@@ -52,7 +52,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         if (instance != null) {
             instance.shutdown();
         }

@@ -29,6 +29,7 @@ import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import org.w3c.dom.Node;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -99,8 +100,8 @@ public abstract class AbstractYamlConfigBuilder {
             }
 
             YamlNode rootLoaded;
-            try {
-                rootLoaded = YamlLoader.load(url.openStream());
+            try (InputStream inputStream = url.openStream()) {
+                rootLoaded = YamlLoader.load(inputStream);
             } catch (Exception ex) {
                 throw new InvalidConfigurationException("Loading YAML document from resource " + url.getPath() + " failed", ex);
             }

@@ -45,7 +45,7 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Before
     @After
-    public void beforeAndAfter() {
+    public void tearDown() throws Exception {
         System.clearProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
         helper.ensureTestConfigDeleted();
     }

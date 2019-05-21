@@ -45,7 +45,7 @@ public class YamlClientConfigBuilderResolutionTest {
 
     @Before
     @After
-    public void beforeAndAfter() {
+    public void tearDown() throws Exception {
         System.clearProperty(SYSPROP_CLIENT_CONFIG);
         helper.ensureTestConfigDeleted();
     }
