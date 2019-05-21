@@ -706,7 +706,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     protected void publishCachePartitionLostEvent(String cacheName, int partitionId) {
-        Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        Collection<EventRegistration> registrations = new LinkedList<>();
         for (EventRegistration registration : getRegistrations(cacheName)) {
             if (registration.getFilter() instanceof CachePartitionLostEventFilter) {
                 registrations.add(registration);
@@ -852,7 +852,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * only completed after additional configuration is done, so the {@code CacheConfig} becomes
      * available to consumers only after all configuration is done.
      *
-     * @see #additionalCacheConfigSetup(CacheConfig, CacheConfig)
+     * @see #additionalCacheConfigSetup(CacheConfig, boolean)
      */
     private static class CacheConfigFuture extends SimpleCompletableFuture<CacheConfig> {
         private final CacheConfig cacheConfig;
