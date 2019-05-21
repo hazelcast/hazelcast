@@ -117,4 +117,6 @@ public interface MapDataStore<K, V> {
      * @return flushed value.
      */
     V flush(K key, V value, boolean backup);
+
+    boolean isEntryStore();
 }

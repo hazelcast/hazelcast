@@ -266,8 +266,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
-        return new PutFromLoadAllOperation(name, keyValueSequence);
+    public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean includesExpirationTime) {
+        return new PutFromLoadAllOperation(name, keyValueSequence, includesExpirationTime);
     }
 
     @Override

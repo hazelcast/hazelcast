@@ -35,14 +35,16 @@ import java.util.List;
 public class PutFromLoadAllBackupOperation extends MapOperation implements BackupOperation {
 
     private List<Data> keyValueSequence;
+    private boolean includesExpirationTime;
 
     public PutFromLoadAllBackupOperation() {
         keyValueSequence = Collections.emptyList();
     }
 
-    public PutFromLoadAllBackupOperation(String name, List<Data> keyValueSequence) {
+    public PutFromLoadAllBackupOperation(String name, List<Data> keyValueSequence, boolean includesExpirationTime) {
         super(name);
         this.keyValueSequence = keyValueSequence;
+        this.includesExpirationTime = includesExpirationTime;
     }
 
     @Override
@@ -51,9 +53,12 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         if (keyValueSequence == null || keyValueSequence.isEmpty()) {
             return;
         }
-        for (int i = 0; i < keyValueSequence.size(); i += 2) {
-            final Data key = keyValueSequence.get(i);
-            final Data value = keyValueSequence.get(i + 1);
+        for (int i = 0; i < keyValueSequence.size();) {
+            final Data key = keyValueSequence.get(i++);
+            final Data value = keyValueSequence.get(i++);
+            if (includesExpirationTime) {
+                i++;
+            }
             final Object object = mapServiceContext.toObject(value);
             recordStore.putFromLoadBackup(key, object);
             // the following check is for the case when the putFromLoad does not put the data due to various reasons
@@ -76,6 +81,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeBoolean(this.includesExpirationTime);
         final List<Data> keyValueSequence = this.keyValueSequence;
         final int size = keyValueSequence.size();
         out.writeInt(size);
@@ -87,6 +93,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        this.includesExpirationTime = in.readBoolean();
         final int size = in.readInt();
         if (size < 1) {
             keyValueSequence = Collections.emptyList();

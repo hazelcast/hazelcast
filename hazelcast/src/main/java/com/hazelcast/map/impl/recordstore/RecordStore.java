@@ -204,6 +204,8 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoad(Data key, Object value, Address callerAddress);
 
+    Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress);
+
     /**
      * Puts key-value pair to map which is the result of a load from map store operation on backup.
      *

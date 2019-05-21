@@ -85,6 +85,11 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
+    public boolean isEntryStore() {
+        return false;
+    }
+
+    @Override
     public int notFinishedOperationsCount() {
         return 0;
     }

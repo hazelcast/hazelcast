@@ -23,6 +23,8 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.map.PostProcessingMapStore;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.map.EntryLoader;
+import com.hazelcast.map.EntryStore;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -45,6 +47,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
      */
     private MapStore mapStore;
 
+    private boolean entryStore = false;
+
     private final String mapName;
 
     private final Object impl;
@@ -54,8 +58,17 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         this.impl = impl;
         MapLoader loader = null;
         MapStore store = null;
+        if (impl instanceof EntryStore) {
+            store = (MapStore) impl;
+            entryStore = true;
+        }
         if (impl instanceof MapStore) {
             store = (MapStore) impl;
+
+        }
+        if (impl instanceof EntryLoader) {
+            loader = (MapLoader) impl;
+            entryStore = true;
         }
         if (impl instanceof MapLoader) {
             loader = (MapLoader) impl;
@@ -184,6 +197,10 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     public boolean isPostProcessingMapStore() {
         return isMapStore() && mapStore instanceof PostProcessingMapStore;
+    }
+
+    public boolean isEntryStore() {
+        return entryStore;
     }
 
     @Override

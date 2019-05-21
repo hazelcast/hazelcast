@@ -22,6 +22,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.EntryLoaderEntry;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
@@ -323,24 +324,40 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress) {
         Record record = null;
+        long ttl = DEFAULT_TTL;
         Object value = mapDataStore.load(key);
-        if (value != null) {
-            record = createRecord(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, getNow());
-            storage.put(key, record);
-            mutationObserver.onLoadRecord(key, record);
-            if (!backup) {
-                saveIndex(record, null);
-                mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
-                        key, null, value, null);
-            }
-            evictEntries(key);
+        if (value == null) {
+            return null;
         }
+        if (mapDataStore.isEntryStore()) {
+            EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
+            long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
+            if (proposedTtl < 0) {
+                return null;
+            }
+            value = loaderEntry.getValue();
+            ttl = proposedTtl;
+        }
+        record = createRecord(key, value, ttl, DEFAULT_MAX_IDLE, getNow());
+        markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
+        storage.put(key, record);
+        mutationObserver.onLoadRecord(key, record);
+        if (!backup) {
+            saveIndex(record, null);
+            mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
+                    key, null, value, null);
+        }
+        evictEntries(key);
         // here, we are only publishing events for loaded entries. This is required for notifying query-caches
         // otherwise query-caches cannot see loaded entries
         if (!backup && record != null && hasQueryCache()) {
             addEventToQueryCache(record);
         }
         return record;
+    }
+
+    private long expirationTimeToTtl(long definedExpirationTime) {
+        return definedExpirationTime - System.currentTimeMillis();
     }
 
     protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
@@ -512,6 +529,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
             record = loadRecordOrNull(key, backup, callerAddress);
+            record = getOrNullIfExpired(record, now, backup);
         } else {
             accessRecord(record, now);
         }
@@ -587,10 +605,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             Data key = toData(entry.getKey());
             Object value = entry.getValue();
+            if (mapDataStore.isEntryStore()) {
+                EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
 
-            resultMap.put(key, value);
+                if (putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress) != null) {
+                    resultMap.put(key, loaderEntry.getValue());
+                }
 
-            putFromLoad(key, value, callerAddress);
+            } else {
+                resultMap.put(key, value);
+
+                putFromLoad(key, value, callerAddress);
+            }
 
         }
 
@@ -918,6 +944,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object putFromLoad(Data key, Object value, Address callerAddress) {
         return putFromLoadInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, false, callerAddress);
+    }
+
+    @Override
+    public Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress) {
+        if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
+            return putFromLoad(key, value, callerAddress);
+        }
+        long ttl = expirationTimeToTtl(expirationTime);
+        if (ttl < 0) {
+            return null;
+        }
+        return putFromLoadInternal(key, value, ttl, DEFAULT_MAX_IDLE, false, callerAddress);
     }
 
     @Override
