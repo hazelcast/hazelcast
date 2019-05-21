@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
@@ -72,14 +71,6 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings("checkstyle:npathcomplexity")
 abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> {
 
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder CACHE_GET_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     AbstractClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
     }
@@ -130,7 +121,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
         ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, name, partitionId);
         ClientInvocationFuture future = clientInvocation.invoke();
-        return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
+        return newDelegatingFuture(future, message -> CacheGetCodec.decodeResponse(message).response, deserializeResponse);
     }
 
     @Override
@@ -349,7 +340,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private List<Data>[] groupKeysToPartitions(Set<? extends K> keys, Set<Data> serializedKeys) {
         List<Data>[] keysByPartition = new List[partitionCount];
         ClientPartitionService partitionService = getContext().getPartitionService();
-        for (K key: keys) {
+        for (K key : keys) {
             Data keyData = getSerializationService().toData(key);
 
             if (serializedKeys != null) {

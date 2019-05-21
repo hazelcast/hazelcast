@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 /**
  * Interface to pass specific decode methods to generic data structures that is dealing with client message
  */
-public interface ClientMessageDecoder {
+public interface ClientMessageDecoder<T> {
 
-    <T> T decodeClientMessage(ClientMessage clientMessage);
+     T decodeClientMessage(ClientMessage clientMessage);
 }
