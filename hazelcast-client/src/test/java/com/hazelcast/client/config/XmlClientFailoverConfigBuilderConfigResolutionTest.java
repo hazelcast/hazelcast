@@ -29,6 +29,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -45,7 +46,7 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Before
     @After
-    public void beforeAndAfter() {
+    public void beforeAndAfter() throws IOException {
         System.clearProperty(SYSPROP_NAME);
         helper.ensureTestConfigDeleted();
     }
