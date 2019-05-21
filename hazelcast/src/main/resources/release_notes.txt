@@ -1,5 +1,12 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.11.4-VISA ====
+
+1. Fixes
+
+* Fixed an issue which was causing 'OutOfMemoryException' in a split-brain situation, due to the
+client listeners. [#15059]
+
 ==== 3.11.4 ====
 
 1. Fixes
