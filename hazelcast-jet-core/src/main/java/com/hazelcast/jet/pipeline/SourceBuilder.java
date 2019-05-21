@@ -635,12 +635,14 @@ public final class SourceBuilder<C> {
          * stream from the same item it was about to emit when the snapshot was
          * taken.
          * <p>
-         * If your source is distributed, there are several source processors
-         * running it. Each processor applied {@code createSnapshotFn} to its local
-         * source context and the snapshot contains all those objects. This is why
-         * {@code restoreSnapshotFn} accepts a list of snapshot objects. It should
+         * If your source is <em>not {@linkplain Base#distributed(int)
+         * distributed}</em>, the `List` in the second argument contains
+         * exactly 1 element; it is safe to use `get(0)` on it. If your source
+         * is distributed, the list will contain objects returned by {@code
+         * createSnapshotFn} in all parallel instances. This is why {@code
+         * restoreSnapshotFn} accepts a list of snapshot objects. It should
          * figure out which part of the snapshot data pertains to it and it can
-         * do so as explained in {@link Base#distributed builder.distributed()}.
+         * do so as explained {@link Base#distributed here}.
          */
         @SuppressWarnings("unchecked")
         @Nonnull
