@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -361,8 +362,11 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         int oldSize = result.size();
         assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
         job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException ignored) { }
 
-        // results should contain a monotonic sequence of results, each with count=1000
+        // results should contain a monotonic sequence of results, each with count=windowSize
         Iterator<WindowResult<Long>> iterator = result.iterator();
         for (int i = 0; i < result.size(); i++) {
             WindowResult<Long> next = iterator.next();
