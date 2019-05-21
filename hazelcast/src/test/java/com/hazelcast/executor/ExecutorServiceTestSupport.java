@@ -25,11 +25,15 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -155,6 +159,30 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public String call() throws Exception {
             return "Completed";
+        }
+    }
+
+    public static class SerializationCountingCallable implements Callable<Void>, DataSerializable {
+
+        private AtomicInteger serializationCount = new AtomicInteger();
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serializationCount.incrementAndGet();
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+
+        }
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+
+        public int getSerializationCount() {
+            return serializationCount.get();
         }
     }
 
