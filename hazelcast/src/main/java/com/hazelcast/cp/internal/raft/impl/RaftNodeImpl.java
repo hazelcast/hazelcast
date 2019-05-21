@@ -62,7 +62,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -77,14 +76,14 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of {@link RaftNode}.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity",
+                   "checkstyle:npathcomplexity"})
 public class RaftNodeImpl implements RaftNode {
 
     private static final int LEADER_ELECTION_TIMEOUT_RANGE = 1000;
@@ -753,21 +752,41 @@ public class RaftNodeImpl implements RaftNode {
         RaftGroupMembers members = state.committedGroupMembers();
         SnapshotEntry snapshotEntry = new SnapshotEntry(snapshotTerm, commitIndex, snapshot, members.index(), members.members());
 
-        long minMatchIndex = 0L;
+        long highestLogIndexToTruncate = commitIndex - maxNumberOfLogsToKeepAfterSnapshot;
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            long[] indices = leaderState.matchIndices();
-            // Last slot is reserved for leader index,
-            // and always zero. That's why we are skipping it.
-            Arrays.sort(indices, 0, indices.length - 1);
-            minMatchIndex = indices[0];
+            long[] matchIndices = leaderState.matchIndices();
+            // Last slot is reserved for leader index and always zero.
+
+            // If there is at least one follower with unknown match index,
+            // its log can be close to the leader's log so we are keeping the old log entries.
+            boolean allMatchIndicesKnown = true;
+            for (int i = 0; i < matchIndices.length - 1; i++) {
+                allMatchIndicesKnown &= matchIndices[i] > 0;
+            }
+
+            if (allMatchIndicesKnown) {
+                // Otherwise, we will keep the log entries until the minimum match index
+                // that is bigger than (commitIndex - maxNumberOfLogsToKeepAfterSnapshot).
+                // If there is no such follower (all of the minority followers are far behind),
+                // then there is no need to keep the old log entries.
+                highestLogIndexToTruncate = commitIndex;
+                for (long matchIndex : matchIndices) {
+                     if (matchIndex > commitIndex - maxNumberOfLogsToKeepAfterSnapshot
+                             && matchIndex < highestLogIndexToTruncate) {
+                         highestLogIndexToTruncate = matchIndex;
+                     }
+                }
+
+                // We should not delete the smallest matchIndex
+                highestLogIndexToTruncate--;
+            }
         }
 
-        long truncateLogsUpToIndex = max(commitIndex - maxNumberOfLogsToKeepAfterSnapshot, minMatchIndex);
-        int truncated = log.setSnapshot(snapshotEntry, truncateLogsUpToIndex);
+        int truncatedEntryCount = log.setSnapshot(snapshotEntry, highestLogIndexToTruncate);
 
         if (logger.isFineEnabled()) {
-            logger.fine(snapshotEntry + " is taken, " + truncated + " entries are truncated.");
+            logger.fine(snapshotEntry + " is taken, " + truncatedEntryCount + " entries are truncated.");
         }
     }
 
