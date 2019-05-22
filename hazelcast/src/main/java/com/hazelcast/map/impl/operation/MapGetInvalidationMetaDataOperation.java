@@ -25,8 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;

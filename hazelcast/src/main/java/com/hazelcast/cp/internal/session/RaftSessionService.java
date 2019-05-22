@@ -42,7 +42,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ManagedExecutorService;
 

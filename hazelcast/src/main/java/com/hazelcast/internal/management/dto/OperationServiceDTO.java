@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;

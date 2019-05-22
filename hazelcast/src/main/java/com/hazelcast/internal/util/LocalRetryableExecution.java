@@ -18,8 +18,8 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.properties.GroupProperty;
 

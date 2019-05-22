@@ -19,10 +19,10 @@ package com.hazelcast.concurrent.lock.operations;
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operations.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 public class SignalOperation extends BaseSignalOperation implements BackupAwareOperation, MutatingOperation {
 

@@ -17,9 +17,9 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.Invocation;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.Invocation;
+import com.hazelcast.spi.impl.operations.impl.InvocationRegistry;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ItemCounter;

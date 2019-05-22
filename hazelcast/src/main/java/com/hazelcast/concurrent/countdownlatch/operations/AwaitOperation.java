@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.AWAIT_OPERATION;

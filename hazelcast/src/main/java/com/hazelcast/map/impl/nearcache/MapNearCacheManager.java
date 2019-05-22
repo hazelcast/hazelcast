@@ -37,7 +37,7 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;

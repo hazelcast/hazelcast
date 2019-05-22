@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -33,7 +33,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}.
- * @see com.hazelcast.spi.OperationFactory
+ * @see OperationFactory
  */
 public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {

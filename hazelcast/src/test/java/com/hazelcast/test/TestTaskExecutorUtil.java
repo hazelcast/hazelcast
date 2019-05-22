@@ -18,7 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;

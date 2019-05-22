@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.impl.operations.PartitionTaskFactory;
 
 import java.util.BitSet;
 import java.util.function.Consumer;

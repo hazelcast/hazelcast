@@ -17,10 +17,10 @@
 package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.impl.DummyBackupAwareOperation;
+import com.hazelcast.spi.impl.operations.impl.DummyOperation;
+import com.hazelcast.spi.impl.operations.impl.DummyPriorityOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operations.OperationAccessor.setCallId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.BackupAwareOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 /**
  * Flushes dirty entries upon call of {@link IMap#flush()}

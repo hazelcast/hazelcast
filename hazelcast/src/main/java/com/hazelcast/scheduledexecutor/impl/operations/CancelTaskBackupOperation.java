@@ -19,7 +19,7 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operations.BackupOperation;
 
 import java.io.IOException;
 

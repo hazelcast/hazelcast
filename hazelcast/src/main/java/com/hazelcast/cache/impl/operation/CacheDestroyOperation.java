@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.OperationService;
+import com.hazelcast.spi.impl.operations.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;

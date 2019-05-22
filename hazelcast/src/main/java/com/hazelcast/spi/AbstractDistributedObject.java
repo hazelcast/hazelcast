@@ -21,7 +21,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationService;
 import com.hazelcast.version.Version;
 
 /**

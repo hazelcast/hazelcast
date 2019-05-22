@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConstructorFunction;

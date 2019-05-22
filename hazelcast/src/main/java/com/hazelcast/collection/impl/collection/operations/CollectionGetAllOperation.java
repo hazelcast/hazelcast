@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.collection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.impl.SerializableList;
 
 import java.util.List;

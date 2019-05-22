@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operations.BackupAwareOperation;
 
 public abstract class CollectionBackupAwareOperation extends CollectionOperation implements BackupAwareOperation {
 

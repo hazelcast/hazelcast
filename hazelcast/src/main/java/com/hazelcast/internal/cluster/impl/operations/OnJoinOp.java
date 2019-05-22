@@ -24,18 +24,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationAccessor;
+import com.hazelcast.spi.impl.operations.OperationResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operations.TargetAware;
 
 import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.spi.impl.operations.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

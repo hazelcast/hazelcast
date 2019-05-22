@@ -19,8 +19,8 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 /**
- * Executes an operation on a set of targets. Similar to {@link com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions}
+ * Executes an operation on a set of targets. Similar to {@link com.hazelcast.spi.impl.operations.impl.InvokeOnPartitions}
  * but for members.
  */
 @PrivateApi

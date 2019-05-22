@@ -30,8 +30,8 @@ import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.operations.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**

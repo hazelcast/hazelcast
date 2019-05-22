@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
-import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationFactory;
+import com.hazelcast.spi.impl.operations.impl.operations.Backup;
+import com.hazelcast.spi.impl.operations.impl.operations.PartitionIteratingOperation;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

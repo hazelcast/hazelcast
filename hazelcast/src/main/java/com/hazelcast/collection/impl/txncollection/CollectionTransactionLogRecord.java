@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareO
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;

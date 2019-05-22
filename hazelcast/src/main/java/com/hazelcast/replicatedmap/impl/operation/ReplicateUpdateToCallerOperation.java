@@ -24,8 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

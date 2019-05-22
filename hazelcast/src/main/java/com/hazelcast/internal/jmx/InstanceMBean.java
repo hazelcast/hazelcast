@@ -25,7 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.File;

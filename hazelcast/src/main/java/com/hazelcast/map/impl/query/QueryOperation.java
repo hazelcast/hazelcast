@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;

@@ -30,11 +30,11 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
+import com.hazelcast.spi.impl.operations.QuorumCheckAwareOperation;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 
 import java.util.Collection;

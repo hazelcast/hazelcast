@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 public class DrainOperation extends SemaphoreBackupAwareOperation implements MutatingOperation {
 

@@ -23,7 +23,7 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;

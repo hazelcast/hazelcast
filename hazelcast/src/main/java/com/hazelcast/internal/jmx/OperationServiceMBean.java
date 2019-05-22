@@ -17,8 +17,8 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.OperationService;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 
 import java.util.Map;
 

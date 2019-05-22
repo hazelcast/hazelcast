@@ -33,10 +33,10 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationFactory;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.operations.PartitionAwareOperationFactory;
 
 import java.security.Permission;
 import java.util.Collections;

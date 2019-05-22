@@ -23,7 +23,7 @@ import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 import java.io.IOException;
 

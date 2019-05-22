@@ -20,7 +20,7 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

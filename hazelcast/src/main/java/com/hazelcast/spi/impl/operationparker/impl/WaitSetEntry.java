@@ -18,15 +18,15 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operations.AbstractLocalOperation;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationResponseHandler;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
 
 import java.util.Queue;

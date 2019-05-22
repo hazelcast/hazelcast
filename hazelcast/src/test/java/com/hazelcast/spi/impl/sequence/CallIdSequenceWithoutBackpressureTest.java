@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl.sequence;
 
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.impl.DummyBackupAwareOperation;
+import com.hazelcast.spi.impl.operations.impl.DummyOperation;
+import com.hazelcast.spi.impl.operations.impl.DummyPriorityOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;

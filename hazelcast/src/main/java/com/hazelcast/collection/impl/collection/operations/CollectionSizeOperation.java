@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.collection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 
 public class CollectionSizeOperation extends CollectionOperation implements ReadonlyOperation {
 

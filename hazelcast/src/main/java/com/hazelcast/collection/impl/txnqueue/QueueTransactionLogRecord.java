@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecor
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 
 /**
  * This class contains Transaction log for the Queue.

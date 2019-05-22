@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.service.fragment;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;

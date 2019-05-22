@@ -26,18 +26,18 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationAccessor;
+import com.hazelcast.spi.impl.operations.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operations.TargetAware;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.operations.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Sent by the master to all members to finalize the join operation from a joining/returning node.

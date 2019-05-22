@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 
 import java.io.IOException;
 import java.util.Map;

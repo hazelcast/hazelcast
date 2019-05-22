@@ -19,10 +19,10 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.BackupAwareOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 public class ClearOperation extends AbstractMultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
         MutatingOperation {

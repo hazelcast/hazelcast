@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.OperationService;
 
 import java.util.function.Consumer;
 

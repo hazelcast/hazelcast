@@ -19,9 +19,9 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationService;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;

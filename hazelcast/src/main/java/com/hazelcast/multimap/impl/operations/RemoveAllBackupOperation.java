@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operations.BackupOperation;
 
 public class RemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 

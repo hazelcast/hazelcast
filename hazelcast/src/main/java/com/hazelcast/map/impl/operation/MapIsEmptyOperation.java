@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 
 public class MapIsEmptyOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 

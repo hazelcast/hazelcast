@@ -21,8 +21,8 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 
 import java.io.IOException;
 

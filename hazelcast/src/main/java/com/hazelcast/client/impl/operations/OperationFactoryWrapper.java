@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.operations;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationFactory;
 
 import java.io.IOException;
 

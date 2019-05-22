@@ -26,7 +26,7 @@ import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operations.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;

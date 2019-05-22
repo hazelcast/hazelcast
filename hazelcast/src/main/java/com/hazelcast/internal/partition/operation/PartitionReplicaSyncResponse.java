@@ -30,16 +30,16 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operations.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationResponseHandler;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operations.TargetAware;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.spi.impl.operations.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
  * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation

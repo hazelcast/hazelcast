@@ -28,10 +28,10 @@ import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -124,7 +124,7 @@ public class QuorumOperationTest {
             "com.hazelcast.internal.management.operation.",
             "com.hazelcast.internal.usercodedeployment.impl.operation.",
             "com.hazelcast.spi.impl.eventservice.impl.operations",
-            "com.hazelcast.spi.impl.operationservice.impl.operations.",
+            "com.hazelcast.spi.impl.operations.impl.operations.",
             "com.hazelcast.spi.impl.proxyservice.impl.operations"
     );
 

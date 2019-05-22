@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
 
 public class AvailableOperation extends SemaphoreOperation implements ReadonlyOperation {
 

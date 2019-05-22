@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import org.mockito.invocation.InvocationOnMock;
 
 import static org.mockito.Mockito.mock;

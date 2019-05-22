@@ -31,7 +31,7 @@ import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.lang.management.ClassLoadingMXBean;

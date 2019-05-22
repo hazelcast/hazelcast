@@ -28,12 +28,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.OperationAccessor;
+import com.hazelcast.spi.impl.operations.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operations.TargetAware;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.io.IOException;

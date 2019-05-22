@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.spi.NamedOperation;
+import com.hazelcast.spi.impl.operations.NamedOperation;
 
 public abstract class AbstractNamedSerializableOperation extends AbstractSerializableOperation implements NamedOperation {
 }

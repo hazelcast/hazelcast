@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
 
 import java.io.IOException;
 

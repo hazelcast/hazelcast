@@ -22,9 +22,9 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.AbstractNamedOperation;
 
 /**
  * Performs the initial subscription to the cache event journal.

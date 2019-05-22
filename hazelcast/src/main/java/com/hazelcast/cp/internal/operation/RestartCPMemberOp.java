@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Offload;
+import com.hazelcast.spi.impl.operations.Operation;
 
 import java.io.IOException;
 

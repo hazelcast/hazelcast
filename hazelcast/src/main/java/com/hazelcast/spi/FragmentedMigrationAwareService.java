@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.impl.operations.Operation;
+
 import java.util.Collection;
 
 /**

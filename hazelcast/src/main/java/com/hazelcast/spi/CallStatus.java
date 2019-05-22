@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.impl.operations.Offload;
+import com.hazelcast.spi.impl.operations.Operation;
+
 /**
  * The result of an {@link Operation#call()}.
  *

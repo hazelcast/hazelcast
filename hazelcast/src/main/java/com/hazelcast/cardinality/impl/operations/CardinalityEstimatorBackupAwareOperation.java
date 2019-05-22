@@ -16,7 +16,7 @@
 
 package com.hazelcast.cardinality.impl.operations;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operations.BackupAwareOperation;
 
 public abstract class CardinalityEstimatorBackupAwareOperation
         extends AbstractCardinalityEstimatorOperation

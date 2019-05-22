@@ -35,12 +35,12 @@ import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.Invocation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.operationservice.impl.RaftInvocation;
-import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
+import com.hazelcast.spi.impl.operations.impl.Invocation;
+import com.hazelcast.spi.impl.operations.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operations.impl.RaftInvocation;
+import com.hazelcast.spi.impl.operations.impl.RaftInvocationContext;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.ArrayList;

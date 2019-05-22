@@ -26,8 +26,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operations.ReadonlyOperation;
+import com.hazelcast.spi.impl.operations.AbstractNamedOperation;
 
 import java.io.IOException;
 

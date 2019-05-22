@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.operation.ClearExpiredOperation;
 import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;

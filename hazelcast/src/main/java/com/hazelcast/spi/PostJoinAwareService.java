@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.impl.operations.Operation;
+import com.hazelcast.spi.impl.operations.PartitionAwareOperation;
+
 /**
  * Marker interface for services that want to return operations to be executed on the cluster
  * members after a join has been finalized.

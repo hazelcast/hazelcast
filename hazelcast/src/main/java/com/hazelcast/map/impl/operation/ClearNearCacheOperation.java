@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operations.MutatingOperation;
 
 /**
  * Only used by deprecated {@link com.hazelcast.client.impl.protocol.task.map.MapClearNearCacheMessageTask}

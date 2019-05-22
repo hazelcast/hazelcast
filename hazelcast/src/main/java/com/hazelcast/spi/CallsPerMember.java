@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.operations.OperationControl;
 
 import java.util.ArrayList;
 import java.util.HashMap;

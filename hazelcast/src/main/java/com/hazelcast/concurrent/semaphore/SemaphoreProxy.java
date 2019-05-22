@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operations.Operation;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
