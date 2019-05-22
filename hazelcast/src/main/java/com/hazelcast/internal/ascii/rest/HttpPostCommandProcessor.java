@@ -28,13 +28,16 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
+import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationService;
@@ -46,6 +49,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -123,6 +127,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_RESTART_CP_SUBSYSTEM_URL)) {
                 handleResetAndInitCPSubsystem(command);
                 sendResponse = false;
+            } else if (uri.startsWith(URI_LICENSE_INFO)) {
+                handleSetLicense(command);
             } else {
                 command.send404();
             }
@@ -794,11 +800,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return textCommandService.getNode().getNodeEngine().getHazelcastInstance().getCPSubsystem();
     }
 
-    private static String exceptionResponse(Throwable throwable) {
+    protected static String exceptionResponse(Throwable throwable) {
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
 
-    private static String response(ResponseType type, Object... attributes) {
+    protected static String response(ResponseType type, Object... attributes) {
         final StringBuilder builder = new StringBuilder("{");
         builder.append("\"status\":\"").append(type).append("\"");
         if (attributes.length > 0) {
@@ -813,7 +819,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return builder.append("}").toString();
     }
 
-    private enum ResponseType {
+    protected enum ResponseType {
         SUCCESS, FAIL, FORBIDDEN;
 
         @Override
@@ -855,7 +861,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
      * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
      */
-    private boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
+    protected boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
             throws UnsupportedEncodingException {
         String decodedName = URLDecoder.decode(groupName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
@@ -881,7 +887,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return true;
     }
 
-    private void sendResponse(HttpPostCommand command, String value) {
+    protected void sendResponse(HttpPostCommand command, String value) {
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(value));
         textCommandService.sendResponse(command);
     }
@@ -890,4 +896,35 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     public void handleRejection(HttpPostCommand command) {
         handle(command);
     }
+
+    private void handleSetLicense(HttpPostCommand command) {
+        final int retryCount = 100;
+        String res;
+        byte[] data = command.getData();
+        try {
+            String[] strList = bytesToString(data).split("&");
+            if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
+                // assumes that both groupName and password are present
+                String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
+                invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine, new Supplier<Operation>() {
+                    @Override
+                    public Operation get() {
+                        return new SetLicenseOperation(licenseKey);
+                    }
+                }, retryCount).get();
+                res = responseOnSetLicenseSuccess();
+            } else {
+                res = response(ResponseType.FORBIDDEN);
+            }
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while updating the license", throwable);
+            res = exceptionResponse(throwable);
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    protected String responseOnSetLicenseSuccess() {
+        return response(ResponseType.SUCCESS);
+    }
+
 }

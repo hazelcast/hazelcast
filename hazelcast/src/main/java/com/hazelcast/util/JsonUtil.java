@@ -332,6 +332,8 @@ public final class JsonUtil {
             return '"' + (String) value + '"';
         } else if (value instanceof Collection) {
             return "[" + toJsonCollection((Collection) value) + "]";
+        } else if (value instanceof JsonValue) {
+            return value.toString();
         } else {
             throw new IllegalArgumentException("Unable to convert " + value + " to JSON");
         }

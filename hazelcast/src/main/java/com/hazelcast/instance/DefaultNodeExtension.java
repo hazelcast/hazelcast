@@ -500,4 +500,8 @@ public class DefaultNodeExtension implements NodeExtension {
     protected void createAndSetPhoneHome() {
         this.phoneHome = new PhoneHome(node);
     }
+
+    public void setLicenseKey(String licenseKey) {
+        // NOP
+    }
 }
