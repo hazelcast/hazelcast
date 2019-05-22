@@ -28,7 +28,6 @@ import com.hazelcast.util.ItemCounter;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -53,7 +52,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.period.seconds", 0, SECONDS);
 
     /**
      * The period in milliseconds between taking samples.
@@ -62,7 +61,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * precision.
      */
     public static final HazelcastProperty SAMPLER_PERIOD_MILLIS
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.sampler.period.millis", 100, MILLISECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.sampler.period.millis", 100, MILLISECONDS);
 
     /**
      * If the name the data-structure the operation operates on should be included.
@@ -76,7 +75,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
      * it gets, the more litter is created.
      */
     public static final HazelcastProperty INCLUDE_NAME
-            = new HazelcastProperty(PREFIX + ".operationthreadsamples.includeName", false);
+            = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.includeName", false);
     public static final float HUNDRED = 100f;
 
 

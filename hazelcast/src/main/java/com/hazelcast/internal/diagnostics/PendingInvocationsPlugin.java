@@ -25,7 +25,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ItemCounter;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -46,13 +45,13 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".pending.invocations.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.pending.invocations.period.seconds", 0, SECONDS);
 
     /**
      * The minimum number of invocations per type of operation before it start logging this particular operation.
      */
     public static final HazelcastProperty THRESHOLD
-            = new HazelcastProperty(PREFIX + ".pending.invocations.threshold", 1);
+            = new HazelcastProperty("hazelcast.diagnostics.pending.invocations.threshold", 1);
 
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();

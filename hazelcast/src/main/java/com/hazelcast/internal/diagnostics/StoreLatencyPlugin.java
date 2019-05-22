@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -57,7 +56,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".storeLatency.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.storeLatency.period.seconds", 0, SECONDS);
 
     /**
      * The period in second the statistics should be reset. Normally the statistics are not reset and if the system
@@ -67,7 +66,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
      * setting will periodically reset the statistics.
      */
     public static final HazelcastProperty RESET_PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".storeLatency.reset.period.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.storeLatency.reset.period.seconds", 0, SECONDS);
 
     private static final int LOW_WATERMARK_MICROS = 100;
 
