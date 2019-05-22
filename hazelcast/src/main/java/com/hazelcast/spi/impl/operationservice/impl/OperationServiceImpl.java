@@ -40,13 +40,12 @@ import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -75,7 +74,7 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
+ * This is the implementation of the {@link OperationServiceImpl}.
  * <p/>
  * <h1>System Operation</h1>
  * When a {@link com.hazelcast.spi.UrgentSystemOperation} is invoked on this OperationService, it will be executed with a
@@ -94,7 +93,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see TargetInvocation
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
+public final class OperationServiceImpl implements MetricsProvider, LiveOperationsTracker, OperationService {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 

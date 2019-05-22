@@ -25,7 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.File;
@@ -75,7 +75,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         this.cluster = hazelcastInstance.getCluster();
         Node node = hazelcastInstance.node;
         ExecutionService executionService = node.nodeEngine.getExecutionService();
-        InternalOperationService operationService = node.nodeEngine.getOperationService();
+        OperationServiceImpl operationService = node.nodeEngine.getOperationService();
         createMBeans(hazelcastInstance, managementService, node, executionService, operationService);
         registerMBeans();
         registerWanPublisherMBeans(node.nodeEngine.getWanReplicationService());
@@ -104,7 +104,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     }
 
     private void createMBeans(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService, Node node,
-                              ExecutionService executionService, InternalOperationService operationService) {
+                              ExecutionService executionService, OperationServiceImpl operationService) {
         this.nodeMBean = new NodeMBean(hazelcastInstance, node, managementService);
         this.networkingServiceMBean = new NetworkingServiceMBean(hazelcastInstance, node.networkingService, service);
         this.eventServiceMBean = new EventServiceMBean(hazelcastInstance, node.nodeEngine.getEventService(), service);

@@ -36,7 +36,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;

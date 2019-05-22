@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheO
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.FutureUtil;
 
 import java.security.Permission;
@@ -65,7 +65,7 @@ public class MapDestroyCacheMessageTask
     }
 
     private void createInvocations(Collection<MemberImpl> members, List<Future<Boolean>> futures) {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             DestroyQueryCacheOperation operation =
                     new DestroyQueryCacheOperation(parameters.mapName, parameters.cacheName);

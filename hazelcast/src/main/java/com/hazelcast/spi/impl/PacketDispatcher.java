@@ -20,6 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.function.Consumer;
 
@@ -29,7 +30,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
  * A {@link Consumer} that dispatches the {@link Packet} to the right service. For example, operations are sent to the
- * {@link com.hazelcast.spi.OperationService}, events are sent to the {@link com.hazelcast.spi.EventService} etc.
+ * {@link OperationService}, events are sent to the {@link com.hazelcast.spi.EventService} etc.
  */
 public final class PacketDispatcher implements Consumer<Packet> {
 

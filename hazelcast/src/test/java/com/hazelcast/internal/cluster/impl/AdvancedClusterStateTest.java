@@ -32,7 +32,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -489,7 +489,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, state);
 
-        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(randomName(), 1);
         Future<Long> future = operationService
                 .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
@@ -626,7 +626,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
-        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(key, 1);
         final Future<Long> future = operationService
                 .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, partitionId);

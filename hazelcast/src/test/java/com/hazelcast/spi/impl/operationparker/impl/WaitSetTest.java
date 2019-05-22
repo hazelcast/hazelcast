@@ -22,7 +22,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

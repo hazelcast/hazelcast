@@ -25,7 +25,6 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -68,7 +67,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final InternalCompletableFuture<Object> future = operationService.invokeOnPartition(null, operation, 0);
 
         try {
@@ -86,7 +85,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(lite);
+        final OperationServiceImpl operationService = getOperationService(lite);
         final InternalCompletableFuture<Object> future = operationService.invokeOnPartition(null, operation, 0);
 
         assertEquals("foobar", future.get());
@@ -97,7 +96,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final DummyExecutionCallback callback = new DummyExecutionCallback();
         operationService.asyncInvokeOnPartition(null, operation, 0, callback);
 
@@ -111,7 +110,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final DummyExecutionCallback callback = new DummyExecutionCallback();
         operationService.asyncInvokeOnPartition(null, operation, 0, callback);
 
@@ -125,7 +124,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         operationService.invokeOnPartitions(SERVICE_NAME, new DummyOperationFactory(), singletonList(0));
     }
 
@@ -136,7 +135,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final Map<Integer, Object> resultMap = operationService
                 .invokeOnPartitions(SERVICE_NAME, new DummyOperationFactory(), singletonList(0));
 
@@ -150,7 +149,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         operationService.invokeOnAllPartitions(SERVICE_NAME, new DummyOperationFactory());
     }
 
@@ -161,7 +160,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
         factory.newHazelcastInstance();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME, new DummyOperationFactory());
 
         assertFalse(resultMap.isEmpty());

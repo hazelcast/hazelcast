@@ -24,7 +24,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -118,7 +118,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
     @Test
     public void test_ClientReAuthOperation_retry() throws ExecutionException, InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        InternalOperationService operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
+        OperationServiceImpl operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         ClientReAuthOperation reAuthOperation = new ClientReAuthOperation("clientUUId", 1);

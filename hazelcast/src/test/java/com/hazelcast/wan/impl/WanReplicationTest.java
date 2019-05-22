@@ -37,7 +37,7 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -196,7 +196,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         OperationFactory operationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet,
                 new UpdatingEntryProcessor());
 
-        InternalOperationService operationService = getOperationService(instance1);
+        OperationServiceImpl operationService = getOperationService(instance1);
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
         // there should be 10 events since all entries should be processed
@@ -281,7 +281,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         HazelcastInstance node = instance1;
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
-        InternalOperationService operationService = nodeEngineImpl.getOperationService();
+        OperationServiceImpl operationService = nodeEngineImpl.getOperationService();
         SerializationService serializationService = nodeEngineImpl.getSerializationService();
         MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();

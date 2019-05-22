@@ -20,7 +20,6 @@ import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -90,7 +89,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
     public OperationThreadSamplerPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
         this.nodeEngine = nodeEngine;
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.executor = ((OperationServiceImpl) operationService).getOperationExecutor();
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);

@@ -24,7 +24,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOp
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;

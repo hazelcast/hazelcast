@@ -26,7 +26,7 @@ import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.Closeable;
 import java.security.PrivilegedAction;

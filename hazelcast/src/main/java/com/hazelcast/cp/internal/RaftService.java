@@ -67,7 +67,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -230,7 +230,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         logger.warning("Restarting CP subsystem with groupId seed: " + seed);
         restartLocal(seed);
 
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         for (Member member : members) {
             Operation op = new RestartCPMemberOp(seed);
             operationService.<Void>invokeOnTarget(SERVICE_NAME, op, member.getAddress()).andThen(callback);
