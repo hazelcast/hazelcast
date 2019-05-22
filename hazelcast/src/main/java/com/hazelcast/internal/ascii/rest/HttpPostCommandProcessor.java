@@ -905,7 +905,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             String[] strList = bytesToString(data).split("&");
             if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
                 // assumes that both groupName and password are present
-                String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
+                final String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
                 invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine, new Supplier<Operation>() {
                     @Override
                     public Operation get() {
