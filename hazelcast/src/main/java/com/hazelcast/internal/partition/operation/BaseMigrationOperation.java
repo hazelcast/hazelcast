@@ -25,8 +25,8 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -220,14 +220,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     void onMigrationStart() {
         InternalPartitionServiceImpl partitionService = getService();
-        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
-        migrationListener.onMigrationStart(getMigrationParticipantType(), migrationInfo);
+        MigrationInterceptor migrationInterceptor = partitionService.getMigrationInterceptor();
+        migrationInterceptor.onMigrationStart(getMigrationParticipantType(), migrationInfo);
     }
 
     void onMigrationComplete() {
         InternalPartitionServiceImpl partitionService = getService();
-        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
-        migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, success);
+        MigrationInterceptor migrationInterceptor = partitionService.getMigrationInterceptor();
+        migrationInterceptor.onMigrationComplete(getMigrationParticipantType(), migrationInfo, success);
     }
 
     /** Notifies all {@link MigrationAwareService}s that the migration is starting. */

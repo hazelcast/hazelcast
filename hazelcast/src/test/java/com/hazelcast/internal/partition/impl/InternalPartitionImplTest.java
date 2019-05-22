@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -53,7 +53,7 @@ public class InternalPartitionImplTest {
 
     private final PartitionReplica localReplica = new PartitionReplica(newAddress(5000), UuidUtil.newUnsecureUuidString());
     private final PartitionReplica[] replicaOwners = new PartitionReplica[MAX_REPLICA_COUNT];
-    private final TestPartitionListener partitionListener = new TestPartitionListener();
+    private final TestPartitionReplicaInterceptor partitionListener = new TestPartitionReplicaInterceptor();
     private InternalPartitionImpl partition;
 
     @Before
@@ -215,11 +215,11 @@ public class InternalPartitionImplTest {
         return new Address("127.0.0.1", LOCALHOST, 5000 + port);
     }
 
-    private static class TestPartitionListener implements PartitionListener {
+    private static class TestPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
         private int eventCount;
 
         @Override
-        public void replicaChanged(PartitionReplicaChangeEvent event) {
+        public void replicaChanged(int partitionId, int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {
             eventCount++;
         }
 

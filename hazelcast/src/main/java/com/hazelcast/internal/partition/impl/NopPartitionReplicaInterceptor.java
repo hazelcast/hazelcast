@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.partition;
+package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.internal.partition.impl.PartitionReplicaChangeEvent;
+import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 
-/** Listener for partition change events */
-public interface PartitionListener {
-    /** Called when a new partition arrangement has been set and a partition replica has been changed. */
-    void replicaChanged(PartitionReplicaChangeEvent event);
+/** No-op partition replica interceptor which does nothing on partition change events. */
+public class NopPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
+
+    @Override
+    public void replicaChanged(int partitionId, int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {
+    }
 }
