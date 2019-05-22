@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -162,9 +163,8 @@ public class TaskletExecutionService {
         @SuppressWarnings("unchecked")
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
-        for (Tasklet t : tasklets) {
-            t.init();
-        }
+        Util.doWithClassLoader(jobClassLoader, () ->
+                tasklets.forEach(Tasklet::init));
 
         // We synchronize so that no two jobs submit their tasklets in
         // parallel. If two jobs submit in parallel, the tasklets of one of

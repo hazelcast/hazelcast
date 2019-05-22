@@ -189,10 +189,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return getNodeEngineImpl(hz(instance));
     }
 
-    private static AssertTask assertTask(RunnableExc runnable) {
+    private static <T extends Exception> AssertTask assertTask(RunnableExc<T> runnable) {
         return new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() throws T {
                 runnable.run();
             }
         };

@@ -18,12 +18,39 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.core.AbstractProcessor;
 
+import javax.annotation.Nonnull;
+
 import static org.junit.Assert.fail;
 
-public class LoadPersonIsolated extends AbstractProcessor {
+class LoadPersonIsolated extends AbstractProcessor {
+    static volatile AssertionError assertionErrorInClose;
+    private final boolean shouldComplete;
+
+    LoadPersonIsolated(boolean shouldComplete) {
+        this.shouldComplete = shouldComplete;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) {
+        checkLoadClass();
+    }
 
     @Override
     public boolean complete() {
+        checkLoadClass();
+        return shouldComplete;
+    }
+
+    @Override
+    public void close() {
+        try {
+            checkLoadClass();
+        } catch (AssertionError e) {
+            assertionErrorInClose = e;
+        }
+    }
+
+    private void checkLoadClass() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             cl.loadClass("com.sample.pojo.person.Person$Appereance");
@@ -35,6 +62,5 @@ public class LoadPersonIsolated extends AbstractProcessor {
             fail();
         } catch (ClassNotFoundException ignored) {
         }
-        return true;
     }
 }

@@ -39,6 +39,7 @@ import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -251,19 +252,18 @@ public class MasterJobContext {
         }
 
         MembersView membersView = getMembersView();
-        ClassLoader previousCL = swapContextClassLoader(classLoader);
         try {
             logger.info("Start executing " + mc.jobIdString()
                     + ", execution graph in DOT format:\n" + dotString
                     + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
             logger.fine("Building execution plan for " + mc.jobIdString());
-            mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(), mc.executionId(),
-                    mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId()));
+            DAG finalDag = dag;
+            Util.doWithClassLoader(classLoader, () ->
+                mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, finalDag, mc.jobId(),
+                        mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId())));
         } catch (Exception e) {
             finalizeJob(e);
             return;
-        } finally {
-            Thread.currentThread().setContextClassLoader(previousCL);
         }
 
         logger.fine("Built execution plans for " + mc.jobIdString());
@@ -683,13 +683,6 @@ public class MasterJobContext {
                 }
             }
         }
-    }
-
-    private static ClassLoader swapContextClassLoader(ClassLoader jobClassLoader) {
-        Thread currentThread = Thread.currentThread();
-        ClassLoader previous = currentThread.getContextClassLoader();
-        currentThread.setContextClassLoader(jobClassLoader);
-        return previous;
     }
 
     void resumeJob(Function<Long, Long> executionIdSupplier) {

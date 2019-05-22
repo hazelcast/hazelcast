@@ -88,7 +88,7 @@ public class JobExecutionService {
                         (PrivilegedAction<JetClassLoader>) () -> {
                             ClassLoader parent = config.getClassLoaderFactory() != null
                                     ? config.getClassLoaderFactory().getJobClassLoader()
-                                    : null;
+                                    : nodeEngine.getConfigClassLoader();
                             return new JetClassLoader(parent, jobId, jobRepository.getJobResources(jobId));
                         }));
     }
@@ -310,10 +310,11 @@ public class JobExecutionService {
     public void completeExecution(long executionId, Throwable error) {
         ExecutionContext executionContext = executionContexts.remove(executionId);
         if (executionContext != null) {
+            JetClassLoader removed = classLoaders.remove(executionContext.jobId());
             try {
-                executionContext.completeExecution(error);
+                com.hazelcast.jet.impl.util.Util.doWithClassLoader(removed, () ->
+                    executionContext.completeExecution(error));
             } finally {
-                JetClassLoader removed = classLoaders.remove(executionContext.jobId());
                 removed.shutdown();
                 executionContextJobIds.remove(executionContext.jobId());
                 logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());

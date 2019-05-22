@@ -17,11 +17,12 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobClassLoaderFactory;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
-import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
@@ -30,14 +31,16 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static java.util.Collections.emptyEnumeration;
 import static java.util.Collections.enumeration;
 import static java.util.Collections.singleton;
 
-public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
+public abstract class AbstractDeploymentTest extends JetTestSupport {
 
     protected abstract JetInstance getJetInstance();
 
@@ -48,7 +51,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("load class", LoadPersonIsolated::new);
+        dag.newVertex("load class", () -> new LoadPersonIsolated(true));
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
@@ -62,7 +65,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("create and print person", LoadPersonIsolated::new);
+        dag.newVertex("create and print person", () -> new LoadPersonIsolated(true));
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
@@ -71,6 +74,32 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         jobConfig.addClass(appearance);
 
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
+    }
+
+    @Test
+    public void testDeployment_whenClassAddedAsResource_then_availableInDestroyWhenCancelled() throws Throwable {
+        createCluster();
+
+        DAG dag = new DAG();
+        LoadPersonIsolated.assertionErrorInClose = null;
+        dag.newVertex("v", () -> new LoadPersonIsolated(false));
+
+        JobConfig jobConfig = new JobConfig();
+        URL classUrl = this.getClass().getResource("/cp1/");
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
+        Class<?> appearanceClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
+        jobConfig.addClass(appearanceClz);
+
+        Job job = getJetInstance().newJob(dag, jobConfig);
+        assertJobStatusEventually(job, RUNNING);
+        job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException ignored) {
+        }
+        if (LoadPersonIsolated.assertionErrorInClose != null) {
+            throw LoadPersonIsolated.assertionErrorInClose;
+        }
     }
 
     @Test

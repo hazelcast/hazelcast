@@ -208,8 +208,8 @@ public final class Util {
                   .contains(objectName);
     }
 
-    public interface RunnableExc {
-        void run() throws Exception;
+    public interface RunnableExc<T extends Exception> {
+        void run() throws T;
     }
 
     @Nonnull
@@ -616,5 +616,16 @@ public final class Util {
 
     public static String sanitizeLoggerNamePart(String name) {
         return name.replace('.', '_');
+    }
+
+    public static <T extends Exception> void doWithClassLoader(ClassLoader cl, RunnableExc<T> action) throws T {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousCl = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(cl);
+        try {
+            action.run();
+        } finally {
+            currentThread.setContextClassLoader(previousCl);
+        }
     }
 }
