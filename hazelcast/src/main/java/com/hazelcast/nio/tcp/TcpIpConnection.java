@@ -31,6 +31,8 @@ import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
+import java.security.cert.Certificate;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -50,6 +52,7 @@ public class TcpIpConnection
         implements Connection {
 
     private final Channel channel;
+    private final ConcurrentMap attributeMap;
 
     private final TcpIpEndpointManager endpointManager;
 
@@ -76,6 +79,7 @@ public class TcpIpConnection
 
     private volatile String closeReason;
 
+
     public TcpIpConnection(TcpIpEndpointManager endpointManager,
                            ConnectionLifecycleListener lifecycleListener,
                            int connectionId,
@@ -86,7 +90,8 @@ public class TcpIpConnection
         this.ioService = endpointManager.getNetworkingService().getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.channel = channel;
-        channel.attributeMap().put(TcpIpConnection.class, this);
+        this.attributeMap = channel.attributeMap();
+        attributeMap.put(TcpIpConnection.class, this);
     }
 
     public Channel getChannel() {
@@ -296,5 +301,10 @@ public class TcpIpConnection
                 + ", alive=" + alive
                 + ", type=" + type
                 + "]";
+    }
+
+    @Override
+    public Certificate[] getRemoteCertificates() {
+        return attributeMap != null ? (Certificate[]) attributeMap.get(Certificate.class) : null;
     }
 }

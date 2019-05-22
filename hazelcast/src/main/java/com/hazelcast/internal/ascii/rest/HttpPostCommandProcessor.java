@@ -855,7 +855,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
      * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
      */
-    private boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
+    private boolean authenticate(HttpPostCommand command, String groupName, String pass)
             throws UnsupportedEncodingException {
         String decodedName = URLDecoder.decode(groupName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
@@ -873,7 +873,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String decodedPass = URLDecoder.decode(pass, "UTF-8");
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(groupName, decodedPass);
         try {
-            LoginContext lc = securityContext.createMemberLoginContext(credentials, null);
+            LoginContext lc = securityContext.createMemberLoginContext(credentials, command.getConnection());
             lc.login();
         } catch (LoginException e) {
             return false;
