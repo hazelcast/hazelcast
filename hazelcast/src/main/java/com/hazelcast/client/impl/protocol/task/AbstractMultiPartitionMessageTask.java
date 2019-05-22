@@ -22,7 +22,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Map;
@@ -37,7 +37,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessa
     @Override
     protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions()).andThen(this);
     }
 

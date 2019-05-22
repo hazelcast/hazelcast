@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,7 +45,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
-    private InternalOperationService opService;
+    private OperationServiceImpl opService;
 
     @Before
     public void setup() {

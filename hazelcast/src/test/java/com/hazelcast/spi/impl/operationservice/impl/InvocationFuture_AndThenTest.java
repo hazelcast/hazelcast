@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.verify;
 public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
 
     @Before
     public void setup() {

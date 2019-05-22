@@ -28,8 +28,8 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -93,8 +93,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         getLogger().severe(cause);
     }
 
-    private InternalOperationService getOperationService() {
-        return (InternalOperationService) getNodeEngine().getOperationService();
+    private OperationServiceImpl getOperationService() {
+        return (OperationServiceImpl) getNodeEngine().getOperationService();
     }
 
     @Override

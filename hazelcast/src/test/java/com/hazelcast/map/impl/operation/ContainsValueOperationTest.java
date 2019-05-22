@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -79,7 +79,7 @@ public class ContainsValueOperationTest extends HazelcastTestSupport {
                 = operationProvider.createContainsValueOperationFactory(mapProxy.getName(), mapServiceContext.toData(value));
         Operation operation = operationFactory.createOperation();
 
-        InternalOperationService operationService = getOperationService(member1);
+        OperationServiceImpl operationService = getOperationService(member1);
         return operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).invoke();
     }
 }

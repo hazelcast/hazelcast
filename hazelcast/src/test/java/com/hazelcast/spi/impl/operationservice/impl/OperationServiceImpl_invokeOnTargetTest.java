@@ -21,7 +21,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,7 +40,7 @@ import static org.junit.Assert.fail;
 public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private HazelcastInstance remote;
 
     @Before

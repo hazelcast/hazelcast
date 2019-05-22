@@ -45,7 +45,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
@@ -316,7 +316,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         public void notify(Object result) {
             if (Boolean.TRUE.equals(result)) {
                 if (fragmentedMigrationEnabled) {
-                    InternalOperationService operationService = (InternalOperationService) getNodeEngine().getOperationService();
+                    OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
                     operationService.execute(new SendNewMigrationFragmentRunnable());
                 } else {
                     completeMigration(true);

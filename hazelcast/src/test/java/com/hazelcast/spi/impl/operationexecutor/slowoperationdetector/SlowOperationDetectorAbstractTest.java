@@ -25,7 +25,6 @@ import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -114,7 +113,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        InternalOperationService operationService = getOperationService(instance);
+        OperationServiceImpl operationService = getOperationService(instance);
         SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
         Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
 

@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
 
     @Before
     public void setup() {

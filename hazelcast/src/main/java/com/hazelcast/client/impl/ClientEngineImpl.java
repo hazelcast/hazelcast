@@ -57,7 +57,7 @@ import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.UrgentSystemOperation;
@@ -65,7 +65,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -253,7 +253,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         int partitionId = clientMessage.getPartitionId();
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
             if (isUrgent(messageTask)) {
                 operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
@@ -594,7 +594,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
         @Override
         public void run() {
-            InternalOperationService service = nodeEngine.getOperationService();
+            OperationServiceImpl service = nodeEngine.getOperationService();
             Address thisAddr = node.getThisAddress();
             for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
                 String clientUuid = entry.getKey();

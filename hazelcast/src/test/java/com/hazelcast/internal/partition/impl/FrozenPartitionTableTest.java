@@ -30,7 +30,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -223,7 +223,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
                 randomName(), new StaticMemberNodeContext(factory, newUnsecureUuidString(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        InternalOperationService operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
     }
 
@@ -254,7 +254,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
                 randomName(), new StaticMemberNodeContext(factory, member4.getUuid(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        InternalOperationService operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
 
         try {

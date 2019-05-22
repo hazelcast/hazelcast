@@ -55,11 +55,11 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -269,7 +269,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
 
         if (masterTriggered.compareAndSet(false, true)) {
-            InternalOperationService operationService = nodeEngine.getOperationService();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
             ICompletableFuture<PartitionRuntimeState> future =
                     operationService.invokeOnTarget(SERVICE_NAME, new AssignPartitions(), masterAddress);
             future.andThen(new ExecutionCallback<PartitionRuntimeState>() {
@@ -871,7 +871,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
 
         CountDownLatch latch = getShutdownLatch();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         long timeoutMillis = unit.toMillis(timeout);
         long awaitStep = Math.min(SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS, timeoutMillis);

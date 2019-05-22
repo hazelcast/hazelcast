@@ -32,7 +32,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -85,7 +85,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
         waitAllForSafeState(instances);
 
-        InternalOperationService operationService = getOperationService(instances[0]);
+        OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), partitionId).get();
         }
@@ -537,7 +537,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void assertPartitionDataAfterMigrations() throws Exception {
-        InternalOperationService operationService = getOperationService(instances[0]);
+        OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             assertNotNull(operationService.invokeOnPartition(null, new TestGetOperation(), partitionId)
                     .get(10, TimeUnit.SECONDS));

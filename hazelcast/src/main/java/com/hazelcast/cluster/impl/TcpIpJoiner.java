@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMerge
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
@@ -199,7 +199,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             logger.fine("Claiming myself as master node! Asking to endpoints: " + votingEndpoints);
         }
         claimingMastership = true;
-        InternalOperationService operationService = node.getNodeEngine().getOperationService();
+        OperationServiceImpl operationService = node.getNodeEngine().getOperationService();
         Collection<Future<Boolean>> futures = new LinkedList<Future<Boolean>>();
         for (Address address : possibleAddresses) {
             if (isBlacklisted(address)) {

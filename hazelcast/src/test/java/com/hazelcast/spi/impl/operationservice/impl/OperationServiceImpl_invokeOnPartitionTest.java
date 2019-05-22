@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,7 +37,7 @@ import static org.junit.Assert.fail;
 public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private HazelcastInstance remote;
 
     @Before

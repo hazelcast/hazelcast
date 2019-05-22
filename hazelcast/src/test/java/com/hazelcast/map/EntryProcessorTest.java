@@ -59,7 +59,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -1986,7 +1986,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         HazelcastInstance node = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
-        InternalOperationService operationService = nodeEngineImpl.getOperationService();
+        OperationServiceImpl operationService = nodeEngineImpl.getOperationService();
 
         int keyCount = 1000;
         Set<Data> dataKeys = new HashSet<Data>();

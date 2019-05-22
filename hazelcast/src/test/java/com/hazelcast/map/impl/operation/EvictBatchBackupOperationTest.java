@@ -22,7 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -73,7 +73,7 @@ public class EvictBatchBackupOperationTest extends HazelcastTestSupport {
             for (int replicaIndex = 0; replicaIndex <= backupCount; replicaIndex++) {
                 EvictBatchBackupOperation operation = new EvictBatchBackupOperation(mapName,
                         Collections.<ExpiredKey>emptyList(), 0);
-                InternalOperationService operationService = getOperationService(node1);
+                OperationServiceImpl operationService = getOperationService(node1);
                 operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
                         .setReplicaIndex(replicaIndex).invoke().join();
             }

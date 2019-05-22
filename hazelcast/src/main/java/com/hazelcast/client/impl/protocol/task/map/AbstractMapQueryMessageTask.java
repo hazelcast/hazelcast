@@ -35,7 +35,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -104,7 +104,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     private QueryResult invokeOnPartition(PartitionPredicate predicate, int partitionId) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         MapService mapService = nodeEngine.getService(getServiceName());
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
@@ -139,7 +139,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
         List<Future> futures = new ArrayList<>(members.size());
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         final Query query = buildQuery(predicate);
 
         MapService mapService = nodeEngine.getService(getServiceName());
@@ -220,7 +220,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     private void createInvocationsForMissingPartitions(PartitionIdSet missingPartitionsList, List<Future> futures,
                                                        Predicate predicate) {
 
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         MapService mapService = nodeEngine.getService(getServiceName());
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 

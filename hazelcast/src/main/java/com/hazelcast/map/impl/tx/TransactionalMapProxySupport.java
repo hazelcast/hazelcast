@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;

@@ -30,8 +30,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -201,7 +200,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
         InternalCompletableFuture<Object> future = operationService
@@ -216,7 +215,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
 

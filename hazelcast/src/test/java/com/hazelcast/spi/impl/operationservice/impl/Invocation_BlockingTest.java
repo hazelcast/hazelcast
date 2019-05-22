@@ -29,7 +29,6 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -82,7 +81,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we execute an operation that stall the partition.
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
         opService.invokeOnPartition(null, new SlowOperation(5 * callTimeout), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
@@ -127,7 +126,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we execute an operation that stall the partition.
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
         opService.invokeOnPartition(null, new SlowOperation(5 * callTimeout), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
@@ -164,7 +163,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we lock the lock by another thread
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
         int otherThreadId = 2;
         opService.invokeOnPartition(
                 new LockOperation(namespace, nodeEngine.toData(key), otherThreadId, -1, -1)
@@ -204,7 +203,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we lock the lock by another thread
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
         int otherThreadId = 2;
         opService.invokeOnPartition(
                 new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1)
@@ -246,7 +245,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we execute an operation that stall the partition
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
         opService.invokeOnPartition(null, new SlowOperation(SECONDS.toMillis(5)), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
@@ -298,7 +297,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we execute an operation that stall the partition
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
 
         // first we are going to lock
         int otherThreadId = 1;
@@ -361,7 +360,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we execute an operation that stall the partition.
-        InternalOperationService opService = nodeEngine.getOperationService();
+        OperationServiceImpl opService = nodeEngine.getOperationService();
 
         // first we are going to lock
         int otherThreadId = 1;
