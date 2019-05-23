@@ -153,18 +153,19 @@ public class SnapshotTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_followerFallsTooFarBehind_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+    public void when_followersMatchIndexIsUnknown_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl slowFollower = followers[1];
+        RaftNodeImpl slowFollower = followers[1];
 
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
 
         for (int i = 0; i < entryCount; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
@@ -178,6 +179,72 @@ public class SnapshotTest extends HazelcastTestSupport {
         });
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
+
+        group.allowMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(entryCount, getCommitIndex(slowFollower));
+            }
+        });
+
+        group.resetAllRulesFrom(leader.getLocalMember());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
+                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(entryCount + 1, service.size());
+                    for (int i = 0; i < entryCount; i++) {
+                        assertEquals(("val" + i), service.get(i + 1));
+                    }
+                    assertEquals("valFinal", service.get(51));
+                }
+            }
+        });
+    }
+
+    @Test
+    public void when_followersIsFarBehind_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
+        int entryCount = 50;
+        RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
+        group = newGroupWithService(3, raftAlgorithmConfig);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+
+        leader.replicate(new ApplyRaftRunnable("val0")).get();
+
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl slowFollower = followers[1];
+
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
+
+        for (int i = 1; i < entryCount; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(entryCount, getSnapshotEntry(leader).index());
+            }
+        });
+
+        leader.replicate(new ApplyRaftRunnable("valFinal")).get();
+
+        group.allowMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(entryCount, getCommitIndex(slowFollower));
+            }
+        });
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
@@ -269,7 +336,7 @@ public class SnapshotTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_followerMissesTheLastEntryThatGoesIntoTheSnapshot_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
+    public void when_followerMissesTheLastEntryThatGoesIntoTheSnapshot_then_itCatchesUpWithoutInstallingSnapshot() throws ExecutionException, InterruptedException {
         final int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
@@ -294,6 +361,7 @@ public class SnapshotTest extends HazelcastTestSupport {
         });
 
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
 
         leader.replicate(new ApplyRaftRunnable("val" + (entryCount - 1))).get();
 
@@ -306,7 +374,7 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
 
-        group.resetAllRulesFrom(leader.getLocalMember());
+        group.allowMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -321,7 +389,67 @@ public class SnapshotTest extends HazelcastTestSupport {
                     assertEquals("valFinal", service.get(51));
                 }
             }
-        }, 30);
+        });
+    }
+
+    @Test
+    public void when_followerMissesAFewEntriesBeforeTheSnapshot_then_itCatchesUpWithoutInstallingSnapshot() throws ExecutionException, InterruptedException {
+        int entryCount = 50;
+        int missingEntryCountOnSlowFollower = 4; // entryCount * 0.1 - 2
+        RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
+        group = newGroupWithService(3, raftAlgorithmConfig);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl slowFollower = followers[1];
+
+        for (int i = 0; i < entryCount - missingEntryCountOnSlowFollower; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (RaftNodeImpl follower : group.getNodesExcept(leader.getLocalMember())) {
+                    assertEquals(entryCount - missingEntryCountOnSlowFollower, getMatchIndex(leader, follower.getLocalMember()));
+                }
+            }
+        });
+
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
+
+        for (int i = entryCount - missingEntryCountOnSlowFollower; i < entryCount; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(entryCount, getSnapshotEntry(leader).index());
+            }
+        });
+
+        leader.replicate(new ApplyRaftRunnable("valFinal")).get();
+
+        group.allowMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
+                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(entryCount + 1, service.size());
+                    for (int i = 0; i < entryCount; i++) {
+                        assertEquals(("val" + i), service.get(i + 1));
+                    }
+                    assertEquals("valFinal", service.get(51));
+                }
+            }
+        });
     }
 
     @Test
@@ -403,7 +531,6 @@ public class SnapshotTest extends HazelcastTestSupport {
                     for (int i = 0; i < 51; i++) {
                         assertEquals(("val" + i), service.get(i + 1));
                     }
-
                 }
             }
         });
