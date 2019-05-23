@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class InternalMigrationListenerTest extends HazelcastTestSupport {
+public class MigrationInterceptorTest extends HazelcastTestSupport {
 
     private static final int PARTITION_COUNT = 2;
 
@@ -56,7 +56,7 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
         warmUpPartitions(hz1);
 
-        final InternalMigrationListenerImpl listener = new InternalMigrationListenerImpl();
+        final MigrationInterceptorImpl listener = new MigrationInterceptorImpl();
         final Config config2 = new Config();
         config2.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config2.addListenerConfig(new ListenerConfig(listener));
@@ -129,8 +129,7 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         }
     }
 
-    static class InternalMigrationListenerImpl
-            extends InternalMigrationListener {
+    static class MigrationInterceptorImpl implements MigrationInterceptor {
 
         private final List<MigrationProgressNotification> notifications = new ArrayList<MigrationProgressNotification>();
 
