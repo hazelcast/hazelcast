@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -664,9 +663,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean setTtl(Data key, long ttl) {
-        if (mapServiceContext.getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
-        }
         long now = getNow();
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
