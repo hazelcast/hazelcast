@@ -70,6 +70,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
     public void test_invocationFailsOnMemberLeftException() throws ExecutionException, InterruptedException {
         CPGroupId groupId = getRaftInvocationManager(instances[0]).createRaftGroup(groupName).get();
 
+        waitAllForLeaderElection(instances, groupId);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         Future f = new RaftInvocation(getOperationServiceImpl(leader).invocationContext,
@@ -90,6 +91,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
     public void test_invocationFailsWithMemberLeftException_when_thereAreRetryableExceptionsAfterwards() throws ExecutionException, InterruptedException {
         CPGroupId groupId = getRaftInvocationManager(instances[0]).createRaftGroup(groupName).get();
 
+        waitAllForLeaderElection(instances, groupId);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         Future f = new RaftInvocation(getOperationServiceImpl(leader).invocationContext,
@@ -110,6 +112,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
     public void test_invocationFailsWithStaleAppendRequestException_when_thereAreRetryableExceptionsAfterwards() throws ExecutionException, InterruptedException {
         CPGroupId groupId = getRaftInvocationManager(instances[0]).createRaftGroup(groupName).get();
 
+        waitAllForLeaderElection(instances, groupId);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         Future f = new RaftInvocation(getOperationServiceImpl(leader).invocationContext,
@@ -130,6 +133,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
     public void test_invocationFailsWithFirstMemberLeftException_when_thereAreIndeterminateOperationStateExceptionsAfterwards() throws ExecutionException, InterruptedException {
         CPGroupId groupId = getRaftInvocationManager(instances[0]).createRaftGroup(groupName).get();
 
+        waitAllForLeaderElection(instances, groupId);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         Future f = new RaftInvocation(getOperationServiceImpl(leader).invocationContext,
@@ -150,6 +154,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
     public void test_invocationFailsWitNonRetryableException_when_thereAreRetryableExceptionsAfterIndeterminateOperationState() throws ExecutionException, InterruptedException {
         CPGroupId groupId = getRaftInvocationManager(instances[0]).createRaftGroup(groupName).get();
 
+        waitAllForLeaderElection(instances, groupId);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         Future f = new RaftInvocation(getOperationServiceImpl(leader).invocationContext,
