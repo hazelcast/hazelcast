@@ -226,6 +226,7 @@ public interface CPSubsystemManagementService {
      *         removed from the active CP members list
      * @throws IllegalStateException If there is an ongoing membership change
      *         in the CP subsystem
+     * @throws IllegalStateException If local member is a lite-member
      */
     ICompletableFuture<Void> promoteToCPMember();
 
