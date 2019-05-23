@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
@@ -995,7 +996,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return;
             }
 
-            Collection<Member> members = nodeEngine.getClusterService().getMembers();
+            Collection<Member> members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
             for (Member member : latestMembers) {
                 if (!members.contains(member)) {
                     logger.severe(member + " left the cluster while CP subsystem discovery in progress!");
