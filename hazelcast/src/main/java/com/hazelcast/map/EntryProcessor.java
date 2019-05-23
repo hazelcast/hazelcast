@@ -39,7 +39,6 @@ import java.util.Map;
  * <p>
  * Note that to modify an entry by using EntryProcessors you should explicitly call the
  * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
- * <p>
  * <pre>
  * <code>
  * {@literal}Override

@@ -36,7 +36,6 @@ import static com.hazelcast.util.QuickMath.normalize;
  * a later JVM implementation can change this behaviour to allow varying index-scales and base-offsets
  * over time or per array instances (e.g. compressed primitive arrays or backwards growing arrays...)
  * <p>
- * <p>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
  * </p>

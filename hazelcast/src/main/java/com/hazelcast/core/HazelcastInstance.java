@@ -190,9 +190,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the distributed executor service for the given name.
-     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * Executor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -203,9 +202,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the durable executor service for the given name.
-     * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * DurableExecutor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -254,9 +252,9 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
-     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
-     * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
+     * between <code>0</code> and <code>Long.MAX_VALUE</code>. ID generation occurs almost at the speed of
+     * local <code>AtomicLong.incrementAndGet()</code>. Generated IDs are unique during the life
+     * cycle of the cluster. If the entire cluster is restarted, IDs start from <code>0</code> again.
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
@@ -291,7 +289,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
+     * implementation of <code>java.util.concurrent.atomic.AtomicLong</code>.
      *
      * @param name name of the {@link IAtomicLong} proxy
      * @return IAtomicLong proxy for the given name
@@ -304,7 +302,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
+     * implementation of <code>java.util.concurrent.atomic.AtomicReference</code>.
      *
      * @param name name of the {@link IAtomicReference} proxy
      * @return {@link IAtomicReference} proxy for the given name
@@ -317,7 +315,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
-     * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
+     * implementation of <code>java.util.concurrent.CountDownLatch</code>.
      *
      * @param name name of the {@link ICountDownLatch} proxy
      * @return {@link ICountDownLatch} proxy for the given name
@@ -330,7 +328,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
-     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     * implementation of <code>java.util.concurrent.Semaphore</code>.
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
@@ -498,7 +496,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
-     * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * ScheduledExecutor service enables you to schedule your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
      *
      * @param name name of the executor service

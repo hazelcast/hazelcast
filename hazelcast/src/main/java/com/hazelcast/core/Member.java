@@ -37,14 +37,14 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Returns true if this member is the local member.
      *
-     * @return <tt>true</tt> if this member is the local member, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this member is the local member, <code>false</code> otherwise.
      */
     boolean localMember();
 
     /**
      * Returns true if this member is a lite member.
      *
-     * @return <tt>true</tt> if this member is a lite member, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this member is a lite member, <code>false</code> otherwise.
      * Lite members do not own any partition.
      */
     boolean isLiteMember();

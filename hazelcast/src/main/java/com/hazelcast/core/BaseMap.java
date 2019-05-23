@@ -81,7 +81,6 @@ public interface BaseMap<K, V> extends DistributedObject {
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
-     * <p>
      * <p> This method is preferred to {@link #put(Object, Object)}
      * if the old value is not needed.
      *
@@ -182,9 +181,9 @@ public interface BaseMap<K, V> extends DistributedObject {
     boolean remove(Object key, Object value);
 
     /**
-     * Returns <tt>true</tt> if this map contains no entries.
+     * Returns <code>true</code> if this map contains no entries.
      *
-     * @return <tt>true</tt> if this map contains no entries.
+     * @return <code>true</code> if this map contains no entries.
      */
     boolean isEmpty();
 

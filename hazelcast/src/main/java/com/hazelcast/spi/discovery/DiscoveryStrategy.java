@@ -21,12 +21,12 @@ import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import java.util.Map;
 
 /**
- * The <tt>DiscoveryStrategy</tt> itself is the actual implementation to discover
+ * The <code>DiscoveryStrategy</code> itself is the actual implementation to discover
  * nodes based on whatever environment is used to run the Hazelcast cloud. The
  * internal implementation is completely vendor specific and might use external Java
  * libraries to query APIs or send requests to a external REST service.
  * <p>
- * <tt>DiscoveryStrategies</tt> are also free to define any kind of properties that might
+ * <code>DiscoveryStrategies</code> are also free to define any kind of properties that might
  * be necessary to discover eligible nodes based on configured attributes, tags or any
  * other kind of metadata.
  * <p>
@@ -43,7 +43,7 @@ import java.util.Map;
 public interface DiscoveryStrategy {
 
     /**
-     * The <tt>start</tt> method is used to initialize internal state and perform any kind of
+     * The <code>start</code> method is used to initialize internal state and perform any kind of
      * startup procedure like multicast socket creation. The behavior of this method might
      * change based on the {@link DiscoveryNode} instance passed to the {@link DiscoveryStrategyFactory}.
      */
@@ -51,14 +51,14 @@ public interface DiscoveryStrategy {
 
     /**
      * Returns a set of all discovered nodes based on the defined properties that were used
-     * to create the <tt>DiscoveryStrategy</tt> instance.
+     * to create the <code>DiscoveryStrategy</code> instance.
      *
      * @return a set of all discovered nodes
      */
     Iterable<DiscoveryNode> discoverNodes();
 
     /**
-     * The <tt>stop</tt> method is used to stop internal services, sockets or to destroy any
+     * The <code>stop</code> method is used to stop internal services, sockets or to destroy any
      * kind of internal state.
      */
     void destroy();
@@ -69,7 +69,7 @@ public interface DiscoveryStrategy {
      * or to provide a specific behavior in case the discovery environment does not provide
      * information about the infrastructure to be used for automatic configuration.
      *
-     * @return a custom implementation of a <tt>PartitionGroupStrategy</tt> otherwise <tt>null</tt>
+     * @return a custom implementation of a <code>PartitionGroupStrategy</code> otherwise <code>null</code>
      * in case of the default implementation is to be used
      * @since 3.7
      */
@@ -85,7 +85,7 @@ public interface DiscoveryStrategy {
      * overrides provided metadata.
      * <p>
      * The default implementation provides an empty map with no further metadata configured. Returning
-     * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
+     * <code>null</code> is not permitted and will most probably result in an {@link NullPointerException}
      * inside the cluster system.
      *
      * @return a map of discovered metadata as provided by the runtime environment

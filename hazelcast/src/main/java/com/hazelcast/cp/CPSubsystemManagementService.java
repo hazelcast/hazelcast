@@ -150,7 +150,7 @@ public interface CPSubsystemManagementService {
      * This field is initialized when the local Hazelcast member is one of
      * the first {@link CPSubsystemConfig#getCPMemberCount()} members
      * in the cluster and the CP subsystem discovery process is completed.
-     * <p></p>
+     * <p>
      * This method fails with {@link HazelcastException} if the CP subsystem
      * is not enabled.
      *

@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import java.util.Map;
 
 /**
- * A <tt>DiscoveryNode</tt> describes a nodes addresses (private and if
+ * A <code>DiscoveryNode</code> describes a nodes addresses (private and if
  * necessary a public one) as well as attributes assigned to this node.
  * Private address defines the typical internal communication port, all
  * cluster communication and also client communication inside the same

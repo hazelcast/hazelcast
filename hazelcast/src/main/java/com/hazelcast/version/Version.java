@@ -42,7 +42,6 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
 
     /**
      * Version 0.0 is UNKNOWN constant
-     * <p>
      * <ul>
      * <li>UNKNOWN is only equal to itself.</li>
      * <li>{@code is(Less|Greater)Than} method with an UNKNOWN operand returns false.</li>

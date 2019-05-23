@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The <tt>DiscoveryServiceSettings</tt> class is used to pass the necessary
+ * The <code>DiscoveryServiceSettings</code> class is used to pass the necessary
  * configuration to create a {@link DiscoveryService} to the
  * {@link DiscoveryServiceProvider}. This approach is chosen to have an easily
  * extensible way to provide new configuration properties over time.

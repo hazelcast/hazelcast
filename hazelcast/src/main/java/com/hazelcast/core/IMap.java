@@ -288,7 +288,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -649,7 +648,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -729,7 +727,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -817,7 +814,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -1202,10 +1198,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1259,10 +1253,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1515,7 +1507,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * retrieved the invocation result response, then the operation is retried. The invocation
      * retry fails because the value is already updated and the result of such replace call
      * returns {@code false}. Hazelcast doesn't guarantee exactly once invocation.
-     * <p>
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -2589,7 +2580,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
-     * <p>
      * <p>
      * <b>Performance note</b>
      * <p>Keep the state of {@code entryProcessor}

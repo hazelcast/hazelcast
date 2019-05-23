@@ -85,11 +85,10 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Adds the specified entry listener for the specified key.
      * The listener will be notified for all
      * add/remove/update/evict events of the specified key only.
-     * <p>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * This method uses <code>hashCode</code> and <code>equals</code> of the binary form of
+     * the <code>key</code>, not the actual implementations of <code>hashCode</code> and <code>equals</code>
+     * defined in the <code>key</code>'s class.
      *
      * @param listener the entry listener to add
      * @param key      the key to listen to

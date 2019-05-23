@@ -86,7 +86,6 @@ import java.util.concurrent.locks.Lock;
  * Client-2 passes its fencing token to the external service. After that,
  * once Client-1 comes back alive, its write request will be rejected
  * by the external service, and only Client-2 will be able to safely talk it.
- * <p>
  * <pre>
  *                                                       CLIENT-1's session is expired.
  *                                                                    |
@@ -107,7 +106,6 @@ import java.util.concurrent.locks.Lock;
  * |------------------|                                |                                     | write(A) fails.    write(B) ok.
  *                                                     | SERVICE belongs to CLIENT-1.        | SERVICE belongs to CLIENT-2.
  * </pre>
- *  <p>
  * You can read more about the fencing token idea in Martin Kleppmann's
  * "How to do distributed locking" blog post and Google's Chubby paper.
  * {@link FencedLock} integrates this idea with the {@link Lock}

@@ -32,12 +32,12 @@ public interface BaseQueue<E> extends DistributedObject {
     /**
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions. Returns
-     * <tt>true</tt> upon success and <tt>false</tt> if no space is currently
+     * <code>true</code> upon success and <code>false</code> if no space is currently
      * available.
      *
      * @param e the element to add
-     * @return <tt>true</tt> if the element was added to this queue,
-     *         <tt>false</tt> otherwise
+     * @return <code>true</code> if the element was added to this queue,
+     *         <code>false</code> otherwise
      */
     boolean offer(E e);
 
@@ -47,10 +47,10 @@ public interface BaseQueue<E> extends DistributedObject {
      *
      * @param e the element to add
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determines how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return <tt>true</tt> if successful, or <tt>false</tt> if
+     *        <code>unit</code>
+     * @param unit a <code>TimeUnit</code> determines how to interpret the
+     *        <code>timeout</code> parameter
+     * @return <code>true</code> if successful, or <code>false</code> if
      *         the specified waiting time elapses before space is available
      * @throws InterruptedException if interrupted while waiting
      */
@@ -67,9 +67,9 @@ public interface BaseQueue<E> extends DistributedObject {
 
     /**
      * Retrieves and removes the head of this queue,
-     * or returns <tt>null</tt> if this queue is empty.
+     * or returns <code>null</code> if this queue is empty.
      *
-     * @return the head of this queue, or <tt>null</tt> if this queue is empty
+     * @return the head of this queue, or <code>null</code> if this queue is empty
      */
     E poll();
 
@@ -78,10 +78,10 @@ public interface BaseQueue<E> extends DistributedObject {
      * specified wait time if necessary for an element to become available.
      *
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return the head of this queue, or <tt>null</tt> if the
+     *        <code>unit</code>
+     * @param unit a <code>TimeUnit</code> determining how to interpret the
+     *        <code>timeout</code> parameter
+     * @return the head of this queue, or <code>null</code> if the
      *         specified waiting time elapses before an element is available
      * @throws InterruptedException if interrupted while waiting
      */
@@ -89,8 +89,8 @@ public interface BaseQueue<E> extends DistributedObject {
 
     /**
      * Returns the number of elements in this collection.  If this collection
-     * contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
-     * <tt>Integer.MAX_VALUE</tt>.
+     * contains more than <code>Integer.MAX_VALUE</code> elements, returns
+     * <code>Integer.MAX_VALUE</code>.
      *
      * @return the number of elements in this collection
      */

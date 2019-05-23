@@ -23,7 +23,6 @@ import java.io.IOException;
 
 /**
  * A base class for custom serialization. User can register custom serializer like following:
- * <p>
  * <pre>
  *     final SerializerConfig serializerConfig = new SerializerConfig();
  *     serializerConfig.setImplementation(new StreamSerializer&lt;Person&gt;() {
@@ -47,7 +46,6 @@ import java.io.IOException;
  *     config.getSerializationConfig().addSerializerConfig(serializerConfig);
  *
  * </pre>
- * <p>
  * There is another class with byte arrays can be used instead ıf this interface
  * see {@link com.hazelcast.nio.serialization.ByteArraySerializer}.
  * <p>

@@ -836,7 +836,7 @@ public final class GroupProperty {
      * Therefore, there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
      * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
      * <p>
-     * The feature can be disabled by setting its value to <tt>-1</tt> (which is the default value).
+     * The feature can be disabled by setting its value to <code>-1</code> (which is the default value).
      */
     public static final HazelcastProperty QUERY_RESULT_SIZE_LIMIT
             = new HazelcastProperty("hazelcast.query.result.size.limit", -1);
@@ -851,7 +851,7 @@ public final class GroupProperty {
      * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter
      * increases the latency due to the prolonged local pre-check.
      * <p>
-     * The pre-check can be disabled by setting the value to <tt>-1</tt>.
+     * The pre-check can be disabled by setting the value to <code>-1</code>.
      *
      * @see #QUERY_RESULT_SIZE_LIMIT
      */
@@ -920,7 +920,6 @@ public final class GroupProperty {
      * if some entries returned in the result set do not match the initial query criteria.
      * The fastest solution for read and writes, since no copying takes place.</li>
      * </ul>
-     * <p>
      */
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
