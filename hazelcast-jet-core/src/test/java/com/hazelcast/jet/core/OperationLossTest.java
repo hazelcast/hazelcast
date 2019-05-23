@@ -144,7 +144,7 @@ public class OperationLossTest extends JetTestSupport {
         // now lift the filter and check that a snapshot is done
         logger.info("Lifting the packet filter...");
         PacketFiltersUtil.resetPacketFiltersFrom(instance1.getHazelcastInstance());
-        waitForFirstSnapshot(jobRepository, job.getId(), 10);
+        waitForFirstSnapshot(jobRepository, job.getId(), 10, false);
         job.cancel();
         try {
             job.join();

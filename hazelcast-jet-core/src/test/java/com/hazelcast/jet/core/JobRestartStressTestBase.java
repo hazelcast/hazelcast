@@ -63,7 +63,7 @@ public class JobRestartStressTestBase extends JetTestSupport {
                                .setProcessingGuarantee(EXACTLY_ONCE))};
 
         logger.info("waiting for 1st snapshot");
-        waitForFirstSnapshot(jobRepository, job[0].getId(), 5);
+        waitForFirstSnapshot(jobRepository, job[0].getId(), 5, false);
         logger.info("first snapshot found");
         spawn(() -> {
             for (int i = 0; i < 10; i++) {

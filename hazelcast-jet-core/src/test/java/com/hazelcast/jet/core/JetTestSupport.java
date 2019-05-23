@@ -220,16 +220,16 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return new Watermark(timestamp);
     }
 
-    public void waitForFirstSnapshot(JobRepository jr, long jobId, int timeout) {
+    public void waitForFirstSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
         long[] snapshotId = {-1};
         assertTrueEventually(() -> {
             JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
             assertNotNull("null JobExecutionRecord", record);
             assertTrue("No snapshot produced",
                     record.dataMapIndex() >= 0 && record.snapshotId() >= 0);
-            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
+            assertTrue("stats are 0", allowEmptySnapshot || record.snapshotStats().numBytes() > 0);
             snapshotId[0] = record.snapshotId();
-        }, timeout);
+        }, timeoutSeconds);
         logger.info("First snapshot found (id=" + snapshotId[0] + ")");
     }
 

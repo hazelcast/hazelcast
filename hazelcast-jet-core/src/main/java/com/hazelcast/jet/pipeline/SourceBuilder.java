@@ -52,8 +52,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public final class SourceBuilder<C> {
     private final String name;
     private final FunctionEx<? super Context, ? extends C> createFn;
-    private FunctionEx<? super C, Object> createSnapshotFn;
-    private BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFn;
+    private FunctionEx<? super C, Object> createSnapshotFn = ctx -> null;
+    private BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFn = (ctx, states) -> { };
     private ConsumerEx<? super C> destroyFn = ConsumerEx.noop();
     private int preferredLocalParallelism;
 

@@ -202,7 +202,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobRepository jobRepository = new JobRepository(instance1);
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
 
-        waitForFirstSnapshot(jobRepository, job.getId(), timeout);
+        waitForFirstSnapshot(jobRepository, job.getId(), timeout, false);
         waitForNextSnapshot(jobRepository, job.getId(), timeout);
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);

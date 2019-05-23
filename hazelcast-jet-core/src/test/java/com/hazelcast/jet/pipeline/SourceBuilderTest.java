@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 
@@ -373,6 +374,32 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             assertEquals(windowSize, (long) next.result());
             assertEquals(i * windowSize, next.start());
         }
+    }
+
+    @Test
+    public void test_faultToleranceUnspecified_and_snapshotsOn() {
+        StreamSource<Integer> source = SourceBuilder
+                .stream("src", procCtx -> "foo")
+                .<Integer>fillBufferFn((ctx, buffer) -> {
+                    buffer.add(0);
+                    Thread.sleep(100);
+                })
+                .build();
+
+        Pipeline p = Pipeline.create();
+        IList<Integer> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        p.drawFrom(source)
+         .withoutTimestamps()
+         .drainTo(Sinks.list(result));
+
+        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(100));
+        JobRepository jr = new JobRepository(jet());
+        waitForFirstSnapshot(jr, job.getId(), 10, true);
+
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        int currentSize = result.size();
+        assertTrueEventually(() -> assertTrue(result.size() > currentSize), 5);
     }
 
     private static final class NumberGeneratorContext implements Serializable {
