@@ -56,8 +56,7 @@ public class KubernetesClientTest {
 
     @Before
     public void setUp() {
-        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        kubernetesClient = new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES);
+        kubernetesClient = newKubernetesClient(false);
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
                                            .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
     }
@@ -364,37 +363,11 @@ public class KubernetesClientTest {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
-        //language=JSON
-        //language=JSON
-        String serviceResponse1 = "{\n"
-                + "  \"kind\": \"Service\",\n"
-                + "  \"spec\": {\n"
-                + "    \"ports\": [\n"
-                + "      {\n"
-                + "        \"port\": 32123,\n"
-                + "        \"targetPort\": 5701,\n"
-                + "        \"nodePort\": 31916\n"
-                + "      }\n"
-                + "    ]\n"
-                + "  }\n"
-                + "}\n";
-        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), serviceResponse1);
+
+        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
 
         //language=JSON
-        String serviceResponse2 = "{\n"
-                + "  \"kind\": \"Service\",\n"
-                + "  \"spec\": {\n"
-                + "    \"ports\": [\n"
-                + "      {\n"
-                + "        \"port\": 32124,\n"
-                + "        \"targetPort\": 5701,\n"
-                + "        \"nodePort\": 31917\n"
-                + "      }\n"
-                + "    ]\n"
-                + "  }\n"
-                + "}";
-        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), serviceResponse2);
-
         String nodeResponse1 = "{\n"
                 + "  \"kind\": \"Node\",\n"
                 + "  \"status\": {\n"
@@ -435,6 +408,30 @@ public class KubernetesClientTest {
         // then
         assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+    }
+
+    @Test
+    public void endpointsByNamespaceWithNodeName() {
+        // given
+        // create KubernetesClient with useNodeNameAsExternalAddress=true
+        kubernetesClient = newKubernetesClient(true);
+
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
+
+        String forbiddenBody = "\"reason\":\"Forbidden\"";
+        stub("/api/v1/nodes/node-name-1", 403, forbiddenBody);
+        stub("/api/v1/nodes/node-name-2", 403, forbiddenBody);
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPublic(result), containsInAnyOrder(ready("node-name-1", 31916), ready("node-name-2", 31917)));
     }
 
     private static String podsListResponse() {
@@ -561,13 +558,43 @@ public class KubernetesClientTest {
                 + "}";
     }
 
+    private static String nodePortService1Response() {
+        //language=JSON
+        return "{\n"
+        + "  \"kind\": \"Service\",\n"
+        + "  \"spec\": {\n"
+        + "    \"ports\": [\n"
+        + "      {\n"
+        + "        \"port\": 32123,\n"
+        + "        \"targetPort\": 5701,\n"
+        + "        \"nodePort\": 31916\n"
+        + "      }\n"
+        + "    ]\n"
+        + "  }\n"
+        + "}\n";
+    }
+
+    private static String nodePortService2Response() {
+        //language=JSON
+        return "{\n"
+        + "  \"kind\": \"Service\",\n"
+        + "  \"spec\": {\n"
+        + "    \"ports\": [\n"
+        + "      {\n"
+        + "        \"port\": 32124,\n"
+        + "        \"targetPort\": 5701,\n"
+        + "        \"nodePort\": 31917\n"
+        + "      }\n"
+        + "    ]\n"
+        + "  }\n"
+        + "}";
+    }
+
     @Test
     public void forbidden() {
         // given
         String forbiddenBody = "\"reason\":\"Forbidden\"";
-        stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/pods", NAMESPACE)))
-                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
-                .willReturn(aResponse().withStatus(403).withBody(forbiddenBody)));
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 403, forbiddenBody);
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -580,9 +607,7 @@ public class KubernetesClientTest {
     public void wrongApiToken() {
         // given
         String unauthorizedBody = "\"reason\":\"Unauthorized\"";
-        stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/pods", NAMESPACE)))
-                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
-                .willReturn(aResponse().withStatus(401).withBody(unauthorizedBody)));
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 401, unauthorizedBody);
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -595,12 +620,15 @@ public class KubernetesClientTest {
     public void unknownException() {
         // given
         String notRetriedErrorBody = "\"reason\":\"Forbidden\"";
-        stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/pods", NAMESPACE)))
-                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
-                .willReturn(aResponse().withStatus(501).withBody(notRetriedErrorBody)));
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 501, notRetriedErrorBody);
 
         // when
         kubernetesClient.endpoints();
+    }
+
+    private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
+        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress);
     }
 
     private static List<String> format(List<Endpoint> addresses) {
@@ -626,9 +654,13 @@ public class KubernetesClientTest {
     }
 
     private static void stub(String url, String response) {
+        stub(url, 200, response);
+    }
+
+    private static void stub(String url, int status, String response) {
         stubFor(get(urlEqualTo(url))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
-                .willReturn(aResponse().withStatus(200).withBody(response)));
+                .willReturn(aResponse().withStatus(status).withBody(response)));
     }
 
     private static void stub(String url, Map<String, String> queryParams, String response) {

@@ -41,6 +41,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
+import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS;
 
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
@@ -60,6 +61,7 @@ final class KubernetesConfig {
     private final String serviceLabelValue;
     private final String namespace;
     private final boolean resolveNotReadyAddresses;
+    private final boolean useNodeNameAsExternalAddress;
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
     private final String kubernetesApiToken;
@@ -77,6 +79,8 @@ final class KubernetesConfig {
         this.serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         this.namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
+        this.useNodeNameAsExternalAddress
+                = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
         this.kubernetesApiRetries
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         this.kubernetesMasterUrl = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
@@ -255,6 +259,10 @@ final class KubernetesConfig {
         return resolveNotReadyAddresses;
     }
 
+    boolean isUseNodeNameAsExternalAddress() {
+        return useNodeNameAsExternalAddress;
+    }
+
     int getKubernetesApiRetries() {
         return kubernetesApiRetries;
     }
@@ -286,6 +294,7 @@ final class KubernetesConfig {
                 + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
+                + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "
                 + "kubernetes-master: " + kubernetesMasterUrl + "}";
     }

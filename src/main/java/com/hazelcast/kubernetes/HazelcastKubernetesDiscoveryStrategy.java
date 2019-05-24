@@ -56,7 +56,7 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private static KubernetesClient buildKubernetesClient(KubernetesConfig config) {
         return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getKubernetesApiToken(),
-                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries());
+                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.isUseNodeNameAsExternalAddress());
     }
 
     public void start() {

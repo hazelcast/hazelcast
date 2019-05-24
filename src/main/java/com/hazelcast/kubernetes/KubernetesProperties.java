@@ -92,6 +92,14 @@ public final class KubernetesProperties {
     public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
 
     /**
+     * <p>Configuration key: <tt>use-node-name-as-external-address</tt></p>
+     * Defines if the node name should be used as external address, instead of looking up the external IP using
+     * the <code>/nodes</code> resource. Default is false.
+     */
+    public static final PropertyDefinition USE_NODE_NAME_AS_EXTERNAL_ADDRESS = property("use-node-name-as-external-address",
+            BOOLEAN);
+
+    /**
      * <p>Configuration key: <tt>kubernetes-api-retries</tt></p>
      * Defines the number of retries to Kubernetes API. Defaults to: 3.
      */

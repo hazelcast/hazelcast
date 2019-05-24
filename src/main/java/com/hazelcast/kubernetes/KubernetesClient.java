@@ -40,6 +40,7 @@ import static java.util.Collections.emptyList;
  *
  * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/">Kubernetes API</a>
  */
+@SuppressWarnings("checkstyle:methodcount")
 class KubernetesClient {
     private static final ILogger LOGGER = Logger.getLogger(KubernetesClient.class);
 
@@ -53,15 +54,18 @@ class KubernetesClient {
     private final String apiToken;
     private final String caCertificate;
     private final int retries;
+    private boolean useNodeNameAsExternalAddress;
 
     private boolean isNoPublicIpAlreadyLogged;
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries) {
+    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
+            boolean useNodeNameAsExternalAddress) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
         this.caCertificate = caCertificate;
         this.retries = retries;
+        this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
     }
 
     /**
@@ -296,15 +300,14 @@ class KubernetesClient {
                     // Load Balancer public IP cannot be found, try using NodePort.
                     Integer nodePort = extractNodePort(serviceJson);
                     String node = nodes.get(privateAddress);
-                    String nodePublicIp;
+                    String nodePublicAddress;
                     if (cachedNodePublicIps.containsKey(node)) {
-                        nodePublicIp = cachedNodePublicIps.get(node);
+                        nodePublicAddress = cachedNodePublicIps.get(node);
                     } else {
-                        String nodeUrl = String.format("%s/api/v1/nodes/%s", kubernetesMaster, node);
-                        nodePublicIp = extractNodePublicIp(callGet(nodeUrl));
-                        cachedNodePublicIps.put(node, nodePublicIp);
+                        nodePublicAddress = externalAddressForNode(node);
+                        cachedNodePublicIps.put(node, nodePublicAddress);
                     }
-                    publicIps.put(privateAddress, nodePublicIp);
+                    publicIps.put(privateAddress, nodePublicAddress);
                     publicPorts.put(privateAddress, nodePort);
                 }
             }
@@ -420,6 +423,18 @@ class KubernetesClient {
             throw new KubernetesClientException("Cannot fetch nodePort from the service");
         }
         return ports.get(0).asObject().get("nodePort").asInt();
+    }
+
+    private String externalAddressForNode(String node) {
+        String nodeExternalAddress;
+        if (useNodeNameAsExternalAddress) {
+            LOGGER.info("Using node name instead of public IP for node, must be available from client: " + node);
+            nodeExternalAddress = node;
+        } else {
+            String nodeUrl = String.format("%s/api/v1/nodes/%s", kubernetesMaster, node);
+            nodeExternalAddress = extractNodePublicIp(callGet(nodeUrl));
+        }
+        return nodeExternalAddress;
     }
 
     private static String extractNodePublicIp(JsonObject nodeJson) {

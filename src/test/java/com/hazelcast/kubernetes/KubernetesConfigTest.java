@@ -79,6 +79,7 @@ public class KubernetesConfigTest {
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
         assertEquals("default", config.getNamespace());
         assertEquals(false, config.isResolveNotReadyAddresses());
+        assertEquals(false, config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
     }
@@ -114,6 +115,19 @@ public class KubernetesConfigTest {
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
         assertEquals(serviceLabelName, config.getServiceLabelName());
         assertEquals(serviceLabelValue, config.getServiceLabelValue());
+    }
+
+    @Test
+    public void kubernetesApiNodeNameAsExternalAddress() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS.key(), true);
+
+        // when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        // then
+        assertEquals(true, config.isUseNodeNameAsExternalAddress());
     }
 
     @Test(expected = InvalidConfigurationException.class)

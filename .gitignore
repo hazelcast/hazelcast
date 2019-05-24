@@ -12,3 +12,5 @@ build/
 *.iws
 .DS_Store
 atlassian-ide-plugin.xml
+.checkstyle
+.fbExcludeFilterFile
