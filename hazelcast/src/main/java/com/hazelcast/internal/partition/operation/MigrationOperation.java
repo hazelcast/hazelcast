@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;

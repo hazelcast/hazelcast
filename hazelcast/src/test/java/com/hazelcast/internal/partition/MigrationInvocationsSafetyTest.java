@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -273,7 +273,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
     private void setMigrationListenerToDropCommitResponse(final HazelcastInstance master, final HazelcastInstance destination) {
         // intercept migration complete on destination and drop commit response
-        getPartitionServiceImpl(destination).setInternalMigrationListener(new InternalMigrationListener() {
+        getPartitionServiceImpl(destination).setMigrationInterceptor(new MigrationInterceptor() {
             final AtomicReference<MigrationInfo> committedMigrationInfoRef = new AtomicReference<MigrationInfo>();
 
             @Override
@@ -443,7 +443,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     }
 
     private void setMigrationListenerToPromotionResponse(final HazelcastInstance master, final HazelcastInstance destination) {
-        getPartitionServiceImpl(destination).setInternalMigrationListener(new InternalMigrationListener() {
+        getPartitionServiceImpl(destination).setMigrationInterceptor(new MigrationInterceptor() {
             @Override
             public void onPromotionComplete(MigrationParticipant participant, Collection<MigrationInfo> migrationInfos, boolean success) {
                 if (participant == MigrationParticipant.DESTINATION) {

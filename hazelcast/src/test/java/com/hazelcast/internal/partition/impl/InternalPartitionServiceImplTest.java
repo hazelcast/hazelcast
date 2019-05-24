@@ -26,7 +26,6 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -154,20 +153,6 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_setInitialState_listenerShouldNOTBeCalled() {
-        PartitionReplica[][] addresses = new PartitionReplica[partitionCount][MAX_REPLICA_COUNT];
-        for (int i = 0; i < partitionCount; i++) {
-            addresses[i][0] = PartitionReplica.from(localMember);
-        }
-
-        TestPartitionListener listener = new TestPartitionListener();
-        partitionService.addPartitionListener(listener);
-
-        partitionService.setInitialState(new PartitionTableView(addresses, 0));
-        assertEquals(0, listener.eventCount);
-    }
-
-    @Test
     public void test_getMemberPartitions_whenNotInitialized() {
         List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
         assertTrue(partitionService.getPartitionStateManager().isInitialized());
@@ -192,15 +177,5 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         partitionService.firstArrangement();
         List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
         assertEquals(partitionCount, partitions.size());
-    }
-
-    private static class TestPartitionListener implements PartitionListener {
-
-        private int eventCount;
-
-        @Override
-        public void replicaChanged(PartitionReplicaChangeEvent event) {
-            eventCount++;
-        }
     }
 }

@@ -33,7 +33,6 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
-import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
@@ -123,7 +122,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
-    private final InternalPartitionListener partitionListener;
 
     private final PartitionStateManager partitionStateManager;
     private final MigrationManager migrationManager;
@@ -149,9 +147,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
 
-        partitionListener = new InternalPartitionListener(node, this);
-
-        partitionStateManager = new PartitionStateManager(node, this, partitionListener);
+        partitionStateManager = new PartitionStateManager(node, this);
         migrationManager = new MigrationManager(node, this, lock);
         replicaManager = new PartitionReplicaManager(node, this);
 
@@ -1078,15 +1074,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         partitionEventListener.onEvent(partitionEvent);
     }
 
-    public void addPartitionListener(PartitionListener listener) {
-        lock.lock();
-        try {
-            partitionListener.addChildListener(listener);
-        } finally {
-            lock.unlock();
-        }
-    }
-
     @Override
     public boolean isPartitionOwner(int partitionId) {
         InternalPartition partition = partitionStateManager.getPartitionImpl(partitionId);
@@ -1103,16 +1090,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         partitionEventManager.onPartitionLost(event);
     }
 
-    public void setInternalMigrationListener(InternalMigrationListener listener) {
-        migrationManager.setInternalMigrationListener(listener);
+    public void setMigrationInterceptor(MigrationInterceptor listener) {
+        migrationManager.setMigrationInterceptor(listener);
     }
 
-    public InternalMigrationListener getInternalMigrationListener() {
-        return migrationManager.getInternalMigrationListener();
+    public MigrationInterceptor getMigrationInterceptor() {
+        return migrationManager.getMigrationInterceptor();
     }
 
-    public void resetInternalMigrationListener() {
-        migrationManager.resetInternalMigrationListener();
+    public void resetMigrationInterceptor() {
+        migrationManager.resetMigrationInterceptor();
     }
 
     /**
