@@ -40,7 +40,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -50,8 +50,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
+    protected void afterRunInternal() {
         invalidateAllKeysInNearCaches();
         hintMapEvent();
     }

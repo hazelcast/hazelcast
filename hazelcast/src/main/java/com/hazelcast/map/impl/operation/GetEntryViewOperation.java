@@ -38,7 +38,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());

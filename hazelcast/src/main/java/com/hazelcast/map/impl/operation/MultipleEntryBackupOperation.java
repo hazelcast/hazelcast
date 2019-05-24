@@ -42,7 +42,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
         for (Data key : keys) {
             operator.operateOnKey(key).doPostOperateOps();

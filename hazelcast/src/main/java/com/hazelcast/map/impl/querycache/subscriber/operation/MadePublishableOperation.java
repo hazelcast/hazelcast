@@ -52,7 +52,7 @@ public class MadePublishableOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         setPublishable();
     }
 

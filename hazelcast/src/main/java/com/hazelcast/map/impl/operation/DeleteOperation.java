@@ -34,7 +34,7 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         success = recordStore.delete(dataKey, getCallerProvenance());
     }
 
@@ -44,9 +44,9 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (success) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 

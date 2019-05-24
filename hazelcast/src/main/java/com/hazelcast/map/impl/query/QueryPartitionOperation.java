@@ -26,7 +26,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class QueryPartitionOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private Query query;
     private Result result;
@@ -40,15 +41,16 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        // partition scan only, since we can't run partition queries on global indexes
-        result = queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
+        result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
 
         // we have to increment query count here manually since we are not even
         // trying to use indexes
         Indexes indexes = mapServiceContext.getMapContainer(getName()).getIndexes();
-        indexes.getIndexesStats().incrementQueryCount();
+        if (indexes != null) {
+            indexes.getIndexesStats().incrementQueryCount();
+        }
     }
 
     @Override

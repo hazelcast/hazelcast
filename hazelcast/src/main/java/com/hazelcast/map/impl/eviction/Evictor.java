@@ -24,14 +24,20 @@ import static java.lang.Integer.getInteger;
 /**
  * Evicts a {@link RecordStore}.
  * <p>
- * When the {@link RecordStore} needs to be evicted according to {@link Evictor#checkEvictable},
- * {@link Evictor} removes records from {@link RecordStore}.
+ * When the {@link RecordStore} needs to be evicted
+ * according to {@link Evictor#checkEvictable}, {@link
+ * Evictor} removes records from {@link RecordStore}.
  */
 public interface Evictor {
 
     Evictor NULL_EVICTOR = new Evictor() {
         @Override
         public void evict(RecordStore recordStore, Data excludedKey) {
+
+        }
+
+        @Override
+        public void forceEvict(RecordStore recordStore) {
 
         }
 
@@ -56,9 +62,19 @@ public interface Evictor {
      * Evict supplied record-store.
      *
      * @param recordStore the recordStore
-     * @param excludedKey this key has lowest priority to be selected for eviction and it is nullable.
+     * @param excludedKey this key has lowest priority
+     *                    to be selected for eviction and it is nullable.
      */
     void evict(RecordStore recordStore, Data excludedKey);
+
+    /**
+     * Evicts provided record-store forcibly. This type
+     * of eviction is used when regular eviction is not
+     * enough to provide free space for newly added entries.
+     *
+     * @param recordStore the recordStore
+     */
+    void forceEvict(RecordStore recordStore);
 
     /**
      * Check whether the supplied record-store needs eviction.

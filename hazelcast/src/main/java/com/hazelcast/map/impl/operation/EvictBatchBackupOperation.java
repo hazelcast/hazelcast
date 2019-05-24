@@ -55,7 +55,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -68,15 +68,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         equalizeEntryCountWithPrimary();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        try {
-            super.afterRun();
-        } finally {
-            recordStore.disposeDeferredBlocks();
-        }
     }
 
     /**

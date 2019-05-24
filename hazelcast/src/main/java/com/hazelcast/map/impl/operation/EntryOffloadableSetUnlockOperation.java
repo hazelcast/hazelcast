@@ -65,7 +65,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         verifyLock();
         try {
             operator(this).init(dataKey, oldValue, newValue, null, modificationType)

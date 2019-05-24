@@ -36,7 +36,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.evict(dataKey, true);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -44,7 +44,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         publishWanRemove(dataKey);
     }
 

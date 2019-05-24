@@ -55,7 +55,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> keyValueSequence = this.keyValueSequence;
@@ -108,11 +108,11 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
         evict(null);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override

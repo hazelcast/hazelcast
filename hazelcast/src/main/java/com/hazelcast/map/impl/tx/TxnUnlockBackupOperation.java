@@ -41,7 +41,7 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
     }
 
