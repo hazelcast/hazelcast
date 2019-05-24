@@ -68,7 +68,7 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        indexes.addOrGetIndex(attributeName, ordered);
+        indexes.recordIndexDefinition(attributeName, ordered);
     }
 
     @Override
