@@ -60,7 +60,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(4)
             .driverCount(1)
-            .useTerminate()
+            .useTerminate(true)
             .build();
 
     public Config getConfig() {
