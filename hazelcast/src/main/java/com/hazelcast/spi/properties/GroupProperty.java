@@ -580,17 +580,6 @@ public final class GroupProperty {
     public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
             = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
 
-    /**
-     * This property is a switch between old and new event publishing
-     * behavior of map#loadAll. When it is true, map#loadAll publishes
-     * entry ADDED events, when false, map#loadAll publishes entry
-     * LOADED events. By default LOADED events will be published.
-     *
-     * @since 3.11
-     */
-    public static final HazelcastProperty MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT
-            = new HazelcastProperty("hazelcast.map.loadAll.publishes.added.event", false);
-
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
 
