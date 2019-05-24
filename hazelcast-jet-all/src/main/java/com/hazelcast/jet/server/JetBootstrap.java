@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.server;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
@@ -43,6 +42,7 @@ import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
 /**
@@ -96,28 +96,22 @@ import java.util.jar.JarFile;
 public final class JetBootstrap {
 
     // these params must be set before a job is submitted
-    private static ClientConfig config;
     private static String jarName;
     private static String snapshotName;
     private static String jobName;
+    private static ConcurrentMemoizingSupplier<JetInstance> supplier;
 
-    private static final ConcurrentMemoizingSupplier<JetBootstrap> SUPPLIER =
-            new ConcurrentMemoizingSupplier<>(() -> new JetBootstrap(Jet.newJetClient(config)));
-
-    private final JetInstance instance;
-
-    private JetBootstrap(JetInstance instance) {
-        this.instance = new InstanceProxy((AbstractJetInstance) instance);
+    private JetBootstrap() {
     }
 
-    static void executeJar(
-            @Nonnull ClientConfig clientConfig, @Nonnull String jar, @Nullable String snapshotName,
-            @Nullable String jobName, @Nonnull List<String> args
+    static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplier,
+                           @Nonnull String jar, @Nullable String snapshotName,
+                           @Nullable String jobName, @Nonnull List<String> args
     ) throws Exception {
-        JetBootstrap.config = clientConfig;
         JetBootstrap.jarName = jar;
         JetBootstrap.snapshotName = snapshotName;
         JetBootstrap.jobName = jobName;
+        JetBootstrap.supplier = new ConcurrentMemoizingSupplier<>(() -> new InstanceProxy(supplier.get()));
 
         try (JarFile jarFile = new JarFile(jar)) {
             if (jarFile.getManifest() == null) {
@@ -145,9 +139,9 @@ public final class JetBootstrap {
             // upcast args to Object so it's passed as a single array-typed argument
             main.invoke(null, (Object) jobArgs);
         } finally {
-            JetBootstrap remembered = SUPPLIER.remembered();
+            JetInstance remembered = JetBootstrap.supplier.remembered();
             if (remembered != null) {
-                remembered.instance.shutdown();
+                remembered.shutdown();
             }
         }
     }
@@ -162,21 +156,21 @@ public final class JetBootstrap {
      * automatically shut down once the {@code main()} method of the JAR returns.
      */
     public static JetInstance getInstance() {
-        if (config == null) {
+        if (supplier == null) {
             throw new JetException(
                     "JetBootstrap.getInstance() should be used in conjunction with the jet.sh submit command"
             );
         }
-        return SUPPLIER.get().instance;
+        return supplier.get();
     }
 
     private static class InstanceProxy extends AbstractJetInstance {
 
         private final AbstractJetInstance instance;
 
-        InstanceProxy(AbstractJetInstance instance) {
+        InstanceProxy(JetInstance instance) {
             super(instance.getHazelcastInstance());
-            this.instance = instance;
+            this.instance = (AbstractJetInstance) instance;
         }
 
         @Nonnull @Override
@@ -197,11 +191,6 @@ public final class JetBootstrap {
         @Nonnull @Override
         public JetConfig getConfig() {
             return instance.getConfig();
-        }
-
-        @Nonnull @Override
-        public Job newJob(@Nonnull DAG dag) {
-            return newJob(dag, new JobConfig());
         }
 
         @Nonnull @Override
