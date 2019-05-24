@@ -252,14 +252,14 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.memcache.enabled", false);
     /**
      * @deprecated Use {@link com.hazelcast.config.RestEndpointGroup RestEndpointGroups} in
-     *             {@link com.hazelcast.config.RestApiConfig} instead.
+     * {@link com.hazelcast.config.RestApiConfig} instead.
      */
     @Deprecated
     public static final HazelcastProperty REST_ENABLED
             = new HazelcastProperty("hazelcast.rest.enabled", false);
     /**
      * @deprecated Enable or disable the {@link com.hazelcast.config.RestEndpointGroup#HEALTH_CHECK} group in
-     *             {@link com.hazelcast.config.RestApiConfig} instead.
+     * {@link com.hazelcast.config.RestApiConfig} instead.
      */
     @Deprecated
     public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
@@ -574,15 +574,11 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.map.eviction.batch.size", 1);
 
     /**
-     * This property is a switch between old and new event publishing
-     * behavior of map#loadAll. When it is true, map#loadAll publishes
-     * entry ADDED events, when false, map#loadAll publishes entry
-     * LOADED events. By default LOADED events will be published.
-     *
-     * @since 3.11
+     * XML and system property for setting the hot restart required free space.
+     * By default, hot restart requires at least 15% free HD space.
      */
-    public static final HazelcastProperty MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT
-            = new HazelcastProperty("hazelcast.map.loadAll.publishes.added.event", false);
+    public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
+            = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
 
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
@@ -596,7 +592,7 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
     /**
      * @deprecated Enable or disable the {@link com.hazelcast.config.RestEndpointGroup#CLUSTER_WRITE} group in
-     *             {@link com.hazelcast.config.RestApiConfig} instead.
+     * {@link com.hazelcast.config.RestApiConfig} instead.
      */
     @Deprecated
     public static final HazelcastProperty MC_URL_CHANGE_ENABLED
