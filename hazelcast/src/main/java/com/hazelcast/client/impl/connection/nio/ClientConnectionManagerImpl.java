@@ -93,7 +93,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private static final int DEFAULT_SSL_THREAD_COUNT = 3;
+    private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -157,22 +157,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     protected NioNetworking initNetworking(final HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
 
-        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
-        boolean sslEnabled = sslConfig != null && sslConfig.isEnabled();
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+        boolean smartClient = networkConfig == null ? true : networkConfig.isSmartRouting();
 
         int configuredInputThreads = properties.getInteger(IO_INPUT_THREAD_COUNT);
         int configuredOutputThreads = properties.getInteger(IO_OUTPUT_THREAD_COUNT);
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            inputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+            inputThreads = smartClient ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
         } else {
             inputThreads = configuredInputThreads;
         }
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            outputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+            outputThreads = smartClient ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
         } else {
             outputThreads = configuredOutputThreads;
         }
@@ -189,7 +189,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .writeThroughEnabled(properties.getBoolean(IO_WRITE_THROUGH_ENABLED))
                         .concurrencyDetection(client.getConcurrencyDetection()));
     }
-
 
     public ClientConnectionStrategy getConnectionStrategy() {
         return connectionStrategy;
