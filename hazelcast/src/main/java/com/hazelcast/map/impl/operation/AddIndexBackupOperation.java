@@ -16,20 +16,27 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 
-public class AddIndexBackupOperation extends MapOperation implements BackupOperation, PartitionAwareOperation {
+public class AddIndexBackupOperation extends MapOperation implements BackupOperation, TargetAware {
+
+    private static final MemberVersion V3_12_1 = MemberVersion.of(3, 12, 1);
 
     private String attributeName;
     private boolean ordered;
+
+    private boolean targetSupported;
 
     public AddIndexBackupOperation() {
     }
@@ -38,6 +45,17 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
         super(name);
         this.attributeName = attributeName;
         this.ordered = ordered;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        Member target = getNodeEngine().getClusterService().getMember(address);
+        if (target == null) {
+            this.targetSupported = false;
+        } else {
+            MemberVersion memberVersion = target.getVersion();
+            this.targetSupported = memberVersion.compareTo(V3_12_1) >= 0;
+        }
     }
 
     @Override
@@ -60,9 +78,20 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(attributeName);
-        out.writeBoolean(ordered);
+        if (targetSupported) {
+            super.writeInternal(out);
+            out.writeUTF(attributeName);
+            out.writeBoolean(ordered);
+        } else {
+            // RU_COMPAT_3_12_0: here we are serializing the operation as a
+            // no-op EvictBatchBackupOperation, so old pre 3.12.1 members are
+            // not failing with exceptions.
+
+            super.writeInternal(out);
+            out.writeUTF(name);
+            out.writeInt(0);
+            out.writeInt(Integer.MAX_VALUE);
+        }
     }
 
     @Override
@@ -74,7 +103,8 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.ADD_INDEX_BACKUP;
+        // RU_COMPAT_3_12_0
+        return targetSupported ? MapDataSerializerHook.ADD_INDEX_BACKUP : MapDataSerializerHook.EVICT_BATCH_BACKUP;
     }
 
 }
