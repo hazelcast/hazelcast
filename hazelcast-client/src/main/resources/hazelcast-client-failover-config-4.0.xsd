@@ -24,7 +24,7 @@
     <xs:element name="hazelcast-client-failover">
         <xs:complexType>
             <xs:choice minOccurs="1" maxOccurs="unbounded">
-                <xs:element name="try-count" type="non-space-string" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="try-count" type="xs:int" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="clients" type="clients" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
         </xs:complexType>
