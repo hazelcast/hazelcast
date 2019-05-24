@@ -24,6 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.properties.GroupProperty.MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT;
 import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -210,7 +210,6 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testPutEvent_withInterceptor_withLoadAll() {
         String name = randomString();
         Config config = getConfig();
-        config.setProperty(MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT.getName(), "true");
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(new DummyLoader());
@@ -219,7 +218,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, String> map = instance.getMap(name);
         map.addInterceptor(new SimpleInterceptor());
-        final EntryAddedLatch listener = new EntryAddedLatch();
+        final EntryLoadedLatch listener = new EntryLoadedLatch();
         map.addEntryListener(listener, true);
 
         Set<Integer> keys = new HashSet<Integer>();
@@ -229,7 +228,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("FOO-1", listener.getAddedValue());
+                assertEquals("FOO-1", listener.getLoadedValue());
             }
         }, 15);
     }
@@ -337,6 +336,20 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
 
         String getAddedValue() {
+            return value.get();
+        }
+    }
+
+    static class EntryLoadedLatch implements EntryLoadedListener<Integer, String> {
+
+        AtomicReference<String> value = new AtomicReference<String>();
+
+        @Override
+        public void entryLoaded(EntryEvent<Integer, String> event) {
+            value.compareAndSet(null, event.getValue());
+        }
+
+        String getLoadedValue() {
             return value.get();
         }
     }
