@@ -27,7 +27,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 
 import java.io.IOException;
 import java.util.Collection;

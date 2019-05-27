@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.partition;
+
+import com.hazelcast.spi.Operation;
 
 /**
  * An interface that can be implemented by SPI services to get notified of partition changes; for example, if a

@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.partition;
+
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 
 import java.util.Collection;
 

@@ -25,7 +25,7 @@ import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
