@@ -16,9 +16,6 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -42,22 +39,18 @@ public class ExpirationManagerTimeoutTest extends HazelcastTestSupport {
     public void afterShortExpirationEntryShouldBeAway() throws InterruptedException {
         final String KEY = "key";
 
-        Config hConfig = new Config()
-                .addMapConfig(new MapConfig().setName("test")
-                        .setMaxSizeConfig(new MaxSizeConfig(200, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE))
-                        .setTimeToLiveSeconds(20));
-        final HazelcastInstance node = createHazelcastInstance(hConfig);
+        final HazelcastInstance node = createHazelcastInstance();
         try {
             IMap<String, String> map = node.getMap("test");
             // after 1 second entry should be evicted
-            map.put(KEY, "value", 1, TimeUnit.SECONDS);
+            map.set(KEY, "value", 1500, TimeUnit.MILLISECONDS);
             // short time after adding it to the map, all ok
             map.lock(KEY);
             Object object = map.get(KEY);
             map.unlock(KEY);
             assertNotNull(object);
 
-            Thread.sleep(1200);
+            sleepAtLeastMillis(1700);
 
             // more than one second after adding it, now it should be away
             map.lock(KEY);
@@ -73,22 +66,20 @@ public class ExpirationManagerTimeoutTest extends HazelcastTestSupport {
     public void afterLongerExpirationEntryShouldBeAway() throws InterruptedException {
         final String KEY = "key";
 
-        Config hConfig = new Config()
-                .addMapConfig(new MapConfig().setName("test")
-                        .setMaxSizeConfig(new MaxSizeConfig(200, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE))
-                        .setTimeToLiveSeconds(20));
-        final HazelcastInstance node = createHazelcastInstance(hConfig);
+        final HazelcastInstance node = createHazelcastInstance();
         try {
             IMap<String, String> map = node.getMap("test");
-            // after 1 second entry should be evicted
-            map.put(KEY, "value", 1, TimeUnit.SECONDS);
+            // after 3 second entry should be evicted
+            map.set(KEY, "value", 3, TimeUnit.SECONDS);
             // short time after adding it to the map, all ok
             map.lock(KEY);
             Object object = map.get(KEY);
             map.unlock(KEY);
             assertNotNull(object);
-            Thread.sleep(3600);
-            // More than one second after adding it, now it should be away
+
+            sleepAtLeastMillis(3600);
+
+            // More than 3 seconds after adding it, now it should be away
             map.lock(KEY);
             object = map.get(KEY);
             map.unlock(KEY);
