@@ -154,15 +154,15 @@ public class SnapshotTest extends HazelcastTestSupport {
 
     @Test
     public void when_followersMatchIndexIsUnknown_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        int entryCount = 50;
+        final int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        RaftNodeImpl slowFollower = followers[1];
+        final RaftNodeImpl slowFollower = followers[1];
 
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
@@ -209,17 +209,17 @@ public class SnapshotTest extends HazelcastTestSupport {
 
     @Test
     public void when_followersIsFarBehind_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        int entryCount = 50;
+        final int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         leader.replicate(new ApplyRaftRunnable("val0")).get();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        RaftNodeImpl slowFollower = followers[1];
+        final RaftNodeImpl slowFollower = followers[1];
 
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), InstallSnapshot.class);
@@ -394,13 +394,13 @@ public class SnapshotTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerMissesAFewEntriesBeforeTheSnapshot_then_itCatchesUpWithoutInstallingSnapshot() throws ExecutionException, InterruptedException {
-        int entryCount = 50;
-        int missingEntryCountOnSlowFollower = 4; // entryCount * 0.1 - 2
+        final int entryCount = 50;
+        final int missingEntryCountOnSlowFollower = 4; // entryCount * 0.1 - 2
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl slowFollower = followers[1];
