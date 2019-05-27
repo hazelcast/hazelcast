@@ -95,7 +95,6 @@ public class QueryCacheInMemoryFormatTest extends HazelcastTestSupport {
 
         private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
             deserializationCount.incrementAndGet();
-            Thread.dumpStack();
         }
     }
 }

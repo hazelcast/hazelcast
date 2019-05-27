@@ -43,13 +43,13 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         dataValue = mapServiceContext.toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (!evicted) {
             return;
         }

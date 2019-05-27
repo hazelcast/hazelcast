@@ -38,7 +38,7 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         successful = recordStore.replace(dataKey, expect, dataValue);
         if (successful) {
             oldValue = expect;
@@ -46,9 +46,9 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 

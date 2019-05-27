@@ -94,17 +94,6 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runPartitionScanQueryOnSinglePartition() {
-        Predicate predicate = Predicates.equal("this", value);
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
-        QueryResult result = (QueryResult) queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
-
-        assertEquals(1, result.getRows().size());
-        assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
-        assertArrayEquals(result.getPartitionIds().toArray(), new Object[]{partitionId});
-    }
-
-    @Test
     public void verifyIndexedQueryFailureWhileMigrating() {
         map.addIndex("this", false);
         Predicate predicate = new EqualPredicate("this", value);

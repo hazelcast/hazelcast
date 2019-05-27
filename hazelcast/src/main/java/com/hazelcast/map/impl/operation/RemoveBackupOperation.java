@@ -47,7 +47,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.removeBackup(dataKey, getCallerProvenance());
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -55,11 +55,11 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         publishWanRemove(dataKey);
         evict(dataKey);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override

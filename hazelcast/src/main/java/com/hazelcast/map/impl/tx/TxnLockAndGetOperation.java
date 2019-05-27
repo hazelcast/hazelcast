@@ -50,7 +50,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }

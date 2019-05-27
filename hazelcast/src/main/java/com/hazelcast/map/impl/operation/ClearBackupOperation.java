@@ -31,7 +31,7 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore != null) {
             recordStore.clear();
         }

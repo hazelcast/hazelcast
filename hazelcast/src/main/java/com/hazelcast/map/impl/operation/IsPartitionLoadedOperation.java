@@ -32,7 +32,7 @@ public class IsPartitionLoadedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         isFinished = recordStore.isLoaded();
     }
 
