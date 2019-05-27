@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastException;
 
 /**
  * Base Jet exception.
+ *
+ * @since 3.0
  */
 public class JetException extends HazelcastException {
 

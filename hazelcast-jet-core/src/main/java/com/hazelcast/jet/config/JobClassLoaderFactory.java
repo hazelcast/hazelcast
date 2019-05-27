@@ -28,6 +28,8 @@ import java.io.Serializable;
  * form.
  * <p>
  * It is useful in custom class-loading environments, for example in OSGi.
+ *
+ * @since 3.0
  */
 public interface JobClassLoaderFactory extends Serializable {
 

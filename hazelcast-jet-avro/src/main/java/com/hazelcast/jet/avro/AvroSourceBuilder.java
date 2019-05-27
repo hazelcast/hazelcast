@@ -32,6 +32,8 @@ import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
  * {@code mapOutputFn}.
  *
  * @param <D> the type of the datum read by {@code datumReaderSupplier}
+ *
+ * @since 3.0
  */
 public final class AvroSourceBuilder<D> {
 

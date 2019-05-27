@@ -66,7 +66,6 @@ public final class JetConfigXmlGenerator {
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/jet-config "
                         + "http://www.hazelcast.com/schema/jet-config/hazelcast-jet-config-3.1.xsd");
 
-
         gen.appendProperties(jetConfig.getProperties());
 
         instance(gen, jetConfig.getInstanceConfig());
@@ -155,6 +154,5 @@ public final class JetConfigXmlGenerator {
            .node("scale-up-delay-millis", instance.getScaleUpDelayMillis())
            .node("lossless-restart-enabled", instance.isLosslessRestartEnabled())
            .close();
-
     }
 }

@@ -39,6 +39,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 /**
  * Static utility class with factories of Apache Avro source and sink
  * processors.
+ *
+ * @since 3.0
  */
 public final class AvroProcessors {
 
@@ -101,5 +103,4 @@ public final class AvroProcessors {
         writer.create(schemaSupplier.get(), file.toFile());
         return writer;
     }
-
 }

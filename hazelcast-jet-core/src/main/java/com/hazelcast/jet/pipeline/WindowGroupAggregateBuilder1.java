@@ -40,6 +40,8 @@ import javax.annotation.Nonnull;
  *
  * @param <T0> the type of the stream-0 item
  * @param <K> type of the key
+ *
+ * @since 3.0
  */
 public class WindowGroupAggregateBuilder1<T0, K> {
     private final GrAggBuilder<K> grAggBuilder;

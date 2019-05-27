@@ -16,5 +16,7 @@
 
 /**
  * Spring integration for Hazelcast Jet
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet.spring;

@@ -42,6 +42,8 @@ import static java.util.stream.IntStream.range;
  * accepts multiple inputs. To obtain it, call {@link
  * AggregateOperations#coAggregateOperationBuilder()}. and refer to that
  * method's Javadoc for further details.
+ *
+ * @since 3.0
  */
 public class CoAggregateOperationBuilder {
 

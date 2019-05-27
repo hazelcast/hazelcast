@@ -26,6 +26,8 @@ import java.sql.SQLException;
  * parallelism and processor index as arguments and produces a result set.
  * This result set should return a part of the whole result set specific to
  * this processor.
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface ToResultSetFunction extends Serializable {

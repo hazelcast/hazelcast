@@ -24,6 +24,8 @@ import java.util.function.ToIntFunction;
 /**
  * {@code Serializable} variant of {@link ToIntFunction
  * java.util.function.ToIntFunction} which declares checked exception.
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface ToIntFunctionEx<T> extends ToIntFunction<T>, Serializable {

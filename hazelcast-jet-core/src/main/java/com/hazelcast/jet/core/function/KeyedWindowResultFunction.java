@@ -35,6 +35,8 @@ import java.io.Serializable;
  * @param <K> type of the key
  * @param <R> the type of aggregation result this function receives
  * @param <OUT> the type of the output item this function returns
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface KeyedWindowResultFunction<K, R, OUT> extends Serializable {

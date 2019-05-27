@@ -18,6 +18,8 @@ package com.hazelcast.jet.pipeline;
 
 /**
  * Represents the definition of a session window.
+ *
+ * @since 3.0
  */
 public class SessionWindowDefinition extends WindowDefinition {
     private final long sessionTimeout;

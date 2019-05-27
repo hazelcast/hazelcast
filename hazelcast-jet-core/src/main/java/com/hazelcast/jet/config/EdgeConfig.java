@@ -25,6 +25,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * A configuration object for a DAG {@link Edge} that holds fine-tuning
  * parameters that influence its performance characteristics.
+ *
+ * @since 3.0
  */
 public class EdgeConfig implements Serializable {
 

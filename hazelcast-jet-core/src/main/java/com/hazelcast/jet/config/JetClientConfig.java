@@ -23,6 +23,8 @@ import com.hazelcast.client.config.ClientConfig;
  * connect to the Jet cluster.
  * <p>
  * See {@link ClientConfig} for actual config options.
+ *
+ * @since 3.0
  */
 public class JetClientConfig extends ClientConfig {
 

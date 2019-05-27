@@ -38,6 +38,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * See {@link Sinks#jmsQueueBuilder} or {@link Sinks#jmsTopicBuilder}.
  *
  * @param <T> type of the items the sink accepts
+ *
+ * @since 3.0
  */
 public final class JmsSinkBuilder<T> {
 

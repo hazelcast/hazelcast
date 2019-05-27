@@ -38,6 +38,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * See {@link Sources#jmsQueueBuilder} or {@link Sources#jmsTopicBuilder}.
+ *
+ * @since 3.0
  */
 public final class JmsSourceBuilder {
 

@@ -27,6 +27,8 @@ import java.util.Map.Entry;
 
 /**
  * Factories of Apache Hadoop HDFS sinks.
+ *
+ * @since 3.0
  */
 public final class HdfsSinks {
 

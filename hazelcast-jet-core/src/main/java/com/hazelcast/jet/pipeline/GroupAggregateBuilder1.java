@@ -37,6 +37,8 @@ import java.util.Map.Entry;
  *
  * @param <T0> type of the stream-0 item
  * @param <K> type of the grouping key
+ *
+ * @since 3.0
  */
 public class GroupAggregateBuilder1<T0, K> {
     private final GrAggBuilder<K> grAggBuilder;

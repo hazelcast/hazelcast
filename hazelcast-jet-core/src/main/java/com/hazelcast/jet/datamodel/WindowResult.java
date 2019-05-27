@@ -26,6 +26,8 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * window.
  *
  * @param <R> type of aggregated result
+ *
+ * @since 3.0
  */
 public class WindowResult<R> {
     private final long start;

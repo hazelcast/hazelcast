@@ -19,6 +19,7 @@
  * Hazelcast IMDG technology. To use it, refer to the Javadoc on the
  * {@link com.hazelcast.jet.pipeline Pipeline API} and to the Reference
  * Manual.
- * <p>
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet;

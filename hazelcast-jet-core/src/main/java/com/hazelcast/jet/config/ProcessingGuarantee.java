@@ -35,6 +35,8 @@ package com.hazelcast.jet.config;
  * from inputs which have already received the barrier. This will result
  * in lower latency and higher throughput overall, with the caveat that
  * some items may be processed twice after a restart.
+ *
+ * @since 3.0
  */
 public enum ProcessingGuarantee {
 

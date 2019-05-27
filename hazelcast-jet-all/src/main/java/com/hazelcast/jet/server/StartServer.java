@@ -30,6 +30,8 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
  * Main class that starts a Hazelcast Jet instance.
+ *
+ * @since 3.0
  */
 public final class StartServer {
 

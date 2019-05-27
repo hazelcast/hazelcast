@@ -21,6 +21,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Represents the definition of a sliding window.
+ *
+ * @since 3.0
  */
 public class SlidingWindowDefinition extends WindowDefinition {
     private final long windowSize;

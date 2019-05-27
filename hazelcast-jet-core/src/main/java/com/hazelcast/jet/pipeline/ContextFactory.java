@@ -47,6 +47,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * </ul>
  *
  * @param <C> the user-defined context object type
+ *
+ * @since 3.0
  */
 public final class ContextFactory<C> implements Serializable {
 
@@ -100,6 +102,8 @@ public final class ContextFactory<C> implements Serializable {
      *                        a JetInstance
      * @param <C> the user-defined context object type
      * @return a new factory instance
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <C> ContextFactory<C> withCreateFn(

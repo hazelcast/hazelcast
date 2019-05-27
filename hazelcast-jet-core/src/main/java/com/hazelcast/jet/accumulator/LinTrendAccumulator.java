@@ -28,6 +28,8 @@ import java.util.Objects;
  * set of {@code (long, long)} pairs. The intermediate results are held in
  * the form of {@link BigInteger} and the finished value is a {@code
  * double}-valued linear coefficient.
+ *
+ * @since 3.0
  */
 public final class LinTrendAccumulator {
     private static final int MAX_BIGINT_LEN = 255;

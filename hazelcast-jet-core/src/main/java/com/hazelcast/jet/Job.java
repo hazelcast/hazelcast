@@ -30,6 +30,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * A Jet computation job created by submitting a {@link DAG} or {@link
  * Pipeline}. Once submitted, Jet starts executing the job automatically.
+ *
+ * @since 3.0
  */
 public interface Job {
 

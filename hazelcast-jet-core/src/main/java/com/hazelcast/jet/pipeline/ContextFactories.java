@@ -27,6 +27,8 @@ import javax.annotation.Nonnull;
 /**
  * Utility class with methods that create several useful {@link ContextFactory
  * context factories}.
+ *
+ * @since 3.0
  */
 public final class ContextFactories {
 
@@ -56,6 +58,8 @@ public final class ContextFactories {
      * @param mapName name of the {@link ReplicatedMap} to use as the context
      * @param <K> type of the map key
      * @param <V> type of the map value
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <K, V> ContextFactory<ReplicatedMap<K, V>> replicatedMapContext(@Nonnull String mapName) {
@@ -81,6 +85,8 @@ public final class ContextFactories {
      * @param <K> key type
      * @param <V> value type
      * @return the context factory
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <K, V> ContextFactory<IMapJet<K, V>> iMapContext(@Nonnull String mapName) {

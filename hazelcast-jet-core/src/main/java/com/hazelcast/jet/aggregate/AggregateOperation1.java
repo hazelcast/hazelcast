@@ -33,6 +33,8 @@ import java.util.stream.Collector;
  * @param <T> the type of the stream item
  * @param <A> the type of the accumulator
  * @param <R> the type of the aggregation result
+ *
+ * @since 3.0
  */
 public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
 

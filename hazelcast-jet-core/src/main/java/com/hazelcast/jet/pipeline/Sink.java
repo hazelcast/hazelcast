@@ -23,8 +23,11 @@ package com.hazelcast.jet.pipeline;
  * @see Sinks sink factory methods
  *
  * @param <T> the type of the data the sink will receive
+ *
+ * @since 3.0
  */
 public interface Sink<T> {
+
     /**
      * Returns a descriptive name for this sink.
      */

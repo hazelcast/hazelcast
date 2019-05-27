@@ -28,6 +28,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * General configuration options pertaining to a Jet instance.
+ *
+ * @since 3.0
  */
 public class InstanceConfig {
 

@@ -28,6 +28,8 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
  * See {@link Sinks#filesBuilder}.
  *
  * @param <T> type of the items the sink accepts
+ *
+ * @since 3.0
  */
 public final class FileSinkBuilder<T> {
 

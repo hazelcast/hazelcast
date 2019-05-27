@@ -27,6 +27,8 @@ import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 /**
  * A handle to an exported state snapshot created using {@link
  * Job#exportSnapshot(String)}.
+ *
+ * @since 3.0
  */
 public final class JobStateSnapshot {
 

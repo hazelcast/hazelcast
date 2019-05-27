@@ -37,6 +37,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
  *
  * If this exception is caught, the job will be terminated abruptly and
  * restarted (if {@link JobConfig#setAutoScaling so configured}).
+ *
+ * @since 3.0
  */
 public class RestartableException extends JetException {
 

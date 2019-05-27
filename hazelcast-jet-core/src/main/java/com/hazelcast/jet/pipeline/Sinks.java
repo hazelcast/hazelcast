@@ -64,6 +64,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>
  * The default local parallelism for the sinks in this class is typically 1,
  * check the documentation of individual methods.
+ *
+ * @since 3.0
  */
 public final class Sinks {
 

@@ -45,6 +45,8 @@ import javax.annotation.Nonnull;
  * @param <T2> the type of item in stream-2
  * @param <A> the type of the accumulator
  * @param <R> the type of the aggregation result
+ *
+ * @since 3.0
  */
 public interface AggregateOperation3<T0, T1, T2, A, R> extends AggregateOperation<A, R> {
 

@@ -29,6 +29,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Builder for a file source which reads lines from files in a directory (but not
  * its subdirectories) and emits output object created by {@code mapOutputFn}
+ *
+ * @since 3.0
  */
 public final class FileSourceBuilder {
 

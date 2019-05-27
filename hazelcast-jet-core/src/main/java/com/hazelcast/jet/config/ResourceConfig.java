@@ -25,6 +25,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Describes a single resource to deploy to the Jet cluster.
+ *
+ * @since 3.0
  */
 public class ResourceConfig implements Serializable {
     private final URL url;

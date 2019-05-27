@@ -69,6 +69,8 @@ import static java.util.stream.Collectors.joining;
  * </li></ol>
  * Data travels from sources to sinks and is transformed and reshaped
  * as it passes through the processors.
+ *
+ * @since 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 

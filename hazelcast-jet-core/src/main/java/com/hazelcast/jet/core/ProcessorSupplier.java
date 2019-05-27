@@ -30,6 +30,8 @@ import static java.util.stream.Collectors.toList;
 /**
  * Factory of {@link Processor} instances. Part of the initialization
  * chain as explained on {@link ProcessorMetaSupplier}.
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
@@ -85,6 +87,8 @@ public interface ProcessorSupplier extends Serializable {
 
     /**
      * Context passed to the supplier in the {@link #init(Context) init()} call.
+     *
+     * @since 3.0
      */
     interface Context extends ProcessorMetaSupplier.Context {
 

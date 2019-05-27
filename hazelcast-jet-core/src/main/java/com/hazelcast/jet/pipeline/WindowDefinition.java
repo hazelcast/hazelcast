@@ -21,6 +21,8 @@ import javax.annotation.Nonnull;
 /**
  * The definition of the window for a windowed aggregation operation. To obtain
  * a window definition, use the factory methods provided in this interface.
+ *
+ * @since 3.0
  */
 public abstract class WindowDefinition {
 

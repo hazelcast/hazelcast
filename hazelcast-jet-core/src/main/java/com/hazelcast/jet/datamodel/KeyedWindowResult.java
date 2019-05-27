@@ -28,6 +28,8 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  *
  * @param <K> type of the grouping key
  * @param <R> type of the aggregated result
+ *
+ * @since 3.0
  */
 public final class KeyedWindowResult<K, R> extends WindowResult<R> implements Entry<K, R> {
     private final K key;

@@ -33,6 +33,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * Utility class with several {@link Traverser}s useful in {@link Processor}
  * implementations.
+ *
+ * @since 3.0
  */
 public final class Traversers {
 

@@ -40,6 +40,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
  * Configuration object for a Jet instance.
+ *
+ * @since 3.0
  */
 public class JetConfig {
 
@@ -293,6 +295,8 @@ public class JetConfig {
      *
      * @param configStream the InputStream to load the config from
      * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     *
+     * @since 3.1
      */
     @Nonnull
     public static JetConfig loadYamlFromStream(@Nonnull InputStream configStream) {
@@ -312,6 +316,8 @@ public class JetConfig {
      *
      * @param configStream the InputStream to load the config from
      * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     *
+     * @since 3.1
      */
     @Nonnull
     public static JetConfig loadYamlFromStream(@Nonnull InputStream configStream, @Nonnull Properties properties) {
@@ -325,6 +331,8 @@ public class JetConfig {
      * @param yaml the YAML content as a Hazelcast Jet YAML String
      * @throws IllegalArgumentException      if the YAML is null or empty
      * @throws InvalidConfigurationException if the YAML content is invalid
+     *
+     * @since 3.1
      */
     @Nonnull
     public static JetConfig loadYamlFromString(String yaml) {
@@ -339,6 +347,8 @@ public class JetConfig {
      * @throws IllegalArgumentException      if the YAML is null or empty or if
      *                                       properties is null
      * @throws InvalidConfigurationException if the YAML content is invalid
+     *
+     * @since 3.1
      */
     @Nonnull
     public static JetConfig loadYamlFromString(String yaml, Properties properties) {

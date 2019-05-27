@@ -49,6 +49,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * same processor.
  * <p>
  * A vertex is uniquely identified in a DAG by its name.
+ *
+ * @since 3.0
  */
 public class Vertex implements IdentifiedDataSerializable {
 

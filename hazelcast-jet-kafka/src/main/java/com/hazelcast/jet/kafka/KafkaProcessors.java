@@ -32,6 +32,8 @@ import java.util.Properties;
 /**
  * Static utility class with factories of Apache Kafka source and sink
  * processors.
+ *
+ * @since 3.0
  */
 public final class KafkaProcessors {
 

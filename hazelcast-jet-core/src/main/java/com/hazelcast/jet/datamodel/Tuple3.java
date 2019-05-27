@@ -24,6 +24,8 @@ import java.util.Objects;
  * @param <E0> the type of the field 0
  * @param <E1> the type of the field 1
  * @param <E2> the type of the field 2
+ *
+ * @since 3.0
  */
 public final class Tuple3<E0, E1, E2> {
     private E0 f0;

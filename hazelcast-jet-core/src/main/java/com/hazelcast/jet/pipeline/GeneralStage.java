@@ -45,6 +45,8 @@ import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
  * interface must be stateless.
  *
  * @param <T> the type of items coming out of this stage
+ *
+ * @since 3.0
  */
 public interface GeneralStage<T> extends Stage {
 
@@ -612,7 +614,6 @@ public interface GeneralStage<T> extends Stage {
      * StreamStage<User> joined = builder.build((user, itemsByTag) ->
      *         user.setCountry(itemsByTag.get(tCountry)).setCompany(itemsByTag.get(tCompany)));
      * }</pre>
-     *
      */
     @Nonnull
     GeneralHashJoinBuilder<T> hashJoinBuilder();

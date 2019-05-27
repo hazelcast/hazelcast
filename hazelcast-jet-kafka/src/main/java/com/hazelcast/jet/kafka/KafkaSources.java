@@ -36,6 +36,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Contains factory methods for Apache Kafka sources.
+ *
+ * @since 3.0
  */
 public final class KafkaSources {
 

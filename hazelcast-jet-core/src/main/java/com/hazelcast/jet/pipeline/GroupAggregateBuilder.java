@@ -41,6 +41,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  *
  * @param <K> type of the grouping key
  * @param <R0> type of the aggregation result for stream-0
+ *
+ * @since 3.0
  */
 public class GroupAggregateBuilder<K, R0> {
     private final GrAggBuilder<K> grAggBuilder;

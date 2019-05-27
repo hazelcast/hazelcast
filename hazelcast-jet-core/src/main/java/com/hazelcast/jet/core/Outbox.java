@@ -41,6 +41,8 @@ import javax.annotation.Nonnull;
  * asynchronous operation. If you need that, you have to employ a concurrent
  * queue, add to it in the callback and drain it in e.g. {@link
  * Processor#tryProcess()}.
+ *
+ * @since 3.0
  */
 public interface Outbox {
 

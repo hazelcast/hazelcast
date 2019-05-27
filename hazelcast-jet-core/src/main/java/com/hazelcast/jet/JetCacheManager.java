@@ -30,7 +30,7 @@ package com.hazelcast.jet;
  * to operate on {@link JetInstance} when JCache is not on the classpath.
  * </p>
  *
- * @since 0.5
+ * @since 3.0
  */
 public interface JetCacheManager {
 

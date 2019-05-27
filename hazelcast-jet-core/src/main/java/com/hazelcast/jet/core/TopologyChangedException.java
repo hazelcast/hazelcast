@@ -23,6 +23,8 @@ import com.hazelcast.jet.JetException;
  * is aborted when a participating member leaves the cluster. If
  * auto-restart is enabled for the job, the job will be restarted
  * automatically and this exception will not be thrown to the user.
+ *
+ * @since 3.0
  */
 public class TopologyChangedException extends JetException {
 

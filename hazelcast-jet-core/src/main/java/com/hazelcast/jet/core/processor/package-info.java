@@ -29,5 +29,7 @@
  *     {@link com.hazelcast.jet.core.processor.DiagnosticProcessors Diagnostic
  *     helpers}
  * </li></ul>
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet.core.processor;

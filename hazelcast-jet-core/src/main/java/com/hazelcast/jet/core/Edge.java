@@ -57,6 +57,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * <p>
  * A newly instantiated Edge is non-distributed with a {@link
  * RoutingPolicy#UNICAST UNICAST} routing policy.
+ *
+ * @since 3.0
  */
 public class Edge implements IdentifiedDataSerializable {
 
@@ -261,7 +263,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T> Edge partitioned(@Nonnull FunctionEx<T, ?> extractKeyFn) {
-        // optimization for Functions#constantKey()
+        // optimization for ConstantFunctionEx
         if (extractKeyFn instanceof ConstantFunctionEx) {
             return allToOne(extractKeyFn.apply(null));
         }

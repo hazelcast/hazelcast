@@ -23,6 +23,8 @@ import java.io.Serializable;
 /**
  * Represents a three-arity function that accepts three arguments and
  * produces a result.
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface TriFunction<T0, T1, T2, R> extends Serializable {

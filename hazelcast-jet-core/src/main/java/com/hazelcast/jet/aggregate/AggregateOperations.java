@@ -60,6 +60,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * operations. See the Javadoc on {@link AggregateOperation}. You can
  * also create your own aggregate operation using the {@link
  * AggregateOperation#withCreate builder object}.
+ *
+ * @since 3.0
  */
 public final class AggregateOperations {
 
@@ -465,6 +467,8 @@ public final class AggregateOperations {
      * @param <R> downstream operation's result type
      * @param filterFn the function to apply to input items
      * @param downstream the downstream aggregate operation
+     *
+     * @since 3.1
      */
     public static <T, A, R> AggregateOperation1<T, A, R> filtering(
             @Nonnull PredicateEx<? super T> filterFn,
@@ -514,6 +518,8 @@ public final class AggregateOperations {
      * @param <R> downstream operation's result type
      * @param flatMapFn the function to apply to input items
      * @param downstream the downstream aggregate operation
+     *
+     * @since 3.1
      */
     public static <T, U, A, R> AggregateOperation1<T, A, R> flatMapping(
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends U>> flatMapFn,

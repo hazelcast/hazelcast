@@ -16,5 +16,7 @@
 
 /**
  * Jet's configuration data objects.
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet.config;

@@ -41,6 +41,8 @@ import static java.util.stream.IntStream.range;
  * AggregateOperation.withCreate()} for more details.
  *
  * @param <A> the type of the accumulator
+ *
+ * @since 3.0
  */
 public final class AggregateOperationBuilder<A> {
 

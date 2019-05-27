@@ -34,6 +34,8 @@ import com.hazelcast.jet.impl.pipeline.BatchStageImpl;
  * type safety.
  *
  * @param <T0> the type of the items in the primary stage
+ *
+ * @since 3.0
  */
 public class HashJoinBuilder<T0> extends GeneralHashJoinBuilder<T0> {
 

@@ -79,6 +79,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>
  * The default local parallelism for sources in this class is 1 or 2, check the
  * documentation of individual methods.
+ *
+ * @since 3.0
  */
 public final class Sources {
 

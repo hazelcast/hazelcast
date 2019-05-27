@@ -39,6 +39,8 @@ import java.util.function.Predicate;
  * and stop using the original instance.
  *
  * @param <T> traversed item type
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface Traverser<T> {

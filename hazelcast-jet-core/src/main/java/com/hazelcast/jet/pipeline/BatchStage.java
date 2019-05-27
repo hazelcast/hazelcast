@@ -49,6 +49,8 @@ import static com.hazelcast.jet.function.Functions.wholeItem;
  * upstream stages (if any) and passes its output to its downstream stages.
  *
  * @param <T> the type of items coming out of this stage
+ *
+ * @since 3.0
  */
 public interface BatchStage<T> extends GeneralStage<T> {
 
@@ -505,6 +507,8 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *
      * @param transformFn function to transform this stage into another stage
      * @param <R> type of the returned stage
+     *
+     * @since 3.1
      */
     @Nonnull
     default <R> BatchStage<R> apply(@Nonnull FunctionEx<? super BatchStage<T>, ? extends BatchStage<R>> transformFn) {

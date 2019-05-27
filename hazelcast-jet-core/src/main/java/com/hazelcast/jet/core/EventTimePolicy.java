@@ -59,6 +59,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * source processor.
  *
  * @param <T> event type
+ *
+ * @since 3.0
  */
 public final class EventTimePolicy<T> implements Serializable {
 

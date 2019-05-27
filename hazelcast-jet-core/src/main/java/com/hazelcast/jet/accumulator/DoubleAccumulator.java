@@ -18,6 +18,8 @@ package com.hazelcast.jet.accumulator;
 
 /**
  * Accumulator of a {@code double} value.
+ *
+ * @since 3.0
  */
 public class DoubleAccumulator {
 

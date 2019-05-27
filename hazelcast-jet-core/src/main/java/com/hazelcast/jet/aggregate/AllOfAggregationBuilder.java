@@ -34,6 +34,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * operations. To obtain it, call {@link AggregateOperations#allOfBuilder()}.
  *
  * @param <T> the type of the input items
+ *
+ * @since 3.0
  */
 public final class AllOfAggregationBuilder<T> {
 

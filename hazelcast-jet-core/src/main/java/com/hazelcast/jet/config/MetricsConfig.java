@@ -23,6 +23,8 @@ import javax.annotation.Nonnull;
 
 /**
  * Configuration options specific to metrics collection.
+ *
+ * @since 3.0
  */
 public class MetricsConfig {
 

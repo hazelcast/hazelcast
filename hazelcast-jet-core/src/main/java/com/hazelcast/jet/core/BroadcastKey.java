@@ -27,6 +27,8 @@ import java.util.Objects;
  * when restoring the snapshot.
  *
  * @param <K> type of key
+ *
+ * @since 3.0
  */
 public final class BroadcastKey<K> {
 

@@ -37,6 +37,8 @@ import static com.hazelcast.jet.function.Functions.wholeItem;
  * operation.
  *
  * @param <T> type of the input item
+ *
+ * @since 3.0
  */
 public interface StageWithWindow<T> {
 

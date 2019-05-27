@@ -19,5 +19,7 @@
  * com.hazelcast.jet.aggregate.AggregateOperation AggregateOperation}.
  * They are Hazelcast-serializable via {@link
  * com.hazelcast.jet.accumulator.AccumulatorSerializerHooks}.
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet.accumulator;

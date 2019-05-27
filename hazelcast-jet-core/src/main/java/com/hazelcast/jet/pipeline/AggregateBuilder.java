@@ -41,6 +41,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * AggregateOperation#withCreate here}.
  *
  * @param <R0> type of the aggregation result for stream-0
+ *
+ * @since 3.0
  */
 public class AggregateBuilder<R0> {
     private final AggBuilder aggBuilder;

@@ -30,6 +30,8 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * sequence over the original disordered one. Watermark items are used by
  * windowing processors as anchoring points where the processor knows which
  * windows it can close and emit their aggregated results.
+ *
+ * @since 3.0
  */
 public final class Watermark implements BroadcastItem {
 

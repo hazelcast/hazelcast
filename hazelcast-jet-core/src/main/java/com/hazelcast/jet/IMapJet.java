@@ -40,6 +40,8 @@ import com.hazelcast.jet.pipeline.Sources;
  * @see Sources#map(String)
  * @see Sources#mapJournal(String, JournalInitialPosition)
  * @see Sinks#map(String) (String)
+ *
+ * @since 3.0
  */
 public interface IMapJet<K, V> extends IMap<K, V> {
 

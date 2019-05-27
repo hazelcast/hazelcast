@@ -24,6 +24,8 @@ import java.util.Deque;
 
 /**
  * {@link Inbox} implementation suitable to be used in tests.
+ *
+ * @since 3.0
  */
 public final class TestInbox implements Inbox {
 

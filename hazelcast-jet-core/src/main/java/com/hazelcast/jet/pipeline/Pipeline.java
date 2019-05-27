@@ -39,11 +39,15 @@ import javax.annotation.Nonnull;
  * vertices) and some stages may be merged with others into a single vertex
  * (e.g., a cascade of map/filter/flatMap stages can be fused into one
  * vertex).
+ *
+ * @since 3.0
  */
 public interface Pipeline {
 
     /**
      * Creates a new, empty pipeline.
+     *
+     * @since 3.0
      */
     @Nonnull
     static Pipeline create() {

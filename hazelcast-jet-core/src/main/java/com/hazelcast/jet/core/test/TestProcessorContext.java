@@ -25,6 +25,8 @@ import javax.annotation.Nonnull;
 
 /**
  * {@link Processor.Context} implementation suitable to be used in tests.
+ *
+ * @since 3.0
  */
 public class TestProcessorContext extends TestProcessorSupplierContext implements Processor.Context {
 

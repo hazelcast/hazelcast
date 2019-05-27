@@ -17,5 +17,7 @@
 /**
  * Contains {@code AggregateOperation} and several its variants, as well
  * as a builder object for the aggregate operations.
+ *
+ * @since 3.0
  */
 package com.hazelcast.jet.aggregate;

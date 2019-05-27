@@ -39,6 +39,8 @@ import static com.hazelcast.jet.impl.util.Util.wrapImdgPredicate;
 
 /**
  * Miscellaneous utility methods useful in DAG building logic.
+ *
+ * @since 3.0
  */
 public final class Util {
 

@@ -203,6 +203,8 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * Tumbling window is a special case of sliding window with sliding step =
  * window size.
+ *
+ * @since 3.0
  */
 public final class Processors {
 

@@ -22,6 +22,8 @@ import java.util.Objects;
  * Mutable container of an object reference.
  *
  * @param <T> referenced object type
+ *
+ * @since 3.0
  */
 public class MutableReference<T> {
 

@@ -39,6 +39,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.pickAny;
  *
  * @param <T> type of the input item
  * @param <K> type of the key
+ *
+ * @since 3.0
  */
 public interface StageWithKeyAndWindow<T, K> {
 

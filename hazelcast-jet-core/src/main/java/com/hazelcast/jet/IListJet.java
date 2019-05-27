@@ -38,6 +38,8 @@ import com.hazelcast.jet.pipeline.Sources;
  * @see IList
  * @see Sources#list(String)
  * @see Sinks#list(String) (String)
+ *
+ * @since 3.0
  */
 public interface IListJet<E> extends IList<E> {
 

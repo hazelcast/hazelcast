@@ -31,6 +31,8 @@ import static com.hazelcast.jet.hadoop.impl.SerializableJobConf.asSerializable;
 
 /**
  * Contains factory methods for Apache Hadoop HDFS sources.
+ *
+ * @since 3.0
  */
 public final class HdfsSources {
 

@@ -63,6 +63,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     items. {@code FlatMapper} is obtained from one of the factory methods
  *     {@link #flatMapper(Function) flatMapper(...)}.
  * </li></ol>
+ *
+ * @since 3.0
  */
 public abstract class AbstractProcessor implements Processor {
 

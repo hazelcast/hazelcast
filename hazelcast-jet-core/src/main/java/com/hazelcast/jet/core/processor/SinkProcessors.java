@@ -52,6 +52,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * Static utility class with factories of sink processors (the terminators
  * of the DAG data flow). For other kinds of processors refer to the {@link
  * com.hazelcast.jet.core.processor package-level documentation}.
+ *
+ * @since 3.0
  */
 public final class SinkProcessors {
     private SinkProcessors() {

@@ -18,6 +18,8 @@ package com.hazelcast.jet.accumulator;
 
 /**
  * Mutable container of a {@code long} and a {@code double} value.
+ *
+ * @since 3.0
  */
 public class LongDoubleAccumulator {
 

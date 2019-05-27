@@ -19,6 +19,8 @@ package com.hazelcast.jet.core;
 /**
  * Enumerates the two possible kinds of timestamp: event timestamp and
  * frame timestamp. Used by the sliding window processors.
+ *
+ * @since 3.0
  */
 public enum TimestampKind {
     /**

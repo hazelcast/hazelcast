@@ -40,6 +40,8 @@ import static com.hazelcast.jet.Util.toCompletableFuture;
  *
  * @param <T> type of the stream item
  * @param <K> type of the grouping key
+ *
+ * @since 3.0
  */
 public interface GeneralStageWithKey<T, K> {
 

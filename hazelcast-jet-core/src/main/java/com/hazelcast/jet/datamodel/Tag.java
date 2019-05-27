@@ -28,6 +28,8 @@ import java.io.Serializable;
  * heterogeneous maps ({@link ItemsByTag}) that appear in the output.
  *
  * @param <T> the type of the data associated with the tag
+ *
+ * @since 3.0
  */
 public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
     private static final Tag TAG_0 = new Tag(0);

@@ -36,6 +36,8 @@ import static java.lang.Math.max;
  *
  * @see EventTimePolicy
  * @see EventTimeMapper
+ *
+ * @since 3.0
  */
 public interface WatermarkPolicy {
 

@@ -56,6 +56,8 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
 /**
  * Entry point to the Jet product.
+ *
+ * @since 3.0
  */
 public final class Jet {
 

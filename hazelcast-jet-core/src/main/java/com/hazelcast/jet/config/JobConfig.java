@@ -39,6 +39,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
+ *
+ * @since 3.0
  */
 public class JobConfig implements IdentifiedDataSerializable {
 
@@ -73,6 +75,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * The default value is {@code null}.
      *
      * @return {@code this} instance for fluent API
+     *
+     * @since 3.0
      */
     @Nonnull
     public JobConfig setName(@Nullable String name) {
@@ -410,6 +414,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @param initialSnapshotName the snapshot name given to {@link
      *      Job#exportSnapshot(String)}
      * @return {@code this} instance for fluent API
+     *
+     * @since 3.0
      */
     @Nonnull
     public JobConfig setInitialSnapshotName(@Nullable String initialSnapshotName) {

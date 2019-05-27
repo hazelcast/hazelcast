@@ -37,6 +37,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <W> type of the writer object
  * @param <T> type of the items the sink will accept
+ *
+ * @since 3.0
  */
 public final class SinkBuilder<W, T> {
 
@@ -89,6 +91,8 @@ public final class SinkBuilder<W, T> {
      * compatible with the <em>exactly-once</em> guarantee.
      *
      * @param <W> type of the writer object
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <W> SinkBuilder<W, Void> sinkBuilder(

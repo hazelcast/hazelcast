@@ -30,6 +30,8 @@ import javax.annotation.Nonnull;
  * timestamps to events.
  *
  * @param <T> the type of items coming out of this stage
+ *
+ * @since 3.0
  */
 public interface StreamSourceStage<T> {
 

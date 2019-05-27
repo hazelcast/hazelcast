@@ -75,6 +75,8 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
  * Static utility class with factories of source processors (the DAG
  * entry points). For other kinds for a vertices refer to the {@link
  * com.hazelcast.jet.core.processor package-level documentation}.
+ *
+ * @since 3.0
  */
 public final class SourceProcessors {
 

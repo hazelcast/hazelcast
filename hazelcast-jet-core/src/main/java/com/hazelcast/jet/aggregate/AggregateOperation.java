@@ -106,6 +106,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <A> the type of the accumulator
  * @param <R> the type of the final result
+ *
+ * @since 3.0
  */
 public interface AggregateOperation<A, R> extends Serializable {
 

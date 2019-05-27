@@ -28,6 +28,8 @@ import javax.annotation.Nonnull;
 /**
  * {@link ProcessorMetaSupplier.Context} implementation suitable to be used
  * in tests.
+ *
+ * @since 3.0
  */
 public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.Context {
 

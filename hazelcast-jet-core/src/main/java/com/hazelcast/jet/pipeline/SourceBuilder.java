@@ -48,6 +48,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * </ul>
  *
  * @param <C> type of the context object
+ *
+ * @since 3.0
  */
 public final class SourceBuilder<C> {
     private final String name;
@@ -175,6 +177,8 @@ public final class SourceBuilder<C> {
      * @param name     a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the source's context object
      * @param <C>      type of the context object
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Batch<Void> batch(
@@ -236,6 +240,8 @@ public final class SourceBuilder<C> {
      * @param name     a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the source's context object
      * @param <C>      type of the context object
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Stream<Void> stream(
@@ -316,6 +322,8 @@ public final class SourceBuilder<C> {
      * @param name a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the source's context object
      * @param <C> type of the context object
+     *
+     * @since 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.TimestampedStream<Void> timestampedStream(
@@ -398,6 +406,8 @@ public final class SourceBuilder<C> {
          * }</pre>
          *
          * @param <S> type of the snapshot object
+         *
+         * @since 3.1
          */
         @Nonnull
         abstract <S> FaultTolerant<? extends Base<T>, S> createSnapshotFn(
@@ -441,6 +451,8 @@ public final class SourceBuilder<C> {
      * See {@link SourceBuilder#batch(String, FunctionEx)}.
      *
      * @param <T> type of emitted objects
+     *
+     * @since 3.0
      */
     public final class Batch<T> extends BaseNoTimestamps<T> {
         private Batch() {
@@ -493,6 +505,8 @@ public final class SourceBuilder<C> {
      * See {@link SourceBuilder#stream(String, FunctionEx)}.
      *
      * @param <T> type of emitted objects
+     *
+     * @since 3.0
      */
     public final class Stream<T> extends BaseNoTimestamps<T> {
         private Stream() {
@@ -541,6 +555,8 @@ public final class SourceBuilder<C> {
      * See {@link SourceBuilder#timestampedStream(String, FunctionEx)}.
      *
      * @param <T> type of emitted objects
+     *
+     * @since 3.0
      */
     public final class TimestampedStream<T> extends Base<T> {
         private BiConsumerEx<? super C, ? super TimestampedSourceBuffer<T>> fillBufferFn;
@@ -614,6 +630,8 @@ public final class SourceBuilder<C> {
      *
      * @param <B> type of the builder this sub-builder was created from
      * @param <S> type of the object saved to the state snapshot
+     *
+     * @since 3.1
      */
     public final class FaultTolerant<B, S> {
         private final B parentBuilder;
@@ -643,6 +661,8 @@ public final class SourceBuilder<C> {
          * restoreSnapshotFn} accepts a list of snapshot objects. It should
          * figure out which part of the snapshot data pertains to it and it can
          * do so as explained {@link Base#distributed here}.
+         *
+         * @since 3.1
          */
         @SuppressWarnings("unchecked")
         @Nonnull

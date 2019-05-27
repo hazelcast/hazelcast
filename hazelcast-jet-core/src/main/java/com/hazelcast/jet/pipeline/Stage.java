@@ -32,6 +32,8 @@ import javax.annotation.Nonnull;
  * downstream stages. Terminate the pipeline by calling {@link
  * GeneralStage#drainTo(Sink) stage.drainTo(sink)}, which will attach a
  * {@link SinkStage}.
+ *
+ * @since 3.0
  */
 public interface Stage {
     /**

@@ -26,6 +26,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link Function java.util.function.Function}
  * which declares checked exception.
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface FunctionEx<T, R> extends Function<T, R>, com.hazelcast.util.function.Function<T, R>, Serializable {

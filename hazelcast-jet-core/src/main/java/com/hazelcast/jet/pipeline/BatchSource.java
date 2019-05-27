@@ -25,8 +25,11 @@ import javax.annotation.Nonnull;
  * @see Sources source factory methods
  *
  * @param <T> the stream item type
+ *
+ * @since 3.0
  */
 public interface BatchSource<T> {
+
     /**
      * Returns a descriptive name of this source.
      */

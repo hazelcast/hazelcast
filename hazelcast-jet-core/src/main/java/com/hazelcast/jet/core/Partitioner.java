@@ -32,6 +32,8 @@ import java.io.Serializable;
  * partition.
  *
  * @param <T> type of item the partitioner accepts
+ *
+ * @since 3.0
  */
 @FunctionalInterface
 public interface Partitioner<T> extends Serializable {

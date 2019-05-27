@@ -41,6 +41,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * diagnosing the execution of Jet jobs. For other kinds of processors
  * refer to the {@link com.hazelcast.jet.core.processor package-level
  * documentation}.
+ *
+ * @since 3.0
  */
 public final class DiagnosticProcessors {
     private DiagnosticProcessors() {

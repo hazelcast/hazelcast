@@ -47,6 +47,8 @@ import java.util.concurrent.ConcurrentMap;
  * @see Sources#cache(String)
  * @see Sources#cacheJournal(String, JournalInitialPosition)
  * @see Sinks#cache(String) (String)
+ *
+ * @since 3.0
  */
 public interface ICacheJet<K, V> extends ICache<K, V> {
 }

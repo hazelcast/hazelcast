@@ -29,6 +29,8 @@ package com.hazelcast.jet.pipeline;
  *     <li>{@link Sources#cacheJournal}
  *     <li>{@link Sources#remoteCacheJournal}
  * </ul>
+ *
+ * @since 3.0
  */
 public enum JournalInitialPosition {
 

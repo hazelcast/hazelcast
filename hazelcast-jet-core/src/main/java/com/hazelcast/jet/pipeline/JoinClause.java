@@ -47,6 +47,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @param <T0> the type of the left-hand stream item
  * @param <T1> the type of the right-hand stream item
  * @param <T1_OUT> the result type of the right-hand projection function
+ *
+ * @since 3.0
  */
 public final class JoinClause<K, T0, T1, T1_OUT> {
     private final FunctionEx<? super T0, ? extends K> leftKeyFn;

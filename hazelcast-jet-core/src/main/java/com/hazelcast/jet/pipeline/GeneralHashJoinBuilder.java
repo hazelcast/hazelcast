@@ -52,6 +52,8 @@ import static java.util.stream.Stream.concat;
  * type safety.
  *
  * @param <T0> the type of the items in the primary stage
+ *
+ * @since 3.0
  */
 public abstract class GeneralHashJoinBuilder<T0> {
     private final Transform transform0;

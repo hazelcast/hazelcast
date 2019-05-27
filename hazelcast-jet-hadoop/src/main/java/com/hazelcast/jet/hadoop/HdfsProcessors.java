@@ -30,6 +30,8 @@ import static com.hazelcast.jet.hadoop.impl.SerializableJobConf.asSerializable;
 /**
  * Static utility class with factories of Apache Hadoop HDFS source and sink
  * processors.
+ *
+ * @since 3.0
  */
 public final class HdfsProcessors {
 

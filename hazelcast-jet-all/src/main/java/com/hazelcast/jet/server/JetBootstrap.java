@@ -92,6 +92,8 @@ import java.util.jar.JarFile;
  * <pre>
  * $ jet.sh submit jetjob.jar
  * </pre>
+ *
+ * @since 3.0
  */
 public final class JetBootstrap {
 

@@ -152,6 +152,8 @@ import static java.util.stream.Collectors.toMap;
  *            .input(asList("foo", "bar"))       // default is `emptyList()`
  *            .expectOutput(asList("FOO", "BAR"));
  * }</pre>
+ *
+ * @since 3.0
  */
 public final class TestSupport {
 
