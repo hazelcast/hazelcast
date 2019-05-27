@@ -34,7 +34,7 @@ public class DeclarativeConfigFileHelper {
             "<hazelcast-client-failover xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
     private static final String HAZELCAST_CLIENT_FAILOVER_END_TAG = "</hazelcast-client-failover>";
 
-    private List<String> testConfigPaths = new LinkedList<>();
+    private List<String> testConfigPaths = new LinkedList<String>();
 
     // MEMBER
 
