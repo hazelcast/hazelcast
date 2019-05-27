@@ -19,6 +19,8 @@ package com.hazelcast.config.helpers;
 import com.hazelcast.config.Config;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.LinkedList;
@@ -226,11 +228,26 @@ public class DeclarativeConfigFileHelper {
                 + "    - hazelcast-client-c1.yaml";
     }
 
-    public void ensureTestConfigDeleted() {
+    public void ensureTestConfigDeleted() throws IOException {
         if (!testConfigPaths.isEmpty()) {
             for (String testConfigPath : testConfigPaths) {
-                File file = new File(testConfigPath);
-                file.delete();
+                if (testConfigPath != null) {
+                    File file = new File(testConfigPath);
+
+                    if (!file.exists()) {
+                        throw new FileNotFoundException(testConfigPath + " couldn't be deleted because it doesn't exist");
+                    }
+
+                    if (!file.canWrite()) {
+                        throw new IOException(testConfigPath + " couldn't be deleted because write is not permitted");
+                    }
+
+                    if (!file.delete()) {
+                        throw new IOException(
+                                testConfigPath + " couldn't be deleted. On Windows it most likely means the files is "
+                                        + "still used.");
+                    }
+                }
             }
         }
     }
