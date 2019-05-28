@@ -17,11 +17,13 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -76,7 +78,10 @@ public class MulticastDiscoveryTest extends JetTestSupport {
         JetInstance jetInstance1 = Jet.newJetInstance();
         JetInstance jetInstance2 = Jet.newJetInstance();
 
-        JetInstance client = Jet.newJetClient(new JetClientConfig());
+        // Configure client with the address of the created instance
+        // Sometimes the instances are created with a different port number
+        // like 5704, 5705
+        JetInstance client = Jet.newJetClient(clientConfig(jetInstance1, jetInstance2));
 
         assertEquals(2, client.getHazelcastInstance().getCluster().getMembers().size());
     }
@@ -98,4 +103,18 @@ public class MulticastDiscoveryTest extends JetTestSupport {
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
         HazelcastClient.newHazelcastClient();
     }
+
+    /**
+     * Creates a client config which configured with the address of the jet
+     * instances provided.
+     */
+    private static JetClientConfig clientConfig(JetInstance... jetInstances) {
+        JetClientConfig jetClientConfig = new JetClientConfig();
+        ClientNetworkConfig networkConfig = jetClientConfig.getNetworkConfig();
+        for (JetInstance jet : jetInstances) {
+            Address address = getAddress(jet);
+            networkConfig.addAddress(address.getHost() + ":" + address.getPort());
+        }
+        return jetClientConfig;
     }
+}
