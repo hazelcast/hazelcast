@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -30,7 +30,7 @@ import org.junit.runners.Parameterized;
  * Test event types as published by {@link com.hazelcast.map.impl.event.DefaultEntryEventFilteringStrategy}
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryListenerEventTypesTest extends AbstractEntryEventTypesTest {
 

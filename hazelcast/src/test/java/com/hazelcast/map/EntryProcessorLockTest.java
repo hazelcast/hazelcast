@@ -27,7 +27,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryProcessorLockTest extends HazelcastTestSupport {
 
