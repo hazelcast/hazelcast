@@ -134,6 +134,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven.antrun.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-hazelcast-xml</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
