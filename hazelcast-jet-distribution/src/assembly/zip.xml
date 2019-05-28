@@ -65,7 +65,7 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
         <file>
-            <source>${config.directory}/hazelcast-client-full.xml</source>
+            <source>${config.directory}/hazelcast-client-full-example.xml</source>
             <destName>hazelcast-client-full-example.xml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
@@ -82,7 +82,7 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
         <file>
-            <source>${config.directory}/hazelcast-client-full.yaml</source>
+            <source>${config.directory}/hazelcast-client-full-example.yaml</source>
             <destName>hazelcast-client-full-example.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
