@@ -292,4 +292,3 @@ hazelcast-client:
       - file://User/test/sample.jar
     classNames:
       - test.sampleClassName
-
