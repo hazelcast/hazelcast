@@ -46,7 +46,7 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         response = recordStore.fetchKeys(lastTableIndex, fetchSize);
     }
 

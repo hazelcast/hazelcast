@@ -54,7 +54,7 @@ public class SetReadCursorOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         this.result = setReadCursor();
     }
 

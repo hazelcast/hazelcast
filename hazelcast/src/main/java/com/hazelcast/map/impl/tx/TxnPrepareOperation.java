@@ -48,7 +48,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {

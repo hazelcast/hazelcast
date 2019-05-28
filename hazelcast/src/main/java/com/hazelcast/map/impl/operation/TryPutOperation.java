@@ -31,7 +31,7 @@ public class TryPutOperation extends BasePutOperation implements MutatingOperati
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.put(dataKey, dataValue, ttl, maxIdle);
     }
 

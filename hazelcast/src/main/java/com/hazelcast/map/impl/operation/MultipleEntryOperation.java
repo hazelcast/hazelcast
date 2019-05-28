@@ -65,7 +65,7 @@ public class MultipleEntryOperation extends MapOperation
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public void run() throws Exception {
+    protected void runInternal() {
         responses = new MapEntries(keys.size());
         if (keys.isEmpty()) {
             return;

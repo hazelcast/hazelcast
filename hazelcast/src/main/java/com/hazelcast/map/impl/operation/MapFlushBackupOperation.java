@@ -37,7 +37,7 @@ public class MapFlushBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.softFlush();
     }
 

@@ -31,7 +31,8 @@ import static com.hazelcast.core.EntryEventType.EVICT_ALL;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllOperation extends MapOperation implements BackupAwareOperation, MutatingOperation, PartitionAwareOperation {
+public class EvictAllOperation extends MapOperation
+        implements BackupAwareOperation, MutatingOperation, PartitionAwareOperation {
 
     private boolean shouldRunOnBackup;
     private int numberOfEvictedEntries;
@@ -46,7 +47,7 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -55,14 +56,14 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
+    protected void afterRunInternal() {
         hintMapEvent();
         invalidateAllKeysInNearCaches();
     }
 
     private void hintMapEvent() {
-        mapEventPublisher.hintMapEvent(getCallerAddress(), name, EVICT_ALL, numberOfEvictedEntries, getPartitionId());
+        mapEventPublisher.hintMapEvent(getCallerAddress(), name,
+                EVICT_ALL, numberOfEvictedEntries, getPartitionId());
     }
 
     @Override

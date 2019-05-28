@@ -61,6 +61,11 @@ public class EvictorImpl implements Evictor {
         }
     }
 
+    @Override
+    public void forceEvict(RecordStore recordStore) {
+
+    }
+
     private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
         Iterable<EntryView> samples = getSamples(recordStore);
         EntryView excluded = null;

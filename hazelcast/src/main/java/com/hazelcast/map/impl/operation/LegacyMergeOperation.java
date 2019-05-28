@@ -50,7 +50,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Record oldRecord = recordStore.getRecord(dataKey);
         if (oldRecord != null) {
             oldValue = mapServiceContext.toData(oldRecord.getValue());
@@ -76,10 +76,10 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (merged) {
             eventType = EntryEventType.MERGED;
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -88,7 +88,7 @@ public class LegacyMergeOperation extends BasePutOperation {
         if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
         } else {
-           return super.getBackupOperation();
+            return super.getBackupOperation();
         }
     }
 

@@ -34,7 +34,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }

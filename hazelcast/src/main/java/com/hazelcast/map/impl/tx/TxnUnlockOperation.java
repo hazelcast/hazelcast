@@ -55,7 +55,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
     }
 

@@ -41,7 +41,7 @@ public class KeyLoadStatusOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.updateLoadStatus(true, exception);
     }
 

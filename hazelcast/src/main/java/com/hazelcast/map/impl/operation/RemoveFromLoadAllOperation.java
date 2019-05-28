@@ -53,7 +53,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         removeExistingKeys(keys);
     }
 

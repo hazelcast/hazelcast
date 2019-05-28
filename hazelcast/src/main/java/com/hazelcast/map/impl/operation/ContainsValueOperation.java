@@ -39,7 +39,7 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         contains = recordStore.containsValue(testValue);
     }
 

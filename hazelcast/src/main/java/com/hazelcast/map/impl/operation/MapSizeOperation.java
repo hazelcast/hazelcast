@@ -32,7 +32,7 @@ public class MapSizeOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.checkIfLoaded();
         size = recordStore.size();
     }

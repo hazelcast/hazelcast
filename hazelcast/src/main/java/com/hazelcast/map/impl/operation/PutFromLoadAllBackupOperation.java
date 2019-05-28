@@ -46,7 +46,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         final List<Data> keyValueSequence = this.keyValueSequence;
         if (keyValueSequence == null || keyValueSequence.isEmpty()) {
             return;
@@ -67,10 +67,10 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         evict(null);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override

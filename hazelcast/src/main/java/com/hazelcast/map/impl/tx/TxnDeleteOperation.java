@@ -56,7 +56,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
@@ -70,9 +70,10 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         return false;
     }
 
-    public void afterRun() {
+    @Override
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
