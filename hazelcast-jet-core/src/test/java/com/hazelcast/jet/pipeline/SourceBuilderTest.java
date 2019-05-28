@@ -321,37 +321,46 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
     @Test
     public void test_faultTolerance() {
-        StreamSource<Integer> source = SourceBuilder
-                .timestampedStream("src", ctx -> new NumberGeneratorContext())
-                .<Integer>fillBufferFn((src, buffer) -> {
-                    long expectedCount = NANOSECONDS.toMillis(System.nanoTime() - src.startTime);
-                    expectedCount = Math.min(expectedCount, src.current + 100);
-                    while (src.current < expectedCount) {
-                        buffer.add(src.current, src.current);
-                        src.current++;
+        StreamSource<Integer> source = integerSequenceSource(true);
+        testFaultTolerance(source);
+    }
+
+    @Test
+    public void test_faultTolerance_snapshotWithUserDefinedObject() {
+        StreamSource<WrappedInt> source = SourceBuilder
+                .timestampedStream("src", ctx -> new WrappedNumberGeneratorContext())
+                .<WrappedInt>fillBufferFn((src, buffer) -> {
+                    for (int i = 0; i < 100; i++) {
+                        buffer.add(src.current, src.current.value);
+                        src.current = new WrappedInt(src.current.value + 1);
                     }
+                    Thread.sleep(100);
                 })
                 .createSnapshotFn(src -> {
-                    System.out.println("Will save " + src.current + " to snapshot");
+                    System.out.println("Will save " + src.current.value + " to snapshot");
                     return src;
                 })
                 .restoreSnapshotFn((src, states) -> {
                     assert states.size() == 1;
                     src.restore(states.get(0));
-                    System.out.println("Restored " + src.current + " from snapshot");
+                    System.out.println("Restored " + src.current.value + " from snapshot");
                 })
                 .build();
 
+        testFaultTolerance(source);
+    }
+
+    private void testFaultTolerance(StreamSource<?> source) {
         long windowSize = 100;
         IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.drawFrom(source)
-         .withNativeTimestamps(0)
-         .window(tumbling(windowSize))
-         .aggregate(AggregateOperations.counting())
-         .peek()
-         .drainTo(Sinks.list(result));
+                .withNativeTimestamps(0)
+                .window(tumbling(windowSize))
+                .aggregate(AggregateOperations.counting())
+                .peek()
+                .drainTo(Sinks.list(result));
 
         Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
@@ -365,7 +374,8 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         job.cancel();
         try {
             job.join();
-        } catch (CancellationException ignored) { }
+        } catch (CancellationException ignored) {
+        }
 
         // results should contain a monotonic sequence of results, each with count=windowSize
         Iterator<WindowResult<Long>> iterator = result.iterator();
@@ -377,7 +387,106 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void test_faultToleranceUnspecified_and_snapshotsOn() {
+    public void test_faultTolerance_restartTwice() {
+        StreamSource<Integer> source = integerSequenceSource(true);
+
+        long windowSize = 100;
+        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(source)
+                .withNativeTimestamps(0)
+                .window(tumbling(windowSize))
+                .aggregate(AggregateOperations.counting())
+                .peek()
+                .drainTo(Sinks.list(result));
+
+        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
+        // restart the job
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // wait until more results are added
+        int oldSize = result.size();
+        assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
+
+        // restart the job for the second time
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // wait until more results are added
+        int sizeAfterSecondRestart = result.size();
+        assertTrueEventually(() -> assertTrue("no more results added to the list",
+                result.size() > sizeAfterSecondRestart));
+
+        job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException ignored) {
+        }
+
+        // results should contain a monotonic sequence of results, each with count=windowSize
+        Iterator<WindowResult<Long>> iterator = result.iterator();
+        for (int i = 0; i < result.size(); i++) {
+            WindowResult<Long> next = iterator.next();
+            assertEquals(windowSize, (long) next.result());
+            assertEquals(i * windowSize, next.start());
+        }
+    }
+
+    @Test
+    public void test_nonFaultTolerantSource_processingGuaranteeNone() {
+        StreamSource<Integer> source = integerSequenceSource(false);
+
+        long windowSize = 100;
+        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(source)
+                .withNativeTimestamps(0)
+                .window(tumbling(windowSize))
+                .aggregate(AggregateOperations.counting())
+                .peek()
+                .drainTo(Sinks.list(result));
+
+        Job job = jet().newJob(p, new JobConfig());
+        assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
+        // restart the job
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // wait until more results are added
+        int oldSize = result.size();
+        assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
+        job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException ignored) {
+        }
+
+        Iterator<WindowResult<Long>> iterator = result.iterator();
+
+        int startAfterRestartIndex = 0;
+        for (int i = 0; i < result.size(); i++) {
+            WindowResult<Long> next = iterator.next();
+            long resultStart = next.start();
+            assertEquals(windowSize, (long) next.result());
+            if (i != 0 && resultStart == 0) {
+                startAfterRestartIndex = i;
+                break;
+            }
+            assertEquals(i * windowSize, resultStart);
+        }
+        for (int i = 1; i < result.size() - startAfterRestartIndex; i++) {
+            WindowResult<Long> next = iterator.next();
+            assertEquals(i * windowSize, next.start());
+            assertEquals(windowSize, (long) next.result());
+        }
+    }
+
+    @Test
+    public void test_nonFaultTolerantSource_processingGuaranteeOn() {
         StreamSource<Integer> source = SourceBuilder
                 .stream("src", procCtx -> "foo")
                 .<Integer>fillBufferFn((ctx, buffer) -> {
@@ -402,6 +511,32 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertTrue(result.size() > currentSize), 5);
     }
 
+    private StreamSource<Integer> integerSequenceSource(boolean addFaultTolerance) {
+        SourceBuilder<NumberGeneratorContext>.TimestampedStream<Integer> builder = SourceBuilder
+                .timestampedStream("src", ctx -> new NumberGeneratorContext())
+                .fillBufferFn((src, buffer) -> {
+                    long expectedCount = NANOSECONDS.toMillis(System.nanoTime() - src.startTime);
+                    expectedCount = Math.min(expectedCount, src.current + 100);
+                    while (src.current < expectedCount) {
+                        buffer.add(src.current, src.current);
+                        src.current++;
+                    }
+                });
+        if (addFaultTolerance) {
+            builder = builder
+                    .createSnapshotFn(src -> {
+                        System.out.println("Will save " + src.current + " to snapshot");
+                        return src;
+                    })
+                    .restoreSnapshotFn((src, states) -> {
+                        assert states.size() == 1;
+                        src.restore(states.get(0));
+                        System.out.println("Restored " + src.current + " from snapshot");
+                    });
+        }
+        return builder.build();
+    }
+
     private static final class NumberGeneratorContext implements Serializable {
         long startTime = System.nanoTime();
         int current;
@@ -409,6 +544,26 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         void restore(NumberGeneratorContext other) {
             this.startTime = other.startTime;
             this.current = other.current;
+        }
+    }
+
+    private static final class WrappedNumberGeneratorContext implements Serializable {
+
+        long startTime = System.nanoTime();
+        WrappedInt current = new WrappedInt(0);
+
+        void restore(WrappedNumberGeneratorContext other) {
+            this.startTime = other.startTime;
+            this.current = other.current;
+        }
+    }
+
+    private static final class WrappedInt implements Serializable {
+
+        final int value;
+
+        WrappedInt(int value) {
+            this.value = value;
         }
     }
 
@@ -448,5 +603,4 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
     private static BufferedReader fileReader(File textFile) throws FileNotFoundException {
         return new BufferedReader(new FileReader(textFile));
     }
-
 }
