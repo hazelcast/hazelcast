@@ -40,8 +40,8 @@ public class TestCategoriesTest_withParallelTest extends HazelcastTestSupport {
     }
 
     @Test(expected = AssertionError.class)
-    public void testAssertThatIsNoParallelTest() {
-        assertThatIsNoParallelTest();
-        throw new RuntimeException("Expected an AssertionError on this ParallelTest");
+    public void testAssertThatNotMultithreadedTest() {
+        assertThatIsNotMultithreadedTest();
+        throw new RuntimeException("Expected an AssertionError on this multi-threaded test");
     }
 }
