@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.CacheConfig;
@@ -27,10 +26,8 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -55,9 +52,7 @@ import java.util.concurrent.Executors;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assume.assumeFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -152,18 +147,6 @@ public class CacheCreationTest extends HazelcastTestSupport {
 
         thrown.expect(CacheException.class);
         cachingProvider.getCacheManager();
-    }
-
-    // test special Cache proxy creation, required for compatibility with 3.6 clients
-    // should be removed in 4.0
-    @Test
-    public void test_createSetupRef() {
-        assumeFalse("test_createSetupRef is only applicable for Hazelcast members",
-                ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient"));
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        DistributedObject setupRef = HazelcastTestSupport.getNodeEngineImpl(hz).getProxyService()
-                .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        assertNotNull(setupRef);
     }
 
     @Test
