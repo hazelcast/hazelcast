@@ -38,7 +38,7 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         sequence = recordStore.softFlush();
     }
 

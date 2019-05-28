@@ -25,13 +25,13 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
@@ -1617,27 +1617,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         map.addIndex("__key", true);
 
+        map.set(1, 1);
+
+        PREDICATE_APPLY_COUNT.set(0);
+        ApplyCountAwareIndexedTestPredicate predicate = new ApplyCountAwareIndexedTestPredicate("__key", 1);
+        map.executeOnEntries(new DeleteEntryProcessor(), predicate);
+
         // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
         // so there is no chance of data being modified after the index has been queried.
         final int expectedApplyCount = inMemoryFormat == NATIVE ? 0 : 2;
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                try {
-                    map.set(1, 1);
-
-                    ApplyCountAwareIndexedTestPredicate predicate = new ApplyCountAwareIndexedTestPredicate("__key", 1);
-                    map.executeOnEntries(new DeleteEntryProcessor(), predicate);
-
-                    assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                            expectedApplyCount, PREDICATE_APPLY_COUNT.get());
-                } finally {
-                    // set predicateApplyCount to zero, in case we repeat this test
-                    PREDICATE_APPLY_COUNT.set(0);
-                }
-            }
-        };
-        assertTrueEventually(task);
+        assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
+                expectedApplyCount, PREDICATE_APPLY_COUNT.get());
     }
 
     static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {

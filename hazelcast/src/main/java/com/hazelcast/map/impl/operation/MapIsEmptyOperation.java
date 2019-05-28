@@ -31,7 +31,8 @@ public class MapIsEmptyOperation extends MapOperation implements PartitionAwareO
     public MapIsEmptyOperation() {
     }
 
-    public void run() {
+    @Override
+    protected void runInternal() {
         empty = recordStore.isEmpty();
     }
 

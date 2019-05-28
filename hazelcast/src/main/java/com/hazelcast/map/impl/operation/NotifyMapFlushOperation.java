@@ -45,7 +45,7 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         // NOP.
     }
 

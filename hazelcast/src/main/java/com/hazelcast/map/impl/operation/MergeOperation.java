@@ -68,7 +68,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
@@ -151,10 +151,8 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
-
-        super.afterRun();
     }
 
     @Override

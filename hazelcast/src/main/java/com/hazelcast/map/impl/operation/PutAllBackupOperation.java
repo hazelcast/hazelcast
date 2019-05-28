@@ -50,7 +50,7 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         for (int i = 0; i < entries.size(); i++) {
             Data dataKey = entries.getKey(i);
             Data dataValue = entries.getValue(i);

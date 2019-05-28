@@ -46,11 +46,16 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        PartitionWideEntryWithPredicateBackupOperation backupOperation = null;
-        if (backupProcessor != null) {
-            backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+        if (backupProcessor == null) {
+            return null;
         }
-        return backupOperation;
+        if (keysFromIndex != null) {
+            // if we used index we leverage it for the backup too
+            return new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
+        } else {
+            // if no index used we will do a full partition-scan on backup too
+            return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, getPredicate());
+        }
     }
 
     @Override

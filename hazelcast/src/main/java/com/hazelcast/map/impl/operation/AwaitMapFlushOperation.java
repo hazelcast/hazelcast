@@ -67,7 +67,7 @@ public class AwaitMapFlushOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         // NOP
     }
 

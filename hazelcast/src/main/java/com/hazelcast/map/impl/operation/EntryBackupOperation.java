@@ -55,7 +55,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         operator(this, entryProcessor)
                 .operateOnKey(dataKey).doPostOperateOps();
     }

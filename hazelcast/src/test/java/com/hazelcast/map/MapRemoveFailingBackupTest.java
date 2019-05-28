@@ -120,15 +120,15 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() {
+        protected void runInternal() {
             dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey, getCallerProvenance()));
             successful = dataOldValue != null;
         }
 
         @Override
-        public void afterRun() {
+        protected void afterRunInternal() {
             if (successful) {
-                super.afterRun();
+                super.afterRunInternal();
             }
         }
 
@@ -163,7 +163,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        protected void runInternal() {
             throw new UnsupportedOperationException("Don't panic this is what we want!");
         }
 

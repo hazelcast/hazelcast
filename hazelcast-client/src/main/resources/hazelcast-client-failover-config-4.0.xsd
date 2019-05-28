@@ -16,7 +16,9 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.hazelcast.com/schema/client-config"
            elementFormDefault="qualified"
+           targetNamespace="http://www.hazelcast.com/schema/client-config"
            attributeFormDefault="unqualified">
 
     <xs:element name="hazelcast-client-failover">

@@ -33,6 +33,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
+    private static final String HAZELCAST_CLIENT_FAILOVER_START_TAG =
+            "<hazelcast-client-failover xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
+    private static final String HAZELCAST_CLIENT_FAILOVER_END_TAG = "</hazelcast-client-failover>";
 
     @Before
     public void init() throws Exception {
@@ -68,13 +71,13 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Test
     public void testVariableReplacementFromProperties() {
         String xml = ""
-                + "<hazelcast-client-failover>"
+                + HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <clients>"
                 + "    <client>hazelcast-client-c1.xml</client>\n"
                 + "    <client>hazelcast-client-c2.xml</client>\n"
                 + "  </clients>"
                 + "  <try-count>${try-count}</try-count>"
-                + "</hazelcast-client-failover>";
+                + HAZELCAST_CLIENT_FAILOVER_END_TAG;
 
         Properties properties = new Properties();
         properties.setProperty("try-count", "11");
@@ -86,13 +89,13 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Test
     public void testVariableReplacementFromSystemProperties() {
         String xml = ""
-                + "<hazelcast-client-failover>"
+                + HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <clients>"
                 + "    <client>hazelcast-client-c1.xml</client>\n"
                 + "    <client>hazelcast-client-c2.xml</client>\n"
                 + "  </clients>"
                 + "  <try-count>${try-count}</try-count>"
-                + "</hazelcast-client-failover>";
+                + HAZELCAST_CLIENT_FAILOVER_END_TAG;
 
         System.setProperty("try-count", "11");
         ClientFailoverConfig config = buildConfig(xml);

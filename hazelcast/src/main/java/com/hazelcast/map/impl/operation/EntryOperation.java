@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
@@ -47,8 +48,8 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.CallStatus.WAIT;
@@ -135,8 +136,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class EntryOperation extends KeyBasedMapOperation implements BackupAwareOperation, BlockingOperation,
-        MutatingOperation {
+public class EntryOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
 
@@ -177,6 +178,9 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         if (shouldWait()) {
             return WAIT;
         }
+        // when offloading is enabled, left disposing
+        // to EntryOffloadableSetUnlockOperation
+        disposeDeferredBlocks = !offload;
 
         if (offload) {
             return new EntryOperationOffload(getCallerAddress());
@@ -187,6 +191,11 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
                     .getResult();
             return DONE_RESPONSE;
         }
+    }
+
+    @Override
+    protected void runInternal() {
+        // NOP
     }
 
     @Override
@@ -227,17 +236,51 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
 
     @Override
     public Object getResponse() {
+        if (offload) {
+            return null;
+        }
         return response;
     }
 
     @Override
+    public boolean returnsResponse() {
+        if (offload) {
+            // This has to be false, since the operation uses the
+            // deferred-response mechanism. This method returns false, but
+            // the response will be send later on using the response handler
+            return false;
+        } else {
+            return super.returnsResponse();
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (offload) {
+            // This is required since if the returnsResponse() method returns
+            // false there won't be any response sent to the invoking
+            // party - this means that the operation won't be retried if
+            // the exception is instanceof HazelcastRetryableException
+            sendResponse(e);
+        } else {
+            super.onExecutionFailure(e);
+        }
+    }
+
+    @Override
     public Operation getBackupOperation() {
+        if (offload) {
+            return null;
+        }
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
+        if (offload) {
+            return false;
+        }
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
@@ -280,17 +323,29 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
         public void start() {
             verifyEntryProcessor();
 
-            boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-            Object oldValue = recordStore.get(dataKey, false, callerAddress);
-            Object clonedOldValue = shouldCloneForOffloading ? serializationService.toData(oldValue) : oldValue;
-
+            Object oldValue = getOldValueByInMemoryFormat();
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
             executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
 
             if (readOnly) {
-                executeReadOnlyEntryProcessor(clonedOldValue, executorName);
+                executeReadOnlyEntryProcessor(oldValue, executorName);
             } else {
-                executeMutatingEntryProcessor(clonedOldValue, executorName);
+                executeMutatingEntryProcessor(oldValue, executorName);
+            }
+        }
+
+        private Object getOldValueByInMemoryFormat() {
+            Object oldValue = recordStore.get(dataKey, false, callerAddress);
+            InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+            switch (inMemoryFormat) {
+                case NATIVE:
+                    return toHeapData((Data) oldValue);
+                case OBJECT:
+                    return serializationService.toData(oldValue);
+                case BINARY:
+                    return oldValue;
+                default:
+                    throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
             }
         }
 

@@ -41,7 +41,7 @@ public class LoadMapOperation extends MapOperation implements MutatingOperation 
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.loadAll(replaceExistingValues);
     }
 

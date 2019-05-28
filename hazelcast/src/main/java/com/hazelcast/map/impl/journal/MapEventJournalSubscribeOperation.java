@@ -42,8 +42,8 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        super.beforeRun();
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
 
         namespace = getServiceNamespace();
         if (!mapServiceContext.getEventJournal().hasEventJournal(namespace)) {
@@ -53,7 +53,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         final MapEventJournal eventJournal = mapServiceContext.getEventJournal();
         final long newestSequence = eventJournal.newestSequence(namespace, getPartitionId());
         final long oldestSequence = eventJournal.oldestSequence(namespace, getPartitionId());

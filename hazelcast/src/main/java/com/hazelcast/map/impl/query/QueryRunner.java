@@ -202,16 +202,6 @@ public class QueryRunner {
         return result;
     }
 
-    Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        PartitionIdSet partitions = singletonPartitionIdSet(partitionCount, partitionId);
-        Result result = createResult(query, partitions);
-        partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
-        result.completeConstruction(partitions);
-        return result;
-    }
-
     private Result createResult(Query query, Collection<Integer> partitions) {
         return query.createResult(serializationService, queryResultSizeLimiter.getNodeResultLimit(partitions.size()));
     }

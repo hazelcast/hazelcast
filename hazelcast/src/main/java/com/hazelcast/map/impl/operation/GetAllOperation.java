@@ -52,7 +52,7 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
         final int roughSize = (int) (keys.size() * SIZING_FUDGE_FACTOR / partitionService.getPartitionCount());

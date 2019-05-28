@@ -32,16 +32,16 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         final Object oldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl, maxIdle, getCallerAddress());
         this.oldValue = mapServiceContext.toData(oldValue);
         successful = this.oldValue == null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 

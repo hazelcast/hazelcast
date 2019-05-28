@@ -53,7 +53,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         QueryCacheContext context = getQueryCacheContext();
         Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheId);
         Accumulator<Sequenced> accumulator = accumulators.get(getPartitionId());

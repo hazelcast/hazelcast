@@ -39,10 +39,8 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
-import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 import java.io.Closeable;
 import java.io.IOException;
@@ -76,8 +74,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10000 max entry count
     //      * LRU as eviction policy
-    // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
 
     private WanReplicationRef wanReplicationRef;
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
@@ -112,7 +109,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
-                this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
+                this.evictionConfig = new EvictionConfig(config.evictionConfig);
             }
             if (config.wanReplicationRef != null) {
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
@@ -149,7 +146,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         // eviction config is not allowed to be null
         if (simpleConfig.getEvictionConfig() != null) {
-            this.evictionConfig = new CacheEvictionConfig(simpleConfig.getEvictionConfig());
+            this.evictionConfig = new EvictionConfig(simpleConfig.getEvictionConfig());
         }
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
@@ -167,7 +164,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         if (expiryPolicyFactoryConfig != null) {
             if (expiryPolicyFactoryConfig.getClassName() != null) {
                 setExpiryPolicyFactory(
-                        ClassLoaderUtil.<Factory<? extends ExpiryPolicy>>newInstance(
+                        ClassLoaderUtil.newInstance(
                                 null,
                                 expiryPolicyFactoryConfig.getClassName()
                         )
@@ -221,7 +218,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
-        return new CacheConfigReadOnly<K, V>(this);
+        return new CacheConfigReadOnly<>(this);
     }
 
     /**
@@ -362,8 +359,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *
      * @return the {@link EvictionConfig} instance of the eviction configuration
      */
-    // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
@@ -375,14 +371,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      */
     public CacheConfig<K, V> setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "evictionConfig");
-
-        // TODO: remove this check in the future since "CacheEvictionConfig" is deprecated
-        if (evictionConfig instanceof CacheEvictionConfig) {
-            this.evictionConfig = (CacheEvictionConfig) evictionConfig;
-        } else {
-            this.evictionConfig = new CacheEvictionConfig(evictionConfig);
-        }
-
+        this.evictionConfig = evictionConfig;
         return this;
     }
 
@@ -402,7 +391,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      */
     public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
         if (partitionLostListenerConfigs == null) {
-            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+            partitionLostListenerConfigs = new ArrayList<>();
         }
         return partitionLostListenerConfigs;
     }
@@ -654,8 +643,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     protected void readKeyValueTypes(ObjectDataInput in) throws IOException {
-        setKeyType((Class<K>) in.readObject());
-        setValueType((Class<V>) in.readObject());
+        setKeyType(in.readObject());
+        setValueType(in.readObject());
     }
 
     protected void writeFactories(ObjectDataOutput out) throws IOException {
@@ -665,9 +654,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     protected void readFactories(ObjectDataInput in) throws IOException {
-        setCacheLoaderFactory(in.<Factory<? extends CacheLoader<K, V>>>readObject());
-        setCacheWriterFactory(in.<Factory<? extends CacheWriter<? super K, ? super V>>>readObject());
-        setExpiryPolicyFactory(in.<Factory<? extends ExpiryPolicy>>readObject());
+        setCacheLoaderFactory(in.readObject());
+        setCacheWriterFactory(in.readObject());
+        setExpiryPolicyFactory(in.readObject());
     }
 
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
@@ -681,7 +670,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         final int size = in.readInt();
         Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> lc = createConcurrentSet();
         for (int i = 0; i < size; i++) {
-            lc.add(DeferredValue.withValue((CacheEntryListenerConfiguration<K, V>) in.readObject()));
+            lc.add(DeferredValue.withValue(in.readObject()));
         }
         listenerConfigurations = lc;
     }
@@ -751,9 +740,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
-                    new MutableCacheEntryListenerConfiguration<K, V>(
-                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
+            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<>(
+                    listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
         for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
@@ -764,14 +752,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     private void copyFactories(CacheSimpleConfig simpleConfig) throws Exception {
         if (simpleConfig.getCacheLoaderFactory() != null) {
             setCacheLoaderFactory(
-                    ClassLoaderUtil.<Factory<? extends CacheLoader<K, V>>>newInstance(
+                    ClassLoaderUtil.newInstance(
                             null,
                             simpleConfig.getCacheLoaderFactory()
                     )
             );
         }
         if (simpleConfig.getCacheLoader() != null) {
-            setCacheLoaderFactory(FactoryBuilder.<CacheLoader<K, V>>factoryOf(simpleConfig.getCacheLoader()));
+            setCacheLoaderFactory(FactoryBuilder.factoryOf(simpleConfig.getCacheLoader()));
         }
         if (simpleConfig.getCacheWriterFactory() != null) {
             setCacheWriterFactory(
