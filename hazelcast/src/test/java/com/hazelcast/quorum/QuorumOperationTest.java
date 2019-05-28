@@ -33,7 +33,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ServiceLoader;
 
@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
  * depending on a set of naming rules.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QuorumOperationTest {
 
     private static final ILogger LOGGER = Logger.getLogger(QuorumOperationTest.class);

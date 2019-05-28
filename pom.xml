@@ -413,7 +413,7 @@
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
-                                        com.hazelcast.test.annotation.ParallelTest
+                                        com.hazelcast.test.annotation.ParallelJVMTest
                                     </groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
@@ -456,7 +456,7 @@
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
-                                        com.hazelcast.test.annotation.ParallelTest
+                                        com.hazelcast.test.annotation.ParallelJVMTest
                                     </excludedGroups>
                                 </configuration>
                             </execution>

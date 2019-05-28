@@ -17,7 +17,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
 public class WeightedEvictableListTest {
 

@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,7 +71,7 @@ import static org.w3c.dom.TypeInfo.DERIVATION_RESTRICTION;
  * @see XMLConfigBuilderTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class XmlOnlyConfigBuilderTest {
 
     private static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";

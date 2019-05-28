@@ -17,7 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryCloseConnection
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryShutdown;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OutOfMemoryHandlerHelperTest extends AbstractOutOfMemoryHandlerTest {
 
     @Before

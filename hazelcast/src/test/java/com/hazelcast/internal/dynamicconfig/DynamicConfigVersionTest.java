@@ -22,7 +22,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +37,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigVersionTest {
 
     // config classes not supported by dynamic data structure config

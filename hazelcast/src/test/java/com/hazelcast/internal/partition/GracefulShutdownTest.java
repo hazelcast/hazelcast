@@ -28,7 +28,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
@@ -63,9 +63,9 @@ import static org.junit.Assert.assertTrue;
  * and 800 daemon threads). As comparison the BasicMapTest creates about 700 threads and 25 daemon threads.
  * This regularly results in test failures when multiple PR builders run in parallel due to a resource starvation.
  *
- * Countermeasures are to remove the ParallelTest annotation or to use the HazelcastSerialClassRunner.
+ * Countermeasures are to remove the ParallelJVMTest annotation or to use the HazelcastSerialClassRunner.
  *
- * Without ParallelTest we'll add the whole test duration to the PR builder time (about 25 seconds) and still create the
+ * Without ParallelJVMTest we'll add the whole test duration to the PR builder time (about 25 seconds) and still create the
  * resource usage peak, which may have a negative impact on parallel PR builder runs on the same host machine.
  *
  * With HazelcastSerialClassRunner the test takes over 3 minutes, but with a maximum of 200 threads and 160 daemon threads.
@@ -73,7 +73,7 @@ import static org.junit.Assert.assertTrue;
  * in parallel to others).
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class GracefulShutdownTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;

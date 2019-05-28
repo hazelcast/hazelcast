@@ -18,7 +18,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.collection.BiInt2ObjectMap.EntryConsumer;
 import org.hamcrest.core.CombinableMatcher;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BiInt2ObjectMapTest {
     private final BiInt2ObjectMap<String> map = new BiInt2ObjectMap<String>();
 
