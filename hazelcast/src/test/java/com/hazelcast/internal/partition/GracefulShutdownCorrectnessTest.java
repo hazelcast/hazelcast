@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.test.ChangeLoggingRule;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.ClassRule;
@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class GracefulShutdownCorrectnessTest extends AbstractGracefulShutdownCorrectnessTest {
 

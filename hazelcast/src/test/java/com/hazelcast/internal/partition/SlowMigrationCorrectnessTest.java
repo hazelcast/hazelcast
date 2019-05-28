@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RandomPicker;
 import org.junit.Ignore;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * https://github.com/hazelcast/hazelcast/issues/5444
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class})
 @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9828")
 public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {

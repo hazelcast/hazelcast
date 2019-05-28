@@ -29,7 +29,7 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,7 +49,7 @@ import java.util.concurrent.Callable;
  * Parametrized with QueryCache option includeValues true/false & using default and query-cache-natural filtering strategies.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
 
