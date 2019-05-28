@@ -23,7 +23,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
 
     private static final long CALL_TIMEOUT = 12345;

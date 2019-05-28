@@ -20,7 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigRollingUpgradeTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.version.Version;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class, SerializationSamplesExcluded.class})
+@Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class ClientDynamicConfigRollingUpgradeTest extends DynamicConfigRollingUpgradeTest {
 
     private TestHazelcastFactory factory;

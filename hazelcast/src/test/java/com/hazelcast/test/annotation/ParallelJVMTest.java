@@ -21,5 +21,5 @@ package com.hazelcast.test.annotation;
  * <p/>
  * Has no effect in which build a test will be executed, but if it will be executed in a single or with multiple JVMs.
  */
-public final class ParallelTest {
+public final class ParallelJVMTest {
 }

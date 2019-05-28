@@ -18,7 +18,7 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import org.junit.Test;
@@ -36,7 +36,7 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class ResultSetTest {
 

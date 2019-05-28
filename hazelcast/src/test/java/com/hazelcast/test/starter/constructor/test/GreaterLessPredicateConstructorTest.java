@@ -18,7 +18,7 @@ package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.constructor.GreaterLessPredicateConstructor;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class GreaterLessPredicateConstructorTest {
 
     // Tests that the copied object is not null due to lack of equals implementation in Predicate implementations

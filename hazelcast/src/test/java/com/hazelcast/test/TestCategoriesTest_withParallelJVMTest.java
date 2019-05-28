@@ -16,7 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,15 +28,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class TestCategoriesTest_withParallelTest extends HazelcastTestSupport {
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class TestCategoriesTest_withParallelJVMTest
+        extends HazelcastTestSupport {
 
     @Test
     public void testGetTestCategories() {
         HashSet<Class<?>> testCategories = getTestCategories();
         assertEquals("Expected a two test categories", 2, testCategories.size());
         assertTrue("Expected to find a QuickTest category", testCategories.contains(QuickTest.class));
-        assertTrue("Expected to find a ParallelTest category", testCategories.contains(ParallelTest.class));
+        assertTrue("Expected to find a ParallelJVMTest category", testCategories.contains(ParallelJVMTest.class));
     }
 
     @Test(expected = AssertionError.class)

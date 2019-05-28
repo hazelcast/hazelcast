@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.event.QueryCacheNaturalFilteringStrategy;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -33,7 +33,7 @@ import org.junit.runners.Parameterized;
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryListenerQueryCacheEventTypesTest extends AbstractEntryEventTypesTest {
 
     @Before

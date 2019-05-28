@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.quorum.multimap.MultiMapQuorumWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,7 +33,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMultiMapQuorumWriteTest extends MultiMapQuorumWriteTest {
 
     private static PartitionedClusterClients clients;

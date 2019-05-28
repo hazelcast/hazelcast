@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
@@ -60,7 +60,7 @@ import static org.junit.Assume.assumeThat;
  * - extraction in collections and arrays
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

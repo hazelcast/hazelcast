@@ -28,6 +28,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,24 +46,24 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom group name which prevents
  * accidental joins (e.g. dangling members).
  * <p>
- * <b>Tests using this factory should not be annotated with {@code ParallelTest} category to avoid runs in multiple JVMs.</b>
+ * <b>Tests using this factory should not be annotated with {@code ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
  * <p>
- * Usage of {@link com.hazelcast.test.annotation.ParallelTest} is allowed with this instance factory.<br/>
+ * Usage of {@link ParallelJVMTest} is allowed with this instance factory.<br/>
  * Example:
  *
  * <pre>
- * &commat;RunWith(HazelcastParallelClassRunner.class)
- * &commat;Category({QuickTest.class, ParallelTest.class})
+ * &#64;RunWith(HazelcastParallelClassRunner.class)
+ * &#64;Category({QuickTest.class, ParallelJVMTest.class})
  * public class Test {
  *
  *     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
  *
- *     &commat;After
+ *     &#64;After
  *     public void after() {
  *         factory.terminateAll();
  *     }
  *
- *     &commat;Test
+ *     &#64;Test
  *     public void test1() {
  *         Config config = new Config();
  *         HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -70,7 +71,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  *         // ...
  *     }
  *
- *     &commat;Test
+ *     &#64;Test
  *     public void test2() {
  *         Config config = new Config();
  *         HazelcastInstance h1 = factory.newHazelcastInstance(config);

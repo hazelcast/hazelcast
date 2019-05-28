@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assume;
 import org.junit.experimental.categories.Category;
@@ -29,7 +29,7 @@ import java.nio.ByteOrder;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class UnsafeObjectDataInputIntegrationTest
         extends AbstractDataStreamIntegrationTest<UnsafeObjectDataOutput, UnsafeObjectDataInput> {
 

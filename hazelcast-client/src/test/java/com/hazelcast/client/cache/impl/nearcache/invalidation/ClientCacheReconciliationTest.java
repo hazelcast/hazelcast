@@ -31,7 +31,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -54,7 +54,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
 import static java.lang.Integer.MAX_VALUE;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheReconciliationTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME = "ClientCacheReconciliationTest";

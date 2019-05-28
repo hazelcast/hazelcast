@@ -23,7 +23,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PacketEncoderTest extends HazelcastTestSupport {
 
     private InternalSerializationService serializationService;

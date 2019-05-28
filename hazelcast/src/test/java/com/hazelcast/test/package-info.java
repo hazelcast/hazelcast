@@ -17,7 +17,7 @@
 /**
  * Test execution parallelism is achieved at two levels:
  * <ul>
- *     <li>Tests with the {@link com.hazelcast.test.annotation.ParallelTest ParallelTest}
+ *     <li>Tests with the {@link com.hazelcast.test.annotation.ParallelJVMTest ParallelJVMTest}
  *     category are picked up by surefire plugin for execution in multiple JVMs in parallel.
  *     </li>
  *     <li>Tests whose methods can be executed concurrently by multiple threads within the
