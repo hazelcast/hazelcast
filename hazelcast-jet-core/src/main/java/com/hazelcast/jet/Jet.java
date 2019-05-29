@@ -25,6 +25,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
@@ -42,6 +43,8 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -62,6 +65,10 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 public final class Jet {
 
     private static final ILogger LOGGER = Logger.getLogger(Jet.class);
+
+    static {
+        assertHazelcastVersion();
+    }
 
     private Jet() {
     }
@@ -125,6 +132,26 @@ public final class Jet {
 
     static JetClientInstanceImpl getJetClientInstance(HazelcastInstance client) {
         return new JetClientInstanceImpl(((HazelcastClientProxy) client).client);
+    }
+
+    /**
+     * Makes sure that the Jet-expected Hazelcast version and the one in classpath match
+     */
+    private static void assertHazelcastVersion() {
+        String hzVersion = BuildInfoProvider.getBuildInfo().getVersion();
+        try (InputStream resource = Jet.class.getClassLoader().getResourceAsStream("jet-runtime.properties")) {
+            Properties p = new Properties();
+            p.load(resource);
+            String jetHzVersion = p.getProperty("jet.hazelcast.version");
+            if (!hzVersion.equals(jetHzVersion)) {
+                throw new JetException("Jet uses Hazelcast IMDG version " + jetHzVersion + " however " +
+                        "version " + hzVersion + " was found in the classpath. " +
+                        " As Jet already shades Hazelcast jars there is no need to explicitly " +
+                        "add a dependency to it.");
+            }
+        } catch (IOException e) {
+            LOGGER.warning("Could not read the file jet-runtime.properties", e);
+        }
     }
 
     private static synchronized void configureJetService(JetConfig jetConfig) {
