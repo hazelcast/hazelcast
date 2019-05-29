@@ -187,7 +187,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     public void testSubmitToAllMembersSerializesTheTaskOnlyOnce_withCallback() throws InterruptedException {
         IExecutorService executorService = instances[0].getExecutorService(randomName());
         SerializationCountingCallable countingCallable = new SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToAllMembers(countingCallable, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
@@ -225,7 +225,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelectorAndCallback() throws InterruptedException {
         IExecutorService executorService = instances[0].getExecutorService(randomName());
         SerializationCountingCallable countingCallable = new SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToMembers(countingCallable, MemberSelectors.DATA_MEMBER_SELECTOR, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
@@ -245,7 +245,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollectionAndCallback() throws InterruptedException {
         IExecutorService executorService = instances[0].getExecutorService(randomName());
         SerializationCountingCallable countingCallable = new SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToMembers(countingCallable, instances[0].getCluster().getMembers(), new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {

@@ -336,7 +336,8 @@ public class ExecutorServiceProxy
         Data taskData = getNodeEngine().toData(task);
         Map<Member, Future<T>> futures = createHashMap(members.size());
         for (Member member : members) {
-            futures.put(member, submitToMember(taskData, member));
+            Future<T> future = submitToMember(taskData, member);
+            futures.put(member, future);
         }
         return futures;
     }
