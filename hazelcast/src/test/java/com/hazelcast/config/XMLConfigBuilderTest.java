@@ -109,6 +109,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.xml");
         Config config = new XmlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
+        assertNull(config.getConfigurationFile());
     }
 
     @Override
@@ -132,6 +133,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String path = file.getAbsolutePath();
         Config config = new XmlConfigBuilder(path).build();
         assertEquals(path, config.getConfigurationFile().getAbsolutePath());
+        assertNull(config.getConfigurationUrl());
     }
 
     @Override
