@@ -26,6 +26,9 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class EntryLoaderEntry<V> {
 
+    /**
+     * Represents no expiration time for a particular value
+     */
     public static final long NO_TIME_SET = Long.MAX_VALUE;
 
     private final V value;

@@ -47,7 +47,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
      */
     private MapStore mapStore;
 
-    private boolean entryStore = false;
+    private boolean entryStore;
 
     private final String mapName;
 

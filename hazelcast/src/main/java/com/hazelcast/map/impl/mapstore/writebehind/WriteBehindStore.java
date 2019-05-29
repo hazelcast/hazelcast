@@ -126,7 +126,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
 
     @Override
-    public Object add(Data key, Object value, long now) {
+    public Object add(Data key, Object value, long expirationTime, long now) {
 
         // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
         if (NATIVE == inMemoryFormat) {
@@ -171,8 +171,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Object addBackup(Data key, Object value, long time) {
-        return add(key, value, time);
+    public Object addBackup(Data key, Object value, long expirationTime, long time) {
+        return add(key, value, expirationTime, time);
     }
 
     @Override

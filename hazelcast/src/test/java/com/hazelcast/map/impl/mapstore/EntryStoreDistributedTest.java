@@ -24,8 +24,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class EntryLoaderDistributedTest extends EntryLoaderSimpleTest {
+@Category({ParallelJVMTest.class, QuickTest.class})
+public class EntryStoreDistributedTest extends EntryStoreSimpleTest {
 
     @Override
     protected HazelcastInstance[] createInstances() {

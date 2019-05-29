@@ -31,11 +31,11 @@ import java.util.Map;
  */
 public interface MapDataStore<K, V> {
 
-    V add(K key, V value, long now);
+    V add(K key, V value, long expirationTime, long now);
 
     void addTransient(K key, long now);
 
-    V addBackup(K key, V value, long now);
+    V addBackup(K key, V value, long expirationTime, long now);
 
     void remove(K key, long now);
 

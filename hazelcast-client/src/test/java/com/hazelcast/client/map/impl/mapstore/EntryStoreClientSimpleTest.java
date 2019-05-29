@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore;
+package com.hazelcast.client.map.impl.mapstore;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.map.impl.mapstore.EntryStoreSimpleTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class EntryLoaderDistributedTest extends EntryLoaderSimpleTest {
+@Category({ParallelJVMTest.class, QuickTest.class})
+public class EntryStoreClientSimpleTest extends EntryStoreSimpleTest {
+    TestHazelcastFactory factory;
 
-    @Override
-    protected HazelcastInstance[] createInstances() {
-        return createHazelcastInstanceFactory(3).newInstances(getConfig());
+    @Before
+    public void setup() {
+        factory = new TestHazelcastFactory(1);
+        instances = factory.newInstances(getConfig());
+        map = factory.newHazelcastClient().getMap(randomMapName());
+    }
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
     }
 }

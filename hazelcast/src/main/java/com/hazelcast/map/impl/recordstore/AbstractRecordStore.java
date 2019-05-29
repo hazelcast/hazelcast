@@ -144,14 +144,32 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return Clock.currentTimeMillis();
     }
 
-    protected void updateRecord(Data key, Record record, Object value, long now, boolean countAsAccess) {
+    protected void updateRecord(Data key, Record record, Object value, long now, boolean countAsAccess, long ttl, long maxIdle) {
         updateStatsOnPut(countAsAccess, now);
+        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
+        value = runMapStore(record, key, value, now);
         if (countAsAccess) {
             record.onAccess(now);
         }
         record.onUpdate(now);
         mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
+    }
+
+    protected Record putNewRecord(Data key, Object value, long ttlMillis, long maxIdleMillis, long now) {
+        Record record = createRecord(key, value, ttlMillis, maxIdleMillis, now);
+        runMapStore(record, key, value, now);
+        storage.put(key, record);
+        mutationObserver.onPutRecord(key, record);
+        return record;
+    }
+
+    protected Object runMapStore(Record record, Data key, Object value, long now) {
+        value = mapDataStore.add(key, value, record.getExpirationTime(), now);
+        if (mapDataStore.isPostProcessingMapStore()) {
+            recordFactory.setValue(record, value);
+        }
+        return value;
     }
 
     @Override

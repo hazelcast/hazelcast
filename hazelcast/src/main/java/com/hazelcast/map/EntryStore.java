@@ -18,5 +18,25 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.MapStore;
 
+/**
+ * Hazelcast distributed map implementation is an in-memory data store
+ * but it can be backed by any type of data store such as RDBMS, OODBMS,
+ * NOSQL, or simply a file-based data store.
+ * <p>
+ * IMap.put(key, value) normally stores the entry into JVM's memory. If
+ * the EntryStore implementation is provided then Hazelcast will also
+ * call theEntryStore implementation to store the entry into a
+ * user-defined storage, such as RDBMS or some other external storage
+ * system. It is completely up to the user how the key-value will be
+ * stored or deleted.
+ * <p>
+ * Same goes for IMap.remove(key).
+ * <p>
+ * Store implementation can be called synchronously (write-through) or
+ * asynchronously (write-behind) depending on the configuration.
+ *
+ * @param <K> type of the EntryStore key
+ * @param <V> type of the EntryStore value
+ */
 public interface EntryStore<K, V> extends EntryLoader<K, V>, MapStore<K, EntryLoaderEntry<V>> {
 }

@@ -26,7 +26,7 @@ import java.util.Map;
 class EmptyMapDataStore implements MapDataStore {
 
     @Override
-    public Object add(Object key, Object value, long now) {
+    public Object add(Object key, Object value, long expirationTime, long now) {
         return value;
     }
 
@@ -35,7 +35,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Object addBackup(Object key, Object value, long now) {
+    public Object addBackup(Object key, Object value, long expirationTime, long now) {
         return value;
     }
 
