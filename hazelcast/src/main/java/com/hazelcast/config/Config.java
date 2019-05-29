@@ -3335,10 +3335,11 @@ public class Config {
     }
 
     /**
-     * Returns the {@link URL} to the XML configuration, which has been parsed
+     * Returns the {@link URL} to the declarative configuration, which has been parsed
      * to create this {@link Config} instance.
      *
-     * @return the configuration URL
+     * @return the configuration URL if the configuration loaded from a URL
+     * or {@code null} otherwise
      */
     public URL getConfigurationUrl() {
         return configurationUrl;
@@ -3360,10 +3361,11 @@ public class Config {
     }
 
     /**
-     * Returns the {@link File} to the XML configuration, which has been
+     * Returns the {@link File} to the declarative configuration, which has been
      * parsed to create this {@link Config} instance.
      *
-     * @return the configuration file
+     * @return the configuration file if the configuration loaded from a file
+     * or {@code null} otherwise
      */
     public File getConfigurationFile() {
         return configurationFile;
