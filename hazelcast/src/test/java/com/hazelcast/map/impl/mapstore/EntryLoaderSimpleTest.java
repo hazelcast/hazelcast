@@ -30,7 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class, QuickTest.class})
 public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     private TestEntryLoader testEntryLoader = new TestEntryLoader();
@@ -194,7 +194,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
         Record record = recordStore.getRecordOrNull(keyData);
-        Object actualValue = record == null ? null: serializationService.toObject(record.getValue());
+        Object actualValue = record == null ? null : serializationService.toObject(record.getValue());
         assertEquals(expectedValue, actualValue);
     }
 

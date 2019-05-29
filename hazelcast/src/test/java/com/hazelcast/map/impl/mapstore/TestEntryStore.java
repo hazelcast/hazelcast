@@ -16,15 +16,15 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.map.EntryLoader;
 import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.EntryStore;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestEntryLoader implements EntryLoader<String, String> {
+public class TestEntryStore implements EntryStore<String, String> {
 
     static final String NULL_RETURNING_KEY = "nullReturningKey";
 
@@ -33,6 +33,10 @@ public class TestEntryLoader implements EntryLoader<String, String> {
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();
     private AtomicInteger loadKeysCallCount = new AtomicInteger();
+    private AtomicInteger storedEntryCount = new AtomicInteger();
+    private AtomicInteger storeCallCount = new AtomicInteger();
+    private AtomicInteger storeAllCallCount = new AtomicInteger();
+    private AtomicInteger deleteCallCount = new AtomicInteger();
 
     @Override
     public EntryLoaderEntry<String> load(String key) {
@@ -70,6 +74,49 @@ public class TestEntryLoader implements EntryLoader<String, String> {
         return records.keySet();
     }
 
+    @Override
+    public void store(String key, EntryLoaderEntry<String> value) {
+        String internalValue = value.getValue();
+        long expirationTime = value.getExpirationTime();
+        if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
+            records.put(key, new Record(internalValue, -1));
+        } else {
+            records.put(key, new Record(internalValue, expirationTime));
+        }
+        storeCallCount.incrementAndGet();
+        storedEntryCount.incrementAndGet();
+    }
+
+    @Override
+    public void storeAll(Map<String, EntryLoaderEntry<String>> map) {
+        for (Map.Entry<String, EntryLoaderEntry<String>> mapEntry: map.entrySet()) {
+            String key = mapEntry.getKey();
+            EntryLoaderEntry<String> entry = mapEntry.getValue();
+            String internalValue = entry.getValue();
+            long expirationTime = entry.getExpirationTime();
+            if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
+                records.put(key, new Record(internalValue, -1));
+            } else {
+                records.put(key, new Record(internalValue, expirationTime));
+            }
+        }
+        storedEntryCount.addAndGet(map.size());
+        storeAllCallCount.incrementAndGet();
+    }
+
+    @Override
+    public void delete(String key) {
+        records.remove(key);
+        deleteCallCount.incrementAndGet();
+    }
+
+    @Override
+    public void deleteAll(Collection<String> keys) {
+        for (String key: keys) {
+            records.remove(key);
+        }
+    }
+
     public void putExternally(String key, String value, long expirationTime) {
         this.records.put(key, new Record(value, expirationTime));
     }
@@ -94,9 +141,41 @@ public class TestEntryLoader implements EntryLoader<String, String> {
         return loadedEntryCount.get();
     }
 
-    private class Record {
-        private String value;
-        private long expirationTime;
+    public int getLoadKeysCallCount() {
+        return loadKeysCallCount.get();
+    }
+
+    public int getStoredEntryCount() {
+        return storedEntryCount.get();
+    }
+
+    public int getStoreCallCount() {
+        return storeCallCount.get();
+    }
+
+    public int getStoreAllCallCount() {
+        return storeAllCallCount.get();
+    }
+
+    public int getDeleteCallCount() {
+        return deleteCallCount.get();
+    }
+
+    public String getExternal(String key) {
+        Record record = records.get(key);
+        if (record == null) {
+            return null;
+        }
+        return record.value;
+    }
+
+    public Record getRecord(String key) {
+        return records.get(key);
+    }
+
+    class Record {
+        String value;
+        long expirationTime;
 
         private Record(String value, long expirationTime) {
             this.value = value;

@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryLoader;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryLoaderInitializationTest extends HazelcastTestSupport {
 
     @Test
@@ -48,7 +48,7 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         assertEquals(1, entryLoader.getLoadAllKeysCallCount());
         assertTrue(0 < entryLoader.getLoadAllCallCount());
 
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertEquals("val" + i, map.get("key" + i));
         }
         assertEquals(0, entryLoader.getLoadCallCount());
@@ -63,12 +63,12 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         assertEquals(1, entryLoader.getLoadAllKeysCallCount());
         assertTrue(0 < entryLoader.getLoadAllCallCount());
 
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertEquals("val" + i, map.get("key" + i));
         }
         assertEquals(0, entryLoader.getLoadCallCount());
         sleepAtLeastSeconds(6);
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertNull(map.get("key" + i));
         }
 
@@ -84,7 +84,7 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         assertEquals(0, entryLoader.getLoadAllKeysCallCount());
         assertEquals(0, entryLoader.getLoadAllCallCount());
 
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertEquals("val" + i, map.get("key" + i));
         }
         assertEquals(0, entryLoader.getLoadCallCount());
@@ -100,12 +100,12 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         assertEquals(0, entryLoader.getLoadAllKeysCallCount());
         assertEquals(0, entryLoader.getLoadAllCallCount());
 
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertEquals("val" + i, map.get("key" + i));
         }
         sleepAtLeastSeconds(6);
 
-        for(int i = 0; i < entryCount; i++) {
+        for (int i = 0; i < entryCount; i++) {
             assertNull(map.get("key" + i));
         }
         assertEquals(entryCount, entryLoader.getLoadCallCount());

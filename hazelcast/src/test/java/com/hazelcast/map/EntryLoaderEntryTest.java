@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,7 +27,7 @@ import static com.hazelcast.map.EntryLoaderEntry.NO_TIME_SET;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelTest.class, QuickTest.class})
+@Category({ParallelJVMTest.class, QuickTest.class})
 public class EntryLoaderEntryTest {
 
     @Test(expected = IllegalArgumentException.class)

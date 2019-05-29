@@ -49,11 +49,11 @@ import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
  * Responsible for loading keys from configured map store for a single partition.
  */
 class BasicRecordStoreLoader implements RecordStoreLoader {
+    protected final String name;
+    protected final MapServiceContext mapServiceContext;
     private final ILogger logger;
     private final MapDataStore mapDataStore;
     private final int partitionId;
-    protected final String name;
-    protected final MapServiceContext mapServiceContext;
 
     BasicRecordStoreLoader(RecordStore recordStore) {
         final MapContainer mapContainer = recordStore.getMapContainer();
