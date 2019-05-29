@@ -39,18 +39,26 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Clears expired entries.
- * This task provides per partition expiration operation logic.
- * Fires cleanup operations at most partition operation thread count or some factor of it in one round.
+ * <p>
+ * This task provides per partition expiration
+ * operation logic. Fires cleanup operations at most partition
+ * operation thread count or some factor of it in one round.
+ *
  * <ul>
  * <li>
- * {@value PROP_CLEANUP_PERCENTAGE}: Scannable percentage
- * of entries in a maps' partition in each round.
- * Default percentage is {@value DEFAULT_CLEANUP_PERCENTAGE}%.
+ * {@value PROP_TASK_PERIOD_SECONDS}: Interval, in seconds,
+ * at which the background expiration task is going to run.
+ * Default value is {@value DEFAULT_TASK_PERIOD_SECONDS} seconds.
  * </li>
  * <li>
- * {@value PROP_CLEANUP_OPERATION_COUNT}: Number of
- * scannable partitions in each round. No default value exists. Dynamically calculated against partition-count or
- * partition-thread-count.
+ * {@value PROP_CLEANUP_PERCENTAGE}: Scannable percentage
+ * of entries in a maps' partition in each round. Default
+ * percentage is {@value DEFAULT_CLEANUP_PERCENTAGE}%.
+ * </li>
+ * <li>
+ * {@value PROP_CLEANUP_OPERATION_COUNT}: Number of scannable
+ * partitions in each round. No default value exists. Dynamically
+ * calculated against partition-count or partition-thread-count.
  * </li>
  * </ul>
  *
@@ -60,17 +68,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Node-wide setting example:
  * <pre>
  *           Config config = new Config();
- *           config.setProperty(
- *           {@value PROP_CLEANUP_OPERATION_COUNT}, "3");
+ *           config.setProperty({@value PROP_CLEANUP_OPERATION_COUNT}, "3");
  *           Hazelcast.newHazelcastInstance(config);
- *       </pre>
+ * </pre>
  * </p>
  * <p>
  * System-wide setting example:
  * <pre>
- *        System.setProperty(
- *        {@value PROP_CLEANUP_OPERATION_COUNT}, "3");
- *    </pre>
+ *        System.setProperty({@value PROP_CLEANUP_OPERATION_COUNT}, "3");
+ * </pre>
  * </p>
  */
 public class CacheClearExpiredRecordsTask
@@ -88,13 +94,10 @@ public class CacheClearExpiredRecordsTask
             = new HazelcastProperty(PROP_CLEANUP_PERCENTAGE, DEFAULT_CLEANUP_PERCENTAGE);
     private static final HazelcastProperty CLEANUP_OPERATION_COUNT = new HazelcastProperty(PROP_CLEANUP_OPERATION_COUNT);
 
-    private final Comparator<CachePartitionSegment> partitionSegmentComparator = new Comparator<CachePartitionSegment>() {
-        @Override
-        public int compare(CachePartitionSegment o1, CachePartitionSegment o2) {
-            final long s1 = o1.getLastCleanupTimeBeforeSorting();
-            final long s2 = o2.getLastCleanupTimeBeforeSorting();
-            return (s1 < s2) ? -1 : ((s1 == s2) ? 0 : 1);
-        }
+    private final Comparator<CachePartitionSegment> partitionSegmentComparator = (o1, o2) -> {
+        long s1 = o1.getLastCleanupTimeBeforeSorting();
+        long s2 = o2.getLastCleanupTimeBeforeSorting();
+        return (s1 < s2) ? -1 : ((s1 == s2) ? 0 : 1);
     };
 
     public CacheClearExpiredRecordsTask(CachePartitionSegment[] containers, NodeEngine nodeEngine) {
