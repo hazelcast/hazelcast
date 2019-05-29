@@ -740,7 +740,7 @@ public class ClientExecutorServiceSubmitTest {
     public void testSubmitToAllMembersSerializesTheTaskOnlyOnce_withCallback() throws InterruptedException {
         IExecutorService executorService = client.getExecutorService(randomName());
         ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToAllMembers(countingCallable, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
@@ -778,7 +778,7 @@ public class ClientExecutorServiceSubmitTest {
     public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelectorAndCallback() throws InterruptedException {
         IExecutorService executorService = client.getExecutorService(randomName());
         ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToMembers(countingCallable, MemberSelectors.DATA_MEMBER_SELECTOR, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
@@ -798,7 +798,7 @@ public class ClientExecutorServiceSubmitTest {
     public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollectionAndCallback() throws InterruptedException {
         IExecutorService executorService = client.getExecutorService(randomName());
         ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
-        CountDownLatch complete = new CountDownLatch(1);
+        final CountDownLatch complete = new CountDownLatch(1);
         executorService.submitToMembers(countingCallable, client.getCluster().getMembers(), new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
