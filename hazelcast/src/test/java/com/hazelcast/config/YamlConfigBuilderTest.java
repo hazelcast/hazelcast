@@ -99,6 +99,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.yaml");
         Config config = new YamlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
+        assertNull(config.getConfigurationFile());
     }
 
     @Override
@@ -121,6 +122,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String path = file.getAbsolutePath();
         Config config = new YamlConfigBuilder(path).build();
         assertEquals(path, config.getConfigurationFile().getAbsolutePath());
+        assertNull(config.getConfigurationUrl());
     }
 
     @Override
