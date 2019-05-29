@@ -125,4 +125,11 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEquals(endpointConfig,
                 config.getAdvancedNetworkConfig().getEndpointConfigs().get(qualifier));
     }
+
+    @Test
+    public void testProgrammaticConfigGetUrlAndGetFileReturnNull() {
+        Config config = new Config();
+        assertNull(config.getConfigurationUrl());
+        assertNull(config.getConfigurationFile());
+    }
 }
