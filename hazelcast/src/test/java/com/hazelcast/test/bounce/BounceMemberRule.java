@@ -523,8 +523,8 @@ public class BounceMemberRule implements TestRule {
             return this;
         }
 
-        public Builder useTerminate() {
-            this.useTerminate = true;
+        public Builder useTerminate(boolean value) {
+            this.useTerminate = value;
             return this;
         }
 
