@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -49,9 +50,12 @@ public class QueryBounceTest {
     private static final int CONCURRENCY = 10;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
-            .clusterSize(4)
-            .driverCount(4).build();
+    public BounceMemberRule bounceMemberRule =
+            BounceMemberRule.with(getConfig())
+                    .clusterSize(4)
+                    .driverCount(4)
+                    .useTerminate(useTerminate())
+                    .build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -70,6 +74,12 @@ public class QueryBounceTest {
         return smallInstanceConfig();
     }
 
+    // XXX: It's better to use parametrized test here, but parameters don't play
+    // nice with rules: parameters are injected after rules instantiation.
+    protected boolean useTerminate() {
+        return false;
+    }
+
     private void prepareAndRunQueryTasks(boolean withIndexes) {
         IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
         if (withIndexes) {
@@ -80,7 +90,7 @@ public class QueryBounceTest {
 
         QueryRunnable[] testTasks = new QueryRunnable[CONCURRENCY];
         for (int i = 0; i < CONCURRENCY; i++) {
-            testTasks[i] = new QueryRunnable(bounceMemberRule.getNextTestDriver());
+            testTasks[i] = new QueryRunnable(bounceMemberRule.getNextTestDriver(), withIndexes);
         }
         bounceMemberRule.testRepeatedly(testTasks, MINUTES.toSeconds(3));
     }
@@ -92,16 +102,22 @@ public class QueryBounceTest {
         }
     }
 
-    public static class QueryRunnable implements Runnable {
+    protected Predicate makePredicate(String attribute, int min, int max, boolean withIndexes) {
+        return new SqlPredicate(attribute + " >= " + min + " AND " + attribute + " < " + max);
+    }
+
+    public class QueryRunnable implements Runnable {
 
         private final HazelcastInstance hazelcastInstance;
+        private final boolean withIndexes;
         // query age min-max range, min is randomized, max = min+1000
         private final Random random = new Random();
         private final int numberOfResults = 1000;
         private IMap<String, SampleTestObjects.Employee> map;
 
-        public QueryRunnable(HazelcastInstance hazelcastInstance) {
+        public QueryRunnable(HazelcastInstance hazelcastInstance, boolean withIndexes) {
             this.hazelcastInstance = hazelcastInstance;
+            this.withIndexes = withIndexes;
         }
 
         @Override
@@ -111,13 +127,14 @@ public class QueryBounceTest {
             }
             int min = random.nextInt(COUNT_ENTRIES - numberOfResults);
             int max = min + numberOfResults;
-            String sql = (min % 2 == 0)
-                    ? "age >= " + min + " AND age < " + max // may use sorted index
-                    : "id >= " + min + " AND id < " + max;  // may use unsorted index
-            Collection<SampleTestObjects.Employee> employees = map.values(new SqlPredicate(sql));
+            String attribute = min % 2 == 0 ? "age" : "id";
+            Predicate predicate = makePredicate(attribute, min, max, withIndexes);
+            Collection<SampleTestObjects.Employee> employees = map.values(predicate);
             assertEquals("There is data loss", COUNT_ENTRIES, map.size());
-            assertEquals("Obtained " + employees.size() + " results for query '" + sql + "'",
+            assertEquals("Obtained " + employees.size() + " results for query '" + predicate + "'",
                     numberOfResults, employees.size());
         }
+
     }
+
 }
