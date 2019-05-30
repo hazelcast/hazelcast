@@ -56,7 +56,7 @@ public interface GeneralStage<T> extends Stage {
      * If the result is {@code null}, it emits nothing. Therefore this stage
      * can be used to implement filtering semantics as well.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of names and outputs the names in lowercase:
      * <pre>{@code
      * stage.map(name -> name.toLowerCase())
      * }</pre>
@@ -73,7 +73,7 @@ public interface GeneralStage<T> extends Stage {
      * to each input item to decide whether to pass the item to the output or
      * to discard it. Returns the newly attached stage.
      * <p>
-     * Sample usage:
+     * This sample removes empty strings from the stream:
      * <pre>{@code
      * stage.filter(name -> !name.isEmpty())
      * }</pre>
@@ -89,7 +89,8 @@ public interface GeneralStage<T> extends Stage {
      * each input item independently and emits all the items from the {@link
      * Traverser} it returns. The traverser must be <em>null-terminated</em>.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of sentences and outputs a stream of
+     * individual words in them:
      * <pre>{@code
      * stage.map(sentence -> traverseArray(sentence.split("\\W+")))
      * }</pre>
@@ -112,26 +113,29 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * If the mapping result is {@code null}, it emits nothing. Therefore this
      * stage can be used to implement filtering semantics as well.
-     *
-     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
-     * If you use this stage in a fault-tolerant unbounded job, keep in mind
-     * that any state the context object maintains doesn't participate in Jet's
-     * fault tolerance protocol. If the state is local, it will be lost after a
-     * job restart; if it is saved to some durable storage, the state of that
-     * storage won't be rewound to the last checkpoint, so you'll perform
-     * duplicate updates.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingContext(
      *     ContextFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
      *     (reg, item) -> item.setDetail(reg.fetchDetail(item))
      * )
      * }</pre>
-     * @param <C> type of context object
-     * @param <R> the result type of the mapping function
+     *
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
      * @param contextFactory the context factory
      * @param mapFn a stateless mapping function
+     * @param <C> type of context object
+     * @param <R> the result type of the mapping function
      * @return the newly attached stage
      */
     @Nonnull
@@ -150,7 +154,8 @@ public interface GeneralStage<T> extends Stage {
      * The latency of the async call will add to the total latency of the
      * output.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingContextAsync(
      *     ContextFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
@@ -159,11 +164,20 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      *
-     * @param <C> type of context object
-     * @param <R> the future's result type of the mapping function
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
      * @param contextFactory the context factory
      * @param mapAsyncFn a stateless mapping function. Can map to null (return
      *      a null future)
+     * @param <C> type of context object
+     * @param <R> the future's result type of the mapping function
      * @return the newly attached stage
      */
     @Nonnull
@@ -178,16 +192,9 @@ public interface GeneralStage<T> extends Stage {
      * to discard it. The predicate function receives another parameter, the
      * context object, which Jet will create using the supplied {@code
      * contextFactory}.
-     *
-     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
-     * If you use this stage in a fault-tolerant unbounded job, keep in mind
-     * that any state the context object maintains doesn't participate in Jet's
-     * fault tolerance protocol. If the state is local, it will be lost after a
-     * job restart; if it is saved to some durable storage, the state of that
-     * storage won't be rewound to the last checkpoint, so you'll perform
-     * duplicate updates.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of photos, uses an image classifier to reason
+     * about their contents, and keeps only photos of cats:
      * <pre>{@code
      * photos.filterUsingContext(
      *     ContextFactory.withCreateFn(jet -> new ImageClassifier(jet)),
@@ -195,9 +202,18 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      *
-     * @param <C> type of context object
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
      * @param contextFactory the context factory
      * @param filterFn a stateless filter predicate function
+     * @param <C> type of context object
      * @return the newly attached stage
      */
     @Nonnull
@@ -216,7 +232,8 @@ public interface GeneralStage<T> extends Stage {
      * The latency of the async call will add to the total latency of the
      * output.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of photos, uses an image classifier to reason
+     * about their contents, and keeps only photos of cats:
      * <pre>{@code
      * photos.filterUsingContextAsync(
      *     ContextFactory.withCreateFn(jet -> new ImageClassifier(jet)),
@@ -225,9 +242,18 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      *
-     * @param <C> type of context object
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
      * @param contextFactory the context factory
      * @param filterAsyncFn a stateless filtering function
+     * @param <C> type of context object
      * @return the newly attached stage
      */
     @Nonnull
@@ -244,7 +270,8 @@ public interface GeneralStage<T> extends Stage {
      * parameter, the context object, which Jet will create using the supplied
      * {@code contextFactory}.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of products and outputs an "exploded" stream
+     * of all the parts that go into making them:
      * <pre>{@code
      * StreamStage<Part> parts = products.flatMapUsingContext(
      *     ContextFactory.withCreateFn(jet -> new PartRegistryCtx()),
@@ -254,17 +281,19 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
      * that any state the context object maintains doesn't participate in Jet's
      * fault tolerance protocol. If the state is local, it will be lost after a
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
-     * @param <C> type of context object
-     * @param <R> the type of items in the result's traversers
+     *
      * @param contextFactory the context factory
      * @param flatMapFn a stateless flatmapping function, whose result type is
      *                  Jet's {@link Traverser}
+     * @param <C> type of context object
+     * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
      */
     @Nonnull
@@ -284,7 +313,8 @@ public interface GeneralStage<T> extends Stage {
      * The latency of the async call will add to the total latency of the
      * output.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of products and outputs an "exploded" stream
+     * of all the parts that go into making them:
      * <pre>{@code
      * StreamStage<Part> parts = products.flatMapUsingContextAsync(
      *     ContextFactory.withCreateFn(jet -> new PartRegistryCtx()),
@@ -294,11 +324,20 @@ public interface GeneralStage<T> extends Stage {
      * );
      * }</pre>
      *
-     * @param <C> type of context object
-     * @param <R> the type of the returned stage
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the context object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
      * @param contextFactory the context factory
      * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
      *      (return a null future)
+     * @param <C> type of context object
+     * @param <R> the type of the returned stage
      * @return the newly attached stage
      */
     @Nonnull
@@ -324,7 +363,8 @@ public interface GeneralStage<T> extends Stage {
      * return mapFn.apply(item, value);
      * }</pre>
      *
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * items.mapUsingReplicatedMap(
      *     "enriching-map",
@@ -368,7 +408,8 @@ public interface GeneralStage<T> extends Stage {
      * return mapFn.apply(item, value);
      * }</pre>
      *
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * items.mapUsingReplicatedMap(
      *     enrichingMap,
@@ -411,7 +452,8 @@ public interface GeneralStage<T> extends Stage {
      * return mapFn.apply(item, value);
      * }</pre>
      *
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * items.mapUsingIMap(
      *     "enriching-map",
@@ -459,7 +501,8 @@ public interface GeneralStage<T> extends Stage {
      * return mapFn.apply(item, value);
      * }</pre>
      *
-     * Sample usage:
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by looking up from a registry:
      * <pre>{@code
      * items.mapUsingIMap(
      *     enrichingMap,
@@ -493,12 +536,12 @@ public interface GeneralStage<T> extends Stage {
      * Attaches a rolling aggregation stage. As opposed to regular aggregation,
      * this stage emits the current aggregation result after receiving each
      * item. For example, if your aggregation is <em>summing</em> and the input
-     * is {@code {2, 7, 8, -5}}, the output will be {@code {2, 9, 17, 12}}. The
-     * number of input and output items is equal.
+     * is {@code {2, 7, 8, -5}}, the output will be {@code {2, 9, 17, 12}} (see
+     * the example below). The number of input and output items is equal.
      * <p>
      * Sample usage:
      * <pre>{@code
-     * stage.rollingAggregate(AggregateOperations.counting())
+     * stage.rollingAggregate(AggregateOperations.summing())
      * }</pre>
      * This stage is fault-tolerant and saves its state to the snapshot.
      * <p>
@@ -522,7 +565,8 @@ public interface GeneralStage<T> extends Stage {
      * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package javadoc} for a detailed description of the hash-join transform.
      * <p>
-     * Sample usage:
+     * This sample joins a stream of users to a stream of countries and outputs
+     * a stream of users with the {@code country} field set:
      * <pre>{@code
      * // Types of the input stages:
      * BatchStage<User> users;
@@ -557,7 +601,9 @@ public interface GeneralStage<T> extends Stage {
      * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package javadoc} for a detailed description of the hash-join transform.
      * <p>
-     * Sample usage:
+     * This sample joins a stream of users to streams of countries and
+     * companies, and outputs a stream of users with the {@code country} and
+     * {@code company} fields set:
      * <pre>{@code
      * // Types of the input stages:
      * BatchStage<User> users;
@@ -601,7 +647,9 @@ public interface GeneralStage<T> extends Stage {
      * prefer the direct {@code stage.hashJoinN(...)} calls because they offer
      * more static type safety.
      * <p>
-     * Sample usage:
+     * This sample joins a stream of users to streams of countries and
+     * companies, and outputs a stream of users with the {@code country} and
+     * {@code company} fields set:
      * <pre>{@code
      * // Types of the input stages:
      * StreamStage<User> users;
@@ -609,11 +657,15 @@ public interface GeneralStage<T> extends Stage {
      * BatchStage<Map.Entry<Long, Company>> idAndCompany;
      *
      * StreamHashJoinBuilder<User> builder = users.hashJoinBuilder();
-     * Tag<Country> tCountry = builder.add(idAndCountry, JoinClause.joinMapEntries(User::getCountryId));
-     * Tag<Company> tCompany = builder.add(idAndCompany, JoinClause.joinMapEntries(User::getCompanyId));
+     * Tag<Country> tCountry = builder.add(idAndCountry,
+     *         JoinClause.joinMapEntries(User::getCountryId));
+     * Tag<Company> tCompany = builder.add(idAndCompany,
+     *         JoinClause.joinMapEntries(User::getCompanyId));
      * StreamStage<User> joined = builder.build((user, itemsByTag) ->
      *         user.setCountry(itemsByTag.get(tCountry)).setCompany(itemsByTag.get(tCompany)));
      * }</pre>
+     *
+     * @return the newly attached stage
      */
     @Nonnull
     GeneralHashJoinBuilder<T> hashJoinBuilder();
@@ -634,6 +686,7 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param keyFn function that extracts the grouping key
      * @param <K> type of the key
+     * @return the newly attached stage
      */
     @Nonnull
     <K> GeneralStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
@@ -661,7 +714,7 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * Sample usage:
      * <pre>{@code
-     * events.addTimestamps(Event::getTimestamp)
+     * events.addTimestamps(Event::getTimestamp, 1000)
      * }</pre>
      * <p>
      * <b>Note:</b> This method adds the timestamps after the source emitted
@@ -688,7 +741,7 @@ public interface GeneralStage<T> extends Stage {
      * @param allowedLag the allowed lag behind the top observed timestamp.
      *                   Time unit is the same as the unit used by {@code
      *                   timestampFn}
-     *
+     * @return the newly attached stage
      * @throws IllegalArgumentException if this stage already has timestamps
      */
     @Nonnull
@@ -737,6 +790,7 @@ public interface GeneralStage<T> extends Stage {
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
      * @param toStringFn  a function that returns a string representation of the item
+     * @return the newly attached stage
      * @see #peek(FunctionEx)
      * @see #peek()
      */
@@ -765,6 +819,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * @param toStringFn  a function that returns a string representation of the item
+     * @return the newly attached stage
      * @see #peek(PredicateEx, FunctionEx)
      * @see #peek()
      */
@@ -782,6 +837,7 @@ public interface GeneralStage<T> extends Stage {
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
      *
+     * @return the newly attached stage
      * @see #peek(PredicateEx, FunctionEx)
      * @see #peek(FunctionEx)
      */
@@ -801,6 +857,7 @@ public interface GeneralStage<T> extends Stage {
      * @param stageName    a human-readable name for the custom stage
      * @param procSupplier the supplier of processors
      * @param <R>          the type of the output items
+     * @return the newly attached stage
      */
     @Nonnull
     <R> GeneralStage<R> customTransform(
@@ -817,6 +874,7 @@ public interface GeneralStage<T> extends Stage {
      * @param stageName    a human-readable name for the custom stage
      * @param procSupplier the supplier of processors
      * @param <R>          the type of the output items
+     * @return the newly attached stage
      */
     @Nonnull
     <R> GeneralStage<R> customTransform(
@@ -833,6 +891,7 @@ public interface GeneralStage<T> extends Stage {
      * @param stageName a human-readable name for the custom stage
      * @param procSupplier the supplier of processors
      * @param <R> the type of the output items
+     * @return the newly attached stage
      */
     @Nonnull
     <R> GeneralStage<R> customTransform(

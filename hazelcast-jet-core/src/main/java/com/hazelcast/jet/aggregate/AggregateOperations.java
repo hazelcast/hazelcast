@@ -23,6 +23,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.BiConsumerEx;
@@ -35,6 +36,9 @@ import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToDoubleFunctionEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.BatchStageWithKey;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.StageWithWindow;
 
 import javax.annotation.Nonnull;
@@ -69,7 +73,16 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the number of items.
+     * Returns an aggregate operation that counts the items it observes. The
+     * result is of type {@code long}.
+     * <p>
+     * This sample takes a stream of words and finds the number of occurrences
+     * of each word in it:
+     * <pre>{@code
+     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<Entry<String, Long>> wordFrequencies =
+     *     words.groupingKey(wholeItem()).aggregate(counting());
+     * }</pre>
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> counting() {
@@ -84,8 +97,22 @@ public final class AggregateOperations {
     /**
      * Returns an aggregate operation that computes the sum of the {@code long}
      * values it obtains by applying {@code getLongValueFn} to each item.
+     * <p>
+     * This sample takes a stream of lines of text and outputs a single {@code
+     * long} number telling how many words there were in the stream:
+     * <pre>{@code
+     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<Long> numberOfWordsInText =
+     *         linesOfText
+     *                 .map(line -> line.split("\\W+"))
+     *                 .aggregate(summingLong(wordsInLine -> wordsInLine.length));
+     * }</pre>
      *
-     * @param <T> input item type
+     * <strong>Note:</strong> if the sum exceeds {@code Long.MAX_VALUE}, the job
+     * will fail with an {@code ArithmeticException}.
+     *
+     * @param getLongValueFn function that extracts the {@code long} values you want to sum
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
@@ -101,10 +128,21 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the sum of the {@code double}
-     * values it obtains by applying {@code getDoubleValueFn} to each item.
+     * Returns an aggregate operation that computes the sum of the {@code
+     * double} values it obtains by applying {@code getDoubleValueFn} to each
+     * item.
+     * <p>
+     * This sample takes a stream of purchase events and outputs a single
+     * {@code double} value that tells the total sum of money spent in
+     * them:
+     * <pre>{@code
+     * BatchStage<Purchase> purchases = pipeline.drawFrom(purchaseSource);
+     * BatchStage<Double> purchaseVolume =
+     *         purchases.aggregate(summingDouble(Purchase::amount));
+     * }</pre>
      *
-     * @param <T> input item type
+     * @param getDoubleValueFn function that extracts the {@code double} values you want to sum
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
@@ -120,19 +158,24 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the minimal item according
-     * to the given {@code comparator}.
+     * Returns an aggregate operation that computes the least item according to
+     * the given {@code comparator}.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and finds the youngest person in it:
      * <pre>{@code
-     *     // the result will be the youngest Person
-     *     AggregateOperations.minBy(ComparatorEx.comparingInt(person -> person.getAge()))
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> youngestPerson =
+     *         people.aggregate(minBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
+     * If the aggregate operation doesn't observe any items, its result will
+     * be {@code null}. If several items tie for the least one, it will choose
+     * any one to return and may choose a different one each time.
+     * <p>
+     * <em>Implementation note:</em> this aggregate operation does not
+     * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
      *
-     * This aggregate operation does not implement the {@link
-     * AggregateOperation1#deductFn() deduct} primitive.
-     *
-     * @param <T> input item type
+     * @param comparator comparator to compare the items
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> minBy(
@@ -143,19 +186,24 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the maximal item according
+     * Returns an aggregate operation that computes the greatest item according
      * to the given {@code comparator}.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and finds the oldest person in it:
      * <pre>{@code
-     *     // the result will be the oldest Person
-     *     AggregateOperations.maxBy(ComparatorEx.comparingInt(person -> person.getAge()))
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> oldestPerson =
+     *         people.aggregate(maxBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
+     * If the aggregate operation doesn't observe any items, its result will
+     * be {@code null}. If several items tie for the greatest one, it will
+     * choose any one to return and may choose a different one each time.
+     * <p>
+     * <em>Implementation note:</em> this aggregate operation does not
+     * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
      *
-     * This aggregate operation does not implement the {@link
-     * AggregateOperation1#deductFn() deduct} primitive.
-     *
-     * @param <T> input item type
+     * @param comparator comparator to compare the items
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> maxBy(
@@ -178,21 +226,22 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the top {@code n} items
-     * calculated according to the given {@link ComparatorEx comparator}.
-     * The returned list of elements is sorted in descending order.
+     * Returns an aggregate operation that finds the top {@code n} items
+     * according to the given {@link ComparatorEx comparator}. It outputs a
+     * sorted list with the top item in the first position.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and finds ten oldest persons in it:
      * <pre>{@code
-     *     // the result will be a List<Person> with up to 5 oldest persons
-     *     AggregateOperations.topN(5, ComparatorEx.comparingInt(person -> person.getAge()))
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<List<Person>> oldestDudes =
+     *         people.aggregate(topN(10, ComparatorEx.comparing(Person::age)));
      * }</pre>
-     * This aggregate operation does not implement the {@link
-     * AggregateOperation1#deductFn() deduct} primitive.
+     * <em>Implementation note:</em> this aggregate operation does not
+     * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
      *
-     * @param n number of items to return
-     * @param comparator the comparator to use
-     * @param <T> input item type
+     * @param n number of top items to find
+     * @param comparator compares the items
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> topN(
@@ -226,21 +275,23 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the bottom {@code n} items
-     * calculated according to the given {@link ComparatorEx comparator}.
-     * The returned list of elements is sorted in ascending order.
+     * Returns an aggregate operation that finds the bottom {@code n} items
+     * according to the given {@link ComparatorEx comparator}. It outputs a
+     * sorted list with the bottom item in the first position.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and finds ten youngest persons in
+     * it:
      * <pre>{@code
-     *     // the result will be a List<Person> with up to 5 youngest persons
-     *     AggregateOperations.bottomN(5, ComparatorEx.comparingInt(person -> person.getAge()))
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<List<Person>> youngestDudes =
+     *         people.aggregate(bottomN(10, ComparatorEx.comparing(Person::age)));
      * }</pre>
-     * This aggregate operation does not implement the {@link
-     * AggregateOperation1#deductFn() deduct} primitive.
+     * <em>Implementation note:</em> this aggregate operation does not
+     * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
      *
-     * @param n number of items to return
-     * @param comparator the comparator to use
-     * @param <T> input item type
+     * @param n number of bottom items to find
+     * @param comparator compares the items
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> bottomN(
@@ -250,19 +301,31 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the arithmetic mean of the
-     * {@code long} values it obtains by applying {@code getLongValueFn} to
-     * each item.
+     * Returns an aggregate operation that finds the arithmetic mean (aka.
+     * average) of the {@code long} values it obtains by applying {@code
+     * getLongValueFn} to each item. It outputs the result as a {@code double}.
+     * <p>
+     * This sample takes a stream of people and finds their mean age:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Double> meanAge = people.aggregate(averagingLong(Person::age));
+     * }</pre>
+     * <p>
+     * <strong>Note:</strong> this operation accumulates the sum and the
+     * count as separate {@code long} variables and combines them at the end
+     * into the mean value. If either of these variables exceeds {@code
+     * Long.MAX_VALUE}, the job will fail with an {@link ArithmeticException}.
      *
-     * @param <T> input item type
+     * @param getLongValueFn function that extracts the {@code long} value from the item
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
             @Nonnull ToLongFunctionEx<? super T> getLongValueFn
     ) {
         checkSerializable(getLongValueFn, "getLongValueFn");
-        // accumulator.value1 is count
-        // accumulator.value2 is sum
+        // count == accumulator.value1
+        // sum == accumulator.value2
         return AggregateOperation
                 .withCreate(LongLongAccumulator::new)
                 .andAccumulate((LongLongAccumulator a, T i) -> {
@@ -285,19 +348,26 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes the arithmetic mean of the
-     * {@code double} values it obtains by applying {@code getDoubleValueFn} to
-     * each item.
+     * Returns an aggregate operation that finds the arithmetic mean (aka.
+     * average) of the {@code double} values it obtains by applying {@code
+     * getDoubleValueFn} to each item. It outputs the result as a {@code double}.
+     * <p>
+     * This sample takes a stream of people and finds their mean age:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Double> meanAge = people.aggregate(averagingDouble(Person::age));
+     * }</pre>
      *
-     * @param <T> input item type
+     * @param getDoubleValueFn function that extracts the {@code double} value from the item
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
             @Nonnull ToDoubleFunctionEx<? super T> getDoubleValueFn
     ) {
         checkSerializable(getDoubleValueFn, "getDoubleValueFn");
-        // accumulator.value1 is count
-        // accumulator.value2 is sum
+        // count == accumulator.value1
+        // sum == accumulator.value2
         return AggregateOperation
                 .withCreate(LongDoubleAccumulator::new)
                 .andAccumulate((LongDoubleAccumulator a, T item) -> {
@@ -320,11 +390,30 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that computes a linear trend on the items.
-     * The operation will produce a {@code double}-valued coefficient that
+     * Returns an aggregate operation that computes a linear trend over the
+     * items. It will produce a {@code double}-valued coefficient that
      * approximates the rate of change of {@code y} as a function of {@code x},
      * where {@code x} and {@code y} are {@code long} quantities obtained
      * by applying the two provided functions to each item.
+     * <p>
+     * This sample takes an infinite stream of trade events and outputs the
+     * current rate of price change using a sliding window:
+     * <pre>{@code
+     * StreamStage<Trade> trades = pipeline
+     *         .drawFrom(tradeSource)
+     *         .withTimestamps(Trade::getTimestamp, SECONDS.toMillis(1));
+     * StreamStage<WindowResult<Double>> priceTrend = trades
+     *     .window(WindowDefinition.sliding(MINUTES.toMillis(5), SECONDS.toMillis(1)))
+     *     .aggregate(linearTrend(Trade::getTimestamp, Trade::getPrice));
+     * }</pre>
+     *
+     * With the trade price given in cents and the timestamp in milliseconds,
+     * the output will be in cents per millisecond. Make sure you apply a
+     * scaling factor if you want another, more natural unit of measure.
+     *
+     * @param getXFn a function to extract <strong>x</strong> from the input
+     * @param getYFn a function to extract <strong>y</strong> from the input
+     * @param <T> type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LinTrendAccumulator, Double> linearTrend(
@@ -343,8 +432,18 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that concatenates the input items into a
-     * string.
+     * Returns an aggregate operation that takes string items and concatenates
+     * them into a single string.
+     * <p>
+     * This sample outputs a string that you get by reading down the first
+     * column of the input text:
+     * <pre>{@code
+     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> lineStarters = linesOfText
+     *         .map(line -> line.charAt(0))
+     *         .map(Object::toString)
+     *         .aggregate(concatenating());
+     * }</pre>
      */
     public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating() {
         return AggregateOperation
@@ -355,8 +454,19 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an aggregate operation that concatenates the input items into a
-     * string with the given {@code delimiter}.
+     * Returns an aggregate operation that takes string items and concatenates
+     * them, separated by the given {@code delimiter}, into a single string.
+     * <p>
+     * This sample outputs a single line of text that contains all the
+     * upper-cased and title-cased words of the input text:
+     * <pre>{@code
+     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> upcaseWords = linesOfText
+     *         .map(line -> line.split("\\W+"))
+     *         .flatMap(Traversers::traverseArray)
+     *         .filter(word -> word.matches("\\p{Lu}.*"))
+     *         .aggregate(concatenating(" "));
+     * }</pre>
      */
     public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating(
             CharSequence delimiter
@@ -364,11 +474,22 @@ public final class AggregateOperations {
         return concatenating(delimiter, "", "");
     }
 
-
     /**
-     * Returns an aggregate operation that concatenates the input items into a
-     * string with the given {@code delimiter}. The resulting string will also
-     * have the given {@code prefix} and {@code suffix}.
+     * Returns an aggregate operation that takes string items and concatenates
+     * them, separated by the given {@code delimiter}, into a single string.
+     * The resulting string will start with the given {@code prefix} and end
+     * with the given {@code suffix}.
+     * <p>
+     * This sample outputs a single item, a JSON array of all the upper-cased
+     * and title-cased words of the input text:
+     * <pre>{@code
+     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> upcaseWords = linesOfText
+     *         .map(line -> line.split("\\W+"))
+     *         .flatMap(Traversers::traverseArray)
+     *         .filter(word -> word.matches("\\p{Lu}.*"))
+     *         .aggregate(concatenating("['", "', '", "']"));
+     * }</pre>
      **/
     public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating(
             CharSequence delimiter, CharSequence prefix, CharSequence suffix
@@ -398,32 +519,35 @@ public final class AggregateOperations {
     }
 
     /**
-     * Adapts an aggregate operation accepting items of type {@code
-     * U} to one accepting items of type {@code T} by applying a mapping
-     * function to each item before accumulation.
+     * Adapts an aggregate operation that takes items of type {@code U} to one
+     * that takes items of type {@code T}, by applying the given mapping
+     * function to each item. Normally you should just apply the mapping in a
+     * stage before the aggregation, but this adapter is useful when
+     * simultaneously performing several aggregate operations using {@link
+     * #allOf}.
      * <p>
-     * If the {@code mapFn} returns {@code null}, the item won't be aggregated
-     * at all. This allows applying a filter at the same time.
+     * In addition to mapping, you can apply filtering as well by returning
+     * {@code null} for an item you want filtered out.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and builds two sorted lists from
+     * it, one with all the names and one with all the surnames:
      * <pre>{@code
-     *     // calculate the set of surnames
-     *     AggregateOperations.mapping(person -> person.getSurname(), AggregateOperations.toSet())
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Tuple2<List<String>, List<String>>> sortedNames =
+     *     people.aggregate(allOf(
+     *         mapping(Person::getFirstName, sorting(ComparatorEx.naturalOrder())),
+     *         mapping(Person::getLastName, sorting(ComparatorEx.naturalOrder()))));
      * }</pre>
      *
-     * This operation is mostly useful in conjunction with {@link #allOf},
-     * otherwise it's simpler to use {@code stage.map()} before the
-     * aggregation.
-     * <p>
-     * See also {@link #filtering filtering()} and {@link #flatMapping
-     * flatMapping()}.
+     * @see #filtering
+     * @see #flatMapping
      *
-     * @param <T> input item type
+     * @param mapFn the function to apply to the input items
+     * @param downstream the downstream aggregate operation
+     * @param <T> type of the input item
      * @param <U> input type of the downstream aggregate operation
      * @param <A> downstream operation's accumulator type
      * @param <R> downstream operation's result type
-     * @param mapFn the function to apply to input items
-     * @param downstream the downstream aggregate operation
      */
     public static <T, U, A, R> AggregateOperation1<T, A, R> mapping(
             @Nonnull FunctionEx<? super T, ? extends U> mapFn,
@@ -446,27 +570,29 @@ public final class AggregateOperations {
     }
 
     /**
-     * Wraps an aggregate operation so that only items passing the {@code
-     * filterFn} will be accumulated; others will be ignored.
+     * Adapts an aggregate operation so that it accumulates only the items
+     * passing the {@code filterFn} and ignores others. Normally you should
+     * just apply the filter in a stage before the aggregation, but this
+     * adapter is useful when simultaneously performing several aggregate
+     * operations using {@link #allOf}.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and outputs two numbers, the
+     * average height of kids and grown-ups:
      * <pre>{@code
-     *     // the result will be the count of trades with quantity of 100 or more (as a Long)
-     *     AggregateOperations.filtering(trade -> trade.getQuantity >= 100, AggregateOperations.counting())
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Tuple2<Double, Double>> avgHeightByAge = people.aggregate(allOf(
+     *     filtering((Person p) -> p.getAge() < 18, averagingLong(Person::getHeight)),
+     *     filtering((Person p) -> p.getAge() >= 18, averagingLong(Person::getHeight))
+     * ));
      * }</pre>
+     * @see #mapping
+     * @see #flatMapping
      *
-     * This operation is mostly useful in conjunction with {@link #allOf},
-     * otherwise it's simpler to use {@code stage.filter()} before the
-     * aggregation.
-     * <p>
-     * See also {@link #mapping mapping()} and {@link #flatMapping
-     * flatMapping()}.
-     *
-     * @param <T> input item type
+     * @param filterFn the filtering function
+     * @param downstream the downstream aggregate operation
+     * @param <T> type of the input item
      * @param <A> downstream operation's accumulator type
      * @param <R> downstream operation's result type
-     * @param filterFn the function to apply to input items
-     * @param downstream the downstream aggregate operation
      *
      * @since 3.1
      */
@@ -490,34 +616,36 @@ public final class AggregateOperations {
     }
 
     /**
-     * Adapts an aggregate operation accepting items of type {@code U} to one
-     * accepting items of type {@code T} by applying a flat-mapping function to
-     * each item before accumulation - for one {@code T} item there will be
-     * <em>n</em> {@code U} items accumulated.
+     * Adapts an aggregate operation that takes items of type {@code U} to one
+     * that takes items of type {@code T}, by exploding each {@code T} into a
+     * sequence of {@code U}s and then accumulating all of them. Normally you
+     * should just apply the flat-mapping in a stage before the aggregation,
+     * but this adapter is useful when simultaneously performing several
+     * aggregate operations using {@link #allOf}.
      * <p>
-     * The returned traverser must be non-null and <em>null-terminated</em>.
+     * The traverser your function returns must be non-null and
+     * <em>null-terminated</em>.
      * <p>
-     * Sample usage:
+     * This sample takes a stream of people and outputs two numbers, the mean
+     * age of all the people and the mean age of people listed as someone's
+     * kid:
      * <pre>{@code
-     *     // the result will be the total count of members in all groups
-     *     AggregateOperations.flatMapping(
-     *       group -> Traversers.traverseIterable(group.getMembers()),
-     *       AggregateOperations.counting()
-     *     )
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * people.aggregate(allOf(
+     *     averagingLong(Person::getAge),
+     *     flatMapping((Person p) -> traverseIterable(p.getChildren()),
+     *             averagingLong(Person::getAge))
+     * ));
      * }</pre>
+     * @see #mapping
+     * @see #filtering
      *
-     * This operation is mostly useful in conjunction with {@link #allOf},
-     * otherwise it's simpler to use {@code stage.flatMap()} before the
-     * aggregation.
-     * <p>
-     * See also {@link #mapping mapping()} and {@link #filtering filtering()}.
-     *
-     * @param <T> input item type
+     * @param flatMapFn the flat-mapping function to apply
+     * @param downstream the downstream aggregate operation
+     * @param <T> type of the input item
      * @param <U> input type of the downstream aggregate operation
      * @param <A> downstream operation's accumulator type
      * @param <R> downstream operation's result type
-     * @param flatMapFn the function to apply to input items
-     * @param downstream the downstream aggregate operation
      *
      * @since 3.1
      */
@@ -543,19 +671,27 @@ public final class AggregateOperations {
 
     /**
      * Returns an aggregate operation that accumulates the items into a {@code
-     * Collection}. It creates the collections as needed by calling the
-     * provided {@code createCollectionFn}.
+     * Collection}. It creates empty, mutable collections as needed by calling
+     * the provided {@code createCollectionFn}.
      * <p>
-     * If you use a collection that preserves the insertion order, keep in mind
-     * that there is no specified order in which the items are aggregated.
+     * This sample takes a stream of words and outputs a single sorted set of
+     * all the long words (above 5 letters):
+     * <pre>{@code
+     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<SortedSet<String>> sortedLongWords = words
+     *         .filter(w -> w.length() > 5)
+     *         .aggregate(toCollection(TreeSet::new));
+     * }</pre>
+     * <strong>Note:</strong> if you use a collection that preserves the
+     * insertion order, keep in mind that Jet doesn't aggregate the items in
+     * any specified order.
      *
-     * @param <T> input item type
+     * @param createCollectionFn a {@code Supplier} of empty, mutable {@code Collection}s
+     * @param <T> type of the input item
      * @param <C> the type of the collection
-     * @param createCollectionFn a {@code Supplier} which returns a new, empty {@code Collection} of the
-     *                           appropriate type
      */
     public static <T, C extends Collection<T>> AggregateOperation1<T, C, C> toCollection(
-            SupplierEx<C> createCollectionFn
+            @Nonnull SupplierEx<C> createCollectionFn
     ) {
         checkSerializable(createCollectionFn, "createCollectionFn");
         return AggregateOperation
@@ -573,8 +709,20 @@ public final class AggregateOperations {
     /**
      * Returns an aggregate operation that accumulates the items into an {@code
      * ArrayList}.
+     * <p>
+     * This sample takes a stream of words and outputs a single list of all the
+     * long words (above 5 letters):
+     * <pre>{@code
+     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<List<String>> longWords = words
+     *         .filter(w -> w.length() > 5)
+     *         .aggregate(toList());
+     * }</pre>
+     * <strong>Note:</strong> accumulating all the data into an in-memory list
+     * shouldn't be your first choice in designing a pipeline. Consider
+     * draining the result stream to a sink.
      *
-     * @param <T> input item type
+     * @param <T> type of the input item
      */
     public static <T> AggregateOperation1<T, List<T>, List<T>> toList() {
         return toCollection(ArrayList::new);
@@ -583,32 +731,55 @@ public final class AggregateOperations {
     /**
      * Returns an aggregate operation that accumulates the items into a {@code
      * HashSet}.
-     *
-     * @param <T> input item type
+     * <p>
+     * This sample takes a stream of people and outputs a single set of all the
+     * distinct cities they live in:
+     * <pre>{@code
+     * pipeline.drawFrom(personSource)
+     *         .map(Person::getCity)
+     *         .aggregate(toSet());
+     * }</pre>
+     * <strong>Note:</strong> accumulating all the data into an in-memory set
+     * shouldn't be your first choice in designing a pipeline. Consider
+     * draining the result stream to a sink.
+     * @param <T> type of the input item
      */
     public static <T> AggregateOperation1<T, Set<T>, Set<T>> toSet() {
         return toCollection(HashSet::new);
     }
 
     /**
-     * Returns an aggregate operation that accumulates the items into a
-     * {@code HashMap} whose keys and values are the result of applying
-     * the provided mapping functions.
+     * Returns an aggregate operation that accumulates the items into a {@code
+     * HashMap} whose keys and values are the result of applying the provided
+     * mapping functions.
      * <p>
-     * This aggregate operation does not tolerate duplicate keys and will
-     * throw {@code IllegalStateException} if it detects them. If your
-     * data contains duplicates, use the {@link #toMap(FunctionEx,
-     * FunctionEx, BinaryOperatorEx) toMap()} overload
-     * that can resolve them.
+     * This aggregate operation does not tolerate duplicate keys and will throw
+     * an {@code IllegalStateException} if it detects them. If your data
+     * contains duplicates, use {@link #toMap(FunctionEx, FunctionEx,
+     * BinaryOperatorEx) toMap(keyFn, valueFn, mergeFn)}.
+     * <p>
+     * The following sample takes a stream of sensor readings and outputs a
+     * single map {sensor ID -> reading}:
+     * <pre>{@code
+     * BatchStage<Map<String, Double>> readings = pipeline
+     *         .drawFrom(sensorData)
+     *         .aggregate(toMap(
+     *                 SensorReading::getSensorId,
+     *                 SensorReading::getValue));
+     * }</pre>
+     * <strong>Note:</strong> accumulating all the data into an in-memory map
+     * shouldn't be your first choice in designing a pipeline. Consider
+     * draining the stream to a sink.
      *
-     * @param <T> input item type
-     * @param <K> type of the key
-     * @param <U> type of the value
      * @param keyFn a function to extract the key from the input item
      * @param valueFn a function to extract the value from the input item
+     * @param <T> type of the input item
+     * @param <K> type of the key
+     * @param <U> type of the value
      *
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx, SupplierEx)
+     * @see #groupingBy(FunctionEx)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
             FunctionEx<? super T, ? extends K> keyFn,
@@ -631,16 +802,30 @@ public final class AggregateOperations {
      * This aggregate operation resolves duplicate keys by applying {@code
      * mergeFn} to the conflicting values. {@code mergeFn} will act upon the
      * values after {@code valueFn} has already been applied.
-     *
-     * @param <T> input item type
-     * @param <K> the type of key
-     * @param <U> the output type of the value mapping function
+     * <p>
+     * The following sample takes a stream of sensor readings and outputs a
+     * single map {sensor ID -> reading}. Multiple readings from the same
+     * sensor get summed up:
+     * <pre>{@code
+     * BatchStage<Map<String, Double>> readings = pipeline
+     *         .drawFrom(sensorData)
+     *         .aggregate(toMap(
+     *                 SensorReading::getSensorId,
+     *                 SensorReading::getValue,
+     *                 Double::sum));
+     * }</pre>
+     * <strong>Note:</strong> accumulating all the data into an in-memory map
+     * shouldn't be your first choice in designing a pipeline. Consider
+     * draining the stream to a sink.
+
      * @param keyFn a function to extract the key from input item
      * @param valueFn a function to extract value from input item
-     * @param mergeFn a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
+     * @param mergeFn the function used to resolve collisions between values associated
+     *                with the same key, will be passed to {@link Map#merge(Object, Object,
+     *                java.util.function.BiFunction)}
+     * @param <T> type of the input item
+     * @param <K> the type of key
+     * @param <U> the output type of the value mapping function
      *
      * @see #toMap(FunctionEx, FunctionEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx, SupplierEx)
@@ -656,20 +841,27 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates elements
-     * into a {@code Map} whose keys and values are the result of applying the
-     * provided mapping functions to the input elements.
+     * Returns an aggregate operation that accumulates elements into a
+     * user-supplied {@code Map} instance. The keys and values are the result
+     * of applying the provided mapping functions to the input elements.
      * <p>
-     * If the mapped keys contain duplicates (according to {@link
-     * Object#equals(Object)}), the value mapping function is applied to each
-     * equal element, and the results are merged using the provided merging
-     * function. The {@code Map} is created by a provided {@code createMapFn}
-     * function.
+     * This aggregate operation resolves duplicate keys by applying {@code
+     * mergeFn} to the conflicting values. {@code mergeFn} will act upon the
+     * values after {@code valueFn} has already been applied.
+     * <p>
+     * The following sample takes a stream of sensor readings and outputs a
+     * single {@code ObjectToLongHashMap} of {sensor ID -> reading}. Multiple
+     * readings from the same sensor get summed up:
+     * <pre>{@code
+     * BatchStage<Map<String, Long>> readings = pipeline
+     *         .drawFrom(sensorData)
+     *         .aggregate(toMap(
+     *                 SensorReading::getSensorId,
+     *                 SensorReading::getValue,
+     *                 Long::sum,
+     *                 ObjectToLongHashMap::new));
+     * }</pre>
      *
-     * @param <T> input item type
-     * @param <K> the output type of the key mapping function
-     * @param <U> the output type of the value mapping function
-     * @param <M> the type of the resulting {@code Map}
      * @param keyFn a function to extract the key from input item
      * @param valueFn a function to extract value from input item
      * @param mergeFn a merge function, used to resolve collisions between
@@ -678,6 +870,10 @@ public final class AggregateOperations {
      *                      java.util.function.BiFunction)}
      * @param createMapFn a function which returns a new, empty {@code Map} into
      *                    which the results will be inserted
+     * @param <T> type of the input item
+     * @param <K> the output type of the key mapping function
+     * @param <U> the output type of the value mapping function
+     * @param <M> the type of the resulting {@code Map}
      *
      * @see #toMap(FunctionEx, FunctionEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx)
@@ -707,19 +903,58 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates the items into a
+     * Returns an aggregate operation that accumulates the items into a
      * {@code HashMap} where the key is the result of applying {@code keyFn}
      * and the value is a list of the items with that key.
      * <p>
-     * This operation achieves the effect of a cascaded group-by where the
-     * members of each group are further classified by a secondary key.
+     * This operation is primarily useful when you need a cascaded group-by
+     * where you further classify the members of each group by a secondary key.
+     * <p>
+     * This sample takes a stream of persons and classifies them first by
+     * country and then by gender. It outputs a stream of map entries where the
+     * key is the country and the value is a map from gender to the list of
+     * people of that gender from that country:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Entry<String, Map<String, List<Person>>>> byCountryAndGender =
+     *         people.groupingKey(Person::getCountry)
+     *               .aggregate(groupingBy(Person::getGender));
+     *     }
+     * }</pre>
+     *
+     * This aggregate operation has a similar effect to the dedicated {@link
+     * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform
+     * so you may wonder why not use it in all cases, not just cascaded
+     * grouping. To see the difference, check out these two snippets:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     *
+     * // Snippet 1
+     * BatchStage<Entry<String, List<Person>>> byCountry1 =
+     *         people.groupingKey(Person::getCountry)
+     *               .aggregate(toList());
+     *
+     * // Snippet 2
+     * BatchStage<Map<String, List<Person>>> byCountry2 =
+     *         people.aggregate(groupingBy(Person::getCountry));
+     * }</pre>
+     *
+     * Notice that snippet 1 outputs a <em>stream of map entries</em> whereas
+     * snippet 2 outputs a <em>single map</em>. To produce the single map,
+     * Jet must do all the work on a single thread and hold all the data on a
+     * single cluster member, so you lose the advantage of distributed
+     * computation. By contrast, snippet 2 allows Jet to partition the input by
+     * the grouping key and split the work across the cluster. This is why you
+     * should prefer a {@code groupingKey} stage if you have just one level of
+     * grouping.
      *
      * @param keyFn a function to extract the key from input item
-     * @param <T> input item type
+     * @param <T> type of the input item
      * @param <K> the output type of the key mapping function
      *
      * @see #groupingBy(FunctionEx, AggregateOperation1)
      * @see #groupingBy(FunctionEx, SupplierEx, AggregateOperation1)
+     * @see #toMap(FunctionEx, FunctionEx)
      */
     public static <T, K> AggregateOperation1<T, Map<K, List<T>>, Map<K, List<T>>> groupingBy(
             FunctionEx<? super T, ? extends K> keyFn
@@ -729,23 +964,37 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates the items into a
+     * Returns an aggregate operation that accumulates the items into a
      * {@code HashMap} where the key is the result of applying {@code keyFn}
      * and the value is the result of applying the downstream aggregate
      * operation to the items with that key.
      * <p>
-     * This operation achieves the effect of a cascaded group-by where the
-     * members of each group are further classified by a secondary key.
+     * This operation is primarily useful when you need a cascaded group-by
+     * where you further classify the members of each group by a secondary key.
+     * For the difference between this operation and the {@link
+     * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform,
+     * see the documentation on {@link #groupingBy(FunctionEx) groupingBy(keyFn)}.
+     * <p>
+     * This sample takes a stream of people, classifies them by country and
+     * gender, and reports the number of people in each category:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Entry<String, Map<String, Long>>> countByCountryAndGender =
+     *         people.groupingKey(Person::getCountry)
+     *               .aggregate(groupingBy(Person::getGender, counting()));
+     * }</pre>
+     *
      *
      * @param keyFn a function to extract the key from input item
      * @param downstream the downstream aggregate operation
-     * @param <T> input item type
+     * @param <T> type of the input item
      * @param <K> the output type of the key mapping function
      * @param <R> the type of the downstream aggregation result
      * @param <A> downstream aggregation's accumulator type
      *
      * @see #groupingBy(FunctionEx)
      * @see #groupingBy(FunctionEx, SupplierEx, AggregateOperation1)
+     * @see #toMap(FunctionEx, FunctionEx)
      */
     public static <T, K, A, R> AggregateOperation1<T, Map<K, A>, Map<K, R>> groupingBy(
             FunctionEx<? super T, ? extends K> keyFn,
@@ -755,21 +1004,36 @@ public final class AggregateOperations {
         return groupingBy(keyFn, HashMap::new, downstream);
     }
 
-
     /**
      * Returns an {@code AggregateOperation1} that accumulates the items into a
      * {@code Map} (as obtained from {@code createMapFn}) where the key is the
      * result of applying {@code keyFn} and the value is the result of
      * applying the downstream aggregate operation to the items with that key.
      * <p>
-     * This operation achieves the effect of a cascaded group-by where the
-     * members of each group are further classified by a secondary key.
+     * This operation is primarily useful when you need a cascaded group-by
+     * where you further classify the members of each group by a secondary key.
+     * For the difference between this operation and the {@link
+     * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform,
+     * see the documentation on {@link #groupingBy(FunctionEx) groupingBy(keyFn)}.
+     * <p>
+     * The following sample takes a stream of people, classifies them by country
+     * and gender, and reports the number of people in each category. It uses
+     * the {@code EnumMap} to optimize memory usage:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Entry<String, Map<Gender, Long>>> countByCountryAndGender =
+     *         people.groupingKey(Person::getCountry)
+     *               .aggregate(groupingBy(
+     *                       Person::getGender,
+     *                       () -> new EnumMap<>(Gender.class),
+     *                       counting()));
+     * }</pre>
      *
      * @param keyFn a function to extract the key from input item
      * @param createMapFn a function which returns a new, empty {@code Map} into
      *                    which the results will be inserted
      * @param downstream the downstream aggregate operation
-     * @param <T> input item type
+     * @param <T> type of the input item
      * @param <K> the output type of the key mapping function
      * @param <R> the type of the downstream aggregation result
      * @param <A> downstream aggregation's accumulator type
@@ -777,6 +1041,7 @@ public final class AggregateOperations {
      *
      * @see #groupingBy(FunctionEx)
      * @see #groupingBy(FunctionEx, AggregateOperation1)
+     * @see #toMap(FunctionEx, FunctionEx)
      */
     @SuppressWarnings("unchecked")
     public static <T, K, R, A, M extends Map<K, R>> AggregateOperation1<T, Map<K, A>, M> groupingBy(
@@ -823,31 +1088,48 @@ public final class AggregateOperations {
     }
 
     /**
-     * A reducing operation maintains an accumulated value that starts out as
-     * {@code emptyAccValue} and is iteratively transformed by applying
-     * {@code combineAccValuesFn} to it and each stream item's accumulated
-     * value, as returned from {@code toAccValueFn}. {@code combineAccValuesFn}
-     * must be <em>associative</em> because it will also be used to combine
-     * partial results, as well as <em>commutative</em> because the encounter
-     * order of items is unspecified.
+     * Returns an aggregate operation that constructs the result through the
+     * process of <em>immutable reduction</em>:
+     * <ol>
+     *     <li>The initial accumulated value is {@code emptyAccValue}.
+     *     <li>For each input item, compute the new value:
+     *     {@code newVal = combineAccValues(currVal, toAccValue(item))}
+     * </ol>
+     * {@code combineAccValuesFn} must be <strong>associative</strong> because
+     * it will also be used to combine partial results, as well as
+     * <strong>commutative</strong> because the encounter order of items is
+     * unspecified.
      * <p>
      * The optional {@code deductAccValueFn} allows Jet to compute the sliding
      * window in O(1) time. It must undo the effects of a previous {@code
      * combineAccValuesFn} call:
      * <pre>
-     *     A accVal;  (has some pre-existing value)
+     *     A accVal;  // has some pre-existing value
      *     A itemAccVal = toAccValueFn.apply(item);
      *     A combined = combineAccValuesFn.apply(accVal, itemAccVal);
      *     A deducted = deductAccValueFn.apply(combined, itemAccVal);
      *     assert deducted.equals(accVal);
      * </pre>
+     * <p>
+     * This sample takes a stream of product orders and outputs a single {@code
+     * long} number which is the sum total of all the ordered amounts. The
+     * aggregate operation it implements is equivalent to {@link #summingLong}:
+     * <pre>{@code
+     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Long> totalAmount = orders.aggregate(reducing(
+     *         0L,
+     *         Order::getAmount,
+     *         Math::addExact,
+     *         Math::subtractExact
+     * ));
+     * }</pre>
      *
      * @param emptyAccValue the reducing operation's emptyAccValue element
      * @param toAccValueFn transforms the stream item into its accumulated value
      * @param combineAccValuesFn combines two accumulated values into one
      * @param deductAccValueFn deducts the right-hand accumulated value from the left-hand one
      *                        (optional)
-     * @param <T> input item type
+     * @param <T> type of the input item
      * @param <A> type of the accumulated value
      */
     @Nonnull
@@ -881,16 +1163,18 @@ public final class AggregateOperations {
      * <p>
      * The implementation of {@link StageWithWindow#distinct()} uses this
      * operation and, if needed, you can use it directly for the same purpose.
-     * For example, in a stream of Person objects you can specify the last name
-     * as the key. The result will be a stream of Person objects, one for each
-     * distinct last name:
-     * <pre>
-     *     Pipeline p = Pipeline.create();
-     *     p.&lt;Person>drawFrom(list("persons"))
-     *      .groupingKey(Person::getLastName)
-     *      .aggregate(pickAny())
-     *      .drainTo(...);
-     * </pre>
+     * <p>
+     * This sample takes a stream of people and outputs a stream of people that
+     * have distinct last names (same as calling {@link
+     * BatchStageWithKey#distinct() groupingKey(keyFn).distinct()}:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Entry<String, Person>> distinctByLastName =
+     *         people.groupingKey(Person::getLastName)
+     *               .aggregate(pickAny());
+     * }</pre>
+     *
+     * @param <T> type of the input item
      */
     @Nonnull
     @SuppressWarnings("checkstyle:needbraces")
@@ -910,9 +1194,17 @@ public final class AggregateOperations {
 
     /**
      * Returns an aggregate operation that accumulates all input items into an
-     * {@code ArrayList} and sorts it with the given comparator. Use {@link
-     * ComparatorEx#naturalOrder()} if you want to sort {@code
-     * Comparable} items by their natural order.
+     * {@code ArrayList} and sorts it with the given comparator. If you have
+     * {@code Comparable} items that you want to sort in their natural order, use
+     * {@link ComparatorEx#naturalOrder()}.
+     * <p>
+     * This sample takes a stream of people and outputs a single list of people
+     * sorted by their last name:
+     * <pre>{@code
+     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<List<Person>> sorted = people.aggregate(
+     *     sorting(ComparatorEx.comparing(Person::getLastName)));
+     * }</pre>
      *
      * @param comparator the comparator to use for sorting
      * @param <T> the type of input items
@@ -938,8 +1230,19 @@ public final class AggregateOperations {
 
     /**
      * Returns an aggregate operation that is a composite of two aggregate
-     * operations. It allows you to calculate multiple aggregations over the
-     * same items at once.
+     * operations. It allows you to calculate both aggregations over the same
+     * items at once.
+     * <p>
+     * This sample takes a stream of orders and outputs a single tuple
+     * containing the orders with the smallest and the largest amount:
+     * <pre>{@code
+     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Tuple2<Order, Order>> extremes = orders.aggregate(allOf(
+     *         minBy(ComparatorEx.comparing(Order::getAmount)),
+     *         maxBy(ComparatorEx.comparing(Order::getAmount)),
+     *         Tuple2::tuple2
+     * ));
+     * }</pre>
      *
      * @param op0 1st operation
      * @param op1 2nd operation
@@ -989,7 +1292,7 @@ public final class AggregateOperations {
 
     /**
      * Convenience for {@link #allOf(AggregateOperation1, AggregateOperation1,
-     * BiFunctionEx)} with identity finish.
+     * BiFunctionEx)} wrapping the two results in a {@link Tuple2}.
      */
     @Nonnull
     public static <T, A0, A1, R0, R1> AggregateOperation1<T, Tuple2<A0, A1>, Tuple2<R0, R1>> allOf(
@@ -1001,8 +1304,22 @@ public final class AggregateOperations {
 
     /**
      * Returns an aggregate operation that is a composite of three aggregate
-     * operations. It allows you to calculate multiple aggregations over the
-     * same items at once.
+     * operations. It allows you to calculate all three over the same items
+     * at once.
+     * <p>
+     * This sample takes a stream of orders and outputs a single tuple
+     * containing the average amount ordered and the orders with the smallest
+     * and the largest amount:
+     * <pre>{@code
+     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Tuple3<Double, Order, Order>> averageAndExtremes =
+     *     orders.aggregate(allOf(
+     *         averagingLong(Order::getAmount),
+     *         minBy(ComparatorEx.comparing(Order::getAmount)),
+     *         maxBy(ComparatorEx.comparing(Order::getAmount)),
+     *         Tuple3::tuple3
+     * ));
+     * }</pre>
      *
      * @param op0 1st operation
      * @param op1 2nd operation
@@ -1065,7 +1382,8 @@ public final class AggregateOperations {
 
     /**
      * Convenience for {@link #allOf(AggregateOperation1, AggregateOperation1,
-     * AggregateOperation1, TriFunction)} with identity finisher.
+     * AggregateOperation1, TriFunction)} wrapping the three results in a
+     * {@link Tuple3}.
      */
     @Nonnull
     public static <T, A0, A1, A2, R0, R1, R2>
@@ -1081,32 +1399,40 @@ public final class AggregateOperations {
     /**
      * Returns a builder object that helps you create a composite of multiple
      * aggregate operations. The resulting aggregate operation will perform all
-     * of the constituent operations at the same time and you can retrieve each
-     * result from the {@link com.hazelcast.jet.datamodel.ItemsByTag} object
-     * you'll get in the output.
+     * of the constituent operations at the same time and you can retrieve
+     * individual results from the {@link ItemsByTag} object you'll get in the
+     * output.
      * <p>
-     * The builder object is primarily intended to build a composite of four or more
-     * aggregate operations. For up to three operations, prefer the explicit, more
-     * type-safe variants {@link #allOf(AggregateOperation1, AggregateOperation1) allOf(op1, op2)}
-     * and {@link #allOf(AggregateOperation1, AggregateOperation1,
-     * AggregateOperation1) allOf(op1, op2, op3)}.
+     * The builder object is primarily intended to build a composite of four or
+     * more aggregate operations. For up to three operations, prefer the simpler
+     * and more type-safe variants {@link #allOf(AggregateOperation1,
+     * AggregateOperation1) allOf(op1, op2)} and {@link
+     * #allOf(AggregateOperation1, AggregateOperation1, AggregateOperation1)
+     * allOf(op1, op2, op3)}.
      * <p>
-     * Example that calculates the count and the sum of the items:
+     * In the following sample we'll construct a composite aggregate operation
+     * that takes a stream of orders and finds the extremes in terms of ordered
+     * amount. Here's the input stage:
      * <pre>{@code
-     * AllOfAggregationBuilder<Long> builder = allOfBuilder();
-     * Tag<Long> tagSum = builder.add(summingLong(Long::longValue));
-     * Tag<Long> tagCount = builder.add(counting());
-     * AggregateOperation1<Long, ?, ItemsByTag> compositeAggrOp = builder.build();
+     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
      * }</pre>
      *
-     * When you receive the resulting {@link com.hazelcast.jet.datamodel.ItemsByTag
-     * ItemsByTag}, fetch the individual results using the tags as keys, for example:
+     * Now we construct the aggregate operation using the builder:
+     *
      * <pre>{@code
-     * batchStage.aggregate(compositeAggrOp).map((ItemsByTag result) -> {
-     *     Long sum = result.get(tagSum);
-     *     Long count = result.get(tagCount);
-     *     ...
-     * });
+     * AllOfAggregationBuilder<Order> builder = allOfBuilder();
+     * Tag<Order> minTag = builder.add(minBy(ComparatorEx.comparing(Order::getAmount)));
+     * Tag<Order> maxTag = builder.add(maxBy(ComparatorEx.comparing(Order::getAmount)));
+     * AggregateOperation1<Order, ?, ItemsByTag> aggrOp = builder.build();
+     * }</pre>
+     *
+     * Finally, we apply the aggregate operation and use the tags we got
+     * above to extract the components:
+     *
+     * <pre>{@code
+     * BatchStage<ItemsByTag> extremes = orders.aggregate(aggrOp);
+     * BatchStage<Tuple2<Order, Order>> extremesAsTuple =
+     *         extremes.map(ibt -> tuple2(ibt.get(minTag), ibt.get(maxTag)));
      * }</pre>
      *
      * @param <T> type of input items
@@ -1119,16 +1445,41 @@ public final class AggregateOperations {
     /**
      * Returns an aggregate operation that is a composite of two independent
      * aggregate operations, each one accepting its own input. You need this
-     * kind of operation for a two-way co-aggregating pipeline stage:
-     * {@link com.hazelcast.jet.pipeline.StageWithWindow#aggregate2
-     * stage.aggregate2()}.
+     * kind of operation in a two-way co-aggregating pipeline stage such as
+     * {@link BatchStage#aggregate2(BatchStage, AggregateOperation2)}
+     * stage0.aggregate2(stage1, compositeAggrOp)}. Before using this method,
+     * see if you can instead use {@link
+     * BatchStage#aggregate2(AggregateOperation1, BatchStage, AggregateOperation1)
+     * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it's simpler and
+     * doesn't require you to pre-compose the aggregate operations.
      * <p>
      * This method is suitable when you can express your computation as two
-     * independent aggregate operations where you combine only their final
-     * results. If you need an operation that combines the two inputs in the
+     * independent aggregate operations where you combine their final results.
+     * If you need an operation that combines the two inputs in the
      * accumulation phase, you can create an aggregate operation by specifying
      * each primitive using the {@linkplain AggregateOperation#withCreate
      * aggregate operation builder}.
+     * <p>
+     * As a quick example, let's say you have two data streams coming from an
+     * online store, consisting of user actions: page visits and payments:
+     * <pre>{@code
+     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
+     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * }</pre>
+     * We want to find out how many page clicks each user did before buying a
+     * product. We can do it like this:
+     * <pre>{@code
+     * BatchStage<Entry<Long, Double>> visitsPerPurchase = pageVisits
+     *     .groupingKey(PageVisit::userId)
+     *     .aggregate2(
+     *         payments.groupingKey(Payment::userId),
+     *         aggregateOperation2(counting(), counting(),
+     *             (numPageVisits, numPayments) -> 1.0 * numPageVisits / numPayments
+     *         ));
+     * }</pre>
+     * The output stage's stream contains a {@code Map.Entry} where the key is
+     * the user ID and the value is the ratio of page visits to payments for
+     * that user.
      *
      * @param op0 the aggregate operation that will receive the first stage's input
      * @param op1 the aggregate operation that will receive the second stage's input
@@ -1199,16 +1550,46 @@ public final class AggregateOperations {
     /**
      * Returns an aggregate operation that is a composite of three independent
      * aggregate operations, each one accepting its own input. You need this
-     * kind of operation for a three-way co-aggregating pipeline stage:
-     * {@link com.hazelcast.jet.pipeline.StageWithWindow#aggregate3
-     * stage.aggregate3()}.
+     * kind of operation in the three-way co-aggregating pipeline stage:
+     * {@link BatchStage#aggregate3(BatchStage, BatchStage, AggregateOperation3)}
+     * stage0.aggregate3(stage1, stage2, compositeAggrOp)}. Before using this
+     * method, see if you can instead use {@link
+     * BatchStage#aggregate3(AggregateOperation1, BatchStage, AggregateOperation1,
+     * BatchStage, AggregateOperation1) stage0.aggregate3(aggrOp0, stage1,
+     * aggrOp1, stage2, aggrOp2)} because it's simpler and doesn't require you
+     * to pre-compose the aggregate operations.
      * <p>
      * This method is suitable when you can express your computation as three
-     * independent aggregate operations where you combine only their final
-     * results. If you need an operation that combines the three inputs in the
-     * accumulation phase, you can create an aggregate operation by specifying
-     * each primitive using the {@linkplain AggregateOperation#withCreate
-     * aggregate operation builder}.
+     * independent aggregate operations where you combine their final results.
+     * If you need an operation that combines the inputs in the accumulation
+     * phase, you can create an aggregate operation by specifying each
+     * primitive using the {@linkplain AggregateOperation#withCreate aggregate
+     * operation builder}.
+     * <p>
+     * As a quick example, let's say you have three data streams coming from an
+     * online store, consisting of user actions: page visits, add-to-cart
+     * actions and payments:
+     * <pre>{@code
+     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
+     * BatchStage<AddToCart> addToCarts = pipeline.drawFrom(addToCartSource);
+     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * }</pre>
+     * We want to get these metrics per each user: how many page clicks they
+     * did before buying a product, and how many products they bought per
+     * purchase. We could do it like this:
+     * <pre>{@code
+     * BatchStage<Entry<Integer, Tuple2<Double, Double>>> userStats = pageVisits
+     *     .groupingKey(PageVisit::userId)
+     *     .aggregate3(
+     *         addToCarts.groupingKey(AddToCart::userId),
+     *         payments.groupingKey(Payment::userId),
+     *         aggregateOperation3(counting(), counting(), counting(),
+     *             (numPageVisits, numAddToCarts, numPayments) ->
+     *                 tuple2(1.0 * numPageVisits / numPayments,
+     *                        1.0 * numAddToCarts / numPayments
+     *                 )
+     *         ));
+     * }</pre>
      *
      * @param op0 the aggregate operation that will receive the first stage's input
      * @param op1 the aggregate operation that will receive the second stage's input
@@ -1299,11 +1680,16 @@ public final class AggregateOperations {
     /**
      * Returns a builder object that offers a step-by-step fluent API to create
      * an aggregate operation that accepts multiple inputs. You must supply
-     * this kind of operation to a co-aggregating pipeline stage. Most typically
-     * you'll need this builder if you're using the {@link
-     * com.hazelcast.jet.pipeline.StageWithWindow#aggregateBuilder()}. For
-     * two-way or three-way co-aggregation you can use {@link
-     * AggregateOperations#aggregateOperation2} and {@link AggregateOperations#aggregateOperation3}.
+     * this kind of operation to a co-aggregating pipeline stage. You need this
+     * builder if you're using the {@link BatchStage#aggregateBuilder()
+     * stage.aggregateBuilder()}. Before deciding to use it, consider using
+     * {@link BatchStage#aggregateBuilder(AggregateOperation1)
+     * stage.aggregateBuilder(aggrOp0)} because it will allow you to directly
+     * pass the aggregate operation for each joined stage, without requiring
+     * you to build a composite operation through this builder. Finally, if
+     * you're co-aggregating two or three streams, prefer the simpler and more
+     * type-safe variants: {@link #aggregateOperation2} and {@link
+     * #aggregateOperation3}.
      * <p>
      * This builder is suitable when you can express your computation as
      * independent aggregate operations on each input where you combine only
@@ -1311,6 +1697,52 @@ public final class AggregateOperations {
      * in the accumulation phase, you can create an aggregate operation by
      * specifying each primitive using the {@linkplain AggregateOperation#withCreate
      * aggregate operation builder}.
+     * <p>
+     * As a quick example, let's say you have two data streams coming from an
+     * online store, consisting of user actions: page visits and payments:
+     * <pre>{@code
+     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
+     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * }</pre>
+     * We want to find out how many page clicks each user did before buying a
+     * product, and we want to do it using {@link BatchStage#aggregateBuilder()
+     * stage.aggregateBuilder()}. Note that there will be two builders at play:
+     * the <em>stage builder</em>, which joins the pipeline stages, and the
+     * <em>aggregate operation builder</em> (obtained from this method). First
+     * we obtain the stage builder and add our pipeline stages:
+     *
+     * <pre>{@code
+     * GroupAggregateBuilder1<PageVisit, Long> stageBuilder =
+     *         pageVisits.groupingKey(PageVisit::userId).aggregateBuilder();
+     * Tag<PageVisit> visitTag_in = stageBuilder.tag0();
+     * Tag<Payment> payTag_in = stageBuilder.add(payments.groupingKey(Payment::userId));
+     * }</pre>
+     *
+     * Now we have the tags we need to build the aggregate operation, and while
+     * building it we get new tags to get the results of the operation:
+     *
+     * <pre>{@code
+     * CoAggregateOperationBuilder opBuilder = coAggregateOperationBuilder();
+     * Tag<Long> visitTag = opBuilder.add(visitTag_in, counting());
+     * Tag<Long> payTag = opBuilder.add(payTag_in, counting());
+     * }</pre>
+     *
+     * We use these tags in the {@code exportFinishFn} we specify at the end:
+     *
+     * <pre>{@code
+     * AggregateOperation<Object[], Double> aggrOp =
+     *         opBuilder.build(ibt -> 1.0 * ibt.get(visitTag) / ibt.get(payTag));
+     * }</pre>
+     *
+     * And now we're ready to construct the output stage:
+     *
+     * <pre>{@code
+     * BatchStage<Entry<Long, Double>> visitsPerPurchase = stageBuilder.build(aggrOp);
+     * }</pre>
+     *
+     * The output stage's stream contains {@code Map.Entry}s where the key is
+     * the user ID and the value is the ratio of page visits to payments for
+     * that user.
      */
     @Nonnull
     public static CoAggregateOperationBuilder coAggregateOperationBuilder() {

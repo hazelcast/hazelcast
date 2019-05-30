@@ -18,8 +18,9 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -55,8 +56,8 @@ public class CoAggregateOperationBuilder {
      * Registers the given aggregate operation with the tag corresponding to an
      * input to the co-aggregating operation being built. If you are preparing
      * an operation to pass to an {@linkplain
-     * com.hazelcast.jet.pipeline.StageWithWindow#aggregateBuilder() aggregate
-     * builder}, you must use the tags you obtained from it.
+     * StageWithKeyAndWindow#aggregateBuilder() aggregate builder}, you must
+     * use the tags you obtained from it.
      * <p>
      * Returns the tag you'll use to retrieve the results of aggregating this
      * input.

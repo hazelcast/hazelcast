@@ -54,4 +54,7 @@
     <!-- Suppress checks for test code -->
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>
     <suppress checks="LineLength" files="DecoratorTest.java"/>
+
+    <!-- Suppress maximum line count of a large factory file with lot of javadoc -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations.java"/>
 </suppressions>

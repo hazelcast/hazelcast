@@ -109,13 +109,13 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_summingToLong() {
+    public void when_summingLong() {
         validateOp(summingLong(Long::longValue), LongAccumulator::get,
                 1L, 2L, 1L, 3L, 3L);
     }
 
     @Test
-    public void when_summingToDouble() {
+    public void when_summingDouble() {
         validateOp(summingDouble(Double::doubleValue), DoubleAccumulator::export,
                 0.5, 1.5, 0.5, 2.0, 2.0);
     }

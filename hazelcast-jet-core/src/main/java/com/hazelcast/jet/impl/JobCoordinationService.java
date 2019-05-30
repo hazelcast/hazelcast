@@ -769,7 +769,7 @@ public class JobCoordinationService {
         if (jobExecutionRecord.isSuspended()) {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
-            logger.info("Starting job " + jobId + ": " + reason);
+            logger.info("Starting job " + idToString(jobId) + ": " + reason);
             tryStartJob(masterContext);
         }
 
