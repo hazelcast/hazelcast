@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -32,6 +31,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
@@ -83,7 +83,8 @@ public final class WithForcedEviction {
         for (int i = 0; i < forcedEvictionRetryCount; i++) {
             try {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Applying forced eviction on current RecordStore (map %s, partitionId: %d)!",
+                    logger.fine(format("Applying forced eviction on "
+                                    + "current RecordStore (map %s, partitionId: %d)!",
                             mapOperation.getName(), mapOperation.getPartitionId()));
                 }
                 // if there is still an NOOME, apply eviction on current RecordStore and try again
@@ -100,11 +101,12 @@ public final class WithForcedEviction {
         for (int i = 0; i < forcedEvictionRetryCount; i++) {
             try {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Applying forced eviction on other RecordStores owned by the same partition thread"
-                            + " (map %s, partitionId: %d", mapOperation.getName(), mapOperation.getPartitionId()));
+                    logger.fine(format("Applying forced eviction on other RecordStores "
+                                    + "owned by the same partition thread (map %s, partitionId:%d",
+                            mapOperation.getName(), mapOperation.getPartitionId()));
                 }
                 // if there is still an NOOME, apply for eviction on others and try again
-                forceEvictionOnOthers(mapOperation);
+                evictRecordStores(recordStore -> forceEviction(recordStore), mapOperation);
                 mapOperation.runInternal();
                 return;
             } catch (NativeOutOfMemoryError e) {
@@ -122,11 +124,11 @@ public final class WithForcedEviction {
         if (recordStore != null) {
             try {
                 if (logger.isLoggable(Level.INFO)) {
-                    logger.info("Evicting all entries in current"
-                            + " RecordStores because forced eviction was not enough!");
+                    logger.info("Evicting all entries in current "
+                            + "RecordStores because forced eviction was not enough!");
                 }
                 // if there is still NOOME, clear the current RecordStore and try again
-                evictAllThenDispose(recordStore, isBackup);
+                evictAllKeysThenDispose(recordStore, isBackup);
                 mapOperation.runInternal();
                 return;
             } catch (NativeOutOfMemoryError e) {
@@ -135,11 +137,12 @@ public final class WithForcedEviction {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            logger.info("Evicting all entries in other RecordStores owned by the same partition thread"
-                    + " because forced eviction was not enough!");
+            logger.info("Evicting all entries in other RecordStores "
+                    + "owned by the same partition thread because forced eviction was not enough!");
         }
-        // if there is still NOOME, for the last chance, evict other record stores and try again
-        evictAll(mapOperation, isBackup);
+
+        // if there is still NOOME, for the last chance, evict other record stores too and try again
+        evictRecordStores(r -> evictAllKeysThenDispose(r, isBackup), mapOperation);
         mapOperation.runInternal();
     }
 
@@ -147,24 +150,11 @@ public final class WithForcedEviction {
      * Executes a forced eviction on this particular RecordStore.
      */
     private static void forceEviction(RecordStore recordStore) {
-        if (recordStore == null) {
-            return;
-        }
-
-        MapContainer mapContainer = recordStore.getMapContainer();
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        if (mapConfig.getInMemoryFormat() == NATIVE
-                && mapConfig.getEvictionPolicy() != NONE) {
-            Evictor evictor = mapContainer.getEvictor();
-            evictor.forceEvict(recordStore);
-        }
+        Evictor evictor = recordStore.getMapContainer().getEvictor();
+        evictor.forceEvict(recordStore);
     }
 
-    /**
-     * Executes a forced eviction on other NATIVE
-     * in-memory-formatted RecordStores of this partition thread.
-     */
-    private static void forceEvictionOnOthers(MapOperation mapOperation) {
+    private static void evictRecordStores(Consumer<RecordStore> consumer, MapOperation mapOperation) {
         NodeEngine nodeEngine = mapOperation.getNodeEngine();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         OperationService operationService = nodeEngine.getOperationService();
@@ -173,10 +163,7 @@ public final class WithForcedEviction {
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             if (partitionId % threadCount == mod) {
-                ConcurrentMap<String, RecordStore> maps = getRecordStoresInThisPartition(mapOperation, partitionId);
-                for (RecordStore recordStore : maps.values()) {
-                    forceEviction(recordStore);
-                }
+                recordStoresInPartition(partitionId, mapOperation).values().forEach(consumer);
             }
         }
     }
@@ -185,35 +172,21 @@ public final class WithForcedEviction {
      * Evicts all RecordStores on the partitions owned
      * by the partition thread of current partition.
      */
-    private static void evictAll(MapOperation mapOperation, boolean isBackup) {
-        NodeEngine nodeEngine = mapOperation.getNodeEngine();
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        OperationService operationService = nodeEngine.getOperationService();
-        int threadCount = operationService.getPartitionThreadCount();
-        int mod = mapOperation.getPartitionId() % threadCount;
-
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (partitionId % threadCount == mod) {
-                ConcurrentMap<String, RecordStore> maps = getRecordStoresInThisPartition(mapOperation, partitionId);
-                for (RecordStore recordStore : maps.values()) {
-                    MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
-                    if (mapConfig.getInMemoryFormat() == NATIVE
-                            && mapConfig.getEvictionPolicy() != NONE) {
-                        evictAllThenDispose(recordStore, isBackup);
-                    }
-                }
-            }
-        }
-    }
-
-    private static ConcurrentMap<String, RecordStore> getRecordStoresInThisPartition(MapOperation mapOperation,
-                                                                                     int partitionId) {
+    private static ConcurrentMap<String, RecordStore> recordStoresInPartition(int partitionId,
+                                                                              MapOperation mapOperation) {
         MapServiceContext mapServiceContext = mapOperation.mapServiceContext;
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         return partitionContainer.getMaps();
     }
 
-    private static void evictAllThenDispose(RecordStore recordStore, boolean isBackup) {
+    private static void evictAllKeysThenDispose(RecordStore recordStore, boolean isBackup) {
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
+        if (mapConfig.getInMemoryFormat() != NATIVE
+                || mapConfig.getEvictionPolicy() == NONE) {
+            // When this is not a map backed by NATIVE memory or
+            // when no eviction is configured, it means this map can't be evicted.
+            return;
+        }
         recordStore.evictAll(isBackup);
         recordStore.disposeDeferredBlocks();
     }

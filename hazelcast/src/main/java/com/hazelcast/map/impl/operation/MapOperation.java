@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
@@ -81,8 +82,21 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             runInternal();
         } catch (NativeOutOfMemoryError e) {
+            if (noEvictionConfigured(mapContainer)) {
+                disposeDeferredBlocks();
+                throw e;
+            }
+
             WithForcedEviction.rerun(this);
         }
+    }
+
+    /**
+     * @return {@code true} if eviction is not configured
+     * for this map, otherwise returns {@code false}
+     */
+    private static boolean noEvictionConfigured(MapContainer mapContainer) {
+        return mapContainer.getEvictor() == Evictor.NULL_EVICTOR;
     }
 
     @Override
