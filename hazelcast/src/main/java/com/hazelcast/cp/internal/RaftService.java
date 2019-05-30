@@ -290,6 +290,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return complete(future, new IllegalStateException("CP subsystem discovery is not completed yet!"));
         }
 
+        if (nodeEngine.getLocalMember().isLiteMember()) {
+            return complete(future, new IllegalStateException("Lite members cannot be promoted to CP member!"));
+        }
+
         if (getLocalCPMember() != null) {
             future.setResult(null);
             return future;
