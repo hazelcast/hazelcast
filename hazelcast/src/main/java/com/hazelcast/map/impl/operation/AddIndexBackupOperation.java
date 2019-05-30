@@ -36,8 +36,7 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
     private String attributeName;
     private boolean ordered;
 
-    // true by default just to make DataSerializableConventionsTest pass
-    private boolean targetSupported = true;
+    private transient boolean targetSupported;
 
     public AddIndexBackupOperation() {
     }
