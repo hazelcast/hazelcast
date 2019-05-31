@@ -118,5 +118,5 @@ public interface MapDataStore<K, V> {
      */
     V flush(K key, V value, boolean backup);
 
-    boolean isEntryStore();
+    boolean isWithExpirationTime();
 }

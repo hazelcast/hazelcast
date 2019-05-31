@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -245,6 +246,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testSetTtl() {
         map.set("key", "value");
         map.setTtl("key", 1, TimeUnit.DAYS);

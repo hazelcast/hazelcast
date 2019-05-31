@@ -329,7 +329,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value == null) {
             return null;
         }
-        if (mapDataStore.isEntryStore()) {
+        if (mapDataStore.isWithExpirationTime()) {
             EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
             long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
             if (proposedTtl < 0) {
@@ -605,7 +605,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             Data key = toData(entry.getKey());
             Object value = entry.getValue();
-            if (mapDataStore.isEntryStore()) {
+            if (mapDataStore.isWithExpirationTime()) {
                 EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
 
                 if (putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress) != null) {

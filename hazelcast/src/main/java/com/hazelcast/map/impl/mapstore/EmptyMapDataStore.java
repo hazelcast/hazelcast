@@ -85,7 +85,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public boolean isEntryStore() {
+    public boolean isWithExpirationTime() {
         return false;
     }
 
