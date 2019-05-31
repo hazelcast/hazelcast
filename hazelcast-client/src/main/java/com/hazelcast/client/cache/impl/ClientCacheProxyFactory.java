@@ -21,7 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
+import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class ClientCacheProxyFactory extends ClientProxyFactoryWithContext {
+public class ClientCacheProxyFactory implements ClientProxyFactory {
 
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
