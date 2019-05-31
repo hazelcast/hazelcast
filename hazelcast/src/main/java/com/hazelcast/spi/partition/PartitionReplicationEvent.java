@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import java.util.EventObject;
+package com.hazelcast.spi.partition;
 
 /**
- * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partition changes happen.
+ * An event send to {@link MigrationAwareService} when partition changes happen.
  */
-public class PartitionReplicationEvent extends EventObject {
+public class PartitionReplicationEvent {
 
     private final int partitionId;
 
@@ -34,7 +32,6 @@ public class PartitionReplicationEvent extends EventObject {
      * @param replicaIndex the replica index
      */
     public PartitionReplicationEvent(int partitionId, int replicaIndex) {
-        super(partitionId);
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
     }

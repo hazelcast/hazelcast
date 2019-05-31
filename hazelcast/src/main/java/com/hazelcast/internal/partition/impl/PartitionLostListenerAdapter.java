@@ -19,9 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.partition.PartitionEventListener;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.annotation.PrivateApi;
 
-@PrivateApi
 class PartitionLostListenerAdapter implements PartitionEventListener<PartitionLostEvent> {
 
     private final PartitionLostListener listener;

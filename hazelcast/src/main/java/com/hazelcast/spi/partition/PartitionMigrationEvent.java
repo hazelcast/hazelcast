@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.spi.partition.MigrationEndpoint;
-
-import java.util.EventObject;
+package com.hazelcast.spi.partition;
 
 /**
  * An {@link java.util.EventObject} for a partition migration. Can be used by SPI services to get a callback
- * to listen to partition migration.  See {@link com.hazelcast.spi.MigrationAwareService} for more info.
+ * to listen to partition migration.  See {@link MigrationAwareService} for more info.
  */
-public class PartitionMigrationEvent extends EventObject {
+public class PartitionMigrationEvent {
 
     private final MigrationEndpoint migrationEndpoint;
 
@@ -36,7 +32,6 @@ public class PartitionMigrationEvent extends EventObject {
 
     public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId,
             int currentReplicaIndex, int newReplicaIndex) {
-        super(partitionId);
         this.migrationEndpoint = migrationEndpoint;
         this.partitionId = partitionId;
         this.currentReplicaIndex = currentReplicaIndex;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+
 /**
  * An object which is aware of {@link ServiceNamespace} which object itself belongs to.
  * <p>
