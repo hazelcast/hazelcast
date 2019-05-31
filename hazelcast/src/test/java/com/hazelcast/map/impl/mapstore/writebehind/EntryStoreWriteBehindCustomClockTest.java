@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore;
+package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.AbstractClockTest;
@@ -33,12 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class EntryLoaderCustomClockTest extends AbstractClockTest {
-
+public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
     private HazelcastInstance instance;
     private IMap<String, String> map;
     private TestEntryStore testEntryStore = new TestEntryStore();
@@ -57,30 +56,23 @@ public class EntryLoaderCustomClockTest extends AbstractClockTest {
     }
 
     @Test
-    public void testEntryLoader() {
-        testEntryStore.putExternally("key", "val", System.currentTimeMillis() + 2000);
-        assertEquals("val", map.get("key"));
-        sleepAtLeastSeconds(2);
-        assertNull(map.get("key"));
-    }
-
-    @Test
     public void testEntryStore() {
         map.put("key", "val", 1, TimeUnit.DAYS);
-        TestEntryStore.Record record = testEntryStore.getRecord("key");
         long expectedExpirationTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
         long delta = 5000;
-        assertNotNull(record);
-        assertEquals("val", record.value);
-        assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
-
+        assertTrueEventually(() -> {
+            TestEntryStore.Record record = testEntryStore.getRecord("key");
+            assertNotNull(record);
+            assertEquals("val", record.value);
+            assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
+        });
     }
 
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(testEntryStore).setEnabled(true);
+        mapStoreConfig.setImplementation(testEntryStore).setWriteDelaySeconds(3).setEnabled(true);
         config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
         return config;
     }

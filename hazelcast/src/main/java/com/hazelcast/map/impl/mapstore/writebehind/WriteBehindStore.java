@@ -147,7 +147,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         }
 
         DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createDefault(key, value, now, partitionId);
+                = DelayedEntries.createDefault(key, value, expirationTime, now, partitionId);
 
         add(delayedEntry);
 
@@ -250,7 +250,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             key = toHeapData(key);
         }
 
-        return !writeBehindQueue.contains(DelayedEntries.createDefault(key, null, -1, -1));
+        return !writeBehindQueue.contains(DelayedEntries.createDefault(key, null, Long.MAX_VALUE, -1, -1));
     }
 
     @Override

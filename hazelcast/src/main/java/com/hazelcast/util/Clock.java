@@ -44,6 +44,16 @@ public final class Clock {
         return CLOCK.currentTimeMillis();
     }
 
+    /**
+     * Converts a milliseconds offset from configured clock implementation
+     * offset to JVM time offset.
+     * @param millis
+     * @return
+     */
+    public static long convertHzMillisToStandardMillis(long millis) {
+        return millis - Clock.currentTimeMillis() + System.currentTimeMillis();
+    }
+
     static {
         CLOCK = createClock();
     }
