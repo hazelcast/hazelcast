@@ -168,7 +168,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected Object runMapStore(Record record, Data key, Object value, long now) {
-        value = mapDataStore.add(key, value, record.getExpirationTime(), now);
+        long expirationTime = record.getExpirationTime();
+        value = mapDataStore.add(key, value, expirationTime, now);
         if (mapDataStore.isPostProcessingMapStore()) {
             recordFactory.setValue(record, value);
         }
@@ -229,7 +230,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         MapStoreWrapper wrapper = mapStoreContext.getMapStoreWrapper();
         if (wrapper == null) {
             return RecordStoreLoader.EMPTY_LOADER;
-        } else if (wrapper.isEntryStore()) {
+        } else if (wrapper.isWithExpirationTime()) {
             return new EntryRecordStoreLoader(this);
         } else {
             return new BasicRecordStoreLoader(this);

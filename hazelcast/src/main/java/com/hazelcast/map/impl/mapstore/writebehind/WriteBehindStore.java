@@ -145,7 +145,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (!coalesce && OBJECT == inMemoryFormat) {
             value = toHeapData(value);
         }
-
+        expirationTime = getUserExpirationTime(expirationTime);
         DelayedEntry<Data, Object> delayedEntry
                 = DelayedEntries.createDefault(key, value, expirationTime, now, partitionId);
 

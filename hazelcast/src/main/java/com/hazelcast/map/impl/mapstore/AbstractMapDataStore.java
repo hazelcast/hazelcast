@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,6 +77,20 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         getStore().deleteAll(objectKeys);
     }
 
+    /**
+     * Returns expiration time offset in terms of JVM clock. HZ view vs
+     * JVM view of expiration time may differ in case of a custom clock
+     * implementation.
+     * @param hzExpirationTime
+     * @return
+     */
+    protected long getUserExpirationTime(long hzExpirationTime) {
+        if (hzExpirationTime == Long.MAX_VALUE) {
+            return hzExpirationTime;
+        }
+        return Clock.toSystemCurrentTimeMillis(hzExpirationTime);
+    }
+
     protected Object toObject(Object obj) {
         return serializationService.toObject(obj);
     }
@@ -112,7 +127,7 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
     }
 
     @Override
-    public boolean isEntryStore() {
-        return store.isEntryStore();
+    public boolean isWithExpirationTime() {
+        return store.isWithExpirationTime();
     }
 }

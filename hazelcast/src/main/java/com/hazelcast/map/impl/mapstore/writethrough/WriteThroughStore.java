@@ -21,7 +21,6 @@ import com.hazelcast.map.EntryLoaderEntry;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
 
 /**
  * Write through map data store implementation.
@@ -38,9 +37,9 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
         Object objectKey = toObject(key);
         Object objectValue = toObject(value);
 
-        if (getStore().isEntryStore()) {
-            long systemExpirationTime = Clock.convertHzMillisToStandardMillis(expirationTime);
-            getStore().store(objectKey, new EntryLoaderEntry(objectValue, systemExpirationTime));
+        if (getStore().isWithExpirationTime()) {
+            expirationTime = getUserExpirationTime(expirationTime);
+            getStore().store(objectKey, new EntryLoaderEntry(objectValue, expirationTime));
         } else {
             getStore().store(objectKey, objectValue);
         }

@@ -20,7 +20,6 @@ import com.hazelcast.map.EntryLoaderEntry;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -192,7 +191,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      */
     private List<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
                                                             final StoreOperationType operationType) {
-        return retryCall(new StoreSingleEntryTask(entry, operationType, mapStore.isEntryStore()));
+        return retryCall(new StoreSingleEntryTask(entry, operationType, mapStore.isWithExpirationTime()));
     }
 
     /**
@@ -201,7 +200,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      */
     private List<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,
                                                            final StoreOperationType operationType) {
-        return retryCall(new StoreBatchTask(batchMap, operationType, mapStore.isEntryStore()));
+        return retryCall(new StoreBatchTask(batchMap, operationType, mapStore.isWithExpirationTime()));
     }
 
     private void callBeforeStoreListeners(DelayedEntry entry) {
@@ -378,8 +377,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             final Object value = toObject(entry.getValue());
             boolean result;
             if (withTtl) {
-                long realExpirationTime = Clock.convertHzMillisToStandardMillis(entry.getExpirationTime());
-                result = operationType.processSingle(key, new EntryLoaderEntry(value, realExpirationTime), mapStore);
+                long expirationTime = entry.getExpirationTime();
+                result = operationType.processSingle(key, new EntryLoaderEntry(value, expirationTime), mapStore);
             } else {
                 result = operationType.processSingle(key, value, mapStore);
             }
@@ -439,8 +438,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
                 if (withTtl) {
-                    long realExpirationTime = Clock.convertHzMillisToStandardMillis(entry.getExpirationTime());
-                    map.put(key, new EntryLoaderEntry(value, realExpirationTime));
+                    map.put(key, new EntryLoaderEntry(value, entry.getExpirationTime()));
                 } else {
                     map.put(key, value);
                 }
