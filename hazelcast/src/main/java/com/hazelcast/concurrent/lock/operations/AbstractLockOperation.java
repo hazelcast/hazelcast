@@ -34,9 +34,6 @@ import com.hazelcast.spi.ServiceNamespaceAware;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.readNamespaceCompatibly;
-import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
-
 public abstract class AbstractLockOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation,
         ServiceNamespaceAware {
@@ -157,7 +154,7 @@ public abstract class AbstractLockOperation extends Operation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        writeNamespaceCompatibly(namespace, out);
+        out.writeObject(namespace);
         out.writeData(key);
         out.writeLong(threadId);
         out.writeLong(leaseTime);
@@ -167,7 +164,7 @@ public abstract class AbstractLockOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        namespace = readNamespaceCompatibly(in);
+        namespace = in.readObject();
         key = in.readData();
         threadId = in.readLong();
         leaseTime = in.readLong();
