@@ -19,8 +19,8 @@ package com.hazelcast.gcp;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.util.Base64;
 
+import java.util.Base64;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -101,7 +101,7 @@ class GcpAuthenticator {
         String dataToSign = String.format("%s.%s", headerBase64, claimSetBase64);
 
         String clearPrivateKeyString = clear(privateKeyString);
-        byte[] b1 = Base64.decode(clearPrivateKeyString.getBytes("UTF-8"));
+        byte[] b1 = Base64.getDecoder().decode(clearPrivateKeyString.getBytes("UTF-8"));
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(b1);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         Signature privateSignature = Signature.getInstance("SHA256withRSA");
@@ -125,7 +125,7 @@ class GcpAuthenticator {
     }
 
     private static byte[] base64encodeUrlSafe(byte[] data) {
-        byte[] encode = Base64.encode(data);
+        byte[] encode = Base64.getEncoder().encode(data);
         for (int i = 0; i < encode.length; i++) {
             if (encode[i] == '+') {
                 encode[i] = '-';

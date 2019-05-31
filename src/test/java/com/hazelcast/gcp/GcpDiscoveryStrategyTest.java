@@ -60,8 +60,8 @@ public class GcpDiscoveryStrategyTest {
         given(gcpClient.getAvailabilityZone()).willReturn(ZONE);
 
         // when
-        Map<String, Object> result1 = gcpDiscoveryStrategy.discoverLocalMetadata();
-        Map<String, Object> result2 = gcpDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> result1 = gcpDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> result2 = gcpDiscoveryStrategy.discoverLocalMetadata();
 
         // then
         assertEquals(ZONE, result1.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));

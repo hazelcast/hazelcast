@@ -50,7 +50,7 @@ public class GcpDiscoveryStrategy
     private final GcpClient gcpClient;
     private final PortRange portRange;
 
-    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
+    private final Map<String, String> memberMetadata = new HashMap<String, String>();
 
     GcpDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -98,7 +98,7 @@ public class GcpDiscoveryStrategy
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, gcpClient.getAvailabilityZone());
         }

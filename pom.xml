@@ -27,9 +27,9 @@
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jdk.version>1.6</jdk.version>
+        <jdk.version>1.8</jdk.version>
 
-        <hazelcast.version>3.12-BETA-1</hazelcast.version>
+        <hazelcast.version>4.0-SNAPSHOT</hazelcast.version>
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
