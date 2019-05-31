@@ -24,7 +24,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

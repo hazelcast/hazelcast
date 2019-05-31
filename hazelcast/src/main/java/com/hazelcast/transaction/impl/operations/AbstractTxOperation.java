@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.F_ID;
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.SERVICE_NAME;

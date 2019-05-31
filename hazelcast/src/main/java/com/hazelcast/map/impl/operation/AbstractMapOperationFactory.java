@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 public abstract class AbstractMapOperationFactory implements OperationFactory {
 

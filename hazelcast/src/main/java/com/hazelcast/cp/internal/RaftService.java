@@ -64,7 +64,7 @@ import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;

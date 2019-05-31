@@ -24,7 +24,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;

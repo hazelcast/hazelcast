@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Peek operation for Queue.

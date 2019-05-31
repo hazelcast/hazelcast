@@ -18,7 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

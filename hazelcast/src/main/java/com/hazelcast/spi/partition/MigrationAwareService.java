@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.partition;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * An interface that can be implemented by SPI services to get notified of partition changes; for example, if a

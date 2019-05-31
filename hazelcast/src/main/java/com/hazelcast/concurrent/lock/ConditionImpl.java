@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;

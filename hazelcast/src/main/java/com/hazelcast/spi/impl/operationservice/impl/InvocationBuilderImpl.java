@@ -18,11 +18,11 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
+ * An {@link InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
 class InvocationBuilderImpl extends InvocationBuilder {
 

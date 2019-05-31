@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;

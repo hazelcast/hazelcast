@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.security.Permission;
 import java.util.Map;

@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.GET;
 

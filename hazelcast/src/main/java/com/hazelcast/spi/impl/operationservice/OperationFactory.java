@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 
 /**
  * A Factory for creating {@link Operation} instances.
  * <p>The operations that will be sent to all partitions causes redundant serialization and network overhead.
- * An {@link com.hazelcast.spi.OperationFactory} instance is sent to each {@link com.hazelcast.core.Member} (node) instead to
+ * An {@link OperationFactory} instance is sent to each {@link com.hazelcast.core.Member} (node) instead to
  * improve the performance.
  * {@link OperationService} uses this factory to create {@link Operation}s for each partition by calling
  * {@link #createOperation()}

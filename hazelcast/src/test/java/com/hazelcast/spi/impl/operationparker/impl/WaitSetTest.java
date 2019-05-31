@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;

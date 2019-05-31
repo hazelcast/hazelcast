@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;

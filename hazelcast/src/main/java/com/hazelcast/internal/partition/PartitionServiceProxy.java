@@ -27,7 +27,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.FutureUtil;

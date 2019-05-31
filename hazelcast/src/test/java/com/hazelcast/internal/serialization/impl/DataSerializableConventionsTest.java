@@ -29,7 +29,7 @@ import com.hazelcast.query.impl.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
-import com.hazelcast.spi.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

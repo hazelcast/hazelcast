@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;

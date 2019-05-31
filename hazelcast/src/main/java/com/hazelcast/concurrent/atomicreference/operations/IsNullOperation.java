@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.IS_NULL;
 

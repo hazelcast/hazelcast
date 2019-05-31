@@ -18,7 +18,7 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.durableexecutor.impl.operations.ReplicationOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashMap;

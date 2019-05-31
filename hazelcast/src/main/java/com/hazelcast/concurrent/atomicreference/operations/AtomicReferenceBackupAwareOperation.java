@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 
 public abstract class AtomicReferenceBackupAwareOperation extends AbstractAtomicReferenceOperation
         implements BackupAwareOperation {

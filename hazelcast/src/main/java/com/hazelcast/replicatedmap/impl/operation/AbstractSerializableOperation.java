@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class AbstractSerializableOperation extends Operation implements IdentifiedDataSerializable {
 

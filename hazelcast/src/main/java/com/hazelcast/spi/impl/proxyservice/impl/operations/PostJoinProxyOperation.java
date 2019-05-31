@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;

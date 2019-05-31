@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 public class ClearBackupOperation extends MapOperation implements BackupOperation {
 

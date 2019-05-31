@@ -27,10 +27,10 @@ import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;

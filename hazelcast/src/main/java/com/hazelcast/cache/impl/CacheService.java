@@ -22,10 +22,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.Collection;

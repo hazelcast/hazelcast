@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.sequence;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;

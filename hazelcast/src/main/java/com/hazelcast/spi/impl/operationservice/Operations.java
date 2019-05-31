@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationutil;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.WanReplicationOperation;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 
 /**
  * Utility class that contains helper methods related to {@link Operation}

@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * Represents a change made in a transaction e.g. a map.put.

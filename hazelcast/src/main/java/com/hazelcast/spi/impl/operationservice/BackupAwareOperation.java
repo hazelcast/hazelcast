@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
  * A BackupAwareOperation is an Operation to indicate then when a change is made, a
- * {@link com.hazelcast.spi.BackupOperation} is created to replicate the backup.
+ * {@link BackupOperation} is created to replicate the backup.
  *
  * @author mdogan 12/6/12
  */
@@ -48,9 +48,9 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
     int getAsyncBackupCount();
 
     /**
-     * Creates the {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
+     * Creates the {@link BackupOperation} responsible for making the backup.
      *
-     * @return the created {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
+     * @return the created {@link BackupOperation} responsible for making the backup.
      */
     Operation getBackupOperation();
 }

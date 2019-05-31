@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -25,6 +25,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -35,9 +38,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.CallStatus.DONE_VOID;
-import static com.hazelcast.spi.CallStatus.WAIT;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -486,7 +489,7 @@ public abstract class Operation implements DataSerializable {
      *
      * @return the call timeout in milliseconds.
      * @see #setCallTimeout(long)
-     * @see com.hazelcast.spi.OperationAccessor#setCallTimeout(Operation, long)
+     * @see OperationAccessor#setCallTimeout(Operation, long)
      */
     public final long getCallTimeout() {
         return callTimeout;

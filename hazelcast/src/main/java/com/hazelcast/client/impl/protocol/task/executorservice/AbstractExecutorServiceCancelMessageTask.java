@@ -24,7 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 
 import java.net.UnknownHostException;
 import java.security.Permission;

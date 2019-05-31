@@ -26,7 +26,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;

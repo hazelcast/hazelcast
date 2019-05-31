@@ -18,15 +18,15 @@ package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 
 /**
  * This class is used to create {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation} instances.
  *
- * In difference to other implementations of {@link com.hazelcast.spi.OperationFactory} this class
+ * In difference to other implementations of {@link OperationFactory} this class
  * is never ever serialized and the DataSerializable methods {@link #readData(com.hazelcast.nio.ObjectDataInput)}
  * and {@link #writeData(com.hazelcast.nio.ObjectDataOutput)} throw {@link java.lang.UnsupportedOperationException}s.
  */

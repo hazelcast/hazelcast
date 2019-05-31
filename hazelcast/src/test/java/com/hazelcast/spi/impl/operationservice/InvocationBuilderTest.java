@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

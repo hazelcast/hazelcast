@@ -32,10 +32,10 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;

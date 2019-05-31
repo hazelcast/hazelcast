@@ -26,7 +26,7 @@ import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;

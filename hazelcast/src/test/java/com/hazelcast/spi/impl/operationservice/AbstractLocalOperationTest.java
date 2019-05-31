@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,25 +25,31 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class OperationTest {
+public class AbstractLocalOperationTest {
 
-    // test for https://github.com/hazelcast/hazelcast/issues/11375
-    @Test
-    public void sendResponse_whenResponseHandlerIsNull_andThrowableValue_thenNoNPE() {
-        Operation op = new DummyOperation();
-        op.sendResponse(new Exception());
+    private AbstractLocalOperation operation = new AbstractLocalOperation() {
+        @Override
+        public void run() throws Exception {
+        }
+    };
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testWriteInternal() throws Exception {
+        operation.writeInternal(null);
     }
 
-    // test for https://github.com/hazelcast/hazelcast/issues/11375
-    @Test
-    public void sendResponse_whenResponseHandlerIsNull_andNoThrowableValue_thenNoNPE() {
-        Operation op = new DummyOperation();
-        op.sendResponse("foo");
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadInternal() throws Exception {
+        operation.readInternal(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowException_whenReplicaIndexInvalid() {
-        Operation op = new DummyOperation();
-        op.setReplicaIndex(-1);
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetFactoryId() {
+        operation.getFactoryId();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetId() {
+        operation.getId();
     }
 }

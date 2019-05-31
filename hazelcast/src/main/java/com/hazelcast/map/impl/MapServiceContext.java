@@ -45,7 +45,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Collection;

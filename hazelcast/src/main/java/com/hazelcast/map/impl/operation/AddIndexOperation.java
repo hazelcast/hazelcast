@@ -27,8 +27,8 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 

@@ -20,8 +20,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;

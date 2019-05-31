@@ -26,7 +26,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.FutureUtil;
 

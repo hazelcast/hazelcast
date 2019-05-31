@@ -31,10 +31,10 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
