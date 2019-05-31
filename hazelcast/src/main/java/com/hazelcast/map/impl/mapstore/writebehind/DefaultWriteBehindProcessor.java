@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.ExtendedValue;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
@@ -376,9 +376,11 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             final Object key = toObject(entry.getKey());
             final Object value = toObject(entry.getValue());
             boolean result;
-            if (withTtl) {
+            // if value is null, then we have a DeletedDelayedEntry. We should not create
+            // an EntryLoaderEntry for that
+            if (withTtl && value != null) {
                 long expirationTime = entry.getExpirationTime();
-                result = operationType.processSingle(key, new EntryLoaderEntry(value, expirationTime), mapStore);
+                result = operationType.processSingle(key, new ExtendedValue(value, expirationTime), mapStore);
             } else {
                 result = operationType.processSingle(key, value, mapStore);
             }
@@ -386,9 +388,6 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             return result;
         }
 
-        /**
-         * Call when store failed.
-         */
         @Override
         public List<DelayedEntry> failureList() {
             List failedDelayedEntries = new ArrayList<DelayedEntry>(1);
@@ -437,8 +436,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             for (DelayedEntry entry : batchMap.values()) {
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
-                if (withTtl) {
-                    map.put(key, new EntryLoaderEntry(value, entry.getExpirationTime()));
+                if (withTtl && value != null) {
+                    map.put(key, new ExtendedValue(value, entry.getExpirationTime()));
                 } else {
                     map.put(key, value);
                 }

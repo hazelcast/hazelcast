@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.EntryLoaderEntry.NO_TIME_SET;
+import static com.hazelcast.map.ExtendedValue.NO_TIME_SET;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -32,17 +32,17 @@ public class EntryLoaderEntryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullValueIsNotAccepted() {
-        new EntryLoaderEntry<>(null);
+        new ExtendedValue<>(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullValueIsNotAccepted_withExpiration() {
-        new EntryLoaderEntry<>(null, -1);
+        new ExtendedValue<>(null, -1);
     }
 
     @Test
-    public void testWithNoTimeSet() {
-        EntryLoaderEntry entry = new EntryLoaderEntry<>("value");
+    public void testWithNoDate() {
+        ExtendedValue entry = new ExtendedValue<>("value");
         assertEquals(NO_TIME_SET, entry.getExpirationTime());
     }
 }

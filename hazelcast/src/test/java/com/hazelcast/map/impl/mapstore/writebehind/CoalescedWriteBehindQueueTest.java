@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -30,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
-import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.createWithoutValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -92,6 +92,6 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     private DelayedEntry<Data, Object> newEntry(Object key) {
-        return createWithoutValue(serializationService.toData(key));
+        return DelayedEntries.createNullEntry(serializationService.toData(key));
     }
 }

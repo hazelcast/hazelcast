@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.ExtendedValue;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -41,7 +41,7 @@ class EntryRecordStoreLoader extends BasicRecordStoreLoader {
         List<Data> keyValueSequence = new ArrayList<>(entries.size() * 2);
         for (Map.Entry<?, ?> entry : entries.entrySet()) {
             Object key = entry.getKey();
-            EntryLoaderEntry loaderEntry = (EntryLoaderEntry) entry.getValue();
+            ExtendedValue loaderEntry = (ExtendedValue) entry.getValue();
             Object value = loaderEntry.getValue();
             long expirationTime = loaderEntry.getExpirationTime();
             Data dataKey = mapServiceContext.toData(key);

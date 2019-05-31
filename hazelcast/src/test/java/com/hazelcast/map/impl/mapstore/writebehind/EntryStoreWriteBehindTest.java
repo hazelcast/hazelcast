@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.mapstore.EntryStoreSimpleTest;
-import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,9 +25,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -51,12 +47,6 @@ public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
     @Override
     protected void assertEntryStore(String key, String value, long remainingTtl, TimeUnit timeUnit, long delta) {
         long expectedExpirationTime = System.currentTimeMillis() + timeUnit.toMillis(remainingTtl);
-        assertTrueEventually(() -> {
-        TestEntryStore.Record record = testEntryStore.getRecord(key);
-        assertNotNull(record);
-        assertEquals(value, record.value);
-            assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
-
-        }, 10);
+        assertTrueEventually(() -> testEntryStore.assertRecordStored(key, value, expectedExpirationTime, delta), 10);
     }
 }

@@ -67,5 +67,5 @@ import java.util.Collection;
  * @param <K> type of the EntryLoader key
  * @param <V> type of the EnyryLoader value
  */
-public interface EntryLoader<K, V> extends MapLoader<K, EntryLoaderEntry<V>> {
+public interface EntryLoader<K, V> extends MapLoader<K, ExtendedValue<V>> {
 }

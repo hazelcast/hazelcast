@@ -17,33 +17,49 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static java.util.Arrays.asList;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
-    protected TestEntryStore testEntryStore = new TestEntryStore();
+    @Parameters(name = "inMemoryFormat: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][] {
+                {InMemoryFormat.BINARY},
+                {InMemoryFormat.OBJECT}
+        });
+    }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    protected TestEntryStore<String, String> testEntryStore = new TestEntryStore<>();
 
     protected HazelcastInstance[] instances;
 
@@ -64,7 +80,9 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
         Config config = super.getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(testEntryStore);
-        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("default")
+                .setMapStoreConfig(mapStoreConfig)
+                .setInMemoryFormat(inMemoryFormat);
         return config;
     }
 
@@ -152,14 +170,14 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testRemove() {
         map.put("key", "value");
         map.remove("key");
-        assertEntryStore("key", null);
+        testEntryStore.assertRecordNotStored("key");
     }
 
     @Test
     public void testRemoveIfSame() {
         map.put("key", "value");
         map.remove("key", "value");
-        assertEntryStore("key", null);
+        testEntryStore.assertRecordNotStored("key");
     }
 
     @Test
@@ -170,7 +188,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
         }
         map.removeAll(Predicates.alwaysTrue());
         for (int i = 0; i < mapSize; i++) {
-            assertEntryStore("k" + i, null);
+            testEntryStore.assertRecordNotStored("k" + i);
         }
     }
 
@@ -178,7 +196,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testRemoveAsync() throws ExecutionException, InterruptedException {
         map.put("key", "value");
         map.removeAsync("key").get();
-        assertEntryStore("key", null);
+        testEntryStore.assertRecordNotStored("key");
     }
 
     @Test
@@ -246,7 +264,6 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testSetTtl() {
         map.set("key", "value");
         map.setTtl("key", 1, TimeUnit.DAYS);
@@ -260,20 +277,11 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     protected void assertEntryStore(String key, String value) {
-        TestEntryStore.Record record = testEntryStore.getRecord(key);
-        if (value == null && record == null) {
-            return;
-        }
-        assertNotNull(record);
-        assertEquals(value, record.value);
-        assertEquals(-1, record.expirationTime);
+        testEntryStore.assertRecordStored(key, value);
     }
 
     protected void assertEntryStore(String key, String value, long remainingTtl, TimeUnit timeUnit, long delta) {
-        TestEntryStore.Record record = testEntryStore.getRecord(key);
-        assertNotNull(record);
-        assertEquals(value, record.value);
         long expectedExpirationTime = System.currentTimeMillis() + timeUnit.toMillis(remainingTtl);
-        assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
+        testEntryStore.assertRecordStored(key, value, expectedExpirationTime, delta);
     }
 }
