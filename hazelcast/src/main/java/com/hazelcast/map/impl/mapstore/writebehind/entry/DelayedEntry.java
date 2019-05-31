@@ -34,6 +34,8 @@ public interface DelayedEntry<K, V> {
 
     V getValue();
 
+    long getExpirationTime();
+
     long getStoreTime();
 
     int getPartitionId();

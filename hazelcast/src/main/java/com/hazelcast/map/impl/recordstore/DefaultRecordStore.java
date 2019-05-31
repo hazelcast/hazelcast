@@ -179,7 +179,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
-            updateRecord(key, record, value, now, true, ttl, maxIdle);
+            updateRecord(key, record, value, now, true, ttl, maxIdle, false);
         }
 
         if (persistenceEnabledFor(provenance)) {
@@ -723,7 +723,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = putNewRecord(key, value, ttl, maxIdle, now);
         } else {
-            updateRecord(key, record, value, now, countAsAccess, ttl, maxIdle);
+            updateRecord(key, record, value, now, countAsAccess, ttl, maxIdle, true);
         }
 
         saveIndex(record, oldValue);
@@ -873,7 +873,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
         } else {
-            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE);
+            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, true);
         }
         onStore(record);
         saveIndex(record, oldValue);
@@ -902,7 +902,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
         } else {
-            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE);
+            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, true);
         }
         onStore(record);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
@@ -926,7 +926,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE);
+            updateRecord(key, record, value, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, false);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
@@ -981,7 +981,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now, true, ttl, maxIdle);
+            updateRecord(key, record, value, now, true, ttl, maxIdle, false);
             entryEventType = UPDATED;
         }
 

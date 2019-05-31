@@ -36,12 +36,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
-    private TestEntryStore testEntryStore = new TestEntryStore();
+    protected TestEntryStore testEntryStore = new TestEntryStore();
 
     protected HazelcastInstance[] instances;
 
@@ -256,17 +257,19 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
         assertEntryStore("key", "value");
     }
 
-    private void assertEntryStore(String key, String value) {
+    protected void assertEntryStore(String key, String value) {
         TestEntryStore.Record record = testEntryStore.getRecord(key);
         if (value == null && record == null) {
             return;
         }
+        assertNotNull(record);
         assertEquals(value, record.value);
         assertEquals(-1, record.expirationTime);
     }
 
-    private void assertEntryStore(String key, String value, long remainingTtl, TimeUnit timeUnit, long delta) {
+    protected void assertEntryStore(String key, String value, long remainingTtl, TimeUnit timeUnit, long delta) {
         TestEntryStore.Record record = testEntryStore.getRecord(key);
+        assertNotNull(record);
         assertEquals(value, record.value);
         long expectedExpirationTime = System.currentTimeMillis() + timeUnit.toMillis(remainingTtl);
         assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);

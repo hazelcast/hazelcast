@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.map.EntryLoaderEntry;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
 import java.util.List;

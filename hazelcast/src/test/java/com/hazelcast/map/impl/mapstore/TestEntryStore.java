@@ -173,9 +173,9 @@ public class TestEntryStore implements EntryStore<String, String> {
         return records.get(key);
     }
 
-    class Record {
-        String value;
-        long expirationTime;
+    public class Record {
+        public String value;
+        public long expirationTime;
 
         private Record(String value, long expirationTime) {
             this.value = value;

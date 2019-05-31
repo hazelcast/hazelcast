@@ -46,6 +46,11 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
     }
 
     @Override
+    public long getExpirationTime() {
+        return Long.MAX_VALUE;
+    }
+
+    @Override
     public long getStoreTime() {
         return -1L;
     }
