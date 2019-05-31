@@ -214,8 +214,7 @@ hazelcast-client:
     type: random
 
   # Note that the Near Cache eviction configuration is different for NATIVE in-memory format.
-  # Proper eviction configuration example for NATIVE in-memory format :
-  #  TODO: `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+  # For the proper eviction configuration example for NATIVE in-memory format see "NearCacheEvictionConfigExample" below
   near-cache:
     default:
       max-size: 2000

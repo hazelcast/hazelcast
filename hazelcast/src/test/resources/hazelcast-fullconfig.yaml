@@ -102,14 +102,14 @@ hazelcast:
         enabled: false
         self-registration: true
         namespace: hazelcast
-#       <discovery-strategies>
-#            <node-filter class="DummyFilterClass"/>
-#            <discovery-strategy class="DummyClass" enabled="true">
-#                <properties>
-#                    <property name="foo">bar</property>
-#                </properties>
-#            </discovery-strategy>
-#        </discovery-strategies>-->
+    #      discovery-strategies:
+    #        node-filter:
+    #          class: DummyFilterClass
+    #        discovery-strategies:
+    #          - class: DummyClass
+    #            enabled: true
+    #            properties:
+    #              foo: bar
     interfaces:
       enabled: true
       interfaces:
