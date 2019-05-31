@@ -17,11 +17,12 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.map.EntryLoader;
-import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.ExtendedValue;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestEntryLoader implements EntryLoader<String, String> {
@@ -35,7 +36,7 @@ public class TestEntryLoader implements EntryLoader<String, String> {
     private AtomicInteger loadKeysCallCount = new AtomicInteger();
 
     @Override
-    public EntryLoaderEntry<String> load(String key) {
+    public ExtendedValue<String> load(String key) {
         loadCallCount.incrementAndGet();
         if (NULL_RETURNING_KEY.equals(key)) {
             return null;
@@ -46,20 +47,20 @@ public class TestEntryLoader implements EntryLoader<String, String> {
         }
         loadedEntryCount.incrementAndGet();
         if (record.expirationTime == -1) {
-            return new EntryLoaderEntry<>(record.value);
+            return new ExtendedValue<>(record.value);
         } else {
-            return new EntryLoaderEntry<>(record.value, record.expirationTime);
+            return new ExtendedValue<>(record.value, record.expirationTime);
         }
     }
 
     @Override
-    public Map<String, EntryLoaderEntry<String>> loadAll(Collection<String> keys) {
+    public Map<String, ExtendedValue<String>> loadAll(Collection<String> keys) {
         loadAllCallCount.incrementAndGet();
         loadedEntryCount.addAndGet(keys.size());
-        Map<String, EntryLoaderEntry<String>> map = new HashMap<>(keys.size());
+        Map<String, ExtendedValue<String>> map = new HashMap<>(keys.size());
         for (String key: keys) {
             Record record = records.get(key);
-            map.put(key, new EntryLoaderEntry<>(record.value, record.expirationTime));
+            map.put(key, new ExtendedValue<>(record.value, record.expirationTime));
         }
         return map;
     }
@@ -72,6 +73,10 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     public void putExternally(String key, String value, long expirationTime) {
         this.records.put(key, new Record(value, expirationTime));
+    }
+
+    public void putExternally(String key, String value, long ttl, TimeUnit unit) {
+        putExternally(key, value, System.currentTimeMillis() + unit.toMillis(ttl));
     }
 
     public void putExternally(String key, String value) {

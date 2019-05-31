@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.ExtendedValue;
 import com.hazelcast.map.EntryStore;
 
 import java.util.Collection;
@@ -24,11 +24,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestEntryStore implements EntryStore<String, String> {
+import static com.hazelcast.test.HazelcastTestSupport.assertBetween;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-    static final String NULL_RETURNING_KEY = "nullReturningKey";
+public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
-    private Map<String, Record> records = new HashMap<>();
+    private static final long NO_TIME = -1;
+
+    private Map<K, Record> records = new HashMap<>();
     private AtomicInteger loadedEntryCount = new AtomicInteger();
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();
@@ -39,47 +44,44 @@ public class TestEntryStore implements EntryStore<String, String> {
     private AtomicInteger deleteCallCount = new AtomicInteger();
 
     @Override
-    public EntryLoaderEntry<String> load(String key) {
+    public ExtendedValue<V> load(K key) {
         loadCallCount.incrementAndGet();
-        if (NULL_RETURNING_KEY.equals(key)) {
-            return null;
-        }
         Record record = records.get(key);
         if (record == null) {
             return null;
         }
         loadedEntryCount.incrementAndGet();
-        if (record.expirationTime == -1) {
-            return new EntryLoaderEntry<>(record.value);
+        if (record.expirationTime == NO_TIME) {
+            return new ExtendedValue<>(record.value);
         } else {
-            return new EntryLoaderEntry<>(record.value, record.expirationTime);
+            return new ExtendedValue<>(record.value, record.expirationTime);
         }
     }
 
     @Override
-    public Map<String, EntryLoaderEntry<String>> loadAll(Collection<String> keys) {
+    public Map<K, ExtendedValue<V>> loadAll(Collection<K> keys) {
         loadAllCallCount.incrementAndGet();
         loadedEntryCount.addAndGet(keys.size());
-        Map<String, EntryLoaderEntry<String>> map = new HashMap<>(keys.size());
-        for (String key: keys) {
+        Map<K, ExtendedValue<V>> map = new HashMap<>(keys.size());
+        for (K key: keys) {
             Record record = records.get(key);
-            map.put(key, new EntryLoaderEntry<>(record.value, record.expirationTime));
+            map.put(key, new ExtendedValue<>(record.value, record.expirationTime));
         }
         return map;
     }
 
     @Override
-    public Iterable<String> loadAllKeys() {
+    public Iterable<K> loadAllKeys() {
         loadKeysCallCount.incrementAndGet();
         return records.keySet();
     }
 
     @Override
-    public void store(String key, EntryLoaderEntry<String> value) {
-        String internalValue = value.getValue();
+    public void store(K key, ExtendedValue<V> value) {
+        V internalValue = value.getValue();
         long expirationTime = value.getExpirationTime();
-        if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
-            records.put(key, new Record(internalValue, -1));
+        if (expirationTime == ExtendedValue.NO_TIME_SET) {
+            records.put(key, new Record(internalValue, NO_TIME));
         } else {
             records.put(key, new Record(internalValue, expirationTime));
         }
@@ -88,14 +90,14 @@ public class TestEntryStore implements EntryStore<String, String> {
     }
 
     @Override
-    public void storeAll(Map<String, EntryLoaderEntry<String>> map) {
-        for (Map.Entry<String, EntryLoaderEntry<String>> mapEntry: map.entrySet()) {
-            String key = mapEntry.getKey();
-            EntryLoaderEntry<String> entry = mapEntry.getValue();
-            String internalValue = entry.getValue();
+    public void storeAll(Map<K, ExtendedValue<V>> map) {
+        for (Map.Entry<K, ExtendedValue<V>> mapEntry: map.entrySet()) {
+            K key = mapEntry.getKey();
+            ExtendedValue<V> entry = mapEntry.getValue();
+            V internalValue = entry.getValue();
             long expirationTime = entry.getExpirationTime();
-            if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
-                records.put(key, new Record(internalValue, -1));
+            if (expirationTime == ExtendedValue.NO_TIME_SET) {
+                records.put(key, new Record(internalValue, NO_TIME));
             } else {
                 records.put(key, new Record(internalValue, expirationTime));
             }
@@ -105,23 +107,23 @@ public class TestEntryStore implements EntryStore<String, String> {
     }
 
     @Override
-    public void delete(String key) {
+    public void delete(K key) {
         records.remove(key);
         deleteCallCount.incrementAndGet();
     }
 
     @Override
-    public void deleteAll(Collection<String> keys) {
-        for (String key: keys) {
+    public void deleteAll(Collection<K> keys) {
+        for (K key: keys) {
             records.remove(key);
         }
     }
 
-    public void putExternally(String key, String value, long expirationTime) {
+    public void putExternally(K key, V value, long expirationTime) {
         this.records.put(key, new Record(value, expirationTime));
     }
 
-    public void putExternally(String key, String value) {
+    public void putExternally(K key, V value) {
         this.records.put(key, new Record(value, Long.MAX_VALUE));
     }
 
@@ -161,23 +163,30 @@ public class TestEntryStore implements EntryStore<String, String> {
         return deleteCallCount.get();
     }
 
-    public String getExternal(String key) {
+    public void assertRecordStored(K key, V value, long expectedExpirationTime, long delta) {
         Record record = records.get(key);
-        if (record == null) {
-            return null;
-        }
-        return record.value;
+        assertNotNull(record);
+        assertEquals(value, record.value);
+        assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
     }
 
-    public Record getRecord(String key) {
-        return records.get(key);
+    public void assertRecordNotStored(K key) {
+        Record record = records.get(key);
+        assertNull(record);
     }
 
-    public class Record {
-        public String value;
+    public void assertRecordStored(K key, V value) {
+        Record record = records.get(key);
+        assertNotNull(record);
+        assertEquals(value, record.value);
+        assertEquals(NO_TIME, record.expirationTime);
+    }
+
+    private class Record {
+        public V value;
         public long expirationTime;
 
-        private Record(String value, long expirationTime) {
+        private Record(V value, long expirationTime) {
             this.value = value;
             this.expirationTime = expirationTime;
         }

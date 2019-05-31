@@ -22,7 +22,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.EntryLoaderEntry;
+import com.hazelcast.map.ExtendedValue;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
@@ -330,7 +330,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return null;
         }
         if (mapDataStore.isWithExpirationTime()) {
-            EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
+            ExtendedValue loaderEntry = (ExtendedValue) value;
             long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
             if (proposedTtl < 0) {
                 return null;
@@ -606,11 +606,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = toData(entry.getKey());
             Object value = entry.getValue();
             if (mapDataStore.isWithExpirationTime()) {
-                EntryLoaderEntry loaderEntry = (EntryLoaderEntry) value;
+                ExtendedValue loaderEntry = (ExtendedValue) value;
 
-                if (putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress) != null) {
+                if (expirationTimeToTtl(loaderEntry.getExpirationTime()) >= 0) {
                     resultMap.put(key, loaderEntry.getValue());
                 }
+                putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress);
 
             } else {
                 resultMap.put(key, value);
@@ -941,7 +942,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress) {
-        if (expirationTime == EntryLoaderEntry.NO_TIME_SET) {
+        if (expirationTime == ExtendedValue.NO_TIME_SET) {
             return putFromLoad(key, value, callerAddress);
         }
         long ttl = expirationTimeToTtl(expirationTime);

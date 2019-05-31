@@ -23,10 +23,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.PostProcessingMapStore;
+import com.hazelcast.map.ExtendedValue;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +37,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -45,11 +50,24 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PostProcessingMapStoreTest extends HazelcastTestSupport {
+
+    @Parameters(name = "mapStore: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {IncrementerPostProcessingMapStore.class},
+                {PostProcessingEntryStore.class}
+        });
+    }
+
+    @Parameter
+    public Class<MapStore> mapStore;
 
     private TestHazelcastInstanceFactory factory;
 
@@ -70,7 +88,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setReadBackupData(true);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
+        mapStoreConfig.setEnabled(true).setClassName(mapStore.getName());
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -164,7 +182,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
+        mapStoreConfig.setEnabled(true).setClassName(mapStore.getName());
         mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         warmUpPartitions(instance);
@@ -217,6 +235,14 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         @Override
         public Set<Integer> loadAllKeys() {
             return map.keySet();
+        }
+    }
+
+    public static class PostProcessingEntryStore extends TestEntryStore<Integer, SampleObject> implements PostProcessingMapStore {
+        @Override
+        public void store(Integer key, ExtendedValue<SampleObject> value) {
+            value.getValue().version++;
+            super.store(key, value);
         }
     }
 

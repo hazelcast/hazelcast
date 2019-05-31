@@ -32,15 +32,12 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
     private HazelcastInstance instance;
     private IMap<String, String> map;
-    private TestEntryStore testEntryStore = new TestEntryStore();
+    private TestEntryStore<String, String> testEntryStore = new TestEntryStore<>();
 
     @Before
     public void setup() {
@@ -56,16 +53,17 @@ public class EntryStoreWriteBehindCustomClockTest extends AbstractClockTest {
     }
 
     @Test
-    public void testEntryStore() {
+    public void testPutWithExpirationTime() {
         map.put("key", "val", 1, TimeUnit.DAYS);
         long expectedExpirationTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
         long delta = 5000;
-        assertTrueEventually(() -> {
-            TestEntryStore.Record record = testEntryStore.getRecord("key");
-            assertNotNull(record);
-            assertEquals("val", record.value);
-            assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
-        });
+        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val", expectedExpirationTime, delta));
+    }
+
+    @Test
+    public void testPutWithoutExpirationTime() {
+        map.put("key", "val");
+        assertTrueEventually(() -> testEntryStore.assertRecordStored("key", "val"), 10);
     }
 
     @Override

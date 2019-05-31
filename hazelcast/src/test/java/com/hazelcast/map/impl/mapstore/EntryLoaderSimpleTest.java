@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -27,8 +28,9 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,23 +38,45 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({ParallelJVMTest.class, QuickTest.class})
 public class EntryLoaderSimpleTest extends HazelcastTestSupport {
+
+    @Parameters(name = "inMemoryFormat: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][] {
+                {InMemoryFormat.BINARY},
+                {InMemoryFormat.OBJECT}
+        });
+    }
 
     private TestEntryLoader testEntryLoader = new TestEntryLoader();
 
     protected HazelcastInstance[] instances;
 
     protected IMap<String, String> map;
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
 
     @Before
     public void setup() {
@@ -69,7 +93,9 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Config config = super.getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(testEntryLoader);
-        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("default")
+                .setMapStoreConfig(mapStoreConfig)
+                .setInMemoryFormat(inMemoryFormat);
         return config;
     }
 
@@ -104,10 +130,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < entryCount; i++) {
             assertInMemory(instances, map.getName(), "key" + i, "val" + i);
         }
-        sleepAtLeastSeconds(6);
-        for (int i = 0; i < entryCount; i++) {
-            assertNull(map.get("key" + i));
-        }
+        assertExpiredEventually(map, "key", 0, entryCount);
     }
 
     @Test
@@ -121,17 +144,13 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < entryCount; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }
-        for (int i = 0; i < entryCount; i++) {
-            assertNull(map.get("key" + i));
-        }
+        assertExpiredEventually(map, "key", 0, entryCount);
     }
 
     @Test
     public void testLoadAllWithoutExpirationTimes() {
         final int entryCount = 100;
-        for (int i = 0; i < entryCount; i++) {
-            testEntryLoader.putExternally("key" + i, "val" + i);
-        }
+        putEntriesExternally(testEntryLoader, "key", "val", 0, entryCount);
         map.loadAll(false);
 
         for (int i = 0; i < entryCount; i++) {
@@ -145,9 +164,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testGetAllLoadsEntriesWithExpiration() {
         final int entryCount = 100;
-        for (int i = 0; i < entryCount; i++) {
-            testEntryLoader.putExternally("key" + i, "val" + i, System.currentTimeMillis() + 5000);
-        }
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -160,17 +177,13 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }
-        for (int i = 0; i < 50; i++) {
-            assertNull(map.get("key" + i));
-        }
+        assertExpiredEventually(map, "key", 0, 50);
     }
 
     @Test
     public void testGetAllLoadsEntriesWithoutExpiration() {
         final int entryCount = 100;
-        for (int i = 0; i < entryCount; i++) {
-            testEntryLoader.putExternally("key" + i, "val" + i);
-        }
+        putEntriesExternally(testEntryLoader, "key", "val", 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -179,6 +192,153 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertEquals("val" + i, entries.get("key" + i));
         }
+    }
+
+    @Test
+    public void testPut_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.put("key", "val2"));
+    }
+
+    @Test
+    public void testPutWithTtl() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.put("key", "val2", 10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testPutWithMaxIdle_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.put("key", "val2", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS));
+    }
+
+    @Test
+    public void testPutAsync_returnValue() throws ExecutionException, InterruptedException {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.putAsync("key", "val2").get());
+    }
+
+    @Test
+    public void testPutIfAbsent_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.putIfAbsent("key", "val2"));
+    }
+
+    @Test
+    public void testRemove_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.remove("key"));
+    }
+
+    @Test
+    public void testRemoveIfSame_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertTrue(map.remove("key", "val"));
+    }
+
+    @Test
+    public void testRemoveAsync_returnValue() throws ExecutionException, InterruptedException {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.removeAsync("key").get());
+    }
+
+    @Test
+    public void testReplace_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertEquals("val", map.replace("key", "val2"));
+    }
+
+    @Test
+    public void testReplaceIfSame_returnValue() {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertTrue(map.replace("key", "val", "val2"));
+    }
+
+    @Test
+    public void testKeySet() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Set<String> entries = map.keySet();
+        for (int i = 0; i < entryCount; i++) {
+            assertContains(entries, "key" + i);
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    @Test
+    public void testKeySet_withPredicate() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Set<String> entries = map.keySet(Predicates.greaterEqual("__key", "key90"));
+        for (int i = 90; i < entryCount; i++) {
+            assertContains(entries, "key" + i);
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    @Test
+    public void testValues() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Collection<String> entries = map.values();
+        for (int i = 0; i < entryCount; i++) {
+            assertContains(entries, "val" + i);
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    @Test
+    public void testValues_withPredicate() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Collection<String> entries = map.values(Predicates.greaterEqual("this", "val90"));
+        for (int i = 90; i < entryCount; i++) {
+            assertContains(entries, "val" + i);
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    @Test
+    public void testEntrySet() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Set<Map.Entry<String, String>> entries = map.entrySet();
+        for (int i = 0; i < entryCount; i++) {
+            assertContains(entries, new AbstractMap.SimpleEntry<>("key" + i, "val" + i));
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    @Test
+    public void testEntrySet_withPredicate() {
+        final int entryCount = 100;
+        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        Set<Map.Entry<String, String>> entries = map.entrySet(Predicates.greaterEqual("__key", "key90"));
+        for (int i = 90; i < entryCount; i++) {
+            assertContains(entries, new AbstractMap.SimpleEntry<>("key" + i, "val" + i));
+        }
+        assertExpiredEventually(map, "key", 0, entryCount);
+    }
+
+    private void putEntriesExternally(TestEntryLoader loader, String keyPrefix, String valuePrefix, long expirationMillis, int from, int to) {
+        long expirationTime = System.currentTimeMillis() + expirationMillis;
+        for (int i = from; i < to; i++) {
+            loader.putExternally(keyPrefix + i, valuePrefix + i, expirationTime);
+        }
+    }
+
+    private void putEntriesExternally(TestEntryLoader loader, String keyPrefix, String valuePrefix, int from, int to) {
+        for (int i = from; i < to; i++) {
+            loader.putExternally(keyPrefix + i, valuePrefix + i);
+        }
+    }
+
+    private void assertExpiredEventually(IMap map, String prefix, int from, int to) {
+        assertTrueEventually(() -> {
+            for (int i = from; i < to; i++) {
+                assertNull(map.get(prefix + i));
+            }
+        });
     }
 
     private void assertInMemory(HazelcastInstance[] instances, String mapName, String key, String expectedValue) {

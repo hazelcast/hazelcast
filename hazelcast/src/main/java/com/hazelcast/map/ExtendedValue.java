@@ -19,12 +19,11 @@ package com.hazelcast.map;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Represents a value with an expiration time attached to it.
- * Expiration time is optional. It is intented to use with
- * {@link EntryLoader}.
+ * Represents a value with an expiration time attached to it. Expiration
+ * time is optional. It is intended to be used with {@link EntryLoader}.
  * @param <V> the type of the value object
  */
-public class EntryLoaderEntry<V> {
+public class ExtendedValue<V> {
 
     /**
      * Represents no expiration time for a particular value
@@ -39,9 +38,8 @@ public class EntryLoaderEntry<V> {
      * Creates a value without attaching an expiration time
      * @param value the value
      */
-    public EntryLoaderEntry(V value) {
-        isNotNull(value, "value");
-        this.value = value;
+    public ExtendedValue(V value) {
+        this.value = isNotNull(value, "value");
         this.expirationTime = NO_TIME_SET;
     }
 
@@ -53,9 +51,8 @@ public class EntryLoaderEntry<V> {
      * @param value the value
      * @param expirationTime expiration time associated with the value
      */
-    public EntryLoaderEntry(V value, long expirationTime) {
-        isNotNull(value, "value");
-        this.value = value;
+    public ExtendedValue(V value, long expirationTime) {
+        this.value = isNotNull(value, "value");
         this.expirationTime = expirationTime;
     }
 

@@ -38,5 +38,5 @@ import com.hazelcast.core.MapStore;
  * @param <K> type of the EntryStore key
  * @param <V> type of the EntryStore value
  */
-public interface EntryStore<K, V> extends EntryLoader<K, V>, MapStore<K, EntryLoaderEntry<V>> {
+public interface EntryStore<K, V> extends EntryLoader<K, V>, MapStore<K, ExtendedValue<V>> {
 }
