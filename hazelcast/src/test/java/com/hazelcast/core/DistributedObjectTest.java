@@ -21,7 +21,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;

@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 
 public final class OperationResponseHandlerFactory {
 

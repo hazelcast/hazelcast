@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

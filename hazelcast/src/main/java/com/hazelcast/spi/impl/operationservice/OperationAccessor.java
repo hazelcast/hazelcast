@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -73,7 +73,7 @@ public final class OperationAccessor {
      *
      * @param op the Operation to updated for its call timeout.
      * @param callTimeout the call timeout in ms.
-     * @see com.hazelcast.spi.Operation#setCallTimeout(long)
+     * @see Operation#setCallTimeout(long)
      */
     public static void setCallTimeout(Operation op, long callTimeout) {
         op.setCallTimeout(callTimeout);

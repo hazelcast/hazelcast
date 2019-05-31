@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
+
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
- *  Indicates that {@link Operation} carries the distributed data structure name that is going to work on.
+ * Read-only operations are allowed to run during migration and passive state.
  */
-public interface NamedOperation {
+public interface ReadonlyOperation extends AllowedDuringPassiveState {
 
-    /**
-     * Returns the name of the distributed data structure.
-     * @return String name of the distributed data structure.
-     */
-    String getName();
 }

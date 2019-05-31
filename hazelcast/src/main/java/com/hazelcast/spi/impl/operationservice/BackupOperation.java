@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
+package com.hazelcast.spi.impl.operationservice;
+
 /**
- * Contains utiliy classes related to {@link com.hazelcast.spi.Operation}
+ * When an {@link BackupAwareOperation} makes a change, the backups need to be replicated to other
+ * members (depending on the configuration and if change really happened). The BackupOperation is created by such a
+ * operation.
+ *
+ * @author mdogan 12/3/12
  */
-package com.hazelcast.spi.impl.operationutil;
+public interface BackupOperation extends PartitionAwareOperation {
+
+}

@@ -18,7 +18,7 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * Topic proxy used when global ordering is enabled (all nodes listening to

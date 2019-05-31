@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOpe
 import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;

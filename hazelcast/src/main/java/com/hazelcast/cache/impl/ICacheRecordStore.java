@@ -25,6 +25,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -39,7 +40,7 @@ import java.util.Set;
  * {@link ICacheRecordStore} is the core contract providing internal functionality to
  * {@link com.hazelcast.cache.ICache} implementations on partition scope. All of the ICache methods actually
  * map to a method on this interface through Hazelcast's RPC mechanism. Hazelcast
- * {@link com.hazelcast.spi.Operation} is sent to the relevant partition to be executed and the final
+ * {@link Operation} is sent to the relevant partition to be executed and the final
  * results are returned to the callers.
  * <p>
  * For each partition, there is only one {@link ICacheRecordStore} in the cluster.

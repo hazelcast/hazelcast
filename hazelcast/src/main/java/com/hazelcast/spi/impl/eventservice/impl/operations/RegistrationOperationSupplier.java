@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.util.function.Supplier;

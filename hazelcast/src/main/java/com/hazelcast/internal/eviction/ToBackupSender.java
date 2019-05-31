@@ -19,7 +19,7 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.CollectionUtil;
 

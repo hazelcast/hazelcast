@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 
 import java.io.IOException;
 
@@ -44,7 +45,7 @@ import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PU
  *
  * I originally wanted to remove the <code>name</code> field and use a constant,
  * but it has side-effects - for example when a ILock proxy is destroyed then you
- * want to destroy all pending {@link com.hazelcast.spi.BlockingOperation}
+ * want to destroy all pending {@link BlockingOperation}
  *
  * @see LockStoreContainer#getOrCreateLockStore(ObjectNamespace)
  * @see OperationParkerImpl#cancelParkedOperations(String, Object, Throwable)

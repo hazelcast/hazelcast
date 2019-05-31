@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.spi.impl.operationservice.OperationService;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
  * A handler for the {@link OperationService} when it has calculated a response. This way you can hook

@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
- * Read-only operations are allowed to run during migration and passive state.
+ * Marker interface for operations that change state/data.
+ * Used for quorum to reject operations if the quorum size not satisfied.
+ * <p>
+ * Operations implementing {@link BackupOperation} should
+ * not be marked with this interface.
+ *
+ * @see com.hazelcast.config.QuorumConfig
+ * @see QuorumCheckAwareOperation
+ * @see ReadonlyOperation
  */
-public interface ReadonlyOperation extends AllowedDuringPassiveState {
-
+public interface MutatingOperation {
 }

@@ -14,45 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public abstract class AbstractNamedOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
-    protected String name;
-
-    protected AbstractNamedOperation(String name) {
-        this.name = name;
-    }
-
-    public AbstractNamedOperation() {
-    }
+/**
+ * Abstract class for local operations, which should not be serializable.
+ */
+public abstract class AbstractLocalOperation extends Operation implements IdentifiedDataSerializable {
 
     @Override
-    public final String getName() {
-        return name;
-    }
-
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(name);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        name = in.readUTF();
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
     }
 
     @Override
-    protected void toString(StringBuilder sb) {
-        super.toString(sb);
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
+    }
 
-        sb.append(", name=").append(name);
+    @Override
+    public int getFactoryId() {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
     }
 }

@@ -20,7 +20,7 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
- * When an {@link com.hazelcast.spi.BackupAwareOperation} makes a change, the backups need to be replicated to other
- * members (depending on the configuration and if change really happened). The BackupOperation is created by such a
- * operation.
- *
- * @author mdogan 12/3/12
+ *  Indicates that {@link Operation} carries the distributed data structure name that is going to work on.
  */
-public interface BackupOperation extends PartitionAwareOperation {
+public interface NamedOperation {
 
+    /**
+     * Returns the name of the distributed data structure.
+     * @return String name of the distributed data structure.
+     */
+    String getName();
 }

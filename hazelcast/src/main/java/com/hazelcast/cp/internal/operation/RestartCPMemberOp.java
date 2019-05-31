@@ -22,9 +22,9 @@ import com.hazelcast.cp.internal.RaftSystemOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 

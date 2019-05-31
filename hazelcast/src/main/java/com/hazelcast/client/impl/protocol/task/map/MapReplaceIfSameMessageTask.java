@@ -22,7 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class MapReplaceIfSameMessageTask
         extends AbstractMapPutMessageTask<MapReplaceIfSameCodec.RequestParameters> {
