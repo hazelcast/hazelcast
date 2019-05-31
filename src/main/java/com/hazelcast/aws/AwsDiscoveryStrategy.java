@@ -62,7 +62,7 @@ public class AwsDiscoveryStrategy
     private final AwsConfig awsConfig;
     private final AWSClient awsClient;
 
-    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
+    private final Map<String, String> memberMetadata = new HashMap<String, String>();
 
     public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -133,7 +133,7 @@ public class AwsDiscoveryStrategy
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, awsClient.getAvailabilityZone());
         }

@@ -51,7 +51,7 @@ public class AwsDiscoveryStrategyTest
         given(mockClient.getAvailabilityZone()).willReturn("us-east-1a");
 
         // when
-        Map<String, Object> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
 
         // then
         assertEquals("us-east-1a", localMetaData.get(PARTITION_GROUP_ZONE));

@@ -20,7 +20,7 @@ import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DescribeInstancesTest {
     public static final String DUMMY_PRIVATE_IP = "10.0.0.1";
     private static final String DUMMY_ACCESS_KEY = "DUMMY_ACCESS_KEY";
