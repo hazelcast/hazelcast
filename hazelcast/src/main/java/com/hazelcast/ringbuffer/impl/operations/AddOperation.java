@@ -106,7 +106,7 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_OPERATION;
     }
 

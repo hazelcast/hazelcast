@@ -56,7 +56,7 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.COUNT;
     }
 

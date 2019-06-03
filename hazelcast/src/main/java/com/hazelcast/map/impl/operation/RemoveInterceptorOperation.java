@@ -90,7 +90,7 @@ public class RemoveInterceptorOperation extends Operation implements MutatingOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE_INTERCEPTOR;
     }
 }

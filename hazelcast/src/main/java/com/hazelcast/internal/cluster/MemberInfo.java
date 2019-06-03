@@ -193,7 +193,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_INFO;
     }
 }

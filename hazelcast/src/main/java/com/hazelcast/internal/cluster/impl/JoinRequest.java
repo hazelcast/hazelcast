@@ -144,7 +144,7 @@ public class JoinRequest extends JoinMessage {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.JOIN_REQUEST;
     }
 }

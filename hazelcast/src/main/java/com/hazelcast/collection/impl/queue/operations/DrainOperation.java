@@ -86,7 +86,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.DRAIN;
     }
 

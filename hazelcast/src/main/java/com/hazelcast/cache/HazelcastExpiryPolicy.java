@@ -138,7 +138,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EXPIRY_POLICY;
     }
 

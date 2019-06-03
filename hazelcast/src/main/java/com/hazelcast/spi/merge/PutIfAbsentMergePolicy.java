@@ -40,7 +40,7 @@ public class PutIfAbsentMergePolicy<V, T extends MergingValue<V>> extends Abstra
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.PUT_IF_ABSENT;
     }
 }

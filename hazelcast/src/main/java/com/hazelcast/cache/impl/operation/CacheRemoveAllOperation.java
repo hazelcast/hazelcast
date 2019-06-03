@@ -157,7 +157,7 @@ public class CacheRemoveAllOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REMOVE_ALL;
     }
 

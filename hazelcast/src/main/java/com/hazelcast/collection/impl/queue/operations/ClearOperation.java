@@ -79,7 +79,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CLEAR;
     }
 }

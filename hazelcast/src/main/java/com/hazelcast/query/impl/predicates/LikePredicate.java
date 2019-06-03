@@ -98,7 +98,7 @@ public class LikePredicate extends AbstractPredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.LIKE_PREDICATE;
     }
 

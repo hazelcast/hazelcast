@@ -239,7 +239,7 @@ public class AliasedDiscoveryConfigUtilsTest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             throw new UnsupportedOperationException("Deserialization not supported!");
         }
     }

@@ -39,7 +39,7 @@ public class MapAssignAndGetUuidsOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_ASSIGN_AND_GET_UUIDS_FACTORY;
     }
 

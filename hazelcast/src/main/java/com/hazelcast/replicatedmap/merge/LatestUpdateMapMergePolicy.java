@@ -52,7 +52,7 @@ public final class LatestUpdateMapMergePolicy implements ReplicatedMapMergePolic
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.LATEST_UPDATE_MERGE_POLICY;
     }
 

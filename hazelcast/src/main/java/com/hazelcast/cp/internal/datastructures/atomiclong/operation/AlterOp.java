@@ -83,7 +83,7 @@ public class AlterOp extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.ALTER_OP;
     }
 

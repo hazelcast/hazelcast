@@ -182,7 +182,7 @@ public class VectorClock implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.VECTOR_CLOCK;
     }
 }

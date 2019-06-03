@@ -72,7 +72,7 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_REMOVE;
     }
 

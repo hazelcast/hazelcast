@@ -76,7 +76,7 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.CREATE_SESSION_OP;
     }
 

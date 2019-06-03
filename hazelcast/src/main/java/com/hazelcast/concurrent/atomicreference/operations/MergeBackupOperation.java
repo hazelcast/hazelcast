@@ -55,7 +55,7 @@ public class MergeBackupOperation extends AbstractAtomicReferenceOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP;
     }
 

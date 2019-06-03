@@ -72,7 +72,7 @@ public class TaskOperation extends AbstractDurableExecutorOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.TASK;
     }
 }

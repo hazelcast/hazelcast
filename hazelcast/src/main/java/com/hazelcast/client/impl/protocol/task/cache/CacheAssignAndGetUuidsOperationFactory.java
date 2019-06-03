@@ -39,7 +39,7 @@ public class CacheAssignAndGetUuidsOperationFactory implements OperationFactory 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CACHE_ASSIGN_AND_GET_UUIDS_FACTORY;
     }
 

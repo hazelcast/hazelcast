@@ -87,7 +87,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.SCRIPT_EXECUTOR;
     }
 }

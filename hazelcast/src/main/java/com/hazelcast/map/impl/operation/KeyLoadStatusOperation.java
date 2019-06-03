@@ -58,7 +58,7 @@ public class KeyLoadStatusOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEY_LOAD_STATUS;
     }
 }

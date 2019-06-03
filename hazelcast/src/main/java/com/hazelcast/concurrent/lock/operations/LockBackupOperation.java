@@ -47,7 +47,7 @@ public class LockBackupOperation extends AbstractLockOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.LOCK_BACKUP;
     }
 

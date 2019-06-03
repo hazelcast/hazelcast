@@ -51,7 +51,7 @@ public class ApplyOperation<R> extends AbstractAtomicLongOperation implements Mu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return APPLY;
     }
 

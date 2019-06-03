@@ -116,7 +116,7 @@ public class PutRemoteTransactionOperation extends AbstractXAOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.PUT_REMOTE_TX;
     }
 }

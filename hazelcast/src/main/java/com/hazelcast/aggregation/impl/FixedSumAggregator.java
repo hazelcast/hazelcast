@@ -57,7 +57,7 @@ public final class FixedSumAggregator<I> extends AbstractAggregator<I, Number, L
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.FIXED_SUM;
     }
 

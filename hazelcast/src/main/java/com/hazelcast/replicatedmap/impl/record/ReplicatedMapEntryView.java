@@ -182,7 +182,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.ENTRY_VIEW;
     }
 

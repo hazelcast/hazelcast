@@ -118,7 +118,7 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.MERGE;
     }
 

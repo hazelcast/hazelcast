@@ -72,7 +72,7 @@ public class TxnPutBackupOperation extends AbstractKeyBasedMultiMapOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_PUT_BACKUP;
     }
 }

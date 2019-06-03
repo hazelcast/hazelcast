@@ -70,7 +70,7 @@ public class GetOperation extends AbstractNamedSerializableOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.GET;
     }
 

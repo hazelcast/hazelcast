@@ -50,7 +50,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_ADD_ALL;
     }
 

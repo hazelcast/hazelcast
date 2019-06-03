@@ -188,7 +188,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PROMOTION_COMMIT;
     }
 

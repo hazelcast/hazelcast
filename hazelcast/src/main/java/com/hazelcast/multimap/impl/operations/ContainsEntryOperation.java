@@ -91,7 +91,7 @@ public class ContainsEntryOperation extends AbstractMultiMapOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.CONTAINS_ENTRY;
     }
 

@@ -95,7 +95,7 @@ public final class NotPredicate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.NOT_PREDICATE;
     }
 

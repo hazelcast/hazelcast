@@ -640,7 +640,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RingbufferDataSerializerHook.RINGBUFFER_CONTAINER;
     }
 

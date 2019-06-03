@@ -45,7 +45,7 @@ public class RandomEvictionPolicy extends MapEvictionPolicy implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RANDOM_EVICTION_POLICY;
     }
 

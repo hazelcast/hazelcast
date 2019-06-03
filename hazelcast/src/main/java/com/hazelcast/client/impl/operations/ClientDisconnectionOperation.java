@@ -97,7 +97,7 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.CLIENT_DISCONNECT;
     }
 

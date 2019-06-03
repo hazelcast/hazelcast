@@ -88,7 +88,7 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_COMMIT;
     }
 

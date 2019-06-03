@@ -67,7 +67,7 @@ public class ForceDestroyRaftGroupOp extends MetadataRaftGroupOp implements Inde
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.FORCE_DESTROY_RAFT_GROUP_OP;
     }
 

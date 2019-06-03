@@ -95,7 +95,7 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL_BACKUP;
     }
 }

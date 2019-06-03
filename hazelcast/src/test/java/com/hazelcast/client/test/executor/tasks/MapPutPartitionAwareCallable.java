@@ -102,7 +102,7 @@ public class MapPutPartitionAwareCallable<T, P>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 }

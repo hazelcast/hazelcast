@@ -34,7 +34,7 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_TTL_BACKUP;
     }
 

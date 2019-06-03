@@ -116,7 +116,7 @@ public class AggregationResult implements Result<AggregationResult> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.AGGREGATION_RESULT;
     }
 

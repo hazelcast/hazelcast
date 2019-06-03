@@ -171,7 +171,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }

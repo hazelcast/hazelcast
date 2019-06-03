@@ -96,7 +96,7 @@ public class SetReadCursorOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_READ_CURSOR;
     }
 }

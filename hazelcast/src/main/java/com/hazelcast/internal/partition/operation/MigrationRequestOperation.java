@@ -287,7 +287,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.MIGRATION_REQUEST;
     }
 

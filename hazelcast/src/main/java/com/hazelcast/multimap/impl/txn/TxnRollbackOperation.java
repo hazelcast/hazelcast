@@ -61,7 +61,7 @@ public class TxnRollbackOperation extends AbstractBackupAwareMultiMapOperation i
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_ROLLBACK;
     }
 }

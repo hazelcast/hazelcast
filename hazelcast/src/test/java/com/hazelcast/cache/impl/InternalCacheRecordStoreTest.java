@@ -207,7 +207,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return InternalCacheRecordStoreTestFactory.INTERNAL_CACHE_PRIMARY_STATE_GETTER;
         }
     }

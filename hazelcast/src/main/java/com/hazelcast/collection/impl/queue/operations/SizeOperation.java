@@ -46,7 +46,7 @@ public class SizeOperation extends QueueOperation implements ReadonlyOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.SIZE;
     }
 }

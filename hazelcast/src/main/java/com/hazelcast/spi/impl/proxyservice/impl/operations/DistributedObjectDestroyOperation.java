@@ -71,7 +71,7 @@ public class DistributedObjectDestroyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DIST_OBJECT_DESTROY;
     }
 }

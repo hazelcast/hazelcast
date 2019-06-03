@@ -30,7 +30,7 @@ public class EurekaConfig
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EUREKA_CONFIG;
     }
 }

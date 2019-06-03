@@ -81,7 +81,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.REPLICATION;
     }
 

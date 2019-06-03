@@ -50,7 +50,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
     }
 

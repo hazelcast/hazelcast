@@ -388,7 +388,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LOCK_RESOURCE;
     }
 

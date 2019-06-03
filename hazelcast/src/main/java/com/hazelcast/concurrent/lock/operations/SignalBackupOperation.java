@@ -31,7 +31,7 @@ public class SignalBackupOperation extends BaseSignalOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.SIGNAL_BACKUP;
     }
 }

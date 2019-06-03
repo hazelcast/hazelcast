@@ -101,7 +101,7 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.MERGE_FACTORY;
     }
 }

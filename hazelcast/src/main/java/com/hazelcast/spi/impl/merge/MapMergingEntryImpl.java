@@ -244,7 +244,7 @@ public class MapMergingEntryImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.MAP_MERGING_ENTRY;
     }
 

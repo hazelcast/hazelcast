@@ -50,7 +50,7 @@ public class IsKeyLoadFinishedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_KEYLOAD_FINISHED;
     }
 }

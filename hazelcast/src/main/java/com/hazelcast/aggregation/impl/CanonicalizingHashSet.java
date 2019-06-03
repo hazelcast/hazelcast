@@ -101,7 +101,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.CANONICALIZING_SET;
     }
 

@@ -38,7 +38,7 @@ public class SizeOperation extends AbstractMultiMapOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.SIZE;
     }
 }

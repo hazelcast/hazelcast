@@ -90,7 +90,7 @@ public class LockOp extends AbstractLockOp implements CallerAware, Indeterminate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.LOCK_OP;
     }
 

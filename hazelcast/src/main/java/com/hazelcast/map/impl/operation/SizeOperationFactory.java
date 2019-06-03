@@ -50,7 +50,7 @@ public class SizeOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SIZE_FACTORY;
     }
 }

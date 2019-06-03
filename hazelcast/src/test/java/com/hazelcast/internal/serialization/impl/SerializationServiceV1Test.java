@@ -109,7 +109,7 @@ public class SerializationServiceV1Test {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 42;
         }
     }

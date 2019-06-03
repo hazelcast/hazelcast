@@ -128,7 +128,7 @@ public final class EndpointQualifier
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.ENDPOINT_QUALIFIER;
     }
 

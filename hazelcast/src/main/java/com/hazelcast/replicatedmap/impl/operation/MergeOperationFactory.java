@@ -99,7 +99,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.MERGE_FACTORY;
     }
 }

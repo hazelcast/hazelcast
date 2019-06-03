@@ -54,7 +54,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRIGGER_LOAD_IF_NEEDED;
     }
 

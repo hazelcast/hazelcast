@@ -126,7 +126,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.VERSION;
     }
 

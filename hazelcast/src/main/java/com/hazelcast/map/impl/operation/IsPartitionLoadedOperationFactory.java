@@ -50,7 +50,7 @@ public class IsPartitionLoadedOperationFactory extends AbstractMapOperationFacto
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_PARTITION_LOADED_FACTORY;
     }
 }

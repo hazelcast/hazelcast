@@ -206,7 +206,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.DURABLE_EXECUTOR_CONFIG;
     }
 

@@ -57,7 +57,7 @@ public class TxnReserveOfferBackupOperation extends QueueOperation implements Ba
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER_BACKUP;
     }
 

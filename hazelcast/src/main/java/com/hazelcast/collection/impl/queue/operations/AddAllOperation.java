@@ -92,7 +92,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.ADD_ALL;
     }
 

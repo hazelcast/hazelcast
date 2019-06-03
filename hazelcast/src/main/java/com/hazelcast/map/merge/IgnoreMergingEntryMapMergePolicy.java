@@ -57,7 +57,7 @@ public final class IgnoreMergingEntryMapMergePolicy implements MapMergePolicy, I
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException();
     }
 }

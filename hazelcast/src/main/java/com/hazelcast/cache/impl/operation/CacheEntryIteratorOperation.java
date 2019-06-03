@@ -48,7 +48,7 @@ public class CacheEntryIteratorOperation extends KeyBasedCacheOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.ENTRY_ITERATOR;
     }
 

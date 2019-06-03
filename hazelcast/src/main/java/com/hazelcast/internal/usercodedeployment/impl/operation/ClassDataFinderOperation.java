@@ -71,7 +71,7 @@ public final class ClassDataFinderOperation extends Operation implements UrgentS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return UserCodeDeploymentSerializerHook.CLASS_DATA_FINDER_OP;
     }
 }

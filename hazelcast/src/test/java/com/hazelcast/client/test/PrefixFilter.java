@@ -39,7 +39,7 @@ public class PrefixFilter implements IdentifiedDataSerializable, IFunction<Strin
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

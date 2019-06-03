@@ -57,7 +57,7 @@ public class GetActiveRaftGroupByNameOp extends MetadataRaftGroupOp implements I
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_ACTIVE_RAFT_GROUP_BY_NAME_OP;
     }
 

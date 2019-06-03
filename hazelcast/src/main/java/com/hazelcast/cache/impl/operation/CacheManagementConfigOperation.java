@@ -82,7 +82,7 @@ public class CacheManagementConfigOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.MANAGEMENT_CONFIG;
     }
 

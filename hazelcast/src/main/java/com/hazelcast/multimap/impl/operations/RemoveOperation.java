@@ -95,7 +95,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.REMOVE;
     }
 }

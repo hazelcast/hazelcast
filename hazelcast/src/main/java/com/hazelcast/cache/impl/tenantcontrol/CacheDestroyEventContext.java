@@ -63,7 +63,7 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_DESTROY_EVENT_CONTEXT;
     }
 

@@ -106,7 +106,7 @@ public class EntryEventFilter implements EventFilter, IdentifiedDataSerializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_EVENT_FILTER;
     }
 }

@@ -362,7 +362,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_CONFIG;
     }
 

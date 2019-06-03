@@ -197,7 +197,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.FINALIZE_JOIN;
     }
 

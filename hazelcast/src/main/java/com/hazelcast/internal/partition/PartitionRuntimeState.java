@@ -207,7 +207,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_RUNTIME_STATE;
     }
 

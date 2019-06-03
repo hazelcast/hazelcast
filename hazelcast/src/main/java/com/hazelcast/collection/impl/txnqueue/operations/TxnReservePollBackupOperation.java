@@ -53,7 +53,7 @@ public class TxnReservePollBackupOperation extends QueueOperation implements Bac
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_POLL_BACKUP;
     }
 

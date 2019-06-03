@@ -91,7 +91,7 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.HOT_RESTART_CONFIG;
     }
 

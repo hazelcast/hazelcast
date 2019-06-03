@@ -63,7 +63,7 @@ public class CompareAndSetOp extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.COMPARE_AND_SET_OP;
     }
 

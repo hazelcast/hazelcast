@@ -64,7 +64,7 @@ public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_GET_ALL_FACTORY;
     }
 }

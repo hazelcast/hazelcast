@@ -71,7 +71,7 @@ class SampleIdentified implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

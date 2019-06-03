@@ -57,7 +57,7 @@ public class CancelTaskOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.CANCEL_OP;
     }
 

@@ -185,7 +185,7 @@ public class RecordInfo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.RECORD_INFO;
     }
 }

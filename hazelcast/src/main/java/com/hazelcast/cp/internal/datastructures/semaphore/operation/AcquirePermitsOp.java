@@ -79,7 +79,7 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.ACQUIRE_PERMITS_OP;
     }
 

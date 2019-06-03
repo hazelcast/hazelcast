@@ -121,7 +121,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.COUNT_DOWN_LATCH_CONFIG;
     }
 

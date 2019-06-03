@@ -73,7 +73,7 @@ public class CacheEventJournalSubscribeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_SUBSCRIBE_OPERATION;
     }
 

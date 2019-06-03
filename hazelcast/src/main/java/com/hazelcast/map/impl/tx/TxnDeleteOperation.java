@@ -132,7 +132,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_DELETE;
     }
 }

@@ -84,7 +84,7 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException();
     }
 }

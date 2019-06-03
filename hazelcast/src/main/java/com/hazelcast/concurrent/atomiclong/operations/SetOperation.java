@@ -50,7 +50,7 @@ public class SetOperation extends AtomicLongBackupAwareOperation implements Muta
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SET_OPERATION;
     }
 

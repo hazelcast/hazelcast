@@ -142,7 +142,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_STORE_CONFIG;
     }
 

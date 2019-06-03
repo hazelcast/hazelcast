@@ -50,7 +50,7 @@ public final class HigherHitsMapMergePolicy implements ReplicatedMapMergePolicy,
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.HIGHER_HITS_MERGE_POLICY;
     }
 

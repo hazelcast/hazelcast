@@ -34,7 +34,7 @@ public class TriggerMemberListPublishOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.TRIGGER_MEMBER_LIST_PUBLISH;
     }
 }

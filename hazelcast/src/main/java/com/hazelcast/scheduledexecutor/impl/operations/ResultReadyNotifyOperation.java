@@ -57,7 +57,7 @@ public class ResultReadyNotifyOperation<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.PUBLISH_RESULT;
     }
 

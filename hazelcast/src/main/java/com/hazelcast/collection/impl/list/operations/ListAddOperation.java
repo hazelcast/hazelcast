@@ -61,7 +61,7 @@ public class ListAddOperation extends CollectionAddOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_ADD;
     }
 

@@ -44,7 +44,7 @@ public class SetBackupOperation extends AbstractAtomicLongOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SET_BACKUP;
     }
 

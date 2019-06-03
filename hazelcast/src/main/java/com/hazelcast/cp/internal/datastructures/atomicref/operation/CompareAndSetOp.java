@@ -55,7 +55,7 @@ public class CompareAndSetOp extends AbstractAtomicRefOp implements IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.COMPARE_AND_SET_OP;
     }
 

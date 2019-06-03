@@ -67,7 +67,7 @@ public final class BroadcastTxRollbackOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return BROADCAST_TX_ROLLBACK;
     }
 

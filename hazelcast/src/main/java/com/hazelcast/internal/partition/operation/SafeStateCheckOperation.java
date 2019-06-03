@@ -44,7 +44,7 @@ public class SafeStateCheckOperation extends AbstractPartitionOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.SAFE_STATE_CHECK;
     }
 }

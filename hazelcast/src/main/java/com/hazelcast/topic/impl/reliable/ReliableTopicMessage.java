@@ -65,7 +65,7 @@ public class ReliableTopicMessage implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RELIABLE_TOPIC_MESSAGE;
     }
 

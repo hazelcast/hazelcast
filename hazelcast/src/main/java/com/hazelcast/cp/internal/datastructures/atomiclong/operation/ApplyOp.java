@@ -44,7 +44,7 @@ public class ApplyOp<R> extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.APPLY_OP;
     }
 

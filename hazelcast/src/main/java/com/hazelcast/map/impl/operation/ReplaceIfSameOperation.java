@@ -80,7 +80,7 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REPLACE_IF_SAME;
     }
 }

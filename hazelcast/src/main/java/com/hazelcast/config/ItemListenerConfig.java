@@ -118,7 +118,7 @@ public class ItemListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ITEM_LISTENER_CONFIG;
     }
 

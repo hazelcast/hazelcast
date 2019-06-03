@@ -93,7 +93,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REMOVE_ALL_FACTORY;
     }
 }

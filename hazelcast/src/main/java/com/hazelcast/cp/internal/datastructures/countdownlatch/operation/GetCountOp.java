@@ -46,7 +46,7 @@ public class GetCountOp extends AbstractCountDownLatchOp implements Indeterminat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.GET_COUNT_OP;
     }
 }

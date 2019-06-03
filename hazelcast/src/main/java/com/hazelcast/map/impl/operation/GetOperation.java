@@ -77,7 +77,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.GET;
     }
 }

@@ -83,7 +83,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.REMOVE;
     }
 

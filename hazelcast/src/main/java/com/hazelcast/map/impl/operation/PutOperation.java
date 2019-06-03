@@ -40,7 +40,7 @@ public class PutOperation extends BasePutOperation implements MutatingOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT;
     }
 }

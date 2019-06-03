@@ -80,7 +80,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_INDEX_INFO;
     }
 

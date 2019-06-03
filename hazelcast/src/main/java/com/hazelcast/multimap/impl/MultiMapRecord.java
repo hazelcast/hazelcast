@@ -92,7 +92,7 @@ public class MultiMapRecord implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_RECORD;
     }
 }

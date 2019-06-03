@@ -45,7 +45,7 @@ public class SetBackupOperation extends AbstractAtomicReferenceOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SET_BACKUP;
     }
 

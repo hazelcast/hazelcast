@@ -165,7 +165,7 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MockTransactionLogRecordSerializerHook.MOCK_TRANSACTION_LOG_RECORD;
     }
 

@@ -121,7 +121,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CLEAR;
     }
 

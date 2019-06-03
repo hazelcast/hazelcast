@@ -67,7 +67,7 @@ public class IsEmptyOperation extends AbstractNamedSerializableOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.IS_EMPTY;
     }
 

@@ -161,7 +161,7 @@ public class MapReplicationOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_REPLICATION;
     }
 }

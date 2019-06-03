@@ -66,7 +66,7 @@ public class MapKeySet implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEY_SET;
     }
 }

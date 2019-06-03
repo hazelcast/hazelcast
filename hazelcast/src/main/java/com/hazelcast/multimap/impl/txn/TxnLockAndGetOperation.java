@@ -96,7 +96,7 @@ public class TxnLockAndGetOperation extends AbstractKeyBasedMultiMapOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_LOCK_AND_GET;
     }
 }

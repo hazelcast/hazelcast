@@ -70,7 +70,7 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_KEYS;
     }
 }

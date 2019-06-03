@@ -47,7 +47,7 @@ public class LFUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LFU_EVICTION_POLICY;
     }
 

@@ -90,7 +90,7 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PUBLISH_COMPLETED_MIGRATIONS;
     }
 }

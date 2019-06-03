@@ -95,7 +95,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CACHE_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -222,7 +222,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CACHE_INVALIDATION_METADATA;
     }
 

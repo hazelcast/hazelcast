@@ -115,7 +115,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return MapDataSerializerHook.INTERCEPTOR_INFO;
         }
     }
@@ -212,7 +212,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.POST_JOIN_MAP_OPERATION;
     }
 

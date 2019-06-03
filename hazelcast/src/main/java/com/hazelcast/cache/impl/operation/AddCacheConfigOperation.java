@@ -65,7 +65,7 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.ADD_CACHE_CONFIG_OPERATION;
     }
 

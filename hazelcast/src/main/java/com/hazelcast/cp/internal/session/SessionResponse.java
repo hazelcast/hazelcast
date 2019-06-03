@@ -62,7 +62,7 @@ public class SessionResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.SESSION_RESPONSE;
     }
 

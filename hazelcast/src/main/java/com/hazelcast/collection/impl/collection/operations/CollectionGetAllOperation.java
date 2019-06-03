@@ -41,7 +41,7 @@ public class CollectionGetAllOperation extends CollectionOperation implements Re
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_GET_ALL;
     }
 }

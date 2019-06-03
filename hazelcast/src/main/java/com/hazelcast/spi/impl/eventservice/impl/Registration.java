@@ -30,6 +30,7 @@ import java.io.IOException;
 // cannot implement IdentifiedDataSerializable (both EventRegistration and IdentifiedDataSerializable interfaces define a
 // method {@code getId()} which differ in return type).
 // Since this class is still DataSerializable it should not be moved/renamed in 3.9, otherwise upgradability will be compromised.
+// TODO Above comment does not apply anymore. Make this class IdentifiedDataSerializable in another PR.
 @BinaryInterface
 public class Registration implements EventRegistration {
 

@@ -140,7 +140,7 @@ public class AccumulatorConsumerOperation extends Operation implements Partition
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ACCUMULATOR_CONSUMER;
     }
 }

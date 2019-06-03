@@ -50,7 +50,7 @@ public class BeforeAwaitBackupOperation extends AbstractLockOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.BEFORE_AWAIT_BACKUP;
     }
 

@@ -197,7 +197,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.WRITE_BEHIND_STATE_HOLDER;
     }
 }

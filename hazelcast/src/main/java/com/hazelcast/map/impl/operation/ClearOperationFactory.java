@@ -50,7 +50,7 @@ public class ClearOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_FACTORY;
     }
 }

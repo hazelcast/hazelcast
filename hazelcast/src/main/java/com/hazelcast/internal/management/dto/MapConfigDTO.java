@@ -131,7 +131,7 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.MAP_CONFIG_DTO;
     }
 }

@@ -36,7 +36,7 @@ public class CollectionSizeOperation extends CollectionOperation implements Read
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_SIZE;
     }
 }

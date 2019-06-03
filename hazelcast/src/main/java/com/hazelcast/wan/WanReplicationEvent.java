@@ -109,7 +109,7 @@ public class WanReplicationEvent
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.WAN_REPLICATION_EVENT;
     }
 }

@@ -84,7 +84,7 @@ public class ExtendedBindMessage implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.EXTENDED_BIND_MESSAGE;
     }
 

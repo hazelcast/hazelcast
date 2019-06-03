@@ -42,7 +42,7 @@ public class EntryRemovingProcessor implements EntryProcessor, IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_REMOVING_PROCESSOR;
     }
 

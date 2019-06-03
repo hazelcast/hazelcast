@@ -60,7 +60,7 @@ public class SerializedCounterCallable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 }

@@ -47,7 +47,7 @@ public class AddBackupOperation extends AbstractRingBufferOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_BACKUP_OPERATION;
     }
 

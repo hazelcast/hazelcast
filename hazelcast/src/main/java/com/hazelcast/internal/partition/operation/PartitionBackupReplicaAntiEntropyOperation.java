@@ -164,7 +164,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
     }
 }

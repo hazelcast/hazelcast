@@ -98,7 +98,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_OP_FACTORY;
     }
 

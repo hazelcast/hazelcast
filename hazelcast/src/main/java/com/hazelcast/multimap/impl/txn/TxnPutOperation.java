@@ -104,7 +104,7 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_PUT;
     }
 }

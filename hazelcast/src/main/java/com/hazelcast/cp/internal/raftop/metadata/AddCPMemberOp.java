@@ -65,7 +65,7 @@ public class AddCPMemberOp extends MetadataRaftGroupOp implements IndeterminateO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.ADD_CP_MEMBER_OP;
     }
 

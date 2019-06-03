@@ -69,7 +69,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ADD;
     }
 

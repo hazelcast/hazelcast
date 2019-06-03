@@ -58,7 +58,7 @@ public class CountDownOperation extends BackupAwareCountDownLatchOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_OPERATION;
     }
 }

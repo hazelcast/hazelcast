@@ -49,7 +49,7 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.SET_REPLICATION;
     }
 }

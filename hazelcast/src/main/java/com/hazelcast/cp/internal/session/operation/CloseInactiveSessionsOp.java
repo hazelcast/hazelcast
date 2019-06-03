@@ -71,7 +71,7 @@ public class CloseInactiveSessionsOp extends RaftOp implements IndeterminateOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.CLOSE_INACTIVE_SESSIONS_OP;
     }
 

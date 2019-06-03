@@ -59,7 +59,7 @@ public class RollbackTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ROLLBACK_TX_BACKUP_LOG;
     }
 

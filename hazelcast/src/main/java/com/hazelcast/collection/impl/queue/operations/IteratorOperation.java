@@ -51,7 +51,7 @@ public class IteratorOperation extends QueueOperation implements ReadonlyOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.ITERATOR;
     }
 }

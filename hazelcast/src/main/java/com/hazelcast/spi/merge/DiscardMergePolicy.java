@@ -40,7 +40,7 @@ public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.DISCARD;
     }
 }

@@ -50,7 +50,7 @@ public class MapFlushOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_FLUSH_FACTORY;
     }
 }

@@ -65,7 +65,7 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.RETRIEVE_DISPOSE_RESULT;
     }
 }

@@ -112,7 +112,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.ENTRY_SET_RESPONSE;
     }
 }

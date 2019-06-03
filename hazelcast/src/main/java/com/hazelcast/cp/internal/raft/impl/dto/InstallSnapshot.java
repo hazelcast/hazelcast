@@ -74,7 +74,7 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.INSTALL_SNAPSHOT;
     }
 

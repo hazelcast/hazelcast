@@ -91,7 +91,7 @@ public class BeforeAwaitOperation extends AbstractLockOperation implements Notif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.BEFORE_AWAIT;
     }
 

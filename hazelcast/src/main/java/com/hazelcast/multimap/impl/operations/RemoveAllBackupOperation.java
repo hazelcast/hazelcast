@@ -38,7 +38,7 @@ public class RemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.REMOVE_ALL_BACKUP;
     }
 }

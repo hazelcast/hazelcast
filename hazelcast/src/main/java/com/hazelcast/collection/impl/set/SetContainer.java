@@ -120,7 +120,7 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.SET_CONTAINER;
     }
 }

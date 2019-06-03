@@ -108,7 +108,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_ALL_OPERATION;
     }
 

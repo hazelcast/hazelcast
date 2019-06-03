@@ -82,7 +82,7 @@ public final class CancellationOperation extends Operation implements NamedOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.CANCELLATION;
     }
 

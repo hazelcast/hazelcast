@@ -87,7 +87,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR;
     }
 }

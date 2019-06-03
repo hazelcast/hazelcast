@@ -99,7 +99,7 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.MIGRATION_COMMIT;
     }
 }

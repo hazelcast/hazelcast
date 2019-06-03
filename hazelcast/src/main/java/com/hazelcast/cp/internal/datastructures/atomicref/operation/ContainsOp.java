@@ -55,7 +55,7 @@ public class ContainsOp extends AbstractAtomicRefOp implements IndeterminateOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.CONTAINS_OP;
     }
 

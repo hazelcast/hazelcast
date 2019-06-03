@@ -173,7 +173,7 @@ public class DistortInvalidationMetadataEntryProcessor
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

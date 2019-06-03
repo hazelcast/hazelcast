@@ -102,7 +102,7 @@ public class ScheduledTaskStatisticsImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.TASK_STATS;
     }
 

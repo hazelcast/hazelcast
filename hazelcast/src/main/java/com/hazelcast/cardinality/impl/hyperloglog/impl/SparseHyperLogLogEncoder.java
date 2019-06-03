@@ -97,7 +97,7 @@ public class SparseHyperLogLogEncoder
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.HLL_SPARSE_ENC;
     }
 

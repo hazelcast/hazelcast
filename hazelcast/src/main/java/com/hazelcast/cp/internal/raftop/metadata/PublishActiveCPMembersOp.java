@@ -75,7 +75,7 @@ public class PublishActiveCPMembersOp extends Operation implements IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.PUBLISH_ACTIVE_CP_MEMBERS_OP;
     }
 

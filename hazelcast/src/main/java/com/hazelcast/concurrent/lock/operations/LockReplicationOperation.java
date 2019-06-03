@@ -85,7 +85,7 @@ public class LockReplicationOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.LOCK_REPLICATION;
     }
 

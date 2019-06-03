@@ -66,7 +66,7 @@ public class HeartbeatSessionOp extends RaftOp implements IndeterminateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.HEARTBEAT_SESSION_OP;
     }
 

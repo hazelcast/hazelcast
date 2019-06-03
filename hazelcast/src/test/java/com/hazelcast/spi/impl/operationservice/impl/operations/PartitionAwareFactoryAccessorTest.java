@@ -77,7 +77,7 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
 
@@ -108,7 +108,7 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
 

@@ -278,7 +278,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.FLAKE_ID_GENERATOR_CONFIG;
     }
 

@@ -47,7 +47,7 @@ public class HigherHitsMergePolicy<V, T extends MergingHits<V>> extends Abstract
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.HIGHER_HITS;
     }
 }

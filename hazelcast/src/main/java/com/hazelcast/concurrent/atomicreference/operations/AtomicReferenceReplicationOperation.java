@@ -65,7 +65,7 @@ public class AtomicReferenceReplicationOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATION;
     }
 

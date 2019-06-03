@@ -42,7 +42,7 @@ public class ClearNearCacheOperation extends MapOperation implements MutatingOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_NEAR_CACHE;
     }
 }

@@ -88,7 +88,7 @@ public class LocalLockCleanupOperation extends UnlockOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException("LocalLockCleanupOperation is local only.");
     }
 

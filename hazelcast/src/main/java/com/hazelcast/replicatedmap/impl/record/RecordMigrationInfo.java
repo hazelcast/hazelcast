@@ -140,7 +140,7 @@ public class RecordMigrationInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.RECORD_MIGRATION_INFO;
     }
 }

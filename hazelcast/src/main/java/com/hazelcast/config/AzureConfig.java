@@ -30,7 +30,7 @@ public class AzureConfig
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.AZURE_CONFIG;
     }
 }

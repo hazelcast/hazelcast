@@ -70,7 +70,7 @@ public final class OperationFactoryWrapper implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
 

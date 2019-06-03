@@ -44,7 +44,7 @@ public class AddBackupOperation extends AbstractAtomicLongOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_BACKUP;
     }
 

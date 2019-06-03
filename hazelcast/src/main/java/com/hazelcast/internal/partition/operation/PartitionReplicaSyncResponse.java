@@ -281,7 +281,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_RESPONSE;
     }
 }

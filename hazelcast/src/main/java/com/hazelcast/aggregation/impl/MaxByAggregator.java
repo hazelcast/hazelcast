@@ -74,7 +74,7 @@ public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.MAX_BY;
     }
 

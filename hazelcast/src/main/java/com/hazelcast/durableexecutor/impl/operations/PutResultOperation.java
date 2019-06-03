@@ -80,7 +80,7 @@ public class PutResultOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.PUT_RESULT;
     }
 }

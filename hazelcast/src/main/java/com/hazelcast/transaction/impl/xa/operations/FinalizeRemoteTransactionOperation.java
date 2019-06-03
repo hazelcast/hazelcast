@@ -136,7 +136,7 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.FINALIZE_REMOTE_TX;
     }
 }

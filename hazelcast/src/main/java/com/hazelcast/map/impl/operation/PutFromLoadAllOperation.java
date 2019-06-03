@@ -168,7 +168,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_FROM_LOAD_ALL;
     }
 }

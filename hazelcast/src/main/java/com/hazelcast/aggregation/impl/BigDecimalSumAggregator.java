@@ -59,7 +59,7 @@ public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_DECIMAL_SUM;
     }
 

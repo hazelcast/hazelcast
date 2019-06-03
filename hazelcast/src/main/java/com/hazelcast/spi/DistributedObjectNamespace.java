@@ -74,7 +74,7 @@ public final class DistributedObjectNamespace implements ObjectNamespace, Identi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DISTRIBUTED_OBJECT_NS;
     }
 

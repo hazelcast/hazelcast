@@ -343,7 +343,7 @@ public abstract class AbstractIndex implements InternalIndex {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return PredicateDataSerializerHook.NULL_OBJECT;
         }
 

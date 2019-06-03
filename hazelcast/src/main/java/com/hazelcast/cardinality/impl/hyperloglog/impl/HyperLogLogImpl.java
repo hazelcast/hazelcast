@@ -91,7 +91,7 @@ public class HyperLogLogImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.HLL;
     }
 

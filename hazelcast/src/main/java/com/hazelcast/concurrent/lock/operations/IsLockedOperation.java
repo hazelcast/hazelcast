@@ -36,7 +36,7 @@ public class IsLockedOperation extends AbstractLockOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.IS_LOCKED;
     }
 

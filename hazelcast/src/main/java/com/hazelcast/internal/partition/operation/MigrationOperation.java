@@ -220,7 +220,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.MIGRATION;
     }
 

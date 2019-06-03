@@ -149,7 +149,7 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
 }

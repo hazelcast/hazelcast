@@ -36,7 +36,7 @@ public final class ReplicateAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

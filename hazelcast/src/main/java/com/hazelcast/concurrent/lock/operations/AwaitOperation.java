@@ -119,7 +119,7 @@ public class AwaitOperation extends AbstractLockOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.AWAIT;
     }
 

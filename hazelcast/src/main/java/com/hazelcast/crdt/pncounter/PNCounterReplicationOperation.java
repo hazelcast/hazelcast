@@ -35,7 +35,7 @@ public class PNCounterReplicationOperation extends AbstractCRDTReplicationOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER_REPLICATION;
     }
 

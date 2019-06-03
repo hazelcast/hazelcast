@@ -56,7 +56,7 @@ public class GetActiveCPMembersOp extends MetadataRaftGroupOp implements Indeter
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_ACTIVE_CP_MEMBERS_OP;
     }
 

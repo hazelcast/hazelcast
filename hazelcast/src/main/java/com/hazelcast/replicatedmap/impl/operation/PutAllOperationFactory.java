@@ -65,7 +65,7 @@ public class PutAllOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL_OP_FACTORY;
     }
 }

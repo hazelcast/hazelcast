@@ -54,7 +54,7 @@ public class MergeBackupOperation extends AbstractAtomicLongOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP;
     }
 

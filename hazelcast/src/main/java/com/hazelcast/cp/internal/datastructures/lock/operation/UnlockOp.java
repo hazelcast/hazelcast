@@ -50,7 +50,7 @@ public class UnlockOp extends AbstractLockOp implements IndeterminateOperationSt
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.UNLOCK_OP;
     }
 }

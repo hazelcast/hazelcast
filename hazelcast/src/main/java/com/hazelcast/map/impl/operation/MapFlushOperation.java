@@ -71,7 +71,7 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FLUSH;
     }
 }

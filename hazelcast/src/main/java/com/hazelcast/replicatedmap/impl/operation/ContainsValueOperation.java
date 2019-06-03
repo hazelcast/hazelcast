@@ -70,7 +70,7 @@ public class ContainsValueOperation extends AbstractNamedSerializableOperation i
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CONTAINS_VALUE;
     }
 

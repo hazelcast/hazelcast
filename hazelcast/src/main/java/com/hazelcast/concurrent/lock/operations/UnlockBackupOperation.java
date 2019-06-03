@@ -56,7 +56,7 @@ public class UnlockBackupOperation extends AbstractLockOperation implements Back
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.UNLOCK_BACKUP;
     }
 

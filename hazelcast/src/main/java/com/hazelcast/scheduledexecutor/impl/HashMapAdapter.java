@@ -51,7 +51,7 @@ public class HashMapAdapter<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.HASH_MAP_ADAPTER;
     }
 

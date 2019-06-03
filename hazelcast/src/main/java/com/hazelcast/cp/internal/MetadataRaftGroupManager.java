@@ -400,7 +400,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return group.id();
             }
 
-            String msg = group.getId() + " already exists with a different size: " + group.memberCount();
+            String msg = group.id() + " already exists with a different size: " + group.memberCount();
             logger.severe(msg);
             throw new IllegalStateException(msg);
         }

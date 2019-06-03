@@ -53,7 +53,7 @@ public class GetActiveRaftGroupIdsOp extends MetadataRaftGroupOp implements Inde
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_ACTIVE_RAFT_GROUP_IDS_OP;
     }
 

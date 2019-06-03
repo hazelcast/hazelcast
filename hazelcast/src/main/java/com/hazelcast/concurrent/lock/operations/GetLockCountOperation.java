@@ -32,7 +32,7 @@ public class GetLockCountOperation extends AbstractLockOperation implements Read
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.GET_LOCK_COUNT;
     }
 

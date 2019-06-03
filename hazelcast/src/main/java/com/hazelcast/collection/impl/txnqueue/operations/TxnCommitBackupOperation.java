@@ -60,7 +60,7 @@ public class TxnCommitBackupOperation extends QueueOperation implements BackupOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_COMMIT_BACKUP;
     }
 

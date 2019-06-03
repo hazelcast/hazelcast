@@ -45,7 +45,7 @@ public class CacheSizeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.SIZE;
     }
 

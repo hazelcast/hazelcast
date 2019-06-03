@@ -74,7 +74,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRY_REMOVE;
     }
 }

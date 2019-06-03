@@ -69,7 +69,7 @@ public class RecordReplicationInfo extends RecordInfo {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.RECORD_REPLICATION_INFO;
     }
 }

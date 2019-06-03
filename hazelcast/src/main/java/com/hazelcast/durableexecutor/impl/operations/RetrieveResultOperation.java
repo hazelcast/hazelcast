@@ -86,7 +86,7 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.RETRIEVE_RESULT;
     }
 }

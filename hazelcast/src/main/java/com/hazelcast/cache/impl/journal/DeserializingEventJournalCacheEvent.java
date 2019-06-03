@@ -49,7 +49,7 @@ public class DeserializingEventJournalCacheEvent<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_DESERIALIZING_CACHE_EVENT;
     }
 

@@ -50,7 +50,7 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.DRAIN_BACKUP;
     }
 

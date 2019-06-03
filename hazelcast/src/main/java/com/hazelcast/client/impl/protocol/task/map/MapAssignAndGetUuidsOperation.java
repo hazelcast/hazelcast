@@ -65,7 +65,7 @@ public class MapAssignAndGetUuidsOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_ASSIGN_AND_GET_UUIDS;
     }
 }

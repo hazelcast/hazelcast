@@ -60,7 +60,7 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_PEEK;
     }
 

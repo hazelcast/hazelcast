@@ -77,7 +77,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.SNAPSHOT_ENTRY;
     }
 

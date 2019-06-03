@@ -82,7 +82,7 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return UserCodeDeploymentSerializerHook.DEPLOY_CLASSES_OP;
     }
 }

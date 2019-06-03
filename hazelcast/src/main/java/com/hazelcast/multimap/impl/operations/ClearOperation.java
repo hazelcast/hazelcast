@@ -68,7 +68,7 @@ public class ClearOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.CLEAR;
     }
 }

@@ -60,7 +60,7 @@ public class RegistrationOperation extends AbstractRegistrationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.REGISTRATION;
     }
 }

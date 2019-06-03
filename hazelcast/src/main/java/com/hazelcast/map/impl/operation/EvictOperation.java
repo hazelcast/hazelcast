@@ -109,7 +109,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT;
     }
 }

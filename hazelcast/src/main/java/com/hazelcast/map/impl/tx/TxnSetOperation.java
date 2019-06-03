@@ -137,7 +137,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_SET;
     }
 }

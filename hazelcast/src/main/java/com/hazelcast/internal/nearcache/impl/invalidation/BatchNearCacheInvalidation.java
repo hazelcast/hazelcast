@@ -76,7 +76,7 @@ public class BatchNearCacheInvalidation extends Invalidation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.NEAR_CACHE_BATCH_INVALIDATION;
     }
 }

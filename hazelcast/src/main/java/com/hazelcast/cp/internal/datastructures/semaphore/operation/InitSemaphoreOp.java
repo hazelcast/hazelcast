@@ -69,7 +69,7 @@ public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationSta
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.INIT_SEMAPHORE_OP;
     }
 

@@ -54,7 +54,7 @@ public class PurgeTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PURGE_TX_BACKUP_LOG;
     }
 

@@ -104,7 +104,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EXPIRE_BATCH_BACKUP;
     }
 

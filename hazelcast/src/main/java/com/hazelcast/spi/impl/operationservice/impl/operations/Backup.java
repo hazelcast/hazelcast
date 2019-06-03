@@ -227,7 +227,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.BACKUP;
     }
 

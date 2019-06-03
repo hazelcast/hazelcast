@@ -32,7 +32,7 @@ public class GetRemainingLeaseTimeOperation extends AbstractLockOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.GET_REMAINING_LEASETIME;
     }
 

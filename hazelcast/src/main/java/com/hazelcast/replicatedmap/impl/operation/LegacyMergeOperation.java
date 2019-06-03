@@ -70,7 +70,7 @@ public class LegacyMergeOperation extends AbstractNamedSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.LEGACY_MERGE;
     }
 

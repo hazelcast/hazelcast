@@ -124,7 +124,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX;
     }
 

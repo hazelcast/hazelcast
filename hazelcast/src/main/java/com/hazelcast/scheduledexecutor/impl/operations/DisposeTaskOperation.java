@@ -52,7 +52,7 @@ public class DisposeTaskOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.DISPOSE_TASK_OP;
     }
 

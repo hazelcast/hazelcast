@@ -50,7 +50,7 @@ public class CacheKeyIteratorOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.KEY_ITERATOR;
     }
 
