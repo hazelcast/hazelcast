@@ -19,19 +19,13 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
 
-// Even though this class is not used in client-member communication, we annotate it to be excluded from related tests, as it
-// cannot implement IdentifiedDataSerializable (both EventRegistration and IdentifiedDataSerializable interfaces define a
-// method {@code getId()} which differ in return type).
-// Since this class is still DataSerializable it should not be moved/renamed in 3.9, otherwise upgradability will be compromised.
-// TODO Above comment does not apply anymore. Make this class IdentifiedDataSerializable in another PR.
-@BinaryInterface
 public class Registration implements EventRegistration {
 
     private String id;
@@ -135,5 +129,15 @@ public class Registration implements EventRegistration {
                 + ", subscriber=" + subscriber
                 + ", listener=" + listener
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiDataSerializerHook.REGISTRATION;
     }
 }

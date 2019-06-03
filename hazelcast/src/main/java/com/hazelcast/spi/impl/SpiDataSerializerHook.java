@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
@@ -59,7 +60,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int ERROR_RESPONSE = 9;
     public static final int DEREGISTRATION = 10;
     public static final int ON_JOIN_REGISTRATION = 11;
-    public static final int REGISTRATION = 12;
+    public static final int REGISTRATION_OPERATION = 12;
     public static final int SEND_EVENT = 13;
     public static final int DIST_OBJECT_INIT = 14;
     public static final int DIST_OBJECT_DESTROY = 15;
@@ -68,6 +69,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int UNMODIFIABLE_LAZY_LIST = 18;
     public static final int OPERATION_CONTROL = 19;
     public static final int DISTRIBUTED_OBJECT_NS = 20;
+    public static final int REGISTRATION = 21;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -105,7 +107,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new DeregistrationOperation();
                     case ON_JOIN_REGISTRATION:
                         return new OnJoinRegistrationOperation();
-                    case REGISTRATION:
+                    case REGISTRATION_OPERATION:
                         return new RegistrationOperation();
                     case SEND_EVENT:
                         return new SendEventOperation();
@@ -123,6 +125,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new OperationControl();
                     case DISTRIBUTED_OBJECT_NS:
                         return new DistributedObjectNamespace();
+                    case REGISTRATION:
+                        return new Registration();
                     default:
                         return null;
                 }
