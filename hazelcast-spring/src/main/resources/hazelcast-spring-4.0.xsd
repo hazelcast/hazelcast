@@ -2098,7 +2098,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                    <tool:exports type="com.hazelcast.topic.ITopic"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2110,7 +2110,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                    <tool:exports type="com.hazelcast.topic.ITopic"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>

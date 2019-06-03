@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.topic.ITopic;
+
 /**
  * Base interface for all distributed objects.
  *

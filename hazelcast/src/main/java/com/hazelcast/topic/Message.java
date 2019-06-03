@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.topic;
+
+import com.hazelcast.core.Member;
 
 import java.util.EventObject;
 

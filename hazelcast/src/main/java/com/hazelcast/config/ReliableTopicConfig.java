@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Configuration for a reliable {@link com.hazelcast.core.ITopic}.
+ * Configuration for a reliable {@link ITopic}.
  * <p>
  * The reliable topic makes use of a {@link com.hazelcast.ringbuffer.Ringbuffer}
  * to store the actual messages.

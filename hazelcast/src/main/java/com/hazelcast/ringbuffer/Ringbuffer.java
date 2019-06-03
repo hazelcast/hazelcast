@@ -20,6 +20,7 @@ import com.hazelcast.core.BaseQueue;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.topic.ITopic;
 
 import java.util.Collection;
 
@@ -58,7 +59,7 @@ import java.util.Collection;
  * times.
  * <p>
  * The Ringbuffer is the backing data structure for the reliable
- * {@link com.hazelcast.core.ITopic} implementation. See
+ * {@link ITopic} implementation. See
  * {@link com.hazelcast.config.ReliableTopicConfig}.
  * <p>
  * A Ringbuffer can be configured to be backed by a
