@@ -1,151 +1,160 @@
-## Hazelcast Jet
+# Hazelcast Jet
 
-[Hazelcast Jet](http://jet.hazelcast.org) is a distributed computing
-platform built for high-performance stream processing and fast batch
-processing. It embeds Hazelcast In-Memory Data Grid (IMDG) to provide
-a lightweight, simple-to-deploy package that includes scalable
-in-memory storage.
+---
 
-Visit [jet.hazelcast.org](http://jet.hazelcast.org) to learn more
-about the architecture and use cases.
+[![Join the chat at https://gitter.im/hazelcast/hazelcast-jet](https://badges.gitter.im/hazelcast/hazelcast-jet.svg)](https://gitter.im/hazelcast/hazelcast-jet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Features:
+<img src="https://github.com/hazelcast/hazelcast-jet/raw/master/logo/hazelcast-jet.png" width="100">
 
-* Low-latency, high-throughput distributed data processing framework.
-* Highly parallel and distributed stream and batch processing of data.
-* Connectors allowing high-velocity ingestion of data from Apache
-Kafka, HDFS, Hazelcast IMDG, sockets and local data files (such as
-logs or CSVs).
-* API for custom connectors.
-* Dynamic node discovery for both on-premise and cloud deployments.
-* Cloud Native - with available [Docker images](https://hub.docker.com/r/hazelcast/hazelcast-jet/) 
-and [Kubernetes support](https://github.com/hazelcast/hazelcast-jet-code-samples/tree/master/integration/kubernetes)
-including Helm Charts.
+---
 
-### Hello World
+[Hazelcast Jet] is an open-source, cloud-native, distributed stream
+and batch processing engine.
 
-#### Batch Example
+Jet is simple to set up. The nodes you start discover each other and
+form a cluster automatically. You can do the same locally, even on the
+same machine (your laptop, for example). This is great for quick testing.
 
-Here's a self-contained example that puts some lines of text into a
-Hazelcast map and then runs a word-frequency analysis on it (the
-so-called Word Count task):
+With Jet it's easy to build fault-tolerant and elastic data processing
+pipelines. Jet keeps processing data without loss even if a node fails,
+and you can add more nodes that immediately start sharing the
+computation load.
 
-```java
-// create a Jet node
-JetInstance jet = Jet.newJetInstance();
+You can embed Jet as a part of your application, it's just a single JAR
+without dependencies. You can also deploy it standalone, as a
+stream-processing cluster.
 
-// create a distributed map and put some data
-IMap<Integer, String> lines = jet.getMap("bookLines");
-lines.put(0, "It was the best of times");
-lines.put(1, "it was the worst of times");
-lines.put(2, "it was the age of wisdom");
-lines.put(3, "it was the age of foolishness");
-lines.put(4, "it was the epoch of belief");
+Jet also provides a highly available, distributed in-memory data store.
+You can cache your reference data and enrich the event stream with it,
+store the results of a computation, or even store the input data you're
+about to process with Jet.
 
-Pipeline p = Pipeline.create();
+---
 
-// Word Count job
-p.drawFrom(Sources.map(lines))
-        .flatMap(e -> traverseArray(e.getValue().toLowerCase().split("\\W+")))
-        .filter(word -> !word.isEmpty())
-        .groupingKey(wholeItem())
-        .aggregate(counting())
-        .drainTo(Sinks.map("counts"));
+## Start using Jet
 
-jet.newJob(p).join();
+Add this to your `pom.xml` to get the latest Jet as your project
+dependency:
 
-System.out.println(jet.getMap("counts").entrySet());
-```
-
-#### Streaming Example
-
-Extending the previous example, here we let Jet receive events whenever
-a Hazelcast map gets new data. We perform the same kind of analysis
-(Word Count) on each 1-second's worth of data. Note that we start adding
-the data while the job is already running. It picks up the events in
-real time and processes them.
-
-```java
-// enable event journal
-JetConfig config = new JetConfig();
-config.getHazelcastConfig()
-        .addEventJournalConfig(new EventJournalConfig().setMapName("bookLines"));
-// create a Jet node
-JetInstance jet = Jet.newJetInstance(config);
-
-// create a distributed map, we will put some data to stream later on
-IMap<Integer, String> lines = jet.getMap("bookLines");
-
-Pipeline p = Pipeline.create();
-
-// minimal streaming word count
-p.drawFrom(Sources.mapJournal(lines, JournalInitialPosition.START_FROM_OLDEST))
-        .withIngestionTimestamps()
-        .setLocalParallelism(1)
-        .flatMap(e -> traverseArray(e.getValue().toLowerCase().split("\\W+")))
-        .filter(word -> !word.isEmpty())
-        .groupingKey(wholeItem())
-        .window(WindowDefinition.tumbling(TimeUnit.SECONDS.toMillis(1)))
-        .aggregate(counting())
-        .drainTo(Sinks.logger());
-
-jet.newJob(p);
-
-lines.put(0, "It was the best of times");
-Thread.sleep(500);
-lines.put(1, "it was the worst of times");
-Thread.sleep(500);
-lines.put(2, "it was the age of wisdom");
-Thread.sleep(500);
-lines.put(3, "it was the age of foolishness");
-Thread.sleep(500);
-lines.put(4, "it was the epoch of belief");
-Thread.sleep(500);
-lines.put(5, "it was the epoch of incredulity");
-Thread.sleep(500);
-```
-
-### Getting Started
-
-See the
-[Getting Started Guide](http://jet.hazelcast.org/getting-started/).
-
-
-### Code Samples
-
-See
-[Hazelcast Jet Code Samples](https://github.com/hazelcast/hazelcast-jet-code-samples)
-for some examples.
-
-### Documentation
-
-See the [Jet Reference Manual](https://jet.hazelcast.org/documentation/).
-
-### Architecture
-
-See [Jet Architecture](https://jet.hazelcast.org/architecture/).
-
-### High Performance Design
-
-See the [write up](https://jet.hazelcast.org/performance/) on our high
-performance secret sauce.
-
-### Releases
-
-Download from [jet.hazelcast.org](http://jet.hazelcast.org/download/).
-
-Use Maven snippet:
 ```xml
 <dependency>
     <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet</artifactId>
-    <version>${hazelcast.jet.version}</version>
+    <version>3.0</version>
 </dependency>
 ```
 
-### Snapshot Releases
+Since Jet is embeddable, this is all you need to start your first Jet
+instance! Read on for a quick example of your first Jet program.
+
+### Batch Processing with Jet
+
+Use this code to start an instance of Jet and tell it to perform some
+computation:
+
+```java
+String path = "books";
+
+JetInstance jet = Jet.newJetInstance();
+
+Pipeline p = Pipeline.create();
+
+p.drawFrom(Sources.files(path))
+        .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
+        .filter(word -> !word.isEmpty())
+        .groupingKey(word -> word)
+        .aggregate(AggregateOperations.counting())
+        .drainTo(Sinks.logger());
+
+jet.newJob(p).join();
+```
+
+When you run this, point the `path` variable to some directory with text
+files in it. Jet will analyze all the files and give you the word
+frequency distribution in the log output (for each word it will say how
+many times it appears in the files).
+
+The above was an example of processing data at rest (i.e., _batch
+processing_). It's conceptually simpler than stream processing so we
+used it as our first example.
+
+### Stream Processing with Jet
+
+For stream processing you need a streaming data source. A simple example
+is watching a folder of text files for changes and processing each new
+appended line. Here's the code you can try out:
+
+```java
+String path = "books";
+
+JetInstance jet = Jet.newJetInstance();
+
+Pipeline p = Pipeline.create();
+
+p.drawFrom(Sources.fileWatcher(path))
+        .withIngestionTimestamps()
+        .setLocalParallelism(1)
+        .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
+        .filter(word -> !word.isEmpty())
+        .groupingKey(word -> word)
+        .window(WindowDefinition.tumbling(1000))
+        .aggregate(AggregateOperations.counting())
+        .drainTo(Sinks.logger());
+
+jet.newJob(p).join();
+```
+
+Before running this make an empty directory and point the `path`
+variable to it. While the job is running copy some text files into it
+and Jet will process them right away.
+
+## Features:
+
+* Constant low-latency - predictable latency is a design goal
+* Zero dependencies - single JAR which is embeddable (minimum JDK 8)
+* Cloud Native - with [Docker images](https://hub.docker.com/r/hazelcast/hazelcast-jet/)
+and [Kubernetes support](https://github.com/hazelcast/hazelcast-jet-code-samples/tree/master/integration/kubernetes)
+including Helm Charts.
+* Elastic - Jet can scale jobs up and down while running
+* Fault Tolerant - At-least-once and exactly-once processing guarantees
+* In memory storage - Jet provides robust distributed in memory storage
+for caching, enrichment or storing job results
+* Sources and sinks for Apache Kafka, Hadoop, Hazelcast IMDG, sockets, files
+* Dynamic node discovery for both on-premise and cloud deployments.
+
+## Distribution
+
+You can download the distribution package which includes command-line
+tools from [jet.hazelcast.org](http://jet.hazelcast.org/download/).
+
+## Documentation
+
+See the [Hazelcast Jet Reference Manual].
+
+## Code Samples
+
+See [Hazelcast Jet Code Samples] for some examples.
+
+## Additional Connectors
+
+See [hazelcast-jet-contrib](github.com/hazelcast/hazelcast-jet-contrib) repository for community supported
+connectors and tools.
+
+## Architecture
+
+See the [architecture](https://jet.hazelcast.org/architecture/) and
+[performance](https://jet.hazelcast.org/performance/) pages for
+more details about Jet's internals and design.
+
+## Start Developing Hazelcast Jet
+
+### Use Latest Snapshot Release
+
+You can always use the latest snapshot release if you want to try the features
+currently under development.
 
 Maven snippet:
+
 ```xml
 <repositories>
     <repository>
@@ -162,52 +171,52 @@ Maven snippet:
     <dependency>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet</artifactId>
-        <version>${hazelcast.jet.version}</version>
+        <version>3.1-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
 
-### Building From Source
+### Build From Source
 
-Pull the latest commits from GitHub (`git pull`) and use Maven to
-build (`mvn clean install`). This will also run all the checks and
-tests: Checkstyle, FindBugs, and JUnit tests.
+#### Requirements
 
-Java 8 and Java 9 are supported. 
+* JDK 8 or later
+* [Apache Maven](https://maven.apache.org/) version 3.5.2 or later
 
-Maven version 3.5.2 is the minimum version required. 
+To build, use the command:
 
-### Contributing to Hazelcast Jet
+```
+mvn clean package -DskipTests
+```
+
+### Contributions
 
 We encourage pull requests and process them promptly.
 
 To contribute:
 
-* see [Developing with Git](https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git) for our Git process
-* complete the [Hazelcast Contributor Agreement](https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement)
+* Complete the [Hazelcast Contributor Agreement](https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement)
+* If you're not familiar with Git, see the [Hazelcast Guide for Git](https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git) for our Git process
 
-For an enhancement or larger feature, create a GitHub issue first to
-discuss.
+### Community
 
-Submit your contribution as a pull request on GitHub. Each pull
-request is subject to automatic verification, so make sure your
-contribution passes the `mvn clean install` build locally before
-submitting it.
+Hazelcast Jet team actively answers questions on [Stack Overflow](https://stackoverflow.com/tags/hazelcast-jet).
 
-### Mail Group
+You are also encouraged to join the [hazelcast-jet mailing list](http://groups.google.com/group/hazelcast-jet)
+if you are interested in community discussions
 
-Please join the mail group if you are interested in using or
-developing Hazelcast Jet.
-
-[http://groups.google.com/group/hazelcast-jet](http://groups.google.com/group/hazelcast-jet)
-
-#### License
+## License
 
 Hazelcast Jet is available under the Apache 2 License. Please see the
 [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
 
-#### Copyright
+## Copyright
 
 Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
+
+
+[Hazelcast Jet]: http://jet.hazelcast.org
+[Hazelcast Jet Reference Manual]: https://docs.hazelcast.org/docs/jet/latest/manual/
+[Hazelcast Jet Code Samples]: https://github.com/hazelcast/hazelcast-jet-code-samples
