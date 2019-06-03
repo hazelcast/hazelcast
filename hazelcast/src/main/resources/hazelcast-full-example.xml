@@ -1797,45 +1797,6 @@
         </message-listeners>
     </reliable-topic>
     <!--
-        ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====
-
-        Configuration element's name is <jobtracker>. It has the required attribute "name" with which you
-        can specify the name of your MapReduce JobTracker. This attribute's default value is "default".
-        It has the following sub-elements:
-        * <max-thread-size>:
-        Maximum thread pool size of the JobTracker. Its default value is 0.
-        * <queue-size>:
-            Maximum number of tasks that can wait to be processed. A value of 0 means number of partitions * 2.
-            Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate
-            chunks might be lost. Its default value is 0.
-        * <retry-count>:
-            Currently not used. Reserved for later use where the framework will automatically try to restart / retry
-            operations from an available saved point.
-        * <chunk-size>:
-            Number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to
-            better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate
-            transmission, but remember that low values mean higher traffic costs. A very high value might cause an
-            OutOfMemoryError to occur if the emitted values do not fit into heap memory before being sent to the reducers.
-            To prevent this, you might want to use a combiner to pre-reduce values on mapping members. Its default
-            value is 1000.
-        * <communicate-stats>:
-            Specifies whether the statistics (for example, statistics about processed entries) are transmitted to
-            the job emitter. This can show progress to a user inside of an UI system, but it produces additional traffic.
-            If not needed, you might want to deactivate this. Its default value is true.
-        * <topology-changed-strategy>:
-            Specifies how the MapReduce framework reacts on topology changes while executing a job. Currently, only
-            CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter
-            (will throw a com.hazelcast.mapreduce.TopologyChangedException).
-    -->
-    <jobtracker name="default">
-        <max-thread-size>0</max-thread-size>
-        <queue-size>0</queue-size>
-        <retry-count>0</retry-count>
-        <chunk-size>1000</chunk-size>
-        <communicate-stats>true</communicate-stats>
-        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
-    </jobtracker>
-    <!--
         ===== HAZELCAST SEMAPHORE CONFIGURATION =====
 
         Configuration element's name is <semaphore>. It has the required attribute "name" with which you
@@ -2583,7 +2544,7 @@
         different protocols, such as for member-member and member-client
         communication. This configuration renders exclusive or relation with the
         generic <network> configuration element.
-           
+
         The configuration element's name is <advanced-network>. It has the following attribute:
         * enabled:
            Indicates whether the advanced network configuration is enabled or not. Default is false.
@@ -2640,7 +2601,7 @@
                 - <members>:
                     Comma separated IP addresses of one or more well known members.
                 - <member-list>:
-                    IP address(es) of one or more well known members listed with the <member> element. 
+                    IP address(es) of one or more well known members listed with the <member> element.
                 - <interface>:
                     IP address(es) of one or more well known members.
             - <aws>:
@@ -2710,7 +2671,7 @@
             A failure detector is responsible to determine if a member in the cluster is unreachable or crashed.
             Please refer to https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#failure-detector-configuration
             for the failure detectors implemented by Hazelcast.
-             
+
             This element has the following sub-element:
             * <icmp>:
                 ICMP can be used in addition to the other detectors. It operates at layer 3 and detects network
@@ -2747,7 +2708,7 @@
             These four server socket elements have the same attribute and sub-elements.
 
             The server socket elements have the following attribute:
-            - "name": 
+            - "name":
                 Name of the endpoint configuration. Only relevant when defining WAN server sockets.
 
             The server socket elements have the following sub-elements:

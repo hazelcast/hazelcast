@@ -32,7 +32,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
@@ -1221,31 +1220,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public JobTrackerConfig findJobTrackerConfig(String name) {
-        return staticConfig.findJobTrackerConfig(name);
-    }
-
-    @Override
-    public JobTrackerConfig getJobTrackerConfig(String name) {
-        return staticConfig.getJobTrackerConfig(name);
-    }
-
-    @Override
-    public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
-        return staticConfig.addJobTrackerConfig(jobTrackerConfig);
-    }
-
-    @Override
-    public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
-        return staticConfig.getJobTrackerConfigs();
-    }
-
-    @Override
-    public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

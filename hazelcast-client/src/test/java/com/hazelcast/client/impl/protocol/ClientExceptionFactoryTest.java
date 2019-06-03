@@ -38,8 +38,6 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
@@ -89,7 +87,6 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CancellationException;
@@ -227,7 +224,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new QuorumException(randomString())},
                 new Object[]{new ReachedMaxSizeException(randomString())},
                 new Object[]{new RejectedExecutionException(randomString())},
-                new Object[]{new RemoteMapReduceException(randomMapName(), Collections.<Exception>emptyList())},
                 new Object[]{new ResponseAlreadySentException(randomString())},
                 new Object[]{new RetryableHazelcastException(randomString())},
                 new Object[]{new RetryableIOException(randomString())},
@@ -240,7 +236,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new TargetNotMemberException(randomString())},
                 new Object[]{new TimeoutException(randomString())},
                 new Object[]{new TopicOverloadException(randomString())},
-                new Object[]{new TopologyChangedException(randomString())},
                 new Object[]{new TransactionException(randomString())},
                 new Object[]{new TransactionNotActiveException(randomString())},
                 new Object[]{new TransactionTimedOutException(randomString())},

@@ -21,8 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
@@ -48,17 +46,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
@@ -83,7 +70,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -95,7 +81,6 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
@@ -830,47 +815,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
-
-        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation,
-                                                    JobTracker jobTracker) {
-        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
-
-        try {
-            isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory == null) {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            // TODO: not what we want, because it can lead to wrapping of HazelcastException
-            throw new HazelcastException(e);
-        }
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

@@ -64,7 +64,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
@@ -384,11 +383,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
         return super.addWanReplicationConfig(wanReplicationConfig);
-    }
-
-    @Override
-    public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
-        throw new UnsupportedOperationException("JobTracker is deprecated and will be removed in Hazelcast 4.0");
     }
 
     @Override
@@ -986,26 +980,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public JobTrackerConfig findJobTrackerConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public JobTrackerConfig getJobTrackerConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

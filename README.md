@@ -11,7 +11,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Distributed implementation of `java.util.concurrent.ExecutorService`.
 * Distributed `MultiMap` for one-to-many relationships.
 * Distributed `Topic` for publish/subscribe messaging.
-* Distributed Query, MapReduce and Aggregators.
+* Distributed Query and Aggregators.
 * Synchronous (write-through) and asynchronous (write-behind) persistence.
 * Transaction support.
 * Specification compliant JCache implementation.

@@ -132,7 +132,7 @@ hazelcast:
       # then all entries of the map will be copied to another JVM for
       # fail-safety. 0 means no backup.
       backup-count: 1
-      
+
       # Number of async backups. 0 means no backup.
       async-backup-count: 0
 
@@ -287,16 +287,6 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
-
-  jobtracker:
-    default:
-      max-thread-size: 0
-      # Queue size 0 means number of partitions * 2
-      queue-size: 0
-      retry-count: 0
-      chunk-size: 1000
-      communicate-stats: true
-      topology-changed-strategy: CANCEL_RUNNING_OPERATION
 
   semaphore:
     default:

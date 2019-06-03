@@ -134,7 +134,6 @@ public class QuorumOperationTest {
      */
     private static final Collection<String> NO_QUORUM_PACKAGES = asList(
             "com.hazelcast.flakeidgen.impl.",
-            "com.hazelcast.mapreduce.impl.operation.",
             "com.hazelcast.topic.impl.",
             "com.hazelcast.transaction.impl.xa.operations."
     );

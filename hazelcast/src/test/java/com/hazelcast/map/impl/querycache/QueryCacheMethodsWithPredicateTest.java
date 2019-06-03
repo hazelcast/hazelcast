@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.mapreduce.helpers.Employee;
+import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;

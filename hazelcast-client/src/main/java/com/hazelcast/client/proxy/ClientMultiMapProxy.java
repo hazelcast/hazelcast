@@ -47,29 +47,15 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
@@ -422,43 +408,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-
-        JobTracker jobTracker = getClient().getJobTracker("hz::aggregation-multimap-" + name);
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation,
-                                                    JobTracker jobTracker) {
-
-        try {
-            Preconditions.isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory != null) {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            throw new HazelcastException(e);
-        }
     }
 
     @Override

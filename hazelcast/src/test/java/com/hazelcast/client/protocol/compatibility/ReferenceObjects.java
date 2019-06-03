@@ -64,10 +64,6 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -646,8 +642,6 @@ public class ReferenceObjects {
     }
 
     public static SimpleEntryView<Data, Data> anEntryView = new SimpleEntryView<Data, Data>(aData, aData);
-    public static Collection<JobPartitionState> jobPartitionStates = Collections
-            .singletonList((JobPartitionState) new JobPartitionStateImpl(anAddress, JobPartitionState.State.MAPPING));
     public static List<DistributedObjectInfo> distributedObjectInfos = Collections
             .singletonList(new DistributedObjectInfo(aString, aString));
     public static QueryCacheEventData aQueryCacheEventData = new DefaultQueryCacheEventData();
@@ -819,12 +813,11 @@ public class ReferenceObjects {
             aString), new NegativeArraySizeException(aString), new NoSuchElementException(aString), new NotSerializableException(
             aString), new NullPointerException(aString), new OperationTimeoutException(aString), new PartitionMigratingException(
             aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new QuorumException(
-            aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new RemoteMapReduceException(
-            aString, Collections.<Exception>emptyList()), new ResponseAlreadySentException(
+            aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new ResponseAlreadySentException(
             aString), new RetryableHazelcastException(aString), new RetryableIOException(aString), new RuntimeException(
             aString), new SecurityException(aString), new SocketException(aString), new StaleSequenceException(aString,
             1), new TargetDisconnectedException(aString), new TargetNotMemberException(aString), new TimeoutException(
-            aString), new TopicOverloadException(aString), new TopologyChangedException(aString), new TransactionException(
+            aString), new TopicOverloadException(aString), new TransactionException(
             aString), new TransactionNotActiveException(aString), new TransactionTimedOutException(
             aString), new URISyntaxException(aString, aString), new UTFDataFormatException(
             aString), new UnsupportedOperationException(aString), new WrongTargetException(aString), new XAException(

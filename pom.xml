@@ -276,7 +276,6 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
-                        <exclude>**/mapreduce/**/*.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -409,7 +408,6 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -450,7 +448,6 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -495,7 +492,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -634,7 +630,6 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -659,7 +654,6 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -935,7 +929,6 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -1006,7 +999,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1130,7 +1122,6 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>

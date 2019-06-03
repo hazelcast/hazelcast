@@ -830,15 +830,6 @@
         <time-to-live-seconds>100</time-to-live-seconds>
     </event-journal>
 
-    <jobtracker name="jobTracker">
-        <chunk-size>100</chunk-size>
-        <queue-size>200</queue-size>
-        <retry-count>10</retry-count>
-        <max-thread-size>20</max-thread-size>
-        <communicate-stats>false</communicate-stats>
-        <topology-changed-strategy>DISCARD_AND_RESTART</topology-changed-strategy>
-    </jobtracker>
-
     <lite-member enabled="true"/>
 
     <cp-subsystem>
