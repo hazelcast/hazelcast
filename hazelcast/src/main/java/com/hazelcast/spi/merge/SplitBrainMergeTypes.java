@@ -20,6 +20,7 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
@@ -68,7 +69,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.MultiMap}.
+     * Provided merge types of {@link MultiMap}.
      *
      * @since 3.10
      */

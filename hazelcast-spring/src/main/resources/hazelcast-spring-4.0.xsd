@@ -1972,7 +1972,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.MultiMap"/>
+                    <tool:exports type="com.hazelcast.multimap.MultiMap"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.multimap;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.transaction.TransactionalMultiMap;
 
 import java.util.Collection;

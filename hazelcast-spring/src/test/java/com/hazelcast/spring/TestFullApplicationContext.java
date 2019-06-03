@@ -124,7 +124,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.ReplicatedMap;

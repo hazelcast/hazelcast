@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.map.impl.tx.MapTransactionStressTest.DummyTransactionalService;
 import com.hazelcast.map.impl.tx.MapTransactionStressTest.ProducerThread;

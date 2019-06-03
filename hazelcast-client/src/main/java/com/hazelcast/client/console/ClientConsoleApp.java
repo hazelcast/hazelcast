@@ -39,7 +39,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.nio.IOUtil;
