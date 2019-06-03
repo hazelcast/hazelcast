@@ -75,7 +75,7 @@ public class ValuesOperation extends AbstractNamedSerializableOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.VALUES;
     }
 

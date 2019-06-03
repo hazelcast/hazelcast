@@ -80,7 +80,7 @@ public class EntrySetOperation extends AbstractNamedSerializableOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.ENTRY_SET;
     }
 

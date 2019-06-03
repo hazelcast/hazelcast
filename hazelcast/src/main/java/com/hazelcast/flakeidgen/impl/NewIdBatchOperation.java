@@ -72,7 +72,7 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return FlakeIdGeneratorDataSerializerHook.NEW_ID_BATCH_OPERATION;
     }
 

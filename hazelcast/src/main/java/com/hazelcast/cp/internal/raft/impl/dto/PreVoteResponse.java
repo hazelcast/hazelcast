@@ -66,7 +66,7 @@ public class PreVoteResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.PRE_VOTE_RESPONSE;
     }
 

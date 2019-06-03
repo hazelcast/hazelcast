@@ -65,7 +65,7 @@ public final class SerializableList implements IdentifiedDataSerializable, Itera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.COLLECTION;
     }
 

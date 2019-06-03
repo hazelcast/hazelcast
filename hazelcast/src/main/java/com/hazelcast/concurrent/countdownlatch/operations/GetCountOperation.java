@@ -44,7 +44,7 @@ public class GetCountOperation extends AbstractCountDownLatchOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GET_COUNT_OPERATION;
     }
 }

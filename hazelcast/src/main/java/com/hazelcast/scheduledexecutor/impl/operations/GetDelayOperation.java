@@ -57,7 +57,7 @@ public class GetDelayOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.GET_DELAY_OP;
     }
 

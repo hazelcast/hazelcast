@@ -202,7 +202,7 @@ public class EntryListenerConfig extends ListenerConfig {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return ConfigDataSerializerHook.MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER;
         }
 
@@ -298,7 +298,7 @@ public class EntryListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ENTRY_LISTENER_CONFIG;
     }
 

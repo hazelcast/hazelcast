@@ -67,7 +67,7 @@ public class AvailablePermitsOp extends RaftOp implements IndeterminateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.AVAILABLE_PERMITS_OP;
     }
 

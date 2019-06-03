@@ -70,7 +70,7 @@ public class AddDynamicConfigOperation extends AbstractDynamicConfigOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ADD_DYNAMIC_CONFIG_OP;
     }
 

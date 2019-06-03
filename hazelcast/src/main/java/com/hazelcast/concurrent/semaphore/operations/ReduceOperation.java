@@ -49,7 +49,7 @@ public class ReduceOperation extends SemaphoreBackupAwareOperation implements Mu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.REDUCE_OPERATION;
     }
 }

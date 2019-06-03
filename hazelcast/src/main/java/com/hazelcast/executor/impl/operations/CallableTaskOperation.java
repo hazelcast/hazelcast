@@ -32,7 +32,7 @@ public final class CallableTaskOperation extends AbstractCallableTaskOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.CALLABLE_TASK;
     }
 }

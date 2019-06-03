@@ -53,7 +53,7 @@ public class IsDoneOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.IS_DONE_OP;
     }
 

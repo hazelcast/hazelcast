@@ -38,7 +38,7 @@ public class ValuesOperation extends AbstractMultiMapOperation implements Readon
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.VALUES;
     }
 }

@@ -316,7 +316,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RELIABLE_TOPIC_CONFIG;
     }
 

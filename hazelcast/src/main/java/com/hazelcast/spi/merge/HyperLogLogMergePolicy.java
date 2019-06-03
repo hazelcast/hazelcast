@@ -45,7 +45,7 @@ public class HyperLogLogMergePolicy extends AbstractSplitBrainMergePolicy<HyperL
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return HYPER_LOG_LOG;
     }
 }

@@ -54,7 +54,7 @@ public class AwaitBackupOperation extends AbstractLockOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.AWAIT_BACKUP;
     }
 

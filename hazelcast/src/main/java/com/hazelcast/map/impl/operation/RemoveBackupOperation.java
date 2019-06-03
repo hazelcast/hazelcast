@@ -68,7 +68,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE_BACKUP;
     }
 

@@ -58,7 +58,7 @@ public class LoadMapOperation extends MapOperation implements MutatingOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_MAP;
     }
 }

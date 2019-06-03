@@ -90,7 +90,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.COMPARE_AND_REMOVE;
     }
 

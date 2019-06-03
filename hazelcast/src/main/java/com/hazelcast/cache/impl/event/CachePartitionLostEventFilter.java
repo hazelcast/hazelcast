@@ -59,7 +59,7 @@ public class CachePartitionLostEventFilter implements EventFilter, IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_PARTITION_LOST_EVENT_FILTER;
     }
 }

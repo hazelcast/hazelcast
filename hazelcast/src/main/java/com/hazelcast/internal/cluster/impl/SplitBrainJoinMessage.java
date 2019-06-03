@@ -100,7 +100,7 @@ public class SplitBrainJoinMessage extends JoinMessage {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SPLIT_BRAIN_JOIN_MESSAGE;
     }
 

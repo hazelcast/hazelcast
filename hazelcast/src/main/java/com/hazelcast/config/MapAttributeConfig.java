@@ -164,7 +164,7 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_ATTRIBUTE_CONFIG;
     }
 

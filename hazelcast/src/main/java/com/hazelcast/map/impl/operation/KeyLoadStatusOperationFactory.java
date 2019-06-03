@@ -57,7 +57,7 @@ public class KeyLoadStatusOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEY_LOAD_STATUS_FACTORY;
     }
 }

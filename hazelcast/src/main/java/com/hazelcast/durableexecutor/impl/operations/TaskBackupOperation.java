@@ -62,7 +62,7 @@ public class TaskBackupOperation extends AbstractDurableExecutorOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.TASK_BACKUP;
     }
 }

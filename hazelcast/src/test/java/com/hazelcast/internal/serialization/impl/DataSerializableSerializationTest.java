@@ -191,7 +191,7 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 2;
         }
     }

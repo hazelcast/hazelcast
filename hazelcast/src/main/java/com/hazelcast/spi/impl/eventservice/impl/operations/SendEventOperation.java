@@ -74,7 +74,7 @@ public class SendEventOperation extends Operation implements AllowedDuringPassiv
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.SEND_EVENT;
     }
 }

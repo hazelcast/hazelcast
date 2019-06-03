@@ -48,7 +48,7 @@ class TopicEvent implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TopicDataSerializerHook.TOPIC_EVENT;
     }
 

@@ -51,7 +51,7 @@ public class CountDownLatchBackupOperation extends AbstractCountDownLatchOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 

@@ -192,7 +192,7 @@ public class PutAllOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL;
     }
 }

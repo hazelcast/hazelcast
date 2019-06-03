@@ -74,7 +74,7 @@ public final class BinaryOperationFactory implements OperationFactory, NodeAware
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.PARALLEL_OPERATION_FACTORY;
     }
 }

@@ -36,7 +36,7 @@ public class ShutdownOperation extends AbstractDurableExecutorOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.SHUTDOWN;
     }
 }

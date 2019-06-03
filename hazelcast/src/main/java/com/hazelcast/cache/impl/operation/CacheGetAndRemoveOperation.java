@@ -61,7 +61,7 @@ public class CacheGetAndRemoveOperation extends MutatingCacheOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.GET_AND_REMOVE;
     }
 }

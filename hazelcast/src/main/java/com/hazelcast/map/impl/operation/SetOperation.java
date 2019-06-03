@@ -48,7 +48,7 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET;
     }
 }

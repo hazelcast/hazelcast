@@ -54,7 +54,7 @@ public class MapKeysWithCursor extends AbstractCursor<Data> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEYS_WITH_CURSOR;
     }
 }

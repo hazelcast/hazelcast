@@ -94,7 +94,7 @@ public class CachePutAllOperation extends CacheOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL;
     }
 

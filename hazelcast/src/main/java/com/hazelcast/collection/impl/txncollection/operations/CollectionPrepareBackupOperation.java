@@ -55,7 +55,7 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE_BACKUP;
     }
 

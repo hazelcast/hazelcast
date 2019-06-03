@@ -55,7 +55,7 @@ public class PartitionWideEntryOperationFactory extends AbstractMapOperationFact
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_ENTRY_FACTORY;
     }
 }

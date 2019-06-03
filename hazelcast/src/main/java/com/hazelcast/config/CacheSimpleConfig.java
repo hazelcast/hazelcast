@@ -690,7 +690,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG;
     }
 
@@ -929,7 +929,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG;
         }
 
@@ -1010,7 +1010,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             }
 
             @Override
-            public int getId() {
+            public int getClassId() {
                 return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG;
             }
 
@@ -1117,7 +1117,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             }
 
             @Override
-            public int getId() {
+            public int getClassId() {
                 return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_DURATION_CONFIG;
             }
 

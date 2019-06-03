@@ -116,7 +116,7 @@ public class AttributeCanonicalizationTest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
 

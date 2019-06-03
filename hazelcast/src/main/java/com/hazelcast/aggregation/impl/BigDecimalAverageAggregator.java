@@ -66,7 +66,7 @@ public final class BigDecimalAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_DECIMAL_AVG;
     }
 

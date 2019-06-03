@@ -331,7 +331,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.RAFT_SEMAPHORE;
     }
 

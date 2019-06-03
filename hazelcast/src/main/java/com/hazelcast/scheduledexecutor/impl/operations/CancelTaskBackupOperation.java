@@ -44,7 +44,7 @@ public class CancelTaskBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.CANCEL_BACKUP_OP;
     }
 

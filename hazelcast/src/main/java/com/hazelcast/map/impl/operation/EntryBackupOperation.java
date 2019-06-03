@@ -73,7 +73,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_BACKUP;
     }
 }

@@ -185,7 +185,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MERGE;
     }
 }

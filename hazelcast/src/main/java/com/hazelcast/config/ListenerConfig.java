@@ -157,7 +157,7 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LISTENER_CONFIG;
     }
 

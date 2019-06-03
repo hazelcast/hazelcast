@@ -77,7 +77,7 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TXN_ADD;
     }
 

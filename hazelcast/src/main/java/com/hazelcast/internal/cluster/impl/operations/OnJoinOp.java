@@ -127,7 +127,7 @@ public class OnJoinOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.POST_JOIN;
     }
 

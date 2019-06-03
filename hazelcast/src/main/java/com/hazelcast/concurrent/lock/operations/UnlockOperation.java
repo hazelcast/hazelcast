@@ -131,7 +131,7 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.UNLOCK;
     }
 

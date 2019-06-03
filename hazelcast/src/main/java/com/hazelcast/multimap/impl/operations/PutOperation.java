@@ -101,7 +101,7 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.PUT;
     }
 }

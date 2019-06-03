@@ -56,7 +56,7 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ADD_AND_GET;
     }
 

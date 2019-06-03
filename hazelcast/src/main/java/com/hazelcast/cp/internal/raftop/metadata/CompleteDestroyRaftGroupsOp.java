@@ -62,7 +62,7 @@ public class CompleteDestroyRaftGroupsOp extends MetadataRaftGroupOp implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.COMPLETE_DESTROY_RAFT_GROUPS_OP;
     }
 

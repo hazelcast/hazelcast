@@ -123,7 +123,7 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
     }
 

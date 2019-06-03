@@ -74,7 +74,7 @@ public class GetResultOperation<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.GET_RESULT;
     }
 

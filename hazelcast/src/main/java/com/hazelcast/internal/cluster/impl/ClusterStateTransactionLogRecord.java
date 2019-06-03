@@ -122,7 +122,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CLUSTER_STATE_TRANSACTION_LOG_RECORD;
     }
 }

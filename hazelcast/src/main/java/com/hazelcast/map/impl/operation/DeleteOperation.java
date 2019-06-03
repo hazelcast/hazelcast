@@ -61,7 +61,7 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.DELETE;
     }
 

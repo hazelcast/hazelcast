@@ -53,7 +53,7 @@ public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.GET_ALL;
     }
 

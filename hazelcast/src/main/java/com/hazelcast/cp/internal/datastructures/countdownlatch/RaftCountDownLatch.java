@@ -137,7 +137,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_LATCH;
     }
 

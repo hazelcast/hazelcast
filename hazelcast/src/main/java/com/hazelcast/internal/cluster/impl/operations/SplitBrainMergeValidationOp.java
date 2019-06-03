@@ -187,7 +187,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
     }
 }

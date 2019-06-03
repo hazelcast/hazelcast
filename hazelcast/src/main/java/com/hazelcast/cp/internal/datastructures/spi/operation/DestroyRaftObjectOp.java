@@ -60,7 +60,7 @@ public class DestroyRaftObjectOp extends RaftOp implements IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataServiceDataSerializerHook.DESTROY_RAFT_OBJECT_OP;
     }
 

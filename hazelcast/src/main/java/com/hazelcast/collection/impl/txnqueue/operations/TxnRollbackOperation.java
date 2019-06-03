@@ -89,7 +89,7 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_ROLLBACK;
     }
 

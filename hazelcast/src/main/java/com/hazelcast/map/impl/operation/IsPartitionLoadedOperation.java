@@ -47,7 +47,7 @@ public class IsPartitionLoadedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_PARTITION_LOADED;
     }
 }

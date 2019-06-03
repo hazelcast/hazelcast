@@ -355,7 +355,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LOCK_STORE;
     }
 

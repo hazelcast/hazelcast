@@ -53,7 +53,7 @@ public class HigherHitsMapMergePolicy implements MapMergePolicy, IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.HIGHER_HITS_MERGE_POLICY;
     }
 }

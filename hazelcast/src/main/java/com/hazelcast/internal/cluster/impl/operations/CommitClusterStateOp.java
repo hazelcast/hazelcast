@@ -122,7 +122,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CHANGE_CLUSTER_STATE;
     }
 }

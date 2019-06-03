@@ -80,7 +80,7 @@ public class MapEventJournalReadOperation<K, V, T> extends EventJournalReadOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_JOURNAL_READ;
     }
 

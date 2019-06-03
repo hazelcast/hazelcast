@@ -57,7 +57,7 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GET_AND_SET;
     }
 

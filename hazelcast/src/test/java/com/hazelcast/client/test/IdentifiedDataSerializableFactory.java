@@ -54,7 +54,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
             return FACTORY_ID;
         }
 
-        public int getId() {
+        public int getClassId() {
             return 1;
         }
 
@@ -112,7 +112,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
             return FACTORY_ID;
         }
 
-        public int getId() {
+        public int getClassId() {
             return 2;
         }
 
@@ -134,7 +134,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 3;
         }
 
@@ -175,7 +175,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 8;
         }
 
@@ -219,7 +219,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 7;
         }
 
@@ -241,7 +241,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 9;
         }
 
@@ -270,7 +270,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 4;
         }
 
@@ -328,7 +328,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     class EmployeeEntryKeyComparator extends EmployeeEntryComparator {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 5;
         }
 
@@ -375,7 +375,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 9;
         }
 
@@ -431,7 +431,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 6;
         }
 
@@ -455,7 +455,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 10;
         }
 
@@ -472,14 +472,14 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     class Derived1DataSerializable extends BaseDataSerializable {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 11;
         }
     }
 
     class Derived2DataSerializable extends Derived1DataSerializable {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 12;
         }
     }
@@ -519,7 +519,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 13;
         }
 

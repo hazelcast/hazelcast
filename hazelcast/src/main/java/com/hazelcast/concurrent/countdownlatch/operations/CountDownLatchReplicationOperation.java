@@ -65,7 +65,7 @@ public class CountDownLatchReplicationOperation extends Operation implements Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_LATCH_REPLICATION_OPERATION;
     }
 

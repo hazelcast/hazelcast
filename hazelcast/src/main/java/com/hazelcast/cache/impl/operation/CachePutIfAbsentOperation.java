@@ -94,7 +94,7 @@ public class CachePutIfAbsentOperation extends MutatingCacheOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_IF_ABSENT;
     }
 

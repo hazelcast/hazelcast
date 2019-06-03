@@ -63,7 +63,7 @@ public class CacheGetAllOperationFactory
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.GET_ALL_FACTORY;
     }
 

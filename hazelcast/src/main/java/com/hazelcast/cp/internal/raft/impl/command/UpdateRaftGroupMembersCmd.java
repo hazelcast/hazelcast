@@ -65,7 +65,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.UPDATE_RAFT_GROUP_MEMBERS_COMMAND;
     }
 

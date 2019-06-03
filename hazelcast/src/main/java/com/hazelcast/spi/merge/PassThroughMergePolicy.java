@@ -40,7 +40,7 @@ public class PassThroughMergePolicy<V, T extends MergingValue<V>> extends Abstra
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.PASS_THROUGH;
     }
 }

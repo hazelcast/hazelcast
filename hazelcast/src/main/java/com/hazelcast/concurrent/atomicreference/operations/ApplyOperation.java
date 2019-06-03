@@ -59,7 +59,7 @@ public class ApplyOperation extends AbstractAtomicReferenceOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return APPLY;
     }
 

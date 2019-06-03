@@ -136,7 +136,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_UNLOCK;
     }
 }

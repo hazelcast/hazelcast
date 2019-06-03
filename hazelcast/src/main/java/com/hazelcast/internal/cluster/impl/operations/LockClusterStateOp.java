@@ -131,7 +131,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.LOCK_CLUSTER_STATE;
     }
 

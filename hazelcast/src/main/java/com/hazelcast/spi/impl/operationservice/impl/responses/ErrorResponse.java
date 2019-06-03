@@ -39,7 +39,7 @@ public class ErrorResponse extends Response {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ERROR_RESPONSE;
     }
 

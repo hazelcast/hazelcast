@@ -72,7 +72,7 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.NOTIFY_MAP_FLUSH;
     }
 }

@@ -104,7 +104,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_POST_JOIN;
     }
 }

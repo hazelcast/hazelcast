@@ -64,7 +64,7 @@ public class AtomicLongReplicationOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATION;
     }
 

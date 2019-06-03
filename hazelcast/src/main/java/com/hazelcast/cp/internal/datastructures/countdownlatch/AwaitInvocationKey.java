@@ -49,7 +49,7 @@ public class AwaitInvocationKey extends WaitKey implements IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.AWAIT_INVOCATION_KEY;
     }
 

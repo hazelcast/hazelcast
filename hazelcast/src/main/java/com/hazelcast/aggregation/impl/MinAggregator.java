@@ -72,7 +72,7 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.MIN;
     }
 

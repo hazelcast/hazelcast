@@ -55,7 +55,7 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_BACKUP;
     }
 }

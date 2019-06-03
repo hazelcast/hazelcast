@@ -374,7 +374,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.PAGING_PREDICATE;
     }
 }

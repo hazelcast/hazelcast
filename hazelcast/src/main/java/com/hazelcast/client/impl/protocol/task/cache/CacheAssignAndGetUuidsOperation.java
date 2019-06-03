@@ -38,7 +38,7 @@ public class CacheAssignAndGetUuidsOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_ASSIGN_AND_GET_UUIDS;
     }
 

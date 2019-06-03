@@ -90,7 +90,7 @@ public class OnJoinRegistrationOperation extends Operation implements Identified
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.ON_JOIN_REGISTRATION;
     }
 }

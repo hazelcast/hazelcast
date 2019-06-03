@@ -52,7 +52,7 @@ public class MapFlushBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FLUSH_BACKUP;
     }
 }

@@ -38,7 +38,7 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_BACKUP;
     }
 }

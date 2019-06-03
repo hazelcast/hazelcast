@@ -114,7 +114,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MERGE_POLICY_CONFIG;
     }
 

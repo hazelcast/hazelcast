@@ -89,7 +89,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_POLL;
     }
 

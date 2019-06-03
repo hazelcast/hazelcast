@@ -50,7 +50,7 @@ public class IsEmptyOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_EMPTY_FACTORY;
     }
 }

@@ -57,7 +57,7 @@ public final class OfferBackupOperation extends QueueOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.OFFER_BACKUP;
     }
 

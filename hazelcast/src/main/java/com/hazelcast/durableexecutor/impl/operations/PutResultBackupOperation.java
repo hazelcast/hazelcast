@@ -61,7 +61,7 @@ public class PutResultBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.PUT_RESULT_BACKUP;
     }
 }

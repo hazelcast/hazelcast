@@ -90,7 +90,7 @@ public class DeserializingEntry<K, V> implements Entry<K, V>, HazelcastInstanceA
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return EventJournalDataSerializerHook.DESERIALIZING_ENTRY;
     }
 

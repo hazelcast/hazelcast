@@ -44,7 +44,7 @@ public class ILikePredicate extends LikePredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.ILIKE_PREDICATE;
     }
 }

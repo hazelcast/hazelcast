@@ -63,7 +63,7 @@ public class GetLockOwnershipStateOp extends RaftOp implements IndeterminateOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.GET_RAFT_LOCK_OWNERSHIP_STATE_OP;
     }
 

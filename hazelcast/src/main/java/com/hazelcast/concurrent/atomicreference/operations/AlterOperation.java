@@ -51,7 +51,7 @@ public class AlterOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ALTER;
     }
 }

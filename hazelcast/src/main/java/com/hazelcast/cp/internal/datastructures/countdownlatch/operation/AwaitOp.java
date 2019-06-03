@@ -77,7 +77,7 @@ public class AwaitOp extends AbstractCountDownLatchOp implements CallerAware, In
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.AWAIT_OP;
     }
 

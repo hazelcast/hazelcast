@@ -229,7 +229,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EVENT_JOURNAL_CONFIG;
     }
 

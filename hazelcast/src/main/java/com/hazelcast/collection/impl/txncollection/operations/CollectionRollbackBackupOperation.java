@@ -53,7 +53,7 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ROLLBACK_BACKUP;
     }
 

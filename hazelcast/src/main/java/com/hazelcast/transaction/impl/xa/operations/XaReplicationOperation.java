@@ -84,7 +84,7 @@ public class XaReplicationOperation extends Operation implements IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.XA_REPLICATION;
     }
 }

@@ -77,7 +77,7 @@ public class CacheDestroyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.DESTROY_CACHE;
     }
 

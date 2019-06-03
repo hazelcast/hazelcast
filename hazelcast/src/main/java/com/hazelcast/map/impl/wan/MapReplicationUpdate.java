@@ -96,7 +96,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
     }
 

@@ -103,7 +103,7 @@ public class AddOperation extends AbstractPNCounterOperation implements Mutating
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER_ADD_OPERATION;
     }
 }

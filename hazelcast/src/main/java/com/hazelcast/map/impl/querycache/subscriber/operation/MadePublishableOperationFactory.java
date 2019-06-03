@@ -70,7 +70,7 @@ public class MadePublishableOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MADE_PUBLISHABLE_FACTORY;
     }
 }

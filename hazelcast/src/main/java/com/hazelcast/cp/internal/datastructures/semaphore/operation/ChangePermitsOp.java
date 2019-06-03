@@ -71,7 +71,7 @@ public class ChangePermitsOp extends AbstractSemaphoreOp implements Indeterminat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.CHANGE_PERMITS_OP;
     }
 

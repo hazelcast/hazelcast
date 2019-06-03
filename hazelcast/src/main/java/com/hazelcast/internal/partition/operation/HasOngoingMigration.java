@@ -57,7 +57,7 @@ public final class HasOngoingMigration extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.HAS_ONGOING_MIGRATION;
     }
 }

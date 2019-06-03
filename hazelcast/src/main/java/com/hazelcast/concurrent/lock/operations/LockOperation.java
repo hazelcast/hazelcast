@@ -97,7 +97,7 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.LOCK;
     }
 }

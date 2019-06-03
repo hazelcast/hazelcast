@@ -96,7 +96,7 @@ public class ClientAwsConfig extends AwsConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
     }
 }

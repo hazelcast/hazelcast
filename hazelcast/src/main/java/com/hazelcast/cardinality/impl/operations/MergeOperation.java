@@ -60,7 +60,7 @@ public class MergeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE;
     }
 

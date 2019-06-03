@@ -85,7 +85,7 @@ public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier,
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_POLL;
     }
 

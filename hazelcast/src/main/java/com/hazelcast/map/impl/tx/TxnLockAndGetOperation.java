@@ -100,7 +100,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_LOCK_AND_GET;
     }
 }

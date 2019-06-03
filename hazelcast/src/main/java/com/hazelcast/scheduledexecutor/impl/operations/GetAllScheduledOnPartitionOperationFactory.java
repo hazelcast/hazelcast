@@ -42,7 +42,7 @@ public class GetAllScheduledOnPartitionOperationFactory
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY;
     }
 

@@ -74,7 +74,7 @@ public class CacheEventJournalReadOperation<K, V, T>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_READ_OPERATION;
     }
 

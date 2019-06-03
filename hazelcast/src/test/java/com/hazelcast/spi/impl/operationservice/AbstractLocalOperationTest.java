@@ -50,6 +50,6 @@ public class AbstractLocalOperationTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testGetId() {
-        operation.getId();
+        operation.getClassId();
     }
 }

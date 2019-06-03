@@ -41,7 +41,7 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CONTAINS_KEY;
     }
 

@@ -53,7 +53,7 @@ public class EvictAllOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_ALL_FACTORY;
     }
 }

@@ -273,7 +273,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUBLISHER_CREATE;
     }
 }

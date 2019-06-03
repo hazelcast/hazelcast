@@ -169,7 +169,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PN_COUNTER_CONFIG;
     }
 

@@ -393,7 +393,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }

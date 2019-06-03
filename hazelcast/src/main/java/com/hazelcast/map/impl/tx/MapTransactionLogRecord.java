@@ -125,7 +125,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }

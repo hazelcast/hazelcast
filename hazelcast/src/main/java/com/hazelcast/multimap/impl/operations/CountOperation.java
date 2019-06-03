@@ -46,7 +46,7 @@ public class CountOperation extends AbstractKeyBasedMultiMapOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.COUNT;
     }
 

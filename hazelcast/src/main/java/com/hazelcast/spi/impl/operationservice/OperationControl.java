@@ -64,7 +64,7 @@ public final class OperationControl implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.OPERATION_CONTROL;
     }
 

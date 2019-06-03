@@ -78,7 +78,7 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE;
     }
 

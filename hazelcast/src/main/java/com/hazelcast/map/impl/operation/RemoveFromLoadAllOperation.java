@@ -95,7 +95,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE_FROM_LOAD_ALL;
     }
 }

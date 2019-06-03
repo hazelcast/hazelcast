@@ -50,7 +50,7 @@ public class LatestUpdateMergePolicy<V, T extends MergingLastUpdateTime<V>>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.LATEST_UPDATE;
     }
 }

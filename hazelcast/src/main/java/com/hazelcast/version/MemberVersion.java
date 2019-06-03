@@ -159,7 +159,7 @@ public final class MemberVersion
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_VERSION;
     }
 

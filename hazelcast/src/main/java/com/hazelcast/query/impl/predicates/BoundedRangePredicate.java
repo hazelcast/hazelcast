@@ -89,7 +89,7 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException("can't be serialized");
     }
 

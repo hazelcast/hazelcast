@@ -57,7 +57,7 @@ public class JoinMastershipClaimOp extends AbstractJoinOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MASTER_CLAIM;
     }
 }

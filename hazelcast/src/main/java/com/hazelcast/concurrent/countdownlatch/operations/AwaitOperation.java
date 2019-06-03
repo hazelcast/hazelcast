@@ -60,7 +60,7 @@ public class AwaitOperation extends AbstractCountDownLatchOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AWAIT_OPERATION;
     }
 }

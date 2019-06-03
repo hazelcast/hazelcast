@@ -91,7 +91,7 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE;
     }
 

@@ -102,7 +102,7 @@ public class EventListenerFilter implements EventFilter, IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_LISTENER_FILTER;
     }
 }

@@ -42,7 +42,7 @@ public class MapIsEmptyOperation extends MapOperation implements PartitionAwareO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_EMPTY;
     }
 }

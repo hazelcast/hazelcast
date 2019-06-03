@@ -263,7 +263,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_REQUEST;
     }
 }

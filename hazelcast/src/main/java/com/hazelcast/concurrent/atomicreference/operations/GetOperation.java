@@ -43,7 +43,7 @@ public class GetOperation extends AbstractAtomicReferenceOperation implements Re
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GET;
     }
 }

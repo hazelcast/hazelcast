@@ -61,7 +61,7 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CREATE_TX_BACKUP_LOG;
     }
 

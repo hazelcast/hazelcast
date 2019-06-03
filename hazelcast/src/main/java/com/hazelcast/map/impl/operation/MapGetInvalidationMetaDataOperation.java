@@ -98,7 +98,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return MAP_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -226,7 +226,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_INVALIDATION_METADATA;
     }
 

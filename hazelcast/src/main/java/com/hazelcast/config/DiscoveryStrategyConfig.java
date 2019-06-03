@@ -128,7 +128,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.DISCOVERY_STRATEGY_CONFIG;
     }
 

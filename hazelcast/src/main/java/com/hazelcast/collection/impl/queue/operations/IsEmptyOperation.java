@@ -46,7 +46,7 @@ public class IsEmptyOperation extends QueueOperation implements ReadonlyOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.IS_EMPTY;
     }
 }

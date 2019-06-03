@@ -74,7 +74,7 @@ public class CollectionCommitOperation extends CollectionBackupAwareOperation {
 
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.TXN_COMMIT;
     }
 

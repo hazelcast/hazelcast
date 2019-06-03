@@ -55,7 +55,7 @@ public class ClearOperationFactory implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CLEAR_OP_FACTORY;
     }
 }

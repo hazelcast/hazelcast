@@ -79,7 +79,7 @@ public class NormalResponse extends Response {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return NORMAL_RESPONSE;
     }
 

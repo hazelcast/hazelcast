@@ -56,7 +56,7 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 

@@ -69,7 +69,7 @@ public class CacheSetExpiryPolicyBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.SET_EXPIRY_POLICY_BACKUP;
     }
 

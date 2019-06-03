@@ -460,7 +460,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUERY_CACHE_CONFIG;
     }
 

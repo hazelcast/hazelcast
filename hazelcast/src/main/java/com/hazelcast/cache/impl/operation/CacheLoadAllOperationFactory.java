@@ -55,7 +55,7 @@ public class CacheLoadAllOperationFactory
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.LOAD_ALL_FACTORY;
     }
 

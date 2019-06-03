@@ -121,7 +121,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DEFAULT_RAFT_GROUP_QUERY_OP;
     }
 

@@ -92,7 +92,7 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL_BACKUP;
     }
 }

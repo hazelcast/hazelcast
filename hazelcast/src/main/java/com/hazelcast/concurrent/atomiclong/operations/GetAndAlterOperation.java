@@ -45,7 +45,7 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GET_AND_ALTER;
     }
 }

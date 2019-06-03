@@ -138,7 +138,7 @@ public class MultipleEntryOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY;
     }
 }

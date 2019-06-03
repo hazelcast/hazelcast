@@ -94,7 +94,7 @@ public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.DETACH_MEMBER_OPERATION;
     }
 

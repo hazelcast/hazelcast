@@ -46,7 +46,7 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_CLEAR_BACKUP;
     }
 

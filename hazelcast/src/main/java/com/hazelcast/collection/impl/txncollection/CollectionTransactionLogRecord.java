@@ -139,7 +139,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TRANSACTION_LOG_RECORD;
     }
 }

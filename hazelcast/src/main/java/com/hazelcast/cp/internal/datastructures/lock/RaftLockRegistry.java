@@ -109,7 +109,7 @@ class RaftLockRegistry extends ResourceRegistry<LockInvocationKey, RaftLock> imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.RAFT_LOCK_REGISTRY;
     }
 }

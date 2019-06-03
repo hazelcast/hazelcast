@@ -47,7 +47,7 @@ public class DrainOperation extends SemaphoreBackupAwareOperation implements Mut
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.DRAIN_OPERATION;
     }
 }

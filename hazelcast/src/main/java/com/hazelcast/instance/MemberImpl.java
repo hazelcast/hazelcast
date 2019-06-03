@@ -177,7 +177,7 @@ public final class MemberImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER;
     }
 

@@ -73,7 +73,7 @@ public class RemoveAllOperation extends AbstractBackupAwareMultiMapOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.REMOVE_ALL;
     }
 }

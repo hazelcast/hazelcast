@@ -253,7 +253,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testILike_Id() {
         ILikePredicate predicate = (ILikePredicate) ilike(ATTRIBUTE, "Java_World");
 
-        assertThat(predicate.getId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
+        assertThat(predicate.getClassId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
     }
 
     @Test

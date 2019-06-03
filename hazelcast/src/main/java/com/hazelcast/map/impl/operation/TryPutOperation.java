@@ -51,7 +51,7 @@ public class TryPutOperation extends BasePutOperation implements MutatingOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRY_PUT;
     }
 }

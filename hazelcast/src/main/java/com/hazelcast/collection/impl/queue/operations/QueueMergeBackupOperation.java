@@ -69,7 +69,7 @@ public class QueueMergeBackupOperation extends QueueOperation implements Mutatin
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.MERGE_BACKUP;
     }
 

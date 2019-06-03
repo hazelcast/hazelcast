@@ -121,7 +121,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BATCH_BACKUP;
     }
 

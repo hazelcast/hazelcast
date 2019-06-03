@@ -65,7 +65,7 @@ public class LockInvocationKey extends WaitKey implements IdentifiedDataSerializ
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.LOCK_INVOCATION_KEY;
     }
 

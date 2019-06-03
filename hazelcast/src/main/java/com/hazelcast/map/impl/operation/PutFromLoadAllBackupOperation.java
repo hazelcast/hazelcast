@@ -101,7 +101,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_FROM_LOAD_ALL_BACKUP;
     }
 }

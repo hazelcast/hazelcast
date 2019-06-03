@@ -90,7 +90,7 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE;
     }
 

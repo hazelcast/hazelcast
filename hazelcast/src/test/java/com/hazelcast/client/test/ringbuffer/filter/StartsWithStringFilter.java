@@ -51,7 +51,7 @@ public class StartsWithStringFilter implements IFunction<String, Boolean>, Ident
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

@@ -44,7 +44,7 @@ public class GetOperation extends AbstractAtomicLongOperation implements Readonl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GET;
     }
 }

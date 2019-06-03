@@ -60,7 +60,7 @@ public class SemaphoreReplicationOperation extends Operation implements Identifi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.SEMAPHORE_REPLICATION_OPERATION;
     }
 

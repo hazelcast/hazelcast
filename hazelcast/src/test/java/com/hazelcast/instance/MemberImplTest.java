@@ -226,7 +226,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         assertEquals(5701, member.getPort());
         assertEquals("127.0.0.1", member.getInetAddress().getHostAddress());
         assertTrue(member.getFactoryId() > -1);
-        assertTrue(member.getId() > -1);
+        assertTrue(member.getClassId() > -1);
         assertNotNull(member.getVersion());
         assertEquals(3, member.getVersion().getMajor());
         assertEquals(8, member.getVersion().getMinor());

@@ -43,7 +43,7 @@ public class IdentifiedEntryProcessor extends AbstractEntryProcessor<String, Str
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

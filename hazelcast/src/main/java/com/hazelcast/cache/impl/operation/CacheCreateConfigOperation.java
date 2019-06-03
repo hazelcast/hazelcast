@@ -174,7 +174,7 @@ public class CacheCreateConfigOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CREATE_CONFIG;
     }
 

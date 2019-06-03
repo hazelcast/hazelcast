@@ -50,7 +50,7 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CLEAR_BACKUP;
     }
 

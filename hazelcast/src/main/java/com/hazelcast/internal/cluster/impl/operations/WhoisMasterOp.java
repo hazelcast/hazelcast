@@ -58,7 +58,7 @@ public class WhoisMasterOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.WHOIS_MASTER;
     }
 }

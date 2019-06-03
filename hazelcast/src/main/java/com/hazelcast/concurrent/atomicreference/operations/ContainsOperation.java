@@ -51,7 +51,7 @@ public class ContainsOperation extends AbstractAtomicReferenceOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CONTAINS;
     }
 

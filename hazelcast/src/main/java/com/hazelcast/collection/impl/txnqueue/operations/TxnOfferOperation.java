@@ -92,7 +92,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_OFFER;
     }
 

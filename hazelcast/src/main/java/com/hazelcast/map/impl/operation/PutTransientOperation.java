@@ -41,7 +41,7 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_TRANSIENT;
     }
 }

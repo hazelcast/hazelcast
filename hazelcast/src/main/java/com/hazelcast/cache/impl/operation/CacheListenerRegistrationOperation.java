@@ -77,7 +77,7 @@ public class CacheListenerRegistrationOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.LISTENER_REGISTRATION;
     }
 

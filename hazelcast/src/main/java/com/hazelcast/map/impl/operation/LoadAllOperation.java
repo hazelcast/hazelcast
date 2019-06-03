@@ -116,7 +116,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_ALL;
     }
 }

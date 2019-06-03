@@ -71,7 +71,7 @@ public class QueryPartitionOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_PARTITION;
     }
 }

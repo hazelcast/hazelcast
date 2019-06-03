@@ -295,7 +295,7 @@ public class EntryOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_OPERATION;
     }
 

@@ -67,7 +67,7 @@ public class MergeBackupOperation extends AbstractRingBufferOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP_OPERATION;
     }
 

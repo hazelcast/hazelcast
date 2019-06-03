@@ -67,7 +67,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.GET_ENTRY_VIEW;
     }
 }

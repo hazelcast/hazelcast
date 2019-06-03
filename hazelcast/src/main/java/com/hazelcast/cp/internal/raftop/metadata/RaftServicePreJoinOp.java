@@ -75,7 +75,7 @@ public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.RAFT_PRE_JOIN_OP;
     }
 

@@ -53,7 +53,7 @@ public class GetRaftGroupIdsOp extends MetadataRaftGroupOp implements Indetermin
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_RAFT_GROUP_IDS_OP;
     }
 

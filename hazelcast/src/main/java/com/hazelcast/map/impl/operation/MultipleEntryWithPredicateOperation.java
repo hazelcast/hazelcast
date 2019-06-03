@@ -69,7 +69,7 @@ public class MultipleEntryWithPredicateOperation extends MultipleEntryOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_PREDICATE;
     }
 }

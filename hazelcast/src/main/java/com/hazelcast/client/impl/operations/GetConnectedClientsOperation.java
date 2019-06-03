@@ -53,7 +53,7 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.GET_CONNECTED_CLIENTS;
     }
 

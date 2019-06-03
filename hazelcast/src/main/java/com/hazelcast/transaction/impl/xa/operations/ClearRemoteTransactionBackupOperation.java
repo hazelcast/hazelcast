@@ -67,7 +67,7 @@ ClearRemoteTransactionBackupOperation extends AbstractXAOperation implements Bac
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.CLEAR_REMOTE_TX_BACKUP;
     }
 }

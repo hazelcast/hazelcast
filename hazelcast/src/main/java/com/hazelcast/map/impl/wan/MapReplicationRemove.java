@@ -73,7 +73,7 @@ public class MapReplicationRemove implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.MAP_REPLICATION_REMOVE;
     }
 

@@ -94,7 +94,7 @@ public class RollbackClusterStateOp extends Operation implements AllowedDuringPa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.ROLLBACK_CLUSTER_STATE;
     }
 }

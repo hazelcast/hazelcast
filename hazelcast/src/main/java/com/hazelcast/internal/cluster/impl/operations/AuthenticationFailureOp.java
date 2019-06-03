@@ -36,7 +36,7 @@ public class AuthenticationFailureOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.AUTH_FAILURE;
     }
 }

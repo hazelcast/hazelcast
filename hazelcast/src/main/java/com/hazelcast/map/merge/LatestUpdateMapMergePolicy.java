@@ -54,7 +54,7 @@ public class LatestUpdateMapMergePolicy implements MapMergePolicy, IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LATEST_UPDATE_MERGE_POLICY;
     }
 }

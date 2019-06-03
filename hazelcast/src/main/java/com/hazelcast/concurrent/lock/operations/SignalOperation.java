@@ -58,7 +58,7 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.SIGNAL;
     }
 }

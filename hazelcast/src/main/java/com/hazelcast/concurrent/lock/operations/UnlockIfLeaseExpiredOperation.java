@@ -92,7 +92,7 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.UNLOCK_IF_LEASE_EXPIRED;
     }
 

@@ -72,7 +72,7 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.MAX;
     }
 

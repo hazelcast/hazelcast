@@ -122,7 +122,7 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_OPERATION;
     }
 

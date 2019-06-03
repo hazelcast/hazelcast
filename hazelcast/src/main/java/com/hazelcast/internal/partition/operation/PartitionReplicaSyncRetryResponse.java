@@ -96,7 +96,7 @@ public class PartitionReplicaSyncRetryResponse
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_RETRY_RESPONSE;
     }
 }

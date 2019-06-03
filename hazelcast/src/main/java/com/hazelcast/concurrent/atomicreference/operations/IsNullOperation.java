@@ -44,7 +44,7 @@ public class IsNullOperation extends AbstractAtomicReferenceOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return IS_NULL;
     }
 }

@@ -85,7 +85,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL_PARTITION_AWARE_FACTORY;
     }
 }

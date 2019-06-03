@@ -49,7 +49,7 @@ public class InitOperation extends SemaphoreBackupAwareOperation implements Muta
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.INIT_OPERATION;
     }
 }

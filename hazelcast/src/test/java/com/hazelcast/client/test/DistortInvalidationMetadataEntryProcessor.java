@@ -180,7 +180,7 @@ public class DistortInvalidationMetadataEntryProcessor extends AbstractEntryProc
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

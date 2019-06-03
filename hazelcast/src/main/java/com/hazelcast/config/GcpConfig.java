@@ -30,7 +30,7 @@ public class GcpConfig
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.GCP_CONFIG;
     }
 }

@@ -65,7 +65,7 @@ public class VersionResponsePair implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.VERSION_RESPONSE_PAIR;
     }
 }

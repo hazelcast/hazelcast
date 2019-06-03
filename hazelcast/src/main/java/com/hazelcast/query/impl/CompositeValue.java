@@ -194,7 +194,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.COMPOSITE_VALUE;
     }
 
@@ -235,7 +235,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return PredicateDataSerializerHook.NEGATIVE_INFINITY;
         }
 
@@ -274,7 +274,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return PredicateDataSerializerHook.POSITIVE_INFINITY;
         }
 

@@ -47,7 +47,7 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.REMOVE_BACKUP;
     }
 

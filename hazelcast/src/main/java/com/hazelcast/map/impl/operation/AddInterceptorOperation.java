@@ -96,7 +96,7 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INTERCEPTOR;
     }
 }

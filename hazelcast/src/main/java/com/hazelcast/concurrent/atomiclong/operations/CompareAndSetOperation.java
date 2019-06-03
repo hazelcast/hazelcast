@@ -59,7 +59,7 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COMPARE_AND_SET;
     }
 

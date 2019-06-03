@@ -56,7 +56,7 @@ public class ContainsOperation extends QueueOperation implements ReadonlyOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CONTAINS;
     }
 

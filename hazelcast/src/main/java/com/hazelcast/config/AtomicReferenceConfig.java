@@ -48,7 +48,7 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ATOMIC_REFERENCE_CONFIG;
     }
 

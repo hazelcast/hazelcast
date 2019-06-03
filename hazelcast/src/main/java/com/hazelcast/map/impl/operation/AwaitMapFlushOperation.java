@@ -112,7 +112,7 @@ public class AwaitMapFlushOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.AWAIT_MAP_FLUSH;
     }
 }

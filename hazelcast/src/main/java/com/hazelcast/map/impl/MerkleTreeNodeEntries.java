@@ -69,7 +69,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MERKLE_TREE_NODE_ENTRIES;
     }
 

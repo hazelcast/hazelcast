@@ -81,7 +81,7 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_ONE_OPERATION;
     }
 

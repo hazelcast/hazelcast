@@ -89,7 +89,7 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.RUNNABLE_ADAPTER;
     }
 

@@ -256,7 +256,7 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_ENTRY;
     }
 

@@ -95,7 +95,7 @@ public class ReplicationOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.REPLICATION;
     }
 

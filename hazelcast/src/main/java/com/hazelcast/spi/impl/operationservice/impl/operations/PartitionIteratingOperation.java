@@ -103,7 +103,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.PARTITION_ITERATOR;
     }
 
@@ -308,7 +308,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
 

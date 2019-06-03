@@ -63,7 +63,7 @@ public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_EVENT_FILTER;
     }
 

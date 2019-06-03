@@ -73,7 +73,7 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.APPEND_SUCCESS_RESPONSE;
     }
 

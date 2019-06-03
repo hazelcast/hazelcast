@@ -86,7 +86,7 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_BACKUP;
     }
 }

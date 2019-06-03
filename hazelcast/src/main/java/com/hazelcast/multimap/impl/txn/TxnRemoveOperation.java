@@ -113,7 +113,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.TXN_REMOVE;
     }
 }

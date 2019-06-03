@@ -73,7 +73,7 @@ public class QueueReplicationOperation extends Operation implements IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_REPLICATION;
     }
 

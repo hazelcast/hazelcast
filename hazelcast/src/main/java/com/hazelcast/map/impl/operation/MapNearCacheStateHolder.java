@@ -139,7 +139,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_NEAR_CACHE_STATE_HOLDER;
     }
 }

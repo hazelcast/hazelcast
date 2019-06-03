@@ -36,7 +36,7 @@ public class AvailableOperation extends SemaphoreOperation implements ReadonlyOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.AVAILABLE_OPERATION;
     }
 }

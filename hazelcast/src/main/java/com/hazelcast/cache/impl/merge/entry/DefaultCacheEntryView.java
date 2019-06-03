@@ -122,7 +122,7 @@ public class DefaultCacheEntryView
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.DEFAULT_CACHE_ENTRY_VIEW;
     }
 }

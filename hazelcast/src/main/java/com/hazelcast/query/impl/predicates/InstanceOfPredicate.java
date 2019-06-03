@@ -83,7 +83,7 @@ public class InstanceOfPredicate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.INSTANCEOF_PREDICATE;
     }
 

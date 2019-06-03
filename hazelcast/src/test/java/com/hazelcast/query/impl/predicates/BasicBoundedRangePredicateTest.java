@@ -46,7 +46,7 @@ public class BasicBoundedRangePredicateTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCantBeSerialized() {
-        new BoundedRangePredicate("this", 1, true, 10, true).getId();
+        new BoundedRangePredicate("this", 1, true, 10, true).getClassId();
     }
 
     @Test

@@ -43,7 +43,7 @@ public abstract class AbstractLocalOperation extends Operation implements Identi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException(getClass().getName() + " is only used locally!");
     }
 }

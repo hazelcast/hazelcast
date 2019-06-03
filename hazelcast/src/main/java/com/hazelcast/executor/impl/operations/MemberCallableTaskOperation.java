@@ -43,7 +43,7 @@ public final class MemberCallableTaskOperation extends AbstractCallableTaskOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
     }
 }

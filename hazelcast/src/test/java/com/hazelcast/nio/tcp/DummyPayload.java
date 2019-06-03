@@ -58,7 +58,7 @@ public class DummyPayload implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TestDataFactory.DUMMY_PAYLOAD;
     }
 

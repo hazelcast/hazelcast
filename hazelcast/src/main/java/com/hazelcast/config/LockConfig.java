@@ -135,7 +135,7 @@ public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LOCK_CONFIG;
     }
 

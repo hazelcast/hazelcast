@@ -112,7 +112,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_MANY_OPERATION;
     }
 

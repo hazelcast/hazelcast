@@ -101,7 +101,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.READ_AND_RESET_ACCUMULATOR;
     }
 }

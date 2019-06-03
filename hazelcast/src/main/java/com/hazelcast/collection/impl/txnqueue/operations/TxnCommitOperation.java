@@ -99,7 +99,7 @@ public class TxnCommitOperation extends QueueBackupAwareOperation implements Not
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_COMMIT;
     }
 

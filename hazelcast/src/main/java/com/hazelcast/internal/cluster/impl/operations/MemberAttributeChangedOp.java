@@ -66,7 +66,7 @@ public class MemberAttributeChangedOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_ATTR_CHANGED;
     }
 }

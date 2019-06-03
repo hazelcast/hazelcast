@@ -50,7 +50,7 @@ public class GetMembershipChangeScheduleOp extends MetadataRaftGroupOp implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_MEMBERSHIP_CHANGE_SCHEDULE_OP;
     }
 

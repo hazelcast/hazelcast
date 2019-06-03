@@ -308,7 +308,7 @@ public class AwsConfig
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.AWS_CONFIG;
     }
 }

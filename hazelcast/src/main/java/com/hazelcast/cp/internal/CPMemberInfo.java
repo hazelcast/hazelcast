@@ -111,7 +111,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.CP_MEMBER;
     }
 

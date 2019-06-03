@@ -116,7 +116,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.IN_PREDICATE;
     }
 

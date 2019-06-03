@@ -175,7 +175,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return RaftServiceDataSerializerHook.GROUP_MEMBERSHIP_CHANGE;
         }
 
@@ -192,7 +192,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.MEMBERSHIP_CHANGE_SCHEDULE;
     }
 

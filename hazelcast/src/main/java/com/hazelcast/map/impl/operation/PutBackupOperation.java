@@ -92,7 +92,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_BACKUP;
     }
 

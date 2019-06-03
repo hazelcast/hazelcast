@@ -1097,7 +1097,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_CONTAINER;
     }
 

@@ -54,7 +54,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BACKUP;
     }
 

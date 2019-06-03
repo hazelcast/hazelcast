@@ -303,7 +303,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_REPLICATION_STATE_HOLDER;
     }
 

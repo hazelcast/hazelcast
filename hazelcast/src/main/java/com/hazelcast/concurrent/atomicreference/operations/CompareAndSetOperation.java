@@ -65,7 +65,7 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COMPARE_AND_SET;
     }
 

@@ -61,7 +61,7 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.RELEASE_OPERATION;
     }
 }

@@ -53,7 +53,7 @@ public class DrainPermitsOp extends AbstractSemaphoreOp implements Indeterminate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.DRAIN_PERMITS_OP;
     }
 }

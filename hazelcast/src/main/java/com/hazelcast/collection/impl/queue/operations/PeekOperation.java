@@ -54,7 +54,7 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.PEEK;
     }
 }

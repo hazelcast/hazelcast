@@ -229,7 +229,7 @@ public class MergeOperation extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_OPERATION;
     }
 

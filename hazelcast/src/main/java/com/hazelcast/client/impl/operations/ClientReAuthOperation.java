@@ -124,7 +124,7 @@ public class ClientReAuthOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.RE_AUTH;
     }
 

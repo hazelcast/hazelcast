@@ -109,7 +109,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LEGACY_MERGE;
     }
 }

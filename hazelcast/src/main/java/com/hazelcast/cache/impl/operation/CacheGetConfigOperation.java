@@ -106,7 +106,7 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.GET_CONFIG;
     }
 

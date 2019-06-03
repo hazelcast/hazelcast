@@ -65,7 +65,7 @@ public class AuthorizationOp extends AbstractJoinOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.AUTHORIZATION;
     }
 }

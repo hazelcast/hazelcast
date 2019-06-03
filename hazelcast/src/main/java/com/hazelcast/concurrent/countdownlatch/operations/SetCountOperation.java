@@ -55,7 +55,7 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SET_COUNT_OPERATION;
     }
 
