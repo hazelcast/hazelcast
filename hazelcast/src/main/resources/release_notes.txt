@@ -1,5 +1,68 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.1 ====
+
+1. New Features
+
+Hazelcast IMDG Enterprise:
+
+* Added support for updating the licenses of all the running
+members of a Hazelcast IMDG cluster using the REST API. See the License Information section.
+
+2. Enhancements
+
+* Introduced complete example configurations (XML and YAML) for
+Hazelcast Java client and client failover. See the Configuring Declaratively section.
+* Updated Hazelcast JCache implementation to support
+JCache 1.1.1. This version of JCache does not introduce new
+functionalities; it resolves the errata and issues in JCache 1.1.0. See the Upgrading to JCache 1.1.1 section.
+
+The following are the other improvements performed to solve the enhancement
+issues opened by the Hazelcast customers/team.
+
+* Improved Config#getConfigurationUrl()'s Javadoc to mention
+that it returns `null` if the `Config` instance has been built from
+a source different than URL or file. [#15109]
+* Updated the client failover XSD to include `targetNamespace` that
+has been delivered with Hazelcast IMDG 3.12. [#15057]
+* Updated the Hazelcast Kubernetes dependency to the latest version. [#14899]
+* Added the getter method for the YAML configuration builder properties. [#14884]
+* Eliminated the excessive logging when NIO networking is shutdown by
+deregistering the IO threads. [#14837] 
+* Introduced a warning log for illegal reflective access operation when
+using Java 9 and higher, and OpenJ 9. [#14835]
+* Updated the Hazelcast web session manager dependency to the latest version. [#14822]
+* Updated the Netty version to fix the unknown signature algorithm
+issues in BoringSSL integration. #2907
+* Added Maven's animal sniffer plugin to check the JDK 6 compatibility. #2906
+
+3. Fixes
+
+* Fixed an issue which was causing `OutOfMemoryException` in a
+split-brain situation, due to the client listeners. [#15042]
+* Fixed the authentication mechanism between the clients and members
+by adding a check to prevent re-verification while the client is changing
+its owner member. [#15015]
+* Fixed an issue where the Hazelcast IMDG configuration files, that
+have an extension other than `.xml`, `.yaml` or `.yml` or do not have
+an extension, were ignored silently. This was happening
+when the configuration file is set by using the `hazelcast.config` [#14945]
+* Some operations such as heartbeat checks and partition
+migrations share common threads with the client login module.
+In case of the long running client login module implementations,
+some symptoms such as split brain syndrome can be seen. This has
+been fixed by introducing a blocking executor which is used only
+for the client JAAS authentications. [#14957]
+* Fixed an issue where the client was not considering the new
+address of a restarted member, which has the same UUID but could
+have a different IP address after it is restarted. [#14843]
+* Fixed an issue where the migration operations were running
+before the previous finalization is completed. [#14834]
+* Fixed an issue where the data loaded by Hot Restart was not being
+recognized after a Merkle tree synchronization. #2960
+* Fixed an issue where the WAN queues were not reset during
+a split-brain healing which caused duplicate WAN events to be
+enqueued and WAN counters to be broken. #2947
 
 ==== 3.12 ====
 
