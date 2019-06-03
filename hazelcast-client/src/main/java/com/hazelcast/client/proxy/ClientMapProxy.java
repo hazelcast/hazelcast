@@ -113,7 +113,6 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
