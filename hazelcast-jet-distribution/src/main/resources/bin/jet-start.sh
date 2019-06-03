@@ -10,4 +10,4 @@ echo "# CLASSPATH=$CLASSPATH"
 echo "# starting now...."
 echo "########################################"
 
-$JAVA -server "${JAVA_OPTS[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.StartServer
+$JAVA "${JAVA_OPTS[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.StartServer
