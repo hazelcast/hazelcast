@@ -62,7 +62,7 @@ import java.util.Collection;
  * {@link com.hazelcast.config.ReliableTopicConfig}.
  * <p>
  * A Ringbuffer can be configured to be backed by a
- * {@link com.hazelcast.core.RingbufferStore}. All write methods will delegate
+ * {@link RingbufferStore}. All write methods will delegate
  * to the store to persist the items, while reader methods will try to read
  * items from the store if not found in the in-memory Ringbuffer.
  * <p>
@@ -165,9 +165,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * sequence of the item you are about to publish but from a previously
      * published item. So it can't be used to find that item.
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the item gets persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#store(long, Object)}. Note that
+     * {@link RingbufferStore#store(long, Object)}. Note that
      * in case an exception is thrown by the store, it prevents the item from being
      * added to the Ringbuffer, keeping the store, primary and the backups
      * consistent.
@@ -206,9 +206,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * }
      * }</pre>
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the item gets persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#store(long, Object)}. Note
+     * {@link RingbufferStore#store(long, Object)}. Note
      * that in case an exception is thrown by the store, it prevents the item
      * from being added to the Ringbuffer, keeping the store, primary and the
      * backups consistent.
@@ -245,8 +245,8 @@ public interface Ringbuffer<E> extends DistributedObject {
      * {@code tryReadOne(long sequence, long timeout, TimeUnit unit)}.
      * <p>
      * If the item is not in the Ringbuffer an attempt is made to read it from
-     * the underlying {@link com.hazelcast.core.RingbufferStore} via
-     * {@link com.hazelcast.core.RingbufferStore#load(long)} if store is
+     * the underlying {@link RingbufferStore} via
+     * {@link RingbufferStore#load(long)} if store is
      * configured for the Ringbuffer. These cases may increase the execution time
      * significantly depending on the implementation of the store. Note that
      * exceptions thrown by the store are propagated to the caller.
@@ -296,9 +296,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * The result of the future contains the sequenceId of the last written
      * item.
      * <p>
-     * If the Ringbuffer is backed by a {@link com.hazelcast.core.RingbufferStore},
+     * If the Ringbuffer is backed by a {@link RingbufferStore},
      * the items are persisted by the underlying store via
-     * {@link com.hazelcast.core.RingbufferStore#storeAll(long, Object[])}.
+     * {@link RingbufferStore#storeAll(long, Object[])}.
      * Note that in case an exception is thrown by the store, it makes the
      * Ringbuffer not adding any of the items to the primary and the backups.
      * Keeping the store consistent with the primary and the backups is the
@@ -332,8 +332,8 @@ public interface Ringbuffer<E> extends DistributedObject {
      * and can result in a significant performance improvement.
      * <p>
      * For each item not available in the Ringbuffer an attempt is made to read
-     * it from the underlying {@link com.hazelcast.core.RingbufferStore} via
-     * multiple invocations of {@link com.hazelcast.core.RingbufferStore#load(long)},
+     * it from the underlying {@link RingbufferStore} via
+     * multiple invocations of {@link RingbufferStore#load(long)},
      * if store is configured for the Ringbuffer. These cases may increase the
      * execution time significantly depending on the implementation of the store.
      * Note that exceptions thrown by the store are propagated to the caller.

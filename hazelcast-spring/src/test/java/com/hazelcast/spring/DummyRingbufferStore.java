@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStore;
 
 public class DummyRingbufferStore implements RingbufferStore {
 

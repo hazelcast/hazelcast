@@ -104,8 +104,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 } else if (returnTypeName.startsWith("java") || returnType.isPrimitive()) {
                     Object thisSubConfigObject = method.invoke(thisConfigObject, null);
                     updateConfig(setter, otherConfigObject, thisSubConfigObject);
-                } else if (returnTypeName.equals("com.hazelcast.core.RingbufferStore")
-                        || returnTypeName.equals("com.hazelcast.core.RingbufferStoreFactory")
+                } else if (returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStore")
+                        || returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStoreFactory")
                         || returnTypeName.equals("com.hazelcast.core.QueueStore")
                         || returnTypeName.equals("com.hazelcast.core.QueueStoreFactory")) {
                     cloneStoreInstance(classloader, method, setter, thisConfigObject, otherConfigObject, returnTypeName);
