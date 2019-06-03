@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.spi.impl.operationservice.OperationService;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
  * An Marker interface that signals that an operation is an urgent System Operation.

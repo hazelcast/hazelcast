@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
- * Can be implemented by a Service to track live operations. This functionality is needed to let the executing side
- * inform the caller side which operations are still running. If an operation doesn't provide a heartbeat, the caller
- * can eventually decide to timeout the operation.
- *
- * Some operations are not executing on regular operation threads (e.g. IExecutorService) or not running at all
- * (blocking operations).
+ * The possible actions that can be taken when a certain exception is thrown. E.g. when a map.get() is executed on a member
+ * where the partition has just moved to another member, the RETRY_INVOCATION would be used.
  */
-public interface LiveOperationsTracker {
+public enum ExceptionAction {
 
     /**
-     * Populate the LiveOperations
-     *
-     * @param liveOperations the LiveOperations to populate.
+     * Indicates that the operation can be retried.
      */
-    void populate(LiveOperations liveOperations);
+    RETRY_INVOCATION,
+
+    /**
+     * Indicates that the exception should bubble up.
+     */
+    THROW_EXCEPTION
 }

@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
- * A key for a wait notify object e.g. an ICondition.
+ * Can be implemented by a Service to track live operations. This functionality is needed to let the executing side
+ * inform the caller side which operations are still running. If an operation doesn't provide a heartbeat, the caller
+ * can eventually decide to timeout the operation.
+ *
+ * Some operations are not executing on regular operation threads (e.g. IExecutorService) or not running at all
+ * (blocking operations).
  */
-public interface WaitNotifyKey {
+public interface LiveOperationsTracker {
 
     /**
-     * Returns the service name of the wait notify object for this key.
+     * Populate the LiveOperations
      *
-     * @return the service name of the wait notify object for this key
+     * @param liveOperations the LiveOperations to populate.
      */
-    String getServiceName();
-
-    /**
-     * Returns the object name of the wait notify object for this key.
-     *
-     * @return the object name of the wait notify object for this key
-     */
-    String getObjectName();
-
+    void populate(LiveOperations liveOperations);
 }
