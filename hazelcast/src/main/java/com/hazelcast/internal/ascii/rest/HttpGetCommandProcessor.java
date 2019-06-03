@@ -44,12 +44,14 @@ import java.util.Collection;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+@SuppressWarnings({"checkstyle:methodcount"})
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 
     public static final String QUEUE_SIZE_COMMAND = "size";
@@ -74,6 +76,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 handleMap(command, uri);
             } else if (uri.startsWith(URI_QUEUES)) {
                 handleQueue(command, uri);
+            } else if (uri.startsWith(URI_INSTANCE)) {
+                handleInstance(command);
             } else if (uri.startsWith(URI_CLUSTER)) {
                 handleCluster(command);
             } else if (uri.startsWith(URI_HEALTH_READY)) {
@@ -359,6 +363,19 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         res.append("AllConnectionCount: ").append(aem.getActiveConnections().size());
         res.append("\n");
         command.setResponse(null, stringToBytes(res.toString()));
+    }
+
+    /**
+     * Sets the HTTP response to a string containing basic instance information in JSON format:
+     * <ul>
+     * <li>Instance name</li>
+     * </ul>
+     *
+     * @param command the HTTP request
+     */
+    private void handleInstance(HttpGetCommand command) {
+        JsonObject jsonResponse = new JsonObject().add("name", textCommandService.getInstanceName());
+        command.setResponse(CONTENT_TYPE_JSON, stringToBytes(jsonResponse.toString()));
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {

@@ -64,7 +64,6 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
 
-    private final HazelcastInstance instance;
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
@@ -78,7 +77,6 @@ public class HTTPCommunicator {
     }
 
     public HTTPCommunicator(HazelcastInstance instance, String baseRestAddress) {
-        this.instance = instance;
 
         AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
         SSLConfig sslConfig;
@@ -151,6 +149,11 @@ public class HTTPCommunicator {
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
+        return doGet(url).response;
+    }
+
+    public String getInstanceInfo() throws IOException {
+        String url = address + "instance";
         return doGet(url).response;
     }
 
@@ -365,7 +368,7 @@ public class HTTPCommunicator {
             if (responseHeaders == null) {
                 this.responseHeaders = Collections.emptyMap();
             } else {
-                this.responseHeaders = new HashMap<String, List<String>>(responseHeaders);
+                this.responseHeaders = new HashMap<>(responseHeaders);
             }
         }
     }
@@ -380,11 +383,11 @@ public class HTTPCommunicator {
             int responseCode = response.getStatusLine().getStatusCode();
 
             Header[] headers = response.getAllHeaders();
-            Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+            Map<String, List<String>> responseHeaders = new HashMap<>();
             for (Header header : headers) {
                 List<String> values = responseHeaders.get(header.getName());
                 if (values == null) {
-                    values = new ArrayList<String>();
+                    values = new ArrayList<>();
                     responseHeaders.put(header.getName(), values);
                 }
                 values.add(header.getValue());
@@ -551,6 +554,11 @@ public class HTTPCommunicator {
 
     public ConnectionResponse headRequestToGarbageClusterHealthURI() throws IOException {
         String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToInstanceURI() throws IOException {
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_INSTANCE;
         return doHead(url);
     }
 

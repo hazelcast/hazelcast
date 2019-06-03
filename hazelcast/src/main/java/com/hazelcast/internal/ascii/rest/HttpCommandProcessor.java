@@ -29,6 +29,9 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_HEALTH_URL = "/hazelcast/health";
     public static final String URI_HEALTH_READY = URI_HEALTH_URL + "/ready";
 
+    // Instance
+    public static final String URI_INSTANCE = "/hazelcast/rest/instance";
+
     // Cluster
     public static final String URI_CLUSTER = "/hazelcast/rest/cluster";
     public static final String URI_CLUSTER_MANAGEMENT_BASE_URL = "/hazelcast/rest/management/cluster";
