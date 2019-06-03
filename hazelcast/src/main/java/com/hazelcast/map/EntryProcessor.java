@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.BinaryInterface;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -111,7 +112,7 @@ public interface EntryProcessor<K, V, R> extends Serializable {
      *
      * @return the backup entry processor
      */
-    default EntryProcessor<K, V, R> getBackupProcessor() {
+    default @Nullable EntryProcessor<K, V, R> getBackupProcessor() {
         return this;
     }
 }
