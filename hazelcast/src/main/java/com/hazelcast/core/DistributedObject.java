@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.topic.ITopic;
+import com.hazelcast.collection.IQueue;
 
 /**
  * Base interface for all distributed objects.

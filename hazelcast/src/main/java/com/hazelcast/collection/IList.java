@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.collection;
 
-import java.util.EventListener;
+import java.util.List;
 
 /**
- * Item listener for {@link IQueue}, {@link ISet} and {@link IList}
+ * Concurrent, distributed implementation of {@link List}.
  *
- * @param <E> item
+ * <p>The Hazelcast IList is not a partitioned data-structure. Entire contents of an IList is stored on a single machine (and
+ * in the backup). The IList will not scale by adding more members to the cluster.
+ *
+ * <p>Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
+ * @param <E>
+ * @see List
  */
-public interface ItemListener<E> extends EventListener {
-
-    /**
-     * Invoked when an item is added.
-     *
-     * @param item the added item
-     */
-    void itemAdded(ItemEvent<E> item);
-
-    /**
-     * Invoked when an item is removed.
-     *
-     * @param item the removed item.
-     */
-    void itemRemoved(ItemEvent<E> item);
+public interface IList<E> extends List<E>, ICollection<E> {
 }

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.collection;
 
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.monitor.LocalQueueStats;
 
 import java.util.concurrent.BlockingQueue;

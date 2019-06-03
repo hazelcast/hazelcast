@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

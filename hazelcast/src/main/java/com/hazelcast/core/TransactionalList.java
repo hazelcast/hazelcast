@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.transaction.TransactionalObject;
 
 /**

@@ -29,7 +29,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperati
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;

@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -614,7 +617,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IQueue} configuration for
+     * Returns a read-only {@link IQueue} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -684,7 +687,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IQueue} configurations,
+     * Returns the map of {@link IQueue} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -695,7 +698,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IQueue} configurations,
+     * Sets the map of {@link IQueue} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -810,7 +813,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IList} configuration for
+     * Returns a read-only {@link IList} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -880,7 +883,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IList} configurations,
+     * Returns the map of {@link IList} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -891,7 +894,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IList} configurations,
+     * Sets the map of {@link IList} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -908,7 +911,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ISet} configuration for
+     * Returns a read-only {@link ISet} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -978,7 +981,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ISet} configurations,
+     * Returns the map of {@link ISet} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -989,7 +992,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ISet} configurations,
+     * Sets the map of {@link ISet} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *

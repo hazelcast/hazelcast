@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.collection;
 
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
+import java.util.EventListener;
 
-public class DummyItemListener implements ItemListener {
+/**
+ * Item listener for {@link IQueue}, {@link ISet} and {@link IList}
+ *
+ * @param <E> item
+ */
+public interface ItemListener<E> extends EventListener {
 
-    @Override
-    public void itemAdded(ItemEvent item) {
-    }
+    /**
+     * Invoked when an item is added.
+     *
+     * @param item the added item
+     */
+    void itemAdded(ItemEvent<E> item);
 
-    @Override
-    public void itemRemoved(ItemEvent item) {
-    }
+    /**
+     * Invoked when an item is removed.
+     *
+     * @param item the removed item.
+     */
+    void itemRemoved(ItemEvent<E> item);
 }

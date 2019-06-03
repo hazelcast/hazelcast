@@ -27,7 +27,7 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;

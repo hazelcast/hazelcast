@@ -17,6 +17,9 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
