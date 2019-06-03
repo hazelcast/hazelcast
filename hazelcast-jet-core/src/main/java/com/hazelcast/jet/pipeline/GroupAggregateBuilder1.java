@@ -65,21 +65,28 @@ public class GroupAggregateBuilder1<T0, K> {
      * {@link #build build()}.
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
     public <T> Tag<T> add(@Nonnull BatchStageWithKey<T, K> stage) {
         return grAggBuilder.add(stage);
     }
 
     /**
-     * Creates and returns a pipeline stage that performs the
-     * co-grouping and aggregation of pipeline stages registered with this
-     * builder object. The tags you register with the aggregate operation must
-     * match the tags you registered with this builder.
+     * Creates and returns a pipeline stage that performs the co-grouping and
+     * aggregation of pipeline stages registered with this builder object. The
+     * tags you register with the aggregate operation must match the tags you
+     * registered with this builder. It applies the {@code mapToOutputFn} to
+     * the key and the corresponding result of the aggregate operation to
+     * obtain the final output of the stage.
+     *
+     * @deprecated This is a leftover from an earlier development cycle of the
+     * Pipeline API. Use {@link #build(AggregateOperation)} instead and add
+     * a separate mapping stage with {@code mapToOutputFn}.
      *
      * @param aggrOp the aggregate operation to perform
-     * @param <R> the type of the output item
-     * @return a new stage representing the co-aggregation
+     * @param <R> result type of the aggregate operation
+     * @param <OUT> output type of the returned stage
+     * @return a new stage representing the co-group-and-aggregate operation
      */
+    @Deprecated
     @Nonnull
     public <R, OUT> BatchStage<OUT> build(
             @Nonnull AggregateOperation<?, R> aggrOp,
@@ -89,11 +96,13 @@ public class GroupAggregateBuilder1<T0, K> {
     }
 
     /**
-     * Convenience for {@link #build(AggregateOperation, BiFunctionEx)
-     * build(aggrOp, mapToOutputFn)} which emits {@code Map.Entry}s as output.
+     * Creates and returns a pipeline stage that performs the co-grouping and
+     * aggregation of pipeline stages registered with this builder object. The
+     * tags you register with the aggregate operation must match the tags you
+     * registered with this builder.
      *
-     * @param aggrOp the aggregate operation to perform.
-     * @param <R> the type of the aggregation result
+     * @param aggrOp the aggregate operation to perform
+     * @param <R> output type of the returned stage
      * @return a new stage representing the co-group-and-aggregate operation
      */
     @Nonnull

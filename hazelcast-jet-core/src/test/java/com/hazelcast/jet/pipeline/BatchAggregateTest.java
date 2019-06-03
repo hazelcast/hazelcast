@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collector;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
 import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperationBuilder;
@@ -293,9 +294,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
         Tag<Long> tag0 = agb.add(tag0_in, SUMMING);
         Tag<Long> tag1 = agb.add(tag1_in, SUMMING);
         Tag<Long> tag2 = agb.add(tag2_in, SUMMING);
-        AggregateOperation<Object[], Long> SUMMING = agb.build(ibt -> ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2));
+        AggregateOperation<Object[], Long> aggrOp = agb.build(ibt -> ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2));
 
-        BatchStage<Long> aggregated = b.build(SUMMING);
+        BatchStage<Long> aggregated = b.build(aggrOp);
 
         // Then
         aggregated.drainTo(sink);
@@ -332,7 +333,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         final Collector<Integer, ?, Long> collectOp;
         final BatchStage<Integer> srcStage0;
 
-        // Initialization in costructor to avoid lambda capture of `this`
+        // Initialization in constructor to avoid lambda capture of `this`
         GroupAggregateFixture() {
             int offset = itemCount;
             keyFn = i -> i % 10;
@@ -364,10 +365,10 @@ public class BatchAggregateTest extends PipelineTestSupport {
         // Then
         aggregated.drainTo(sink);
         execute();
-        Map<Integer, Long> expectedMap = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
         assertEquals(
-                streamToString(expectedMap.entrySet().stream(),
+                streamToString(expectedMap0.entrySet().stream(),
                         e -> FORMAT_FN_2.apply(e.getKey(), tuple2(e.getValue(), expectedMap1.get(e.getKey())))),
                 streamToString(this.<Integer, Tuple2<Long, Long>>sinkStreamOfEntry(),
                         e -> FORMAT_FN_2.apply(e.getKey(), e.getValue()))
@@ -408,7 +409,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1().groupingKey(fx.keyFn);
         BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2().groupingKey(fx.keyFn);
         BatchStage<Entry<Integer, Tuple3<Long, Long, Long>>> aggregated =
-                stage0.aggregate3(stage1, stage2, aggregateOperation3(SUMMING, SUMMING, SUMMING));
+                stage0.aggregate3(SUMMING, stage1, SUMMING, stage2, SUMMING);
 
         // Then
         aggregated.drainTo(sink);
@@ -441,16 +442,122 @@ public class BatchAggregateTest extends PipelineTestSupport {
         // Then
         aggregated.drainTo(sink);
         execute();
-        Map<Integer, Long> expectedMap = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap2 = input.stream().map(fx.mapFn2).collect(groupingBy(fx.keyFn, fx.collectOp));
         assertEquals(
-                streamToString(expectedMap.entrySet().stream(), e -> FORMAT_FN_3.apply(
+                streamToString(expectedMap0.entrySet().stream(), e -> FORMAT_FN_3.apply(
                         e.getKey(),
                         tuple3(e.getValue(), expectedMap1.get(e.getKey()), expectedMap2.get(e.getKey())))),
                 streamToString(this.<Integer, Tuple3<Long, Long, Long>>sinkStreamOfEntry(), e -> FORMAT_FN_3.apply(
                         e.getKey(),
                         e.getValue()))
+        );
+    }
+
+    @Test
+    public void groupAggregateBuilder_withSeparateAggrOps() {
+        // Given
+        GroupAggregateFixture fx = new GroupAggregateFixture();
+        BatchStageWithKey<Integer, Integer> stage0 = fx.srcStage0.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1().groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2().groupingKey(fx.keyFn);
+
+        // When
+        GroupAggregateBuilder<Integer, Long> b = stage0.aggregateBuilder(SUMMING);
+        Tag<Long> tag0 = b.tag0();
+        Tag<Long> tag1 = b.add(stage1, SUMMING);
+        Tag<Long> tag2 = b.add(stage2, SUMMING);
+
+        BatchStage<Entry<Integer, ItemsByTag>> aggregated = b.build();
+
+        // Then
+        aggregated.drainTo(sink);
+        execute();
+        Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap2 = input.stream().map(fx.mapFn2).collect(groupingBy(fx.keyFn, fx.collectOp));
+        assertEquals(
+                streamToString(expectedMap0.entrySet().stream(), e -> FORMAT_FN_3.apply(
+                        e.getKey(),
+                        tuple3(e.getValue(), expectedMap1.get(e.getKey()), expectedMap2.get(e.getKey())))),
+                streamToString(this.<Integer, ItemsByTag>sinkStreamOfEntry(), e -> FORMAT_FN_3.apply(
+                        e.getKey(),
+                        tuple3(e.getValue().get(tag0), e.getValue().get(tag1), e.getValue().get(tag2))))
+        );
+    }
+
+    @Test
+    public void groupAggregateBuilder_withComplexAggrOp() {
+        // Given
+        GroupAggregateFixture fx = new GroupAggregateFixture();
+        BatchStageWithKey<Integer, Integer> stage0 = fx.srcStage0.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1().groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2().groupingKey(fx.keyFn);
+
+        // When
+        GroupAggregateBuilder1<Integer, Integer> b = stage0.aggregateBuilder();
+        Tag<Integer> tag0_in = b.tag0();
+        Tag<Integer> tag1_in = b.add(stage1);
+        Tag<Integer> tag2_in = b.add(stage2);
+
+        CoAggregateOperationBuilder agb = coAggregateOperationBuilder();
+        Tag<Long> tag0 = agb.add(tag0_in, SUMMING);
+        Tag<Long> tag1 = agb.add(tag1_in, SUMMING);
+        Tag<Long> tag2 = agb.add(tag2_in, SUMMING);
+        AggregateOperation<Object[], ItemsByTag> aggrOp = agb.build();
+
+        BatchStage<Entry<Integer, ItemsByTag>> aggregated = b.build(aggrOp);
+
+        // Then
+        aggregated.drainTo(sink);
+        execute();
+        Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap2 = input.stream().map(fx.mapFn2).collect(groupingBy(fx.keyFn, fx.collectOp));
+        assertEquals(
+                streamToString(expectedMap0.entrySet().stream(), e -> FORMAT_FN_3.apply(
+                        e.getKey(),
+                        tuple3(e.getValue(), expectedMap1.get(e.getKey()), expectedMap2.get(e.getKey())))),
+                streamToString(this.<Integer, ItemsByTag>sinkStreamOfEntry(), e -> FORMAT_FN_3.apply(
+                        e.getKey(),
+                        tuple3(e.getValue().get(tag0), e.getValue().get(tag1), e.getValue().get(tag2))))
+        );
+    }
+
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    public void groupAggregateBuilder_withComplexAggrOp_withOutputFn() {
+        // Given
+        GroupAggregateFixture fx = new GroupAggregateFixture();
+        BatchStageWithKey<Integer, Integer> stage0 = fx.srcStage0.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1().groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2().groupingKey(fx.keyFn);
+
+        // When
+        GroupAggregateBuilder1<Integer, Integer> b = stage0.aggregateBuilder();
+        Tag<Integer> tag0_in = b.tag0();
+        Tag<Integer> tag1_in = b.add(stage1);
+        Tag<Integer> tag2_in = b.add(stage2);
+
+        CoAggregateOperationBuilder agb = coAggregateOperationBuilder();
+        Tag<Long> tag0 = agb.add(tag0_in, SUMMING);
+        Tag<Long> tag1 = agb.add(tag1_in, SUMMING);
+        Tag<Long> tag2 = agb.add(tag2_in, SUMMING);
+        AggregateOperation<Object[], ItemsByTag> aggrOp = agb.build();
+        BatchStage<Entry<Integer, Long>> aggregated = b.build(aggrOp,
+                (key, ibt) -> entry(key, ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2)));
+
+        // Then
+        aggregated.drainTo(sink);
+        execute();
+        Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedMap2 = input.stream().map(fx.mapFn2).collect(groupingBy(fx.keyFn, fx.collectOp));
+        assertEquals(
+                streamToString(expectedMap0.entrySet().stream(), e -> FORMAT_FN.apply(entry(e.getKey(),
+                                e.getValue() + expectedMap1.get(e.getKey()) + expectedMap2.get(e.getKey())))),
+                streamToString(sinkStreamOfEntry(), FORMAT_FN)
         );
     }
 
