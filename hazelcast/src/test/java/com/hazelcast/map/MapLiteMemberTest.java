@@ -205,22 +205,12 @@ public class MapLiteMemberTest
         }
     }
 
-    private static class DummyEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class DummyEntryProcessor implements EntryProcessor<Object, Object, String> {
 
         @Override
-        public Object process(java.util.Map.Entry<Object, Object> entry) {
+        public String process(java.util.Map.Entry<Object, Object> entry) {
             entry.setValue("dummy");
             return "done";
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Object, Object> entry) {
-            process(entry);
-        }
-
-        @Override
-        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
-            return this;
         }
     }
 }

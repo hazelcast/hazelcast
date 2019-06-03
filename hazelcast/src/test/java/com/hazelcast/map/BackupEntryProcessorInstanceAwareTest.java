@@ -76,8 +76,8 @@ public class BackupEntryProcessorInstanceAwareTest extends HazelcastTestSupport 
         i1.shutdown();
     }
 
-    private static class PartitionAwareTestEntryProcessor extends AbstractEntryProcessor<String, Integer>
-            implements HazelcastInstanceAware {
+    private static class PartitionAwareTestEntryProcessor
+            implements EntryProcessor<String, Integer, Object>, HazelcastInstanceAware {
 
         private transient HazelcastInstance hz;
 

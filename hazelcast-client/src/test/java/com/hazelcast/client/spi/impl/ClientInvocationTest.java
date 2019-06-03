@@ -26,8 +26,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -71,7 +69,7 @@ public class ClientInvocationTest extends ClientTestSupport {
      * see https://github.com/hazelcast/hazelcast/issues/4192
      */
     @Test
-    public void executionCallback_TooLongThrowableStackTrace() throws InterruptedException {
+    public void executionCallback_TooLongThrowableStackTrace() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
@@ -125,12 +123,9 @@ public class ClientInvocationTest extends ClientTestSupport {
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
 
         IMap<Object, Object> map = client.getMap(randomName());
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
-                    disconnectedLatch.countDown();
-                }
+        client.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
+                disconnectedLatch.countDown();
             }
         });
         server.shutdown();
@@ -164,7 +159,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

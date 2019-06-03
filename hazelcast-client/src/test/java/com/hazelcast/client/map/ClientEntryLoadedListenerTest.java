@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -89,111 +89,63 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
     public void load_listener_notified_when_containsKey_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_containsKey");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.containsKey(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        }, 10);
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()), 10);
     }
 
     @Test
     public void load_listener_notified_when_putIfAbsent_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_putIfAbsent");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.putIfAbsent(1, 100);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
     public void load_listener_notified_when_get_loads_from_map_loader() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_get");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.get(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
     public void load_listener_notified_when_get_after_evict() {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_load_listener_notified_when_get_after_evict");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.put(1, 1);
         map.evict(1);
         map.get(1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        }, 5);
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()), 5);
     }
 
     @Test
     public void load_listener_notified_when_getAll_loads_from_map_loader() {
-        final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<EntryEvent>();
+        final Queue<EntryEvent> entryEvents = new ConcurrentLinkedQueue<>();
 
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_getAll");
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                entryEvents.add(event);
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> entryEvents.add(event), true);
 
 
         final List<Integer> keyList = Arrays.asList(1, 2, 3, 4, 5);
-        map.getAll(new HashSet<Integer>(keyList));
+        map.getAll(new HashSet<>(keyList));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(keyList.size(), entryEvents.size());
-                for (EntryEvent entryEvent : entryEvents) {
-                    assertEquals(LOADED, entryEvent.getEventType());
-                }
+        assertTrueEventually(() -> {
+            assertEquals(keyList.size(), entryEvents.size());
+            for (EntryEvent entryEvent : entryEvents) {
+                assertEquals(LOADED, entryEvent.getEventType());
             }
         });
     }
@@ -203,21 +155,11 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
         final AtomicInteger loadEventCount = new AtomicInteger();
         IMap<Integer, Integer> map = client.getMap("noInitialLoading_test_read_only_ep");
 
-        map.addEntryListener(new EntryLoadedListener<Integer, Integer>() {
-            @Override
-            public void entryLoaded(EntryEvent<Integer, Integer> event) {
-                loadEventCount.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryLoadedListener<Integer, Integer>) event -> loadEventCount.incrementAndGet(), true);
 
         map.executeOnKey(1, new Reader());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, loadEventCount.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, loadEventCount.get()));
     }
 
     @Test
@@ -415,17 +357,17 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public static class Updater extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Updater implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return entry.getValue();
         }
     }
 
-    public static class Reader extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Reader implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             return entry.getValue();
         }
     }

@@ -550,7 +550,7 @@ public final class GroupProperty {
      * You can use MAP_EXPIRY_DELAY_SECONDS to deal with some possible
      * edge cases, such as using EntryProcessor. Without this delay, you
      * may see that an EntryProcessor running on the owner partition
-     * found a key, but EntryBackupProcessor did not find it on backup,
+     * found a key, but entry backup processor did not find it on backup,
      * and as a result when backup promotes to owner you will end up
      * with an unprocessed key.
      */

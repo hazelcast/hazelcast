@@ -485,9 +485,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKeyInternal(Object key,
+                                      EntryProcessor<? super K, ? super V, R> entryProcessor) {
         key = toNearCacheKey(key);
-        Object response;
+        R response;
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
         } finally {
@@ -497,7 +498,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
+                                                         EntryProcessor<? super K, ? super V, R> entryProcessor) {
         key = toNearCacheKey(key);
         ICompletableFuture future;
         try {
@@ -509,7 +511,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKeyInternal(Object key,
+                                    EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                    ExecutionCallback<? super R> callback) {
         key = toNearCacheKey(key);
         try {
             super.submitToKeyInternal(key, entryProcessor, callback);
@@ -519,15 +523,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entrySet) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
-        Map<K, Object> result = createHashMap(entrySet.size());
+        Map<K, R> result = createHashMap(entrySet.size());
         for (Entry<Data, Data> entry : entrySet) {
             Data dataKey = entry.getKey();
             K key = toObject(dataKey);
-            V value = toObject(entry.getValue());
+            R value = toObject(entry.getValue());
 
             invalidateNearCache(serializeKeys ? dataKey : key);
             result.put(key, value);
@@ -660,7 +664,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      * Eventual consistency for Near Cache can be used with server versions >= 3.8
      * For repairing functionality please see {@link RepairingHandler}
      * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
-     *
+     * <p>
      * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
      * Following methods handle the old behaviour:
      * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10

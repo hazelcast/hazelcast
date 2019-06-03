@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.util.Map;
 
 @SpringAware
-public class SomeEntryProcessor extends AbstractEntryProcessor implements ApplicationContextAware {
+public class SomeEntryProcessor implements EntryProcessor, ApplicationContextAware {
 
     private transient ApplicationContext context;
 

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.nearcache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
@@ -390,12 +390,12 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
     /**
      * An entry processor which writes (changes the value and calls {@link Map.Entry#setValue(Object)}).
      */
-    public static class WritingEntryProcessor extends AbstractEntryProcessor<String, String> {
+    public static class WritingEntryProcessor implements EntryProcessor<String, String, String> {
 
         private static final long serialVersionUID = 1L;
 
         @Override
-        public Object process(Map.Entry<String, String> entry) {
+        public String process(Map.Entry<String, String> entry) {
             entry.setValue("new value");
             return "new value";
         }

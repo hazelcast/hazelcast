@@ -151,7 +151,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class InitMapProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class InitMapProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         @Override
         public Object process(Map.Entry<Integer, ListHolder> entry) {
@@ -160,7 +160,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
     }
 
-    private static class IncrementProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class IncrementProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         private final int nextVal;
 

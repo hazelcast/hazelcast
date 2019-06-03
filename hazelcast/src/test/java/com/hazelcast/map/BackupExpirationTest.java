@@ -31,7 +31,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -103,12 +102,9 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         sleepSeconds(5);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance node : nodes) {
-                    assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats()));
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance node : nodes) {
+                assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats()));
             }
         });
     }
@@ -135,22 +131,17 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         final int backupCount = NODE_COUNT - 1;
         final int executeOnKeyCallCount = 2;
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(executeOnKeyCallCount * backupCount,
-                        backupExpiryTimeReader.TIMES_QUEUE.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(executeOnKeyCallCount * backupCount,
+                ExpiryTimeReader.TIMES_QUEUE.size()));
 
         long expiryFoundAt1stCall = -1;
         for (int i = 0; i < backupCount; i++) {
-            expiryFoundAt1stCall = backupExpiryTimeReader.TIMES_QUEUE.poll();
+            expiryFoundAt1stCall = ExpiryTimeReader.TIMES_QUEUE.poll();
         }
 
         long expiryFoundAt2ndCall = -1;
         for (int i = 0; i < backupCount; i++) {
-            expiryFoundAt2ndCall = backupExpiryTimeReader.TIMES_QUEUE.poll();
+            expiryFoundAt2ndCall = ExpiryTimeReader.TIMES_QUEUE.poll();
         }
 
 
@@ -160,12 +151,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
 
     public static class BackupExpiryTimeReader
-            implements EntryProcessor<Integer, Integer>,
-            EntryBackupProcessor<Integer, Integer>, HazelcastInstanceAware, Serializable {
-
-        public static final ConcurrentLinkedQueue<Long> TIMES_QUEUE = new ConcurrentLinkedQueue<Long>();
-
-        private transient HazelcastInstance instance;
+            implements EntryProcessor<Integer, Integer, Object>, Serializable {
 
         private String mapName;
 
@@ -179,15 +165,30 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
-            return this;
+        public EntryProcessor<Integer, Integer, Object> getBackupProcessor() {
+            return new ExpiryTimeReader(mapName);
+        }
+    }
+
+    public static class ExpiryTimeReader
+            implements EntryProcessor<Integer, Integer, Object>, HazelcastInstanceAware, Serializable {
+
+        public static final ConcurrentLinkedQueue<Long> TIMES_QUEUE = new ConcurrentLinkedQueue<>();
+
+        private transient HazelcastInstance instance;
+
+        private String mapName;
+
+        public ExpiryTimeReader(String mapName) {
+            this.mapName = mapName;
         }
 
         @Override
-        public void processBackup(Map.Entry<Integer, Integer> entry) {
+        public Object process(Map.Entry<Integer, Integer> entry) {
             EntryView entryView = instance.getMap(mapName).getEntryView(entry.getKey());
 
             TIMES_QUEUE.add(entryView.getExpirationTime());
+            return null;
         }
 
         @Override
@@ -211,7 +212,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     // after `recordStore.get`.
     @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
     public static final class BackupExpirationQueueLengthFinder
-            extends AbstractEntryProcessor implements HazelcastInstanceAware {
+            implements HazelcastInstanceAware, EntryProcessor {
 
         private transient HazelcastInstance node;
 

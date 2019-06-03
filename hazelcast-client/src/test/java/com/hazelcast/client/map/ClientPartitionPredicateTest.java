@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
@@ -92,8 +92,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void values_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.values(predicate).size();
@@ -106,8 +106,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void keys_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.keySet(predicate).size();
@@ -120,8 +120,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void entries_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.entrySet(predicate).size();
@@ -164,17 +164,17 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void aggregate() throws Exception {
+    public void aggregate() {
         int partitionId = 2;
         String keyForPartition = generateKeyForPartition(server, partitionId);
         Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
-        Long aggregate = map.aggregate(Aggregators.<Map.Entry<String, Integer>>integerSum(), partitionPredicate);
+        Long aggregate = map.aggregate(Aggregators.integerSum(), partitionPredicate);
         Long sum = (long) (partitionId * ITEMS_PER_PARTITION);
         assertEquals(sum, aggregate);
     }
 
     @Test
-    public void executeOnEntries() throws Exception {
+    public void executeOnEntries() {
         int partitionId = 2;
         String keyForPartition = generateKeyForPartition(server, partitionId);
         Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
@@ -207,13 +207,13 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         assertEquals(partitionSizeBefore - 1, map.keySet(predicate).size());
     }
 
-    static class MyProcessor extends AbstractEntryProcessor<String, Integer> {
+    static class MyProcessor implements EntryProcessor<String, Integer, Map.Entry<String, Integer>> {
 
         MyProcessor() {
         }
 
         @Override
-        public Object process(Map.Entry<String, Integer> entry) {
+        public Map.Entry<String, Integer> process(Map.Entry<String, Integer> entry) {
             Integer in = entry.getValue();
             entry.setValue(in * 10);
             return entry;
@@ -221,7 +221,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void project() throws Exception {
+    public void project() {
         Predicate partitionPredicate = new PartitionPredicate<String, Integer>(1, TruePredicate.INSTANCE);
         Collection<Integer> collection = map.project(new PrimitiveValueIncrementingProjection(), partitionPredicate);
         assertEquals(ITEMS_PER_PARTITION, collection.size());

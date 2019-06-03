@@ -196,7 +196,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -213,7 +213,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -230,7 +230,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

@@ -28,7 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
@@ -350,9 +350,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class IncrementEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+    public static class IncrementEntryProcessor implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             int currentValue = entry.getValue();
             int newValue = currentValue + 1000;
             entry.setValue(newValue);

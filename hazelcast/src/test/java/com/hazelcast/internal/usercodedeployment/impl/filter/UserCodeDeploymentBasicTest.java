@@ -69,8 +69,8 @@ public class UserCodeDeploymentBasicTest extends UserCodeDeploymentAbstractTest 
         configWithoutEnclosingClass.getUserCodeDeploymentConfig()
                 .setEnabled(true);
 
-        ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor ep =
-                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor();
+        ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String> ep =
+                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor<String>();
 
         factory = newFactory();
         HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(configWithoutEnclosingClass);

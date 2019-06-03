@@ -29,6 +29,8 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -2511,10 +2513,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * If the EntryProcessor implements ReadOnly and modifies the entry it is processing, an UnsupportedOperationException
      * will be thrown.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor, for example the "delta",
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor, for example the "delta",
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
@@ -2548,7 +2550,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see Offloadable
      * @see ReadOnly
      */
-    Object executeOnKey(K key, EntryProcessor entryProcessor);
+    <R> R executeOnKey(@Nonnull K key,
+                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
@@ -2591,7 +2594,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * partition and backup:
      * <pre>{@code
      *   HashMap additions = ...;
-     *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
+     *   iMap.executeOnKeys(map.keySet(), new EntryProcessor<Integer, Integer, Object>() {
      *             public Object process(Entry<Integer, Integer> entry) {
      *                 Integer updateBy = additions.get(entry.getKey());
      *                 entry.setValue(entry.getValue() + updateBy);
@@ -2605,7 +2608,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */
-    Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
+    <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key} with
@@ -2642,10 +2646,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor - for example the "delta"
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor - for example the "delta"
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
@@ -2678,10 +2682,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @param callback       to listen whether operation is finished or not
+     * @param <R> return type for entry processor
      * @see Offloadable
      * @see ReadOnly
      */
-    void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+    <R> void submitToKey(@Nonnull K key,
+                         @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                         @Nullable ExecutionCallback<? super R> callback);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
@@ -2721,10 +2728,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor - for example the "delta"
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor - for example the "delta"
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
@@ -2761,7 +2768,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ReadOnly
      * @see ICompletableFuture
      */
-    ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
+    <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                          @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
@@ -2795,7 +2803,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
@@ -2829,7 +2837,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                   @Nonnull Predicate<K, V> predicate);
 
     /**
      * Applies the aggregation logic on all map entries and returns the result

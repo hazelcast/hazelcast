@@ -189,7 +189,6 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         service.start();
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
         assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner");
-        assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$1");
         assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$Test");
     }
 

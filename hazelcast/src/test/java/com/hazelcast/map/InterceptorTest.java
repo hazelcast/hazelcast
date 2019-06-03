@@ -312,7 +312,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
     }
 
-    static class EntryPutProcessor extends AbstractEntryProcessor<Integer, String> {
+    static class EntryPutProcessor implements EntryProcessor<Integer, String, String> {
 
         String value;
 
@@ -321,7 +321,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(Map.Entry<Integer, String> entry) {
+        public String process(Map.Entry<Integer, String> entry) {
             return entry.setValue(value);
         }
     }

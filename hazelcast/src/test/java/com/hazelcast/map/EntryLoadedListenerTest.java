@@ -405,17 +405,17 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public static class Updater extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Updater implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return entry.getValue();
         }
     }
 
-    public static class Reader extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Reader implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             return entry.getValue();
         }
     }

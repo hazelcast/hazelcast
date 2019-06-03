@@ -19,7 +19,6 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -651,7 +650,7 @@ public class ClientMapLockTest {
         map.unlock(key);
     }
 
-    private static class LockEntryProcessor implements EntryProcessor<Object, Object>, Serializable {
+    private static class LockEntryProcessor implements EntryProcessor<Object, Object, String>, Serializable {
 
         public final String payload;
 
@@ -660,15 +659,14 @@ public class ClientMapLockTest {
         }
 
         @Override
-        public Object process(Entry entry) {
+        public String process(Entry entry) {
             return payload;
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor<Object, Object, String> getBackupProcessor() {
             return null;
         }
-
     }
 
     private IMap getMapForLock() {

@@ -20,15 +20,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,7 +56,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testAllPartialUpdatesStored_whenInMemoryFormatIsObject() {
         CountDownLatch pauseStoreOp = new CountDownLatch(1);
-        JournalingMapStore<Integer, Employee> mapStore = new JournalingMapStore<Integer, Employee>(pauseStoreOp);
+        JournalingMapStore<Integer, Employee> mapStore = new JournalingMapStore<>(pauseStoreOp);
         IMap<Integer, Employee> map = TestMapUsingMapStoreBuilder.<Integer, Employee>create()
                 .withMapStore(mapStore)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -80,7 +77,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
     private Double[] getStoredSalaries(JournalingMapStore<Integer, Employee> mapStore) {
-        List<Double> salaries = new ArrayList<Double>();
+        List<Double> salaries = new ArrayList<>();
         Iterator<Employee> iterator = mapStore.iterator();
         while (iterator.hasNext()) {
             Employee storedEmployee = iterator.next();
@@ -92,33 +89,25 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
     private void assertStoreOperationsCompleted(final int size, final JournalingMapStore mapStore) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(size, mapStore.queue.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(size, mapStore.queue.size()));
     }
 
     private void updateSalary(IMap<Integer, Employee> map, int key, final double value) {
-        map.executeOnKey(key, new AbstractEntryProcessor<Integer, Employee>() {
-
-            @Override
-            public Object process(Map.Entry<Integer, Employee> entry) {
-                Employee employee = entry.getValue();
-                if (employee == null) {
-                    employee = new Employee();
-                }
-                employee.setSalary(value);
-                entry.setValue(employee);
-                return null;
-            }
-        });
+        map.executeOnKey(key,
+                entry -> {
+                    Employee employee = entry.getValue();
+                    if (employee == null) {
+                        employee = new Employee();
+                    }
+                    employee.setSalary(value);
+                    entry.setValue(employee);
+                    return null;
+                });
     }
 
     private static class JournalingMapStore<K, V> extends MapStoreAdapter<K, V> {
 
-        private final Queue<V> queue = new ConcurrentLinkedQueue<V>();
+        private final Queue<V> queue = new ConcurrentLinkedQueue<>();
         private final CountDownLatch pauseStoreOp;
 
         JournalingMapStore(CountDownLatch pauseStoreOp) {
@@ -164,7 +153,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() {
-        MapStore<Integer, TestObject> mapStore = new MapStoreTest.SimpleMapStore<Integer, TestObject>();
+        MapStore<Integer, TestObject> mapStore = new MapStoreTest.SimpleMapStore<>();
         IMap<Integer, TestObject> map = TestMapUsingMapStoreBuilder.<Integer, TestObject>create()
                 .withMapStore(mapStore)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -174,7 +163,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
                 .build();
 
         final TestObject testObject = new TestObject();
-        map.executeOnKey(1, new EntryProcessor<Integer, TestObject>() {
+        map.executeOnKey(1, new EntryProcessor<Integer, TestObject, Object>() {
             @Override
             public Object process(Map.Entry<Integer, TestObject> entry) {
                 entry.setValue(testObject);
@@ -182,7 +171,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             }
 
             @Override
-            public EntryBackupProcessor<Integer, TestObject> getBackupProcessor() {
+            public EntryProcessor<Integer, TestObject, Object> getBackupProcessor() {
                 return null;
             }
         });
@@ -226,22 +215,14 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     private void assertFinalSubscriptionCountInStore(MapStore mapStore, final int numberOfSubscriptions) {
         final CustomerDataStore store = (CustomerDataStore) mapStore;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(numberOfSubscriptions, store.subscriptionCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(numberOfSubscriptions, store.subscriptionCount()));
     }
 
     private void assertStoreOperationCount(MapStore mapStore, final int expectedStoreCallCount) {
         final CustomerDataStore store = (CustomerDataStore) mapStore;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                final int storeCallCount = store.getStoreCallCount();
-                assertEquals(expectedStoreCallCount, storeCallCount);
-            }
+        assertTrueEventually(() -> {
+            final int storeCallCount = store.getStoreCallCount();
+            assertEquals(expectedStoreCallCount, storeCallCount);
         });
     }
 
@@ -258,27 +239,23 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
     private void addSubscription(IMap<Long, Customer> map, long customerId, final long productId) {
-        map.executeOnKey(customerId, new AbstractEntryProcessor<Long, Customer>() {
-            @Override
-            public Object process(Map.Entry<Long, Customer> entry) {
-                final Customer customer = entry.getValue();
-                customer.addSubscription(new Subscription(productId));
-                entry.setValue(customer);
-                return customer.getSubscriptions().size();
-            }
-        });
+        map.executeOnKey(customerId,
+                entry -> {
+                    final Customer customer = entry.getValue();
+                    customer.addSubscription(new Subscription(productId));
+                    entry.setValue(customer);
+                    return customer.getSubscriptions().size();
+                });
     }
 
     private void removeSubscription(IMap<Long, Customer> map, long customerId, final long productId) {
-        map.executeOnKey(customerId, new AbstractEntryProcessor<Long, Customer>() {
-            @Override
-            public Object process(Map.Entry<Long, Customer> entry) {
-                final Customer customer = entry.getValue();
-                customer.removeSubscription(productId);
-                entry.setValue(customer);
-                return customer.getSubscriptions().size();
-            }
-        });
+        map.executeOnKey(customerId,
+                entry -> {
+                    final Customer customer = entry.getValue();
+                    customer.removeSubscription(productId);
+                    entry.setValue(customer);
+                    return customer.getSubscriptions().size();
+                });
     }
 
     private void addCustomer(long customerId, IMap<Long, Customer> map) {
@@ -293,7 +270,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         private final long customerId;
 
         private CustomerDataStore(long customerId) {
-            this.store = new ConcurrentHashMap<Long, List<Subscription>>();
+            this.store = new ConcurrentHashMap<>();
             this.storeCallCount = new AtomicInteger(0);
             this.customerId = customerId;
         }
@@ -328,7 +305,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
         void addSubscription(Subscription subscription) {
             if (subscriptions == null) {
-                subscriptions = new ArrayList<Subscription>();
+                subscriptions = new ArrayList<>();
             }
             subscriptions.add(subscription);
         }

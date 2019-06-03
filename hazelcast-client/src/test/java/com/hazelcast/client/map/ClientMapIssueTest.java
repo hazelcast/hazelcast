@@ -25,13 +25,11 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -64,7 +62,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerRegistrations() throws Exception {
+    public void testListenerRegistrations() {
         Config config = getConfig();
         ClientConfig clientConfig = getClientConfig();
 
@@ -73,7 +71,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final String mapName = randomMapName();
         IMap<Object, Object> map = client.getMap(mapName);
-        map.addEntryListener(new EntryAdapter<Object, Object>(), true);
+        map.addEntryListener(new EntryAdapter<>(), true);
 
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
@@ -83,15 +81,12 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         final EventService eventService1 = getNodeEngineImpl(instance1).getEventService();
         final EventService eventService2 = getNodeEngineImpl(instance2).getEventService();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<EventRegistration> regs1 = eventService1.getRegistrations(MapService.SERVICE_NAME, mapName);
-                Collection<EventRegistration> regs2 = eventService2.getRegistrations(MapService.SERVICE_NAME, mapName);
+        assertTrueEventually(() -> {
+            Collection<EventRegistration> regs1 = eventService1.getRegistrations(MapService.SERVICE_NAME, mapName);
+            Collection<EventRegistration> regs2 = eventService2.getRegistrations(MapService.SERVICE_NAME, mapName);
 
-                assertEquals("there should be only one registration", 1, regs1.size());
-                assertEquals("there should be only one registration", 1, regs2.size());
-            }
+            assertEquals("there should be only one registration", 1, regs1.size());
+            assertEquals("there should be only one registration", 1, regs2.size());
         });
     }
 
@@ -124,7 +119,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     @Category(NightlyTest.class)
-    public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
+    public void testOperationNotBlockingAfterClusterShutdown() {
         Config config = getConfig();
 
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
@@ -144,23 +139,21 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         instance2.getLifecycleService().terminate();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    map.get(randomString());
-                } catch (Exception ignored) {
-                } finally {
-                    latch.countDown();
-                }
+        new Thread(() -> {
+            try {
+                map.get(randomString());
+            } catch (Exception ignored) {
+            } finally {
+                latch.countDown();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch);
     }
 
     @Test
     @Category(NightlyTest.class)
-    public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() throws InterruptedException {
+    public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() {
         Config config = getConfig();
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
@@ -179,16 +172,14 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         instance2.getLifecycleService().terminate();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    map.get(randomString());
-                } catch (Exception ignored) {
-                } finally {
-                    latch.countDown();
-                }
+        new Thread(() -> {
+            try {
+                map.get(randomString());
+            } catch (Exception ignored) {
+            } finally {
+                latch.countDown();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch);
     }
@@ -210,7 +201,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
         predicate.nextPage();
 
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
@@ -234,7 +225,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
         predicate.nextPage();
 
         Collection<Integer> values = map.values(predicate);
@@ -332,7 +323,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(size - i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
         predicate.nextPage();
 
         final Set<Integer> values = map.keySet(predicate);
@@ -380,7 +371,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

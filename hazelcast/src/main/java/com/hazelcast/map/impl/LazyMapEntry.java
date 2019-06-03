@@ -33,8 +33,7 @@ import java.util.Map;
  * A {@link java.util.Map.Entry Map.Entry} implementation which serializes/de-serializes key and value objects on demand.
  * It is beneficial when you need to prevent unneeded serialization/de-serialization
  * when creating a {@link java.util.Map.Entry Map.Entry}. Mainly targeted to supply a lazy entry to
- * {@link com.hazelcast.map.EntryProcessor#process(Map.Entry)} and
- * {@link com.hazelcast.map.EntryBackupProcessor#processBackup(Map.Entry)}} methods.
+ * {@link com.hazelcast.map.EntryProcessor#process(Map.Entry)} method.
  * <p>
  * <STRONG>Note that this implementation is not synchronized and is not thread-safe.</STRONG>
  * <p>

@@ -31,8 +31,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,8 +39,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.NamedPortable;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.TestSerializationConstants;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
@@ -57,7 +56,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,12 +101,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = getClientConfig();
         clientConfig.getSerializationConfig()
-                .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortable();
-                    }
-
-                });
+                    .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, classId -> new NamedPortable());
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -222,7 +215,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAllPutAll() {
-        Map<Integer, Integer> expectedMap = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> expectedMap = new HashMap<>();
         for (int i = 0; i < 100; i++) {
             expectedMap.put(i, i);
         }
@@ -235,7 +228,7 @@ public class ClientMapTest extends HazelcastTestSupport {
             assertEquals(i, actual);
         }
 
-        Set<Integer> keySet = new HashSet<Integer>();
+        Set<Integer> keySet = new HashSet<>();
         keySet.add(1);
         keySet.add(3);
         Map getAllMap = map.getAll(keySet);
@@ -246,7 +239,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAllWithTooManyEntries() {
-        Map<Integer, Integer> expectedMap = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> expectedMap = new HashMap<>();
         for (int i = 0; i < 1000; i++) {
             expectedMap.put(i, i);
         }
@@ -329,11 +322,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncSetWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryEvictedListener<String, String>) event -> latch.countDown(), true);
 
         Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
         future.get();
@@ -347,11 +336,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncSetWithMaxIdle() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryEvictedListener<String, String>) event -> latch.countDown(), true);
 
         Future<Void> future = map.setAsync("key", "value1", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
         future.get();
@@ -371,7 +356,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTryPutRemove() throws Exception {
+    public void testTryPutRemove() {
         final IMap<String, String> map = createMap();
         assertTrue(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS));
         assertTrue(map.tryPut("key2", "value2", 1, TimeUnit.SECONDS));
@@ -380,25 +365,19 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(2);
 
-        new Thread() {
-            @Override
-            public void run() {
-                boolean result = map.tryPut("key1", "value3", 1, TimeUnit.SECONDS);
-                if (!result) {
-                    latch.countDown();
-                }
+        new Thread(() -> {
+            boolean result = map.tryPut("key1", "value3", 1, TimeUnit.SECONDS);
+            if (!result) {
+                latch.countDown();
             }
-        }.start();
+        }).start();
 
-        new Thread() {
-            @Override
-            public void run() {
-                boolean result = map.tryRemove("key2", 1, TimeUnit.SECONDS);
-                if (!result) {
-                    latch.countDown();
-                }
+        new Thread(() -> {
+            boolean result = map.tryRemove("key2", 1, TimeUnit.SECONDS);
+            if (!result) {
+                latch.countDown();
             }
-        }.start();
+        }).start();
 
         assertOpenEventually(latch);
         assertEquals("value1", map.get("key1"));
@@ -413,12 +392,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         final IMap<String, String> map = createMap();
         map.put("key1", "value1", 10, TimeUnit.SECONDS);
         assertNotNull(map.get("key1"));
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(map.get("key1"));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.get("key1")));
     }
 
     @Test
@@ -433,12 +407,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         final IMap<String, String> map = createMap();
         assertNull(map.putIfAbsent("key1", "value1", 10, TimeUnit.SECONDS));
         assertEquals("value1", map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(map.get("key1"));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.get("key1")));
         assertNull(map.putIfAbsent("key1", "value3", 10, TimeUnit.SECONDS));
         assertEquals("value3", map.putIfAbsent("key1", "value4", 1, TimeUnit.SECONDS));
     }
@@ -454,12 +423,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         map.set("key1", "value3", 1, TimeUnit.SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get("key1"));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.get("key1")));
     }
 
     @Test
@@ -472,19 +436,16 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLock() throws Exception {
+    public void testLock() {
         final IMap<String, String> map = createMap();
         map.put("key1", "value1");
         assertEquals("value1", map.get("key1"));
         map.lock("key1");
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                map.tryPut("key1", "value2", 1, TimeUnit.SECONDS);
-                latch.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            map.tryPut("key1", "value2", 1, TimeUnit.SECONDS);
+            latch.countDown();
+        }).start();
         assertOpenEventually(latch);
         assertEquals("value1", map.get("key1"));
         map.forceUnlock("key1");
@@ -496,34 +457,28 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertTrue(map.tryLock("key1", 2, TimeUnit.SECONDS));
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    if (!map.tryLock("key1", 2, TimeUnit.SECONDS)) {
-                        latch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        new Thread(() -> {
+            try {
+                if (!map.tryLock("key1", 2, TimeUnit.SECONDS)) {
+                    latch.countDown();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
         assertOpenEventually(latch);
         assertTrue(map.isLocked("key1"));
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    if (map.tryLock("key1", 20, TimeUnit.SECONDS)) {
-                        latch2.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        new Thread(() -> {
+            try {
+                if (map.tryLock("key1", 20, TimeUnit.SECONDS)) {
+                    latch2.countDown();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
         Thread.sleep(1000);
         map.unlock("key1");
         assertOpenEventually(latch2);
@@ -532,18 +487,15 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testForceUnlock() throws Exception {
+    public void testForceUnlock() {
         final IMap<String, String> map = createMap();
         map.lock("key1");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                map.forceUnlock("key1");
-                latch.countDown();
-            }
-        }.start();
+        new Thread(() -> {
+            map.forceUnlock("key1");
+            latch.countDown();
+        }).start();
         assertOpenEventually(latch);
         assertFalse(map.isLocked("key1"));
     }
@@ -585,7 +537,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testExecuteOnKey() {
         IMap<Integer, Integer> map = createMap();
         map.put(1, 1);
-        assertEquals(2, map.executeOnKey(1, new IncrementerEntryProcessor()));
+        assertEquals(2, (int) map.executeOnKey(1, new IncrementerEntryProcessor()));
     }
 
     @Test
@@ -610,7 +562,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSubmitToKeyWithCallback() throws Exception {
+    public void testSubmitToKeyWithCallback() {
         IMap<Integer, Integer> map = createMap();
         map.put(1, 1);
 
@@ -638,7 +590,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testListener() throws Exception {
+    public void testListener() {
         IMap<String, String> map = createMap();
         final CountDownLatch latch1Add = new CountDownLatch(5);
         final CountDownLatch latch1Remove = new CountDownLatch(2);
@@ -763,22 +715,23 @@ public class ClientMapTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             map.put(i, 0);
         }
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         keys.add(1);
         keys.add(4);
         keys.add(7);
         keys.add(9);
 
-        Map<Integer, Object> resultMap;
+        Map<Integer, Integer> resultMap;
         if (async) {
-            resultMap = ((ClientMapProxy<Integer, Integer>) map2).submitToKeys(keys, new IncrementerEntryProcessor()).get();
+            ClientMapProxy<Integer, Integer> clientProxy = (ClientMapProxy<Integer, Integer>) map2;
+            resultMap = clientProxy.submitToKeys(keys, new IncrementerEntryProcessor()).get();
         } else {
             resultMap = map2.executeOnKeys(keys, new IncrementerEntryProcessor());
         }
-        assertEquals(1, resultMap.get(1));
-        assertEquals(1, resultMap.get(4));
-        assertEquals(1, resultMap.get(7));
-        assertEquals(1, resultMap.get(9));
+        assertEquals(1, (int) resultMap.get(1));
+        assertEquals(1, (int) resultMap.get(4));
+        assertEquals(1, (int) resultMap.get(7));
+        assertEquals(1, (int) resultMap.get(9));
         assertEquals(1, (int) map.get(1));
         assertEquals(0, (int) map.get(2));
         assertEquals(0, (int) map.get(3));
@@ -1032,14 +985,11 @@ public class ClientMapTest extends HazelcastTestSupport {
         }
     }
 
-    private static class IncrementerEntryProcessor extends AbstractEntryProcessor<Integer, Integer> implements DataSerializable {
-
-        IncrementerEntryProcessor() {
-            super(true);
-        }
+    private static class IncrementerEntryProcessor
+            implements EntryProcessor<Integer, Integer, Integer>, DataSerializable {
 
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             Integer value = entry.getValue();
             if (value == null) {
                 value = 0;
@@ -1054,11 +1004,11 @@ public class ClientMapTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
         }
     }
 
