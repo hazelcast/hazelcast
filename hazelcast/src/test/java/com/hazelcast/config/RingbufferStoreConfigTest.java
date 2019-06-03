@@ -17,8 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
-import com.hazelcast.core.RingbufferStore;
-import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferService;

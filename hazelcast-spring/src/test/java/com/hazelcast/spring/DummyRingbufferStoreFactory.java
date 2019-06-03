@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.RingbufferStore;
-import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
 import java.util.Properties;
 

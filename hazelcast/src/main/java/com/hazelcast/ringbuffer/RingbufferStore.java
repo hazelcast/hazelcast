@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.ringbuffer;
+
+import com.hazelcast.core.IFunction;
 
 /**
  * Ringbuffer store makes a ring buffer backed by a central data store; such as database, disk, etc.
