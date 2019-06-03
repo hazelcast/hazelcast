@@ -252,7 +252,7 @@ public final class LongHashSet implements Set<Long> {
 
     /**
      * Fast Path set difference for comparison with another LongHashSet.
-     * <p/>
+     * <p>
      * NB: garbage free in the identical case, allocates otherwise.
      *
      * @param collection the other set to subtract

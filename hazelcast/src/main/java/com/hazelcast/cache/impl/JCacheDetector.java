@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
  * <li>https://github.com/hazelcast/hazelcast/issues/7810</li>
  * <li>https://github.com/hazelcast/hazelcast/issues/7854</li>
  * </ul>
- * </p>
  */
 public final class JCacheDetector {
 

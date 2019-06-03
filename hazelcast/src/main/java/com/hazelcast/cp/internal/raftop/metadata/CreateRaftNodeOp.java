@@ -37,7 +37,7 @@ import java.util.Collection;
  * group, this operation is sent to the new members of the Raft group to
  * initiate the {@link RaftNode} on the new member. Members present in this
  * operation are initial members of the Raft group, not the current members.
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */

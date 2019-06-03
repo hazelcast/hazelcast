@@ -64,11 +64,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     /**
      * Extensive test which ensures that the {@link QueryResultSizeExceededException} will not be thrown under the configured
      * limit.
-     * <p/>
+     * <p>
      * This test fills the map below the configured limit to ensure that the exception is not triggered yet. Then it fills up the
      * map and periodically checks via {@link IMap#keySet()} if the exception is thrown. If the exception is triggered all other
      * methods from {@link IMap} are executed to ensure they trigger the exception, too.
-     * <p/>
+     * <p>
      * This method fails if the exception is already thrown at {@link #lowerLimit} or if it is not thrown at {@link #upperLimit}.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -88,10 +88,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick test which just calls the {@link IMap} methods once and check for the {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This test fills the map to an amount where the exception is safely triggered. Then all {@link IMap} methods are called
      * and checked if they trigger the exception.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -113,10 +113,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Test which calls {@link TransactionalMap} methods which are expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This test fills the map to an amount where the exception is safely triggered. Then all {@link TransactionalMap} methods are
      * called which should trigger the exception.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      *
      * @param partitionCount  number of partitions the created cluster
@@ -211,11 +211,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     /**
      * Extensive test which ensures that the {@link QueryResultSizeExceededException} will not be thrown under the configured
      * limit.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is not triggered yet. This method then fills the
      * map and calls {@link IMap#keySet()} periodically to determine the limit on which the exception is thrown for the first
      * time. After that it runs {@link #internalRunQuick()} to ensure that all methods will trigger at this limit.
-     * <p/>
+     * <p>
      * This method fails if the exception is already thrown at {@link #lowerLimit} or if it is not thrown at {@link #upperLimit}.
      */
     private void internalRunWithLowerBoundCheck(KeyType keyType) {
@@ -253,11 +253,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick run which just executes the {@link IMap} methods once and check for the {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is safely triggered. The local running methods
      * {@link IMap#localKeySet()} and {@link IMap#localKeySet(Predicate)} are excluded, since they may need a higher fill rate to
      * succeed.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunQuick() {
@@ -306,9 +306,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Quick run on the {@link IMap#localKeySet()} and {@link IMap#localKeySet(Predicate)} methods.
-     * <p/>
+     * <p>
      * Requires the map to be filled so the exception is triggered even locally.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunLocalKeySet() {
@@ -329,9 +329,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     /**
      * Calls {@link TransactionalMap} methods once which are expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
+     * <p>
      * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
+     * <p>
      * This methods fails if any of the called methods does not trigger the exception.
      */
     private void internalRunTxn() {

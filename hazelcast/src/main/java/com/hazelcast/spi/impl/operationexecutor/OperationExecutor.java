@@ -76,7 +76,7 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
      * Gets all the operation handlers for the partitions. Each partition will
      * have its own operation handler. So if there are 271 partitions, then the
      * size of the array will be 271.
-     * <p/>
+     * <p>
      * Don't modify the content of the array!
      *
      * @return the operation handlers.
@@ -86,7 +86,7 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
     /**
      * Gets all the generic operation handlers. The number of generic operation
      * handlers depends on the number of generic threads.
-     * <p/>
+     * <p>
      * Don't modify the content of the array!
      *
      * @return the generic operation handlers.

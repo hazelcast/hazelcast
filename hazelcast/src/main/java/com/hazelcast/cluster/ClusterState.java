@@ -51,10 +51,10 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * <li>
  * {@link #IN_TRANSITION}:
  * Shows that {@code ClusterState} is in transition.
- * This is a temporary & intermediate state, not allowed to be set explicitly.
+ * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
  * </li>
  * </ol>
- * <p/>
+ * <p>
  * By default, cluster will be in {@code ACTIVE} state. During split-brain merge process,
  * state of the cluster, that is going to join to the major side,
  * will be changed to {@code FROZEN} automatically before merge
@@ -151,9 +151,8 @@ public enum ClusterState {
      * ClusterState will be shown as {@code IN_TRANSITION} while the transaction is in progress.
      * After the transaction completes, cluster will be either in the new state or in the previous state,
      * depending on transaction result.
-     * <p/>
-     * This is a temporary & intermediate state, not allowed to be set explicitly.
-     * <p/>
+     * <p>
+     * This is a temporary &amp; intermediate state, not allowed to be set explicitly.
      * <ul>
      * <li>
      * Similarly to the {@code FROZEN} state, new members are not allowed
@@ -179,6 +178,7 @@ public enum ClusterState {
 
     /**
      * Returns {@code true}, if joining of a new member is allowed in this state.
+     * @return {@code true} if joining of a new member is allowed in this state.
      */
     public boolean isJoinAllowed() {
         return joinAllowed;
@@ -186,6 +186,7 @@ public enum ClusterState {
 
     /**
      * Returns {@code true}, if migrations and replications are allowed in this state.
+     * @return {@code true} if migrations and replications are allowed in this state.
      */
     public boolean isMigrationAllowed() {
         return migrationAllowed;
@@ -193,6 +194,7 @@ public enum ClusterState {
 
     /**
      * Returns {@code true}, if partition promotions are allowed in this state.
+     * @return {@code true} if partition promotions are allowed in this state.
      */
     public boolean isPartitionPromotionAllowed() {
         return partitionPromotionAllowed;

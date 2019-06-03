@@ -22,7 +22,7 @@ import com.hazelcast.instance.NodeState;
 /**
  * Marker interface for operations those are allowed to be executed or invoked during
  * {@link Node}'s {@link NodeState#PASSIVE} state.
- * <p/>
+ * <p>
  * By default, only join, replication and cluster heartbeat operations are allowed during shutdown.
  *
  * @see NodeState

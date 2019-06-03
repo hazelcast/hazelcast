@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A modified copy of the of the main test case of {@link YamlTest} that
  * verifies the behavior of the W3C DOM adapters' supported methods.
- * <p/>
+ * <p>
  * These tests utilize that we work with the node adapters with which we
  * can access the mapping via getAttributes().
  */

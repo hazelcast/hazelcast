@@ -83,8 +83,8 @@ public class ClientPartitionListenerService {
     /**
      * If any partition does not have an owner, this method returns empty collection
      *
-     * @param partitionTableView will be converted to address->partitions mapping
-     * @return address->partitions mapping, where address is the client address of the member
+     * @param partitionTableView will be converted to address-&gt;partitions mapping
+     * @return address-&gt;partitions mapping, where address is the client address of the member
      */
     public Collection<Map.Entry<Address, List<Integer>>> getPartitions(PartitionTableView partitionTableView) {
 

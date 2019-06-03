@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 /**
  * This interface is used to automatically register serializers from external
- * Hazelcast or user modules.<br/>
+ * Hazelcast or user modules.<br>
  * Both types of {@link com.hazelcast.nio.serialization.Serializer}s are supported
  * ({@link com.hazelcast.nio.serialization.StreamSerializer} and
  * {@link com.hazelcast.nio.serialization.ByteArraySerializer}).

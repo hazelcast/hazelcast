@@ -45,7 +45,6 @@ import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
  * <li>Enabling/Disabling statistic and management.</li>
  * <li>Data migration commit/rollback through {@link MigrationAwareService}.</li>
  * </ul>
- * </p>
  * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when JCache
  * is located on the classpath, as determined by {@link JCacheDetector#isJCacheAvailable(ClassLoader)}.</p>
  * <p>

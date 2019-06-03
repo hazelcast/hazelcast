@@ -291,11 +291,11 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     /**
      * Removes the entry from being scheduled to be evicted.
-     * <p/>
+     * <p>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p/>
+     * <p>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     * <p/>
+     * <p>
      * Returns associated scheduled entry.
      *
      * @param second  second at which this entry was scheduled to be evicted
@@ -311,11 +311,11 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     /**
      * Removes the entry if it exists from being scheduled to be evicted.
-     * <p/>
+     * <p>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p/>
+     * <p>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     * <p/>
+     * <p>
      * Returns associated scheduled entry.
      *
      * @param second        second at which this entry was scheduled to be evicted
@@ -337,9 +337,9 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     /**
      * Cancels the scheduled future and removes the entries map for the given second If no entries are left
-     * <p/>
+     * <p>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p/>
+     * <p>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
      *
      * @param second  second at which this entry was scheduled to be evicted

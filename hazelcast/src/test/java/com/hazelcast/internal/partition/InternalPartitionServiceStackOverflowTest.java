@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * This test checks the following issue:
- * <p/>
+ * <p>
  * https://github.com/hazelcast/hazelcast/issues/1745
  */
 @RunWith(HazelcastSerialClassRunner.class)

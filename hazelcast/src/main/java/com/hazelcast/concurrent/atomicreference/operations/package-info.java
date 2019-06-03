@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the IAtomicReference.<br/>
+ * <p>This package contains the operations on the IAtomicReference.<br>
  *
  * @since 3.2
  */

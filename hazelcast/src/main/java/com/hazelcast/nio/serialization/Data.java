@@ -82,8 +82,8 @@ public interface Data {
      * Returns partition hash calculated for serialized object.
      * Partition hash is used to determine partition of a Data and is calculated using
      * {@link PartitioningStrategy} during serialization.
-     * <p/>
-     * If partition hash is not set then standard <tt>hashCode()</tt> is used.
+     * <p>
+     * If partition hash is not set then standard <code>hashCode()</code> is used.
      *
      * @return partition hash
      * @see com.hazelcast.partition.PartitionAware
@@ -110,7 +110,7 @@ public interface Data {
      * Returns true if this Data is created from a {@link com.hazelcast.nio.serialization.Portable} object,
      * false otherwise.
      *
-     * @return true if source object is <tt>Portable</tt>, false otherwise.
+     * @return true if source object is <code>Portable</code>, false otherwise.
      */
     boolean isPortable();
 
@@ -118,7 +118,7 @@ public interface Data {
      * Returns true if this Data is created from a {@link com.hazelcast.core.HazelcastJsonValue} object,
      * false otherwise
      *
-     * @return true if source object is <tt>HazelcastJsonValue</tt>, false otherwise.
+     * @return true if source object is <code>HazelcastJsonValue</code>, false otherwise.
      */
     boolean isJson();
 

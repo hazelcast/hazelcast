@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Processes an entry on a backup partition.
- * <p/>
+ * <p>
  * Note that there is a possibility which an {@link com.hazelcast.map.EntryProcessor} can see
  * that a key exists but its backup processor {@link com.hazelcast.map.EntryBackupProcessor} may not find it
  * at run time due to an unsent backup of a previous operation (e.g. a previous put). In those situations,

@@ -19,7 +19,7 @@ package com.hazelcast.memory;
 /**
  * Garbage collector statistics for the JVM which current HazelcastInstance
  * belongs to.
- * <p/>
+ * <p>
  * Shows major/minor collection counts and consumed CPU times.
  *
  * @see com.hazelcast.memory.MemoryStats
@@ -28,7 +28,7 @@ public interface GarbageCollectorStats {
 
     /**
      * Returns major collection count.
-     * <p/>
+     * <p>
      * Major collection is identified by matching heap memory region name
      * with known names. If a collection cannot be matched then it's reported
      * as unknown count.
@@ -40,7 +40,7 @@ public interface GarbageCollectorStats {
 
     /**
      * Returns total major collection time in ms.
-     * <p/>
+     * <p>
      * Major collection is identified by matching heap memory region name
      * with known names. If a collection cannot be matched then it's reported
      * as unknown count.
@@ -52,7 +52,7 @@ public interface GarbageCollectorStats {
 
     /**
      * Returns minor collection count.
-     * <p/>
+     * <p>
      * Minor collection is identified by matching heap memory region name
      * with known names. If a collection cannot be matched then it's reported
      * as unknown count.
@@ -64,7 +64,7 @@ public interface GarbageCollectorStats {
 
     /**
      * Returns total minor collection time in ms.
-     * <p/>
+     * <p>
      * Minor collection is identified by matching heap memory region name
      * with known names. If a collection cannot be matched then it's reported
      * as unknown count.

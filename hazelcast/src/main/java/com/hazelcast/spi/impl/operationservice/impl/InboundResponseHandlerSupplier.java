@@ -55,7 +55,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <li>a 'sync' response handler that doesn't offload to a different thread and
  * processes the response on the calling (IO) thread.</li>
  * <li>a single threaded Packet Consumer that offloads the response processing a
- * ResponseThread/li>
+ * ResponseThread</li>
  * <li>a multi threaded Packet Consumer that offloads the response processing
  * to a pool of ResponseThreads.</li>
  * </ol>

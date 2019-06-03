@@ -56,7 +56,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *     Config config = new Config();
  *     config.getCPSubsystemConfig().setCPMemberCount(cpMemberCount);
  *     HazelcastInstance[] instances = new HazelcastInstance[memberCount];
- *     for (int i = 0; i < memberCount; i++) {
+ *     for (int i = 0; i &lt; memberCount; i++) {
  *         instances[i] = Hazelcast.newHazelcastInstance(config);
  *     }
  *
@@ -84,7 +84,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *           .setCPMemberCount(cpMemberCount)
  *           .setGroupSize(groupSize);
  *     HazelcastInstance[] instances = new HazelcastInstance[memberCount];
- *     for (int i = 0; i < memberCount; i++) {
+ *     for (int i = 0; i &lt; memberCount; i++) {
  *         instances[i] = Hazelcast.newHazelcastInstance(config);
  *     }
  *

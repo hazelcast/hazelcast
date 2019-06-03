@@ -45,11 +45,11 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * This test creates a cluster of HazelcastInstances and a bunch of Topics.
- * <p/>
+ * <p>
  * On each instance, there is a listener for each topic.
- * <p/>
+ * <p>
  * There is a bunch of threads, that selects a random instance with a random topic to publish a message (int) on.
- * <p/>
+ * <p>
  * To verify that everything is fine, we expect that the total messages send by each topic is the same as the total
  * sum of messages receives by the topic listeners.
  */

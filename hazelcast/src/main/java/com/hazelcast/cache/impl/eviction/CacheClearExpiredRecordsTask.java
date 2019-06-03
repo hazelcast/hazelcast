@@ -71,13 +71,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *           config.setProperty({@value PROP_CLEANUP_OPERATION_COUNT}, "3");
  *           Hazelcast.newHazelcastInstance(config);
  * </pre>
- * </p>
  * <p>
  * System-wide setting example:
  * <pre>
  *        System.setProperty({@value PROP_CLEANUP_OPERATION_COUNT}, "3");
  * </pre>
- * </p>
  */
 public class CacheClearExpiredRecordsTask
         extends ClearExpiredRecordsTask<CachePartitionSegment, ICacheRecordStore> {

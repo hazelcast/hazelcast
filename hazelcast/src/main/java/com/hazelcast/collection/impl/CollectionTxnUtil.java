@@ -33,7 +33,7 @@ public final class CollectionTxnUtil {
     }
 
     /**
-     * @param operation
+     * @param operation the operation.
      * @return negative itemId if the operation is a remove operation
      */
     public static long getItemId(CollectionTxnOperation operation) {
@@ -42,7 +42,7 @@ public final class CollectionTxnUtil {
     }
 
     /**
-     * @param itemId
+     * @param itemId the item ID
      * @return true if itemId is greater than 0
      */
     public static boolean isRemove(long itemId) {

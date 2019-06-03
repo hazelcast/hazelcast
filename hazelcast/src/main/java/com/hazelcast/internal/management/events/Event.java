@@ -21,7 +21,7 @@ import com.hazelcast.internal.management.events.EventMetadata.EventType;
 
 /**
  * Represents events sent to Management Center.
- * <p/>
+ * <p>
  * Events are sent to Management Center periodically, which then informs the user about them.
  * Events can be used where a log statement normally is used. They are usually generated as
  * a result of an action that is triggered by the Management Center.

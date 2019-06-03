@@ -29,7 +29,7 @@ import static java.lang.Thread.currentThread;
 /**
  * Provides proxy for the Transactional Queue.
  *
- * @param <E>
+ * @param <E> the type of elements in the queue.
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E> {
 

@@ -40,11 +40,9 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * Future's {@code get} method will return the task's result upon
      * successful completion.
      * <p>
-     * <p>
      * If you would like to immediately block waiting
      * for a task, you can use constructions of the form
      * {@code result = exec.submit(aCallable).get();}
-     * <p>
      * <p>Note: The {@link Executors} class includes a set of methods
      * that can convert some other common closure-like objects,
      * for example, {@link java.security.PrivilegedAction} to

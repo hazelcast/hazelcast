@@ -90,7 +90,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: First network interface is a loopback and the other is a non-loopback.<br/>
+     * When: First network interface is a loopback and the other is a non-loopback.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -106,7 +106,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Last network interface is a loopback and the other is a non-loopback.<br/>
+     * When: Last network interface is a loopback and the other is a non-loopback.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -122,7 +122,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: First network interface is DOWN and the other is UP.<br/>
+     * When: First network interface is DOWN and the other is UP.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -138,7 +138,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Last network interface is DOWN and the other is UP.<br/>
+     * When: Last network interface is DOWN and the other is UP.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -154,7 +154,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: First network interface is virtual and the other is not virtual.<br/>
+     * When: First network interface is virtual and the other is not virtual.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -170,7 +170,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Last network interface is virtual and the other is not virtual.<br/>
+     * When: Last network interface is virtual and the other is not virtual.<br>
      * Then: The other interface will be used for address picking.
      */
     @Test
@@ -186,7 +186,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: No network interface is provided.<br/>
+     * When: No network interface is provided.<br>
      * Then: The address picker returns {@code null} as the picked address.
      */
     @Test
@@ -198,7 +198,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: There is no available interface/address combination for picking.<br/>
+     * When: There is no available interface/address combination for picking.<br>
      * Then: The address picker returns {@code null} as the picked address.
      */
     @Test
@@ -219,7 +219,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Fist network interface is valid for picking, but has no InetAddress.<br/>
+     * When: Fist network interface is valid for picking, but has no InetAddress.<br>
      * Then: Another interface will be used for address picking.
      */
     @Test
@@ -235,7 +235,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Last network interface is valid for picking, but has no InetAddress.<br/>
+     * When: Last network interface is valid for picking, but has no InetAddress.<br>
      * Then: Another interface will be used for address picking.
      */
     @Test
@@ -251,7 +251,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: A valid Network interface has more addresses.<br/>
+     * When: A valid Network interface has more addresses.<br>
      * Then: One of the addresses is picked.
      */
     @Test
@@ -267,7 +267,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Network interface has both IPv4 and IPv6 addresses and IPv4 is preferred.<br/>
+     * When: Network interface has both IPv4 and IPv6 addresses and IPv4 is preferred.<br>
      * Then: The IPv4 address is picked.
      */
     @Test
@@ -283,7 +283,7 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * When: Network interface has both IPv4 and IPv6 addresses and IPv6 is preferred.<br/>
+     * When: Network interface has both IPv4 and IPv6 addresses and IPv6 is preferred.<br>
      * Then: The IPv6 address is picked.
      */
     @Test
@@ -303,7 +303,7 @@ public class DefaultAddressPickerInterfacesTest {
 
     /**
      * When: Multiple interfaces with different configuration is used, but only one IPv4 interface/address combination is
-     * pickable.<br/>
+     * pickable.<br>
      * Then: The correct address is picked.
      */
     @Test

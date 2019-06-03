@@ -28,7 +28,7 @@ import java.io.IOException;
 
 /**
  * Initiates the destroy process for the given Raft group.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class TriggerDestroyRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

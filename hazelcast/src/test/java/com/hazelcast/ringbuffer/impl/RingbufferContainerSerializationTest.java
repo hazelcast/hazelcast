@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  * This test verifies that the RingbufferContainer can serialize itself
  * correctly using different in memory formats and using enabling/disabling
  * TTL.
- * <p/>
+ * <p>
  * This test also forces a delay between the serialization and deserialization. If a ringbuffer is configured
  * with a ttl, we don't want to send over the actual expiration time, because on a different member in the
  * cluster, there could be a big time difference which can lead to the ringbuffer immediately cleaning or cleaning

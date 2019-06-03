@@ -79,7 +79,7 @@ public final class CallsPerMember implements LiveOperations {
 
     /**
      * Makes sure that a list of counters is created for a member.
-     * <p/>
+     * <p>
      * This method exists to ensure that an operation-heartbeat is always sent, even if there are no running operations.
      *
      * @param address the address of the member.

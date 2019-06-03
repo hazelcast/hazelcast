@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream;
 /**
  * Test cases specific only to YAML based configuration. The cases not
  * YAML specific should be added to {@link YamlConfigBuilderTest}.
- * <p/>
+ * <p>
  * This test class is expected to contain only <strong>extra</strong> test
  * cases over the ones defined in {@link YamlConfigBuilderTest} in order
  * to cover YAML specific cases where YAML configuration derives from the

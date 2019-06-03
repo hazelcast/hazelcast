@@ -305,7 +305,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     /**
      * Sets the initial partition table and state version. If any partition has a replica, the partition state manager is
-     * set to initialized, otherwise {@link #partitionStateManager#isInitialized()} stays uninitialized but the current state
+     * set to initialized, otherwise {@link PartitionStateManager#isInitialized()} stays uninitialized but the current state
      * will be updated nevertheless.
      * This method acquires the partition service lock.
      *

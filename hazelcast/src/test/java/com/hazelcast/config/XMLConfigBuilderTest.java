@@ -74,11 +74,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * XML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests.
- * <p/>
+ * <p>
  *
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
- * <p/>
+ * <p>
  *
  * NOTE2: Test cases specific to XML should be added to {@link XmlOnlyConfigBuilderTest}
  *

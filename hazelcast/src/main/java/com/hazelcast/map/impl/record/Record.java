@@ -59,7 +59,7 @@ public interface Record<V> {
 
     /**
      * Get current cache value or null.
-     * <p/>
+     * <p>
      * Warning: Do not use this method directly as it might expose arbitrary objects acting as a lock.
      * Use {@link Records#getCachedValue(Record)} instead.
      *
@@ -119,8 +119,6 @@ public interface Record<V> {
 
     /**
      * Only used for Hot Restart, HDRecord
-     *
-     * @return
      */
     void setSequence(long sequence);
 

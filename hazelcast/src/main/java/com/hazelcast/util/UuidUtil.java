@@ -25,7 +25,7 @@ import java.util.UUID;
 
 /**
  * Util class to generate type 4 (pseudo randomly generated) {@link UUID}.
- * <p/>
+ * <p>
  * Creates {@link UUID} of different quality of randomness,
  * which are based on cryptographically weak {@link Random}
  * and strong {@link SecureRandom} pseudo random number generators.

@@ -28,9 +28,9 @@ public interface SerializationService {
 
     /**
      * Serializes an object to a {@link Data}.
-     * <p/>
+     * <p>
      * This method can safely be called with a {@link Data} instance. In that case, that instance is returned.
-     * <p/>
+     * <p>
      * If this method is called with null, null is returned.
      *
      * @param obj the object to serialize.
@@ -41,9 +41,9 @@ public interface SerializationService {
 
     /**
      * Serializes an object to a {@link Data}.
-     * <p/>
+     * <p>
      * This method can safely be called with a {@link Data} instance. In that case, that instance is returned.
-     * <p/>
+     * <p>
      * If this method is called with null, null is returned.
      *
      * @param obj      the object to serialize.
@@ -55,10 +55,10 @@ public interface SerializationService {
 
     /**
      * Deserializes an object.
-     * <p/>
+     * <p>
      * This method can safely be called on an object that is already deserialized. In that case, that instance
      * is returned.
-     * <p/>
+     * <p>
      * If this method is called with null, null is returned.
      *
      * @param data the data to deserialize.
@@ -69,10 +69,10 @@ public interface SerializationService {
 
     /**
      * Deserializes an object.
-     * <p/>
+     * <p>
      * This method can safely be called on an object that is already deserialized. In that case, that instance
      * is returned.
-     * <p/>
+     * <p>
      * If this method is called with null, null is returned.
      *
      * @param data  the data to deserialize.

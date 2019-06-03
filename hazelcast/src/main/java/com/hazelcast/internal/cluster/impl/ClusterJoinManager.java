@@ -70,10 +70,10 @@ import static java.lang.String.format;
 
 /**
  * ClusterJoinManager manages member join process.
- * <p/>
+ * <p>
  * If this node is not master,
  * then it will answer with sending master node's address to a join request.
- * <p/>
+ * <p>
  * If this is master node, it will handle join request and notify all other members
  * about newly joined member.
  */

@@ -358,15 +358,15 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Called every time a new <tt>callId</tt> is set on the operation. A new
-     * <tt>callId</tt> is set before initial invocation and before every
+     * Called every time a new <code>callId</code> is set on the operation. A new
+     * <code>callId</code> is set before initial invocation and before every
      * invocation retry.
      * <p>
      * By default this is a no-op method. Operation implementations which want to
-     * get notified on <tt>callId</tt> changes can override it.
+     * get notified on <code>callId</code> changes can override it.
      * <p>
      * For example an operation can distinguish the first invocation and
-     * invocation retries by keeping the initial <tt>callId</tt>.
+     * invocation retries by keeping the initial <code>callId</code>.
      *
      * @param callId the new call ID that was set on the operation
      */
@@ -545,15 +545,15 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown
+     * Called when an <code>Exception</code>/<code>Error</code> is thrown
      * during an invocation. Invocation process will continue, it will retry
-     * or fail according to returned <tt>ExceptionAction</tt>.
-     * <p/>
+     * or fail according to returned <code>ExceptionAction</code>.
+     * <p>
      * This method is called on caller side of the invocation.
      *
-     * @param throwable <tt>Exception</tt>/<tt>Error</tt> thrown during
+     * @param throwable <code>Exception</code>/<code>Error</code> thrown during
      *                  invocation
-     * @return <tt>ExceptionAction</tt>
+     * @return <code>ExceptionAction</code>
      */
     public ExceptionAction onInvocationException(Throwable throwable) {
         return throwable instanceof RetryableException ? RETRY_INVOCATION : THROW_EXCEPTION;
@@ -592,13 +592,13 @@ public abstract class Operation implements DataSerializable {
 
 
     /**
-     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during
+     * Called when an <code>Exception</code>/<code>Error</code> is thrown during
      * operation execution.
-     * <p/>
+     * <p>
      * By default this method does nothing.
      * Operation implementations can override this behaviour according to their needs.
-     * <p/>
-     * This method is called on node & thread that's executing the operation.
+     * <p>
+     * This method is called on node &amp; thread that's executing the operation.
      *
      * @param e Exception/Error thrown during operation execution
      */
@@ -606,10 +606,10 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Logs <tt>Exception</tt>/<tt>Error</tt> thrown during operation execution.
+     * Logs <code>Exception</code>/<code>Error</code> thrown during operation execution.
      * Operation implementations can override this behaviour according to their needs.
-     * <p/>
-     * This method is called on node & thread that's executing the operation.
+     * <p>
+     * This method is called on node &amp; thread that's executing the operation.
      *
      * @param e Exception/Error thrown during operation execution
      */

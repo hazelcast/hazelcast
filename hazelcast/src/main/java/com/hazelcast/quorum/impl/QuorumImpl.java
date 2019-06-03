@@ -88,7 +88,7 @@ public class QuorumImpl implements Quorum {
     /**
      * Determines if the quorum is present for the given member collection, caches the result and publishes an event under
      * the {@link #quorumName} topic if there was a change in presence.
-     * <p/>
+     * <p>
      * <strong>This method is not thread safe and should not be called concurrently.</strong>
      *
      * @param members the members for which the presence is determined

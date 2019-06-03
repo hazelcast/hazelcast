@@ -36,16 +36,14 @@ import com.hazelcast.spi.impl.operationservice.Operation;
  * During commit, service should remove either all or some part of its data in this partition
  * and run any other action needed. A sample commit on source will look like;
  * <pre>
- * <code>
  * public void commitMigration(PartitionMigrationEvent event) {
  *     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
- *         if (event.getNewReplicaIndex() == -1 || event.getNewReplicaIndex() > configuredBackupCount) {
+ *         if (event.getNewReplicaIndex() == -1 || event.getNewReplicaIndex() &gt; configuredBackupCount) {
  *             // remove data...
  *         }
  *     }
  *     // run any other task needed
  * }
- * </code>
  * </pre>
  * During rollback, source usually doesn't expected to perform any task. But service implementation may need
  * to execute custom tasks.
@@ -58,7 +56,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
  * <code>
  * public void rollbackMigration(PartitionMigrationEvent event) {
  *      if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
- *          if (event.getCurrentReplicaIndex() == -1 || event.getCurrentReplicaIndex() > configuredBackupCount) {
+ *          if (event.getCurrentReplicaIndex() == -1 || event.getCurrentReplicaIndex() &gt; configuredBackupCount) {
  *              // remove data...
  *          }
  *      }

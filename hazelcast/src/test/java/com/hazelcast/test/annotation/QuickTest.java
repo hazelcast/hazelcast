@@ -18,7 +18,7 @@ package com.hazelcast.test.annotation;
 
 /**
  * Annotates quick tests which are fast enough for the PR builder.
- * <p/>
+ * <p>
  * Will be executed in the PR builder and for code coverage measurements.
  */
 public final class QuickTest {

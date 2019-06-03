@@ -27,7 +27,7 @@ import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PU
 /**
  * An abstract {@link EntryProcessor} that already has implemented the {@link #getBackupProcessor()}. In a most cases you
  * want the same logic to be executed on the primary and on the backup. This implementation has this behavior.
- * <p/>
+ * <p>
  * Note that there is a possibility which an {@link com.hazelcast.map.AbstractEntryProcessor} can see that a key exists
  * but its backup processor may not find it due to an unsent backup of a previous operation (e.g. a previous put).
  * In those situations, Hazelcast internally/eventually will sync those owner and backup partitions so you will not lose any data.

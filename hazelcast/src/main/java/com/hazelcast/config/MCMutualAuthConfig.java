@@ -20,7 +20,8 @@ import java.util.Properties;
 
 /**
  * Management Center mutual authentication configuration.
- * Config required to setup custom key & trust stores for the outgoing connections of the member towards the Management Center.
+ * Config required to setup custom key &amp; trust stores for the outgoing connections of the member towards the Management
+ * Center.
  * A custom SSLContextFactory can also be provided for special needs.
  */
 public final class MCMutualAuthConfig {

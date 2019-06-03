@@ -31,7 +31,7 @@ import java.io.IOException;
 /**
  * If the CP subsystem discovery process is completed, new Hazelcast nodes
  * skip the discovery step.
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */

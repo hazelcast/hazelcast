@@ -106,7 +106,7 @@ public interface ExecutionService {
      * @param name          for the executor service
      * @param poolSize      the maximum number of threads to allow in the pool
      * @param queueCapacity the queue to use for holding tasks before they are executed.
-     * @param type          @{@link ExecutorType#CACHED} or @{@link ExecutorType#CONCRETE}
+     * @param type          {@link ExecutorType#CACHED} or {@link ExecutorType#CONCRETE}
      * @return the created managed executor service
      */
     ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);

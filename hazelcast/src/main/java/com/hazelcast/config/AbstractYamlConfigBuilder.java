@@ -69,7 +69,7 @@ public abstract class AbstractYamlConfigBuilder {
 
     /**
      * Imports external YAML documents into the provided main YAML document.
-     * <p/>
+     * <p>
      * Since the YAML configuration uses mappings, in order to keep the
      * configuration defined in the main YAML document the imported
      * document (the source) will be actually merged into the main
@@ -126,7 +126,7 @@ public abstract class AbstractYamlConfigBuilder {
 
     /**
      * Merges the source YAML document into the target YAML document
-     * <p/>
+     * <p>
      * If a given source node is not found in the target, it will be attached
      * If a given source node is found in the target, this method is invoked
      * recursively with the given node

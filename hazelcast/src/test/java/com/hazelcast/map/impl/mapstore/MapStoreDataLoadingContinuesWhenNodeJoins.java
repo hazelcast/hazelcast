@@ -65,7 +65,7 @@ import static org.junit.Assume.assumeThat;
 
 /**
  * Test if a node joining a cluster which is loading data works.
- * <p/>
+ * <p>
  * Thanks Lukas Blunschi (@lukasblu) for contributing this test originally.
  */
 @RunWith(Parameterized.class)

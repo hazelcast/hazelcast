@@ -44,13 +44,13 @@ import java.util.Set;
  *
  * </code>
  * </pre>
- * <p/>
+ * <p>
  * This cache is evictable. The eviction can be configured with {@link
  * com.hazelcast.config.QueryCacheConfig#setEvictionConfig}.
  * Events caused by {@code IMap} eviction are not reflected to this cache.
  * But the events published after an explicit call to {@link
  * com.hazelcast.core.IMap#evict} are reflected to this cache.
- * <p/>
+ * <p>
  * <b>GOTCHAS</b>
  * <ul>
  * <li>
@@ -80,7 +80,7 @@ import java.util.Set;
  * in {@link com.hazelcast.core.IMap IMap} class for them.
  * </li>
  * </ul>
- * <p/>
+ * <p>
  *
  * @param <K> the type of key for this {@code QueryCache}
  * @param <V> the type of value for this {@code QueryCache}
@@ -189,11 +189,11 @@ public interface QueryCache<K, V> {
     /**
      * This method can be used to recover from a possible event loss situation. You can detect event loss
      * via {@link com.hazelcast.map.listener.EventLostListener}
-     * <p/>
+     * <p>
      * This method tries to make consistent the data in this {@code QueryCache} with the data in the underlying {@code IMap}
      * by replaying the events after last consistently received ones. As a result of this replaying logic, same event may
      * appear more than once to the {@code QueryCache} listeners.
-     * <p/>
+     * <p>
      * This method returns {@code false} if the event is not in the buffer of event publisher side. That means recovery is not
      * possible.
      *

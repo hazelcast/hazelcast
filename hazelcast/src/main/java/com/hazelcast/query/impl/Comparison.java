@@ -28,22 +28,22 @@ public enum Comparison {
     NOT_EQUAL,
 
     /**
-     * <
+     * &lt;
      */
     LESS,
 
     /**
-     * >
+     * &gt;
      */
     GREATER,
 
     /**
-     * <=
+     * &lt;=
      */
     LESS_OR_EQUAL,
 
     /**
-     * >=
+     * &gt;=
      */
     GREATER_OR_EQUAL
 

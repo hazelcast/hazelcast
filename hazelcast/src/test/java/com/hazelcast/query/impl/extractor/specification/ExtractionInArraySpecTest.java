@@ -48,9 +48,9 @@ import static java.util.Arrays.asList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in arrays ONLY.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing

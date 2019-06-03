@@ -62,7 +62,7 @@ import static org.w3c.dom.TypeInfo.DERIVATION_RESTRICTION;
 /**
  * Test cases specific only to XML based configuration. The cases not
  * XML specific should be added to {@link XMLConfigBuilderTest}.
- * <p/>
+ * <p>
  * This test class is expected to contain only <strong>extra</strong> test
  * cases over the ones defined in {@link XMLConfigBuilderTest} in order
  * to cover XML specific cases where XML configuration derives from the

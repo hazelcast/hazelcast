@@ -177,7 +177,7 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given async cause, and it adds the also given local stacktrace.<br/>
+     * This method changes the given async cause, and it adds the also given local stacktrace.<br>
      * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given asyncCause itself.
@@ -201,7 +201,7 @@ public final class ExceptionUtil {
 
     /**
      * This method changes the given async cause, and it adds the also given local stacktrace separated by the
-     * supplied exception message.<br/>
+     * supplied exception message.<br>
      * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.

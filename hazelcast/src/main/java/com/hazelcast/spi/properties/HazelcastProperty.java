@@ -110,7 +110,7 @@ public final class HazelcastProperty {
     /**
      * Returns the default value of the property.
      *
-     * @return the default value or <tt>null</tt> if none is defined
+     * @return the default value or <code>null</code> if none is defined
      */
     public String getDefaultValue() {
         return defaultValue;
@@ -133,7 +133,7 @@ public final class HazelcastProperty {
     /**
      * Returns the parent {@link GroupProperty} of the property.
      *
-     * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
+     * @return the parent {@link GroupProperty} or <code>null</code> if none is defined
      */
     public HazelcastProperty getParent() {
         return parent;

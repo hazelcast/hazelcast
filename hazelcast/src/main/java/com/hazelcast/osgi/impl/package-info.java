@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the OSGI functionality implementations for Hazelcast.<br/>
+ * <p>This package contains the OSGI functionality implementations for Hazelcast.<br>
  */
 package com.hazelcast.osgi.impl;

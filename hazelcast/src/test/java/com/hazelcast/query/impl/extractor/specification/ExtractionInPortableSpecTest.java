@@ -49,9 +49,9 @@ import static java.util.Arrays.asList;
 /**
  * Specification test that verifies the behavior of corner-cases extraction in single-value attributes.
  * It's a detailed test especially for portables, since the extraction is much more complex there.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing

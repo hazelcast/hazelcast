@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Metadata for an {@link Accumulator}.
  * <p>
- * This metadata is used in communications between: node <--> node and client <--> node.
+ * This metadata is used in communications between: node &lt;--&gt; node and client &lt;--&gt; node.
  *
  * @see QueryCacheConfig
  */

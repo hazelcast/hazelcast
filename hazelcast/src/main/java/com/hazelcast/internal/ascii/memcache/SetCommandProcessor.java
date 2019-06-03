@@ -42,19 +42,19 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 
     /**
      * "set" means "store this data".
-     * <p/>
+     * <p>
      * "add" means "store this data, but only if the server *doesn't* already
      * hold data for this key".
-     * <p/>
+     * <p>
      * "replace" means "store this data, but only if the server *does*
      * already hold data for this key".
-     * <p/>
-     * <p/>
+     * <p>
+     * <p>
      * After sending the command line and the data block the client awaits
      * the reply, which may be:
-     * <p/>
+     * <p>
      * - "STORED\r\n", to indicate success.
-     * <p/>
+     * <p>
      * - "NOT_STORED\r\n" to indicate the data was not stored, but not
      * because of an error. This normally means that either that the
      * condition for an "add" or a "replace" command wasn't met, or that the

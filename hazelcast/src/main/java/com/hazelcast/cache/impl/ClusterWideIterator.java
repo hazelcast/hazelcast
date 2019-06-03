@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- * <p/>
+ * <p>
  * <p>
  * This implementation is used for server or embedded mode.
  * </p>

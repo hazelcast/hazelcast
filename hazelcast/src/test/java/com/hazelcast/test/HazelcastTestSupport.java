@@ -1341,7 +1341,7 @@ public abstract class HazelcastTestSupport {
      * This form of eventual completion check has no strict time bounds.
      * Instead, it lets the checked test to continue as long as there is
      * progress observed within the provided stall tolerance time bound.
-     * <p/>
+     * <p>
      * This check may be useful for tests that can provide progress
      * information to prevent unnecessary failures due to unexpectedly
      * slow progress.

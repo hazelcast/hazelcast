@@ -31,7 +31,7 @@ import java.util.concurrent.locks.Lock;
  *      mylock.unlock();
  * }
  * //Lock on Map
- *      IMap<String, Customer> map = Hazelcast.getMap("customers"); map.lock("1");
+ *      IMap&lt;String, Customer&gt; map = Hazelcast.getMap("customers"); map.lock("1");
  * try {
  *      // do something
  * } finally {
@@ -103,10 +103,10 @@ public interface ILock extends Lock, DistributedObject {
      * </ul>
      *
      * @param time      maximum time to wait for the lock.
-     * @param unit      time unit of the <tt>time</tt> argument.
+     * @param unit      time unit of the <code>time</code> argument.
      * @param leaseTime time to wait before releasing the lock.
      * @param leaseUnit unit of time to specify lease time.
-     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
+     * @return <code>true</code> if the lock was acquired and <code>false</code>
      * if the waiting time elapsed before the lock was acquired.
      */
     boolean tryLock(long time, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException;

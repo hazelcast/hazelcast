@@ -66,14 +66,14 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * For example, following code fragment will behave incorrectly and will enter an infinite loop:
  * <pre>
- * map.computeIfPresent("key", (key, value) -> {
+ * map.computeIfPresent("key", (key, value) -&gt; {
  *     value.setSomeAttribute("newAttributeValue");
  *     return value;
  * });
  * </pre>
  * It should be replaced with:
  * <pre>
- * map.computeIfPresent("key", (key, value) -> {
+ * map.computeIfPresent("key", (key, value) -&gt; {
  *     return new ObjectWithSomeAttribute("newAttributeValue");
  * });
  * </pre>
@@ -288,7 +288,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -649,7 +648,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -729,7 +727,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -817,7 +814,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -937,7 +933,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
@@ -1016,7 +1012,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
@@ -1202,10 +1198,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1259,10 +1253,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1294,7 +1286,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
     /**
-     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)}
+     * Same as {@link #put(Object, Object, long, TimeUnit)}
      * except that the map store, if defined, will not be called to
      * load/store/persist the entry.
      * <p>
@@ -1321,7 +1313,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void putTransient(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)}
+     * Same as {@link #put(Object, Object, long, TimeUnit)}
      * except that the map store, if defined, will not be called to
      * load/store/persist the entry.
      * <p>
@@ -1515,7 +1507,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * retrieved the invocation result response, then the operation is retried. The invocation
      * retry fails because the value is already updated and the result of such replace call
      * returns {@code false}. Hazelcast doesn't guarantee exactly once invocation.
-     * <p>
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -2496,9 +2487,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces, the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
@@ -2589,8 +2580,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
-     *
-     * <h4>Performance note</h4>
+     * <p>
+     * <b>Performance note</b>
      * <p>Keep the state of {@code entryProcessor}
      * small, it will be serialized and one copy will be sent to each member.
      * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
@@ -2627,16 +2618,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * </ol>
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
@@ -2706,16 +2697,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * </ol>
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException

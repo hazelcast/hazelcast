@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * Returns the list of pending membership changes that will be orchestrated by
  * the leader node of the Metadata group.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetMembershipChangeScheduleOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

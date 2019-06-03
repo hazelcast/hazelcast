@@ -459,7 +459,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * {@code LocalMultiMapStats} is the statistics for the local portion of this
      * distributed multi map and contains information such as ownedEntryCount
      * backupEntryCount, lastUpdateTime, and lockedEntryCount.
-     * <p/>
+     * <p>
      * Since this stats are only for the local portion of this multi map, if you
      * need the cluster-wide MultiMapStats, then you need to get the {@link com.hazelcast.monitor.LocalMapStats LocalMapStats}
      * from all members of the cluster and combine them.

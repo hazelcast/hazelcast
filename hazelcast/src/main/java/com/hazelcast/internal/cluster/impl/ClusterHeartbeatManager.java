@@ -63,11 +63,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
  * process of a node.
- * <p/>
+ * <p>
  * It periodically sends heartbeat to the other nodes and stores heartbeat timestamps
  * per node when a heartbeat is received from other nodes. If enabled and required, it can send
  * ping packets (an ICMP ping or an echo packet depending on the environment and settings).
- * <p/>
+ * <p>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
  */
 public class ClusterHeartbeatManager {

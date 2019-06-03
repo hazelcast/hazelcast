@@ -90,16 +90,16 @@ public final class SortingUtil {
 
     /**
      * Compares two integers by considering their signs.
-     * <p/>
+     * <p>
      * Suppose that
      * i1 = -500.000.000
      * i2 = 2.000.000.000
-     * <p/>
+     * <p>
      * Normally "i1 < i2", but if we use "i1 - i2" for comparison,
      * i1 - i2 = -500.000.000 - 2.000.000.000 and we may accept the result as "-2.500.000.000".
      * But the actual result is "1.794.967.296" because of overflow between
      * positive and negative integer bounds.
-     * <p/>
+     * <p>
      * So, if we use "i1 - i2" for comparison, since the result is greater than 0,
      * "i1" is accepted as bigger that "i2". But in fact "i1" is smaller than "i2".
      * Therefore, "i1 - i2" is not a good method for comparison between signed integers.

@@ -28,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
- * <p/>
+ * <p>
  * The original design exposed the actual Invocation class, but this will limit flexibility since
  * the whole invocation can't be changed or fully removed easily.
  */
@@ -109,7 +109,7 @@ public abstract class InvocationBuilder {
      * Checks if the Future should automatically deserialize the result. In most cases, you don't want
      * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
      * cases, you want to get the raw Data object.
-     * <p/>
+     * <p>
      * Defaults to true.
      *
      * @return true if the the result is automatically deserialized, false otherwise.

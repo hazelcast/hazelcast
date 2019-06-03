@@ -38,7 +38,7 @@ import static com.hazelcast.util.SetUtil.singletonPartitionIdSet;
 /**
  * Runs query operations in the calling thread (thus blocking it)
  * <p>
- * Used by query operations only: QueryOperation & QueryPartitionOperation
+ * Used by query operations only: QueryOperation &amp; QueryPartitionOperation
  * Should not be used by proxies or any other query related objects.
  */
 public class QueryRunner {

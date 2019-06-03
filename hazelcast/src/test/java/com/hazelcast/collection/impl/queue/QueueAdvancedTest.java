@@ -380,7 +380,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
     /**
      * Test case for issue 289.
-     * <p/>
+     * <p>
      * 1. Create HazelcastInstance h1 and h2, then get a queue from each (same queue name)
      * 2. Put a message on queue from h2
      * 3. Take a message off on queue from h1

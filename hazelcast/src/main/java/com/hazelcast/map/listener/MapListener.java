@@ -20,7 +20,7 @@ import java.util.EventListener;
 
 /**
  * A marker interface which is used to get notified upon a map or an entry event.
- * <p/>
+ * <p>
  * Specifically:
  * <ul>
  * <li>
@@ -32,7 +32,7 @@ import java.util.EventListener;
  * {@link com.hazelcast.core.EntryEventType#UPDATED}
  * </li>
  * </ul>
- * <p/>
+ * <p>
  * An implementer of this interface should extend one of the sub-interfaces of it
  * to receive a corresponding event.
  *

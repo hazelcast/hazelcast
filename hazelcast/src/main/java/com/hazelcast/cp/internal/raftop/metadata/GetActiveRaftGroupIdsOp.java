@@ -27,7 +27,7 @@ import java.io.IOException;
 
 /**
  * Returns ids of the active Raft groups.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetActiveRaftGroupIdsOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

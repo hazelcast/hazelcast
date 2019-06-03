@@ -25,21 +25,20 @@ import java.util.Map;
  * An EntryProcessor passes you a {@link java.util.Map.Entry}. At the time you receive it
  * the entry is locked and not released until the EntryProcessor completes.
  * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
- * <p/>
+ * <p>
  * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
  * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT}, then there is no de-serialization or serialization
  * cost.
- * <p/>
+ * <p>
  * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued.
- * <p/>
+ * <p>
  * While executing partition migrations are not allowed. Any migrations are queued on the partition thread.
- * <p/>
+ * <p>
  * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}. Limitation: you can only access
  * data on the same partition.
- * <p/>
+ * <p>
  * Note that to modify an entry by using EntryProcessors you should explicitly call the
  * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
- * <p/>
  * <pre>
  * <code>
  * {@literal}Override
@@ -53,7 +52,7 @@ import java.util.Map;
  * </code>
  * </pre>
  * otherwise EntryProcessor does not guarantee that it will modify the entry.
- *<p/>
+ *<p>
  * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely on threadlocals.
  *
