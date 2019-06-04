@@ -41,32 +41,42 @@ import java.util.concurrent.TimeUnit;
 /**
  * Concurrent, distributed, observable and queryable map.
  * <p>
- * <b>This class is <i>not</i> a general-purpose {@code ConcurrentMap} implementation! While this class implements
- * the {@code Map} interface, it intentionally violates {@code Map's} general contract, which mandates the
- * use of the {@code equals} method when comparing objects. Instead of the {@code equals} method, this
- * implementation compares the serialized byte version of the objects.</b>
+ * <b>This class is <i>not</i> a general-purpose {@code ConcurrentMap}
+ * implementation! While this class implements the {@code Map} interface,
+ * it intentionally violates {@code Map's} general contract, which mandates
+ * the use of the {@code equals} method when comparing objects. Instead of
+ * the {@code equals} method, this implementation compares the serialized
+ * byte version of the objects.</b>
  * <p>
- * <b>Moreover, stored values are handled as having a value type semantics, while standard Java implementations treat them
- * as having a reference type semantics.</b>
+ * <b>Moreover, stored values are handled as having a value type semantics,
+ * while standard Java implementations treat them as having a reference type
+ * semantics.</b>
  * <p>
  * <b>Gotchas:</b>
  * <ul>
- * <li>Methods, including but not limited to {@code get}, {@code containsKey}, {@code containsValue}, {@code evict},
- * {@code remove}, {@code put}, {@code putIfAbsent}, {@code replace}, {@code lock}, {@code unlock}, do not use
- * {@code hashCode} and {@code equals} implementations of keys. Instead, they use {@code hashCode} and {@code equals}
- * of binary (serialized) forms of the objects.</li>
- * <li>The {@code get} method returns a clone of original values, so modifying the returned value does not change
- * the actual value in the map. You should put the modified value back to make changes visible to all nodes.
+ * <li>Methods, including but not limited to {@code get}, {@code containsKey},
+ * {@code containsValue}, {@code evict}, {@code remove}, {@code put},
+ * {@code putIfAbsent}, {@code replace}, {@code lock}, {@code unlock}, do
+ * not use {@code hashCode} and {@code equals} implementations of keys.
+ * Instead, they use {@code hashCode} and {@code equals} of binary (serialized)
+ * forms of the objects.</li>
+ * <li>The {@code get} method returns a clone of original values, so modifying
+ * the returned value does not change the actual value in the map. You should
+ * put the modified value back to make changes visible to all nodes.
  * For additional info, see {@link IMap#get(Object)}.</li>
- * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return an <b>immutable</b>
- * collection clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b>
- * reflected in the collection.</li>
- * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
- * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
- * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
+ * <li>Methods, including but not limited to {@code keySet}, {@code values},
+ * {@code entrySet}, return an <b>immutable</b> collection clone of the values.
+ * The collection is <b>NOT</b> backed by the map, so changes to the map are
+ * <b>NOT</b> reflected in the collection.</li>
+ * <li>Since Hazelcast is compiled with Java 1.6, we can't override default
+ * methods introduced in later Java versions, nor can we add documentation
+ * to them. Methods, including but not limited to {@code computeIfPresent},
+ * may behave incorrectly if the value passed to the update function is
+ * modified in-place and returned as a result of the invocation.
  * You should create a new value instance and return it as a result.
  * <p>
- * For example, following code fragment will behave incorrectly and will enter an infinite loop:
+ * For example, following code fragment will behave incorrectly and will
+ * enter an infinite loop:
  * <pre>
  * map.computeIfPresent("key", (key, value) -&gt; {
  *     value.setSomeAttribute("newAttributeValue");
@@ -80,27 +90,34 @@ import java.util.concurrent.TimeUnit;
  * });
  * </pre>
  * </li>
- * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
- * the hood they are typically implemented as a sequence of more primitive map operations, therefore the operations won't
- * be executed atomically.</li>
+ * <li>Be careful while using default interface method implementations from
+ * {@link ConcurrentMap} and {@link Map}. Under the hood they are typically
+ * implemented as a sequence of more primitive map operations, therefore the
+ * operations won't be executed atomically.</li>
  * </ul>
  * <p>
- * This class does <em>not</em> allow {@code null} to be used as a key or value.
+ * This class does <em>not</em> allow {@code null} to be used as a key or
+ * value.
  * <p>
  * <b>Entry Processing</b>
  * <p>
- * The following operations are lock-aware, since they operate on a single key only.
- * If the key is locked, the EntryProcessor will wait until it acquires the lock.
+ * The following operations are lock-aware, since they operate on a single
+ * key only.
+ * If the key is locked, the EntryProcessor will wait until it acquires the
+ * lock.
  * <ul>
  * <li>{@link IMap#executeOnKey(Object, EntryProcessor)}</li>
  * <li>{@link IMap#submitToKey(Object, EntryProcessor)}</li>
  * <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)}</li>
  * </ul>
- * However, there are following methods that run the {@code EntryProcessor} on more than one entry.
+ * However, there are following methods that run the {@code EntryProcessor}
+ * on more than one entry.
  * These operations are not lock-aware.
- * The {@code EntryProcessor} will process the entries no matter if they are locked or not.
- * The user may however check if an entry is locked by casting the {@link java.util.Map.Entry} to
- * {@link LockAware} and invoking the {@link LockAware#isLocked()} method.
+ * The {@code EntryProcessor} will process the entries no matter if they
+ * are locked or not.
+ * The user may however check if an entry is locked by casting the
+ * {@link Map.Entry} to {@link LockAware} and invoking the
+ * {@link LockAware#isLocked()} method.
  * <ul>
  * <li>{@link IMap#executeOnEntries(EntryProcessor)}</li>
  * <li>{@link IMap#executeOnEntries(EntryProcessor, Predicate)}</li>
@@ -111,80 +128,102 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * <b>Split-brain</b>
  * <p>
- * Behaviour of {@link IMap} under split-brain scenarios should be taken into account when using this
- * data structure.  During a split, each partitioned cluster will either create a brand new {@link IMap}
- * or it will continue to use the primary or back-up version.
+ * Behaviour of {@link IMap} under split-brain scenarios should be taken
+ * into account when using this data structure.  During a split, each
+ * partitioned cluster will either create a brand new {@link IMap} or it
+ * will continue to use the primary or back-up version.
  * <p>
- * When the split heals, Hazelcast by default, performs a {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
+ * When the split heals, Hazelcast by default, performs a
+ * {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
  * Users can also decide to
  * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
- * specify their own map merge policies</a>, these policies when used in concert with
+ * specify their own map merge policies</a>, these policies when used in
+ * concert with
  * <a href="http://hal.upmc.fr/inria-00555588/document">CRDTs (Convergent and Commutative
  * Replicated Data Types)</a> can ensure against data loss during a split-brain.
  * <p>
- * As a defensive mechanism against such inconsistency, consider using the in-built
+ * As a defensive mechanism against such inconsistency, consider using the
+ * in-built
  * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection">
- * split-brain protection for {@link IMap}</a>.  Using this functionality it is possible to restrict operations in smaller
- * partitioned clusters. It should be noted that there is still an inconsistency window between the time of
- * the split and the actual detection. Therefore using this reduces the window of inconsistency but can never
- * completely eliminate it.
+ * split-brain protection for {@link IMap}</a>.  Using this functionality
+ * it is possible to restrict operations in smaller partitioned clusters.
+ * It should be noted that there is still an inconsistency window between
+ * the time of the split and the actual detection. Therefore using this
+ * reduces the window of inconsistency but can never completely eliminate
+ * it.
  *
  * <p><b>Interactions with the map store</b>
  * <p>
- * Maps can be configured to be backed by a map store to persist the
- * entries. In this case many of the IMap methods call {@link MapLoader} or
+ * Maps can be configured to be backed by a map store to persist the entries.
+ * In this case many of the IMap methods call {@link MapLoader} or
  * {@link MapStore} methods to load, store or remove data. Each method's
  * javadoc describes the way of its interaction with the map store.
  *
  * <p><b>Expiration and eviction</b>
  * <p>
- * Expiration puts a limit on the maximum lifetime of an entry stored inside the map. When the entry expires
- * it can't be retrieved from the map any longer and at some point in time it will be cleaned out from the map
+ * Expiration puts a limit on the maximum lifetime of an entry stored
+ * inside the map. When the entry expires it can't be retrieved from the map
+ * any longer and at some point in time it will be cleaned out from the map
  * to free up the memory. There are two expiration policies:
  * <ul>
- * <li>The time-to-live (TTL) expiration policy limits the lifetime of the entry relative to the time of the last
- * <i>write</i> access performed on the entry. The default TTL value for the map may be configured using the
- * {@code time-to-live-seconds} setting, which has an infinite by default. An individual entry may have its own TTL
- * value assigned using one of the methods accepting a TTL value, for instance using the
- * {@link #put(Object, Object, long, TimeUnit) put} method. If there is no TTL value provided for the individual
- * entry, it inherits the value set in the map configuration.
- * <li>The max-idle expiration policy limits the lifetime of the entry relative to the time of the last <i>read</i> or
- * <i>write</i> access performed on the entry. The max-idle value for the map may be configured using the
- * {@code max-idle-seconds} setting, which has an infinite value by default.
+ * <li>The time-to-live (TTL) expiration policy limits the lifetime of the
+ * entry relative to the time of the last <i>write</i> access performed on
+ * the entry. The default TTL value for the map may be configured using
+ * the {@code time-to-live-seconds} setting, which has an infinite by default.
+ * An individual entry may have its own TTL value assigned using one of the
+ * methods accepting a TTL value, for instance using the
+ * {@link #put(Object, Object, long, TimeUnit) put} method. If there is no
+ * TTL value provided for the individual entry, it inherits the value set
+ * in the map configuration.
+ * <li>The max-idle expiration policy limits the lifetime of the entry
+ * relative to the time of the last <i>read</i> or <i>write</i> access
+ * performed on the entry. The max-idle value for the map may be configured
+ * using the {@code max-idle-seconds} setting, which has an infinite value
+ * by default.
  * </ul>
  * <p>
- * Both expiration policies may be used simultaneously on the map entries. In such case, the entry is considered expired
- * if at least one of the policies marks it as expired.
+ * Both expiration policies may be used simultaneously on the map entries.
+ * In such case, the entry is considered expired if at least one of the
+ * policies marks it as expired.
  * <p>
- * Eviction puts a limit on the maximum size of the map. If the size of the map grows larger than the maximum allowed
- * size, an eviction policy decides which item to evict from the map to reduce its size. The maximum allowed size may
- * be configured using the {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy max-size} setting and the eviction
- * policy may be configured using the {@link com.hazelcast.config.EvictionPolicy eviction-policy} setting as well.
- * By default, maps have no restrictions on the size and may grow arbitrarily large.
+ * Eviction puts a limit on the maximum size of the map. If the size of the
+ * map grows larger than the maximum allowed size, an eviction policy decides
+ * which item to evict from the map to reduce its size. The maximum allowed
+ * size may be configured using the
+ * {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy max-size} setting
+ * and the eviction policy may be configured using the
+ * {@link com.hazelcast.config.EvictionPolicy eviction-policy} setting as well.
+ * By default, maps have no restrictions on the size and may grow arbitrarily
+ * large.
  * <p>
- * Eviction may be enabled along with the expiration policies. In such case, the expiration policies continue to work
- * as usual cleaning out the expired entries regardless of the map size.
+ * Eviction may be enabled along with the expiration policies. In such case,
+ * the expiration policies continue to work as usual cleaning out the expired
+ * entries regardless of the map size.
  * <p>
- * Locked map entries are not the subjects for the expiration and eviction policies.
+ * Locked map entries are not the subjects for the expiration and eviction
+ * policies.
  *
  * <p><b>Mutating methods without TTL</b>
  * <p>
- * Certain {@link IMap} methods perform the entry set mutation and don't accept TTL as a parameter. Entries
- * created or updated by such methods are subjects for the following TTL calculation procedure:
+ * Certain {@link IMap} methods perform the entry set mutation and don't
+ * accept TTL as a parameter. Entries created or updated by such methods are
+ * subjects for the following TTL calculation procedure:
  * <ul>
- * <li>If the entry is new, i.e. the entry was created, it receives the default TTL value configured for
- * the map using the {@code time-to-live-seconds} configuration setting. If this setting is not provided for
- * the map, the entry receives an infinite TTL value.
- * <li>If the entry already exists, i.e. the entry was updated, its TTL value remains unchanged and its
- * lifetime is prolonged by this TTL value.
+ * <li>If the entry is new, i.e. the entry was created, it receives the default
+ * TTL value configured for the map using the {@code time-to-live-seconds}
+ * configuration setting. If this setting is not provided for the map, the
+ * entry receives an infinite TTL value.
+ * <li>If the entry already exists, i.e. the entry was updated, its TTL value
+ * remains unchanged and its lifetime is prolonged by this TTL value.
  * </ul>
- * The methods to which this procedure applies: {@link #put(Object, Object) put}, {@link #set(Object, Object) set},
- * {@link #putAsync(Object, Object) putAsync}, {@link #setAsync(Object, Object) setAsync},
+ * The methods to which this procedure applies: {@link #put(Object, Object) put},
+ * {@link #set(Object, Object) set}, {@link #putAsync(Object, Object) putAsync},
+ * {@link #setAsync(Object, Object) setAsync},
  * {@link #tryPut(Object, Object, long, TimeUnit) tryPut}, {@link #putAll(Map) putAll},
  * {@link #replace(Object, Object, Object)} and {@link #replace(Object, Object)}.
  *
- * @param <K> key
- * @param <V> value
+ * @param <K> key type
+ * @param <V> value type
  * @see java.util.concurrent.ConcurrentMap
  */
 public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
@@ -219,15 +258,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    void putAll(Map<? extends K, ? extends V> m);
+    void putAll(@Nonnull Map<? extends K, ? extends V> m);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of the {@code key},
-     * not the actual implementations of {@code hashCode} and {@code equals} defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -236,24 +276,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the map store backing the map. Exceptions thrown by load fail
      * the operation and are propagated to the caller.
      *
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean containsKey(Object key);
+    boolean containsKey(@Nonnull Object key);
 
     /**
      * {@inheritDoc}
      *
-     * @throws NullPointerException if the specified value is null
+     * @throws NullPointerException if the specified value is {@code null}
      */
-    boolean containsValue(Object value);
+    boolean containsValue(@Nonnull Object value);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method returns a clone of the original value, so modifying the returned value does not change
-     * the actual value in the map. You should put the modified value back to make changes visible to all nodes.
+     * This method returns a clone of the original value, so modifying the returned
+     * value does not change the actual value in the map. You should put the
+     * modified value back to make changes visible to all nodes.
      * <pre>
      *      V value = map.get(key);
      *      value.updateSomeProperty();
@@ -262,9 +303,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -273,17 +314,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the map store backing the map. Exceptions thrown by load fail
      * the operation and are propagated to the caller.
      *
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    V get(Object key);
+    V get(@Nonnull Object key);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -291,7 +332,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
      * <p><b>Note:</b>
-     * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
+     * Use {@link #set(Object, Object)} if you don't need the return value, it's
+     * slightly more efficient.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -313,24 +355,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @throws NullPointerException if the specified key or value is null
      */
-    V put(K key, V value);
+    V put(@Nonnull K key, @Nonnull V value);
 
     /**
      * Removes the mapping for a key from this map if it is present.
      * <p>
-     * If you don't need the previously mapped value for the removed key, prefer to use
-     * {@link #delete} and avoid the cost of serialization and network transfer.
+     * If you don't need the previously mapped value for the removed key, prefer
+     * to use {@link #delete} and avoid the cost of serialization and network
+     * transfer.
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -353,16 +396,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      * @see #delete(Object)
      */
-    V remove(Object key);
+    V remove(@Nonnull Object key);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -384,7 +427,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @throws NullPointerException if the specified key or value is null
      */
-    boolean remove(Object key, Object value);
+    boolean remove(@Nonnull Object key, @Nonnull Object value);
 
     /**
      * Removes all entries which match with the supplied predicate.
@@ -411,7 +454,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                  from this map
      * @throws NullPointerException if the specified predicate is null
      */
-    void removeAll(Predicate<K, V> predicate);
+    void removeAll(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Removes the mapping for the key from this map if it is present.
@@ -449,7 +492,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      * @see #remove(Object)
      */
-    void delete(Object key);
+    void delete(@Nonnull Object key);
 
     /**
      * If this map has a MapStore, this method flushes
@@ -478,10 +521,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the
-     * binary form of the {@code keys}, not the actual implementations
-     * of {@code hashCode} and {@code equals} defined in the
-     * {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code keys}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -494,7 +536,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return an immutable map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
-    Map<K, V> getAll(Set<K> keys);
+    Map<K, V> getAll(@Nullable Set<K> keys);
 
     /**
      * Loads all keys into the store. This is a batch load operation so
@@ -510,7 +552,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param replaceExistingValues when {@code true}, existing values
      *                              in the Map will be replaced by those
      *                              loaded from the MapLoader
-     *                              {@link #loadAll(boolean)}
      * @since 3.3
      */
     void loadAll(boolean replaceExistingValues);
@@ -530,7 +571,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                              be replaced by those loaded from the MapLoader
      * @since 3.3
      */
-    void loadAll(Set<K> keys, boolean replaceExistingValues);
+    void loadAll(@Nonnull Set<K> keys, boolean replaceExistingValues);
 
     /**
      * Clears the map and deletes the items from the backing map store.
@@ -591,9 +632,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -607,7 +648,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      * @see ICompletableFuture
      */
-    ICompletableFuture<V> getAsync(K key);
+    ICompletableFuture<V> getAsync(@Nonnull K key);
 
     /**
      * Asynchronously puts the given key and value.
@@ -678,7 +719,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ICompletableFuture
      * @see #setAsync(Object, Object)
      */
-    ICompletableFuture<V> putAsync(K key, V value);
+    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value);
 
     /**
      * Asynchronously puts the given key and value into this map with a given TTL (time to live) value.
@@ -722,9 +763,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -760,19 +801,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ICompletableFuture
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
-    ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit);
+    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Asynchronously puts the given key and value into this map with a given TTL (time to live) value and max idle time value.
+     * Asynchronously puts the given key and value into this map with a given
+     * TTL (time to live) value and max idle time value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used (default: forever).
+     * The time precision is limited by 1 second. The MaxIdle that less than 1
+     * second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when ready get the result
@@ -809,16 +852,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      * <p><b>Note:</b>
-     * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
-     * more efficient.
+     * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need
+     * the return value, it's slightly more efficient.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -840,17 +883,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key         the key of the map entry
      * @param value       the new value of the map entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return ICompletableFuture from which the old value of the key can be retrieved
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
      * @see ICompletableFuture
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
-    ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value,
+                                   long ttl, @Nonnull TimeUnit ttlUnit,
+                                   long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Asynchronously puts the given key and value.
@@ -892,9 +938,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -911,12 +957,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key   the key of the map entry
      * @param value the new value of the map entry
-     * @return ICompletableFuture on which to block waiting for the operation to complete or
-     * register an {@link ExecutionCallback} to be invoked upon completion
+     * @return ICompletableFuture on which client code can block waiting for the
+     * operation to complete or provide an {@link ExecutionCallback} to be invoked
+     * upon set operation completion
      * @throws NullPointerException if the specified key or value is null
      * @see ICompletableFuture
      */
-    ICompletableFuture<Void> setAsync(K key, V value);
+    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value);
 
     /**
      * Asynchronously puts an entry into this map with a given TTL (time to live) value,
@@ -960,9 +1007,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -983,34 +1030,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key     the key of the map entry
      * @param value   the new value of the map entry
-     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
+     *                means map config default)
      * @param ttlUnit time unit for the TTL
-     * @return ICompletableFuture on which client code can block waiting for the operation to complete
-     * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
+     * @return ICompletableFuture on which client code can block waiting for the
+     * operation to complete or provide an {@link ExecutionCallback} to be invoked
+     * upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit
      * @see ICompletableFuture
      */
-    ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit);
+    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Asynchronously puts an entry into this map with a given TTL (time to live) value and max idle time value.
-     * without returning the old value (which is more efficient than {@code put()}).
+     * Asynchronously puts an entry into this map with a given TTL (time to live)
+     * value and max idle time value without returning the old value
+     * (which is more efficient than {@code put()}).
      * <p>
-     * The entry will expire and get evicted after the TTL. If the TTL is 0,
-     * then the entry lives forever. If the TTL is negative, then the TTL
-     * from the map configuration will be used (default: forever).
+     * The entry will expire and get evicted after the TTL. If the TTL is 0, then
+     * the entry lives forever. If the TTL is negative, then the TTL from the
+     * map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used (default: forever).
+     * The time precision is limited by 1 second. The MaxIdle that less than 1
+     * second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
      *   future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map set operation completes.
-     * If your application requires a timely response,
+     * ICompletableFuture.get() will block until the actual map set operation
+     * completes. If your application requires a timely response,
      * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
      * <pre>
      *   try {
@@ -1021,7 +1072,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *   }
      * </pre>
      * You can also schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * completion of the {@code ICompletableFuture} via
+     * {@link ICompletableFuture#andThen(ExecutionCallback)} or
      * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
@@ -1039,13 +1091,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * the next closest second value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1062,28 +1115,33 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key         the key of the map entry
      * @param value       the new value of the map entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @return ICompletableFuture on which client code can block waiting for the operation to complete
-     * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @return ICompletableFuture on which client code can block waiting for the
+     * operation to complete or provide an {@link ExecutionCallback} to be invoked
+     * upon set operation completion
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
      * @see ICompletableFuture
      */
-    ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value,
+                                      long ttl, @Nonnull TimeUnit ttlUnit,
+                                      long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
-     * Asynchronously removes the given key, returning an {@link ICompletableFuture} on which
-     * the caller can provide an {@link ExecutionCallback} to be invoked upon remove operation
-     * completion or block waiting for the operation to complete with {@link ICompletableFuture#get()}.
+     * Asynchronously removes the given key, returning an {@link ICompletableFuture}
+     * on which the caller can provide an {@link ExecutionCallback} to be invoked
+     * upon remove operation completion or block waiting for the operation to
+     * complete with {@link ICompletableFuture#get()}.
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1101,10 +1159,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key The key of the map entry to remove
      * @return {@link ICompletableFuture} from which the value removed from the map can be retrieved
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      * @see ICompletableFuture
      */
-    ICompletableFuture<V> removeAsync(K key);
+    ICompletableFuture<V> removeAsync(@Nonnull K key);
 
     /**
      * Tries to remove the entry with the given key from this map
@@ -1114,9 +1172,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1136,9 +1194,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeout  maximum time to wait for acquiring the lock for the key
      * @param timeunit time unit for the timeout
      * @return {@code true} if the remove is successful, {@code false} otherwise
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryRemove(K key, long timeout, TimeUnit timeunit);
+    boolean tryRemove(@Nonnull K key, long timeout, @Nonnull TimeUnit timeunit);
 
     /**
      * Tries to put the given key and value into this map within a specified
@@ -1148,9 +1206,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1175,9 +1233,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeout  maximum time to wait
      * @param timeunit time unit for the timeout
      * @return {@code true} if the put is successful, {@code false} otherwise
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    boolean tryPut(K key, V value, long timeout, TimeUnit timeunit);
+    boolean tryPut(@Nonnull K key, @Nonnull V value,
+                   long timeout, @Nonnull TimeUnit timeunit);
 
     /**
      * Puts an entry into this map with a given TTL (time to live) value.
@@ -1188,20 +1247,23 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      * <p>
      * <b>Warning 3:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to the
+     * next closest second value.
      * <p><b>Note:</b>
-     * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
+     * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the
+     * return value, it's slightly more efficient.
+     *
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1222,30 +1284,34 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key     key of the entry
      * @param value   value of the entry
-     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
+     *                means map config default)
      * @param ttlUnit time unit for the TTL
      * @return old value of the entry
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    V put(K key, V value, long ttl, TimeUnit ttlUnit);
+    V put(@Nonnull K key, @Nonnull V value,
+          long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
+     * Puts an entry into this map with a given TTL (time to live) value and
+     * max idle time value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used (default: forever).
+     * The time precision is limited by 1 second. A MaxIdle which is less than
+     * 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -1256,7 +1322,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      * <p><b>Note:</b>
-     * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
+     * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the
+     * return value, it's slightly more efficient.
+     *
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1277,15 +1345,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key         key of the entry
      * @param value       value of the entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
      */
-    V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    V put(@Nonnull K key, @Nonnull V value,
+          long ttl, @Nonnull TimeUnit ttlUnit,
+          long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Same as {@link #put(Object, Object, long, TimeUnit)}
@@ -1298,68 +1369,75 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * next closest second value.
      *
      * @param key     key of the entry
      * @param value   value of the entry
-     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
+     *                means map config default)
      * @param ttlUnit time unit for the TTL
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    void putTransient(K key, V value, long ttl, TimeUnit ttlUnit);
+    void putTransient(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Same as {@link #put(Object, Object, long, TimeUnit)}
-     * except that the map store, if defined, will not be called to
-     * load/store/persist the entry.
+     * Same as {@link #put(Object, Object, long, TimeUnit)} except that the map
+     * store, if defined, will not be called to load/store/persist the entry.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used (default: forever).
+     * The time precision is limited by 1 second. The MaxIdle that less than 1
+     * second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * next closest second value.
      *
      * @param key         key of the entry
      * @param value       value of the entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @throws NullPointerException if the specified {@code key}, {@code value}, {@code ttlUnit} or
+     *                              {@code maxIdleUnit} are {@code null}
      */
-    void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    void putTransient(@Nonnull K key, @Nonnull V value,
+                      long ttl, @Nonnull TimeUnit ttlUnit,
+                      long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Note:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
-     * Also, this method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * Also, this method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1380,9 +1458,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * capacity.
      *
      * @return a clone of the previous value
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified {@code key} or {@code value}
+     *                              is {@code null}
      */
-    V putIfAbsent(K key, V value);
+    V putIfAbsent(@Nonnull K key, @Nonnull V value);
 
     /**
      * Puts an entry into this map with a given TTL (time to live) value,
@@ -1394,18 +1473,19 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      * <p>
      * <b>Warning 3:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * the next closest second value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1427,40 +1507,45 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key     key of the entry
      * @param value   value of the entry
-     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
+     *                means map config default)
      * @param ttlUnit time unit for the TTL
      * @return old value of the entry
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified {@code key} or {@code value}
+     *                              is {@code null}
      */
-    V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit);
+    V putIfAbsent(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
+     * Puts an entry into this map with a given TTL (time to live) value and
+     * max idle time value.
      * if the specified key is not already associated with a value.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used (default: forever).
+     * The time precision is limited by 1 second. The MaxIdle that less than
+     * 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     * This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.
      * <p>
      * <b>Warning 3:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to the
+     * next closest second value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1482,63 +1567,65 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key         key of the entry
      * @param value       value of the entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @throws NullPointerException if the specified {@code key}, {@code value}, {@code ttlUnit} or
+     *                              {@code maxIdleUnit} are {@code null}
      */
-    V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    V putIfAbsent(@Nonnull K key, @Nonnull V value,
+                  long ttl, @Nonnull TimeUnit ttlUnit,
+                  long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the
-     * binary form of the {@code key}, not the actual implementations of
-     * {@code hashCode} and {@code equals} defined in the {@code key}'s
-     * class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
      * This method may return {@code false} even if the operation succeeds.<br>
-     * Background: If the partition owner for given key goes down after successful value replace, but before the executing node
-     * retrieved the invocation result response, then the operation is retried. The invocation
-     * retry fails because the value is already updated and the result of such replace call
+     * Background: If the partition owner for given key goes down after successful
+     * value replace, but before the executing node retrieved the invocation
+     * result response, then the operation is retried. The invocation retry fails
+     * because the value is already updated and the result of such replace call
      * returns {@code false}. Hazelcast doesn't guarantee exactly once invocation.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
      * If value with {@code key} is not found in memory,
-     * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map.
+     * {@link MapLoader#load(Object)} is invoked to load the value from the map
+     * store backing the map.
      * <p>
-     * If write-through persistence mode is configured, before the value
-     * is stored in memory, {@link MapStore#store(Object, Object)} is
-     * called to write the value into the map store. Exceptions thrown
-     * by the store fail the operation and are propagated to the caller.
+     * If write-through persistence mode is configured, before the value is
+     * stored in memory, {@link MapStore#store(Object, Object)} is called to
+     * write the value into the map store. Exceptions thrown by the store fail
+     * the operation and are propagated to the caller.
      * <p>
-     * If write-behind persistence mode is configured with
-     * write-coalescing turned off,
-     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
-     * if the write-behind queue has reached its per-node maximum
-     * capacity.
+     * If write-behind persistence mode is configured with write-coalescing
+     * turned off, {@link com.hazelcast.map.ReachedMaxSizeException} may be
+     * thrown if the write-behind queue has reached its per-node maximum capacity.
      *
-     * @throws NullPointerException if any of the specified parameters are null
+     * @throws NullPointerException if any of the specified parameters are {@code null}
      */
-    boolean replace(K key, V oldValue, V newValue);
+    boolean replace(@Nonnull K key, @Nonnull V oldValue, @Nonnull V newValue);
 
     /**
      * {@inheritDoc}
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -1562,9 +1649,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    V replace(K key, V value);
+    V replace(@Nonnull K key, @Nonnull V value);
 
     /**
      * Puts an entry into this map without returning the old value
@@ -1577,9 +1664,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1596,9 +1683,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key   key of the entry
      * @param value value of the entry
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    void set(K key, V value);
+    void set(@Nonnull K key, @Nonnull V value);
 
     /**
      * Puts an entry into this map with a given TTL (time to live) value,
@@ -1610,13 +1697,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to the
+     * next closest second value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1633,34 +1721,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key     key of the entry
      * @param value   value of the entry
-     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
+     *                means map config default)
      * @param ttlUnit time unit for the TTL
-     * @throws NullPointerException if the specified key or value is null
+     * @throws NullPointerException if the specified key or value is {@code null}
      */
-    void set(K key, V value, long ttl, TimeUnit ttlUnit);
+    void set(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
-     * Puts an entry into this map with a given TTL (time to live) value and max idle time value.
-     * without returning the old value (which is more efficient than {@code put()}).
+     * Puts an entry into this map with a given TTL (time to live) value and
+     * max idle time value without returning the old value (which is more
+     * efficient than {@code put()}).
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * The entry will expire and get evicted after the Max Idle time. If the
+     * MaxIdle is 0, then the entry lives forever. If the MaxIdle is negative,
+     * then the MaxIdle from the map configuration will be used
+     * (default: forever). The time precision is limited by 1 second. The MaxIdle
+     * that less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * the next closest second value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1677,14 +1769,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key         key of the entry
      * @param value       value of the entry
-     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl         maximum time for this entry to stay in the map (0 means infinite, negative
+     *                    means map config default)
      * @param ttlUnit     time unit for the TTL
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
+     * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
      */
-    void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+    void set(@Nonnull K key, @Nonnull V value,
+             long ttl, @Nonnull TimeUnit ttlUnit,
+             long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Acquires the lock for the specified key.
@@ -1716,9 +1811,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in the {@code key}'s class.
      *
      * @param key key to lock
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    void lock(K key);
+    void lock(@Nonnull K key);
 
     /**
      * Acquires the lock for the specified key for the specified lease time.
@@ -1744,9 +1839,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key       the key to lock
      * @param leaseTime time to wait before releasing the lock
      * @param timeUnit  unit of time to specify lease time
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException     if the specified key is {@code null}
+     * @throws IllegalArgumentException if the leaseTime is not positive
      */
-    void lock(K key, long leaseTime, TimeUnit timeUnit);
+    void lock(@Nonnull K key, long leaseTime, @Nullable TimeUnit timeUnit);
 
     /**
      * Checks the lock for the specified key.
@@ -1761,9 +1857,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key the key that is checked for lock
      * @return {@code true} if lock is acquired, {@code false} otherwise
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean isLocked(K key);
+    boolean isLocked(@Nonnull K key);
 
     /**
      * Tries to acquire the lock for the specified key.
@@ -1779,9 +1875,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key the key to lock
      * @return {@code true} if lock is acquired, {@code false} otherwise
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key);
+    boolean tryLock(@Nonnull K key);
 
     /**
      * Tries to acquire the lock for the specified key.
@@ -1803,11 +1899,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key      key to lock in this map
      * @param time     maximum time to wait for the lock
      * @param timeunit time unit of the {@code time} argument
-     * @return {@code true} if the lock was acquired, {@code false} if the waiting time elapsed before the lock was acquired
-     * @throws NullPointerException if the specified key is null
+     * @return {@code true} if the lock was acquired, {@code false} if the waiting time
+     * elapsed before the lock was acquired
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit)
-            throws InterruptedException;
+    boolean tryLock(@Nonnull K key, long time, @Nullable TimeUnit timeunit) throws InterruptedException;
 
     /**
      * Tries to acquire the lock for the specified key for the specified lease time.
@@ -1833,10 +1929,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeunit      time unit of the {@code time} argument
      * @param leaseTime     time to wait before releasing the lock
      * @param leaseTimeunit unit of time to specify lease time
-     * @return {@code true} if the lock was acquired, {@code false} if the waiting time elapsed before the lock was acquired
-     * @throws NullPointerException if the specified key is null
+     * @return {@code true} if the lock was acquired, {@code false} if the waiting time
+     * elapsed before the lock was acquired
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeunit)
+    boolean tryLock(K key,
+                    long time, @Nullable TimeUnit timeunit,
+                    long leaseTime, @Nullable TimeUnit leaseTimeunit)
             throws InterruptedException;
 
     /**
@@ -1855,10 +1954,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in the {@code key}'s class.
      *
      * @param key the key to unlock
-     * @throws NullPointerException         if the specified key is null
+     * @throws NullPointerException         if the specified key is {@code null}
      * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
-    void unlock(K key);
+    void unlock(@Nonnull K key);
 
     /**
      * Releases the lock for the specified key regardless of the lock owner.
@@ -1872,9 +1971,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in the {@code key}'s class.
      *
      * @param key the key to unlock
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      */
-    void forceUnlock(K key);
+    void forceUnlock(@Nonnull K key);
 
     /**
      * Adds a {@link MapListener} for this map. To receive an event, you should
@@ -1893,11 +1992,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener {@link MapListener} for this map
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
      * @throws UnsupportedOperationException if this operation is not supported, for example on a Hazelcast client
-     * @throws NullPointerException          if the listener is null
+     * @throws NullPointerException          if the listener is {@code null}
      * @see #localKeySet()
      * @see MapListener
      */
-    String addLocalEntryListener(MapListener listener);
+    String addLocalEntryListener(@Nonnull MapListener listener);
 
     /**
      * Adds a local entry listener for this map. The added listener will only be
@@ -1916,16 +2015,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener entry listener
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
      * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
-     * @throws NullPointerException          if the listener is null
+     * @throws NullPointerException          if the listener is {@code null}
      * @see #localKeySet()
      * @deprecated please use {@link #addLocalEntryListener(MapListener)} instead
      */
-    String addLocalEntryListener(EntryListener listener);
+    String addLocalEntryListener(@Nonnull EntryListener listener);
 
     /**
      * Adds a {@link MapListener} for this map.
      * <p>
-     * To receive an event, you should implement a corresponding {@link MapListener} sub-interface for that event.
+     * To receive an event, you should implement a corresponding {@link MapListener}
+     * sub-interface for that event.
      * The listener will get notified for map events filtered by the given predicate.
      *
      * @param listener     {@link MapListener} for this map
@@ -1933,61 +2033,76 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
      * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
-     * @throws NullPointerException          if the listener is null
-     * @throws NullPointerException          if the predicate is null
+     * @throws NullPointerException          if the {@code listener} or {@code predicate} is {@code null}
      * @see MapListener
      */
-    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addLocalEntryListener(@Nonnull MapListener listener,
+                                 @Nonnull Predicate<K, V> predicate,
+                                 boolean includeValue);
 
     /**
      * Adds a local entry listener for this map.
      * <p>
-     * The added listener will only be listening for the events (add/remove/update/evict) of the locally owned entries.
-     * The listener will get notified for map add/remove/update/evict events filtered by the given predicate.
+     * The added listener will only be listening for the events
+     * (add/remove/update/evict) of the locally owned entries.
+     * The listener will get notified for map add/remove/update/evict events
+     * filtered by the given predicate.
      *
      * @param listener     entry listener
      * @param predicate    predicate for filtering entries
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is null
-     * @throws NullPointerException if the predicate is null
+     * @throws NullPointerException if the listener is {@code null}
+     * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addLocalEntryListener(@Nonnull EntryListener listener,
+                                 @Nonnull Predicate<K, V> predicate,
+                                 boolean includeValue);
 
     /**
      * Adds a local entry listener for this map.
      * <p>
-     * The added listener will only be listening for the events (add/remove/update/evict) of the locally owned entries.
-     * The listener will get notified for map add/remove/update/evict events filtered by the given predicate.
+     * The added listener will only be listening for the events
+     * (add/remove/update/evict) of the locally owned entries.
+     * The listener will get notified for map add/remove/update/evict events
+     * filtered by the given predicate.
      *
      * @param listener     {@link MapListener} for this map
      * @param predicate    predicate for filtering entries
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is null
-     * @throws NullPointerException if the predicate is null
+     * @throws NullPointerException if the listener is {@code null}
+     * @throws NullPointerException if the predicate is {@code null}
      * @see MapListener
      */
-    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addLocalEntryListener(@Nonnull MapListener listener,
+                                 @Nonnull Predicate<K, V> predicate,
+                                 K key,
+                                 boolean includeValue);
 
     /**
      * Adds a local entry listener for this map.
      * <p>
-     * The added listener will only be listening for the events (add/remove/update/evict) of the locally owned entries.
-     * The listener will get notified for map add/remove/update/evict events filtered by the given predicate.
+     * The added listener will only be listening for the events
+     * (add/remove/update/evict) of the locally owned entries.
+     * The listener will get notified for map add/remove/update/evict events
+     * filtered by the given predicate.
      *
      * @param listener     entry listener
      * @param predicate    predicate for filtering entries
      * @param key          key to listen fo
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is null
-     * @throws NullPointerException if the predicate is null
+     * @throws NullPointerException if the listener is {@code null}
+     * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addLocalEntryListener(@Nonnull EntryListener listener,
+                                 @Nonnull Predicate<K, V> predicate,
+                                 K key,
+                                 boolean includeValue);
 
     /**
      * Adds an interceptor for this map.
@@ -1998,7 +2113,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param interceptor map interceptor
      * @return ID of registered interceptor
      */
-    String addInterceptor(MapInterceptor interceptor);
+    String addInterceptor(@Nonnull MapInterceptor interceptor);
 
     /**
      * Removes the given interceptor for this map,
@@ -2007,20 +2122,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param id registration ID of the map interceptor
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeInterceptor(String id);
+    boolean removeInterceptor(@Nonnull String id);
 
     /**
      * Adds a {@link MapListener} for this map.
      * <p>
-     * To receive an event, you should implement a corresponding {@link MapListener} sub-interface for that event.
+     * To receive an event, you should implement a corresponding {@link MapListener}
+     * sub-interface for that event.
      *
      * @param listener     {@link MapListener} for this map
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
+     * @throws NullPointerException if the specified listener is {@code null}
      * @see MapListener
      */
-    String addEntryListener(MapListener listener, boolean includeValue);
+    String addEntryListener(@Nonnull MapListener listener, boolean includeValue);
 
     /**
      * Adds an entry listener for this map.
@@ -2030,10 +2146,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener     the added entry listener for this map
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
+     * @throws NullPointerException if the specified listener is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, boolean)} instead
      */
-    String addEntryListener(EntryListener listener, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -2043,15 +2159,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param id ID of registered listener
      * @return true if registration is removed, false otherwise
      */
-    boolean removeEntryListener(String id);
+    boolean removeEntryListener(@Nonnull String id);
 
     /**
      * Adds a MapPartitionLostListener.
      * <p>
-     * The addPartitionLostListener returns a register ID. This ID is needed to remove the MapPartitionLostListener using the
+     * The method returns a register ID. This ID is needed to remove the
+     * {@link MapPartitionLostListener} using the
      * {@link #removePartitionLostListener(String)} method.
      * <p>
-     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * There is no check for duplicate registrations, so if you register the
+     * listener twice, you will receive events twice.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -2059,15 +2177,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * <b>Warning 2:</b>
      * <p>
-     * Listeners registered from HazelcastClient may miss some of the map partition lost events due to design limitations.
+     * Listeners registered from HazelcastClient may miss some of the map
+     * partition lost events due to design limitations.
      *
      * @param listener the added MapPartitionLostListener
      * @return returns the registration ID for the MapPartitionLostListener
-     * @throws java.lang.NullPointerException if listener is null
+     * @throws java.lang.NullPointerException if listener is {@code null}
      * @see #removePartitionLostListener(String)
      * @see com.hazelcast.partition.PartitionLostListener
      */
-    String addPartitionLostListener(MapPartitionLostListener listener);
+    String addPartitionLostListener(@Nonnull MapPartitionLostListener listener);
 
     /**
      * Removes the specified map partition lost listener.
@@ -2076,8 +2195,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param id ID of registered listener
      * @return true if registration is removed, false otherwise
+     * @throws NullPointerException if {@code id} is {@code null}
      */
-    boolean removePartitionLostListener(String id);
+    boolean removePartitionLostListener(@Nonnull String id);
 
     /**
      * Adds a {@link MapListener} for this map. To receive an event, you should
@@ -2093,16 +2213,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified listener is {@code null}
+     * @throws NullPointerException if the specified key is {@code null}
      * @see MapListener
      */
-    String addEntryListener(MapListener listener, K key, boolean includeValue);
+    String addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue);
 
     /**
      * Adds the specified entry listener for the specified key.
      * <p>
-     * The listener will get notified for all add/remove/update/evict events of the specified key only.
+     * The listener will get notified for all add/remove/update/evict events of
+     * the specified key only.
      * <p>
      * <b>Warning:</b>
      * <p>
@@ -2114,26 +2235,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified listener is {@code null}
+     * @throws NullPointerException if the specified key is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, Object, boolean)} instead
      */
-    String addEntryListener(EntryListener listener, K key, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener listener, @Nonnull K key, boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
      * <p>
-     * To receive an event, you should implement a corresponding {@link MapListener} sub-interface for that event.
+     * To receive an event, you should implement a corresponding {@link MapListener}
+     * sub-interface for that event.
      *
      * @param listener     the added continuous {@link MapListener} for this map
      * @param predicate    predicate for filtering entries
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified predicate is null
+     * @throws NullPointerException if the specified {@code listener} or {@code predicate}
+     *                              is {@code null}
      * @see MapListener
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(@Nonnull MapListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map.
@@ -2144,11 +2266,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate    predicate for filtering entries
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified predicate is null
+     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2160,11 +2281,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified predicate is null
+     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @see MapListener
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addEntryListener(@Nonnull MapListener listener,
+                            @Nonnull Predicate<K, V> predicate,
+                            @Nonnull K key,
+                            boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map.
@@ -2176,11 +2299,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is null
-     * @throws NullPointerException if the specified predicate is null
+     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener listener,
+                            @Nonnull Predicate<K, V> predicate,
+                            @Nonnull K key,
+                            boolean includeValue);
 
     /**
      * Returns the {@code EntryView} for the specified key.
@@ -2198,10 +2323,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key the key of the entry
      * @return {@code EntryView} of the specified key
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      * @see EntryView
      */
-    EntryView<K, V> getEntryView(K key);
+    EntryView<K, V> getEntryView(@Nonnull K key);
 
     /**
      * Evicts the specified key from this map.
@@ -2221,11 +2346,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key the specified key to evict from this map
      * @return {@code true} if the key is evicted, {@code false} otherwise
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException if the specified key is {@code null}
      * @see #delete(Object)
      * @see #remove(Object)
      */
-    boolean evict(K key);
+    boolean evict(@Nonnull K key);
 
     /**
      * Evicts all keys from this map except the locked ones.
@@ -2259,6 +2384,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Nonnull
     Set<K> keySet();
 
     /**
@@ -2277,6 +2403,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Nonnull
     Collection<V> values();
 
     /**
@@ -2295,6 +2422,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Nonnull
     Set<Map.Entry<K, V>> entrySet();
 
     /**
@@ -2315,10 +2443,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria
      * @return result key set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException             if the predicate is null
+     * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<K> keySet(Predicate predicate);
+    Set<K> keySet(@Nonnull Predicate predicate);
 
     /**
      * Queries the map based on the specified predicate and returns an immutable set of the matching entries.
@@ -2337,14 +2465,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria
      * @return result entry set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException             if the predicate is null
+     * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+    Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate);
 
     /**
-     * Queries the map based on the specified predicate and returns an immutable collection of the values
-     * of matching entries.
+     * Queries the map based on the specified predicate and returns an immutable
+     * collection of the values of matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
@@ -2360,10 +2488,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria
      * @return result value collection of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException             if the predicate is null
+     * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Collection<V> values(Predicate predicate);
+    Collection<V> values(@Nonnull Predicate predicate);
 
     /**
      * Returns the locally owned immutable set of keys.
@@ -2414,7 +2542,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<K> localKeySet(Predicate predicate);
+    Set<K> localKeySet(@Nonnull Predicate predicate);
 
     /**
      * Adds an index to this map for the specified entries so
@@ -2458,7 +2586,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ordered   {@code true} if index should be ordered,
      *                  {@code false} otherwise.
      */
-    void addIndex(String attribute, boolean ordered);
+    void addIndex(@Nonnull String attribute, boolean ordered);
 
     /**
      * Returns LocalMapStats for this map.
@@ -2596,12 +2724,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * partition and backup:
      * <pre>{@code
      *   HashMap additions = ...;
-     *   iMap.executeOnKeys(map.keySet(), new EntryProcessor<Integer, Integer, Object>() {
-     *             public Object process(Entry<Integer, Integer> entry) {
-     *                 Integer updateBy = additions.get(entry.getKey());
-     *                 entry.setValue(entry.getValue() + updateBy);
-     *                 return null;
-     *             }
+     *   iMap.executeOnKeys(map.keySet(), entry -> {
+     *             Integer updateBy = additions.get(entry.getKey());
+     *             entry.setValue(entry.getValue() + updateBy);
+     *             return null;
      *         });
      * }</pre>
      *
@@ -2614,34 +2740,40 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
-     * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key} with
-     * specified {@link ExecutionCallback} to listen event status and returns immediately.
+     * Applies the user defined {@code EntryProcessor} to the entry mapped by
+     * the {@code key} with specified {@link ExecutionCallback} to listen event
+     * status and returns immediately.
      * <p>
-     * The {@code EntryProcessor} may implement the {@link Offloadable} and {@link ReadOnly} interfaces.
+     * The {@code EntryProcessor} may implement the {@link Offloadable} and
+     * {@link ReadOnly} interfaces.
      * <p>
-     * If the EntryProcessor implements the {@link Offloadable} interface the processing will be offloaded to the given
-     * ExecutorService allowing unblocking of the partition-thread, which means that other partition-operations
-     * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
+     * If the EntryProcessor implements the {@link Offloadable} interface the
+     * processing will be offloaded to the given ExecutorService allowing
+     * unblocking of the partition-thread, which means that other
+     * partition-operations may proceed. The key will be locked for the time-span
+     * of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
      * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
-     * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
-     * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
-     * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
-     * looks as follows:
+     * If the EntryProcessor implements the Offloadable and ReadOnly interfaces
+     * the processing will be offloaded to the given ExecutorService allowing
+     * unblocking the partition-thread. Since the EntryProcessor is not supposed
+     * to do any changes to the Entry the key will NOT be locked for the time-span
+     * of the processing. In this case the threading looks as follows:
      * <ol>
      * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * </ol>
-     * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
-     * exception is thrown.
+     * In this case the {@link EntryProcessor#getBackupProcessor()} has to return
+     * {@code null}; otherwise an {@link IllegalArgumentException} exception is thrown.
      * <p>
-     * If the EntryProcessor implements only ReadOnly without implementing Offloadable the processing unit will not
-     * be offloaded, however, the EntryProcessor will not wait for the lock to be acquired, since the EP will not
-     * do any modifications.
+     * If the EntryProcessor implements only {@link ReadOnly} without implementing
+     * {@link Offloadable} the processing unit will not be offloaded, however,
+     * the EntryProcessor will not wait for the lock to be acquired, since the EP
+     * will not do any modifications.
      * <p>
      * If the EntryProcessor implements ReadOnly and modifies the entry it is processing an UnsupportedOperationException
      * will be thrown.
@@ -2684,7 +2816,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @param callback       to listen whether operation is finished or not
-     * @param <R> return type for entry processor
+     * @param <R>            return type for entry processor
      * @see Offloadable
      * @see ReadOnly
      */
@@ -2765,7 +2897,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
-     * @return ICompletableFuture from which the result of the operation can be retrieved
+     * @param <R>            return type for entry processor
+     * @return ICompletableFuture on which client code can block waiting for the
+     * operation to complete or provide an {@link ExecutionCallback} to be invoked
+     * upon set operation completion
      * @see Offloadable
      * @see ReadOnly
      * @see ICompletableFuture
@@ -2804,6 +2939,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     *
+     * @param entryProcessor processor to process the keys
+     * @param <R>            return type for entry processor
+     * @return results mapped by entry key
      */
     <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
@@ -2838,6 +2977,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     *
+     * @param entryProcessor processor to process the keys
+     * @param predicate      predicate to filter the entries with
+     * @param <R>            return type for entry processor
+     * @return results mapped by entry key
      */
     <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
                                    @Nonnull Predicate<K, V> predicate);
@@ -2855,7 +2999,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator);
+    <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator);
 
     /**
      * Applies the aggregation logic on map entries filtered with the Predicated and returns the result
@@ -2871,7 +3015,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate);
+    <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator, @Nonnull Predicate<K, V> predicate);
 
     /**
      * Applies the projection logic on all map entries and returns the result
@@ -2881,7 +3025,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection);
+    <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection);
 
     /**
      * Applies the projection logic on map entries filtered with the Predicated and returns the result
@@ -2892,7 +3036,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection, Predicate<K, V> predicate);
+    <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection, @Nonnull Predicate<K, V> predicate);
 
     /**
      * Returns corresponding {@code QueryCache} instance for the supplied {@code name} or null.
@@ -2907,7 +3051,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see QueryCache
      * @since 3.8
      */
-    QueryCache<K, V> getQueryCache(String name);
+    QueryCache<K, V> getQueryCache(@Nonnull String name);
 
     /**
      * Creates an always up to date snapshot of this {@code IMap} according to the supplied parameters.
@@ -2924,56 +3068,69 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate    the predicate for filtering entries
      * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of entries, otherwise {@code false}
      * @return the {@code QueryCache} instance with the supplied {@code name}
-     * @throws NullPointerException if the specified {@code name} or {@code predicate} is null
+     * @throws NullPointerException if the specified {@code name} or {@code predicate} is {@code null}
      * @see QueryCache
      * @since 3.8
      */
-    QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue);
+    QueryCache<K, V> getQueryCache(@Nonnull String name, @Nonnull Predicate<K, V> predicate, boolean includeValue);
 
     /**
-     * Creates an always up to date snapshot of this {@code IMap} according to the supplied parameters.
+     * Creates an always up to date snapshot of this {@code IMap} according to
+     * the supplied parameters.
      * <p>
-     * If there is a previously created {@link QueryCache} with the supplied {@code name}, this method returns that
-     * {@link QueryCache} and ignores {@code listener}, {@code predicate} and {@code includeValue} parameters.
+     * If there is a previously created {@link QueryCache} with the supplied
+     * {@code name}, this method returns that {@link QueryCache} and ignores
+     * {@code listener}, {@code predicate} and {@code includeValue} parameters.
      * Otherwise it creates and returns a new {@link QueryCache} instance.
      * <p>
-     * Also note that if there exists a {@link com.hazelcast.config.QueryCacheConfig QueryCacheConfig} for the supplied
-     * {@code name}, {@code listener},{@code predicate} and {@code includeValue} parameters will overwrite corresponding ones
-     * in {@link com.hazelcast.config.QueryCacheConfig}.
+     * Also note that if there exists a
+     * {@link com.hazelcast.config.QueryCacheConfig QueryCacheConfig} for the
+     * supplied {@code name}, {@code listener},{@code predicate} and
+     * {@code includeValue} parameters will overwrite corresponding ones in
+     * {@link com.hazelcast.config.QueryCacheConfig}.
      *
      * @param name         the name of {@code QueryCache}
      * @param listener     the {@code MapListener} which will be used to listen this {@code QueryCache}
      * @param predicate    the predicate for filtering entries
-     * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of entries, otherwise {@code false}
+     * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of
+     *                     entries, otherwise {@code false}
      * @return the {@code QueryCache} instance with the supplied {@code name}
-     * @throws NullPointerException if the specified {@code name} or {@code listener} or {@code predicate} is null
+     * @throws NullPointerException if the specified {@code name} or {@code listener} or {@code predicate}
+     *                              is {@code null}
      * @see QueryCache
      * @since 3.8
      */
-    QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    QueryCache<K, V> getQueryCache(@Nonnull String name,
+                                   @Nonnull MapListener listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue);
 
     /**
-     * Updates TTL (time to live) value of the entry specified by {@code key} with a new TTL value.
-     * New TTL value is valid starting from the time this operation is invoked, not since the time the entry was created.
+     * Updates the TTL (time to live) value of the entry specified by {@code key}
+     * with a new TTL value.
+     * New TTL value is valid starting from the time this operation is invoked,
+     * not since the time the entry was created.
      * If the entry does not exist or is already expired, this call has no effect.
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <p>
-     * If there is no entry with key {@code key} or is already expired, this call makes no changes to entries stored in
-     * this map.
+     * If there is no entry with key {@code key} or is already expired, this
+     * call makes no changes to entries stored in this map.
      *
      * <b>Warning:</b>
      * <p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * Time resolution for TTL is seconds. The given TTL value is rounded to
+     * the next closest second value.
      *
      * @param key      the key of the map entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative
+     *                 means map config default)
      * @param timeunit time unit for the TTL
      * @return {@code true} if the entry exists and its ttl value is changed, {@code false} otherwise
-     * @throws NullPointerException if the specified {@code key} or {@code timeunit} is null.
+     * @throws NullPointerException if the specified {@code key} or {@code timeunit} is {@code null}.
      * @since 3.11
      */
-    boolean setTtl(K key, long ttl, TimeUnit timeunit);
+    boolean setTtl(@Nonnull K key, long ttl, @Nonnull TimeUnit timeunit);
 }

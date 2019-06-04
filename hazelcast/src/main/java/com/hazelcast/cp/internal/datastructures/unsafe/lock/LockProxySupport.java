@@ -27,11 +27,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static java.lang.Thread.currentThread;
 
 public final class LockProxySupport {
@@ -123,14 +125,16 @@ public final class LockProxySupport {
         }
     }
 
-    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(NodeEngine nodeEngine, Data key,
+                           long timeout, @Nullable TimeUnit timeunit) throws InterruptedException {
         return tryLock(nodeEngine, key, timeout, timeunit, -1, TimeUnit.MILLISECONDS);
     }
 
-    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit,
-                           long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
-        long timeoutInMillis = getTimeInMillis(timeout, timeunit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseTimeunit);
+    public boolean tryLock(NodeEngine nodeEngine, Data key,
+                           long timeout, @Nullable TimeUnit timeunit,
+                           long leaseTime, @Nullable TimeUnit leaseTimeunit) throws InterruptedException {
+        long timeoutInMillis = timeInMsOrTimeIfNullUnit(timeout, timeunit);
+        long leaseTimeInMillis = timeInMsOrTimeIfNullUnit(leaseTime, leaseTimeunit);
         LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTimeInMillis, timeoutInMillis);
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
 
@@ -139,10 +143,6 @@ public final class LockProxySupport {
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
         }
-    }
-
-    private long getTimeInMillis(final long time, final TimeUnit timeunit) {
-        return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
     public void unlock(NodeEngine nodeEngine, Data key) {
