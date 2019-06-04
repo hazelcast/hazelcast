@@ -220,11 +220,6 @@ final class TestSamples {
         }
 
         @Override
-        protected Object getTargetObject(boolean key) {
-            return key ? this.key : this.value;
-        }
-
-        @Override
         public V getValue() {
             return value;
         }

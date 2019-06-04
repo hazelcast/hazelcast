@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 
 /**
  * Entry of the Query.
@@ -91,31 +92,36 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    protected Object getTargetObject(boolean key) {
-        Object targetObject;
-        if (key) {
-            // keyData is never null
-            if (keyData.isPortable() || keyData.isJson()) {
-                targetObject = keyData;
-            } else {
-                targetObject = getKey();
-            }
-        } else {
-            if (valueObject == null) {
-                if (valueData.isPortable() || valueData.isJson()) {
-                    targetObject = valueData;
+    protected Object getTargetObject(AttributeOrigin origin) {
+        switch (origin) {
+            case KEY:
+                return getKey();
+            case VALUE:
+                return getValue();
+            case WITHIN_KEY:
+                // keyData is never null
+                if (keyData.isPortable() || keyData.isJson()) {
+                    return keyData;
                 } else {
-                    targetObject = getValue();
+                    return getKey();
                 }
-            } else {
-                if (valueObject instanceof Portable) {
-                    targetObject = getValueData();
+            case WITHIN_VALUE:
+                if (valueObject == null) {
+                    if (valueData.isPortable() || valueData.isJson()) {
+                        return valueData;
+                    } else {
+                        return getValue();
+                    }
                 } else {
-                    targetObject = getValue();
+                    if (valueObject instanceof Portable) {
+                        return getValueData();
+                    } else {
+                        return getValue();
+                    }
                 }
-            }
+            default:
+                throw new IllegalArgumentException();
         }
-        return targetObject;
     }
 
     @Override

@@ -32,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
+import static com.hazelcast.query.impl.MapEntryAttributeExtractor.extractAttributeValueByOrigin;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
@@ -123,7 +124,7 @@ public abstract class AbstractIndex implements InternalIndex {
             converter = obtainConverter(entry);
         }
 
-        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
+        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(AttributeOrigin.VALUE));
         if (oldValue == null) {
             indexStore.insert(newAttributeValue, entry, operationStats);
             stats.onInsert(timestamp, operationStats, operationSource);
@@ -233,13 +234,11 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private Object extractAttributeValue(Data key, Object value) {
         if (components == null) {
-            QueryEntry queryEntry = new QueryEntry(ss, key, value, extractors);
-            return MapEntryAttributeExtractor.extractAttributeValue(queryEntry, name, attributeOrigin);
+            return extractAttributeValueByOrigin(extractors, key, value, name, attributeOrigin);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
-            QueryEntry queryEntry = new QueryEntry(ss, key, value, extractors);
             for (int i = 0; i < components.length; ++i) {
-                Object extractedValue = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, components[i],
+                Object extractedValue = extractAttributeValueByOrigin(extractors, key, value, components[i],
                         componentOrigins[i]);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
@@ -364,5 +363,4 @@ public abstract class AbstractIndex implements InternalIndex {
         }
 
     }
-
 }

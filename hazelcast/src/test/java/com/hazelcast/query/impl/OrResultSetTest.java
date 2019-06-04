@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -97,7 +98,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getTargetObject(boolean key) {
+        public Object getTargetObject(AttributeOrigin origin) {
             return null;
         }
 

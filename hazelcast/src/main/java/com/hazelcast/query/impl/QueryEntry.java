@@ -85,11 +85,6 @@ public class QueryEntry extends QueryableEntry {
     }
 
     @Override
-    protected Object getTargetObject(boolean key) {
-        return key ? this.key : this.value;
-    }
-
-    @Override
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }

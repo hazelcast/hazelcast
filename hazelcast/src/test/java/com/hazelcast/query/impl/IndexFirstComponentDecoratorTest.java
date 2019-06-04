@@ -172,11 +172,6 @@ public class IndexFirstComponentDecoratorTest {
             return IndexFirstComponentDecoratorTest.this.serializationService.toData(value);
         }
 
-        @Override
-        protected Object getTargetObject(boolean key) {
-            return key ? this.key : value;
-        }
-
     }
 
 }

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.query.impl.predicates.AttributeOrigin;
@@ -33,27 +34,23 @@ public final class MapEntryAttributeExtractor {
     private MapEntryAttributeExtractor() {
     }
 
-    public static Object extractAttributeValue(QueryableEntry entry, String attributeName, AttributeOrigin attributeOrigin) {
+    public static Object extractAttributeValue(Extractors extractors, Object targetObject,
+                                               Object metadata, String attributeName,
+                                               AttributeOrigin attributeOrigin) {
         Object result;
-        Object target;
-        Object metadata;
         switch (attributeOrigin) {
             case KEY:
-                result = entry.getKey();
+                result = targetObject;
                 break;
             case VALUE:
-                result = entry.getValue();
+                result = targetObject;
                 break;
             case WITHIN_KEY:
                 attributeName = stripKeyKeyword(attributeName);
-                target = entry.getTargetObject(true);
-                metadata = getMetadataOrNull(entry, true);
-                result = entry.getExtractors().extract(target, attributeName, metadata);
+                result = extractors.extract(targetObject, attributeName, metadata);
                 break;
             case WITHIN_VALUE:
-                target = entry.getTargetObject(false);
-                metadata = getMetadataOrNull(entry, false);
-                result = entry.getExtractors().extract(target, attributeName, metadata);
+                result = extractors.extract(targetObject, attributeName, metadata);
                 break;
             default:
                 throw new IllegalArgumentException(attributeOrigin + " is not allowed here");
@@ -62,6 +59,25 @@ public final class MapEntryAttributeExtractor {
             return Json.parse(result.toString());
         }
         return result;
+    }
+
+    public static Object extractAttributeValueByOrigin(Extractors extractors, Object key, Object value,
+                                                       String attributeName, AttributeOrigin origin) {
+        switch (origin) {
+            case KEY:
+            case WITHIN_KEY:
+                return extractAttributeValue(extractors, key, null, attributeName, origin);
+            case VALUE:
+            case WITHIN_VALUE:
+                return extractAttributeValue(extractors, value, null, attributeName, origin);
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
+    public static Object extractAttributeValue(QueryableEntry queryableEntry, String attributeName, AttributeOrigin origin) {
+        return extractAttributeValue(queryableEntry.getExtractors(), queryableEntry.getTargetObject(origin),
+                getMetadataOrNull(queryableEntry, origin), attributeName, origin);
     }
 
     /**
@@ -110,10 +126,20 @@ public final class MapEntryAttributeExtractor {
         return attributeName.substring(KEY_ATTRIBUTE_NAME.value().length() + 1);
     }
 
-    private static Object getMetadataOrNull(QueryableEntry entry, boolean isKey) {
+    private static Object getMetadataOrNull(QueryableEntry entry, AttributeOrigin origin) {
         if (entry.getMetadata() == null) {
             return null;
         }
-        return isKey ? entry.getMetadata().getKeyMetadata() : entry.getMetadata().getValueMetadata();
+        switch (origin) {
+            case KEY:
+            case VALUE:
+                return null;
+            case WITHIN_KEY:
+                return entry.getMetadata().getKeyMetadata();
+            case WITHIN_VALUE:
+                return entry.getMetadata().getValueMetadata();
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 }

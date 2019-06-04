@@ -18,8 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.query.SampleTestObjects.PortableEmployee;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,78 +79,78 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         Object key = entry.getKey();
         assertEquals(keyObject, key);
     }
-
-    @Test
-    public void testGetTargetObject_givenKeyDataIsPortable_whenKeyFlagIsTrue_thenReturnKeyData() {
-        Data keyData = mockPortableData();
-        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
-
-        Object targetObject = entry.getTargetObject(true);
-
-        assertSame(keyData, targetObject);
-    }
-
-    @Test
-    public void testGetTargetObject_givenKeyDataIsNotPortable_whenKeyFlagIsTrue_thenReturnKeyObject() {
-        Object keyObject = "key";
-        Data keyData = serializationService.toData(keyObject);
-        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
-
-        Object targetObject = entry.getTargetObject(true);
-
-        assertEquals(keyObject, targetObject);
-    }
-
-    @Test
-    public void testGetTargetObject_givenValueIsDataAndPortable_whenKeyFlagIsFalse_thenReturnValueData() {
-        Data key = serializationService.toData("indexedKey");
-        Data value = serializationService.toData(new PortableEmployee(30, "peter"));
-        QueryableEntry entry = createEntry(key, value, newExtractor());
-
-        Object targetObject = entry.getTargetObject(false);
-
-        assertEquals(value, targetObject);
-    }
-
-    @Test
-    public void testGetTargetObject_givenValueIsData_whenKeyFlagIsFalse_thenReturnValueObject() {
-        Data key = serializationService.toData("key");
-        Data value = serializationService.toData("value");
-        QueryableEntry entry = createEntry(key, value, newExtractor());
-
-        Object targetObject = entry.getTargetObject(false);
-
-        assertEquals("value", targetObject);
-    }
-
-    @Test
-    public void testGetTargetObject_givenValueIsPortable_whenKeyFlagIsFalse_thenReturnValueData() {
-        Data key = serializationService.toData("indexedKey");
-        Portable value = new PortableEmployee(30, "peter");
-        QueryableEntry entry = createEntry(key, value, newExtractor());
-
-        Object targetObject = entry.getTargetObject(false);
-
-        assertEquals(serializationService.toData(value), targetObject);
-    }
-
-    @Test
-    public void testGetTargetObject_givenValueIsNotPortable_whenKeyFlagIsFalse_thenReturnValueObject() {
-        Data key = serializationService.toData("key");
-        String value = "value";
-        QueryableEntry entry = createEntry(key, value, newExtractor());
-
-        Object targetObject = entry.getTargetObject(false);
-
-        assertSame(value, targetObject);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenThrowNPE() {
-        QueryableEntry entry = createEntry();
-
-        entry.getTargetObject(false);
-    }
+//
+//    @Test
+//    public void testGetTargetObject_givenKeyDataIsPortable_whenKeyFlagIsTrue_thenReturnKeyData() {
+//        Data keyData = mockPortableData();
+//        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(true);
+//
+//        assertSame(keyData, targetObject);
+//    }
+//
+//    @Test
+//    public void testGetTargetObject_givenKeyDataIsNotPortable_whenKeyFlagIsTrue_thenReturnKeyObject() {
+//        Object keyObject = "key";
+//        Data keyData = serializationService.toData(keyObject);
+//        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(true);
+//
+//        assertEquals(keyObject, targetObject);
+//    }
+//
+//    @Test
+//    public void testGetTargetObject_givenValueIsDataAndPortable_whenKeyFlagIsFalse_thenReturnValueData() {
+//        Data key = serializationService.toData("indexedKey");
+//        Data value = serializationService.toData(new PortableEmployee(30, "peter"));
+//        QueryableEntry entry = createEntry(key, value, newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(false);
+//
+//        assertEquals(value, targetObject);
+//    }
+//
+//    @Test
+//    public void testGetTargetObject_givenValueIsData_whenKeyFlagIsFalse_thenReturnValueObject() {
+//        Data key = serializationService.toData("key");
+//        Data value = serializationService.toData("value");
+//        QueryableEntry entry = createEntry(key, value, newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(false);
+//
+//        assertEquals("value", targetObject);
+//    }
+//
+//    @Test
+//    public void testGetTargetObject_givenValueIsPortable_whenKeyFlagIsFalse_thenReturnValueData() {
+//        Data key = serializationService.toData("indexedKey");
+//        Portable value = new PortableEmployee(30, "peter");
+//        QueryableEntry entry = createEntry(key, value, newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(false);
+//
+//        assertEquals(serializationService.toData(value), targetObject);
+//    }
+//
+//    @Test
+//    public void testGetTargetObject_givenValueIsNotPortable_whenKeyFlagIsFalse_thenReturnValueObject() {
+//        Data key = serializationService.toData("key");
+//        String value = "value";
+//        QueryableEntry entry = createEntry(key, value, newExtractor());
+//
+//        Object targetObject = entry.getTargetObject(false);
+//
+//        assertSame(value, targetObject);
+//    }
+//
+//    @Test(expected = NullPointerException.class)
+//    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenThrowNPE() {
+//        QueryableEntry entry = createEntry();
+//
+//        entry.getTargetObject(false);
+//    }
 
     @Test
     @SuppressWarnings("EqualsWithItself")

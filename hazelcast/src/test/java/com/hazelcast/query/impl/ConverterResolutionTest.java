@@ -214,11 +214,6 @@ public class ConverterResolutionTest {
         }
 
         @Override
-        protected Object getTargetObject(boolean key) {
-            return key ? this.key : value;
-        }
-
-        @Override
         public Value setValue(Value value) {
             throw new UnsupportedOperationException();
         }

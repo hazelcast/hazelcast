@@ -37,6 +37,7 @@ import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -410,8 +411,12 @@ public class IndexTest {
         }
 
         @Override
-        public Object getTargetObject(boolean key) {
-            return key ? true : attributeValue;
+        public Object getTargetObject(AttributeOrigin origin) {
+            if (origin == AttributeOrigin.KEY || origin == AttributeOrigin.WITHIN_KEY) {
+                return true;
+            } else {
+                return attributeValue;
+            }
         }
 
         public Data getKeyData() {

@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Metadata;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 
 import java.util.Map;
 
@@ -56,5 +57,16 @@ public abstract class QueryableEntry<K, V> implements Map.Entry<K, V> {
 
     public abstract Data getValueData();
 
-    protected abstract Object getTargetObject(boolean key);
+    protected Object getTargetObject(AttributeOrigin attributeOrigin) {
+        switch (attributeOrigin) {
+            case KEY:
+            case WITHIN_KEY:
+                return getKey();
+            case VALUE:
+            case WITHIN_VALUE:
+                return getValue();
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
 }
