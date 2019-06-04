@@ -30,7 +30,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.CanCancelOperations;
-import com.hazelcast.spi.LiveOperationsTracker;
+import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;

@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.util.Collection;
 

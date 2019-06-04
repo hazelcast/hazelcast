@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.spi.WaitNotifyKey;
-
 /**
  * An interface that can be implemented by an operation that can block. For example an ILock.acquire.
  */

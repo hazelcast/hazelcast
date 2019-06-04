@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
- * The possible actions that can be taken when a certain exception is thrown. E.g. when a map.get() is executed on a member
- * where the partition has just moved to another member, the RETRY_INVOCATION would be used.
+ * A key for a wait notify object e.g. an ICondition.
  */
-public enum ExceptionAction {
+public interface WaitNotifyKey {
 
     /**
-     * Indicates that the operation can be retried.
+     * Returns the service name of the wait notify object for this key.
+     *
+     * @return the service name of the wait notify object for this key
      */
-    RETRY_INVOCATION,
+    String getServiceName();
 
     /**
-     * Indicates that the exception should bubble up.
+     * Returns the object name of the wait notify object for this key.
+     *
+     * @return the object name of the wait notify object for this key
      */
-    THROW_EXCEPTION
+    String getObjectName();
+
 }

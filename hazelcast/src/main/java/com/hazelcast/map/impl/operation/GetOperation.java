@@ -21,7 +21,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 

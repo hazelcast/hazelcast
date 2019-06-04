@@ -17,8 +17,6 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.LiveOperationsTracker;
 
 import java.util.ArrayList;
 import java.util.HashMap;

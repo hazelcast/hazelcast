@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 

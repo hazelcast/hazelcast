@@ -22,10 +22,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;

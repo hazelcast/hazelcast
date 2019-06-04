@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.QuorumCheckAwareOperation;
 import com.hazelcast.spi.partition.IPartition;
