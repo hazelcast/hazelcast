@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

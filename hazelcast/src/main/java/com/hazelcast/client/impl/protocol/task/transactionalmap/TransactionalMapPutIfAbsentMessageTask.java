@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.transactionalmap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;

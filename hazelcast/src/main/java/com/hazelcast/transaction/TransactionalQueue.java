@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
 
 import com.hazelcast.collection.BaseQueue;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.concurrent.TimeUnit;
 

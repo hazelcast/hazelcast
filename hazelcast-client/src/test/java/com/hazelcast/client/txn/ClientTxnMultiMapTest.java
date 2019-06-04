@@ -19,7 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

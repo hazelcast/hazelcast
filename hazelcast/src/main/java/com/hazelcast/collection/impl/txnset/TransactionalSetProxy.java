@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;

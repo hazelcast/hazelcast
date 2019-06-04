@@ -21,7 +21,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalTask;

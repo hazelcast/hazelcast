@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
 
-import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.core.BaseMultiMap;
+import com.hazelcast.core.MultiMap;
 
 import java.util.Collection;
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.transaction.TransactionalMultiMap;
+
 import java.util.Collection;
 
 /**

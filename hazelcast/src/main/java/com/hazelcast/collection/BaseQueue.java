@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.util.concurrent.TimeUnit;
 
