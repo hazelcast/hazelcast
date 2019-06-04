@@ -167,7 +167,11 @@ public final class HazelcastInstanceFactory {
     }
 
     public static String createInstanceName(Config config) {
-        Boolean useMobyNaming = Boolean.valueOf(config.getProperty(GroupProperty.MOBY_NAMING_ENABLED.getName()));
+        String propertyValue = config.getProperty(GroupProperty.MOBY_NAMING_ENABLED.getName());
+        if (propertyValue == null) {
+            propertyValue = GroupProperty.MOBY_NAMING_ENABLED.getDefaultValue();
+        }
+        Boolean useMobyNaming = Boolean.valueOf(propertyValue);
         int instanceNum = FACTORY_ID_GEN.incrementAndGet();
         String name;
         if (useMobyNaming) {

@@ -246,7 +246,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
         String name = hazelcastInstance.getName();
         assertNotNull(name);
-        assertContains(name, "_hzInstance_");
+        assertNotContains(name, "_hzInstance_");
     }
 
     @Test

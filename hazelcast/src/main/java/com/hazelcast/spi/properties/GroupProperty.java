@@ -1013,10 +1013,10 @@ public final class GroupProperty {
      * </p>
      * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
      * </p>
-     * By default is false.
+     * By default is true.
      */
     public static final HazelcastProperty MOBY_NAMING_ENABLED
-            = new HazelcastProperty("hazelcast.member.naming.moby.enabled", false);
+            = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
     private GroupProperty() {
     }
