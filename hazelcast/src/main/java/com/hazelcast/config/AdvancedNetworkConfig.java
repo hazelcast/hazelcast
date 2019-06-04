@@ -76,7 +76,7 @@ public class AdvancedNetworkConfig {
      * connections opened from that member. When the provided {@code endpointconfig} is a
      * {@link ServerSocketEndpointConfig}, then the {@code HazelcastInstance} will additionally listen on
      * the configured port for incoming WAN connections.
-     * <p/>
+     * <p>
      * Example of how to configure Hazelcast instances for active-passive WAN replication:
      * <ul>
      * <li>

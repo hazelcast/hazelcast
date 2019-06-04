@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 /**
  *  Operation to fetch Map configuration.

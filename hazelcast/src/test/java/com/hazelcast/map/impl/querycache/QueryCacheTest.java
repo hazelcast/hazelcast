@@ -25,8 +25,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
@@ -36,7 +36,7 @@ import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")

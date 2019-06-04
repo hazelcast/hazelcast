@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -28,8 +28,8 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;

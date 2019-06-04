@@ -43,7 +43,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +71,7 @@ import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ListenerTest extends HazelcastTestSupport {
 
     private final AtomicInteger globalCount = new AtomicInteger();
@@ -588,13 +588,11 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instance.getMap(name);
         EntryAddedLatch latch = new EntryAddedLatch(1);
         map.addEntryListener(latch, false);
-        map.executeOnKey(key, new AbstractEntryProcessor<Object, Object>() {
-            @Override
-            public Object process(Map.Entry<Object, Object> entry) {
-                entry.setValue(new SerializeCheckerObject());
-                return null;
-            }
-        });
+        map.executeOnKey(key,
+                entry -> {
+                    entry.setValue(new SerializeCheckerObject());
+                    return null;
+                });
         assertOpenEventually(latch, 10);
         SerializeCheckerObject.assertNotSerialized();
     }

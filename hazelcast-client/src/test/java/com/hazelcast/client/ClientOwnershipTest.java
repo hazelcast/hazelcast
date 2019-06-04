@@ -24,11 +24,11 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientOwnershipTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -118,7 +118,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
     @Test
     public void test_ClientReAuthOperation_retry() throws ExecutionException, InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        InternalOperationService operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
+        OperationServiceImpl operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         ClientReAuthOperation reAuthOperation = new ClientReAuthOperation("clientUUId", 1);

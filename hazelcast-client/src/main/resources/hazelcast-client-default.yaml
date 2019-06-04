@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The default Hazelcast client configuration.
+# The default Hazelcast client configuration. This configuration is identical
+# to hazelcast-client-default.xml.
 #
-# This XML file is used when no hazelcast-client.xml is present.
+# This YAML file is used when no hazelcast-client.yaml is present and the
+# Hazelcast client configuration is loaded from YAML configuration with
+# YamlClientConfigBuilder. If the configuration is loaded in another way,
+# hazelcast-client-default.xml is used as the default configuration.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
 # at https://hazelcast.org/documentation/

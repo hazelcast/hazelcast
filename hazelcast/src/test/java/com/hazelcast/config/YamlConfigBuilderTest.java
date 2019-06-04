@@ -30,7 +30,7 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Ignore;
@@ -71,11 +71,11 @@ import static org.junit.Assert.fail;
 /**
  * YAML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests
- * <p/>
+ * <p>
  *
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
- * <p/>
+ * <p>
  *
  * NOTE2: Test cases specific to YAML should be added to {@link YamlOnlyConfigBuilderTest}
  *
@@ -84,7 +84,7 @@ import static org.junit.Assert.fail;
  * @see YamlOnlyConfigBuilderTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
@@ -93,6 +93,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.yaml");
         Config config = new YamlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
+        assertNull(config.getConfigurationFile());
     }
 
     @Override
@@ -115,6 +116,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String path = file.getAbsolutePath();
         Config config = new YamlConfigBuilder(path).build();
         assertEquals(path, config.getConfigurationFile().getAbsolutePath());
+        assertNull(config.getConfigurationUrl());
     }
 
     @Override

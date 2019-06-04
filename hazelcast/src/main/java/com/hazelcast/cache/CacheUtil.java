@@ -87,7 +87,7 @@ public final class CacheUtil {
      *
      * @param cacheName   the simple name of the cache without any prefix
      * @return            the name of the {@link ICache} distributed object corresponding to given cacheName, assuming
-     *                    null URI & class loader prefixes.
+     *                    null URI &amp; class loader prefixes.
      * @see #getDistributedObjectName(String, URI, ClassLoader)
      */
     public static String getDistributedObjectName(String cacheName) {
@@ -109,7 +109,7 @@ public final class CacheUtil {
      *      Cache testCache = cacheManager.createCache("test", new MutableConfiguration&lt;String, String&gt;());
      *
      *      // URI and ClassLoader are null, since we created this cache with the default CacheManager,
-     *      // otherwise we should pass the owning CacheManager's URI & ClassLoader as arguments.
+     *      // otherwise we should pass the owning CacheManager's URI &amp; ClassLoader as arguments.
      *      String distributedObjectName = CacheUtil.asDistributedObjectName("test", null, null);
      *
      *      // Obtain a reference to the backing ICache via HazelcastInstance.getDistributedObject.

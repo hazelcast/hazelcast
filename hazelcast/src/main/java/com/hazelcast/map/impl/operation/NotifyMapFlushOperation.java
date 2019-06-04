@@ -20,8 +20,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class NotifyMapFlushOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         // NOP.
     }
 

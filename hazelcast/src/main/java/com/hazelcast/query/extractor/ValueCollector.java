@@ -17,7 +17,7 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables collecting values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ * Enables collecting values extracted in a {@link com.hazelcast.query.extractor.ValueExtractor}
  *
  * @param <T> type of the collected value
  */

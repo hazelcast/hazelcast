@@ -23,17 +23,16 @@ import java.io.Serializable;
  * Exemplary usage scenario is the project() method of the {@link com.hazelcast.core.IMap}
  * <p>
  * Only 1:1 transformations allowed. Use an Aggregator to perform N:1 or N:M aggregations.
- * <p>
- * <pre>{@code
- *      IMap<String, Employee> employees = instance.getMap("employees");
+ * <pre>
+ *      IMap&lt;String, Employee&gt; employees = instance.getMap("employees");
  *
- *      Collection<String> names = employees.project(new Projection<Map.Entry<String,Employee>,String>(){
- *          @Override
- *          public String transform(Map.Entry<String, Employee>entry){
+ *      Collection&lt;String&gt; names = employees.project(new Projection&lt;Map.Entry&lt;String,Employee&gt;,String&gt;(){
+ *          &#64;Override
+ *          public String transform(Map.Entry&lt;String, Employee&gt; entry){
  *              return entry.getValue().getName();
  *          }
  *      });
- * }</pre>
+ * </pre>
  *
  * @param <I> input type
  * @param <O> output type

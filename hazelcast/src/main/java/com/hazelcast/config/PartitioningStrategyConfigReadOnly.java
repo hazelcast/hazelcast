@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 
 /**
  * Contains the configuration for strategy of partitioning

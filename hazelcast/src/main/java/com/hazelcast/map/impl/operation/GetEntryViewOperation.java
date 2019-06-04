@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
@@ -38,7 +38,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());

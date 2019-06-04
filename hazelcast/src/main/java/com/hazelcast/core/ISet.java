@@ -24,7 +24,7 @@ import java.util.Set;
  * <b>Note:</b> This class is <i>not</i> a general-purpose {@link Set}
  * implementation! While this class implements the {@link Set} interface,
  * it intentionally violates {@link Set}'s general contract, which mandates the
- * use of the {@code equals() method when comparing objects. Instead of the
+ * use of the {@code equals()} method when comparing objects. Instead of the
  * equals method this implementation compares the serialized byte version
  * of the objects.
  * <p>

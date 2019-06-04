@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ConstructorFunction;
 import org.junit.Before;
@@ -43,7 +43,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LockInterceptorServiceTest extends HazelcastTestSupport {
 
     private static final ConcurrentMap<String, AtomicInteger> LOCK_COUNTER = new ConcurrentHashMap<>();

@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.HazelcastCacheManager;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -31,7 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -56,17 +55,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME = "MyCache";
-    private static final ClientMessageDecoder CACHE_GET_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     private TestHazelcastFactory factory;
     private HazelcastClientInstanceImpl client;
 
@@ -109,7 +101,6 @@ public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSuppor
         createCache(timeoutMillis, error);
 
         ClientMessage getRequest = createGetRequest(1);
-        ClientMessageDecoder decoder = CACHE_GET_RESPONSE_DECODER;
         ClientInvocation invocation = new ClientInvocation(client, getRequest, null, 0);
         ClientInvocationFuture invocationFuture = invocation.invoke();
 
@@ -130,7 +121,7 @@ public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSuppor
         CallbackAwareClientDelegatingFuture callbackAwareInvocationFuture =
                 new CallbackAwareClientDelegatingFuture(invocationFuture,
                         client.getSerializationService(),
-                        decoder,
+                        clientMessage -> CacheGetCodec.decodeResponse(clientMessage).response,
                         callback);
 
         if (timeoutMillis > 0) {

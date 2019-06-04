@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
     @Override
     protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory).andThen(this);
     }
 

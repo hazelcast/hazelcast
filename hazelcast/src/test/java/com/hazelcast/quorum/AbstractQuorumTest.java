@@ -347,10 +347,6 @@ public abstract class AbstractQuorumTest {
         return cluster.instance[index].getRingbuffer(RINGBUFFER_NAME + quorumType.name());
     }
 
-    protected IScheduledExecutorService scheduledExec(int index, QuorumType quorumType) {
-        return scheduledExec(index, quorumType, "");
-    }
-
     protected IScheduledExecutorService scheduledExec(int index, QuorumType quorumType, String postfix) {
         return cluster.instance[index].getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name() + postfix);
     }

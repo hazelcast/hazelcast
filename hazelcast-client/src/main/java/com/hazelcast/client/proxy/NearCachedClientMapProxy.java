@@ -18,6 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
@@ -53,7 +54,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
@@ -71,10 +71,6 @@ import static java.util.Collections.emptyMap;
  */
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
-    // eventually consistent Near Cache can only be used with server versions >= 3.8
-    private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
-
-    private ILogger logger;
     private boolean serializeKeys;
     private NearCache<Object, Object> nearCache;
 
@@ -87,8 +83,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void onInitialize() {
         super.onInitialize();
-
-        logger = getContext().getLoggingService().getLogger(getClass());
 
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         serializeKeys = nearCacheConfig.isSerializeKeys();
@@ -169,7 +163,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invocationFuture.andThen(new ExecutionCallback<ClientMessage>() {
                 @Override
                 public void onResponse(ClientMessage response) {
-                    Object newDecodedResponse = GET_ASYNC_RESPONSE_DECODER.decodeClientMessage(response);
+                    Object newDecodedResponse = MapGetCodec.decodeResponse(response).response;
                     nearCache.tryPublishReserved(ncKey, newDecodedResponse, reservationId, false);
                 }
 
@@ -180,8 +174,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             }, getClient().getClientExecutionService());
         }
 
-        return new ClientDelegatingFuture<V>(getAsyncInternal(key),
-                getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(getAsyncInternal(key),
+                getSerializationService(), clientMessage -> MapGetCodec.decodeResponse(clientMessage).response);
     }
 
     @Override
@@ -491,9 +485,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKeyInternal(Object key,
+                                      EntryProcessor<? super K, ? super V, R> entryProcessor) {
         key = toNearCacheKey(key);
-        Object response;
+        R response;
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
         } finally {
@@ -503,7 +498,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
+                                                         EntryProcessor<? super K, ? super V, R> entryProcessor) {
         key = toNearCacheKey(key);
         ICompletableFuture future;
         try {
@@ -515,7 +511,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKeyInternal(Object key,
+                                    EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                    ExecutionCallback<? super R> callback) {
         key = toNearCacheKey(key);
         try {
             super.submitToKeyInternal(key, entryProcessor, callback);
@@ -525,15 +523,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entrySet) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
-        Map<K, Object> result = createHashMap(entrySet.size());
+        Map<K, R> result = createHashMap(entrySet.size());
         for (Entry<Data, Data> entry : entrySet) {
             Data dataKey = entry.getKey();
             K key = toObject(dataKey);
-            V value = toObject(entry.getValue());
+            R value = toObject(entry.getValue());
 
             invalidateNearCache(serializeKeys ? dataKey : key);
             result.put(key, value);
@@ -666,7 +664,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      * Eventual consistency for Near Cache can be used with server versions >= 3.8
      * For repairing functionality please see {@link RepairingHandler}
      * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
-     *
+     * <p>
      * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
      * Following methods handle the old behaviour:
      * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10

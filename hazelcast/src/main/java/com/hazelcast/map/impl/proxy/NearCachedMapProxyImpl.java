@@ -520,8 +520,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public ICompletableFuture<Map<K, Object>> submitToKeysInternal(Set<K> keys, Set<Data> dataKeys,
-                                                                   EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeysInternal(Set<K> keys,
+                                                                  Set<Data> dataKeys,
+                                                                  EntryProcessor<? super K, ? super V, R> entryProcessor) {
         if (serializeKeys) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
@@ -536,8 +537,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public InternalCompletableFuture<Object> executeOnKeyInternal(Object key, EntryProcessor entryProcessor,
-                                                                  ExecutionCallback<Object> callback) {
+    public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
+                                                                 EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                                                 ExecutionCallback<? super R> callback) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.executeOnKeyInternal(key, entryProcessor, callback);

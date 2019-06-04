@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -402,14 +402,18 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         return ss.createPortableReader(processor.stolenEntryData);
     }
 
-    public static class EntryStealingProcessor extends AbstractEntryProcessor {
+    public static class EntryStealingProcessor implements EntryProcessor {
 
         private final Object key;
         private Data stolenEntryData;
 
         EntryStealingProcessor(String key) {
-            super(false);
             this.key = key;
+        }
+
+        @Override
+        public EntryProcessor getBackupProcessor() {
+            return null;
         }
 
         @Override
@@ -417,7 +421,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
             // hack to get rid of de-serialization cost (assuming in-memory-format is BINARY, if it is OBJECT you can replace
             // the null check below with entry.getValue() != null), but works only for versions >= 3.6
             if (key.equals(entry.getKey())) {
-                stolenEntryData = (Data) ((LazyMapEntry) entry).getValueData();
+                stolenEntryData = ((LazyMapEntry) entry).getValueData();
             }
             return null;
         }

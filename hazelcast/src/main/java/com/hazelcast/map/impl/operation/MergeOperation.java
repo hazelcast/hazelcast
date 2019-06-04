@@ -23,9 +23,9 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
@@ -68,7 +68,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
@@ -151,10 +151,8 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
-
-        super.afterRun();
     }
 
     @Override

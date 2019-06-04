@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -178,7 +178,7 @@ public final class SerializationUtil {
      * @param in            the {@code ObjectDataInput} input to read from
      * @param <K>           type of key class
      * @param <V>           type of value class
-     * @return              a {@code Map} containing the keys & values read from the input or {@code null}
+     * @return              a {@code Map} containing the keys &amp; values read from the input or {@code null}
      *                      if the original serialized map was {@code null}
      * @throws IOException  when an error occurs while reading from the input
      */

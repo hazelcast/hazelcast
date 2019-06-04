@@ -289,7 +289,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      * <p><ul>
      * <li>Submit a de-registration task to a current NioThread</li>
      * <li>The de-registration task submits a registration task to the new NioThread</li>
-     * </ul></p>
+     * </ul>
      *
      * @param newOwner target NioThread this handler migrates to
      */

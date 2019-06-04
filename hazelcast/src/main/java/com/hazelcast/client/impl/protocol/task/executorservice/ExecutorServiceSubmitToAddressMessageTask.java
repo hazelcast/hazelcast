@@ -26,9 +26,9 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
@@ -44,7 +44,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 

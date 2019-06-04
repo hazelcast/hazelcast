@@ -28,10 +28,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.BackupOperation;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.SilentOperation;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -40,7 +40,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -63,7 +63,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicClusterStateTest extends HazelcastTestSupport {
 
     @Rule

@@ -161,10 +161,10 @@ public final class NioOutboundPipeline
 
     /**
      * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
-     * <p/>
+     * <p>
      * This call is made by 'outside' threads that interact with the connection. For example when a frame is placed
      * on the connection to be written. It will never be made by an IO thread.
-     * <p/>
+     * <p>
      * If the OutboundHandler already is scheduled, the call is ignored.
      */
     private void schedule() {
@@ -231,15 +231,15 @@ public final class NioOutboundPipeline
 
     /**
      * Tries to unschedule this pipeline.
-     * <p/>
+     * <p>
      * It will only be unscheduled if:
      * - there are no pending frames.
-     * <p/>
+     * <p>
      * If the outputBuffer is dirty then it will register itself for an OP_WRITE since we are interested in knowing
      * if there is more space in the socket output buffer.
      * If the outputBuffer is not dirty, then it will unregister itself from an OP_WRITE since it isn't interested
      * in space in the socket outputBuffer.
-     * <p/>
+     * <p>
      * This call is only made by the owning IO thread.
      */
     private void unschedule() throws IOException {

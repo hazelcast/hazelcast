@@ -29,7 +29,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.Connection;

@@ -25,9 +25,9 @@ import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 
@@ -43,7 +43,7 @@ public class MapClearNearCacheMessageTask extends AbstractInvocationMessageTask<
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(getServiceName(), op, parameters.target);
     }
 

@@ -91,7 +91,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      *
      * The returned map can be used to get information about connected clients to the cluster.
      *
-     * @return Map<ClientType, Integer> .
+     * @return {@code Map&lt;ClientType, Integer&gt;}.
      */
     Map<ClientType, Integer> getConnectedClientStats();
 
@@ -104,9 +104,9 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      *
      * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
      *
-     * The statistics key names can be one of the following (Used IMap named <example.fastmap> and ICache Named
-     * <StatTestCacheName> and assuming that the Near Cache is configured):
-     *
+     * The statistics key names can be one of the following (Used IMap named {@code &lt;example.fastmap&gt;} and ICache Named
+     * {@code &lt;StatTestCacheName&gt;} and assuming that the Near Cache is configured):
+     * <pre>
      * clientType
      * clusterConnectionTimestamp
      * credentials.principal
@@ -114,30 +114,30 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * clientName
      * enterprise
      * lastStatisticsCollectionTime
-     * nearcache.<example\.fastmap>.creationTime
-     * nearcache.<example\.fastmap>.evictions
-     * nearcache.<example\.fastmap>.expirations
-     * nearcache.<example\.fastmap>.hits
-     * nearcache.<example\.fastmap>.lastPersistenceDuration
-     * nearcache.<example\.fastmap>.lastPersistenceFailure
-     * nearcache.<example\.fastmap>.lastPersistenceKeyCount
-     * nearcache.<example\.fastmap>.lastPersistenceTime
-     * nearcache.<example\.fastmap>.lastPersistenceWrittenBytes
-     * nearcache.<example\.fastmap>.misses
-     * nearcache.<example\.fastmap>.ownedEntryCount
-     * nearcache.<example\.fastmap>.ownedEntryMemoryCost
-     * nearcache.hz/<StatTestCacheName>.creationTime
-     * nearcache.hz/<StatTestCacheName>.evictions
-     * nearcache.hz/<StatTestCacheName>.expirations
-     * nearcache.hz/<StatTestCacheName>.hits
-     * nearcache.hz/<StatTestCacheName>.lastPersistenceDuration
-     * nearcache.hz/<StatTestCacheName>.lastPersistenceFailure
-     * nearcache.hz/<StatTestCacheName>.lastPersistenceKeyCount
-     * nearcache.hz/<StatTestCacheName>.lastPersistenceTime
-     * nearcache.hz/<StatTestCacheName>.lastPersistenceWrittenBytes
-     * nearcache.hz/<StatTestCacheName>.misses
-     * nearcache.hz/<StatTestCacheName>.ownedEntryCount
-     * nearcache.hz/<StatTestCacheName>.ownedEntryMemoryCost
+     * nearcache.&lt;example\.fastmap&gt;.creationTime
+     * nearcache.&lt;example\.fastmap&gt;.evictions
+     * nearcache.&lt;example\.fastmap&gt;.expirations
+     * nearcache.&lt;example\.fastmap&gt;.hits
+     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceDuration
+     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceFailure
+     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceKeyCount
+     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceTime
+     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceWrittenBytes
+     * nearcache.&lt;example\.fastmap&gt;.misses
+     * nearcache.&lt;example\.fastmap&gt;.ownedEntryCount
+     * nearcache.&lt;example\.fastmap&gt;.ownedEntryMemoryCost
+     * nearcache.hz/&lt;StatTestCacheName&gt;.creationTime
+     * nearcache.hz/&lt;StatTestCacheName&gt;.evictions
+     * nearcache.hz/&lt;StatTestCacheName&gt;.expirations
+     * nearcache.hz/&lt;StatTestCacheName&gt;.hits
+     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceDuration
+     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceFailure
+     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceKeyCount
+     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceTime
+     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceWrittenBytes
+     * nearcache.hz/&lt;StatTestCacheName&gt;.misses
+     * nearcache.hz/&lt;StatTestCacheName&gt;.ownedEntryCount
+     * nearcache.hz/&lt;StatTestCacheName&gt;.ownedEntryMemoryCost
      * os.committedVirtualMemorySize
      * os.freePhysicalMemorySize
      * os.freeSwapSpaceSize
@@ -154,7 +154,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * runtime.uptime
      * runtime.usedMemory
      * userExecutor.queueSize
-     *
+     * </pre>
      * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
      * followed by the cache name provided which is StatTestCacheName.
      *

@@ -18,9 +18,9 @@ package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 

@@ -37,11 +37,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -53,8 +54,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -81,7 +84,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
     /**
@@ -607,6 +610,95 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.get(2).intValue(), 3);
         assertTrue(map.replace(2, 3, 4));
         assertEquals(map.get(2).intValue(), 4);
+    }
+
+    @Test
+    public void testMapClonedCollectionsImmutable() {
+        testMapClonedCollectionsImmutable(getInstance(), true);
+    }
+
+    /**
+     * Tests the cloned collections returned by IMap's keySet(), localKeySet(),
+     * values(), entrySet() are immutable. To avoid code duplication the static
+     * method is called from client's test.
+     * @param instance the HZ instance
+     */
+    public static void testMapClonedCollectionsImmutable(HazelcastInstance instance, boolean onMember) {
+        IMap<Integer, Integer> map = instance.getMap("testMapClonedCollectionsImmutable");
+
+        // test empty map
+        checkMapClonedCollectionsImmutable(map, onMember);
+
+        // put some values
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        checkMapClonedCollectionsImmutable(map, onMember);
+    }
+
+    private static <K, V> void checkMapClonedCollectionsImmutable(IMap<K, V> map, boolean onMember) {
+        PagingPredicate<K, V> pagingPredicate = new PagingPredicate<K, V>(5);
+
+        checkCollectionImmutable(map.entrySet());
+        checkCollectionImmutable(map.entrySet(e -> true));
+        checkCollectionImmutable(map.entrySet(e -> false));
+        checkCollectionImmutable(map.entrySet(pagingPredicate));
+        if (onMember) {
+            checkCollectionImmutable(map.localKeySet());
+            checkCollectionImmutable(map.localKeySet(k -> true));
+            checkCollectionImmutable(map.localKeySet(k -> false));
+            checkCollectionImmutable(map.localKeySet(pagingPredicate));
+        }
+        checkCollectionImmutable(map.keySet());
+        checkCollectionImmutable(map.keySet(k -> true));
+        checkCollectionImmutable(map.keySet(k -> false));
+        checkCollectionImmutable(map.keySet(pagingPredicate));
+        checkCollectionImmutable(map.values());
+        checkCollectionImmutable(map.values(v -> true));
+        checkCollectionImmutable(map.values(v -> false));
+        checkCollectionImmutable(map.values(pagingPredicate));
+        checkMapImmutable(map.getAll(map.keySet()));
+        checkMapImmutable(map.getAll(Collections.emptySet()));
+    }
+
+    private static <K, V> void checkMapImmutable(Map<K, V> map) {
+        K key = map.isEmpty() ? null : map.keySet().iterator().next();
+        V value = map.isEmpty() ? null : map.values().iterator().next();
+        assertThrows(UnsupportedOperationException.class, () -> map.put(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.putIfAbsent(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfAbsent(key, k -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfPresent(key, (k, v) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.putAll(map));
+        assertThrows(UnsupportedOperationException.class, () -> map.merge(key, value, (v1, v2) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.remove(key));
+        assertThrows(UnsupportedOperationException.class, () -> map.remove(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.clear());
+        assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value, value));
+        assertThrows(UnsupportedOperationException.class, () -> map.replaceAll((k, v) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.compute(key, (k, v) -> v));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfAbsent(key, k -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfPresent(key, (k, v) -> v));
+        checkCollectionImmutable(map.entrySet());
+        checkCollectionImmutable(map.keySet());
+        checkCollectionImmutable(map.values());
+    }
+
+    private static <T> void checkCollectionImmutable(Collection<T> c) {
+        assertThrows(UnsupportedOperationException.class, () -> c.remove(null));
+        assertThrows(UnsupportedOperationException.class, () -> c.removeIf(e -> true));
+        assertThrows(UnsupportedOperationException.class, () -> c.remove(c.isEmpty() ? null : c.iterator().next()));
+        assertThrows(UnsupportedOperationException.class, () -> c.removeAll(c));
+        assertThrows(UnsupportedOperationException.class, () -> c.add(c.isEmpty() ? null : c.iterator().next()));
+        assertThrows(UnsupportedOperationException.class, () -> c.addAll(c));
+        assertThrows(UnsupportedOperationException.class, () -> c.retainAll(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> c.clear());
+
+        if (!c.isEmpty()) {
+            Iterator<T> iterator = c.iterator();
+            iterator.next();
+            assertThrows(UnsupportedOperationException.class, () -> iterator.remove());
+        }
     }
 
     @Test
@@ -1309,7 +1401,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testMapEntryProcessor() {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
         map.put(1, 1);
-        EntryProcessor entryProcessor = new SampleEntryProcessor();
+        SampleEntryProcessor<Integer> entryProcessor = new SampleEntryProcessor<>();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
     }
@@ -1450,14 +1542,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(keys, new EntryProcessor() {
+                map.executeOnKeys(keys, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1760,14 +1852,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(null, new EntryProcessor() {
+                map.executeOnKeys(null, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1787,25 +1879,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(description + " did not throw a NullPointerException.", threwNpe);
     }
 
-    private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
-            Serializable {
+    private static class SampleEntryProcessor<K> implements EntryProcessor<K, Integer, Boolean>, Serializable {
 
         private static final long serialVersionUID = -5735493325953375570L;
 
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Boolean process(Map.Entry<K, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return true;
-        }
-
-        @Override
-        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
-            return SampleEntryProcessor.this;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Integer, Integer> entry) {
-            entry.setValue(entry.getValue() + 1);
         }
     }
 

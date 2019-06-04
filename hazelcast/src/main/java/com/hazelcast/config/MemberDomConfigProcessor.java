@@ -26,7 +26,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
@@ -64,7 +63,6 @@ import static com.hazelcast.config.ConfigSections.GROUP;
 import static com.hazelcast.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.ConfigSections.INSTANCE_NAME;
-import static com.hazelcast.config.ConfigSections.JOB_TRACKER;
 import static com.hazelcast.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.config.ConfigSections.LIST;
 import static com.hazelcast.config.ConfigSections.LISTENERS;
@@ -101,7 +99,6 @@ import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
@@ -196,8 +193,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (JOB_TRACKER.isEqual(nodeName)) {
-            handleJobTracker(node);
         } else if (SEMAPHORE.isEqual(nodeName)) {
             handleSemaphore(node);
         } else if (LOCK.isEqual(nodeName)) {
@@ -1664,14 +1659,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String value = getTextContent(child).trim();
             if ("max-size".equals(nodeName)) {
                 nearCacheConfig.setMaxSize(Integer.parseInt(value));
-                LOGGER.warning("The element <max-size/> for <near-cache/> is deprecated, please use <eviction/> instead!");
+                LOGGER.warning("The element <max-size/> for <near-cache/> is deprecated, please use <eviction> instead!");
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
             } else if ("max-idle-seconds".equals(nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
             } else if ("eviction-policy".equals(nodeName)) {
                 nearCacheConfig.setEvictionPolicy(value);
-                LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction/> instead!");
+                LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction> instead!");
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("serialize-keys".equals(nodeName)) {
@@ -2336,38 +2331,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 configAddFunction.apply(new ListenerConfig(getTextContent(listenerNode)));
             }
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void handleJobTracker(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        JobTrackerConfig jConfig = new JobTrackerConfig();
-        jConfig.setName(name);
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("max-thread-size".equals(nodeName)) {
-                jConfig.setMaxThreadSize(getIntegerValue("max-thread-size", value));
-            } else if ("queue-size".equals(nodeName)) {
-                jConfig.setQueueSize(getIntegerValue("queue-size", value));
-            } else if ("retry-count".equals(nodeName)) {
-                jConfig.setRetryCount(getIntegerValue("retry-count", value));
-            } else if ("chunk-size".equals(nodeName)) {
-                jConfig.setChunkSize(getIntegerValue("chunk-size", value));
-            } else if ("communicate-stats".equals(nodeName)) {
-                jConfig.setCommunicateStats(value.length() == 0 ? DEFAULT_COMMUNICATE_STATS : parseBoolean(value));
-            } else if ("topology-changed-strategy".equals(nodeName)) {
-                TopologyChangedStrategy topologyChangedStrategy = JobTrackerConfig.DEFAULT_TOPOLOGY_CHANGED_STRATEGY;
-                for (TopologyChangedStrategy temp : TopologyChangedStrategy.values()) {
-                    if (temp.name().equals(value)) {
-                        topologyChangedStrategy = temp;
-                    }
-                }
-                jConfig.setTopologyChangedStrategy(topologyChangedStrategy);
-            }
-        }
-        config.addJobTrackerConfig(jConfig);
     }
 
     protected void handleSemaphore(Node node) {

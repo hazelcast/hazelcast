@@ -197,6 +197,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         this.clientMembershipListener.listenMembershipEvents(ownerConnection);
     }
 
+    public void cleanupOnDisconnect() {
+        this.clientMembershipListener.cleanupOnDisconnect();
+    }
+
     public void start() {
         this.clientMembershipListener = new ClientMembershipListener(client);
     }

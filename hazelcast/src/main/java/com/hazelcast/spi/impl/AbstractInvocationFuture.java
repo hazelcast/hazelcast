@@ -72,7 +72,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     protected final ILogger logger;
 
     /**
-     * This field contain the state of the future. If the future is not
+     * This field contains the state of the future. If the future is not
      * complete, the state can be:
      * <ol>
      * <li>{@link #VOID}: no response is available.</li>
@@ -257,7 +257,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                         }
                     } catch (Throwable cause) {
                         logger.severe("Failed asynchronous execution of execution callback: " + callback
-                                + "for call " + invocationToString(), cause);
+                                + " for call " + invocationToString() + ": " + cause, cause);
                     }
                 }
 

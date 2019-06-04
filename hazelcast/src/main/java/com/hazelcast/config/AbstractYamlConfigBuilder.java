@@ -29,6 +29,7 @@ import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import org.w3c.dom.Node;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,7 +69,7 @@ public abstract class AbstractYamlConfigBuilder {
 
     /**
      * Imports external YAML documents into the provided main YAML document.
-     * <p/>
+     * <p>
      * Since the YAML configuration uses mappings, in order to keep the
      * configuration defined in the main YAML document the imported
      * document (the source) will be actually merged into the main
@@ -99,8 +100,8 @@ public abstract class AbstractYamlConfigBuilder {
             }
 
             YamlNode rootLoaded;
-            try {
-                rootLoaded = YamlLoader.load(url.openStream());
+            try (InputStream inputStream = url.openStream()) {
+                rootLoaded = YamlLoader.load(inputStream);
             } catch (Exception ex) {
                 throw new InvalidConfigurationException("Loading YAML document from resource " + url.getPath() + " failed", ex);
             }
@@ -125,7 +126,7 @@ public abstract class AbstractYamlConfigBuilder {
 
     /**
      * Merges the source YAML document into the target YAML document
-     * <p/>
+     * <p>
      * If a given source node is not found in the target, it will be attached
      * If a given source node is found in the target, this method is invoked
      * recursively with the given node

@@ -50,8 +50,6 @@ import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
@@ -93,7 +91,6 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
@@ -429,12 +426,6 @@ public class ClientExceptionFactory {
                 return new RejectedExecutionException(message, cause);
             }
         });
-        register(ClientProtocolErrorCodes.REMOTE_MAP_REDUCE, RemoteMapReduceException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RemoteMapReduceException(message, Collections.<Exception>emptyList());
-            }
-        });
         register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
@@ -500,12 +491,6 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new TopicOverloadException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TOPOLOGY_CHANGED, TopologyChangedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TopologyChangedException(message);
             }
         });
         register(ClientProtocolErrorCodes.TRANSACTION, TransactionException.class, new ExceptionFactory() {

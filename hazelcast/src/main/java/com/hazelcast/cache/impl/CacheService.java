@@ -22,9 +22,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.Collection;
@@ -42,9 +43,8 @@ import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
  * <li>Registering/Deregistering of cache listeners.</li>
  * <li>Publish/dispatch cache events.</li>
  * <li>Enabling/Disabling statistic and management.</li>
- * <li>Data migration commit/rollback through {@link com.hazelcast.spi.MigrationAwareService}.</li>
+ * <li>Data migration commit/rollback through {@link MigrationAwareService}.</li>
  * </ul>
- * </p>
  * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when JCache
  * is located on the classpath, as determined by {@link JCacheDetector#isJCacheAvailable(ClassLoader)}.</p>
  * <p>

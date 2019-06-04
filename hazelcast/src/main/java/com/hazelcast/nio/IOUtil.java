@@ -547,7 +547,7 @@ public final class IOUtil {
      * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
      * <p>
      * The source is only accessed here, but not managed. It's the responsibility of the caller to release
-     * any resources hold by the source.
+     * any resources held by the source.
      *
      * @param source the source
      * @param target the destination

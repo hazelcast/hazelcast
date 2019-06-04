@@ -45,23 +45,11 @@ public abstract class ClientProxy implements DistributedObject {
     private final ClientContext context;
     private final SerializationService serializationService;
 
-    // these fields are for the legacy constructor without ClientContext
-    private volatile ClientContext lazyContext;
-    private volatile SerializationService lazySerializationService;
-
-    /**
-     * @deprecated since 3.9, please use {@link #ClientProxy(String, String, ClientContext)}
-     */
-    @Deprecated
-    protected ClientProxy(String serviceName, String name) {
-        this(serviceName, name, null);
-    }
-
     protected ClientProxy(String serviceName, String name, ClientContext context) {
         this.serviceName = serviceName;
         this.name = name;
         this.context = context;
-        this.serializationService = context == null ? null : context.getSerializationService();
+        this.serializationService = context.getSerializationService();
     }
 
     protected final String registerListener(ListenerMessageCodec codec, EventHandler handler) {
@@ -74,23 +62,15 @@ public abstract class ClientProxy implements DistributedObject {
 
     // public for testing
     public final ClientContext getContext() {
-        return context != null ? context : lazyContext;
+        return context;
     }
 
-    protected final ClientProxy setContext(ClientContext context) {
-        if (this.context != null) {
-            throw new IllegalStateException("The context has already been initialized!");
-        }
-        this.lazyContext = context;
-        this.lazySerializationService = context.getSerializationService();
-        return this;
-    }
 
     protected SerializationService getSerializationService() {
-        return serializationService != null ? serializationService : lazySerializationService;
+        return serializationService;
     }
 
-    protected Data toData(Object o) {
+    protected <T> Data toData(T o) {
         return getSerializationService().toData(o);
     }
 

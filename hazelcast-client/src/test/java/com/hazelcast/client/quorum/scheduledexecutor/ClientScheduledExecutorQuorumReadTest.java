@@ -19,10 +19,11 @@ package com.hazelcast.client.quorum.scheduledexecutor;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.scheduledexecutor.ScheduledExecutorQuorumReadTest;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,7 +34,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientScheduledExecutorQuorumReadTest extends ScheduledExecutorQuorumReadTest {
 
     private static PartitionedClusterClients clients;
@@ -54,7 +55,7 @@ public class ClientScheduledExecutorQuorumReadTest extends ScheduledExecutorQuor
     }
 
     @Override
-    protected IScheduledExecutorService exec(int index) {
-        return clients.client(index).getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name());
+    protected IScheduledExecutorService scheduledExec(int index, QuorumType quorumType, String postfix) {
+        return clients.client(index).getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name() + postfix);
     }
 }

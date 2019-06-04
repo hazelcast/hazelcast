@@ -16,9 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
-
 import java.util.EventListener;
 
 /**

@@ -24,7 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
@@ -55,7 +55,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node);
+        Map<String, String> parameters = phoneHome.phoneHome(node, true);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get("version"), BuildInfoProvider.getBuildInfo().getVersion());
@@ -99,7 +99,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node);
+        Map<String, String> parameters = phoneHome.phoneHome(node, true);
         assertEquals(parameters.get("mcver"), "MC_NOT_AVAILABLE");
         assertEquals(parameters.get("mclicense"), "MC_NOT_AVAILABLE");
     }

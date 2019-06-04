@@ -30,11 +30,11 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
+import com.hazelcast.spi.impl.operationservice.QuorumCheckAwareOperation;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 
 import java.util.Collection;
@@ -88,7 +88,7 @@ public class QuorumImpl implements Quorum {
     /**
      * Determines if the quorum is present for the given member collection, caches the result and publishes an event under
      * the {@link #quorumName} topic if there was a change in presence.
-     * <p/>
+     * <p>
      * <strong>This method is not thread safe and should not be called concurrently.</strong>
      *
      * @param members the members for which the presence is determined

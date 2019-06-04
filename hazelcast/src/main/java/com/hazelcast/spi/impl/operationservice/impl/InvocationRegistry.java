@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.OperationAccessor.deactivate;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 
 /**
  * Responsible for the registration of all pending invocations.

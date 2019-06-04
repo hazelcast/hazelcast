@@ -21,6 +21,8 @@ import com.hazelcast.config.Config;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
 
 public class DeclarativeConfigFileHelper {
     private static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -28,8 +30,11 @@ public class DeclarativeConfigFileHelper {
     private static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
     private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    private static final String HAZELCAST_CLIENT_FAILOVER_START_TAG =
+            "<hazelcast-client-failover xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
+    private static final String HAZELCAST_CLIENT_FAILOVER_END_TAG = "</hazelcast-client-failover>";
 
-    private String testConfigPath;
+    private List<String> testConfigPaths = new LinkedList<>();
 
     // MEMBER
 
@@ -151,7 +156,7 @@ public class DeclarativeConfigFileHelper {
         writer.println(content);
         writer.close();
 
-        testConfigPath = file.getAbsolutePath();
+        testConfigPaths.add(file.getAbsolutePath());
 
         return file;
     }
@@ -164,7 +169,7 @@ public class DeclarativeConfigFileHelper {
         writer.println(content);
         writer.close();
 
-        testConfigPath = file.getAbsolutePath();
+        testConfigPaths.add(file.getAbsolutePath());
 
         return getClass().getClassLoader().getResource(filename);
     }
@@ -188,12 +193,12 @@ public class DeclarativeConfigFileHelper {
 
     private String xmlFailoverClientConfig(int tryCount) {
         return ""
-                + "<hazelcast-client-failover>"
+                + HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <try-count>" + tryCount + "</try-count>"
                 + "  <clients>"
                 + "    <client>hazelcast-client-c1.xml</client>"
                 + "  </clients>"
-                + "</hazelcast-client-failover>";
+                + HAZELCAST_CLIENT_FAILOVER_END_TAG;
     }
 
     private String yamlConfig(String instanceName) {
@@ -222,9 +227,11 @@ public class DeclarativeConfigFileHelper {
     }
 
     public void ensureTestConfigDeleted() {
-        if (testConfigPath != null) {
-            File file = new File(testConfigPath);
-            file.delete();
+        if (!testConfigPaths.isEmpty()) {
+            for (String testConfigPath : testConfigPaths) {
+                File file = new File(testConfigPath);
+                file.delete();
+            }
         }
     }
 }

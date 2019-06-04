@@ -38,8 +38,9 @@ import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
@@ -75,7 +76,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         boolean populate = info.isPopulate();
         if (populate) {
             info.setPublishable(false);
@@ -151,10 +152,14 @@ public class PublisherCreateOperation extends MapOperation {
         return mapServiceContext.getQueryCacheContext();
     }
 
-    private QueryResult createSnapshot() throws Exception {
-        QueryResult queryResult = runInitialQuery();
-        replayEventsOverResultSet(queryResult);
-        return queryResult;
+    private QueryResult createSnapshot() {
+        try {
+            QueryResult queryResult = runInitialQuery();
+            replayEventsOverResultSet(queryResult);
+            return queryResult;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     private QueryResult runInitialQuery() {

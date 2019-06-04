@@ -27,7 +27,7 @@ import java.io.IOException;
 
 /**
  * Returns ids of the Raft groups that are currently being destroyed.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetDestroyingRaftGroupIdsOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

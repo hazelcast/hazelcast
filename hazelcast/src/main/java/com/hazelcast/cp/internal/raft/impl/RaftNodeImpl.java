@@ -80,7 +80,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -313,10 +312,9 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     /**
-     * Returns true if a new entry with the operation is currently allowed to
-     * be replicated. This method can be invoked only when the local Raft node
-     * is the leader.
-     * <p/>
+     * Returns true if a new entry with the operation is allowed to be replicated.
+     * This method can be invoked only when the local Raft node is the leader.
+     * <p>
      * Replication is not allowed, when;
      * <ul>
      * <li>Node is terminating, terminated or stepped down. See {@link RaftNodeStatus}.</li>
@@ -363,7 +361,7 @@ public class RaftNodeImpl implements RaftNode {
      * Returns true if a new query is currently allowed to be executed without
      * appending to the Raft log. This method can be invoked only when
      * the local Raft node is the leader.
-     * <p/>
+     * <p>
      * A new linearizable query execution is not allowed, when;
      * <ul>
      * <li>Node is terminating, terminated or stepped down.
@@ -493,6 +491,7 @@ public class RaftNodeImpl implements RaftNode {
 
         // if the first log entry to be sent is put into the snapshot, check if we still keep it in the log
         // if we still keep that log entry and its previous entry, we don't need to send a snapshot
+
         if (nextIndex <= raftLog.snapshotIndex()
                 && (!raftLog.containsLogEntry(nextIndex) || (nextIndex > 1 && !raftLog.containsLogEntry(nextIndex - 1)))) {
             InstallSnapshot installSnapshot = new InstallSnapshot(localMember, state.term(), raftLog.snapshot(),
@@ -789,21 +788,38 @@ public class RaftNodeImpl implements RaftNode {
         RaftGroupMembers members = state.committedGroupMembers();
         SnapshotEntry snapshotEntry = new SnapshotEntry(snapshotTerm, commitIndex, snapshot, members.index(), members.members());
 
-        long minMatchIndex = 0L;
+        long highestLogIndexToTruncate = commitIndex - maxNumberOfLogsToKeepAfterSnapshot;
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            long[] indices = leaderState.matchIndices();
-            // Last slot is reserved for leader index,
-            // and always zero. That's why we are skipping it.
-            Arrays.sort(indices, 0, indices.length - 1);
-            minMatchIndex = indices[0];
+            long[] matchIndices = leaderState.matchIndices();
+            // Last slot is reserved for leader index and always zero.
+
+            // If there is at least one follower with unknown match index,
+            // its log can be close to the leader's log so we are keeping the old log entries.
+            boolean allMatchIndicesKnown = Arrays.stream(matchIndices, 0, matchIndices.length - 1)
+                                                 .noneMatch(i -> i == 0);
+
+            if (allMatchIndicesKnown) {
+                // Otherwise, we will keep the log entries until the minimum match index
+                // that is bigger than (commitIndex - maxNumberOfLogsToKeepAfterSnapshot).
+                // If there is no such follower (all of the minority followers are far behind),
+                // then there is no need to keep the old log entries.
+                highestLogIndexToTruncate = Arrays.stream(matchIndices)
+                                                  // No need to keep any log entry if all followers are up to date
+                                                  .filter(i -> i < commitIndex)
+                                                  .filter(i -> i > commitIndex - maxNumberOfLogsToKeepAfterSnapshot)
+                                                  // We should not delete the smallest matchIndex
+                                                  .map(i -> i - 1)
+                                                  .sorted()
+                                                  .findFirst()
+                                                  .orElse(commitIndex);
+            }
         }
 
-        long truncateLogsUpToIndex = max(commitIndex - maxNumberOfLogsToKeepAfterSnapshot, minMatchIndex);
-        int truncated = log.setSnapshot(snapshotEntry, truncateLogsUpToIndex);
+        int truncatedEntryCount = log.setSnapshot(snapshotEntry, highestLogIndexToTruncate);
 
         if (logger.isFineEnabled()) {
-            logger.fine(snapshotEntry + " is taken, " + truncated + " entries are truncated.");
+            logger.fine(snapshotEntry + " is taken, " + truncatedEntryCount + " entries are truncated.");
         }
     }
 

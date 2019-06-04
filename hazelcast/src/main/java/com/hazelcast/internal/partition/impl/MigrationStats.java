@@ -109,7 +109,7 @@ public class MigrationStats {
     }
 
     /**
-     * Returns the total elapsed time of migration & replication operations' executions
+     * Returns the total elapsed time of migration &amp; replication operations' executions
      * from source to destination endpoints, in milliseconds, on the latest repartitioning round.
      */
     public long getElapsedMigrationOperationTime() {
@@ -133,7 +133,7 @@ public class MigrationStats {
     }
 
     /**
-     * Returns the total elapsed time of migration & replication operations' executions
+     * Returns the total elapsed time of migration &amp; replication operations' executions
      * from source to destination endpoints, in milliseconds, since the beginning.
      */
     public long getTotalElapsedMigrationOperationTime() {

@@ -71,11 +71,11 @@ public class MembershipEvent extends EventObject {
      * Returns a consistent view of the the members immediately after this MembershipEvent has been processed. If a
      * member is removed, the returned set will not include this member. If a member is added, it will include
      * this member.
-     * <p/>
+     * <p>
      * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} method is that the content could already
      * have changed while processing this event, so it becomes very difficult to write a deterministic algorithm since
      * you cannot get a deterministic view of the members. This method solves that problem.
-     * <p/>
+     * <p>
      * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
      *
      * Warning: If the event is triggered by a member attribute change then {@link #members} is empty.

@@ -27,15 +27,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LockAdvancedTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
@@ -512,7 +512,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz2);
-        InternalOperationService operationService = getOperationService(hz2);
+        OperationServiceImpl operationService = getOperationService(hz2);
         warmUpPartitions(hz2);
 
         String name = randomNameOwnedBy(hz);

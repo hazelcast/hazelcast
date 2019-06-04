@@ -34,7 +34,7 @@ import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
@@ -64,7 +64,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigXmlGeneratorTest {
 
     @Test
@@ -1554,6 +1554,30 @@ public class ConfigXmlGeneratorTest {
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
+    }
+
+    @Test
+    public void testUserCodeDeployment() {
+        Config config = new Config();
+
+        UserCodeDeploymentConfig expected = new UserCodeDeploymentConfig();
+        expected.setEnabled(true)
+                .setBlacklistedPrefixes("some-prefixes")
+                .setClassCacheMode(UserCodeDeploymentConfig.ClassCacheMode.ETERNAL)
+                .setProviderFilter("HAS_ATTRIBUTE:class-provider")
+                .setWhitelistedPrefixes("other-prefixes")
+                .setProviderMode(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES);
+        config.setUserCodeDeploymentConfig(expected);
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(config);
+        UserCodeDeploymentConfig actual = newConfigViaXMLGenerator.getUserCodeDeploymentConfig();
+
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+        assertEquals(expected.getBlacklistedPrefixes(), actual.getBlacklistedPrefixes());
+        assertEquals(expected.getClassCacheMode(), actual.getClassCacheMode());
+        assertEquals(expected.getProviderFilter(), actual.getProviderFilter());
+        assertEquals(expected.getWhitelistedPrefixes(), actual.getWhitelistedPrefixes());
+        assertEquals(expected.getProviderMode(), actual.getProviderMode());
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

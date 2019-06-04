@@ -33,9 +33,9 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected Object call() throws Exception {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         Predicate predicate = serializationService.toObject(parameters.predicate);
 
@@ -67,7 +67,7 @@ public class MapExecuteWithPredicateMessageTask
     }
 
     private Object invokeOnPartition(PartitionPredicate partitionPredicate,
-                                     InternalOperationService operationService) {
+                                     OperationServiceImpl operationService) {
         int partitionId = getPartitionId();
         Predicate predicate = partitionPredicate.getTarget();
         OperationFactory factory = createOperationFactory(predicate);

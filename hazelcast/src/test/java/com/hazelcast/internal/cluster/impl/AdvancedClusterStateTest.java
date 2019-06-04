@@ -30,14 +30,14 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import com.hazelcast.transaction.TransactionException;
@@ -76,7 +76,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Rule
@@ -489,7 +489,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, state);
 
-        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(randomName(), 1);
         Future<Long> future = operationService
                 .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
@@ -626,7 +626,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
-        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(key, 1);
         final Future<Long> future = operationService
                 .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, partitionId);

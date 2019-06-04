@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), lockOwner, lockThreadId, getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));

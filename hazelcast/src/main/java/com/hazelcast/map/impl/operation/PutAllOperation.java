@@ -24,10 +24,10 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,12 +48,13 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 public class PutAllOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
+    private transient int currentIndex;
     private MapEntries mapEntries;
 
-    private boolean hasMapListener;
-    private boolean hasWanReplication;
-    private boolean hasBackups;
-    private boolean hasInvalidation;
+    private transient boolean hasMapListener;
+    private transient boolean hasWanReplication;
+    private transient boolean hasBackups;
+    private transient boolean hasInvalidation;
 
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
@@ -67,7 +68,9 @@ public class PutAllOperation extends MapOperation
     }
 
     @Override
-    public void run() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled();
         hasBackups = hasBackups();
@@ -79,9 +82,16 @@ public class PutAllOperation extends MapOperation
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mapEntries.size());
         }
+    }
 
-        for (int i = 0; i < mapEntries.size(); i++) {
-            put(mapEntries.getKey(i), mapEntries.getValue(i));
+    @Override
+    protected void runInternal() {
+        // if currentIndex is not zero, this is a
+        // continuation of the operation after a NativeOOME
+        int size = mapEntries.size();
+        while (currentIndex < size) {
+            put(mapEntries.getKey(currentIndex), mapEntries.getValue(currentIndex));
+            currentIndex++;
         }
     }
 
@@ -96,7 +106,8 @@ public class PutAllOperation extends MapOperation
 
         if (hasMapListener) {
             EntryEventType eventType = (oldValue == null ? ADDED : UPDATED);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name,
+                    eventType, dataKey, oldValue, dataValue);
         }
 
         if (hasWanReplication) {
@@ -128,10 +139,10 @@ public class PutAllOperation extends MapOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {

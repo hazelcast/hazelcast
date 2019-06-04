@@ -18,11 +18,11 @@ package com.hazelcast.query.extractor;
 
 /**
  * Common superclass for all argument parsers.
- * <p/>
+ * <p>
  * For now, it's not possible to register a custom {@link ArgumentParser}, thus a default parser is used.
  * It follows a "pass-through" semantics, which means that the string located in the square-brackets is passed
  * "as-is" to the extract method.
- * <p/>
+ * <p>
  * <b>It is not allowed to use square brackets within the argument string.</b>
  *
  * @param <I> type of the unparsed argument object (input)

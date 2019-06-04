@@ -29,7 +29,7 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPreconditionsTest extends HazelcastTestSupport {
 
     private final int MINUTES = 60 * 1000;
@@ -583,14 +583,14 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKey() {
-        map.executeOnKey(null, new EntryProcessor() {
+        map.executeOnKey(null, new EntryProcessor<Object, Object, Object>() {
             @Override
             public Object process(Map.Entry entry) {
                 return null;
             }
 
             @Override
-            public EntryBackupProcessor getBackupProcessor() {
+            public EntryProcessor<Object, Object, Object> getBackupProcessor() {
                 return null;
             }
         });
@@ -601,14 +601,14 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         Set<Object> set = new HashSet<Object>();
         set.add(null);
 
-        map.executeOnKeys(set, new EntryProcessor() {
+        map.executeOnKeys(set, new EntryProcessor<Object, Object, Object>() {
             @Override
             public Object process(Map.Entry entry) {
                 return null;
             }
 
             @Override
-            public EntryBackupProcessor getBackupProcessor() {
+            public EntryProcessor<Object, Object, Object> getBackupProcessor() {
                 return null;
             }
         });
@@ -621,12 +621,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         Set<Object> set = new ConcurrentSkipListSet<Object>();
         set.add(1);
 
-        map.executeOnKeys(set, new AbstractEntryProcessor() {
-            @Override
-            public Object process(Map.Entry entry) {
-                return entry.setValue(null);
-            }
-        });
+        map.executeOnKeys(set, entry -> entry.setValue(null));
 
         assertEquals(0, map.size());
     }

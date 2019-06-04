@@ -26,7 +26,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * Configures native memory region.
  * <p>
  * Native memory is allocated outside JVM heap space and is not subject to JVM garbage collection.
- * Therefore, hundreds of gigabytes of native memory can be allocated & used without introducing
+ * Therefore, hundreds of gigabytes of native memory can be allocated &amp; used without introducing
  * pressure on GC mechanism.
  * <p>
  * Data structures, such as {@link com.hazelcast.core.IMap} and {@link com.hazelcast.cache.ICache},

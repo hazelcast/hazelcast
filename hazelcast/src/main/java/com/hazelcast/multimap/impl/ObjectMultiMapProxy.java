@@ -19,22 +19,8 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
@@ -55,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -329,42 +314,6 @@ public class ObjectMultiMapProxy<K, V>
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
         return getService().createStats(name);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-multimap-" + getName());
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation,
-                                                    JobTracker jobTracker) {
-        try {
-            isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory != null) {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            throw new HazelcastException(e);
-        }
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

@@ -126,7 +126,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
     /**
      * Checks whether the public or private IP should be used to connect to Hazelcast members.
      *
-     * @return {@true} for public IP, {@code false} for private IP
+     * @return {@code true} for public IP, {@code false} for private IP
      */
     public boolean isUsePublicIp() {
         return usePublicIp;

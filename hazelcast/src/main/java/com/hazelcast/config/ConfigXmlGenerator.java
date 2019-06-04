@@ -165,6 +165,7 @@ public class ConfigXmlGenerator {
         pnCounterXmlGenerator(gen, config);
         quorumXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
+        userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1466,6 +1467,17 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {
+        UserCodeDeploymentConfig ucdConfig = config.getUserCodeDeploymentConfig();
+        gen.open("user-code-deployment", "enabled", ucdConfig.isEnabled())
+                .node("class-cache-mode", ucdConfig.getClassCacheMode())
+                .node("provider-mode", ucdConfig.getProviderMode())
+                .node("blacklist-prefixes", ucdConfig.getBlacklistedPrefixes())
+                .node("whitelist-prefixes", ucdConfig.getWhitelistedPrefixes())
+                .node("provider-filter", ucdConfig.getProviderFilter())
+                .close();
     }
 
     private static void handleQuorumFunction(XmlGenerator gen, QuorumConfig quorumConfig) {

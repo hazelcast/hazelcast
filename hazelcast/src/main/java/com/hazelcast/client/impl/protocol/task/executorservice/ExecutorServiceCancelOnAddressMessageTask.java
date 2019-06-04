@@ -22,8 +22,8 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.net.UnknownHostException;
 
@@ -36,7 +36,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
 
     @Override
     protected InvocationBuilder createInvocationBuilder() throws UnknownHostException {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         final String serviceName = DistributedExecutorService.SERVICE_NAME;
         CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
         return operationService.createInvocationBuilder(serviceName, op, parameters.address);

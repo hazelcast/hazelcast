@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -32,7 +32,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 3;
@@ -90,11 +90,11 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
 
     /**
      * Tests that all entries and backups of a {@link PutAllPartitionAwareOperationFactory} are sent to the correct members.
-     * <p/>
+     * <p>
      * The test creates a cluster with a single partition per member and invokes {@link PutAllPartitionAwareOperationFactory}
      * which contains a single entry for every partition in the cluster. So just a single entry is for the member the factory
      * is executed on.
-     * <p/>
+     * <p>
      * After the operation is invoked we assert that each member owns one entry of the map and that all backups have been written.
      */
     private void testPutAllPerMemberOperation(final int entriesPerPartition) throws Exception {
@@ -111,7 +111,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
                 serializationService);
 
         // invoke the operation on a random remote target
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, allPartitions);
 
         // assert that all entries have been written

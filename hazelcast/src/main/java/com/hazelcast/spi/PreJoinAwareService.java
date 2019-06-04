@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+
 /**
  * Services which need to perform operations on a joining member just before the member is set as joined must implement
  * this interface. These operations are executed on the joining member before it is set as joined, in contrast to

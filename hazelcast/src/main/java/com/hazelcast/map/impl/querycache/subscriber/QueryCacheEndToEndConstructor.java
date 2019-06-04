@@ -23,7 +23,7 @@ import com.hazelcast.util.ConstructorFunction;
  * Constructor which is used to construct all parts/sides of a {@code QueryCache} system on nodes or on clients.
  * This constructor is called from subscriber-side and initiates the construction of whole underlying system
  * which feeds the {@code QueryCache}.
- * <p/>
+ * <p>
  * When this constructor returns successfully, there should be a {@code QueryCache} instance ready to use.
  *
  * @see com.hazelcast.map.QueryCache

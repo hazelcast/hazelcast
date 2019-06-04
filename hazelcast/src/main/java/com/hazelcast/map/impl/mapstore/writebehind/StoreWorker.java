@@ -44,7 +44,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * When write-behind is enabled the work is offloaded to another thread than partition-operation-thread.
  * That thread uses this runnable task to process write-behind-queues. This task collects entries from
  * write behind queues and passes them to {@link #writeBehindProcessor}.
- * <p/>
+ * <p>
  * Only one {@link StoreWorker} task is created for a map on a member.
  */
 public class StoreWorker implements Runnable {

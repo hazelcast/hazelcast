@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains ICountDownLatch functionality for Hazelcast.<br/>
+ * <p>This package contains ICountDownLatch functionality for Hazelcast.<br>
  * The ICountDownLatch is the distributed version of the {@link java.util.concurrent.CountDownLatch}.
  *
  * @since 3.2

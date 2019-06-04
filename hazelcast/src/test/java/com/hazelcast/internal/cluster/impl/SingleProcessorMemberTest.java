@@ -22,7 +22,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.environment.RuntimeAvailableProcessorsRule;
 import org.junit.Rule;
@@ -37,7 +37,7 @@ import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_W
 import static com.hazelcast.test.OverridePropertyRule.clear;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SingleProcessorMemberTest extends HazelcastTestSupport {
 
     @Rule

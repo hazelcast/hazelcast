@@ -24,7 +24,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -69,7 +69,7 @@ public class PartitionContainer {
     /**
      * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
-     * <p/>
+     * <p>
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */

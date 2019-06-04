@@ -17,7 +17,7 @@
 package com.hazelcast.crdt;
 
 import com.hazelcast.cluster.impl.VectorClock;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Map;
 

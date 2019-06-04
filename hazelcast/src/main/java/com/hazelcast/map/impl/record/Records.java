@@ -22,7 +22,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 
 /**
- * Contains various factory & helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
+ * Contains various factory &amp; helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
  */
 public final class Records {
 
@@ -60,7 +60,7 @@ public final class Records {
     /**
      * Get current cached value from the record.
      * This method protects you against accidental exposure of cached value mutex into rest of the code.
-     * <p/>
+     * <p>
      * Use it instead of raw {@link Record#getCachedValueUnsafe()} See
      * {@link #getValueOrCachedValue(Record, SerializationService)}
      * for details.
@@ -89,13 +89,13 @@ public final class Records {
      * <li>Portable serialization is not used</li>
      * <li>OBJECT InMemoryFormat is not used</li>
      * </ul>
-     * <p/>
+     * <p>
      * If Record does not contain cached value and is found appropriate (see above) then new cache value is created
      * by de-serializing the {@link Record#getValue()}
-     * <p/>
+     * <p>
      * The newly de-deserialized value may not be stored into the Record cache when the record has been modified
      * while the method was running.
-     * <p/>
+     * <p>
      * WARNING: This method may temporarily set an arbitrary object into the Record cache - this object acts as mutex.
      * The mutex should never be returned to the outside world. Use {@link #getCachedValue(Record)} instead of raw
      * {@link Record#getCachedValueUnsafe()} to protect from accidental mutex exposure to the user-code.

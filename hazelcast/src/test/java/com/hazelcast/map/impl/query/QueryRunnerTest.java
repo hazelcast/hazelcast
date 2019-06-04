@@ -25,7 +25,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -91,17 +91,6 @@ public class QueryRunnerTest extends HazelcastTestSupport {
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
         assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOwnedPartitions().toArray());
-    }
-
-    @Test
-    public void runPartitionScanQueryOnSinglePartition() {
-        Predicate predicate = Predicates.equal("this", value);
-        Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
-        QueryResult result = (QueryResult) queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
-
-        assertEquals(1, result.getRows().size());
-        assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
-        assertArrayEquals(result.getPartitionIds().toArray(), new Object[]{partitionId});
     }
 
     @Test

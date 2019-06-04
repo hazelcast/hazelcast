@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition.strategy;
 
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 
 @SerializableByConvention

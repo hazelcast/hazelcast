@@ -40,14 +40,13 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.quorum.QuorumService;
@@ -113,11 +112,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return delegatedInstance.getReplicatedMap(name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        return delegatedInstance.getJobTracker(name);
     }
 
     @Override

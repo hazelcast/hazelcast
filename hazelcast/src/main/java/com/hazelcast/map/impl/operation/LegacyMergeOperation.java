@@ -24,7 +24,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
@@ -50,7 +50,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Record oldRecord = recordStore.getRecord(dataKey);
         if (oldRecord != null) {
             oldValue = mapServiceContext.toData(oldRecord.getValue());
@@ -76,10 +76,10 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (merged) {
             eventType = EntryEventType.MERGED;
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -88,7 +88,7 @@ public class LegacyMergeOperation extends BasePutOperation {
         if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
         } else {
-           return super.getBackupOperation();
+            return super.getBackupOperation();
         }
     }
 

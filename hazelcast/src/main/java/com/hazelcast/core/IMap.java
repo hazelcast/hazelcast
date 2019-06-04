@@ -24,14 +24,13 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -59,9 +58,9 @@ import java.util.concurrent.TimeUnit;
  * <li>The {@code get} method returns a clone of original values, so modifying the returned value does not change
  * the actual value in the map. You should put the modified value back to make changes visible to all nodes.
  * For additional info, see {@link IMap#get(Object)}.</li>
- * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
- * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
- * in the collection, and vice-versa.</li>
+ * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return an <b>immutable</b>
+ * collection clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b>
+ * reflected in the collection.</li>
  * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
  * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
  * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
@@ -69,14 +68,14 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * For example, following code fragment will behave incorrectly and will enter an infinite loop:
  * <pre>
- * map.computeIfPresent("key", (key, value) -> {
+ * map.computeIfPresent("key", (key, value) -&gt; {
  *     value.setSomeAttribute("newAttributeValue");
  *     return value;
  * });
  * </pre>
  * It should be replaced with:
  * <pre>
- * map.computeIfPresent("key", (key, value) -> {
+ * map.computeIfPresent("key", (key, value) -&gt; {
  *     return new ObjectWithSomeAttribute("newAttributeValue");
  * });
  * </pre>
@@ -291,7 +290,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -470,13 +468,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void flush();
 
     /**
-     * Returns the entries for the given keys.
+     * Returns an immutable map of entries for the given keys.
      * <p>
      * <b>Warning 1:</b>
      * <p>
      * The returned map is <b>NOT</b> backed by the original map, so
      * changes to the original map are <b>NOT</b> reflected in the
-     * returned map, and vice-versa.
+     * returned map.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -493,7 +491,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * and are propagated to the caller.
      *
      * @param keys keys to get (keys inside the collection cannot be null)
-     * @return map of entries
+     * @return an immutable map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
@@ -652,7 +650,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
@@ -732,7 +729,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -820,7 +816,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
@@ -940,7 +935,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
@@ -1019,7 +1014,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
@@ -1205,10 +1200,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1262,10 +1255,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
-     * <p>
      * <p><b>Interactions with the map store</b>
      * <p>
      * If no value is found with {@code key} in memory,
@@ -1297,7 +1288,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
     /**
-     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)}
+     * Same as {@link #put(Object, Object, long, TimeUnit)}
      * except that the map store, if defined, will not be called to
      * load/store/persist the entry.
      * <p>
@@ -1324,7 +1315,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void putTransient(K key, V value, long ttl, TimeUnit ttlUnit);
 
     /**
-     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)}
+     * Same as {@link #put(Object, Object, long, TimeUnit)}
      * except that the map store, if defined, will not be called to
      * load/store/persist the entry.
      * <p>
@@ -1518,7 +1509,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * retrieved the invocation result response, then the operation is retried. The invocation
      * retry fails because the value is already updated and the result of such replace call
      * returns {@code false}. Hazelcast doesn't guarantee exactly once invocation.
-     * <p>
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -2252,54 +2242,54 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void evictAll();
 
     /**
-     * Returns a set clone of the keys contained in this map.
+     * Returns an immutable set clone of the keys contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a set clone of the keys contained in this map
+     * @return an immutable set clone of the keys contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
     /**
-     * Returns a collection clone of the values contained in this map.
+     * Returns an immutable collection clone of the values contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the collection.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a collection clone of the values contained in this map
+     * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
     /**
-     * Returns a {@link Set} clone of the mappings contained in this map.
+     * Returns an immutable {@link Set} clone of the mappings contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a set clone of the keys mappings in this map
+     * @return an immutable set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
@@ -2307,14 +2297,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Queries the map based on the specified predicate and
-     * returns the keys of matching entries.
+     * returns an immutable {@link Set} clone of the keys of matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2329,14 +2319,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Set<K> keySet(Predicate predicate);
 
     /**
-     * Queries the map based on the specified predicate and returns the matching entries.
+     * Queries the map based on the specified predicate and returns an immutable set of the matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2351,14 +2341,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
     /**
-     * Queries the map based on the specified predicate and returns the values of matching entries.
+     * Queries the map based on the specified predicate and returns an immutable collection of the values
+     * of matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the collection.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2373,7 +2364,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Collection<V> values(Predicate predicate);
 
     /**
-     * Returns the locally owned set of keys.
+     * Returns the locally owned immutable set of keys.
      * <p>
      * Each key in this map is owned and managed by a specific
      * member in the cluster.
@@ -2385,20 +2376,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return locally owned keys
+     * @return locally owned immutable set of keys
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
     /**
-     * Returns the keys of matching locally owned entries.
+     * Returns an immutable set of the keys of matching locally owned entries.
      * <p>
      * Each key in this map is owned and managed by a specific
      * member in the cluster.
@@ -2410,14 +2401,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
-     * @return keys of matching locally owned entries
+     * @return an immutable set of the keys of matching locally owned entries
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
@@ -2498,9 +2489,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces, the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
@@ -2522,10 +2513,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * If the EntryProcessor implements ReadOnly and modifies the entry it is processing, an UnsupportedOperationException
      * will be thrown.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor, for example the "delta",
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor, for example the "delta",
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
@@ -2559,7 +2550,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see Offloadable
      * @see ReadOnly
      */
-    Object executeOnKey(K key, EntryProcessor entryProcessor);
+    <R> R executeOnKey(@Nonnull K key,
+                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
@@ -2591,8 +2583,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
-     *
-     * <h4>Performance note</h4>
+     * <p>
+     * <b>Performance note</b>
      * <p>Keep the state of {@code entryProcessor}
      * small, it will be serialized and one copy will be sent to each member.
      * Additionally, the {@linkplain EntryProcessor#getBackupProcessor() backup
@@ -2602,7 +2594,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * partition and backup:
      * <pre>{@code
      *   HashMap additions = ...;
-     *   iMap.executeOnKeys(map.keySet(), new AbstractEntryProcessor<Integer, Integer>() {
+     *   iMap.executeOnKeys(map.keySet(), new EntryProcessor<Integer, Integer, Object>() {
      *             public Object process(Entry<Integer, Integer> entry) {
      *                 Integer updateBy = additions.get(entry.getKey());
      *                 entry.setValue(entry.getValue() + updateBy);
@@ -2616,7 +2608,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */
-    Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
+    <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key} with
@@ -2629,16 +2622,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * </ol>
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
@@ -2653,10 +2646,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor - for example the "delta"
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor - for example the "delta"
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
@@ -2689,10 +2682,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @param callback       to listen whether operation is finished or not
+     * @param <R> return type for entry processor
      * @see Offloadable
      * @see ReadOnly
      */
-    void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+    <R> void submitToKey(@Nonnull K key,
+                         @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                         @Nullable ExecutionCallback<? super R> callback);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
@@ -2708,16 +2704,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
-     * <li>partition-thread (set & unlock, or just unlock if no changes)</li>
+     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
      * </ol>
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
      * <ol>
-     * <li>partition-thread (fetch & lock)</li>
+     * <li>partition-thread (fetch &amp; lock)</li>
      * <li>execution-thread (process)</li>
      * </ol>
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
@@ -2732,10 +2728,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the EntryBackupProcessor - for example the "delta"
-     * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * The input allows providing context to the entry backup processor - for example the "delta"
+     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
      * <p>
      * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
@@ -2772,7 +2768,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ReadOnly
      * @see ICompletableFuture
      */
-    ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
+    <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                          @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
@@ -2806,7 +2803,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
@@ -2840,7 +2837,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                   @Nonnull Predicate<K, V> predicate);
 
     /**
      * Applies the aggregation logic on all map entries and returns the result
@@ -2893,43 +2891,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @since 3.8
      */
     <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection, Predicate<K, V> predicate);
-
-    /**
-     * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
-     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
-     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     *
-     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
-     * @param aggregation     the aggregation that is being executed against the map
-     * @param <SuppliedValue> the final type emitted from the supplier
-     * @param <Result>        the resulting aggregation value type
-     * @return the aggregated value
-     * @deprecated please use fast-aggregations {@link IMap#aggregate(Aggregator)}
-     * or {@link IMap#aggregate(Aggregator, Predicate)} instead
-     */
-    @Deprecated
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation);
-
-    /**
-     * Executes a predefined aggregation on the maps data set.
-     * <p>
-     * The {@link com.hazelcast.mapreduce.aggregation.Supplier} is used to either select or to select and extract a (sub-)value.
-     * A predefined set of aggregations can be found in {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     *
-     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
-     * @param aggregation     the aggregation that is being executed against the map
-     * @param jobTracker      the {@link com.hazelcast.mapreduce.JobTracker} instance to execute the aggregation
-     * @param <SuppliedValue> the final type emitted from the supplier
-     * @param <Result>        the resulting aggregation value type
-     * @return the aggregated value
-     * @deprecated please use fast-aggregations {@link IMap#aggregate(Aggregator)}
-     * or {@link IMap#aggregate(Aggregator, Predicate)} instead
-     */
-    @Deprecated
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation,
-                                             JobTracker jobTracker);
 
     /**
      * Returns corresponding {@code QueryCache} instance for the supplied {@code name} or null.

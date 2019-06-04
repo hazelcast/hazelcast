@@ -143,7 +143,7 @@ public class SecurityConfig {
     /**
      * @return a boolean flag indicating whether actions, submitted as tasks in an Executor from clients
      * and have no permission mappings, are blocked or allowed.
-     * <p/>
+     * <p>
      * Executors:
      *
      * <ul>
@@ -158,7 +158,7 @@ public class SecurityConfig {
 
     /**
      * Block or allow actions, submitted as tasks in an Executor from clients and have no permission mappings.
-     * <p/>
+     * <p>
      * Executors:
      *
      * <ul>
@@ -167,8 +167,8 @@ public class SecurityConfig {
      * <li>{@link com.hazelcast.durableexecutor.DurableExecutorService}
      * </ul>
      *
-     * @param clientBlockUnmappedActions <li/>True: Blocks all actions that have no permission mapping
-     *                                   <li/>False: Allows all actions that have no permission mapping
+     * @param clientBlockUnmappedActions True: Blocks all actions that have no permission mapping;
+     *                                   False: Allows all actions that have no permission mapping
      */
     public SecurityConfig setClientBlockUnmappedActions(boolean clientBlockUnmappedActions) {
         this.clientBlockUnmappedActions = clientBlockUnmappedActions;

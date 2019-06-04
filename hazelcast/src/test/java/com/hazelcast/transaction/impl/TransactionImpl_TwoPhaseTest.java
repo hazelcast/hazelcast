@@ -22,7 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
 
-    private InternalOperationService operationService;
+    private OperationServiceImpl operationService;
     private ILogger logger;
     private TransactionManagerServiceImpl txManagerService;
     private NodeEngine nodeEngine;

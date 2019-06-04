@@ -19,9 +19,9 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -149,7 +149,7 @@ public class TransactionLog {
     private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
             TransactionLogRecord record, Operation op) {
 
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (record instanceof TargetAwareTransactionLogRecord) {
             Address target = ((TargetAwareTransactionLogRecord) record).getTarget();

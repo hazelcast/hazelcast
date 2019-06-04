@@ -133,7 +133,7 @@ public final class CollectionUtil {
     }
 
     /**
-     * Converts a {@link Collection<Integer>} to a primitive {@code int[]} array.
+     * Converts a {@link Collection} of {@link Integer} to a primitive {@code int[]} array.
      *
      * @param collection the given collection
      * @return a primitive int[] array
@@ -149,7 +149,7 @@ public final class CollectionUtil {
     }
 
     /**
-     * Converts a {@link Collection<Long>} to a primitive {@code long[]} array.
+     * Converts a {@link Collection} of {@link Long} to a primitive {@code long[]} array.
      *
      * @param collection the given collection
      * @return a primitive long[] array

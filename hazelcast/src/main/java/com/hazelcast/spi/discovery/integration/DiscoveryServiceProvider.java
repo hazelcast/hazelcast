@@ -17,10 +17,10 @@
 package com.hazelcast.spi.discovery.integration;
 
 /**
- * The <tt>DiscoveryServiceProvider</tt> interface provides the possibility to build {@link DiscoveryService}s.
- * <tt>DiscoveryService</tt> implementations should be immutable and therefore the provider is introduced to
+ * The <code>DiscoveryServiceProvider</code> interface provides the possibility to build {@link DiscoveryService}s.
+ * <code>DiscoveryService</code> implementations should be immutable and therefore the provider is introduced to
  * provide this ability. Every service should have its own provider, however in rare cases a single provider might
- * create different <tt>DiscoveryService</tt> implementations based on the provided {@link DiscoveryMode} or other
+ * create different <code>DiscoveryService</code> implementations based on the provided {@link DiscoveryMode} or other
  * configuration details.
  *
  * @since 3.6
@@ -30,7 +30,7 @@ public interface DiscoveryServiceProvider {
     /**
      * Instantiates a new instance of the {@link DiscoveryService}.
      *
-     * @param settings The settings to pass to creation of the <tt>DiscoveryService</tt>
+     * @param settings The settings to pass to creation of the <code>DiscoveryService</code>
      * @return a new instance of the discovery service
      */
     DiscoveryService newDiscoveryService(DiscoveryServiceSettings settings);

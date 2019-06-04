@@ -30,7 +30,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;
@@ -49,7 +49,8 @@ import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZAT
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P>
+        implements BlockingMessageTask {
 
     protected transient ClientPrincipal principal;
     protected transient String clientName;
@@ -112,7 +113,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     @SuppressWarnings("checkstyle:returncount")
     private AuthenticationStatus authenticate() {
-        if (clientSerializationVersion != serializationService.getVersion()) {
+        if (endpoint.isAuthenticated()) {
+            return AUTHENTICATED;
+        } else if (clientSerializationVersion != serializationService.getVersion()) {
             return SERIALIZATION_VERSION_MISMATCH;
         } else if (!isOwnerConnection() && !isMember(principal)) {
             logger.warning("Member having UUID " + principal.getOwnerUuid()

@@ -25,8 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;

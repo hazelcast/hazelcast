@@ -35,7 +35,7 @@ import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -54,7 +54,7 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
 
 /**
- * Performs invocations to create & destroy Raft groups,
+ * Performs invocations to create &amp; destroy Raft groups,
  * commits {@link RaftOp} and runs queries on Raft groups.
  */
 @SuppressWarnings("unchecked")

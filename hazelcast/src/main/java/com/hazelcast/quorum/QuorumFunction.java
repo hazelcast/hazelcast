@@ -22,7 +22,7 @@ import java.util.Collection;
 
 /**
  * A function that can be used to conclude absence/presence of quorum.
- * The quorum function is consulted:<br/>
+ * The quorum function is consulted:<br>
  * <ul>
  *     <li>When a cluster membership change occurs (member added or removed)</li>
  *     <li>Whenever a hearbeat is received from a member, in case the {@code QuorumFunction} also

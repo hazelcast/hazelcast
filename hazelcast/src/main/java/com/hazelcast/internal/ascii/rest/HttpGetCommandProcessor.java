@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
@@ -414,6 +415,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         } else if (value instanceof RestValue) {
             RestValue restValue = (RestValue) value;
             command.setResponse(restValue.getContentType(), restValue.getValue());
+        } else if (value instanceof HazelcastJsonValue) {
+            command.setResponse(CONTENT_TYPE_JSON, stringToBytes(value.toString()));
         } else if (value instanceof String) {
             command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
         } else {

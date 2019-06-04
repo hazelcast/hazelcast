@@ -26,7 +26,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Internal-usage-only adapter which wraps all {@link MapListener} sub-interfaces into a {@link ListenerAdapter}.
- * <p/>
+ * <p>
  * Main purpose of this adapter is to avoid lots of instanceOf checks when firing events to check whether or not
  * a corresponding {@link MapListener} sub-interface for a specific {@link com.hazelcast.core.EntryEventType} is extended.
  * And also to provide an abstraction over all {@link MapListener} sub-interfaces to make a smooth usage when passing

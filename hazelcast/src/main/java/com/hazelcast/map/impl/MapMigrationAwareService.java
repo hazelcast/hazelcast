@@ -28,11 +28,11 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -251,6 +251,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            indexes.createIndexesFromRecordedDefinitions();
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;

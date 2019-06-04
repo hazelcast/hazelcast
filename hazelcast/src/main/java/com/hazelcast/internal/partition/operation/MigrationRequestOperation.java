@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -31,21 +31,21 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.CallStatus;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
@@ -316,7 +316,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         public void notify(Object result) {
             if (Boolean.TRUE.equals(result)) {
                 if (fragmentedMigrationEnabled) {
-                    InternalOperationService operationService = (InternalOperationService) getNodeEngine().getOperationService();
+                    OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
                     operationService.execute(new SendNewMigrationFragmentRunnable());
                 } else {
                     completeMigration(true);

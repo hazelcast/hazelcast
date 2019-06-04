@@ -28,8 +28,8 @@ import com.hazelcast.cp.CPSubsystem;
  * Async methods immediately return an {@link ICompletableFuture} from which
  * the operation's result can be obtained either in a blocking manner or by
  * registering a callback to be executed upon completion. For example:
- * <pre><code>
- * ICompletableFuture<Long> future = atomicLong.addAndGetAsync(13);
+ * <pre>
+ * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
  * future.andThen(new ExecutionCallback&lt;Long&gt;() {
  *     void onResponse(Long response) {
  *         // do something with the result
@@ -39,7 +39,7 @@ import com.hazelcast.cp.CPSubsystem;
  *         // handle failure
  *     }
  * });
- * </code></pre>
+ * </pre>
  * <p>
  * As of version 3.12, Hazelcast offers 2 different {@link IAtomicLong} impls.
  * Behaviour of {@link IAtomicLong} under failure scenarios, including network
@@ -204,15 +204,15 @@ public interface IAtomicLong extends DistributedObject {
      * The operations result can be obtained in a blocking way, or a callback
      * can be provided for execution upon completion, as demonstrated in the
      * following examples:
-     * <pre><code>
-     * ICompletableFuture<Long> future = atomicLong.addAndGetAsync(13);
+     * <pre>
+     * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
      * // do something else, then read the result
      *
      * // this method will block until the result is available
      * Long result = future.get();
-     * </code></pre>
-     * <pre><code>
-     * ICompletableFuture<Long> future = atomicLong.addAndGetAsync(13);
+     * </pre>
+     * <pre>
+     * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
      * future.andThen(new ExecutionCallback&lt;Long&gt;() {
      *     void onResponse(Long response) {
      *         // do something with the result
@@ -222,7 +222,7 @@ public interface IAtomicLong extends DistributedObject {
      *         // handle failure
      *     }
      * });
-     * </code></pre>
+     * </pre>
      *
      * @param delta the value to add
      * @return an {@link ICompletableFuture} bearing the response
@@ -370,16 +370,16 @@ public interface IAtomicLong extends DistributedObject {
      * <p>
      * This method will dispatch a request and return immediately an
      * {@link ICompletableFuture}. For example:
-     * <pre><code>
-     * class IsOneFunction implements IFunction<Long, Boolean> {
+     * <pre>
+     * class IsOneFunction implements IFunction&lt;Long, Boolean&gt; {
      *     &#64;Override
      *     public Boolean apply(Long input) {
      *         return input.equals(1L);
      *     }
      * }
      *
-     * ICompletableFuture<Boolean> future = atomicLong.applyAsync(new IsOneFunction());
-     * future.andThen(new ExecutionCallback<;Boolean>() {
+     * ICompletableFuture&lt;Boolean&gt; future = atomicLong.applyAsync(new IsOneFunction());
+     * future.andThen(new ExecutionCallback&lt;Boolean&gt;() {
      *    void onResponse(Boolean response) {
      *        // do something with the response
      *    }
@@ -388,7 +388,7 @@ public interface IAtomicLong extends DistributedObject {
      *       // handle failure
      *    }
      * });
-     * </code></pre>
+     * </pre>
      *
      * @param function the function
      * @return an {@link ICompletableFuture} with the result of the function application

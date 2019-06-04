@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class MapIsEmptyOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
@@ -31,7 +31,8 @@ public class MapIsEmptyOperation extends MapOperation implements PartitionAwareO
     public MapIsEmptyOperation() {
     }
 
-    public void run() {
+    @Override
+    protected void runInternal() {
         empty = recordStore.isEmpty();
     }
 

@@ -51,7 +51,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -73,7 +73,6 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_11;
-import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -662,9 +661,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     @Override
     public Runnable prepareMergeRunnable() {
-        if (version.isLessOrEqual(V3_8)) {
-            return null;
-        }
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             return null;

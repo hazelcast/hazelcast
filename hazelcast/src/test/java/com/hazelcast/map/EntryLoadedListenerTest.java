@@ -30,7 +30,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
@@ -405,17 +405,17 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public static class Updater extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Updater implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return entry.getValue();
         }
     }
 
-    public static class Reader extends AbstractEntryProcessor<Integer, Integer> {
+    public static class Reader implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             return entry.getValue();
         }
     }

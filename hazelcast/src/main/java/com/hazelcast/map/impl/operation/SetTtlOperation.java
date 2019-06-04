@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
@@ -43,17 +43,18 @@ public class SetTtlOperation extends LockAwareOperation implements BackupAwareOp
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         response = recordStore.setTtl(dataKey, ttl);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             publishWanUpdate(dataKey, record.getValue());
             invalidateNearCache(dataKey);
         }
+        super.afterRunInternal();
     }
 
     @Override

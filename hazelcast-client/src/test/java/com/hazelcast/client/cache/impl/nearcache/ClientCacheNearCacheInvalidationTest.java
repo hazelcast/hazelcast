@@ -41,7 +41,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -89,7 +89,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 @SuppressWarnings("WeakerAccess")
 public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
@@ -164,12 +164,12 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         invalidationListener = createInvalidationEventHandler(cache);
 
         NearCacheTestContextBuilder<Integer, String, Object, String> builder
-                = new NearCacheTestContextBuilder<Integer, String, Object, String>(nearCacheConfig, serializationService);
+                = new NearCacheTestContextBuilder<>(nearCacheConfig, serializationService);
         testContext = builder
                 .setDataInstance(allMembers[0])
                 .setNearCacheInstance(client)
-                .setDataAdapter(new ICacheDataStructureAdapter<Integer, String>(memberCache))
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<Integer, String>(cache))
+                .setDataAdapter(new ICacheDataStructureAdapter<>(memberCache))
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<>(cache))
                 .setMemberCacheManager(memberCacheManager)
                 .setCacheManager(cacheManager)
                 .setNearCacheManager(nearCacheManager)
@@ -204,7 +204,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         final NearCacheTestContext<String, String, Object, String> nearCacheTestContext2
                 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, cacheConfig);
 
-        Map<String, String> keyAndValues = new HashMap<String, String>();
+        Map<String, String> keyAndValues = new HashMap<>();
 
         // put cache record from client-1 to instance which is going to be shutdown
         for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
@@ -240,12 +240,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         // verify that records in the Near Cache of client-1 are invalidated eventually when instance shutdown
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             final String key = entry.getKey();
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertNull(getFromNearCache(nearCacheTestContext1, key));
-                }
-            });
+            assertTrueEventually(() -> assertNull(getFromNearCache(nearCacheTestContext1, key)));
         }
     }
 
@@ -277,12 +272,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             final Integer key = i;
             final String value = nearCacheTestContext2.nearCacheAdapter.get(key);
             // records are stored in the cache as async not sync, so these records will be there in cache eventually
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals(value, getFromNearCache(nearCacheTestContext2, key));
-                }
-            });
+            assertTrueEventually(() -> assertEquals(value, getFromNearCache(nearCacheTestContext2, key)));
         }
 
         // update cache record from client-1
@@ -311,12 +301,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             final int key = i;
             // records are stored in the Near Cache will be invalidated eventually, since cache records are cleared
             // because we just disable per entry invalidation events, not full-flush events
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertNull(getFromNearCache(nearCacheTestContext2, key));
-                }
-            });
+            assertTrueEventually(() -> assertNull(getFromNearCache(nearCacheTestContext2, key)));
         }
     }
 
@@ -430,11 +415,11 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         ICache<K, V> cache = cacheManager.createCache(cacheName, cacheConfig);
         NearCache<NK, NV> nearCache = nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
 
-        NearCacheTestContextBuilder<K, V, NK, NV> builder = new NearCacheTestContextBuilder<K, V, NK, NV>(nearCacheConfig,
+        NearCacheTestContextBuilder<K, V, NK, NV> builder = new NearCacheTestContextBuilder<>(nearCacheConfig,
                 client.getSerializationService());
         return builder
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(cache))
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<>(cache))
                 .setNearCacheManager(nearCacheManager)
                 .setNearCache(nearCache)
                 .build();
@@ -459,16 +444,19 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     private void waitForInvalidationFromInitialPopulation() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long invalidationCount = testContext.stats.getInvalidationRequests();
-                assertEquals(format("Expected %d received Near Cache invalidations, but found %d (%s)",
-                        INITIAL_POPULATION_COUNT, invalidationCount, testContext.stats),
-                        INITIAL_POPULATION_COUNT, invalidationCount);
-                testContext.stats.resetInvalidationEvents();
-                invalidationListener.resetInvalidationCount();
-            }
+        assertTrueEventually(() -> {
+            long invalidationCountFromStats = testContext.stats.getInvalidationRequests();
+            assertEquals(format("Expected %d Near Cache invalidations received by stats, but found %d (%s)",
+                    INITIAL_POPULATION_COUNT, invalidationCountFromStats, testContext.stats),
+                    INITIAL_POPULATION_COUNT, invalidationCountFromStats);
+
+            long invalidationCountFromListener = invalidationListener.getInvalidationCount();
+            assertEquals(format("Expected %d Near Cache invalidations received by listener, but found %d",
+                    INITIAL_POPULATION_COUNT, invalidationCountFromListener),
+                    INITIAL_POPULATION_COUNT, invalidationCountFromListener);
+
+            testContext.stats.resetInvalidationEvents();
+            invalidationListener.resetInvalidationCount();
         });
     }
 
@@ -477,14 +465,11 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     private void assertNoFurtherInvalidationThan(final int expectedInvalidationCount) {
-        AssertTask assertTask = new AssertTask() {
-            @Override
-            public void run() {
-                long invalidationCount = invalidationListener.getInvalidationCount();
-                assertTrue(format("Expected no further Near Cache invalidation events than %d, but received %d (%s)",
-                        expectedInvalidationCount, invalidationCount, testContext.stats),
-                        invalidationCount <= expectedInvalidationCount);
-            }
+        AssertTask assertTask = () -> {
+            long invalidationCount = invalidationListener.getInvalidationCount();
+            assertTrue(format("Expected no further Near Cache invalidation events than %d, but received %d (%s)",
+                    expectedInvalidationCount, invalidationCount, testContext.stats),
+                    invalidationCount <= expectedInvalidationCount);
         };
 
         assertTrueEventually(assertTask);
@@ -494,14 +479,11 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @SuppressWarnings("SameParameterValue")
     private void assertLeastInvalidationCount(final int leastInvalidationCount) {
-        AssertTask assertTask = new AssertTask() {
-            @Override
-            public void run() {
-                long invalidationCount = invalidationListener.getInvalidationCount();
-                assertTrue(format("Expected at least %d Near Cache invalidation events, but received %d (%s)",
-                        leastInvalidationCount, invalidationCount, testContext.stats),
-                        invalidationCount >= leastInvalidationCount);
-            }
+        AssertTask assertTask = () -> {
+            long invalidationCount = invalidationListener.getInvalidationCount();
+            assertTrue(format("Expected at least %d Near Cache invalidation events, but received %d (%s)",
+                    leastInvalidationCount, invalidationCount, testContext.stats),
+                    invalidationCount >= leastInvalidationCount);
         };
 
         assertTrueEventually(assertTask);

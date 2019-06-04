@@ -20,13 +20,13 @@ package com.hazelcast.query.extractor;
  * Enables reading the value of the attribute specified by the path
  *
  * <p>The path may be:<ol>
- *   <li>simple -> it includes a single attribute only, like "name"
- *   <li>nested -> it includes more than a single attribute separated with a dot (.), e.g. "person.address.city"
+ *   <li>simple -&gt; it includes a single attribute only, like "name"
+ *   <li>nested -&gt; it includes more than a single attribute separated with a dot (.), e.g. "person.address.city"
  * </ol>
  *
  * The path may also include array elements:<ol>
- *   <li>specific quantifier, like "person.leg[1]" -> returns the leg with index 1
- *   <li>wildcard quantifier, like "person.leg[any]" -> returns all legs
+ *   <li>specific quantifier, like "person.leg[1]" -&gt; returns the leg with index 1
+ *   <li>wildcard quantifier, like "person.leg[any]" -&gt; returns all legs
  * </ol>
  *
  * <p>The wildcard quantifier may be used multiple times, like "person.leg[any].finger[any]" which returns all fingers

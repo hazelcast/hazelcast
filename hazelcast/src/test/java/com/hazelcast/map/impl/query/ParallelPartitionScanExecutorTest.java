@@ -22,7 +22,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.NamedThreadPoolExecutor;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ParallelPartitionScanExecutorTest {
 
     @Rule

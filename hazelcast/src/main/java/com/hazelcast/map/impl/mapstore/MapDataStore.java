@@ -71,7 +71,7 @@ public interface MapDataStore<K, V> {
      * - calling evict/evictAll,
      * - calling remove, and
      * - not yet stored write-behind queue operations.
-     * <p/>
+     * <p>
      * With this method, we can be sure if a key can be loadable from map-store or not.
      *
      * @param key the key to query whether it is loadable or not
@@ -95,10 +95,10 @@ public interface MapDataStore<K, V> {
 
     /**
      * Flushes write-behind-queue into map-store in calling thread.
-     * <p/>
+     * <p>
      * After calling of this method, all elements in the {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue}
      * of this {@link MapDataStore} should be in map-store regardless of the scheduled store-time.
-     * <p/>
+     * <p>
      * The only call to this method is in node-shutdown.
      *
      * @see com.hazelcast.map.impl.MapManagedService#shutdown(boolean)

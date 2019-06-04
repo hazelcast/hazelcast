@@ -56,6 +56,7 @@ public class Indexes {
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
+    private final Map<String, Boolean> definitions = new ConcurrentHashMap<String, Boolean>();
 
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
@@ -112,7 +113,7 @@ public class Indexes {
      *
      * @param name    the name of the index; the passed value might not
      *                represent a canonical index name (as specified by
-     *                {@link Index#getName()), in this case the method
+     *                {@link Index#getName()}, in this case the method
      *                canonicalizes it.
      * @param ordered {@code true} if the new index should be ordered, {@code
      *                false} otherwise.
@@ -151,6 +152,46 @@ public class Indexes {
             compositeIndexes = newCompositeIndexes;
         }
         return index;
+    }
+
+    /**
+     * Records the given index definition in this indexes without creating an
+     * index.
+     *
+     * @param name    the name of the index; the passed value might not
+     *                represent a canonical index name (as specified by
+     *                {@link Index#getName()), in this case the method
+     *                canonicalizes it.
+     * @param ordered {@code true} if the new index should be ordered, {@code
+     *                false} otherwise.
+     */
+    public void recordIndexDefinition(String name, boolean ordered) {
+        if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
+            return;
+        }
+
+        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
+        if (components == null) {
+            name = PredicateUtils.canonicalizeAttribute(name);
+        } else {
+            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
+        }
+        if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
+            return;
+        }
+
+        definitions.put(name, ordered);
+    }
+
+    /**
+     * Creates indexes according to the index definitions stored inside this
+     * indexes.
+     */
+    public void createIndexesFromRecordedDefinitions() {
+        for (Map.Entry<String, Boolean> definition : definitions.entrySet()) {
+            addOrGetIndex(definition.getKey(), definition.getValue());
+        }
+        definitions.clear();
     }
 
     /**

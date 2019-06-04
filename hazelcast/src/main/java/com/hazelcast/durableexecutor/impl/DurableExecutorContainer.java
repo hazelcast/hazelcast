@@ -18,8 +18,8 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 

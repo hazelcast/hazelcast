@@ -22,7 +22,7 @@ import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +36,7 @@ import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ChangeWanStateRequestTest extends HazelcastTestSupport {
 
     private ManagementCenterService managementCenterService;
@@ -68,6 +68,6 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
         changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotEquals(ChangeWanStateRequest.SUCCESS, getString(result, "result"));
+        assertNotEquals("success", getString(result, "result"));
     }
 }

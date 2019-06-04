@@ -20,10 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -46,7 +46,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
         returnResponseIfNoTargetLeft(targets, EMPTY_MAP);
 
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         MultiTargetCallback callback = new MultiTargetCallback(targets);
         for (Member target : targets) {

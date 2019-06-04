@@ -56,7 +56,6 @@
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
@@ -1238,86 +1237,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the reliable topic.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="jobtracker">
-        <xs:annotation>
-            <xs:documentation>
-                The JobTracker configuration is used to setup behavior of the Hazelcast MapReduce framework.
-                Every JobTracker is capable of running multiple map reduce jobs at once and so once configuration
-                is meant as a shared resource for all jobs created by the same JobTracker.
-                The configuration gives full control over the expected load behavior and thread counts to be used.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:all>
-            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The maximum thread pool size of the JobTracker.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The maximum size of the queue; the maximum number of tasks that can wait to be processed. A
-                        value of 0 means number of partitions * 2.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        retry-count is currently not used but reserved for later use where the framework will
-                        automatically try to restart / retry operations from an available savepoint.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000">
-                <xs:annotation>
-                    <xs:documentation>
-                        The number of emitted values before a chunk is sent to the reducers.
-                        If your emitted values are big, you might want to change this to a lower value. If you want
-                        to better balance your work, you might want to change this to a higher value.
-                        A value of 0 means immediate transmission, but remember that low values mean higher traffic
-                        costs.
-                        A very high value might cause an OutOfMemoryError to occur if emitted values do not fit into
-                        heap memory before being sent to reducers. To prevent this, you might want to use a combiner
-                        to pre-reduce values on mapping nodes.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
-                <xs:annotation>
-                    <xs:documentation>
-                        True if statistics (for example, about processed entries)
-                        are transmitted to the job emitter, false otherwise. This might be used to show any kind of progress to
-                        users inside of UI systems, but this produces additional traffic. If statistics are not needed, you might
-                        want to deactivate this.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1"
-                        default="CANCEL_RUNNING_OPERATION">
-                <xs:annotation>
-                    <xs:documentation>
-                        Defines how the map reduce framework will react on topology
-                        changes while executing a job.
-                        Currently only CANCEL_RUNNING_OPERATION is fully supported; it throws an exception to
-                        the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the JobTracker. Required.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

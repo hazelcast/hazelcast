@@ -28,16 +28,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +52,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERAT
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
     @Test
@@ -201,7 +200,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
         InternalCompletableFuture<Object> future = operationService
@@ -216,7 +215,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
 

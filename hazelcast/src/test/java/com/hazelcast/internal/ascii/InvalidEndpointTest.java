@@ -28,12 +28,10 @@ import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.MemcachedClient;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -140,10 +138,7 @@ public class InvalidEndpointTest {
             HttpGet request = new HttpGet(url);
             request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
             response = client.execute(request);
-            int responseCode = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
-            return new HTTPCommunicator.ConnectionResponse(responseStr, responseCode);
+            return new HTTPCommunicator.ConnectionResponse(response);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);

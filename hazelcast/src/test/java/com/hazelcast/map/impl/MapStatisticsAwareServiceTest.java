@@ -21,7 +21,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
  * Test for {@link MapStatisticsAwareService}
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
 
     HazelcastInstance hz;

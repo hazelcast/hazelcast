@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -47,7 +46,7 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".networking-imbalance.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.networking-imbalance.seconds", 0, SECONDS);
 
     private static final double HUNDRED = 100d;
 

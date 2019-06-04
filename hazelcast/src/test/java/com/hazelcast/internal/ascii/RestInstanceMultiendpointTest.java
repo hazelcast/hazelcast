@@ -36,8 +36,17 @@ public class RestInstanceMultiendpointTest
     @Override
     protected Config createConfigWithRestEnabled() {
         Config config = createConfig();
-        config.getAdvancedNetworkConfig().setRestEndpointConfig(new RestServerEndpointConfig()
-                .enableGroups(RestEndpointGroup.CLUSTER_READ));
+        config.getAdvancedNetworkConfig()
+              .setRestEndpointConfig(new RestServerEndpointConfig().enableGroups(RestEndpointGroup.CLUSTER_READ));
+        return config;
+    }
+
+    @Override
+    protected Config createConfigWithRestEnabledAndClusterReadDisabled() {
+        Config config = createConfig();
+        RestServerEndpointConfig restApiConfig = new RestServerEndpointConfig().disableGroups(RestEndpointGroup.CLUSTER_READ)
+                                                                               .enableGroups(RestEndpointGroup.CLUSTER_WRITE);
+        config.getAdvancedNetworkConfig().setRestEndpointConfig(restApiConfig);
         return config;
     }
 

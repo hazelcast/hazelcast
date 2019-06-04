@@ -21,7 +21,7 @@ import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -41,7 +41,7 @@ import java.util.Map;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -189,7 +189,6 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         service.start();
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
         assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner");
-        assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$1");
         assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$Test");
     }
 

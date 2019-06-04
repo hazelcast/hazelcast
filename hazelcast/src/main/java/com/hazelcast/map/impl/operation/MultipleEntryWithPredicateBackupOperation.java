@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,7 +36,7 @@ public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBack
     }
 
     public MultipleEntryWithPredicateBackupOperation(String name, Set<Data> keys,
-                                                     EntryBackupProcessor backupProcessor, Predicate predicate) {
+                                                     EntryProcessor backupProcessor, Predicate predicate) {
         super(name, keys, backupProcessor);
         this.predicate = checkNotNull(predicate, "predicate cannot be null");
     }

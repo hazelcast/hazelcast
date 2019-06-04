@@ -19,9 +19,9 @@ package com.hazelcast.executor.impl;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;

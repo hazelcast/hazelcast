@@ -47,8 +47,6 @@ import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
@@ -163,7 +161,6 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.QUORUM, QuorumException.class);
         register(ClientProtocolErrorCodes.REACHED_MAX_SIZE, ReachedMaxSizeException.class);
         register(ClientProtocolErrorCodes.REJECTED_EXECUTION, RejectedExecutionException.class);
-        register(ClientProtocolErrorCodes.REMOTE_MAP_REDUCE, RemoteMapReduceException.class);
         register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_HAZELCAST, RetryableHazelcastException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_IO, RetryableIOException.class);
@@ -176,7 +173,6 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.TARGET_NOT_MEMBER, TargetNotMemberException.class);
         register(ClientProtocolErrorCodes.TIMEOUT, TimeoutException.class);
         register(ClientProtocolErrorCodes.TOPIC_OVERLOAD, TopicOverloadException.class);
-        register(ClientProtocolErrorCodes.TOPOLOGY_CHANGED, TopologyChangedException.class);
         register(ClientProtocolErrorCodes.TRANSACTION, TransactionException.class);
         register(ClientProtocolErrorCodes.TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class);
         register(ClientProtocolErrorCodes.TRANSACTION_TIMED_OUT, TransactionTimedOutException.class);

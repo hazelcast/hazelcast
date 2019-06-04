@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -47,9 +47,9 @@ import static org.junit.Assert.assertArrayEquals;
 /**
  * A test that verifies that the Client can deal with various permutations of direct-buffers.
  */
-@Category(QuickTest.class)
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class DirectBufferTest extends HazelcastTestSupport {
 
     @Parameters()

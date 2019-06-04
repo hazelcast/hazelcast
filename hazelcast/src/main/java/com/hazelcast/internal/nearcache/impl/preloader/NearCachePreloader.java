@@ -20,14 +20,14 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.BufferingInputStream;
+import com.hazelcast.internal.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.collection.InflatableSet;
-import com.hazelcast.util.collection.InflatableSet.Builder;
 
 import java.io.File;
 import java.io.FileInputStream;

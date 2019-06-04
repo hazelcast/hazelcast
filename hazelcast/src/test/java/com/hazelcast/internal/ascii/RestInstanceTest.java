@@ -40,7 +40,6 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class RestInstanceTest {
 
-
     protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     @BeforeClass
@@ -64,6 +63,15 @@ public class RestInstanceTest {
         return config;
     }
 
+    protected Config createConfigWithRestEnabledAndClusterReadDisabled() {
+        Config config = createConfig();
+        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true)
+                                                         .disableGroups(RestEndpointGroup.CLUSTER_READ)
+                                                         .enableGroups(RestEndpointGroup.CLUSTER_WRITE);
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        return config;
+    }
+
     @Test
     public void testDisabledRest() {
         // REST should be disabled by default
@@ -81,10 +89,7 @@ public class RestInstanceTest {
     @Test
     public void testEnabledRestButDisabledGroupClusterRead() {
         // REST should be disabled by default
-        Config config = createConfigWithRestEnabled();
-        config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup.CLUSTER_WRITE);
-        config.getNetworkConfig().getRestApiConfig().disableGroups(RestEndpointGroup.CLUSTER_READ);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabledAndClusterReadDisabled());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         try {

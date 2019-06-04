@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentMap;
  * Holds IDs of registered listeners which are registered to listen underlying
  * {@code IMap} events to feed {@link com.hazelcast.map.QueryCache QueryCache}.
  * <p>
- * This class contains mappings like: cacheId ---> registered listener IDs for underlying {@code IMap}.
+ * This class contains mappings like: cacheId ---&gt; registered listener IDs for underlying {@code IMap}.
  */
 public class QueryCacheListenerRegistry implements Registry<String, String> {
 

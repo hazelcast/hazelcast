@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains IAtomicLong functionality for Hazelcast.<br/>
+ * <p>This package contains IAtomicLong functionality for Hazelcast.<br>
  * The IAtomicLong is the distributed version of the {@link java.util.concurrent.atomic.AtomicLong}.
  *
  * @since 2

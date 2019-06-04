@@ -19,9 +19,9 @@ package com.hazelcast.map.impl;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareService;
+import com.hazelcast.spi.partition.PartitionAwareService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
@@ -53,7 +53,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link MigrationAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link MigrationAwareService} implementation.
-     * @see com.hazelcast.spi.MigrationAwareService
+     * @see MigrationAwareService
      */
     abstract CountingMigrationAwareService createMigrationAwareService();
 
@@ -117,7 +117,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link PartitionAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PartitionAwareService} implementation.
-     * @see com.hazelcast.spi.PartitionAwareService
+     * @see PartitionAwareService
      */
     abstract PartitionAwareService createPartitionAwareService();
 
@@ -134,7 +134,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link QuorumAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PartitionAwareService} implementation.
-     * @see com.hazelcast.spi.PartitionAwareService
+     * @see PartitionAwareService
      */
     abstract MapQuorumAwareService createQuorumAwareService();
 

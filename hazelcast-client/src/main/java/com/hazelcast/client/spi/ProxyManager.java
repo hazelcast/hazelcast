@@ -41,7 +41,6 @@ import com.hazelcast.client.proxy.ClientFlakeIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
-import com.hazelcast.client.proxy.ClientMapReduceProxy;
 import com.hazelcast.client.proxy.ClientMultiMapProxy;
 import com.hazelcast.client.proxy.ClientPNCounterProxy;
 import com.hazelcast.client.proxy.ClientQueueProxy;
@@ -55,7 +54,6 @@ import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.impl.listener.LazyDistributedObjectEvent;
@@ -82,7 +80,6 @@ import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -190,17 +187,16 @@ public final class ProxyManager {
         register(DistributedDurableExecutorService.SERVICE_NAME, ClientDurableExecutorServiceProxy.class);
         register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
         register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
-        register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
             @Override
             public ClientProxy create(String id, ClientContext context) {
                 return new ClientReliableTopicProxy(id, context, client);
             }
         });
-        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             @Override
             public ClientProxy create(String id, ClientContext context) {
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
@@ -285,12 +281,7 @@ public final class ProxyManager {
 
     public void register(final String serviceName, final Class<? extends ClientProxy> proxyType) {
         try {
-            register(serviceName, new ClientProxyFactoryWithContext() {
-                @Override
-                public ClientProxy create(String id, ClientContext context) {
-                    return instantiateClientProxy(proxyType, serviceName, context, id);
-                }
-            });
+            register(serviceName, (id, context) -> instantiateClientProxy(proxyType, serviceName, context, id));
         } catch (Exception e) {
             throw new HazelcastException("Factory for service " + serviceName + " could not be created for " + proxyType, e);
         }
@@ -382,11 +373,7 @@ public final class ProxyManager {
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
-        if (factory instanceof ClientProxyFactoryWithContext) {
-            return ((ClientProxyFactoryWithContext) factory).create(id, context);
-        }
-        return factory.create(id)
-                .setContext(context);
+        return factory.create(id, context);
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {

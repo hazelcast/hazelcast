@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
@@ -36,7 +36,7 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         containsKey = recordStore.containsKey(dataKey, getCallerAddress());
     }
 

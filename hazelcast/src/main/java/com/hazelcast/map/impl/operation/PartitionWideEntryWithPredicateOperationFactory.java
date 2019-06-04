@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -30,12 +32,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.collection.InflatableSet;
-import com.hazelcast.util.collection.InflatableSet.Builder;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
@@ -45,9 +45,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.collection.InflatableSet.newBuilder;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
-import static com.hazelcast.util.collection.InflatableSet.newBuilder;
 
 public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAwareOperationFactory {
 

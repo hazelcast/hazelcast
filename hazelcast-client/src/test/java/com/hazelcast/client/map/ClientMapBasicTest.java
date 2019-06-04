@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.BasicMapTest;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
@@ -28,7 +29,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -57,7 +58,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapBasicTest extends AbstractClientMapTest {
 
     @Test
@@ -928,6 +929,11 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
             Integer expectedValue = expected.get(key);
             assertEquals(expectedValue, value);
         }
+    }
+
+    @Test
+    public void testMapClonedCollectionsImmutable() {
+        BasicMapTest.testMapClonedCollectionsImmutable(client, false);
     }
 
     @Test

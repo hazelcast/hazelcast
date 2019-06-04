@@ -23,6 +23,7 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * This test is intentionally not in the {@link com.hazelcast.test.annotation.ParallelTest} category,
+ * This test is intentionally not in the {@link ParallelJVMTest} category,
  * since it starts real HazelcastInstances which have REST enabled.
  */
 @RunWith(HazelcastSerialClassRunner.class)
@@ -43,7 +44,8 @@ public class RestMultiendpointTest
         extends RestTest {
 
     @Override
-    public Config setup() {
+    public Config getConfig() {
+        Config config = super.getConfig();
         config.getGroupConfig().setName(randomString());
         ServerSocketEndpointConfig memberEndpointConfig = new ServerSocketEndpointConfig();
         memberEndpointConfig.setName("MEMBER")
@@ -86,8 +88,7 @@ public class RestMultiendpointTest
 
     @Test
     public void assertAdvancedNetworkInUse() {
-        setup();
-        int numberOfEndpointsInConfig = config.getAdvancedNetworkConfig().getEndpointConfigs().size();
+        int numberOfEndpointsInConfig = instance.getConfig().getAdvancedNetworkConfig().getEndpointConfigs().size();
         MemberImpl local = getNode(instance).getClusterService().getLocalMember();
         assertTrue(local.getAddressMap().size() == numberOfEndpointsInConfig);
         assertFalse(local.getSocketAddress(EndpointQualifier.REST).equals(local.getSocketAddress(EndpointQualifier.MEMBER)));

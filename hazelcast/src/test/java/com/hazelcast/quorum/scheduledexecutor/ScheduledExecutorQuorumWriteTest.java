@@ -23,12 +23,14 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,8 +54,11 @@ import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-scheduledexecutor.xml");
 
     @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
@@ -281,7 +286,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     protected IScheduledExecutorService exec(int index) {
-        return scheduledExec(index, quorumType);
+        return exec(index, "");
     }
 
     protected IScheduledExecutorService exec(int index, String postfix) {

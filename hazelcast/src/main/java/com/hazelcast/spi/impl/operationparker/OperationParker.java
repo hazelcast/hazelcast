@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationparker;
 
-import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 
 /**

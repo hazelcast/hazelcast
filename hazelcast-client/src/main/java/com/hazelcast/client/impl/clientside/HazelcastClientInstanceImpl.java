@@ -93,7 +93,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -125,8 +125,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
@@ -445,6 +443,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }
 
+    public void onClusterDisconnect() {
+        partitionService.cleanupOnDisconnect();
+        clusterService.cleanupOnDisconnect();
+    }
+
     public MetricsRegistryImpl getMetricsRegistry() {
         return metricsRegistry;
     }
@@ -509,12 +512,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        checkNotNull(name, "Retrieving a job tracker instance with a null name is not allowed!");
-        return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
 
     @Override

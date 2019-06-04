@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -35,17 +34,16 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
@@ -71,7 +69,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for WAN replication API.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WanReplicationTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
@@ -162,7 +160,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Test
     public void mapPutAllTest() {
-        Map<Object, Object> userMap = new HashMap<Object, Object>();
+        Map<Object, Object> userMap = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             userMap.put(i, i);
         }
@@ -187,7 +185,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         impl2.eventQueue.clear();
 
         InternalSerializationService serializationService = getSerializationService(instance1);
-        Set<Data> keySet = new HashSet<Data>();
+        Set<Data> keySet = new HashSet<>();
         for (int i = 0; i < 10; i++) {
             keySet.add(serializationService.toData(i));
         }
@@ -196,7 +194,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         OperationFactory operationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet,
                 new UpdatingEntryProcessor());
 
-        InternalOperationService operationService = getOperationService(instance1);
+        OperationServiceImpl operationService = getOperationService(instance1);
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
         // there should be 10 events since all entries should be processed
@@ -249,12 +247,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         boolean useLegacyMergePolicy = true;
         runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertTotalQueueSize(0);
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertTotalQueueSize(0), 3);
     }
 
     @Test
@@ -264,12 +257,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         boolean useLegacyMergePolicy = false;
         runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertTotalQueueSize(0);
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertTotalQueueSize(0), 3);
     }
 
     private void runMergeOpForWAN(boolean enableWANReplicationEvent, boolean useLegacyMergePolicy) {
@@ -281,7 +269,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         HazelcastInstance node = instance1;
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
-        InternalOperationService operationService = nodeEngineImpl.getOperationService();
+        OperationServiceImpl operationService = nodeEngineImpl.getOperationService();
         SerializationService serializationService = nodeEngineImpl.getSerializationService();
         MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -297,7 +285,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         } else {
             MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
-                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<Data, MapMergeTypes>();
+                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
             op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         }
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
@@ -354,49 +342,24 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
         final Queue<WanReplicationEvent> eventQueue1 = impl1.eventQueue;
         final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
     }
 
-    private static class UpdatingEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class UpdatingEntryProcessor implements EntryProcessor<Object, Object, String> {
 
         @Override
-        public Object process(Map.Entry<Object, Object> entry) {
+        public String process(Map.Entry<Object, Object> entry) {
             entry.setValue("EP" + entry.getValue());
             return "done";
         }
-
-        @Override
-        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
-            return this;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Object, Object> entry) {
-            process(entry);
-        }
     }
 
-    private static class DeletingEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class DeletingEntryProcessor implements EntryProcessor<Object, Object, String> {
 
         @Override
-        public Object process(Map.Entry<Object, Object> entry) {
+        public String process(Map.Entry<Object, Object> entry) {
             entry.setValue(null);
             return "done";
-        }
-
-        @Override
-        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
-            return this;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Object, Object> entry) {
-            process(entry);
         }
     }
 }

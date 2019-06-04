@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.collection.InflatableSet;
-import com.hazelcast.util.collection.InflatableSet.Builder;
 import com.hazelcast.wan.merkletree.MerkleTree;
 
 import java.io.IOException;

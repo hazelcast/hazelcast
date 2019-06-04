@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the IAtomicLong.<br/>
+ * <p>This package contains the operations on the IAtomicLong.<br>
  *
  * @since 2
  */

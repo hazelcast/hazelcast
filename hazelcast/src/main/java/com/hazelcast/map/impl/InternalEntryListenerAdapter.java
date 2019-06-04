@@ -25,7 +25,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Internal-usage-only adapter which wraps all {@link EntryListener} interfaces
  * into a {@link com.hazelcast.map.impl.ListenerAdapter}.
- * <p/>
+ * <p>
  * Main purpose of this adapter is to avoid backward compatibility problems
  * when one doesn't use a {@link com.hazelcast.map.listener.MapListener MapListener}
  */

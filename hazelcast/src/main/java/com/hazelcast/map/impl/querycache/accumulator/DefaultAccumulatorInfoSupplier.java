@@ -25,7 +25,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Default implementation of {@link AccumulatorInfoSupplier}.
- * <p/>
+ * <p>
  * At most one thread can write to this class at a time.
  *
  * @see AccumulatorInfoSupplier

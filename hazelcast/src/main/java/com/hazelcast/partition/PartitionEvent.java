@@ -16,8 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.MigrationEvent;
-
 /**
  * PartitionEvent is a base interface for partition related events.
  *

@@ -48,7 +48,6 @@ import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -82,7 +81,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     private final NodeEngineImpl nodeEngine;
     private final CPGroupId groupId;
     private final CPMember localCPMember;
-    private final InternalOperationService operationService;
+    private final OperationServiceImpl operationService;
     private final TaskScheduler taskScheduler;
     private final int partitionId;
     private final int threadId;

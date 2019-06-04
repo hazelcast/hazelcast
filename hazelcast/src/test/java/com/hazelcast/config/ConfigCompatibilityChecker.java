@@ -25,7 +25,6 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -123,8 +122,6 @@ public class ConfigCompatibilityChecker {
                 new ReplicatedMapConfigChecker());
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
-        checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(),
-                new JobTrackerConfigChecker());
         checkCompatibleConfigs("flake id generator", c1, c2, c1.getFlakeIdGeneratorConfigs(), c2.getFlakeIdGeneratorConfigs(),
                 new FlakeIdGeneratorConfigChecker());
         checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(),
@@ -590,33 +587,6 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation());
-        }
-    }
-
-    private static class JobTrackerConfigChecker extends ConfigChecker<JobTrackerConfig> {
-        @Override
-        boolean check(JobTrackerConfig c1, JobTrackerConfig c2) {
-            if (c1 == c2) {
-                return true;
-            }
-            if (c1 == null || c2 == null) {
-                return false;
-            }
-            int max1 = c1.getMaxThreadSize();
-            int max2 = c2.getMaxThreadSize();
-            int availableProcessors = RuntimeAvailableProcessors.get();
-            return nullSafeEqual(c1.getName(), c2.getName())
-                    && (nullSafeEqual(max1, max2) || (Math.min(max1, max2) == 0 && Math.max(max1, max2) == availableProcessors))
-                    && nullSafeEqual(c1.getRetryCount(), c2.getRetryCount())
-                    && nullSafeEqual(c1.getChunkSize(), c2.getChunkSize())
-                    && nullSafeEqual(c1.getQueueSize(), c2.getQueueSize())
-                    && nullSafeEqual(c1.isCommunicateStats(), c2.isCommunicateStats())
-                    && nullSafeEqual(c1.getTopologyChangedStrategy(), c2.getTopologyChangedStrategy());
-        }
-
-        @Override
-        JobTrackerConfig getDefault(Config c) {
-            return c.getJobTrackerConfig("default");
         }
     }
 

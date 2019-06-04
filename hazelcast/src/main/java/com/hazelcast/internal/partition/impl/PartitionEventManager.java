@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -27,9 +27,9 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.PartitionAwareService;
 
 import java.util.Collection;
 
