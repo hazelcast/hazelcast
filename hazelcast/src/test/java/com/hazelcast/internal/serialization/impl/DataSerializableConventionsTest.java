@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.map.impl.operation.AddIndexBackupOperation;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -347,7 +346,6 @@ public class DataSerializableConventionsTest {
         whiteList.add(BoundedRangePredicate.class);
         whiteList.add(CompositeRangePredicate.class);
         whiteList.add(CompositeEqualPredicate.class);
-        whiteList.add(AddIndexBackupOperation.class);
         try {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
