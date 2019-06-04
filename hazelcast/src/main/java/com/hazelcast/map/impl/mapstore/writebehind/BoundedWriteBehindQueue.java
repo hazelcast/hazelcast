@@ -27,7 +27,7 @@ import static java.lang.String.format;
 /**
  * A bounded queue which throws {@link com.hazelcast.map.ReachedMaxSizeException}
  * when it exceeds max size. Used when non-write-coalescing mode is on.
- * <p/>
+ * <p>
  * Note that this {@link WriteBehindQueue} implementation is not thread-safe. When it is in action, thread-safe access
  * will be provided by wrapping it in a {@link SynchronizedWriteBehindQueue}
  *

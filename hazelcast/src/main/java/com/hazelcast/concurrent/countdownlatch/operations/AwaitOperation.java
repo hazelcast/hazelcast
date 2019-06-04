@@ -17,9 +17,9 @@
 package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.AWAIT_OPERATION;
 import static java.lang.Boolean.TRUE;
@@ -60,7 +60,7 @@ public class AwaitOperation extends AbstractCountDownLatchOperation implements B
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AWAIT_OPERATION;
     }
 }

@@ -30,7 +30,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
@@ -61,7 +61,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 50;
@@ -151,7 +151,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class InitMapProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class InitMapProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         @Override
         public Object process(Map.Entry<Integer, ListHolder> entry) {
@@ -160,7 +160,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
     }
 
-    private static class IncrementProcessor extends AbstractEntryProcessor<Integer, ListHolder> {
+    private static class IncrementProcessor implements EntryProcessor<Integer, ListHolder, Object> {
 
         private final int nextVal;
 

@@ -26,7 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -38,7 +38,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.MapBackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
@@ -62,7 +62,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
     private static final int ENTRY_COUNT = 1000;
@@ -397,7 +397,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
                 .toString());
     }
 
-    static class ModifyingEntryProcessor extends AbstractEntryProcessor<HazelcastJsonValue, Object> {
+    static class ModifyingEntryProcessor implements EntryProcessor<HazelcastJsonValue, Object, Object> {
         @Override
         public Object process(Map.Entry<HazelcastJsonValue, Object> entry) {
             HazelcastJsonValue key = entry.getKey();

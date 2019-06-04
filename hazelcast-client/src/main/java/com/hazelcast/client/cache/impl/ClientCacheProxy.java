@@ -16,43 +16,34 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
-import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
+import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec.ResponseParameters;
-import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.cache.CacheException;
-import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -61,24 +52,26 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createCacheEntryListenerCodec;
+import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createHandler;
+import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createPartitionLostListenerCodec;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.emptyMap;
 
 /**
  * {@link com.hazelcast.cache.ICache} implementation for Hazelcast clients.
@@ -91,9 +84,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
-        implements EventJournalReader<EventJournalCacheEvent<K, V>> {
+public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
+        implements EventJournalReader<EventJournalCacheEvent<K, V>>, CacheSyncListenerCompleter {
 
     private ClientMessageDecoder eventJournalReadResponseDecoder;
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
@@ -106,23 +98,17 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
     @Override
     protected void onInitialize() {
         super.onInitialize();
-        eventJournalReadResponseDecoder = new ClientMessageDecoder() {
-            @Override
-            public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
-                final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
-                final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
-                        params.readCount, params.items, params.itemSeqs,
-                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
-                resultSet.setSerializationService(getSerializationService());
-                return resultSet;
-            }
+        eventJournalReadResponseDecoder = message -> {
+            final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
+            final PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
+                    params.readCount, params.items, params.itemSeqs,
+                    params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
+            resultSet.setSerializationService(getSerializationService());
+            return resultSet;
         };
-        eventJournalSubscribeResponseDecoder = new ClientMessageDecoder() {
-            @Override
-            public EventJournalInitialSubscriberState decodeClientMessage(ClientMessage message) {
-                final ResponseParameters resp = CacheEventJournalSubscribeCodec.decodeResponse(message);
-                return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
-            }
+        eventJournalSubscribeResponseDecoder = message -> {
+            final ResponseParameters resp = CacheEventJournalSubscribeCodec.decodeResponse(message);
+            return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
         };
     }
 
@@ -144,19 +130,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         return containsKeyInternal(key);
     }
 
-    protected boolean containsKeyInternal(Object key) {
-        Data keyData = toData(key);
-        ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
-        ClientMessage result = invoke(request, keyData);
-        return CacheContainsKeyCodec.decodeResponse(result).response;
-    }
-
     @Override
     public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
         ensureOpen();
         validateNotNull(keys);
 
-        List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        List<Data> dataKeys = new ArrayList<>(keys.size());
         for (K key : keys) {
             validateNotNull(key);
             validateConfiguredTypes(cacheConfig, key);
@@ -165,19 +144,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         }
 
         loadAllInternal(keys, dataKeys, replaceExistingValues, completionListener);
-    }
-
-    protected void loadAllInternal(Set<? extends K> keys, List<Data> dataKeys, boolean replaceExistingValues,
-                                   CompletionListener completionListener) {
-        ClientMessage request = CacheLoadAllCodec.encodeRequest(nameWithPrefix, dataKeys, replaceExistingValues);
-        try {
-            submitLoadAllTask(request, completionListener, dataKeys);
-        } catch (Exception e) {
-            if (completionListener != null) {
-                completionListener.onException(e);
-            }
-            throw new CacheException(e);
-        }
     }
 
     @Override
@@ -274,7 +240,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             return;
         }
 
-        List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        List<Data> dataKeys = new ArrayList<>(keys.size());
         objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         removeAllKeysInternal(keys, dataKeys, startNanos);
     }
@@ -311,33 +277,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         return (T) invokeInternal(key, epData, arguments);
     }
 
-    protected Object invokeInternal(Object key, Data epData, Object... arguments) {
-        Data keyData = toData(key);
-        List<Data> argumentsData;
-        if (arguments != null) {
-            argumentsData = new ArrayList<Data>(arguments.length);
-            for (int i = 0; i < arguments.length; i++) {
-                argumentsData.add(toData(arguments[i]));
-            }
-        } else {
-            argumentsData = Collections.emptyList();
-        }
-        int completionId = nextCompletionId();
-        ClientMessage request = CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData,
-                completionId);
-        try {
-            ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
-            ClientMessage response = getSafely(future);
-            Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
-            // at client side, we don't know what entry processor does so we ignore it from statistics perspective
-            return toObject(data);
-        } catch (CacheException ce) {
-            throw ce;
-        } catch (Exception e) {
-            throw new EntryProcessorException(e);
-        }
-    }
-
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
@@ -366,11 +305,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
     }
 
     @Override
-    public CacheManager getCacheManager() {
-        return cacheManagerRef.get();
-    }
-
-    @Override
     public <T> T unwrap(Class<T> clazz) {
         if (clazz.isAssignableFrom(((Object) this).getClass())) {
             return clazz.cast(this);
@@ -390,10 +324,10 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
+        CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<>(this, cacheEntryListenerConfiguration,
                 getSerializationService());
         EventHandler handler = createHandler(adaptor);
-        String regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
+        String regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(nameWithPrefix), handler);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -403,30 +337,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
             }
         }
-    }
-
-    private ListenerMessageCodec createCacheEntryListenerCodec() {
-        return new ListenerMessageCodec() {
-            @Override
-            public ClientMessage encodeAddRequest(boolean localOnly) {
-                return CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-            }
-
-            @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
-                return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-
-            @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
-                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
     }
 
     @Override
@@ -447,70 +357,30 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         }
     }
 
-    protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
-                                                         boolean isRegister) {
-        Collection<Member> members = getContext().getClusterService().getMemberList();
-        for (Member member : members) {
-            try {
-                Address address = member.getAddress();
-                Data configData = toData(cacheEntryListenerConfiguration);
-                ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
-                        address);
-                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), address);
-                invocation.invoke();
-            } catch (Exception e) {
-                sneakyThrow(e);
-            }
-        }
-    }
-
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, getContext(), false);
+        return new ClientClusterWideIterator<>(this, getContext(), false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, getContext(), fetchSize, false);
+        return new ClientClusterWideIterator<>(this, getContext(), fetchSize, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
-        return new ClientCachePartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
+        return new ClientCachePartitionIterator<>(this, getContext(), fetchSize, partitionId, prefetchValues);
     }
 
     @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
-        EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
+        EventHandler<ClientMessage> handler = new ClientCacheProxySupportUtil.ClientCachePartitionLostEventHandler(name,
+                getContext(), listener);
         injectDependencies(listener);
-        return getContext().getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
-    }
-
-    private ListenerMessageCodec createPartitionLostListenerCodec() {
-        return new ListenerMessageCodec() {
-            @Override
-            public ClientMessage encodeAddRequest(boolean localOnly) {
-                return CacheAddPartitionLostListenerCodec.encodeRequest(name, localOnly);
-            }
-
-            @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
-                return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
-            }
-
-            @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
-                return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
+        return getContext().getListenerService().registerListener(createPartitionLostListenerCodec(name), handler);
     }
 
     @Override
@@ -518,12 +388,11 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         return getContext().getListenerService().deregisterListener(id);
     }
 
-
     @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, getSerializationService(),
+        return new ClientDelegatingFuture<>(fut, getSerializationService(),
                 eventJournalSubscribeResponseDecoder);
     }
 
@@ -544,31 +413,213 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
                 nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
+        return new ClientDelegatingFuture<>(fut, ss, eventJournalReadResponseDecoder);
     }
 
-    private final class ClientCachePartitionLostEventHandler
-            extends CacheAddPartitionLostListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
+    @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return getAsync(key, null);
+    }
 
-        private CachePartitionLostListener listener;
+    @Override
+    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+        long startNanos = nowInNanosOrDefault();
+        ensureOpen();
+        validateNotNull(key);
 
-        private ClientCachePartitionLostEventHandler(CachePartitionLostListener listener) {
-            this.listener = listener;
+        ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
+        return getAsyncInternal(key, expiryPolicy, callback);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsync(K key, V value) {
+        return putAsync(key, value, null);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (ICompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true,
+                newStatsCallbackOrNull(false));
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
+        return getAndPutAsync(key, value, null);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> removeAsync(K key) {
+        return (ICompletableFuture<Boolean>) removeAsyncInternal(key, null, false, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+        return (ICompletableFuture<Boolean>) removeAsyncInternal(key, oldValue, true, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndRemoveAsync(K key) {
+        return getAndRemoveAsyncInternal(key);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
+        return replaceAsyncInternal(key, null, value, null, false, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
+        return replaceAndGetAsyncInternal(key, null, value, null, false, false, true);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+    }
+
+    @Override
+    public V get(K key, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(key);
+        return toObject(getSyncInternal(key, expiryPolicy));
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        long startNanos = nowInNanosOrDefault();
+        ensureOpen();
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return emptyMap();
         }
 
-        @Override
-        public void beforeListenerRegister() {
-        }
+        int keysSize = keys.size();
+        List<Data> dataKeys = new LinkedList<Data>();
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
 
-        @Override
-        public void onListenerRegister() {
+        Map<K, V> result = createHashMap(keysSize);
+        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
+            K key = toObject(resultingKeyValuePairs.get(i++));
+            V value = toObject(resultingKeyValuePairs.get(i++));
+            result.put(key, value);
         }
+        return result;
+    }
 
-        @Override
-        public void handleCachePartitionLostEventV10(int partitionId, String uuid) {
-            Member member = getContext().getClusterService().getMember(uuid);
-            listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
+    @Override
+    public void put(K key, V value, ExpiryPolicy expiryPolicy) {
+        putSyncInternal(key, value, expiryPolicy, false);
+    }
+
+    @Override
+    public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putSyncInternal(key, value, expiryPolicy, true);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
+        long startNanos = nowInNanosOrDefault();
+        ensureOpen();
+        checkNotNull(map, "map is null");
+        if (map.isEmpty()) {
+            return;
         }
+        putAllInternal(map, expiryPolicy, null, new List[partitionCount], startNanos);
+    }
+
+    @Override
+    public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy policy) {
+        ensureOpen();
+        checkNotNull(keys);
+        checkNotNull(policy);
+        if (keys.isEmpty()) {
+            return;
+        }
+        setExpiryPolicyInternal(keys, policy);
+    }
+
+    @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        return setExpiryPolicyInternal(key, expiryPolicy);
+    }
+
+
+    @Override
+    public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceSyncInternal(key, oldValue, newValue, expiryPolicy, true);
+    }
+
+    @Override
+    public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceSyncInternal(key, null, value, expiryPolicy, false);
+    }
+
+    @Override
+    public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
+        long startNanos = nowInNanosOrDefault();
+        Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+        try {
+            V oldValue = future.get();
+            if (statisticsEnabled) {
+                statsHandler.onReplace(true, startNanos, oldValue);
+            }
+            return oldValue;
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public int size() {
+        ensureOpen();
+        try {
+            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
+            ClientMessage resultMessage = invoke(request);
+            return CacheSizeCodec.decodeResponse(resultMessage).response;
+        } catch (Throwable t) {
+            throw rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        return statsHandler.getStatistics();
     }
 }

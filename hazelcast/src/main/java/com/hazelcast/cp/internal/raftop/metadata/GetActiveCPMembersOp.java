@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 /**
  * Returns the current active CP members in the Metadata group.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetActiveCPMembersOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
@@ -56,7 +56,7 @@ public class GetActiveCPMembersOp extends MetadataRaftGroupOp implements Indeter
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_ACTIVE_CP_MEMBERS_OP;
     }
 

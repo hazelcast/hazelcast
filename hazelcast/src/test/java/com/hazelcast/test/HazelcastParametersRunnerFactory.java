@@ -16,20 +16,18 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.Runner;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.parameterized.ParametersRunnerFactory;
 import org.junit.runners.parameterized.TestWithParameters;
 
 /**
- * {@link ParametersRunnerFactory} implementation which creates either {@link HazelcastSerialClassRunner}
- * or {@link HazelcastParallelClassRunner}, depending on the presence of the {@link ParallelTest} category.
+ * Abstract {@link ParametersRunnerFactory} superclass for {@link HazelcastSerialClassRunner}
+ * and {@link HazelcastParallelClassRunner}.
  * <p>
  * See {@link com.hazelcast.test package documentation} for runners overview.
  */
-public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory {
+public abstract class HazelcastParametersRunnerFactory implements ParametersRunnerFactory {
 
     @Override
     public Runner createRunnerForTestWithParameters(TestWithParameters test) throws InitializationError {
@@ -37,37 +35,9 @@ public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory
         Object[] parameters = test.getParameters().toArray();
         String testName = test.getName();
 
-        boolean isParallel = isParallel(testClass);
-        if (isParallel) {
-            return getParallelClassRunner(testClass, parameters, testName);
-        }
-        return getSerialClassRunner(testClass, parameters, testName);
+        return getClassRunner(testClass, parameters, testName);
     }
 
-    protected boolean isParallel(Class<?> testClass) {
-        Category category = testClass.getAnnotation(Category.class);
-        if (category == null) {
-            return false;
-        }
-
-        Class<?>[] categories = category.value();
-        for (Class<?> clazz : categories) {
-            if (clazz == ParallelTest.class) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // needs to be protected for Hazelcast Enterprise HazelcastParametersRunnerFactory
-    protected HazelcastSerialClassRunner getSerialClassRunner(Class<?> testClass, Object[] parameters, String testName)
-            throws InitializationError {
-        return new HazelcastSerialClassRunner(testClass, parameters, testName);
-    }
-
-    // needs to be protected for Hazelcast Enterprise HazelcastParametersRunnerFactory
-    protected HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters, String testName)
-            throws InitializationError {
-        return new HazelcastParallelClassRunner(testClass, parameters, testName);
-    }
+    protected abstract Runner getClassRunner(Class<?> testClass, Object[] parameters, String testName)
+            throws InitializationError;
 }

@@ -32,7 +32,7 @@ public class RollbackAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

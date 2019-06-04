@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * All registered subscriber side accumulators for an {@link com.hazelcast.core.IMap IMap}
  * can be reached from this registry class.
- * <p/>
+ * <p>
  * Every map has only one {@link SubscriberRegistry}.
  */
 public class SubscriberRegistry implements Registry<String, Accumulator> {

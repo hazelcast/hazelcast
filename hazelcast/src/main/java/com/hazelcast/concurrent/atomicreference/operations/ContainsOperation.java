@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -51,7 +51,7 @@ public class ContainsOperation extends AbstractAtomicReferenceOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CONTAINS;
     }
 

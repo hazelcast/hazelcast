@@ -40,11 +40,10 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -66,7 +65,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastOSGiInstanceTest {
 
     @Test
@@ -243,19 +242,6 @@ public class HazelcastOSGiInstanceTest {
         assertEquals(mockReplicatedMap, hazelcastOSGiInstance.getReplicatedMap("my-replicatedmap"));
 
         verify(mockHazelcastInstance).getReplicatedMap("my-replicatedmap");
-    }
-
-    @Test
-    public void getJobTrackerMapCalledSuccessfullyOverOSGiInstance() {
-        JobTracker mockJobTracker = mock(JobTracker.class);
-        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
-
-        when(mockHazelcastInstance.getJobTracker("my-jobtracker")).thenReturn(mockJobTracker);
-
-        assertEquals(mockJobTracker, hazelcastOSGiInstance.getJobTracker("my-jobtracker"));
-
-        verify(mockHazelcastInstance).getJobTracker("my-jobtracker");
     }
 
     @Test

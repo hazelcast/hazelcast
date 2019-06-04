@@ -66,7 +66,7 @@ public class ClassData implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return UserCodeDeploymentSerializerHook.CLASS_DATA;
     }
 

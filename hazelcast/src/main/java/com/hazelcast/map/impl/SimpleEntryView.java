@@ -281,7 +281,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_VIEW;
     }
 

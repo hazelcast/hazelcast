@@ -93,7 +93,7 @@ public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REGISTRY;
     }
 }

@@ -309,7 +309,7 @@ public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER;
     }
 

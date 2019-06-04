@@ -34,11 +34,9 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * <p>
  * The value of <code>φ</code> is calculated as:
  * <p>
- * <code>
  * <pre>
  * φ = -log10(1 - F(timeSinceLastHeartbeat)
  * </pre>
- * </code>
  * where F is the cumulative distribution function of a normal distribution with mean
  * and standard deviation estimated from historical heartbeat inter-arrival times.
  */

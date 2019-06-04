@@ -59,7 +59,7 @@ public final class DoubleSumAggregator<I> extends AbstractAggregator<I, Number, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.DOUBLE_SUM;
     }
 

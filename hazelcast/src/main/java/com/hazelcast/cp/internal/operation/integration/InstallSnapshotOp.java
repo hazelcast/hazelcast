@@ -47,7 +47,7 @@ public class InstallSnapshotOp extends AsyncRaftOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.INSTALL_SNAPSHOT_OP;
     }
 

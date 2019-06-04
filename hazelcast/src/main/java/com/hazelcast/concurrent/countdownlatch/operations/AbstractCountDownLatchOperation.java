@@ -18,9 +18,9 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.LatchKey;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchService.SERVICE_NAME;

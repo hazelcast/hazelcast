@@ -26,9 +26,9 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -640,7 +640,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RingbufferDataSerializerHook.RINGBUFFER_CONTAINER;
     }
 

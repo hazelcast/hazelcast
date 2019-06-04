@@ -53,7 +53,7 @@ public class SetOp extends AbstractAtomicRefOp implements IdentifiedDataSerializ
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.SET_OP;
     }
 

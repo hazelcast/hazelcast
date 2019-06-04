@@ -94,7 +94,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
     }
 

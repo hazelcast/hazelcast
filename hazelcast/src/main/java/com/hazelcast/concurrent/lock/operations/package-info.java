@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the ILock.<br/>
+ * <p>This package contains the operations on the ILock.<br>
  *
  * @since 1
  */

@@ -25,9 +25,9 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -256,7 +256,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException();
     }
 }

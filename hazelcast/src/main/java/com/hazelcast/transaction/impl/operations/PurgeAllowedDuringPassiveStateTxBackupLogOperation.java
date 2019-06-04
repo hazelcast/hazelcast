@@ -32,7 +32,7 @@ public final class PurgeAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 }

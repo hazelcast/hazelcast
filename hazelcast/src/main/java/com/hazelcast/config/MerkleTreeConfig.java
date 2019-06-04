@@ -182,7 +182,7 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MERKLE_TREE_CONFIG;
     }
 

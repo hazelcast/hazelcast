@@ -45,7 +45,6 @@ import java.util.concurrent.TimeUnit;
  *   HazelcastExpiryPolicy customExpiry = new HazelcastExpiryPolicy(20, 30, 40, TimeUnit.SECONDS);
  *   unwrappedCache.put(&quot;key1&quot;, value, customExpiry );
  * </pre>
- * </p>
  *
  * @since 3.3.1
  */
@@ -139,7 +138,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EXPIRY_POLICY;
     }
 

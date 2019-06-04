@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the {@link com.hazelcast.cardinality.CardinalityEstimator}.<br/>
+ * <p>This package contains the operations on the {@link com.hazelcast.cardinality.CardinalityEstimator}.<br>
  *
  * @since 3.8
  */

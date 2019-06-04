@@ -156,7 +156,7 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SIMPLE_CACHE_ENTRY_LISTENER_CONFIG;
     }
 

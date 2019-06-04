@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static java.lang.Boolean.TRUE;
 
@@ -49,7 +49,7 @@ public class ReduceOperation extends SemaphoreBackupAwareOperation implements Mu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.REDUCE_OPERATION;
     }
 }

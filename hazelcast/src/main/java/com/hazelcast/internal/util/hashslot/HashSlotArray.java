@@ -55,7 +55,7 @@ import com.hazelcast.nio.Disposable;
  * {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE} + ({@link #capacity()} * slot size), and
  * its base address is {@link #address()} - {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE}.
  * </p><p>
- * A special value must be reserved to mark an <emph>unassigned</emph> slot. The offset of the marker
+ * A special value must be reserved to mark an <em>unassigned</em> slot. The offset of the marker
  * in the slot can be customized, as well as the choice of the special value.
  * </p>
  */

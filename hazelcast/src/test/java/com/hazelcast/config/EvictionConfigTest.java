@@ -20,7 +20,7 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -33,7 +33,7 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMO
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EvictionConfigTest {
 
     @Test

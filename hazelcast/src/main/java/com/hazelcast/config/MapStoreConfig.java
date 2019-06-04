@@ -406,7 +406,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_STORE_CONFIG;
     }
 

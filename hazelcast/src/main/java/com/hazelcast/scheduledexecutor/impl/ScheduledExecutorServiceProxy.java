@@ -32,7 +32,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
@@ -55,8 +55,9 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.MapUtil.HASHMAP_DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.util.MapUtil.calculateInitialCapacity;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.MapUtil.createHashMapAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount"})
@@ -382,6 +383,11 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command can't be null");
 
         return new ScheduledRunnableAdapter<T>(command);
+    }
+
+    private static <K, V> Map<K, V> createHashMapAdapter(int expectedMapSize) {
+        int initialCapacity = calculateInitialCapacity(expectedMapSize);
+        return new HashMapAdapter<>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
     private <V> IScheduledFuture<V> createFutureProxy(int partitionId, String taskName) {

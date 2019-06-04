@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -164,7 +164,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
     }
 }

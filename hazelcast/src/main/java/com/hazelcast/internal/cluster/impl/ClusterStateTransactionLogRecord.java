@@ -23,7 +23,7 @@ import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 import com.hazelcast.util.Preconditions;
 
@@ -122,7 +122,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CLUSTER_STATE_TRANSACTION_LOG_RECORD;
     }
 }

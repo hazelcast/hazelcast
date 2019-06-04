@@ -42,7 +42,7 @@ import static com.hazelcast.util.Preconditions.checkState;
  * try to initialize its local {@link RaftNode} instance. In order to the
  * initialize itself, it can directly ask to the Raft group to verify if it is
  * a current member of the Raft group.
- * <p/>
+ * <p>
  * This operation is NOT committed to the Metadata group.
  * It is committed to the queried Raft group.
  */
@@ -86,7 +86,7 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_INITIAL_RAFT_GROUP_MEMBERS_IF_CURRENT_GROUP_MEMBER_OP;
     }
 

@@ -100,7 +100,7 @@ public final class ScheduledTaskHandlerImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.TASK_HANDLER;
     }
 

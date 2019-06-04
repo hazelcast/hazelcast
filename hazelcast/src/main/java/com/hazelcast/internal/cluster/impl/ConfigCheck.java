@@ -160,7 +160,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CONFIG_CHECK;
     }
 

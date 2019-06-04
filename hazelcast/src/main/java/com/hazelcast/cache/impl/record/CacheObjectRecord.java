@@ -74,7 +74,7 @@ public class CacheObjectRecord extends AbstractCacheRecord<Object, ExpiryPolicy>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_OBJECT_RECORD;
     }
 }

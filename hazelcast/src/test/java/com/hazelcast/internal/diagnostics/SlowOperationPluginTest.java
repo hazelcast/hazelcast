@@ -18,10 +18,8 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.operation.EntryOperation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -62,24 +60,18 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testRun() {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                hz.getMap("foo").executeOnKey("bar", new SlowEntryProcessor());
-            }
+        spawn(() -> {
+            hz.getMap("foo").executeOnKey("bar", new SlowEntryProcessor());
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
-                assertContains(EntryOperation.class.getName());
-                assertContains("stackTrace");
-                assertContains("invocations=1");
-                assertContains("startedAt=");
-                assertContains("duration(ms)=");
-                assertContains("operationDetails=");
-            }
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
+            assertContains(EntryOperation.class.getName());
+            assertContains("stackTrace");
+            assertContains("invocations=1");
+            assertContains("startedAt=");
+            assertContains("duration(ms)=");
+            assertContains("operationDetails=");
         });
     }
 
@@ -95,7 +87,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

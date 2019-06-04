@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -70,7 +70,7 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_KEYS;
     }
 }

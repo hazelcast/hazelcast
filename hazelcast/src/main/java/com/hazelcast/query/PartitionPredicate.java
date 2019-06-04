@@ -91,7 +91,7 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.PARTITION_PREDICATE;
     }
 

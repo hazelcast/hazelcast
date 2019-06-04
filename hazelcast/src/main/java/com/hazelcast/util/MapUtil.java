@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.util.HashMap;
@@ -30,7 +29,10 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class MapUtil {
 
-    private static final float HASHMAP_DEFAULT_LOAD_FACTOR = 0.75f;
+    /**
+     * Default hash map load factor.
+     */
+    public static final float HASHMAP_DEFAULT_LOAD_FACTOR = 0.75f;
 
     private MapUtil() { }
 
@@ -41,15 +43,6 @@ public final class MapUtil {
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
         final int initialCapacity = calculateInitialCapacity(expectedMapSize);
         return new HashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
-    }
-
-    /**
-     * Utility method that creates an {@link HashMapAdapter} with its initialCapacity calculated
-     * to minimize rehash operations
-     */
-    public static <K, V> Map<K, V> createHashMapAdapter(int expectedMapSize) {
-        final int initialCapacity = calculateInitialCapacity(expectedMapSize);
-        return new HashMapAdapter<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
     /**

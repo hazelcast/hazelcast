@@ -36,13 +36,13 @@ import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Tests that {@link ModularJavaUtils} correctly logs warnings about missing package access on Java 9+.
  */
-@Category({ QuickTest.class, ParallelTest.class })
+@Category({ QuickTest.class, ParallelJVMTest.class })
 public class ModularJavaUtilsTest {
 
     /**

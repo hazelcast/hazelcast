@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 /**
  * Only used by deprecated {@link com.hazelcast.client.impl.protocol.task.map.MapClearNearCacheMessageTask}
@@ -42,7 +42,7 @@ public class ClearNearCacheOperation extends MapOperation implements MutatingOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CLEAR_NEAR_CACHE;
     }
 }

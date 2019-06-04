@@ -31,7 +31,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionPredicateTest extends HazelcastTestSupport {
 
     private static final int PARTITIONS = 10;
@@ -156,12 +156,12 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     public void executeOnEntries() {
         PartitionPredicate<String, Integer> lessThan10pp = new PartitionPredicate<String, Integer>(partitionKey,
                 Predicates.lessThan("this", 10));
-        Map<String, Object> result = aggMap.executeOnEntries(new EntryNoop(), lessThan10pp);
+        Map<String, Integer> result = aggMap.executeOnEntries(new EntryNoop<>(), lessThan10pp);
 
         assertEquals(10, result.size());
-        for (Map.Entry<String, Object> entry : result.entrySet()) {
+        for (Map.Entry<String, Integer> entry : result.entrySet()) {
             assertEquals(partitionId, local.getPartitionService().getPartition(entry.getKey()).getPartitionId());
-            assertEquals(-1, entry.getValue());
+            assertEquals(-1, (int) entry.getValue());
         }
     }
 
@@ -211,9 +211,9 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
         assertEquals(TruePredicate.INSTANCE, deserialized.getTarget());
     }
 
-    private static class EntryNoop extends AbstractEntryProcessor<String, Integer> {
+    private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {
         @Override
-        public Object process(Map.Entry<String, Integer> entry) {
+        public Integer process(Map.Entry<K, V> entry) {
             return -1;
         }
     }

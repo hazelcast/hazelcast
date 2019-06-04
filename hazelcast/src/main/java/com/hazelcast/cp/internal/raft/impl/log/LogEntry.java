@@ -76,7 +76,7 @@ public class LogEntry implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.LOG_ENTRY;
     }
 

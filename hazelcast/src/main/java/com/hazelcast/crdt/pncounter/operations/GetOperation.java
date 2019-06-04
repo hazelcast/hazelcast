@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -71,7 +71,7 @@ public class GetOperation extends AbstractPNCounterOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER_GET_OPERATION;
     }
 }

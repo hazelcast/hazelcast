@@ -31,11 +31,10 @@ import static com.hazelcast.util.QuickMath.normalize;
 
 /**
  * Unsafe accessor.
- * <p/>
+ * <p>
  * Warning: Although both array base-offsets and array index-scales are constant over time currently,
  * a later JVM implementation can change this behaviour to allow varying index-scales and base-offsets
  * over time or per array instances (e.g. compressed primitive arrays or backwards growing arrays...)
- * <p/>
  * <p>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
@@ -52,7 +51,6 @@ import static com.hazelcast.util.QuickMath.normalize;
  *          So on these platforms memory access alignments must be checked and handled if possible.
  *     </li>
  * </ul>
- * </p>
  */
 @Deprecated
 @PrivateApi

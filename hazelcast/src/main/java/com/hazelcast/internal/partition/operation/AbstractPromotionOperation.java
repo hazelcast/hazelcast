@@ -26,8 +26,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -84,7 +84,7 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException();
     }
 }

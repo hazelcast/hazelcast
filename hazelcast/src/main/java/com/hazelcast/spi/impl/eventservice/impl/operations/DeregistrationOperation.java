@@ -65,7 +65,7 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DEREGISTRATION;
     }
 }

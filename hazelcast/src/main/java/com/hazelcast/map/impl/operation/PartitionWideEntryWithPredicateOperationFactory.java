@@ -32,7 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
@@ -202,7 +202,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_FACTORY;
     }
 }

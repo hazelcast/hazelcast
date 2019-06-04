@@ -24,7 +24,7 @@ import java.util.Iterator;
 /**
  * Iterator for the Queue.
  *
- * @param <E>
+ * @param <E> the type of elements in the queue.
  */
 public class QueueIterator<E> implements Iterator<E> {
 

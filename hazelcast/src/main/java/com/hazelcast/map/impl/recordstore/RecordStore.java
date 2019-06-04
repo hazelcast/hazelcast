@@ -119,7 +119,7 @@ public interface RecordStore<R extends Record> {
     boolean setTtl(Data key, long ttl);
 
     /**
-     * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
+     * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.
      */
     void removeBackup(Data dataKey, CallerProvenance provenance);
@@ -137,7 +137,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
      * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
-     * <p/>
+     * <p>
      * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
      * This adds an extra serialization step. For the reason of this behaviour please see issue 1292 on github.
      *

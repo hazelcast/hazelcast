@@ -38,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A YAML {@link ConfigBuilder} implementation.
- * <p/>
+ * <p>
  * This config builder is compatible with the YAML 1.2 specification and
  * supports the JSON Schema.
  */
@@ -93,11 +93,11 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
     /**
      * Constructs a {@link YamlConfigBuilder} that loads the configuration
      * with the provided {@link YamlConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link YamlConfigLocator} is {@code null}, a new
      * instance is created and the config is located in every possible
      * places. For these places, please see {@link YamlConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link YamlConfigLocator} is not {@code null}, it
      * is expected that it already located the configuration YAML to load
      * from. No further attempt to locate the configuration YAML is made

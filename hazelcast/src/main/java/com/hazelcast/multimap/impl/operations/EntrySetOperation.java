@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class EntrySetOperation extends AbstractMultiMapOperation implements ReadonlyOperation {
 
@@ -38,7 +38,7 @@ public class EntrySetOperation extends AbstractMultiMapOperation implements Read
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.ENTRY_SET;
     }
 }

@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchContainer;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 abstract class BackupAwareCountDownLatchOperation extends AbstractCountDownLatchOperation
         implements BackupAwareOperation {

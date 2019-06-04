@@ -70,7 +70,7 @@ public class CountDownLatchContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CONTAINER;
     }
 

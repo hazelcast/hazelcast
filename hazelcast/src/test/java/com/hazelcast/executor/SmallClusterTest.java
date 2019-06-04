@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -25,7 +26,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,12 +47,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.FutureUtil.waitForever;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SmallClusterTest extends ExecutorServiceTestSupport {
 
     private static final int TEST_TIMEOUT = 60000;
@@ -170,6 +172,93 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
             Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
             assertEquals((long) (i + 1), future.get());
         }
+    }
+
+    @Test
+    public void testSubmitToAllMembersSerializesTheTaskOnlyOnce() {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToAllMembers(countingCallable);
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToAllMembersSerializesTheTaskOnlyOnce_withCallback() throws InterruptedException {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToAllMembers(countingCallable, new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelector() {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToMembers(countingCallable, MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollection() {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToMembers(countingCallable, instances[0].getCluster().getMembers());
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelectorAndCallback() throws InterruptedException {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToMembers(countingCallable, MemberSelectors.DATA_MEMBER_SELECTOR, new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollectionAndCallback() throws InterruptedException {
+        IExecutorService executorService = instances[0].getExecutorService(randomName());
+        SerializationCountingCallable countingCallable = new SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToMembers(countingCallable, instances[0].getCluster().getMembers(), new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
     }
 
     @Test(timeout = TEST_TIMEOUT)

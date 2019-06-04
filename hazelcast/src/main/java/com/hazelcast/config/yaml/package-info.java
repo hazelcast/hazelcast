@@ -18,11 +18,11 @@
  * Contains adapter and utility classes needed to adapt YAML DOM classes
  * as W3C DOM ones, making config builders that accept W3C DOM able to
  * build the config structure from YAML.
- * <p/>
+ * <p>
  * This package intentionally lacks fully implementing the  functionality
  * of the W3C DOM model. Only the parts that required by the Hazelcast
  * config processors are implemented.
- * <p/>
+ * <p>
  * The package contains the following adapters:
  * <ul>
  * <li>{@link com.hazelcast.internal.yaml.YamlNode} to {@link org.w3c.dom.Node}</li>

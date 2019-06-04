@@ -48,7 +48,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     /**
      * Used when sorting partition containers in {@link ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
-     * <p/>
+     * <p>
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */

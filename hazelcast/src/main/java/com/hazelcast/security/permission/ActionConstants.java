@@ -38,7 +38,6 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -177,12 +176,6 @@ public final class ActionConstants {
             @Override
             public Permission create(String name, String... actions) {
                 return new FlakeIdGeneratorPermission(name, actions);
-            }
-        });
-        PERMISSION_FACTORY_MAP.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {
-            @Override
-            public Permission create(String name, String... actions) {
-                return new MapReducePermission(name, actions);
             }
         });
         PERMISSION_FACTORY_MAP.put(ReplicatedMapService.SERVICE_NAME, new PermissionFactory() {

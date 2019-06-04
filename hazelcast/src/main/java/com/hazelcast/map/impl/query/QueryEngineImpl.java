@@ -28,7 +28,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
@@ -57,8 +57,10 @@ import static java.util.Collections.singletonList;
  * Should be used from top-level proxy-layer only (e.g. MapProxy, etc.).
  * <p>
  * Top level-query actors:
- * - QueryEngine orchestrates the queries and  merging the result
- * - QueryRunner -> runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
+ * <ul>
+ * <li>QueryEngine orchestrates the queries and  merging the result</li>
+ * <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)</li>
+ * </ul>
  */
 public class QueryEngineImpl implements QueryEngine {
 

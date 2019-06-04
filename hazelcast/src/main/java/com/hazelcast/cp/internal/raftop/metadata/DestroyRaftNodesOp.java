@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.Collection;
  * When a Raft group is destroyed, its members terminate their internal
  * {@link RaftNode} instances. This operation is sent to members of destroyed
  * Raft groups.
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
@@ -74,7 +74,7 @@ public class DestroyRaftNodesOp extends Operation implements IdentifiedDataSeria
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DESTROY_RAFT_NODES_OP;
     }
 

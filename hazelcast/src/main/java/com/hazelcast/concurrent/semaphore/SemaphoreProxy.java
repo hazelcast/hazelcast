@@ -27,7 +27,7 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;

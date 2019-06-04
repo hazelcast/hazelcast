@@ -78,7 +78,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * {@link CPSubsystemConfig#getSessionTimeToLiveSeconds()} seconds, its session
  * is closed. That caller is considered to be alive as long as it is committing
  * heartbeats.
- * <p/>
+ * <p>
  * Blocking Raft services can make use of the session abstraction to attach
  * resources to sessions. On session termination, its attached resources will
  * be released automatically.

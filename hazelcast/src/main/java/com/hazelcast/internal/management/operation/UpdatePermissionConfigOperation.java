@@ -44,7 +44,7 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.UPDATE_PERMISSION_CONFIG_OPERATION;
     }
 

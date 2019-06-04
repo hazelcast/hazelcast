@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.util.ThreadUtil;
 
@@ -125,7 +125,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
  * Member implementation for testing behaviour of {@link ConsistencyLostException}
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PNCounterConsistencyLostTest extends AbstractPNCounterConsistencyLostTest {
 
     private HazelcastInstance[] members;

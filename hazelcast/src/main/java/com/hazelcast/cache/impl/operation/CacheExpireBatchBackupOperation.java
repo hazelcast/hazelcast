@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
@@ -104,7 +104,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EXPIRE_BATCH_BACKUP;
     }
 

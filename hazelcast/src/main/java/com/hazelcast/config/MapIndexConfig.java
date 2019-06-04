@@ -151,7 +151,7 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_INDEX_CONFIG;
     }
 

@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Mutable state maintained by each candidate during pre-voting & voting phases
+ * Mutable state maintained by each candidate during pre-voting &amp; voting phases
  */
 public class CandidateState {
 

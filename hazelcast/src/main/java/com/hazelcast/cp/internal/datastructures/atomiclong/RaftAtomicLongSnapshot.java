@@ -89,7 +89,7 @@ public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.SNAPSHOT;
     }
 

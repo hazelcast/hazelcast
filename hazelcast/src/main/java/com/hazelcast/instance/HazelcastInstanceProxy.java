@@ -48,7 +48,6 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -127,11 +126,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getOriginal().getMultiMap(name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        return getOriginal().getJobTracker(name);
     }
 
     @Override

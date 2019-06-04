@@ -208,7 +208,7 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PREDICATE_CONFIG;
     }
 

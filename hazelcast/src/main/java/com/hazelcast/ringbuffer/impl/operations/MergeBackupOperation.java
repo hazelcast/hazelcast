@@ -22,7 +22,7 @@ import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class MergeBackupOperation extends AbstractRingBufferOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP_OPERATION;
     }
 

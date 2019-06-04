@@ -37,7 +37,7 @@ public class AtomicReferenceMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.ATOMIC_REFERENCE_MERGING_VALUE;
     }
 }

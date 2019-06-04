@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains Lock for Hazelcast.<br/>
+ * <p>This package contains Lock for Hazelcast.<br>
  *
  * The {@link com.hazelcast.core.ILock} is the distributed version of the {@link java.util.concurrent.locks.Lock}.
  * So a lock can be acquired by different JVM's in the same cluster. When a JVM dies which acquired the Lock, the lock

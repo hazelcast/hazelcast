@@ -49,7 +49,7 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TRANSACTION_ROLLBACK;
     }
 

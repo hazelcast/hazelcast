@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Returns if the key loading and dispatching has finished on this partition
@@ -50,7 +50,7 @@ public class IsKeyLoadFinishedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.IS_KEYLOAD_FINISHED;
     }
 }

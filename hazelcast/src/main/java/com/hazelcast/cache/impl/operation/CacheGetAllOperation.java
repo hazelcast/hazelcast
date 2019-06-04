@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class CacheGetAllOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.GET_ALL;
     }
 

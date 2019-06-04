@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
 public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
@@ -31,7 +31,7 @@ public class SignalBackupOperation extends BaseSignalOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.SIGNAL_BACKUP;
     }
 }

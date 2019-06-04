@@ -22,11 +22,11 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 

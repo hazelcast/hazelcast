@@ -26,14 +26,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -51,7 +50,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
@@ -174,26 +173,16 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
     }
 
-    private static class JsonEntryProcessor implements EntryProcessor<Integer, HazelcastJsonValue> {
+    private static class JsonEntryProcessor implements EntryProcessor<Integer, HazelcastJsonValue, String> {
 
         @Override
-        public Object process(Map.Entry<Integer, HazelcastJsonValue> entry) {
+        public String process(Map.Entry<Integer, HazelcastJsonValue> entry) {
             JsonObject jsonObject = Json.parse(entry.getValue().toString()).asObject();
             jsonObject.set("age", 0);
             jsonObject.set("active", false);
 
             entry.setValue(new HazelcastJsonValue(jsonObject.toString()));
             return "anyResult";
-        }
-
-        @Override
-        public EntryBackupProcessor<Integer, HazelcastJsonValue> getBackupProcessor() {
-            return new EntryBackupProcessor<Integer, HazelcastJsonValue>() {
-                @Override
-                public void processBackup(Map.Entry<Integer, HazelcastJsonValue> entry) {
-                    process(entry);
-                }
-            };
         }
     }
 

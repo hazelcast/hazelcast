@@ -49,7 +49,7 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SET_CONFIG;
     }
 

@@ -444,7 +444,7 @@ public class SqlPredicate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.SQL_PREDICATE;
     }
 }

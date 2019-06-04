@@ -18,7 +18,7 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.HashMap;
 import java.util.Map;

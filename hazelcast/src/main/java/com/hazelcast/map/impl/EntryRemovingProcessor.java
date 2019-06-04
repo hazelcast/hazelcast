@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
-public class EntryRemovingProcessor extends AbstractEntryProcessor implements IdentifiedDataSerializable {
+public class EntryRemovingProcessor implements EntryProcessor, IdentifiedDataSerializable {
 
     public static final EntryRemovingProcessor ENTRY_REMOVING_PROCESSOR = new EntryRemovingProcessor();
 
@@ -42,7 +42,7 @@ public class EntryRemovingProcessor extends AbstractEntryProcessor implements Id
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_REMOVING_PROCESSOR;
     }
 

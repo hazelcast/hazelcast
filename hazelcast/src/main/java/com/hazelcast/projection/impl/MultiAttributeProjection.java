@@ -73,7 +73,7 @@ public final class MultiAttributeProjection<I> extends Projection<I, Object[]> i
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ProjectionDataSerializerHook.MULTI_ATTRIBUTE;
     }
 

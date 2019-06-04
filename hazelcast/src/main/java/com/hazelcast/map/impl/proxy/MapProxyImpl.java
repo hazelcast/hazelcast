@@ -21,8 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
@@ -48,17 +46,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
@@ -67,11 +54,12 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.DelegatingFuture;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,7 +71,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -95,7 +82,6 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
@@ -722,7 +708,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKey(@Nonnull K key,
+                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -731,7 +718,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -742,7 +730,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeys(Set<K> keys,
+                                                          EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return new SimpleCompletedFuture<>(Collections.emptyMap());
@@ -754,7 +743,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKey(@Nonnull K key,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor, callback);
 
@@ -762,7 +753,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -771,12 +763,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                          @Nonnull Predicate<K, V> predicate) {
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
 
@@ -785,7 +778,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return emptyMap();
         }
 
-        Map<K, Object> resultingMap = createHashMap(result.size() / 2);
+        Map<K, R> resultingMap = createHashMap(result.size() / 2);
         for (int i = 0; i < result.size(); ) {
             Data key = result.get(i++);
             Data value = result.get(i++);
@@ -830,47 +823,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
-
-        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation,
-                                                    JobTracker jobTracker) {
-        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
-
-        try {
-            isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory == null) {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            // TODO: not what we want, because it can lead to wrapping of HazelcastException
-            throw new HazelcastException(e);
-        }
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

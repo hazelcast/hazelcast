@@ -36,7 +36,7 @@ public class InitBackupOperation extends SemaphoreBackupOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.INIT_BACKUP_OPERATION;
     }
 }

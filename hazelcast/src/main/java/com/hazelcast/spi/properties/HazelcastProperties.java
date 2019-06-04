@@ -26,7 +26,7 @@ import static java.lang.String.format;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- * Container for configured Hazelcast properties ({@see HazelcastProperty}).
+ * Container for configured Hazelcast properties (see {@link HazelcastProperty}).
  * <p>
  * A {@link HazelcastProperty} can be set as:
  * <ul>

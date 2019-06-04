@@ -44,7 +44,7 @@ public class GetOp extends AbstractAtomicRefOp implements IndeterminateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.GET_OP;
     }
 }

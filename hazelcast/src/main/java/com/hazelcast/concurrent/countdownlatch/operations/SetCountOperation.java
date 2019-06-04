@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -55,7 +55,7 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SET_COUNT_OPERATION;
     }
 

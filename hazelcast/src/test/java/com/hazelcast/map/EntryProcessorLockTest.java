@@ -27,9 +27,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,8 +53,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryProcessorLockTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorLockTest";
@@ -196,7 +196,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -213,7 +213,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }
@@ -230,7 +230,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

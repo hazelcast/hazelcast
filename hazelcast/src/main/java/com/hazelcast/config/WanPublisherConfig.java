@@ -454,7 +454,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_PUBLISHER_CONFIG;
     }
 

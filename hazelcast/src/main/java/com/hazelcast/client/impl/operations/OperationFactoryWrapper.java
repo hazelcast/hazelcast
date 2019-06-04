@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.operations;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 
@@ -70,7 +70,7 @@ public final class OperationFactoryWrapper implements OperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.OP_FACTORY_WRAPPER;
     }
 

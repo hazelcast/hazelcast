@@ -58,7 +58,7 @@ public final class FloatingPointSumAggregator<I> extends AbstractAggregator<I, N
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.FLOATING_POINT_SUM;
     }
 

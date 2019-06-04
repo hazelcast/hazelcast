@@ -276,7 +276,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.TOPIC_CONFIG;
     }
 

@@ -109,7 +109,7 @@ hazelcast:
     scripting-enabled: false
     update-interval: 2
     url: http://localhost:8080/hazelcast-mancenter
-  # 
+  #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
   # You can define the name and value of these properties.
@@ -123,19 +123,19 @@ hazelcast:
   # * login-module
   # * security-object
   # * socket-interceptor
-  # 
+  #
   properties:
     your-property: Value of the property
-  # 
+  #
   # ===== HAZELCAST WAN REPLICATION CONFIGURATION =====
-  # 
+  #
   # The WAN replication feature is available only in Hazelcast Enterprise.
   # The configuration element's name is "wan-replication". It has two attributes:
   # * name:
   #     Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN
   #     Replication for these data structures (using the element "wan-replication-ref" in the configuration of
   #     IMap or ICache). Please see the "map" and "cache" configuration descriptions in this YAML.
-  # 
+  #
   # The "wan-replication" element has the following sub-elements:
   # * "wan-publisher":
   #     Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
@@ -710,9 +710,9 @@ hazelcast:
        - 10.10.1.*
        - 10.10.2.*
 
-  # 
+  #
   # ===== HAZELCAST EXECUTOR SERVICE CONFIGURATION =====
-  # 
+  #
   # Configuration element's name is "executor-service". It has the optional attribute "name" with which you
   # can specify the name of your executor service. Its default value is "default".
   # It has the following sub-elements:
@@ -728,7 +728,7 @@ hazelcast:
   # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
   # "quorum-ref"'s value
   # as the "quorum"'s name.
-  # 
+  #
   executor-service:
     default:
       statistics-enabled: true
@@ -1159,7 +1159,7 @@ hazelcast:
   # * "quorum-ref":
   # Adds the quorum for this map which you configure using the "quorum" element. You should set the "quorum-ref"'s value
   # as the "quorum"'s name.
-  # 
+  #
   map:
     default:
       in-memory-format: BINARY
@@ -1800,45 +1800,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-  #
-  # ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====
-  #
-  # Configuration element's name is "jobtracker". It has the required attribute "name" with which you
-  # can specify the name of your MapReduce JobTracker. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "max-thread-size":
-  # Maximum thread pool size of the JobTracker. Its default value is 0.
-  # * "queue-size":
-  #     Maximum number of tasks that can wait to be processed. A value of 0 means number of partitions * 2.
-  #     Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate
-  #     chunks might be lost. Its default value is 0.
-  # * "retry-count":
-  #     Currently not used. Reserved for later use where the framework will automatically try to restart / retry
-  #     operations from an available saved point.
-  # * "chunk-size":
-  #     Number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to
-  #     better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate
-  #     transmission, but remember that low values mean higher traffic costs. A very high value might cause an
-  #     OutOfMemoryError to occur if the emitted values do not fit into heap memory before being sent to the reducers.
-  #     To prevent this, you might want to use a combiner to pre-reduce values on mapping members. Its default
-  #     value is 1000.
-  # * "communicate-stats":
-  #     Specifies whether the statistics (for example, statistics about processed entries) are transmitted to
-  #     the job emitter. This can show progress to a user inside of an UI system, but it produces additional traffic.
-  #     If not needed, you might want to deactivate this. Its default value is true.
-  # * "topology-changed-strategy":
-  #     Specifies how the MapReduce framework reacts on topology changes while executing a job. Currently, only
-  #     CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter
-  #     (will throw a com.hazelcast.mapreduce.TopologyChangedException).
-  #
-  jobtracker:
-    default:
-      max-thread-size: 0
-      queue-size: 0
-      retry-count: 0
-      chunk-size: 1000
-      communicate-stats: true
-      topology-changed-strategy: CANCEL_RUNNING_OPERATION
   #
   # ===== HAZELCAST SEMAPHORE CONFIGURATION =====
   #
@@ -2904,14 +2865,14 @@ hazelcast:
         enabled: false
         self-registration: true
         namespace: hazelcast
-#       <discovery-strategies>
-#            <node-filter class="DummyFilterClass"/>
-#            <discovery-strategy class="DummyClass" enabled="true">
-#                <properties>
-#                    <property name="foo">bar</property>
-#                </properties>
-#            </discovery-strategy>
-#        </discovery-strategies>-->
+    #      discovery-strategies:
+    #        node-filter:
+    #          class: DummyFilterClass
+    #        discovery-strategies:
+    #          - class: DummyClass
+    #            enabled: true
+    #            properties:
+    #              foo: bar
     interfaces:
       enabled: true
       interfaces:

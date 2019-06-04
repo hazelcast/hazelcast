@@ -24,7 +24,7 @@ import com.hazelcast.util.SampleableConcurrentHashMap;
 
 /**
  * Internally used {@link EntryView} implementation for sampling based eviction specific purposes.
- * <p/>
+ * <p>
  * Mainly :
  * - Wraps a {@link Record} and reaches all {@link EntryView} specific info over it
  * - Lazily de-serializes key and value.

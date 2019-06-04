@@ -60,7 +60,7 @@ public class ReleasePermitsOp extends AbstractSemaphoreOp implements Indetermina
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.RELEASE_PERMITS_OP;
     }
 

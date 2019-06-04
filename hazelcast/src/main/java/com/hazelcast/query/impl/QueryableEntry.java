@@ -37,7 +37,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
  * This abstract class contains methods related to Queryable Entry, which means searched an indexed by SQL query or predicate.
- * <p/>
+ * <p>
  * If the object, which is used as the extraction target, is not of Data or Portable type the serializationService
  * will not be touched at all.
  */

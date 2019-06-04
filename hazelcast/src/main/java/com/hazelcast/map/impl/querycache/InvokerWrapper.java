@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Future;
 

@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the implementation of the cluster functionality.<br/>
+ * <p>This package contains the implementation of the cluster functionality.<br>
  */
 package com.hazelcast.internal.cluster.impl;

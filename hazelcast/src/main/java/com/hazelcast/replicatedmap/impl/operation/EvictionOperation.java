@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -52,7 +52,7 @@ public class EvictionOperation extends AbstractNamedSerializableOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.EVICTION;
     }
 

@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains merge functionality for Hazelcast cache.<br/>
+ * <p>This package contains merge functionality for Hazelcast cache.<br>
  */
 package com.hazelcast.cache.impl.merge;

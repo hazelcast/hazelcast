@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal;
 
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**

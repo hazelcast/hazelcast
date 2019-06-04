@@ -20,7 +20,7 @@ import com.hazelcast.core.IBiFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;

@@ -112,8 +112,6 @@ public class Config {
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
-    private final Map<String, JobTrackerConfig> jobTrackerConfigs = new ConcurrentHashMap<String, JobTrackerConfig>();
-
     private final Map<String, QuorumConfig> quorumConfigs = new ConcurrentHashMap<String, QuorumConfig>();
 
     private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
@@ -2430,105 +2428,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.mapreduce.JobTracker}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the job tracker config
-     * @return the job tracker configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public JobTrackerConfig findJobTrackerConfig(String name) {
-        name = getBaseName(name);
-        JobTrackerConfig config = lookupByPattern(configPatternMatcher, jobTrackerConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getJobTrackerConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the JobTrackerConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addJobTrackerConfig(JobTrackerConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the job tracker config
-     * @return the job tracker configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public JobTrackerConfig getJobTrackerConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, jobTrackerConfigs, name, JobTrackerConfig.class);
-    }
-
-    /**
-     * Adds the {@link com.hazelcast.mapreduce.JobTracker} configuration.
-     * The configuration is saved under the config name defined by
-     * {@link JobTrackerConfig#getName()}.
-     *
-     * @param jobTrackerConfig semaphoreConfig config to add
-     * @return this config instance
-     */
-    public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
-        jobTrackerConfigs.put(jobTrackerConfig.getName(), jobTrackerConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of {@link com.hazelcast.mapreduce.JobTracker}
-     * configurations, mapped by config name. The config name may be a pattern
-     * with which the configuration was initially obtained.
-     *
-     * @return the WAN replication configurations mapped by config name
-     */
-    public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
-        return jobTrackerConfigs;
-    }
-
-    /**
-     * Sets the map of job tracker configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param jobTrackerConfigs the job tracker configuration map to set
-     * @return this config instance
-     */
-    public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
-        this.jobTrackerConfigs.clear();
-        this.jobTrackerConfigs.putAll(jobTrackerConfigs);
-        for (final Entry<String, JobTrackerConfig> entry : this.jobTrackerConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
      * Returns the map of split brain protection configurations, mapped by
      * config name. The config name may be a pattern with which the
      * configuration was initially obtained.
@@ -3335,10 +3234,11 @@ public class Config {
     }
 
     /**
-     * Returns the {@link URL} to the XML configuration, which has been parsed
+     * Returns the {@link URL} to the declarative configuration, which has been parsed
      * to create this {@link Config} instance.
      *
-     * @return the configuration URL
+     * @return the configuration URL if the configuration loaded from a URL
+     * or {@code null} otherwise
      */
     public URL getConfigurationUrl() {
         return configurationUrl;
@@ -3360,10 +3260,11 @@ public class Config {
     }
 
     /**
-     * Returns the {@link File} to the XML configuration, which has been
+     * Returns the {@link File} to the declarative configuration, which has been
      * parsed to create this {@link Config} instance.
      *
-     * @return the configuration file
+     * @return the configuration file if the configuration loaded from a file
+     * or {@code null} otherwise
      */
     public File getConfigurationFile() {
         return configurationFile;

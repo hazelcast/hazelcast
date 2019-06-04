@@ -19,13 +19,13 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfigTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientDynamicConfigurationAwareConfigTest extends DynamicConfigurationAwareConfigTest {
 
     @Override

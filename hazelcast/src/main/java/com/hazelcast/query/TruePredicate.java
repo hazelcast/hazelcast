@@ -70,7 +70,7 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.TRUE_PREDICATE;
     }
 

@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class CountDownLatchReplicationOperation extends Operation implements Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_LATCH_REPLICATION_OPERATION;
     }
 

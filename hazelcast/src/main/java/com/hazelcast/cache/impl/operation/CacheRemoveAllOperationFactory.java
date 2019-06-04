@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 import java.util.Set;
@@ -30,14 +30,14 @@ import java.util.Set;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
- * {@link com.hazelcast.spi.OperationFactory} implementation for RemoveAll Operations.
+ * {@link OperationFactory} implementation for RemoveAll Operations.
  * <p>RemoveAll operation has two main purposes;
  * <ul>
  * <li>Remove all internal data
  * <li>Remove the entries of the provided keys.</li>
- * </ul></p>
+ * </ul>
  *
- * @see com.hazelcast.spi.OperationFactory
+ * @see OperationFactory
  */
 public class CacheRemoveAllOperationFactory implements OperationFactory, IdentifiedDataSerializable {
 
@@ -93,7 +93,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.REMOVE_ALL_FACTORY;
     }
 }

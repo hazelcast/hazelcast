@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  * the {@link ISemaphore} instances. By default, it is selected from the
  * largest partitioned cluster (by number of members). If the cluster sizes are
  * all equal, then a random {@link ISemaphore} instance will be chosen.
- * <p/>
+ * <p>
  * This {@link ISemaphore} impl also supports Quorum {@link QuorumConfig}
  * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
  * guarantee strong consistency under failure scenarios.

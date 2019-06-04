@@ -39,7 +39,7 @@ import java.util.concurrent.Executor;
  * item from the ringbuffer or blocks if no item is available. All data
  * that are read is pushed into the {@link com.hazelcast.core.MessageListener}.
  * It is a self-perpetuating stream of async calls.
- * <p/>
+ * <p>
  * The runner keeps track of the sequence.
  */
 public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {

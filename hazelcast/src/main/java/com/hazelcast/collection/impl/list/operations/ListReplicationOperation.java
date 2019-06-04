@@ -37,7 +37,7 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_REPLICATION;
     }
 

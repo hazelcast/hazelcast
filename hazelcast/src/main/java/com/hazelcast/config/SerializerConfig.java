@@ -76,7 +76,7 @@ public class SerializerConfig {
      * Returns the implementation of the serializer class.
      *
      * @return the implementation of the serializer class
-     * @see {@link com.hazelcast.config.SerializerConfig#setImplementation(com.hazelcast.nio.serialization.Serializer)}
+     * @see com.hazelcast.config.SerializerConfig#setImplementation(com.hazelcast.nio.serialization.Serializer)
      */
     public Serializer getImplementation() {
         return implementation;
@@ -84,7 +84,7 @@ public class SerializerConfig {
 
     /**
      * Sets the serializer implementation instance.
-     * <br/>
+     * <br>
      * Serializer must be instance of either {@link com.hazelcast.nio.serialization.StreamSerializer}
      * or {@link com.hazelcast.nio.serialization.ByteArraySerializer}.
      *
@@ -100,7 +100,7 @@ public class SerializerConfig {
      * Gets the type of the class that will be serialized via this implementation.
      *
      * @return typeClass type of the class that will be serialized via this implementation
-     * @see {@link com.hazelcast.config.SerializerConfig#setTypeClass(Class)}
+     * @see com.hazelcast.config.SerializerConfig#setTypeClass(Class)
      */
     public Class getTypeClass() {
         return typeClass;
@@ -121,7 +121,7 @@ public class SerializerConfig {
      * Gets the name of the class that will be serialized via this implementation.
      *
      * @return typeClassName name of the class that will be serialized via this implementation
-     * @see {@link com.hazelcast.config.SerializerConfig#setTypeClassName(String)}
+     * @see com.hazelcast.config.SerializerConfig#setTypeClassName(String)
      */
     public String getTypeClassName() {
         return typeClassName;

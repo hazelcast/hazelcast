@@ -19,7 +19,7 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.listeners.AddListenerWithNullParameterTests;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientAddListenerWithNullParameterTests extends AddListenerWithNullParameterTests {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

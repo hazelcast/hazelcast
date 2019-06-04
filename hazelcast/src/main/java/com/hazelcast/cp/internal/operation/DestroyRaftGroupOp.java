@@ -52,7 +52,7 @@ public class DestroyRaftGroupOp extends RaftReplicateOp implements Indeterminate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DESTROY_RAFT_GROUP_OP;
     }
 }

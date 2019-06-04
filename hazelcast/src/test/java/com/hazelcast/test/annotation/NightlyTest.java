@@ -18,7 +18,7 @@ package com.hazelcast.test.annotation;
 
 /**
  * Annotates tests which are too slow for the PR builder and have no relevance for code coverage.
- * <p/>
+ * <p>
  * Will be executed in nightly builds, but are not used for code coverage measurements.
  */
 public final class NightlyTest {

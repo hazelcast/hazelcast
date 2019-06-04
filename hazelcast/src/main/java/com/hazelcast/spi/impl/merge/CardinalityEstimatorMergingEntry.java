@@ -38,7 +38,7 @@ public class CardinalityEstimatorMergingEntry
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.CARDINALITY_ESTIMATOR_MERGING_ENTRY;
     }
 }

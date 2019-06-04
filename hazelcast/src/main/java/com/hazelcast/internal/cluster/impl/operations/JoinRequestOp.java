@@ -63,7 +63,7 @@ public class JoinRequestOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.JOIN_REQUEST_OP;
     }
 }

@@ -161,7 +161,7 @@ public final class OutOfMemoryErrorDispatcher {
 
     /**
      * Signals the OutOfMemoryErrorDispatcher that an OutOfMemoryError happened.
-     * <p/>
+     * <p>
      * If there are any registered instances, they are automatically unregistered. This is done to prevent creating
      * new objects during the deregistration process while the system is suffering from a shortage of memory.
      *

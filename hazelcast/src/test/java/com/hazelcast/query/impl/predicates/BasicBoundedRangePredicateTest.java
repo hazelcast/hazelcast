@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicBoundedRangePredicateTest {
 
     @Test(expected = IllegalArgumentException.class)
@@ -46,7 +46,7 @@ public class BasicBoundedRangePredicateTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCantBeSerialized() {
-        new BoundedRangePredicate("this", 1, true, 10, true).getId();
+        new BoundedRangePredicate("this", 1, true, 10, true).getClassId();
     }
 
     @Test

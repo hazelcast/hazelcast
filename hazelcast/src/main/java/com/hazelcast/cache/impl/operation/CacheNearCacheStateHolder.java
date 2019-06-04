@@ -126,7 +126,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_NEAR_CACHE_STATE_HOLDER;
     }
 }

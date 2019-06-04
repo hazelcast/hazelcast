@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 import java.util.Set;
@@ -31,7 +31,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}.
- * @see com.hazelcast.spi.OperationFactory
+ * @see OperationFactory
  */
 public class CacheLoadAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
@@ -55,7 +55,7 @@ public class CacheLoadAllOperationFactory
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.LOAD_ALL_FACTORY;
     }
 

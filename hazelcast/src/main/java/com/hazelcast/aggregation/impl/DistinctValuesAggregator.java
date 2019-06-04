@@ -62,7 +62,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.DISTINCT_VALUES;
     }
 

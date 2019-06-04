@@ -111,7 +111,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if the {@code value} is >= 0.
+     * Tests if the {@code value} is &gt;= 0.
      *
      * @param value        the value tested to see if it is not negative.
      * @param errorMessage the errorMessage
@@ -126,7 +126,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if the {@code value} is >= 0.
+     * Tests if the {@code value} is &gt;= 0.
      *
      * @param value        the  value tested to see if it is not negative.
      * @param errorMessage the errorMessage
@@ -141,7 +141,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if the {@code value} is < 0.
+     * Tests if the {@code value} is &lt; 0.
      *
      * @param value        the long value tested to see if it is not negative.
      * @param errorMessage the message
@@ -156,7 +156,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a {@code value} is positive, that is strictly larger than 0 (value > 0).
+     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
      * @param value        the value tested to see if it is positive.
      * @param errorMessage the message
@@ -171,7 +171,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a {@code value} is positive, that is strictly larger than 0 (value > 0).
+     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
      * @param value        the value tested to see if it is positive.
      * @param errorMessage the message
@@ -186,7 +186,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a {@code value} is positive, that is strictly larger than 0 (value > 0).
+     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
      * @param value        the value tested to see if it is positive.
      * @param errorMessage the message

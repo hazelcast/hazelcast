@@ -28,24 +28,25 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Distributed & durable implementation similar to, but not directly inherited {@link ScheduledExecutorService}.
+ * Distributed &amp; durable implementation similar to, but not directly inherited {@link ScheduledExecutorService}.
  * <code>IScheduledExecutorService</code> provides similar API to the <code>ScheduledExecutorService</code> with some exceptions
  * but also additional methods like scheduling tasks on a specific member, on a member who is owner of a specific key, executing a
  * tasks on multiple members etc.
  *
- * <p>Tasks (<tt>Runnable</tt> and/or <tt>Callable</tt>) scheduled on any partition through an <tt>IScheduledExecutorService</tt>,
- * yield some durability characteristics.
+ * <p>Tasks (<code>Runnable</code> and/or <code>Callable</code>) scheduled on any partition through an
+ * <code>IScheduledExecutorService</code>, yield some durability characteristics.
  * <ul>
- *     <li>When a node goes down (up to <tt>durability</tt> config), the scheduled task will get re-scheduled on a replica node.
+ *     <li>When a node goes down (up to <code>durability</code> config), the scheduled task will get re-scheduled on a replica
+ *     node.
  *     <li>In the event of a partition migration, the task will be re-scheduled on the destination node.
  * </ul>
  *
- * <b>Note: </b> The above characteristics don't apply when scheduled on a <tt>Member</tt>.
+ * <b>Note: </b> The above characteristics don't apply when scheduled on a <code>Member</code>.
  *
  * <p>Upon scheduling, a task acquires a resource handler, see {@link ScheduledTaskHandler}. The handler is generated before the
  * actual scheduling of the task on the node, which allows for a way to access the future in an event of a node failure,
  * immediately after scheduling, and also guarantees no duplicates in the cluster by utilising a unique name per task. A name can
- * also be defined by the user by having the <tt>Runnable</tt> or <tt>Callable</tt> implement the {@link NamedTask}.
+ * also be defined by the user by having the <code>Runnable</code> or <code>Callable</code> implement the {@link NamedTask}.
  * Alternatively, one can wrap any task using the {@link TaskUtils#named(String, Callable)}
  * or {@link TaskUtils#named(String, Runnable)} for simplicity.
  *
@@ -327,7 +328,7 @@ public interface IScheduledExecutorService
 
     /**
      * Creates a new {@link IScheduledFuture} from the given handler. This is useful in case your member node or client from which
-     * the original scheduling happened, went down, and now you want to access the <tt>ScheduledFuture</tt> again.
+     * the original scheduling happened, went down, and now you want to access the <code>ScheduledFuture</code> again.
      *
      * @param handler The handler of the task as found from {@link IScheduledFuture#getHandler()}
      * @param <V>     The return type of callable tasks

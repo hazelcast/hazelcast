@@ -37,7 +37,7 @@ public final class EntryTaskSchedulerFactory {
      * 2. All entries scheduled for a given second will be executed once by your
      * SecondBulkExecutor implementation.
      * Once a key is executed, it can be re-scheduled for another execution.
-     * <p/>
+     * <p>
      * EntryTaskScheduler implementation is thread-safe.
      *
      * @param taskScheduler ScheduledExecutorService instance to execute the second

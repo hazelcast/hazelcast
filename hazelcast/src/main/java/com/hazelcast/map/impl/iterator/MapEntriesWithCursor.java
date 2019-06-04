@@ -56,7 +56,7 @@ public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRIES_WITH_CURSOR;
     }
 }

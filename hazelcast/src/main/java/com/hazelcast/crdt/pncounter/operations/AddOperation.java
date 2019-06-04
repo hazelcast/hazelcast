@@ -23,7 +23,7 @@ import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -103,7 +103,7 @@ public class AddOperation extends AbstractPNCounterOperation implements Mutating
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER_ADD_OPERATION;
     }
 }

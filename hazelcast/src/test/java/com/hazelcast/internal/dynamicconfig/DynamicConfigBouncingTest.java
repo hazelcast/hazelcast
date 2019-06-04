@@ -40,7 +40,7 @@ import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import org.junit.Rule;
@@ -54,13 +54,13 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(4)
             .driverCount(1)
-            .useTerminate()
+            .useTerminate(true)
             .build();
 
     public Config getConfig() {

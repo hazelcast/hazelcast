@@ -23,38 +23,38 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.CallStatus.WAIT;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -73,7 +73,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * IMap.submitToKey(Object, EntryProcessor)
  * IMap.submitToKey(Object, EntryProcessor, ExecutionCallback)
  * <p>
- * ### Offloadable (for reading & writing)
+ * ### Offloadable (for reading &amp; writing)
  * <p>
  * If the EntryProcessor implements the Offloadable interface the processing will be offloaded to the given
  * ExecutorService allowing unblocking the partition-thread. The key will be locked for the time-span of the processing
@@ -91,9 +91,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * There will not be a conflict on a write due to the pessimistic locking of the key.
  * The threading looks as follows:
  * <p>
- * 1. partition-thread (fetch & lock)
+ * 1. partition-thread (fetch &amp; lock)
  * 2. execution-thread (process)
- * 3. partition-thread (set & unlock, or just unlock if no changes)
+ * 3. partition-thread (set &amp; unlock, or just unlock if no changes)
  * <p>
  * ### Offloadable (for reading only)
  * <p>
@@ -105,8 +105,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * - EntryOperation fetches the entry and DOES NOT lock the given key on partition-thread
  * - Then the processing is offloaded to the given executor
  * - When the processing finishes
- * if there is a change to the entry -> exception is thrown
- * if there is no change to the entry -> the result is returned to the user from the executor-thread.
+ * if there is a change to the entry -&gt; exception is thrown
+ * if there is no change to the entry -&gt; the result is returned to the user from the executor-thread.
  * <p>
  * In the read-only case the threading looks as follows:
  * <p>
@@ -120,10 +120,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * ### Backup partitions
  * <p>
- * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+ * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
  * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
- * The input allows providing context to the EntryBackupProcessor - for example the "delta"
- * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+ * The input allows providing context to the entry backup processor - for example the "delta"
+ * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
  * <p>
  * ### Locking
  * <p>
@@ -268,11 +268,14 @@ public class EntryOperation extends KeyBasedMapOperation
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
         if (offload) {
             return null;
         }
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
@@ -295,7 +298,7 @@ public class EntryOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_OPERATION;
     }
 

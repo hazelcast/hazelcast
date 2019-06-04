@@ -58,7 +58,7 @@ public class RaftAtomicRefSnapshot implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.SNAPSHOT;
     }
 

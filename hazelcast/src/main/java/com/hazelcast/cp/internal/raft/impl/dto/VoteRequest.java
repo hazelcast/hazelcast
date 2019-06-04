@@ -72,7 +72,7 @@ public class VoteRequest implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.VOTE_REQUEST;
     }
 

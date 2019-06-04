@@ -26,7 +26,7 @@ import java.io.Reader;
 /**
  * YAML loader that can load, parse YAML documents and can build a tree
  * of {@link YamlNode} instances.
- * <p/>
+ * <p>
  * The possible sources of the YAML documents are:
  * <ul>
  * <li>{@link InputStream}</li>

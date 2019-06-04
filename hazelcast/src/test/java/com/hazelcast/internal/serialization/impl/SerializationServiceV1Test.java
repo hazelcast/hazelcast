@@ -20,10 +20,10 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SerializationServiceV1Test {
 
     @Rule
@@ -109,7 +109,7 @@ public class SerializationServiceV1Test {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 42;
         }
     }

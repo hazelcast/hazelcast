@@ -21,10 +21,10 @@ package com.hazelcast.spi.discovery;
  * apply additional filtering based on vendor provided metadata. These metadata
  * are expected to be provided using the {@link DiscoveryNode#getProperties()}
  * method and may contain additional information initially setup by the user.
- * <p/>
+ * <p>
  * This is useful for additional security settings, to apply a certain type of
  * policy or to work around insufficient query languages of cloud providers.
- * <p/>
+ * <p>
  * Denied {@link DiscoveryNode}s will not be
  * handed over to the Hazelcast connection framework and therefore are not
  * known to the discovered.

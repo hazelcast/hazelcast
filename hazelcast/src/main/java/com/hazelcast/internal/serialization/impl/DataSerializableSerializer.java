@@ -233,7 +233,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
             out.writeInt(ds.getFactoryId());
-            out.writeInt(ds.getId());
+            out.writeInt(ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
                 out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());

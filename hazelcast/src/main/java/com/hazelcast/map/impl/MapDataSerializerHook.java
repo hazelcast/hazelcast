@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.journal.MapEventJournalReadResultSetImpl;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
+import com.hazelcast.map.impl.operation.AddIndexBackupOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
@@ -313,8 +314,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int SET_TTL = 148;
     public static final int SET_TTL_BACKUP = 149;
     public static final int MERKLE_TREE_NODE_ENTRIES = 150;
+    public static final int ADD_INDEX_BACKUP = 151;
 
-    private static final int LEN = MERKLE_TREE_NODE_ENTRIES + 1;
+    private static final int LEN = ADD_INDEX_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -471,6 +473,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[SET_TTL] = arg -> new SetTtlOperation();
         constructors[SET_TTL_BACKUP] = arg -> new SetTtlBackupOperation();
         constructors[MERKLE_TREE_NODE_ENTRIES] = arg -> new MerkleTreeNodeEntries();
+        constructors[ADD_INDEX_BACKUP] = arg -> new AddIndexBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

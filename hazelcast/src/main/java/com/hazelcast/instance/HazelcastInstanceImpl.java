@@ -66,8 +66,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.quorum.QuorumService;
@@ -217,12 +215,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         checkNotNull(name, "Retrieving a multi-map instance with a null name is not allowed!");
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        checkNotNull(name, "Retrieving a job tracker instance with a null name is not allowed!");
-        return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
 
     @Override

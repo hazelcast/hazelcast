@@ -47,7 +47,7 @@ public class TrySetCountOp extends AbstractCountDownLatchOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.TRY_SET_COUNT_OP;
     }
 

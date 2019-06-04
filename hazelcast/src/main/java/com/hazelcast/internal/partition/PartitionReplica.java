@@ -103,7 +103,7 @@ public final class PartitionReplica implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_REPLICA;
     }
 

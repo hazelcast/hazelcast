@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -82,7 +82,7 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_WITH_QUERY;
     }
 }

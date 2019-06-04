@@ -36,7 +36,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -79,10 +78,10 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.BinaryOperationFactory;
+import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -1134,7 +1133,7 @@ abstract class MapProxySupport<K, V>
 
     private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
         if (entryProcessor instanceof ReadOnly) {
-            EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+            EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
             if (backupProcessor != null) {
                 throw new IllegalArgumentException(
                         "EntryProcessor.getBackupProcessor() should be null for a ReadOnly EntryProcessor");
@@ -1142,8 +1141,8 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public ICompletableFuture<Map<K, Object>> submitToKeysInternal(Set<K> keys, Set<Data> dataKeys,
-                                                                   EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeysInternal(Set<K> keys, Set<Data> dataKeys,
+                                                                  EntryProcessor<? super K, ? super V, R> entryProcessor) {
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
@@ -1151,7 +1150,7 @@ abstract class MapProxySupport<K, V>
         OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
                 entryProcessor);
 
-        final SimpleCompletableFuture<Map<K, Object>> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
+        final SimpleCompletableFuture<Map<K, R>> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
         ExecutionCallback<Map<Integer, Object>> partialCallback = new ExecutionCallback<Map<Integer, Object>>() {
             @Override
             public void onResponse(Map<Integer, Object> response) {
@@ -1178,8 +1177,9 @@ abstract class MapProxySupport<K, V>
         return resultFuture;
     }
 
-    public InternalCompletableFuture<Object> executeOnKeyInternal(Object key, EntryProcessor entryProcessor,
-                                                                  ExecutionCallback<Object> callback) {
+    public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
+                                                                  EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                                                  ExecutionCallback<? super R> callback) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
@@ -1308,12 +1308,12 @@ abstract class MapProxySupport<K, V>
         handleHazelcastInstanceAwareParams(userPredicate);
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(userPredicate)
-                .iterationType(iterationType)
-                .aggregator(aggregator)
-                .projection(projection)
-                .build();
+                           .mapName(getName())
+                           .predicate(userPredicate)
+                           .iterationType(iterationType)
+                           .aggregator(aggregator)
+                           .projection(projection)
+                           .build();
         return queryEngine.execute(query, target);
     }
 
@@ -1345,16 +1345,16 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    private class MapExecutionCallbackAdapter implements ExecutionCallback<Object> {
+    private class MapExecutionCallbackAdapter<T> implements ExecutionCallback<T> {
 
-        private final ExecutionCallback<Object> executionCallback;
+        private final ExecutionCallback<T> executionCallback;
 
-        MapExecutionCallbackAdapter(ExecutionCallback<Object> executionCallback) {
+        MapExecutionCallbackAdapter(ExecutionCallback<T> executionCallback) {
             this.executionCallback = executionCallback;
         }
 
         @Override
-        public void onResponse(Object response) {
+        public void onResponse(T response) {
             executionCallback.onResponse(toObject(response));
         }
 

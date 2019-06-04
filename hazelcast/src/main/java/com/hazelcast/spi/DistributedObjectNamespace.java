@@ -28,18 +28,32 @@ import java.io.IOException;
  *
  * @since 3.9
  */
-public final class DistributedObjectNamespace extends DefaultObjectNamespace
-        implements ObjectNamespace, IdentifiedDataSerializable {
+public final class DistributedObjectNamespace implements ObjectNamespace, IdentifiedDataSerializable {
+
+    private String service;
+
+    private String objectName;
 
     public DistributedObjectNamespace() {
     }
 
     public DistributedObjectNamespace(String serviceName, String objectName) {
-        super(serviceName, objectName);
+        this.service = serviceName;
+        this.objectName = objectName;
     }
 
     public DistributedObjectNamespace(ObjectNamespace namespace) {
-        super(namespace.getServiceName(), namespace.getObjectName());
+        this(namespace.getServiceName(), namespace.getObjectName());
+    }
+
+    @Override
+    public String getServiceName() {
+        return service;
+    }
+
+    @Override
+    public String getObjectName() {
+        return objectName;
     }
 
     @Override
@@ -60,7 +74,32 @@ public final class DistributedObjectNamespace extends DefaultObjectNamespace
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DISTRIBUTED_OBJECT_NS;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DistributedObjectNamespace)) {
+            return false;
+        }
+
+        DistributedObjectNamespace that = (DistributedObjectNamespace) o;
+
+        if (!service.equals(that.service)) {
+            return false;
+        }
+        return objectName.equals(that.objectName);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = service.hashCode();
+        result = 31 * result + objectName.hashCode();
+        return result;
     }
 }

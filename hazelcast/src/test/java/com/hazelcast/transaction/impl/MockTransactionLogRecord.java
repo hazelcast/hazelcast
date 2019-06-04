@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -165,7 +165,7 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MockTransactionLogRecordSerializerHook.MOCK_TRANSACTION_LOG_RECORD;
     }
 

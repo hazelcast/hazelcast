@@ -22,7 +22,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Utility class for Time & unit conversions
+ * Utility class for Time &amp; unit conversions
  */
 public final class TimeUtil {
 
@@ -30,7 +30,7 @@ public final class TimeUtil {
 
     /**
      * Convert time to milliseconds based on the given time unit.
-     * If conversion result is 0 and {@code time} was > 0, then 1 is returned.
+     * If conversion result is 0 and {@code time} was &gt; 0, then 1 is returned.
      *
      * @param time The input time
      * @param timeUnit The time unit to base the conversion on

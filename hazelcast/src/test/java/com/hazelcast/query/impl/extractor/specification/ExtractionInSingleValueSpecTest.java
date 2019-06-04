@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,15 +47,15 @@ import static java.util.Arrays.asList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in single-value attributes.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

@@ -42,9 +42,9 @@ public interface QuorumService {
      * Throws a QuorumException if quorum not present.
      * Does not throw exception if quorumName null or quorum undefined.
      *
-     * If (requiredQuorumPermissionType == READ) -> will check for presence of READ or READ_WRITE quorum<br/>
-     * If (requiredQuorumPermissionType == WRITE) -> will check for presence of WRITE or READ_WRITE quorum<br/>
-     * If (requiredQuorumPermissionType == READ_WRITE) -> will check for presence of READ_WRITE quorum<br/>
+     * If (requiredQuorumPermissionType == READ) -&gt; will check for presence of READ or READ_WRITE quorum<br>
+     * If (requiredQuorumPermissionType == WRITE) -&gt; will check for presence of WRITE or READ_WRITE quorum<br>
+     * If (requiredQuorumPermissionType == READ_WRITE) -&gt; will check for presence of READ_WRITE quorum<br>
      *
      * @param quorumName                   quorum name to ensure, can be null or empty
      * @param requiredQuorumPermissionType type of quorum required

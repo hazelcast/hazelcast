@@ -44,7 +44,7 @@ public class RaftLog {
 
     /**
      * Array of log entries stored in the Raft log.
-     * <p/>
+     * <p>
      * Important: Log entry indices start from 1, not 0.
      */
     private final Ringbuffer<LogEntry> logs;

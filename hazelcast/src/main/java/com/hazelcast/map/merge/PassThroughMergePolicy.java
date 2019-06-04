@@ -48,7 +48,7 @@ public class PassThroughMergePolicy implements MapMergePolicy, IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PASS_THROUGH_MERGE_POLICY;
     }
 }

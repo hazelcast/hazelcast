@@ -38,8 +38,6 @@ import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
  * are waiting responses of these wait keys will be notified with
  * the return value provided by
  * {@link AbstractBlockingService#expiredWaitKeyResponse()}
- *
- * @param <W> concrete type of the WaitKey
  */
 public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializable {
 
@@ -72,7 +70,7 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataServiceDataSerializerHook.EXPIRE_WAIT_KEYS_OP;
     }
 

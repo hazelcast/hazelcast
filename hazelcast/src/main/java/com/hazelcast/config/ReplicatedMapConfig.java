@@ -402,7 +402,7 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.REPLICATED_MAP_CONFIG;
     }
 

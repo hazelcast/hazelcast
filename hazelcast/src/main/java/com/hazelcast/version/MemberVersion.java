@@ -41,7 +41,7 @@ public final class MemberVersion
     public static final MemberVersion UNKNOWN = new MemberVersion(0, 0, 0);
 
     /**
-     * Version comparator that takes into account only major & minor version, disregarding patch version number.
+     * Version comparator that takes into account only major &amp; minor version, disregarding patch version number.
      */
     public static final transient Comparator<MemberVersion> MAJOR_MINOR_VERSION_COMPARATOR = new MajorMinorVersionComparator();
 
@@ -159,7 +159,7 @@ public final class MemberVersion
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_VERSION;
     }
 

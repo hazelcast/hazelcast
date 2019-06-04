@@ -24,17 +24,13 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
-import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
@@ -49,6 +45,7 @@ import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -171,18 +168,15 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     private ClientProxyFactory createClientMapProxyFactory() {
-        return new ClientProxyFactoryWithContext() {
-            @Override
-            public ClientProxy create(String id, ClientContext context) {
-                ClientConfig clientConfig = client.getClientConfig();
-                NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(id);
-                if (nearCacheConfig != null) {
-                    checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
-                    initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
-                    return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
-                } else {
-                    return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
-                }
+        return (id, context) -> {
+            ClientConfig clientConfig = client.getClientConfig();
+            NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(id);
+            if (nearCacheConfig != null) {
+                checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
+                initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+                return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
+            } else {
+                return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
             }
         };
     }

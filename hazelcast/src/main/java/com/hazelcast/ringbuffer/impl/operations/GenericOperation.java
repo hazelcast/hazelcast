@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -78,7 +78,7 @@ public class GenericOperation extends AbstractRingBufferOperation implements Rea
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GENERIC_OPERATION;
     }
 

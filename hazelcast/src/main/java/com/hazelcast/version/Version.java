@@ -36,13 +36,12 @@ import java.io.IOException;
 public final class Version implements IdentifiedDataSerializable, Comparable<Version> {
 
     /**
-     * Use 0 as major & minor values for UNKNOWN version
+     * Use 0 as major &amp; minor values for UNKNOWN version
      */
     public static final byte UNKNOWN_VERSION = 0;
 
     /**
      * Version 0.0 is UNKNOWN constant
-     * <p>
      * <ul>
      * <li>UNKNOWN is only equal to itself.</li>
      * <li>{@code is(Less|Greater)Than} method with an UNKNOWN operand returns false.</li>
@@ -127,7 +126,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.VERSION;
     }
 

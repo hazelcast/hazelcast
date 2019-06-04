@@ -220,7 +220,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     long total();
 
     /**
-     * Cost of map & Near Cache & backup & Merkle trees in bytes
+     * Cost of map &amp; Near Cache &amp; backup &amp; Merkle trees in bytes
      * <p>
      * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
      *

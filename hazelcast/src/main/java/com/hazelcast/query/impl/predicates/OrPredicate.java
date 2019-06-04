@@ -166,7 +166,7 @@ public final class OrPredicate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.OR_PREDICATE;
     }
 

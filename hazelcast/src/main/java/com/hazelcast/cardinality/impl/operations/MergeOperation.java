@@ -19,7 +19,7 @@ package com.hazelcast.cardinality.impl.operations;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -60,7 +60,7 @@ public class MergeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE;
     }
 

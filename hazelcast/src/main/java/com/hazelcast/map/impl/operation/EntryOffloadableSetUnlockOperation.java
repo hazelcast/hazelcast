@@ -18,23 +18,23 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 /**
- * Set & Unlock processing for the EntryOperation
+ * Set &amp; Unlock processing for the EntryOperation
  *
  * See the javadoc on {@link EntryOperation}
  */
@@ -46,14 +46,14 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     protected String caller;
     protected long begin;
     protected EntryEventType modificationType;
-    protected EntryBackupProcessor entryBackupProcessor;
+    protected EntryProcessor entryBackupProcessor;
 
     public EntryOffloadableSetUnlockOperation() {
     }
 
     public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType, Data key, Data oldValue,
                                               Data newValue, String caller, long threadId, long begin,
-                                              EntryBackupProcessor entryBackupProcessor) {
+                                              EntryProcessor entryBackupProcessor) {
         super(name, key, newValue);
         this.newValue = newValue;
         this.oldValue = oldValue;
@@ -69,7 +69,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         verifyLock();
         try {
             operator(this).init(dataKey, oldValue, newValue, null, modificationType)
-                    .doPostOperateOps();
+                          .doPostOperateOps();
         } finally {
             unlockKey();
         }
@@ -135,7 +135,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRY_OFFLOADABLE_SET_UNLOCK;
     }
 

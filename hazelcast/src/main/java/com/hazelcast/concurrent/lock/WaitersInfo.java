@@ -69,7 +69,7 @@ final class WaitersInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WAITERS_INFO;
     }
 

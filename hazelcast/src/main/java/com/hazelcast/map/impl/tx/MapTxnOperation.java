@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.Notifier;
 
 /**
  * Transactional operation interface for {@link com.hazelcast.core.IMap}

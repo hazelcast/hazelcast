@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 /**
  * Triggers key loading on member with {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}
@@ -54,7 +54,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRIGGER_LOAD_IF_NEEDED;
     }
 

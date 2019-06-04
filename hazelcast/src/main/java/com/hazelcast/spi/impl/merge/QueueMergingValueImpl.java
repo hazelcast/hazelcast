@@ -38,7 +38,7 @@ public class QueueMergingValueImpl extends AbstractCollectionMergingValueImpl<Co
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.QUEUE_MERGING_VALUE;
     }
 }

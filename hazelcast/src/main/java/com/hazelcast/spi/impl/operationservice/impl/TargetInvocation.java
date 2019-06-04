@@ -20,10 +20,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the

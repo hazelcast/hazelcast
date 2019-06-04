@@ -16,9 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 import java.util.Collection;
@@ -462,7 +459,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * {@code LocalMultiMapStats} is the statistics for the local portion of this
      * distributed multi map and contains information such as ownedEntryCount
      * backupEntryCount, lastUpdateTime, and lockedEntryCount.
-     * <p/>
+     * <p>
      * Since this stats are only for the local portion of this multi map, if you
      * need the cluster-wide MultiMapStats, then you need to get the {@link com.hazelcast.monitor.LocalMapStats LocalMapStats}
      * from all members of the cluster and combine them.
@@ -470,50 +467,4 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return this multimap's local statistics.
      */
     LocalMultiMapStats getLocalMultiMapStats();
-
-    /**
-     * Executes a predefined aggregation on the multimaps data set.
-     * <p>
-     * The {@link com.hazelcast.mapreduce.aggregation.Supplier} is used to
-     * either select or to select and extract a (sub-)value.
-     * A predefined set of aggregations can be found in
-     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     * <p>
-     * Method does not honor Quorum.
-     *
-     * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
-     * @param aggregation     the aggregation that is being executed against the multimap
-     * @param <SuppliedValue> the final type emitted from the supplier
-     * @param <Result>        the resulting aggregation value type
-     * @return Returns the aggregated value for the multimaps data set
-     * @deprecated The old Aggregations API is superseded by Fast Aggregations ({@link com.hazelcast.aggregation})
-     * which does not yet support MultiMap. Hazelcast Jet can be used in the future to replace this functionality.
-     */
-    @Deprecated
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation);
-
-    /**
-     * Executes a predefined aggregation on the multimaps data set.
-     * <p>
-     * The {@link com.hazelcast.mapreduce.aggregation.Supplier} is used to
-     * either select, or to select and extract, a (sub-)value.
-     * A predefined set of aggregations can be found in
-     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
-     * <p>
-     * Method does not honor Quorum.
-     *
-     * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
-     * @param aggregation     the aggregation that is being executed against the multimap
-     * @param jobTracker      the {@link com.hazelcast.mapreduce.JobTracker} instance to execute the aggregation
-     * @param <SuppliedValue> the final type emitted from the supplier
-     * @param <Result>        the resulting aggregation value type
-     * @return Returns the aggregated value
-     * @deprecated The old Aggregations API is superseded by Fast Aggregations ({@link com.hazelcast.aggregation})
-     * which does not yet support MultiMap. Hazelcast Jet can be used in the future to replace this functionality.
-     */
-    @Deprecated
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation,
-                                             JobTracker jobTracker);
 }

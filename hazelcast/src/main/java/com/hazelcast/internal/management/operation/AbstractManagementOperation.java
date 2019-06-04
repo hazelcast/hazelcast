@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class AbstractManagementOperation extends Operation implements IdentifiedDataSerializable {
 

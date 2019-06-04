@@ -21,16 +21,11 @@ import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
@@ -54,16 +49,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
+import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createInvalidationListenerCodec;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
-import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 /**
@@ -72,11 +66,8 @@ import static java.lang.String.format;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:anoninnerlength"})
+@SuppressWarnings("checkstyle:methodcount")
 public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
-
-    // eventually consistent Near Cache can only be used with server versions >= 3.8
-    private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
 
     private boolean cacheOnUpdate;
     private boolean invalidateOnChange;
@@ -102,11 +93,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         ClientConfig clientConfig = getContext().getClientConfig();
         NearCacheConfig nearCacheConfig = checkNearCacheConfig(clientConfig.getNearCacheConfig(name),
                 clientConfig.getNativeMemoryConfig());
-        cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, logger);
+        cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, getLogger());
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
-        ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
+        ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<>(this);
         nearCacheManager = getContext().getNearCacheManager();
         nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
@@ -145,7 +136,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         key = serializeKeys ? toData(key) : key;
         V value = (V) getCachedValue(key, false);
         if (value != NOT_CACHED) {
-            return new CompletedFuture<V>(getSerializationService(), value, getContext().getExecutionService().getUserExecutor());
+            return new CompletedFuture<>(getSerializationService(), value, getContext().getExecutionService().getUserExecutor());
         }
 
         try {
@@ -182,7 +173,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                               ClientDelegatingFuture<Boolean> delegatingFuture,
                                               ExecutionCallback<Boolean> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<Boolean>(callbackKey, keyData, value,
+        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value,
                 valueData, callback);
         super.onPutIfAbsentAsyncInternal(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
@@ -200,7 +191,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onGetAndRemoveAsyncInternal(K key, Data keyData, ClientDelegatingFuture<T> delegatingFuture,
                                                    ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        InvalidateCallback<T> wrapped = new InvalidateCallback<T>(callbackKey, callback);
+        InvalidateCallback<T> wrapped = new InvalidateCallback<>(callbackKey, callback);
         super.onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, wrapped);
     }
 
@@ -208,7 +199,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceInternalAsync(K key, V value, Data keyData, Data valueData,
                                               ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, value, valueData, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceInternalAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -216,7 +207,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceAndGetAsync(K key, V value, Data keyData, Data valueData,
                                             ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, value, valueData, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceAndGetAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -315,7 +306,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     public void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
         Set<Data> serializedKeys = null;
         if (serializeKeys) {
-            serializedKeys = new HashSet<Data>(keys.size());
+            serializedKeys = new HashSet<>(keys.size());
         }
         super.setExpiryPolicyInternal(keys, expiryPolicy, serializedKeys);
         invalidate(keys, serializedKeys);
@@ -508,7 +499,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         return deserializeValue ? toObject(cached) : cached;
     }
 
-    @SuppressWarnings("unchecked")
     private void cacheOrInvalidate(Object key, Data keyData, V value, Data valueData) {
         if (cacheOnUpdate) {
             nearCache.put(key, keyData, value, valueData);
@@ -564,7 +554,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     public String addNearCacheInvalidationListener(EventHandler eventHandler) {
-        return registerListener(createInvalidationListenerCodec(), eventHandler);
+        return registerListener(createInvalidationListenerCodec(nameWithPrefix), eventHandler);
     }
 
     private void registerInvalidationListener() {
@@ -574,30 +564,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         EventHandler eventHandler = new NearCacheInvalidationEventHandler();
         nearCacheMembershipRegistrationId = addNearCacheInvalidationListener(eventHandler);
-    }
-
-    private ListenerMessageCodec createInvalidationListenerCodec() {
-        return new ListenerMessageCodec() {
-            @Override
-            public ClientMessage encodeAddRequest(boolean localOnly) {
-                return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-            }
-
-            @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
-                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
-            }
-
-            @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
-                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
     }
 
     private void removeInvalidationListener() {
@@ -623,16 +589,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         return localUpdatePolicy == CACHE_ON_UPDATE;
-    }
-
-    private static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (inMemoryFormat != NATIVE) {
-            return nearCacheConfig;
-        }
-
-        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format for Near Cache");
-        return nearCacheConfig;
     }
 
     private final class GetAsyncCallback implements ExecutionCallback<V> {

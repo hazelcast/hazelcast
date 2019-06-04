@@ -18,13 +18,13 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     public PartitionWideEntryBackupOperation() {
     }
 
-    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    public PartitionWideEntryBackupOperation(String name, EntryProcessor backupProcessor) {
         super(name, backupProcessor);
     }
 
@@ -124,7 +124,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_ENTRY_BACKUP;
     }
 }

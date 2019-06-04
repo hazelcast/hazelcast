@@ -184,7 +184,7 @@ public class QuorumConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUORUM_CONFIG;
     }
 

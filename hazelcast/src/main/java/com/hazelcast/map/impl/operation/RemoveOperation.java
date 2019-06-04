@@ -53,7 +53,7 @@ public class RemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REMOVE;
     }
 

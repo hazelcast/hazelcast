@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi.impl.operationparker;
 
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 /**
  * A service to park/unpark {@link BlockingOperation}. E.g. to implement a {@link java.util.concurrent.locks.Lock#lock()} or
@@ -32,7 +33,7 @@ public interface OperationParker {
      * {@link BlockingOperation#getWaitTimeout()}. After the {@link BlockingOperation} is parked, this method returns;
      * it doesn't wait.
      *
-     * {@link BlockingOperation} operation will be registered using {@link com.hazelcast.spi.WaitNotifyKey}
+     * {@link BlockingOperation} operation will be registered using {@link WaitNotifyKey}
      * returned from method {@link BlockingOperation#getWaitKey()}.
      *
      * If wait time-outs, {@link BlockingOperation#onWaitExpire()} method is called.
@@ -50,9 +51,9 @@ public interface OperationParker {
      *
      * A parked operation registered with the {@link Notifier#getNotifiedKey()} will be notified and deregistered.
      * This method has no effect if there isn't any operation registered
-     * for related {@link com.hazelcast.spi.WaitNotifyKey}.
+     * for related {@link WaitNotifyKey}.
      *
-     * This method should be called in the thread that executes the actual {@link com.hazelcast.spi.Notifier} operation.
+     * This method should be called in the thread that executes the actual {@link Notifier} operation.
      *
      * @param notifier operation which will unpark a corresponding waiting operation
      */

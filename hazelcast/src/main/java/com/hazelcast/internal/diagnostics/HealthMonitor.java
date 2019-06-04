@@ -44,9 +44,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <ul>
  * <li>{@link GroupProperty#HEALTH_MONITORING_LEVEL} This property can be one of the following:
  * <ul>
- * <li>{@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints</li>
- * <li>{@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default)</li>
- * <li>{@link HealthMonitorLevel#OFF}    => does not print anything</li>
+ * <li>{@link HealthMonitorLevel#NOISY}  =&gt; does not check threshold, always prints</li>
+ * <li>{@link HealthMonitorLevel#SILENT} =&gt; prints only if metrics are above threshold (default)</li>
+ * <li>{@link HealthMonitorLevel#OFF}    =&gt; does not print anything</li>
  * </ul>
  * </li>
  * <li>{@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}

@@ -117,7 +117,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.XA_TRANSACTION_DTO;
     }
 }

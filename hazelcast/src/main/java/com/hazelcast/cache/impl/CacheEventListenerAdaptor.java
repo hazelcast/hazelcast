@@ -47,7 +47,7 @@ import java.util.HashSet;
  * types into a single listener.
  * <p>JCache has multiple {@link CacheEntryListener} sub-interfaces for each event type. This adapter
  * implementation delegates to the correct subtype using the event type.</p>
- * <p/>
+ * <p>
  * <p>Another responsibility of this implementation is filtering events by using the already configured
  * event filters.</p>
  *
@@ -263,7 +263,7 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_EVENT_LISTENER_ADAPTOR;
     }
 

@@ -106,7 +106,7 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException("NearCacheConfigReadOnly is not serializable");
     }
 }

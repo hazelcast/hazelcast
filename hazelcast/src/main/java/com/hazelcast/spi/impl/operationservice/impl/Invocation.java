@@ -32,12 +32,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -60,10 +61,10 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
-import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
-import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
-import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.hasActiveInvocation;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setInvocationTime;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
@@ -73,9 +74,9 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CA
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isMigrationOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
@@ -88,7 +89,7 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Evaluates the invocation of an {@link Operation}.
- * <p/>
+ * <p>
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
  * @param <T> Target type of the Invocation
  */
@@ -209,7 +210,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
     private final long tryPauseMillis;
 
     /**
-     * Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation
+     * Refer to {@link InvocationBuilder#setDoneCallback(Runnable)} for an explanation
      */
     private final Runnable taskDoneCallback;
 

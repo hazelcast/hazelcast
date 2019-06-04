@@ -23,13 +23,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,7 +49,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSupport {
 
     @Test
@@ -281,7 +281,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }
@@ -298,7 +298,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 145;
         }
     }
@@ -368,7 +368,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 654;
         }
 

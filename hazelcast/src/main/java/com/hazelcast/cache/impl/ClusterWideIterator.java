@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- * <p/>
+ * <p>
  * <p>
  * This implementation is used for server or embedded mode.
  * </p>

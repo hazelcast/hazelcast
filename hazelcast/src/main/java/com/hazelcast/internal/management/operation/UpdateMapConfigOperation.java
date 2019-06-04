@@ -75,7 +75,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.UPDATE_MAP_CONFIG;
     }
 }

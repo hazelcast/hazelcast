@@ -49,7 +49,7 @@ public final class PutIfAbsentMapMergePolicy implements ReplicatedMapMergePolicy
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_IF_ABSENT_MERGE_POLICY;
     }
 

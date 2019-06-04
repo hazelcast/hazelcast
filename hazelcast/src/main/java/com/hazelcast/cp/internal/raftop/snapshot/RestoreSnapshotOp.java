@@ -77,7 +77,7 @@ public class RestoreSnapshotOp extends RaftOp implements IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.RESTORE_SNAPSHOT_OP;
     }
 

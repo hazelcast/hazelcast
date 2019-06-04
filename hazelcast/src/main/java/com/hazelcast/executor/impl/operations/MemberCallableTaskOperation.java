@@ -20,9 +20,9 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public final class MemberCallableTaskOperation extends AbstractCallableTaskOperation
         implements IdentifiedDataSerializable, MutatingOperation {
@@ -43,7 +43,7 @@ public final class MemberCallableTaskOperation extends AbstractCallableTaskOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
     }
 }

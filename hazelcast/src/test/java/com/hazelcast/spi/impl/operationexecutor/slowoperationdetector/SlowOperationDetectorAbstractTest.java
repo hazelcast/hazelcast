@@ -22,12 +22,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.lang.reflect.Field;
@@ -48,7 +46,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     private static final String DEFAULT_KEY = "key";
     private static final String DEFAULT_VALUE = "value";
 
-    private List<SlowEntryProcessor> entryProcessors = new ArrayList<SlowEntryProcessor>();
+    private List<SlowEntryProcessor> entryProcessors = new ArrayList<>();
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
         Config config = new Config();
@@ -69,7 +67,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         getOperationService(instance).execute(operation);
     }
 
-    static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String> entryProcessor) {
+    static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String, Object> entryProcessor) {
         map.executeOnKey(DEFAULT_KEY, entryProcessor);
     }
 
@@ -102,12 +100,9 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static Collection<SlowOperationLog> getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(final HazelcastInstance instance,
                                                                                                final int expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-                assertNumberOfSlowOperationLogs(logs, expected);
-            }
+        assertTrueEventually(() -> {
+            Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
+            assertNumberOfSlowOperationLogs(logs, expected);
         });
         return getSlowOperationLogs(instance);
     }
@@ -195,7 +190,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static class SlowEntryProcessor extends CountDownLatchHolder implements EntryProcessor<String, String> {
+    static class SlowEntryProcessor extends CountDownLatchHolder implements EntryProcessor<String, String, Object> {
 
         static int globalInstanceCounter;
 
@@ -214,7 +209,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor<String, String> getBackupProcessor() {
+        public EntryProcessor<String, String, Object> getBackupProcessor() {
             return null;
         }
 

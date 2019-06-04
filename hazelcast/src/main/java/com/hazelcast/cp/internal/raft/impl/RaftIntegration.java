@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Integration abstraction between Raft state machine and the underlying
- * platform which is responsible for task/operation execution & scheduling,
+ * platform which is responsible for task/operation execution &amp; scheduling,
  * message transportation and failure detection.
  */
 public interface RaftIntegration {

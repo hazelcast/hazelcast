@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -43,17 +43,17 @@ public final class GroupProperty {
     /**
      * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
      * same.
-     * <p/>
+     * <p>
      * If you have multiple machines, you want to make sure that each machine that joins the cluster
      * has exactly the same 'application level' settings (such as settings that are not part of the Hazelcast configuration,
      * maybe some file path). To prevent the machines with potentially different application level configuration from forming
      * a cluster, you can set this property.
-     * <p/>
+     * <p>
      * You could use actual values, such as string paths, but you can also use an md5 hash. We make a guarantee
      * that nodes will form a cluster (become a member) only if the token is an exact match. If this token is different, the
      * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
      * application validation token.
-     * <p/>
+     * <p>
      * This validation token will be checked before a member joins the cluster.
      */
     public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
@@ -67,10 +67,10 @@ public final class GroupProperty {
 
     /**
      * The number of partition operation handler threads per member.
-     * <p/>
+     * <p>
      * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
-     * <p/>
+     * <p>
      * The default is -1, which means that the value is determined dynamically.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
@@ -78,7 +78,7 @@ public final class GroupProperty {
 
     /**
      * The number of generic operation handler threads per member.
-     * <p/>
+     * <p>
      * The default is -1, which means that the value is determined dynamically.
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
@@ -86,7 +86,7 @@ public final class GroupProperty {
 
     /**
      * The number of priority generic operation handler threads per member.
-     * <p/>
+     * <p>
      * The default is 1.
      * <p>
      * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of cluster
@@ -197,10 +197,10 @@ public final class GroupProperty {
 
     /**
      * The number of threads doing socket input and the number of threads doing socket output.
-     * <p/>
+     * <p>
      * E.g., if 3 is configured, then you get 3 threads doing input and 3 doing output. For individual control,
      * check {@link #IO_INPUT_THREAD_COUNT} and {@link #IO_OUTPUT_THREAD_COUNT}.
-     * <p/>
+     * <p>
      * The default is 3 (i.e. 6 threads).
      */
     public static final HazelcastProperty IO_THREAD_COUNT
@@ -221,10 +221,10 @@ public final class GroupProperty {
     /**
      * The interval in seconds between {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
-     * <p/>
+     * <p>
      * Please see the documentation of {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * for a detailed explanation of the problem.
-     * <p/>
+     * <p>
      * The default is 20 seconds. A value smaller than 1 disables the balancer.
      */
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
@@ -342,13 +342,13 @@ public final class GroupProperty {
 
     /**
      * Overrides receive buffer size for connections opened by clients.
-     * <p/>
+     * <p>
      * Hazelcast creates all connections with receive buffer size set according to #PROP_SOCKET_RECEIVE_BUFFER_SIZE.
      * When it detects a connection was opened by a client then it adjusts receive buffer size
      * according to this property.
-     * <p/>
+     * <p>
      * Size is in kilobytes.
-     * <p/>
+     * <p>
      * The default is -1 (same as receive buffer size for connections opened by members).
      */
     public static final HazelcastProperty SOCKET_CLIENT_RECEIVE_BUFFER_SIZE
@@ -356,13 +356,13 @@ public final class GroupProperty {
 
     /**
      * Overrides send buffer size for connections opened by clients.
-     * <p/>
+     * <p>
      * Hazelcast creates all connections with send buffer size set according to #PROP_SOCKET_SEND_BUFFER_SIZE.
      * When it detects a connection was opened by a client then it adjusts send buffer size
      * according to this property.
-     * <p/>
+     * <p>
      * Size is in kilobytes.
-     * <p/>
+     * <p>
      * The default is -1 (same as receive buffer size for connections opened by members).
      */
     public static final HazelcastProperty SOCKET_CLIENT_SEND_BUFFER_SIZE
@@ -550,7 +550,7 @@ public final class GroupProperty {
      * You can use MAP_EXPIRY_DELAY_SECONDS to deal with some possible
      * edge cases, such as using EntryProcessor. Without this delay, you
      * may see that an EntryProcessor running on the owner partition
-     * found a key, but EntryBackupProcessor did not find it on backup,
+     * found a key, but entry backup processor did not find it on backup,
      * and as a result when backup promotes to owner you will end up
      * with an unprocessed key.
      */
@@ -644,7 +644,7 @@ public final class GroupProperty {
 
     /**
      * This value defines the retention time of invocations in slow operation logs.
-     * <p/>
+     * <p>
      * If an invocation is older than this value, it will be purged from the log to prevent unlimited memory usage.
      * When all invocations are purged from a log, the log itself will be deleted.
      *
@@ -684,9 +684,9 @@ public final class GroupProperty {
     /**
      * Setting this capacity is valid if you set {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}.
      * Otherwise its value will not be taken into account.
-     * <p/>
+     * <p>
      * The per node maximum write-behind queue capacity is the total of all write-behind queue sizes in a node, including backups.
-     * <p/>
+     * <p>
      * The maximum value which can be set is {@link Integer#MAX_VALUE}
      */
     public static final HazelcastProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY
@@ -706,7 +706,7 @@ public final class GroupProperty {
 
     /**
      * Defines the cache invalidation event batch sending frequency in seconds.
-     * <p/>
+     * <p>
      * When the number of events do not come up to {@link #CACHE_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
      * is defined by this property); those events are gathered into a batch and sent to target.
      */
@@ -727,7 +727,7 @@ public final class GroupProperty {
 
     /**
      * Defines the Near Cache invalidation event batch sending frequency in seconds.
-     * <p/>
+     * <p>
      * When the number of events do not come up to {@link #MAP_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
      * is defined by this property); those events are gathered into a batch and sent to target.
      */
@@ -738,9 +738,9 @@ public final class GroupProperty {
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
      * single asynchronous backup, producing asynchronous backups could happen at a higher rate than
      * the consumption of the backup. This can eventually lead to an OOME (especially if the backups are slow).
-     * <p/>
+     * <p>
      * With back-pressure enabled, this can't happen.
-     * <p/>
+     * <p>
      * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from
      * overflowing because the invoker will wait for the primary and for the backups to complete. The frequency of this is
      * determined by the sync-window.
@@ -754,15 +754,15 @@ public final class GroupProperty {
     /**
      * Controls the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
      * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
-     * <p/>
+     * <p>
      * A sync window of 10 means that 1 in 10 BackupAwareOperations get their async backups convert to sync backups.
-     * <p/>
+     * <p>
      * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. 1
      * is also the smallest legal value for the sync window.
-     * <p/>
+     * <p>
      * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
      * BackupAwareOperation operation gets its async backups converted to sync.
-     * <p/>
+     * <p>
      * This property only has meaning when backpressure is enabled.
      */
     public static final HazelcastProperty BACKPRESSURE_SYNCWINDOW
@@ -770,11 +770,11 @@ public final class GroupProperty {
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.
-     * <p/>
+     * <p>
      * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
      * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
      * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
-     * <p/>
+     * <p>
      * The value needs to be equal or larger than 0.
      */
     public static final HazelcastProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
@@ -782,16 +782,16 @@ public final class GroupProperty {
 
     /**
      * The maximum number of concurrent invocations per partition.
-     * <p/>
+     * <p>
      * To prevent the system from overloading, HZ can apply a constraint on the number of concurrent invocations. If the maximum
      * number of concurrent invocations has been exceeded and a new invocation comes in, then an exponential back-off is applied
      * till eventually a timeout happens or there is room for the invocation.
-     * <p/>
+     * <p>
      * By default it is configured as 100. With 271 partitions, that would give (271 + 1) * 100 = 27200 concurrent invocations
      * from a single member. The +1 is for generic operations. The reasons why 100 is chosen are:
      * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation, and
      * - certain methods like those from the IExecutor or ILock are also invocations and they can be very long running.
-     * <p/>
+     * <p>
      * No promise is made for the invocations being tracked per partition, or if there is a general pool of invocations.
      */
     public static final HazelcastProperty BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
@@ -799,13 +799,13 @@ public final class GroupProperty {
 
     /**
      * Run Query Evaluations for multiple partitions in parallel.
-     * <p/>
+     * <p>
      * Each Hazelcast member evaluates query predicates using a single thread by default. In most cases the overhead of
      * inter-thread communication overweight benefit of parallel execution.
-     * <p/>
+     * <p>
      * When you have a large dataset and/or slow predicate you may benefit from parallel predicate evaluations.
-     * Set to true if you are using slow predicates or have > 100,000s entries per member.
-     * <p/>
+     * Set to true if you are using slow predicates or have &lt; 100,000s entries per member.
+     * <p>
      * The default is false.
      */
     public static final HazelcastProperty QUERY_PREDICATE_PARALLEL_EVALUATION
@@ -813,10 +813,10 @@ public final class GroupProperty {
 
     /**
      * Run aggregation accumulation for multiple entries in parallel.
-     * <p/>
+     * <p>
      * Each Hazelcast member executes the accumulation stage of an aggregation using a single thread by default.
      * In most cases it pays off to do it in parallel.
-     * <p/>
+     * <p>
      * The default is true.
      */
     public static final HazelcastProperty AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION
@@ -824,34 +824,34 @@ public final class GroupProperty {
 
     /**
      * Result size limit for query operations on maps.
-     * <p/>
+     * <p>
      * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
      * elements, a {@link QueryResultSizeExceededException} will be thrown.
-     * <p/>
+     * <p>
      * This feature prevents an OOME if a single node is requesting the whole data set of the cluster, such as by
      * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
      * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
-     * <p/>
+     * <p>
      * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
      * Therefore, there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
      * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
-     * <p/>
-     * The feature can be disabled by setting its value to <tt>-1</tt> (which is the default value).
+     * <p>
+     * The feature can be disabled by setting its value to <code>-1</code> (which is the default value).
      */
     public static final HazelcastProperty QUERY_RESULT_SIZE_LIMIT
             = new HazelcastProperty("hazelcast.query.result.size.limit", -1);
 
     /**
      * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
-     * <p/>
-     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}); a local pre-check on the requesting node can be
+     * <p>
+     * To limit the result size of a query ({@link #QUERY_RESULT_SIZE_LIMIT}); a local pre-check on the requesting node can be
      * done before the query is sent to the cluster. Since this may increase the latency, the pre-check is limited to a maximum
      * number of local partitions.
-     * <p/>
+     * <p>
      * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter
      * increases the latency due to the prolonged local pre-check.
-     * <p/>
-     * The pre-check can be disabled by setting the value to <tt>-1</tt>.
+     * <p>
+     * The pre-check can be disabled by setting the value to <code>-1</code>.
      *
      * @see #QUERY_RESULT_SIZE_LIMIT
      */
@@ -865,7 +865,7 @@ public final class GroupProperty {
      * <li>RULES - for optimizations based on static rules</li>
      * <li>NONE - optimization are disabled</li>
      * </ul>
-     * <p/>
+     * <p>
      * Values are case sensitive
      */
     public static final HazelcastProperty QUERY_OPTIMIZER_TYPE
@@ -880,26 +880,26 @@ public final class GroupProperty {
      *
      * Why is it needed? In order to support correctness the internal data-structures used by indexes need to do some copying.
      * The copying may take place on-read or on-write:
-     *
-     * -> Copying on-read means that each index-read operation will copy the result of the query before returning it to the
+     * <p>
+     * -&gt; Copying on-read means that each index-read operation will copy the result of the query before returning it to the
      * caller.This copying may be expensive, depending on the size of the result, since the result is stored in a map, which
      * means that all entries need to have the hash calculated before being stored in a bucket.
      * Each index-write operation however will be fast, since there will be no copying taking place.
-     *
-     * -> Copying on-write means that each index-write operation will completely copy the underlying map to provide the
+     * <p>
+     * -&gt; Copying on-write means that each index-write operation will completely copy the underlying map to provide the
      * copy-on-write semantics. Depending on the index size, it may be a very expensive operation.
      * Each index-read operation will be very fast, however, since it may just access the map and return it to the caller.
-     *
-     * -> Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
+     * <p>
+     * -&gt; Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
      * copy-on-write semantics. Index reads never copy the results of a query to a separate map.
      * It means that the results backed by the underlying index-map can change after the query has been executed.
      * Specifically an entry might have been added / removed from an index, or it might have been remapped.
      * Should be used in cases when a the caller expects "mostly correct" results - specifically, if it's ok
      * if some entries returned in the result set do not match the initial query criteria.
      * The fastest solution for read and writes, since no copying takes place.
-     *
+     * <p>
      * It's a tuneable trade-off - the user may decide.
-     *
+     * <p>
      * Valid Values:
      * <ul>
      * <li>COPY_ON_READY - Internal data structures of the index are concurrently modified without copy-on-write semantics.
@@ -920,7 +920,6 @@ public final class GroupProperty {
      * if some entries returned in the result set do not match the initial query criteria.
      * The fastest solution for read and writes, since no copying takes place.</li>
      * </ul>
-     * <p/>
      */
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
@@ -959,7 +958,7 @@ public final class GroupProperty {
 
     /**
      * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining
-     * a cluster may affect the serialization format of cluster discovery & join operations and its compatibility with members
+     * a cluster may affect the serialization format of cluster discovery &amp; join operations and its compatibility with members
      * of a cluster running on different Hazelcast codebase versions. The default is to use the node's codebase version. You may
      * need to override it for your node to join a cluster running on a previous cluster version.
      */

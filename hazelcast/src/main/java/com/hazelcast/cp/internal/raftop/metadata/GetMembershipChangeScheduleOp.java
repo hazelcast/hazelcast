@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * Returns the list of pending membership changes that will be orchestrated by
  * the leader node of the Metadata group.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetMembershipChangeScheduleOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
@@ -50,7 +50,7 @@ public class GetMembershipChangeScheduleOp extends MetadataRaftGroupOp implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_MEMBERSHIP_CHANGE_SCHEDULE_OP;
     }
 

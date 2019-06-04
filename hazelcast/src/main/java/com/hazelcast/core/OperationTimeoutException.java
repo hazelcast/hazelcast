@@ -19,7 +19,7 @@ package com.hazelcast.core;
 /**
  * An unchecked version of {@link java.util.concurrent.TimeoutException}.
  * <p>
- * Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>.
+ * Some of the Hazelcast operations may throw an <code>OperationTimeoutException</code>.
  * Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces
  * that don't have TimeoutException in their signatures.
  * </p>

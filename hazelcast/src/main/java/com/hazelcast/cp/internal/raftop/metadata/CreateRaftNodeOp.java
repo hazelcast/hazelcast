@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import java.util.Collection;
  * group, this operation is sent to the new members of the Raft group to
  * initiate the {@link RaftNode} on the new member. Members present in this
  * operation are initial members of the Raft group, not the current members.
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
@@ -76,7 +76,7 @@ public class CreateRaftNodeOp extends Operation implements IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.CREATE_RAFT_NODE_OP;
     }
 

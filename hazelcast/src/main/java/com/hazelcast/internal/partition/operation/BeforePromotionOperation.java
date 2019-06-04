@@ -21,10 +21,10 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.PartitionMigrationEvent;
 
 import static com.hazelcast.partition.MigrationEvent.MigrationStatus.STARTED;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 
 /**
  * Runs locally when the node becomes owner of a partition, before applying a promotion result to the partition table.

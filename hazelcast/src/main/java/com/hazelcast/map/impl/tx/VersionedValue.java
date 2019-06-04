@@ -65,7 +65,7 @@ public class VersionedValue implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.VERSIONED_VALUE;
     }
 }

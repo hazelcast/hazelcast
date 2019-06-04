@@ -23,14 +23,14 @@ import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTe
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.RaftAtomicLongProxy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RaftAtomicLongSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Long> {
 
     private IAtomicLong atomicLong;

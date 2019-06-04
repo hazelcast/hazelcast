@@ -215,7 +215,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SEMAPHORE_CONFIG;
     }
 

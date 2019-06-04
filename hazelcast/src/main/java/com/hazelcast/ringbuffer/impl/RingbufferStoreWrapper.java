@@ -18,8 +18,8 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferStoreConfig;
-import com.hazelcast.core.RingbufferStore;
-import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;
