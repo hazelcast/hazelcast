@@ -155,7 +155,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "."
                             + sanitizeLoggerNamePart(vertex.name())),
-                    vertex.name(), vertex.isHigherPriorityUpstream());
+                    vertex.name(), vertex.isHigherPrioritySource());
             tasklets.add(ssTasklet);
 
             int localProcessorIdx = 0;
@@ -617,7 +617,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public int getHigherPriorityVertexCount() {
         return (int) vertices.stream()
-                             .filter(VertexDef::isHigherPriorityUpstream)
+                             .filter(VertexDef::isHigherPrioritySource)
                              .count();
+    }
+
+    // for test
+    List<VertexDef> getVertices() {
+        return vertices;
     }
 }
