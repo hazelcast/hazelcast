@@ -1,12 +1,10 @@
 # Hazelcast Jet
 
----
-
 [![Join the chat at https://gitter.im/hazelcast/hazelcast-jet](https://badges.gitter.im/hazelcast/hazelcast-jet.svg)](https://gitter.im/hazelcast/hazelcast-jet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 <img src="https://github.com/hazelcast/hazelcast-jet/raw/master/logo/hazelcast-jet.png" width="100">
 
----
+----
 
 [Hazelcast Jet] is an open-source, cloud-native, distributed stream
 and batch processing engine.
@@ -29,7 +27,7 @@ You can cache your reference data and enrich the event stream with it,
 store the results of a computation, or even store the input data you're
 about to process with Jet.
 
----
+----
 
 ## Start using Jet
 
