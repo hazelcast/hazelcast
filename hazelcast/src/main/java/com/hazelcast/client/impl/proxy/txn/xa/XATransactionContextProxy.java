@@ -92,6 +92,16 @@ public class XATransactionContextProxy implements ClientTransactionContext {
     }
 
     @Override
+    public void suspendTransaction() {
+        throw new UnsupportedOperationException("XA Transaction cannot be suspended manually!");
+    }
+
+    @Override
+    public void resumeTransaction() {
+        throw new UnsupportedOperationException("XA Transaction cannot be resumed manually!");
+    }
+
+    @Override
     public String getTxnId() {
         return transaction.getTxnId();
     }
