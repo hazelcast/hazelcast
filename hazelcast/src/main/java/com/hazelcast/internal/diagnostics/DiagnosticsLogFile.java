@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.BufferedWriter;
@@ -105,12 +105,12 @@ final class DiagnosticsLogFile {
         File dir = diagnostics.directory;
         if (dir.exists()) {
             if (!dir.isDirectory()) {
-                throw new ConfigurationException("Configured path for diagnostics log file '" + dir
+                throw new InvalidConfigurationException("Configured path for diagnostics log file '" + dir
                         + "' exists, but it's not a directory");
             }
         } else {
             if (!dir.mkdirs()) {
-                throw new ConfigurationException("Error while creating a directory '" + dir
+                throw new InvalidConfigurationException("Error while creating a directory '" + dir
                         + "' for diagnostics log files. Are you having sufficient rights on the filesystem?");
             }
         }

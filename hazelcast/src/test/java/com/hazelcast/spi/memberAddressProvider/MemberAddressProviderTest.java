@@ -17,7 +17,7 @@
 package com.hazelcast.spi.memberAddressProvider;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -124,7 +124,7 @@ public class MemberAddressProviderTest {
         assertEquals("propValue", property);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testProviderDoesNotImplementTheInterface() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
@@ -136,7 +136,7 @@ public class MemberAddressProviderTest {
         Hazelcast.newHazelcastInstance(config);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testProviderDoesNotHaveMatchingConstructor() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
@@ -148,7 +148,7 @@ public class MemberAddressProviderTest {
         Hazelcast.newHazelcastInstance(config);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testProviderClassDoesNotExist() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
@@ -172,7 +172,7 @@ public class MemberAddressProviderTest {
         assertEquals("1.2.3.4", localMember.getAddress().getHost());
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testFailFastWhenNoMatchingConstructorIsFound() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()

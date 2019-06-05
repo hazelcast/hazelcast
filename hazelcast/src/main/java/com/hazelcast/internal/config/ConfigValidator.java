@@ -23,7 +23,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
@@ -566,16 +565,16 @@ public final class ConfigValidator {
     }
 
     /**
-     * Throws {@link ConfigurationException} if given group property is defined within Hazelcast properties.
+     * Throws {@link InvalidConfigurationException} if given group property is defined within Hazelcast properties.
      *
      * @param properties        Group properties
      * @param hazelcastProperty property to be checked
-     * @throws ConfigurationException
+     * @throws InvalidConfigurationException
      */
     public static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
-            throws ConfigurationException {
+            throws InvalidConfigurationException {
         if (properties.containsKey(hazelcastProperty)) {
-            throw new ConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
+            throw new InvalidConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
                     + " is provided together with new Config object. "
                     + "Remove the property from your configuration to fix this issue.");
         }

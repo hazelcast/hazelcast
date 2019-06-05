@@ -109,7 +109,7 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Test
     public abstract void testReplacers() throws Exception;
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testMissingReplacement() throws Exception;
 
     @Test
