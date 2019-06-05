@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.topic;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.topic.TopicOverloadException;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are

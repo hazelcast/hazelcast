@@ -20,8 +20,8 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -49,7 +49,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 /**
- * The serverside {@link com.hazelcast.core.ITopic} implementation for reliable topics.
+ * The serverside {@link ITopic} implementation for reliable topics.
  *
  * @param <E> type of item contained in the topic
  */
