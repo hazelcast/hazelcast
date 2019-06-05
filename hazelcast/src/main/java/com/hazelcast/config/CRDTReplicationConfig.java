@@ -60,7 +60,7 @@ public class CRDTReplicationConfig {
      */
     public CRDTReplicationConfig setReplicationPeriodMillis(int replicationPeriodMillis) {
         if (replicationPeriodMillis <= 0) {
-            throw new ConfigurationException("The value of replicationPeriodMillis must be a non-null positive integer");
+            throw new InvalidConfigurationException("The value of replicationPeriodMillis must be a non-null positive integer");
         }
         this.replicationPeriodMillis = replicationPeriodMillis;
         return this;
@@ -87,7 +87,8 @@ public class CRDTReplicationConfig {
      */
     public CRDTReplicationConfig setMaxConcurrentReplicationTargets(int maxConcurrentReplicationTargets) {
         if (maxConcurrentReplicationTargets <= 0) {
-            throw new ConfigurationException("The value of maxConcurrentReplicationTargets must be a non-null positive integer");
+            throw new InvalidConfigurationException("The value of maxConcurrentReplicationTargets must be a non-null"
+                    + " positive integer");
         }
         this.maxConcurrentReplicationTargets = maxConcurrentReplicationTargets;
         return this;

@@ -31,7 +31,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -504,7 +503,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (configBuilder != null) {
                 boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumClassName);
                 if (quorumFunctionDefinedByClassName) {
-                    throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                    throw new InvalidConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
                             + "recently-active-quorum and a quorum function class name.");
                 }
                 QuorumConfig constructedConfig = configBuilder.build();

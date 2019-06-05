@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
@@ -104,7 +104,7 @@ public class DefaultNodeContext implements NodeContext {
         }
         if (provider == null) {
             if (properties != null && !properties.isEmpty()) {
-                throw new ConfigurationException("Cannot find a matching constructor for MemberAddressProvider.  "
+                throw new InvalidConfigurationException("Cannot find a matching constructor for MemberAddressProvider.  "
                         + "The member address provider has properties configured, but the class " + "'"
                         + clazz.getName() + "' does not have a public constructor accepting properties.");
             }
@@ -114,7 +114,7 @@ public class DefaultNodeContext implements NodeContext {
             provider = InstantiationUtils.newInstanceOrNull(clazz);
         }
         if (provider == null) {
-            throw new ConfigurationException("Cannot find a matching constructor for MemberAddressProvider "
+            throw new InvalidConfigurationException("Cannot find a matching constructor for MemberAddressProvider "
                     + "implementation '" + clazz.getName() + "'.");
         }
         return provider;
@@ -125,12 +125,12 @@ public class DefaultNodeContext implements NodeContext {
         try {
             Class<?> clazz = ClassLoaderUtil.loadClass(classLoader, classname);
             if (!(MemberAddressProvider.class.isAssignableFrom(clazz))) {
-                throw new ConfigurationException("Configured member address provider " + clazz.getName()
+                throw new InvalidConfigurationException("Configured member address provider " + clazz.getName()
                         + " does not implement the interface" + MemberAddressProvider.class.getName());
             }
             return (Class<? extends MemberAddressProvider>) clazz;
         } catch (ClassNotFoundException e) {
-            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + classname
+            throw new InvalidConfigurationException("Cannot create a new instance of MemberAddressProvider '" + classname
                     + "'", e);
         }
     }

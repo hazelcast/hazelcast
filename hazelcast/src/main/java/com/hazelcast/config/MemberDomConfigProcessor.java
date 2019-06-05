@@ -379,7 +379,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         if (quorumConfigBuilder != null) {
             boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumConfig.getQuorumFunctionClassName());
             if (quorumFunctionDefinedByClassName) {
-                throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                throw new InvalidConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
                         + "recently-active-quorum and a quorum function class name.");
             }
             // ensure parsed attributes are reflected in constructed quorum config

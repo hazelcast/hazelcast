@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
@@ -38,13 +38,13 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.impl.operationservice.NamedOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ExceptionUtil;
@@ -145,12 +145,12 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         long heartbeatIntervalMillis = nodeProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
 
         if (value > maxNoHeartbeatMillis) {
-            throw new ConfigurationException("This member is configured with maximum no-heartbeat duration "
+            throw new InvalidConfigurationException("This member is configured with maximum no-heartbeat duration "
                 + maxNoHeartbeatMillis + " millis. For the quorum '" + quorumName + "' to be effective, set "
                 + parameterName + " to a lower value. Currently configured value is " + value
                 + ", reconfigure to a value lower than " + maxNoHeartbeatMillis + ".");
         } else if (value < heartbeatIntervalMillis) {
-            throw new ConfigurationException("Quorum '" + quorumName + "' is misconfigured: the value of "
+            throw new InvalidConfigurationException("Quorum '" + quorumName + "' is misconfigured: the value of "
                     + "acceptable heartbeat pause (" + value + ") must be greater than "
                     + "the configured heartbeat interval (" + heartbeatIntervalMillis + "), otherwise quorum "
                     + "will be always absent.");

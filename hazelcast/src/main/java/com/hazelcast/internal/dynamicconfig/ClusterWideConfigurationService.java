@@ -21,12 +21,12 @@ import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -51,9 +51,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
@@ -279,7 +279,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * @param newConfig       Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws ConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws InvalidConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -381,7 +381,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                         eventJournalConfig);
                 try {
                     checkCurrentConfigNullOrEqual(configCheckMode, currentCacheJournalConfig, eventJournalConfig);
-                } catch (ConfigurationException e) {
+                } catch (InvalidConfigurationException e) {
                     // exception when registering cache journal config.
                     // let's remove map journal if we configured any
                     if (mapName != null && currentMapJournalConfig == null) {
@@ -406,7 +406,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                     + " is already a conflicting configuration '" + currentConfig + "'";
             switch (checkMode) {
                 case THROW_EXCEPTION:
-                    throw new ConfigurationException(message);
+                    throw new InvalidConfigurationException(message);
                 case WARNING:
                     logger.warning(message);
                     break;
