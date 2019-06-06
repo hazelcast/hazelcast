@@ -189,9 +189,9 @@ public class Indexes {
      * Creates indexes according to the index definitions stored inside this
      * indexes.
      */
-    public void createIndexesFromRecordedDefinitions() {
+    public void createIndexesFromRecordedDefinitions(StoreAdapter partitionStoreAdapter) {
         for (Map.Entry<String, Boolean> definition : definitions.entrySet()) {
-            addOrGetIndex(definition.getKey(), definition.getValue());
+            addOrGetIndex(definition.getKey(), definition.getValue(), partitionStoreAdapter);
         }
         definitions.clear();
     }

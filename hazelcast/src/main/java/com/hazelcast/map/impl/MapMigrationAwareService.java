@@ -253,7 +253,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             final StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            indexes.createIndexesFromRecordedDefinitions();
+            indexes.createIndexesFromRecordedDefinitions(storeAdapter);
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
