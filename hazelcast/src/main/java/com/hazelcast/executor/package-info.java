@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
-
-import com.hazelcast.executor.ExecutionCallback;
-import com.hazelcast.util.ExceptionUtil;
-
-class TestExecutionCallback implements ExecutionCallback {
-    volatile Object value;
-
-    @Override
-    public void onResponse(Object response) {
-        value = response;
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        throw ExceptionUtil.rethrow(t);
-    }
-}
+/**
+ * Contains the API for the IExecutorService.
+ */
+package com.hazelcast.executor;

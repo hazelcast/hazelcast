@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;

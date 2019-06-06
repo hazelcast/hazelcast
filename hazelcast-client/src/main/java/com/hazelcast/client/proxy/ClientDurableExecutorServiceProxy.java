@@ -30,7 +30,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;

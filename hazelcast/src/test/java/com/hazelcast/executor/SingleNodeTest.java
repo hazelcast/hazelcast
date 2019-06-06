@@ -16,8 +16,6 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.monitor.LocalExecutorStats;

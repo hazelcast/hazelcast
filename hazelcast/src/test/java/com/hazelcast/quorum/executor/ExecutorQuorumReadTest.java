@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.executor;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;

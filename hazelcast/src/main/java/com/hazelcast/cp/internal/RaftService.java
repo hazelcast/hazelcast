@@ -18,7 +18,7 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPGroup;

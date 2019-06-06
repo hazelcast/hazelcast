@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchTrySetCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;

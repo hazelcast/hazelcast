@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;

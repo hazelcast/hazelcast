@@ -26,7 +26,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;

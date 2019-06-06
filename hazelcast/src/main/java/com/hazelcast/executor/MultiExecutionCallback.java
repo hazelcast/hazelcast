@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.executor;
+
+import com.hazelcast.core.Member;
 
 import com.hazelcast.cluster.Member;
 

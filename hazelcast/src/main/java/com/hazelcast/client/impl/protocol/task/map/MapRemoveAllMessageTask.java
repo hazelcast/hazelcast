@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.Node;

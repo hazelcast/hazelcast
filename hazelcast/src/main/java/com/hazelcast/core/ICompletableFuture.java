@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.executor.ExecutionCallback;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 

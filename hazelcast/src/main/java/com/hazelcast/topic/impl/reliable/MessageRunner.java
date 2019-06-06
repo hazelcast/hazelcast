@@ -17,7 +17,7 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.OperationTimeoutException;
@@ -36,7 +36,7 @@ import java.util.concurrent.Executor;
 
 
 /**
- * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an
+ * An {@link ExecutionCallback} that will try to read an
  * item from the ringbuffer or blocks if no item is available. All data
  * that are read is pushed into the {@link MessageListener}.
  * It is a self-perpetuating stream of async calls.

@@ -34,7 +34,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;

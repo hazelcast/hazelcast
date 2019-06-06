@@ -23,7 +23,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IMap;

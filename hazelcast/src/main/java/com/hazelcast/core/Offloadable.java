@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.spi.ExecutionService;
 

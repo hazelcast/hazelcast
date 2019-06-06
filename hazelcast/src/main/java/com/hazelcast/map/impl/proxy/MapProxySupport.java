@@ -25,7 +25,7 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;

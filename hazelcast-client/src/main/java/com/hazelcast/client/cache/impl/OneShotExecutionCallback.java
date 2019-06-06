@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.TimeoutException;

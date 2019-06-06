@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.session;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;

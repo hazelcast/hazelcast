@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;

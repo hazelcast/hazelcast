@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

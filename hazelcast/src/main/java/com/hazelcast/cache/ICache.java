@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.PrefixedDistributedObject;
+import com.hazelcast.executor.ExecutionCallback;
 
 import javax.cache.Cache;
 import javax.cache.expiry.ExpiryPolicy;
@@ -55,7 +56,7 @@ import java.util.Set;
  * extended by the term <code>Async</code>; for example, the asynchronous version of {@link javax.cache.Cache#get(Object)}
  * is {@link #getAsync(Object)}.<br>
  * These methods return an {@link com.hazelcast.core.ICompletableFuture} that can be used to get the result by
- * either implementing a callback based on {@link com.hazelcast.core.ExecutionCallback}, or waiting for the operation to be
+ * either implementing a callback based on {@link ExecutionCallback}, or waiting for the operation to be
  * completed in a blocking fashion {@link java.util.concurrent.Future#get()} or
  * {@link java.util.concurrent.Future#get(long, java.util.concurrent.TimeUnit)}.<p>
  * In a reactive way:

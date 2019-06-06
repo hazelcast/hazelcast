@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.cluster.Member;

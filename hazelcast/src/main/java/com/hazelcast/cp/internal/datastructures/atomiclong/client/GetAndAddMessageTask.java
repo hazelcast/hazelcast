@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;

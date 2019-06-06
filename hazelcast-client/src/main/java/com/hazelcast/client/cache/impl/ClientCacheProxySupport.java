@@ -49,7 +49,7 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;

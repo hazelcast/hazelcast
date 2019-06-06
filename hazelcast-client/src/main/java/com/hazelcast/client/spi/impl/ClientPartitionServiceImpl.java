@@ -28,7 +28,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.partition.PartitionTableView;

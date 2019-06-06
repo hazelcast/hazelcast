@@ -16,9 +16,9 @@
 
 package com.hazelcast.executor.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
+import com.hazelcast.executor.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;

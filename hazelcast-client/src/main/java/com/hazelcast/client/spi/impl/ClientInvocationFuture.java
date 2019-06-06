@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;

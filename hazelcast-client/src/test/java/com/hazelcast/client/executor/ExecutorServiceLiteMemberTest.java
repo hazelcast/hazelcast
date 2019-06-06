@@ -22,7 +22,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.test.AssertTask;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 
 /**
  * A ExecutionCallback implementation that simplifies the implementation of the ExecutionCallback by only

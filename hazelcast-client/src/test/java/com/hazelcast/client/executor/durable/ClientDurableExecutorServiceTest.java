@@ -23,7 +23,7 @@ import com.hazelcast.client.test.executor.tasks.FailingCallable;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;

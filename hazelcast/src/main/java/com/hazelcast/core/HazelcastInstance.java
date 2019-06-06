@@ -34,6 +34,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.multimap.MultiMap;

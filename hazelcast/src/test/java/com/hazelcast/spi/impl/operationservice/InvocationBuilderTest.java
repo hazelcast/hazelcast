@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;

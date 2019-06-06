@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong.proxy;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;

@@ -2068,7 +2068,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IExecutorService"/>
+                    <tool:exports type="com.hazelcast.executor.IExecutorService"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>

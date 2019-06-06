@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.Node;

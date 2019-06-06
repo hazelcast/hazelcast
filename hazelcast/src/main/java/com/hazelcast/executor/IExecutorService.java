@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.executor;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalExecutorStats;
 
 import java.util.Collection;
@@ -31,7 +32,7 @@ import java.util.concurrent.Future;
  * IExecutorService provides additional methods like executing tasks
  * on a specific member, on a member who is owner of a specific key,
  * executing a tasks on multiple members and listening execution result using a callback.
- *
+ * <p>
  * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @see ExecutorService

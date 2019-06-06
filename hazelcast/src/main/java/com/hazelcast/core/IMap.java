@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LockAware;
 import com.hazelcast.map.MapInterceptor;

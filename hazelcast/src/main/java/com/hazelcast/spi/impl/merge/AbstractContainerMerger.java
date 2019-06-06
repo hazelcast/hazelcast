@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;

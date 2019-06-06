@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;

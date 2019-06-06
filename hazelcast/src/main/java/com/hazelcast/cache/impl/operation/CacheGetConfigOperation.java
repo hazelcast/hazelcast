@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

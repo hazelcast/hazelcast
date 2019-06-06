@@ -17,7 +17,7 @@
 
 package com.hazelcast.internal.util.futures;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;

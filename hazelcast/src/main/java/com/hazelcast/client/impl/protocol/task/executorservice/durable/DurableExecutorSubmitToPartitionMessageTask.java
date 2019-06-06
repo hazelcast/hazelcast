@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice.durable;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;

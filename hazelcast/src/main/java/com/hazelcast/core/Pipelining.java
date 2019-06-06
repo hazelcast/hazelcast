@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;

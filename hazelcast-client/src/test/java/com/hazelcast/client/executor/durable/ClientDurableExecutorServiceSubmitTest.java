@@ -25,7 +25,7 @@ import com.hazelcast.client.test.executor.tasks.AppendCallable;
 import com.hazelcast.client.test.executor.tasks.MapPutPartitionAwareCallable;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.cluster.Member;

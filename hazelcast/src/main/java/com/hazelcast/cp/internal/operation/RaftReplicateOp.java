@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;

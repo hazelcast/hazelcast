@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;

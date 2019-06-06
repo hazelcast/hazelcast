@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;

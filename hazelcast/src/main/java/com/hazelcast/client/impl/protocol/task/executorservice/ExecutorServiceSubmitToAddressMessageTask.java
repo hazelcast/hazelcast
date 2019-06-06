@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.Node;

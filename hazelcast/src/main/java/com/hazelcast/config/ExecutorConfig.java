@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -23,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
+ * Contains the configuration for an {@link IExecutorService}.
  */
 public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 

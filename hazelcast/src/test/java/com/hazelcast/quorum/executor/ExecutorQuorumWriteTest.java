@@ -17,11 +17,11 @@
 package com.hazelcast.quorum.executor;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
-import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.ExecutionCallback;
+import com.hazelcast.executor.IExecutorService;
+import com.hazelcast.executor.MultiExecutionCallback;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

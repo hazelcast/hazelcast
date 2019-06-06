@@ -16,6 +16,8 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.executor.IExecutorService;
+
 /**
  * PartitionAware means that data will be based in the same member based on the partition key
  * and implementing tasks will be executed on the {@link #getPartitionKey()}'s owner member.
@@ -31,7 +33,7 @@ package com.hazelcast.partition;
  *     <li>any PartitionAware object with partition key "Steve"</li>
  * </ul>
  *
- * If you have a {@link com.hazelcast.core.IExecutorService} which needs to deal with a customer and a customer's
+ * If you have a {@link IExecutorService} which needs to deal with a customer and a customer's
  * orders, you can achieve optimal performance by putting them on the same partition.
  * <p>
  * {@link com.hazelcast.core.DistributedObject} also has a notion of the partition key which is of type String

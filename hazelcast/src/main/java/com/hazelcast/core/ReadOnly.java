@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.executor.ExecutionCallback;
 import com.hazelcast.map.EntryProcessor;
 
 /**
