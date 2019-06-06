@@ -47,6 +47,10 @@ public final class NotPredicate
     public NotPredicate() {
     }
 
+    public Predicate getPredicate() {
+        return predicate;
+    }
+
     @Override
     public boolean apply(Map.Entry mapEntry) {
         return !predicate.apply(mapEntry);

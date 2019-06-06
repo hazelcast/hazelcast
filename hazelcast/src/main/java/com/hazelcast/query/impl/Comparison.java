@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 /**
  * Defines comparisons supported by {@link Index#getRecords(Comparison, Comparable)}
- * and {@link IndexStore#getRecords(Comparable)}.
+ * and {@link IndexStore#getRecords(Comparison, Comparable)}.
  */
 public enum Comparison {
 
