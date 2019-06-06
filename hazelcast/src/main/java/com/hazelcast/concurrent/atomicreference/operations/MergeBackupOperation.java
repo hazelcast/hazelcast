@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class MergeBackupOperation extends AbstractAtomicReferenceOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP;
     }
 

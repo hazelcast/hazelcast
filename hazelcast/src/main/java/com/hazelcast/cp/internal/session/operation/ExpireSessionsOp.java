@@ -70,7 +70,7 @@ public class ExpireSessionsOp extends RaftOp implements IndeterminateOperationSt
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.EXPIRE_SESSIONS_OP;
     }
 

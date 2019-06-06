@@ -69,7 +69,7 @@ public class UuidFilter implements EventFilter, IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.UUID_FILTER;
     }
 }

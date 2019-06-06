@@ -21,7 +21,6 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -148,14 +147,14 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         assertEquals("body1", resultBody.getName());
     }
 
-    private static final class ExtractProcessor implements EntryProcessor<Integer, Body> {
+    private static final class ExtractProcessor implements EntryProcessor<Integer, Body, Body> {
         @Override
         public Body process(Map.Entry<Integer, Body> entry) {
             return entry.getValue();
         }
 
         @Override
-        public EntryBackupProcessor<Integer, Body> getBackupProcessor() {
+        public EntryProcessor<Integer, Body, Body> getBackupProcessor() {
             return null;
         }
     }
@@ -172,7 +171,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }

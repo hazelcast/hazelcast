@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.LockGuard;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionException;
@@ -52,9 +52,9 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 /**
  * ClusterStateManager stores cluster state and manages cluster state transactions.
- * <p/>
+ * <p>
  * When a node joins to the cluster, its initial state is set.
- * <p/>
+ * <p>
  * When a cluster state change is requested, a cluster-wide transaction is started
  * and state is changed all over the cluster atomically.
  */

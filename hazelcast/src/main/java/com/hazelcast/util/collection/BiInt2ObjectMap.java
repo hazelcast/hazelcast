@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * Map that takes two part int key and associates with an object.
- * <p/>
+ * <p>
  * The underlying implementation use as {@link Long2ObjectHashMap} and combines both int keys into a long key.
  *
  * @param <V> type of the object stored in the map.

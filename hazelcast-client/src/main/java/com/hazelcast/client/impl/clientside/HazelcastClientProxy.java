@@ -31,13 +31,13 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
@@ -50,7 +50,6 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -129,11 +128,6 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getClient().getReplicatedMap(name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        return getClient().getJobTracker(name);
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 
 public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation implements BackupAwareOperation {
 

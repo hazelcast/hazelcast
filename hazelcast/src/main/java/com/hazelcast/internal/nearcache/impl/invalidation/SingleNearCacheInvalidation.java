@@ -68,7 +68,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return NEAR_CACHE_SINGLE_INVALIDATION;
     }
 }

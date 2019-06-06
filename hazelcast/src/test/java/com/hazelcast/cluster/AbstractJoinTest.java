@@ -64,7 +64,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
     /**
      * Checks if a HazelcastInstance created with config2, can be added to a HazelcastInstance created with config 1.
-     * <p/>
+     * <p>
      * This method expects that an IllegalStateException is thrown when the second HazelcastInstance is created and
      * it doesn't join the cluster but gets killed instead.
      *

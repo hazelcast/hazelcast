@@ -103,7 +103,7 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_PARTITION_EVENT_DATA;
     }
 }

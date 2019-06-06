@@ -37,14 +37,14 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Returns true if this member is the local member.
      *
-     * @return <tt>true</tt> if this member is the local member, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this member is the local member, <code>false</code> otherwise.
      */
     boolean localMember();
 
     /**
      * Returns true if this member is a lite member.
      *
-     * @return <tt>true</tt> if this member is a lite member, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this member is a lite member, <code>false</code> otherwise.
      * Lite members do not own any partition.
      */
     boolean isLiteMember();
@@ -87,7 +87,7 @@ public interface Member extends DataSerializable, Endpoint {
     String getUuid();
 
     /**
-     * Returns configured attributes for this member.<br/>
+     * Returns configured attributes for this member.<br>
      * <b>This method might not be available on all native clients.</b>
      *
      * @return configured attributes for this member.
@@ -114,7 +114,7 @@ public interface Member extends DataSerializable, Endpoint {
 
     /**
      * Removes a key-value pair attribute for this member if given key was
-     * previously assigned as an attribute.<br/>
+     * previously assigned as an attribute.<br>
      * If key wasn't assigned to a value this method does nothing.
      *
      * @param key The key to be deleted from the member attributes

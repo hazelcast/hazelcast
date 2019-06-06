@@ -17,18 +17,15 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
-import junit.framework.AssertionFailedError;
-
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -55,9 +52,11 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -65,10 +64,10 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.starter.HazelcastStarter;
 import com.hazelcast.util.UuidUtil;
+import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.ComparisonFailure;
@@ -98,6 +97,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
@@ -291,7 +291,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static OperationServiceImpl getOperationServiceImpl(HazelcastInstance hz) {
-        return (OperationServiceImpl) getNodeEngineImpl(hz).getOperationService();
+        return getNodeEngineImpl(hz).getOperationService();
     }
 
     public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
@@ -317,7 +317,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Returns the partition ID from a non-partitioned Hazelcast data
-     * structures like {@link com.hazelcast.core.ISet}.
+     * structures like {@link ISet}.
      * <p>
      * The partition ID is read via reflection from the internal
      * {@code partitionId} field. This is needed to support proxied
@@ -362,7 +362,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Future spawn(Runnable task) {
-        FutureTask<Runnable> futureTask = new FutureTask<Runnable>(task, null);
+        FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
     }
@@ -375,11 +375,9 @@ public abstract class HazelcastTestSupport {
 
     public static void interruptCurrentThread(final int delayMillis) {
         final Thread currentThread = Thread.currentThread();
-        new Thread(new Runnable() {
-            public void run() {
-                sleepMillis(delayMillis);
-                currentThread.interrupt();
-            }
+        new Thread(() -> {
+            sleepMillis(delayMillis);
+            currentThread.interrupt();
         }).start();
     }
 
@@ -556,7 +554,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Partition randomPartitionOwnedBy(HazelcastInstance hz) {
-        List<Partition> partitions = new LinkedList<Partition>();
+        List<Partition> partitions = new LinkedList<>();
         for (Partition partition : hz.getPartitionService().getPartitions()) {
             if (partition.getOwner().localMember()) {
                 partitions.add(partition);
@@ -764,19 +762,13 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitInstanceForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                isInstanceInSafeState(instance);
-            }
+        assertTrueEventually(() -> {
+            isInstanceInSafeState(instance);
         });
     }
 
     public static void waitClusterForSafeState(final HazelcastInstance instance) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(isClusterInSafeState(instance));
-            }
-        });
+        assertTrueEventually((() -> assertTrue(isClusterInSafeState(instance))));
     }
 
     public static void waitUntilClusterState(HazelcastInstance hz, ClusterState state, int timeoutSeconds) {
@@ -1350,7 +1342,7 @@ public abstract class HazelcastTestSupport {
      * This form of eventual completion check has no strict time bounds.
      * Instead, it lets the checked test to continue as long as there is
      * progress observed within the provided stall tolerance time bound.
-     * <p/>
+     * <p>
      * This check may be useful for tests that can provide progress
      * information to prevent unnecessary failures due to unexpectedly
      * slow progress.
@@ -1364,7 +1356,7 @@ public abstract class HazelcastTestSupport {
         long taskStartTimestamp = System.currentTimeMillis();
         // we are going to check five times a second
         int sleepMillis = 200;
-        List<TaskProgress> progresses = new LinkedList<TaskProgress>();
+        List<TaskProgress> progresses = new LinkedList<>();
         long lastProgressTimestamp = System.currentTimeMillis();
         double lastProgress = 0;
 
@@ -1399,7 +1391,7 @@ public abstract class HazelcastTestSupport {
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
-                            + " seconds has been exceeded without completing the task. " + message != null ? message : "");
+                            + " seconds has been exceeded without completing the task. " + (message != null ? message : ""));
                 }
 
                 sleepMillis(sleepMillis);
@@ -1491,12 +1483,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertWaitingOperationCountEventually(final int expectedOpsCount, HazelcastInstance instance) {
         final OperationParkerImpl waitNotifyService = getOperationParkingService(instance);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expectedOpsCount, waitNotifyService.getTotalParkedOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expectedOpsCount, waitNotifyService.getTotalParkedOperationCount()));
     }
 
     @SuppressWarnings("unchecked")
@@ -1520,8 +1507,8 @@ public abstract class HazelcastTestSupport {
         return (OperationParkerImpl) getNodeEngineImpl(instance).getOperationParker();
     }
 
-    public static void assertThatIsNoParallelTest() {
-        assertFalse("Test cannot be a ParallelTest", hasTestCategory(ParallelTest.class));
+    public static void assertThatIsNotMultithreadedTest() {
+        assertFalse("Test cannot run with parallel runner", Thread.currentThread() instanceof MultithreadedTestRunnerThread);
     }
 
     // ###################################
@@ -1563,23 +1550,22 @@ public abstract class HazelcastTestSupport {
      * It may also fail on test class hierarchies (the annotated class has to be in the stack trace).
      */
     public static HashSet<Class<?>> getTestCategories() {
-        HashSet<Class<?>> testCategories = new HashSet<Class<?>>();
-        for (StackTraceElement stackTraceElement : new Exception().getStackTrace()) {
-            String className = stackTraceElement.getClassName();
+        List<Class<?>> testCategories = acceptOnStackTrace((element, results) -> {
             try {
+                String className = element.getClassName();
                 Class<?> clazz = Class.forName(className);
                 Category annotation = clazz.getAnnotation(Category.class);
                 if (annotation != null) {
                     List<Class<?>> categoryList = asList(annotation.value());
-                    testCategories.addAll(categoryList);
+                    results.addAll(categoryList);
                 }
             } catch (Exception ignored) {
             }
-        }
+        });
         if (testCategories.isEmpty()) {
             fail("Could not find any classes with a @Category annotation in the stack trace");
         }
-        return testCategories;
+        return new HashSet<>(testCategories);
     }
 
     // ###################################
@@ -1747,7 +1733,7 @@ public abstract class HazelcastTestSupport {
         }
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        List<Indexes> allIndexes = new ArrayList<>();
         for (PartitionContainer partitionContainer : partitionContainers) {
             IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
             if (!partition.isLocal()) {
@@ -1763,6 +1749,23 @@ public abstract class HazelcastTestSupport {
         }
 
         return allIndexes;
+    }
+
+    /**
+     * Walk the stack trace and execute the provided {@code BiConsumer} on each {@code StackTraceElement}
+     * encountered while walking the stack trace.
+     *
+     * The {@code BiConsumer} expects {@code StackTraceElement, List<V>} arguments; any
+     * result from the {@code BiConsumer} should be added to the {@code results} list which is
+     * returned as the result of this method.
+     */
+    private static <V> List<V> acceptOnStackTrace(BiConsumer<StackTraceElement, List<V>> consumer) {
+        List<V> results = new ArrayList<>();
+        StackTraceElement[] stackTrace = new Exception().getStackTrace();
+        for (StackTraceElement stackTraceElement : stackTrace) {
+            consumer.accept(stackTraceElement, results);
+        }
+        return results;
     }
 
 }

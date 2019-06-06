@@ -123,7 +123,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PRE_JOIN_CACHE_CONFIG;
     }
 

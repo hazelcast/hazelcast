@@ -35,8 +35,8 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  * The basic idea is to reduce all predicates for a certain attribute into a
  * single predicate verifying its satisfiability on the go. For instance:
  * <ul>
- * <li>"a = 1 and a = 2" and "a > 10 and a < 5" are unsatisfiable.
- * <li>"a > 0 and a < 10" and "a > 0 and a > 10" can be reduced into a single
+ * <li>"a = 1 and a = 2" and "a &gt; 10 and a &lt; 5" are unsatisfiable.
+ * <li>"a &gt; 0 and a &lt; 10" and "a &gt; 0 and a &gt; 10" can be reduced into a single
  * range predicate.
  * </ul>
  * {@link CompositeIndexVisitor} is highly dependent on the work of this class

@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the ISemaphore.<br/>
+ * <p>This package contains the operations on the ISemaphore.<br>
  *
  * @since 2
  */

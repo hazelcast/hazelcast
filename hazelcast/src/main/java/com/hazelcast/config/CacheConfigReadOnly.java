@@ -42,10 +42,9 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         super(config);
     }
 
-    // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
     @Override
-    public CacheEvictionConfig getEvictionConfig() {
-        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+    public EvictionConfig getEvictionConfig() {
+        final EvictionConfig evictionConfig = super.getEvictionConfig();
         if (evictionConfig == null) {
             return null;
         }

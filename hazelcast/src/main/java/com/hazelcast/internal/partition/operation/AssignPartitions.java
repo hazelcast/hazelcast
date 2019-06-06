@@ -38,7 +38,7 @@ public class AssignPartitions extends AbstractPartitionOperation implements Migr
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.ASSIGN_PARTITIONS;
     }
 }

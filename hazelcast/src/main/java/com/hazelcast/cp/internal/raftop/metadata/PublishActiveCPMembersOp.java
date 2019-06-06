@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftSystemOperation;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ import java.util.Collection;
 /**
  * CP members use this operation to broadcast their current active CP member
  * list to the AP Hazelcast members.
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
@@ -75,7 +75,7 @@ public class PublishActiveCPMembersOp extends Operation implements IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.PUBLISH_ACTIVE_CP_MEMBERS_OP;
     }
 

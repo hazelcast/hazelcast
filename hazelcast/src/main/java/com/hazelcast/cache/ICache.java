@@ -47,12 +47,12 @@ import java.util.Set;
  * <pre>
  *   ICache&lt;Key , Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
  * </pre>
- * The unwrapped cache instance can now be used for both ICache and Cache operations.<p><p>
+ * The unwrapped cache instance can now be used for both ICache and Cache operations.<p>
  *
  * <b>Asynchronous operations:</b><br>
  * For most of the typical operations, Hazelcast provides asynchronous versions to program in a more reactive
  * styled way. All asynchronous operations follow the same naming pattern: the operation's name from JCache
- * extended by the term <tt>Async</tt>; for example, the asynchronous version of {@link javax.cache.Cache#get(Object)}
+ * extended by the term <code>Async</code>; for example, the asynchronous version of {@link javax.cache.Cache#get(Object)}
  * is {@link #getAsync(Object)}.<br>
  * These methods return an {@link com.hazelcast.core.ICompletableFuture} that can be used to get the result by
  * either implementing a callback based on {@link com.hazelcast.core.ExecutionCallback}, or waiting for the operation to be
@@ -76,7 +76,7 @@ import java.util.Set;
  *   ICompletableFuture&lt;Value&gt; future = unwrappedCache.getAsync( &quot;key-1&quot; ) ;
  *   Value value = future.get();
  *   System.out.println( value );
- * </pre><p><p>
+ * </pre>
  *
  * <b>Custom ExpirePolicy:</b><br>
  * For most of the typical operations, Hazelcast provides overloaded versions with an additional
@@ -148,9 +148,9 @@ public interface ICache<K, V>
 
     /**
      * Asynchronously retrieves the mapped value of the given key using a custom
-     * {@link javax.cache.expiry.ExpiryPolicy}. If no mapping exists <tt>null</tt> is returned.
+     * {@link javax.cache.expiry.ExpiryPolicy}. If no mapping exists <code>null</code> is returned.
      * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>read-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
      * <p>
@@ -165,7 +165,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key);
@@ -173,7 +173,7 @@ public interface ICache<K, V>
     /**
      * Asynchronously gets an entry from cache using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>read-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
      * <p>
@@ -190,7 +190,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy);
@@ -201,7 +201,7 @@ public interface ICache<K, V>
      * In case a previous assignment already exists, the previous value is overridden by
      * the new given value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -216,7 +216,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Void> putAsync(K key, V value);
@@ -228,7 +228,7 @@ public interface ICache<K, V>
      * In case a previous assignment already exists, the previous value is overridden by
      * the new given value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -245,7 +245,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -265,7 +265,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -280,7 +280,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value);
@@ -301,7 +301,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -319,7 +319,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -332,7 +332,7 @@ public interface ICache<K, V>
      * the new given value and the previous value is returned to the caller. This is
      * equivalent to the {@link java.util.Map#put(Object, Object)} operation.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -347,7 +347,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndPutAsync(K key, V value);
@@ -360,7 +360,7 @@ public interface ICache<K, V>
      * the new given value and the previous value is returned to the caller. This is
      * equivalent to the {@link java.util.Map#put(Object, Object)} operation.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -377,7 +377,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -385,7 +385,7 @@ public interface ICache<K, V>
     /**
      * Asynchronously removes the mapping for a key from this cache if it is present.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      * <p>
@@ -400,14 +400,14 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#remove(K)
+     * @see javax.cache.Cache#remove(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> removeAsync(K key);
 
     /**
      * Asynchronously removes the mapping for the given key if and only if the
-     * currently mapped value equals to the value of <tt>oldValue</tt>.
+     * currently mapped value equals to the value of <code>oldValue</code>.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -420,7 +420,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      * <p>
@@ -436,7 +436,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#remove(K, V)
+     * @see javax.cache.Cache#remove(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> removeAsync(K key, V oldValue);
@@ -445,7 +445,7 @@ public interface ICache<K, V>
      * Asynchronously removes the entry for a key and returns the previously assigned value or null
      * if no value was assigned.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      * <p>
@@ -460,7 +460,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#getAndRemove(K)
+     * @see javax.cache.Cache#getAndRemove(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndRemoveAsync(K key);
@@ -468,7 +468,7 @@ public interface ICache<K, V>
     /**
      * Asynchronously replaces the assigned value of the given key by the specified value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -483,7 +483,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V value);
@@ -492,7 +492,7 @@ public interface ICache<K, V>
      * Asynchronously replaces the assigned value of the given key by the specified value
      * using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -509,15 +509,15 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
 
     /**
      * Asynchronously replaces the currently assigned value for the given key with the specified
-     * <tt>newValue</tt> if and only if the currently assigned value equals the value of
-     * <tt>oldValue</tt>.
+     * <code>newValue</code> if and only if the currently assigned value equals the value of
+     * <code>oldValue</code>.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -530,7 +530,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      * <p>
@@ -551,15 +551,15 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue);
 
     /**
      * Asynchronously replaces the currently assigned value for the given key with the specified
-     * <tt>newValue</tt> if and only if the currently assigned value equals the value of
-     * <tt>oldValue</tt> using a custom {@link javax.cache.expiry.ExpiryPolicy}.
+     * <code>newValue</code> if and only if the currently assigned value equals the value of
+     * <code>oldValue</code> using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -572,7 +572,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      * <p>
@@ -595,7 +595,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
@@ -604,7 +604,7 @@ public interface ICache<K, V>
      * Asynchronously replaces the assigned value of the given key by the specified value and returns
      * the previously assigned value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -619,7 +619,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndReplaceAsync(K key, V value);
@@ -628,7 +628,7 @@ public interface ICache<K, V>
      * Asynchronously replaces the assigned value of the given key by the specified value using a
      * custom {@link javax.cache.expiry.ExpiryPolicy} and returns the previously assigned value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -645,16 +645,16 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
 
     /**
      * Retrieves the mapped value of the given key using a custom {@link javax.cache.expiry.ExpiryPolicy}.
-     * If no mapping exists <tt>null</tt> is returned.
+     * If no mapping exists <code>null</code> is returned.
      * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>read-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
      *
@@ -670,7 +670,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      */
     V get(K key, ExpiryPolicy expiryPolicy);
 
@@ -678,7 +678,7 @@ public interface ICache<K, V>
      * Gets a collection of entries from the cache with custom expiry policy, returning them as
      * {@link Map} of the values associated with the set of keys requested.
      * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>read-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the values of the keys from any kind of external resource.
      *
@@ -714,7 +714,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      */
     void put(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -735,7 +735,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      */
     V getAndPut(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -744,10 +744,10 @@ public interface ICache<K, V>
      * {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
      * Puts of single entries happen atomically but there is no transactional guarantee over
-     * the complete <tt>putAll</tt> operation. If other concurrent operations modify or remove
+     * the complete <code>putAll</code> operation. If other concurrent operations modify or remove
      * all or single values of the provided map, the result is undefined.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the values of the keys to any kind of external resource.
      *
@@ -781,7 +781,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -798,14 +798,14 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      */
     boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy);
 
     /**
      * Atomically replaces the currently assigned value for the given key with the specified
-     * <tt>newValue</tt> if and only if the currently assigned value equals the value of
-     * <tt>oldValue</tt> using a custom {@link javax.cache.expiry.ExpiryPolicy}.
+     * <code>newValue</code> if and only if the currently assigned value equals the value of
+     * <code>oldValue</code> using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -818,7 +818,7 @@ public interface ICache<K, V>
      * </pre>
      * except that the action is performed atomically.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -836,7 +836,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      */
     boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
 
@@ -844,7 +844,7 @@ public interface ICache<K, V>
      * Atomically replaces the assigned value of the given key by the specified value
      * using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -861,7 +861,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      */
     boolean replace(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -869,7 +869,7 @@ public interface ICache<K, V>
      * Atomically replaces the assigned value of the given key by the specified value using a
      * custom {@link javax.cache.expiry.ExpiryPolicy} and returns the previously assigned value.
      * <p>
-     * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
+     * If the cache is configured for <code>write-through</code> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
@@ -886,7 +886,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      */
     V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -920,11 +920,11 @@ public interface ICache<K, V>
 
     /**
      * Adds a CachePartitionLostListener.
-     * <p/>
+     * <p>
      * The addPartitionLostListener returns a registration ID. This ID is needed to remove the
      * CachePartitionLostListener using the
      * {@link #removePartitionLostListener(String)} method.
-     * <p/>
+     * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses.
      * IMPORTANT: Listeners registered from HazelcastClient may miss some of the cache partition lost events due
@@ -961,7 +961,6 @@ public interface ICache<K, V>
      * <li>read will have their appropriate CacheEntryReadListeners notified.</li>
      * <li>removed will have their appropriate CacheEntryRemoveListeners notified.</li>
      * </ul>
-     * </p>
      * {@link java.util.Iterator#next()} may return null if the entry is no
      * longer present, has expired or has been evicted.
      *

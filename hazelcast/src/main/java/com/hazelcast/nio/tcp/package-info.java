@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>Contains functionality for the TCP/IP Networking for cluster members<br/>
+ * <p>Contains functionality for the TCP/IP Networking for cluster members<br>
  *
  * This whole package is internal and no compatibility will be provided.
  */

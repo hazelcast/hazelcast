@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
@@ -51,7 +51,7 @@ public class CountDownLatchBackupOperation extends AbstractCountDownLatchOperati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 

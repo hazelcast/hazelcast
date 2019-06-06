@@ -94,7 +94,7 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_EVENT_FILTER;
     }
 }

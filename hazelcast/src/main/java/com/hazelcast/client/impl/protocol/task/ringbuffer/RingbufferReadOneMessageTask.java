@@ -26,7 +26,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 

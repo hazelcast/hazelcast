@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
@@ -54,7 +54,7 @@ public class SetReadCursorOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         this.result = setReadCursor();
     }
 
@@ -96,7 +96,7 @@ public class SetReadCursorOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_READ_CURSOR;
     }
 }

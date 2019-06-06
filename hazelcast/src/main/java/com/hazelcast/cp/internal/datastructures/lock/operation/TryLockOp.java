@@ -94,7 +94,7 @@ public class TryLockOp extends AbstractLockOp implements CallerAware, Indetermin
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.TRY_LOCK_OP;
     }
 

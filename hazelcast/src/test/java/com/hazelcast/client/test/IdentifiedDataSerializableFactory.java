@@ -23,7 +23,6 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,7 +53,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
             return FACTORY_ID;
         }
 
-        public int getId() {
+        public int getClassId() {
             return 1;
         }
 
@@ -112,7 +111,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
             return FACTORY_ID;
         }
 
-        public int getId() {
+        public int getClassId() {
             return 2;
         }
 
@@ -125,7 +124,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
     }
 
-    class KeyMultiplier implements IdentifiedDataSerializable, EntryProcessor<Integer, Employee> {
+    class KeyMultiplier implements IdentifiedDataSerializable, EntryProcessor<Integer, Employee, Integer> {
         private int multiplier;
 
         @Override
@@ -134,7 +133,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 3;
         }
 
@@ -151,7 +150,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public Object process(Map.Entry<Integer, Employee> entry) {
+        public Integer process(Map.Entry<Integer, Employee> entry) {
             if (null == entry.getValue()) {
                 return -1;
             }
@@ -159,13 +158,13 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public EntryBackupProcessor<Integer, Employee> getBackupProcessor() {
+        public EntryProcessor<Integer, Employee, Integer> getBackupProcessor() {
             return null;
         }
     }
 
     class WaitMultiplierProcessor
-            implements IdentifiedDataSerializable, EntryProcessor<Integer, Employee> {
+            implements IdentifiedDataSerializable, EntryProcessor<Integer, Employee, Integer> {
         private int waiTimeInMillis;
         private int multiplier;
 
@@ -175,7 +174,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 8;
         }
 
@@ -194,7 +193,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public Object process(Map.Entry<Integer, Employee> entry) {
+        public Integer process(Map.Entry<Integer, Employee> entry) {
             try {
                 Thread.sleep(waiTimeInMillis);
             } catch (InterruptedException e) {
@@ -207,7 +206,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public EntryBackupProcessor<Integer, Employee> getBackupProcessor() {
+        public EntryProcessor<Integer, Employee, Integer> getBackupProcessor() {
             return null;
         }
     }
@@ -219,12 +218,12 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 7;
         }
 
         @Override
-        public Object process(Map.Entry<Integer, Employee> entry) {
+        public Integer process(Map.Entry<Integer, Employee> entry) {
             if (null == entry.getValue()) {
                 return null;
             }
@@ -241,7 +240,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 9;
         }
 
@@ -270,7 +269,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 4;
         }
 
@@ -328,7 +327,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     class EmployeeEntryKeyComparator extends EmployeeEntryComparator {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 5;
         }
 
@@ -358,14 +357,14 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
     }
 
     class UTFValueValidatorProcessor
-            implements EntryProcessor<String, String>, IdentifiedDataSerializable {
+            implements EntryProcessor<String, String, Boolean>, IdentifiedDataSerializable {
         @Override
-        public Object process(Map.Entry<String, String> entry) {
+        public Boolean process(Map.Entry<String, String> entry) {
             return entry.getKey().equals("myutfkey") && entry.getValue().equals("xyzä123 イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム");
         }
 
         @Override
-        public EntryBackupProcessor<String, String> getBackupProcessor() {
+        public EntryProcessor<String, String, Boolean> getBackupProcessor() {
             return null;
         }
 
@@ -375,7 +374,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 9;
         }
 
@@ -431,7 +430,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 6;
         }
 
@@ -455,7 +454,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 10;
         }
 
@@ -472,14 +471,14 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     class Derived1DataSerializable extends BaseDataSerializable {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 11;
         }
     }
 
     class Derived2DataSerializable extends Derived1DataSerializable {
         @Override
-        public int getId() {
+        public int getClassId() {
             return 12;
         }
     }
@@ -519,7 +518,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 13;
         }
 

@@ -23,7 +23,7 @@ import java.util.EventObject;
 
 /**
  * An Event that is send when a {@link Quorum} changes.
- * <p/>
+ * <p>
  * Hold member list, quorum threshold and the quorum result.
  */
 public class QuorumEvent extends EventObject {
@@ -51,7 +51,7 @@ public class QuorumEvent extends EventObject {
     /**
      * Returns the snapshot of member list at the time quorum happened
      *
-     * @return Collection<Member> collection of members
+     * @return {@code Collection&lt;Member&gt;} collection of members
      */
     public Collection<Member> getCurrentMembers() {
         return currentMembers;

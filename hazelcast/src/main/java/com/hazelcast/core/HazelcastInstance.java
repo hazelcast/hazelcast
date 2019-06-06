@@ -17,18 +17,21 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -112,18 +115,6 @@ public interface HazelcastInstance {
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
 
     /**
-     * Creates or returns the job tracker instance with the specified name.
-     *
-     * @param name name of the job tracker
-     * @return job tracker instance with the specified name
-     * @since 3.2
-     * @deprecated MapReduce is deprecated and will be removed in 4.0.
-     * For map aggregations, you can use {@link com.hazelcast.aggregation.Aggregator} on IMap.
-     * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
-     */
-    JobTracker getJobTracker(String name);
-
-    /**
      * Creates or returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
@@ -137,7 +128,7 @@ public interface HazelcastInstance {
      * So keys are considered equals cluster-wide as long as
      * they are serialized to the same byte array such as String, long,
      * Integer.
-     * <p/>
+     * <p>
      * Locks are fail-safe. If a member holds a lock and some of the
      * members go down, the cluster will keep your locks safe and available.
      * Moreover, when a member leaves the cluster, all the locks acquired
@@ -203,9 +194,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the distributed executor service for the given name.
-     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * Executor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -216,9 +206,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the durable executor service for the given name.
-     * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * DurableExecutor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -267,9 +256,9 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
-     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
-     * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
+     * between <code>0</code> and <code>Long.MAX_VALUE</code>. ID generation occurs almost at the speed of
+     * local <code>AtomicLong.incrementAndGet()</code>. Generated IDs are unique during the life
+     * cycle of the cluster. If the entire cluster is restarted, IDs start from <code>0</code> again.
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
@@ -304,7 +293,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
+     * implementation of <code>java.util.concurrent.atomic.AtomicLong</code>.
      *
      * @param name name of the {@link IAtomicLong} proxy
      * @return IAtomicLong proxy for the given name
@@ -317,7 +306,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
+     * implementation of <code>java.util.concurrent.atomic.AtomicReference</code>.
      *
      * @param name name of the {@link IAtomicReference} proxy
      * @return {@link IAtomicReference} proxy for the given name
@@ -330,7 +319,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
-     * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
+     * implementation of <code>java.util.concurrent.CountDownLatch</code>.
      *
      * @param name name of the {@link ICountDownLatch} proxy
      * @return {@link ICountDownLatch} proxy for the given name
@@ -343,7 +332,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
-     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     * implementation of <code>java.util.concurrent.Semaphore</code>.
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
@@ -511,7 +500,7 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
-     * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * ScheduledExecutor service enables you to schedule your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
      *
      * @param name name of the executor service

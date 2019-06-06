@@ -168,7 +168,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.MULTI_MAP_MERGING_ENTRY;
     }
 

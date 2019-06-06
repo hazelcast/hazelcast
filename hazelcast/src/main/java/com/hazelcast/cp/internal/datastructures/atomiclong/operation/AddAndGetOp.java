@@ -65,7 +65,7 @@ public class AddAndGetOp extends AbstractAtomicLongOp implements IndeterminateOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.ADD_AND_GET_OP;
     }
 

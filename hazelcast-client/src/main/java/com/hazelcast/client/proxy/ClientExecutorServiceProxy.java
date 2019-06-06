@@ -135,9 +135,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
         Map<Member, Future<T>> futureMap = new HashMap<>(members.size());
+        Data taskData = toData(task);
         for (Member member : members) {
             final Address memberAddress = getMemberAddress(member);
-            Future<T> f = submitToTargetInternal(toData(task), memberAddress, null, true);
+            Future<T> f = submitToTargetInternal(taskData, memberAddress, null, true);
             futureMap.put(member, f);
         }
         return futureMap;
@@ -160,8 +161,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
         final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         Map<Member, Future<T>> futureMap = new HashMap<>(memberList.size());
+        Data taskData = toData(task);
         for (Member m : memberList) {
-            Future<T> f = submitToTargetInternal(toData(task), m.getAddress(), null, true);
+            Future<T> f = submitToTargetInternal(taskData, m.getAddress(), null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -195,10 +197,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(members.size(), callback);
+        Data taskData = toData(task);
         for (Member member : members) {
             final ExecutionCallbackWrapper<T> executionCallback =
                     new ExecutionCallbackWrapper<T>(multiExecutionCallbackWrapper, member);
-            submitToMember(task, member, executionCallback);
+            submitToTargetInternal(taskData, getMemberAddress(member), executionCallback);
         }
     }
 

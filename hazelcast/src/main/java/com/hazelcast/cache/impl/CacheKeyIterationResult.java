@@ -60,7 +60,7 @@ public class CacheKeyIterationResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.KEY_ITERATION_RESULT;
     }
 

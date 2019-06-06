@@ -190,7 +190,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_RESULT_SET;
     }
 

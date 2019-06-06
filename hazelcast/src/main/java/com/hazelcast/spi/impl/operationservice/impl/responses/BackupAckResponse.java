@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
 
 /**
- * The {Response} for a {@link com.hazelcast.spi.BackupOperation}. So when a operation like
+ * The {Response} for a {@link BackupOperation}. So when a operation like
  * Map.put is done, backup operations are send to the backup partitions. For the initial
  * Map.put to complete, the {@link com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse} needs to return,
  * but also the {@link BackupAckResponse} to make sure that the change
@@ -38,7 +40,7 @@ public final class BackupAckResponse extends Response {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return BACKUP_ACK_RESPONSE;
     }
 

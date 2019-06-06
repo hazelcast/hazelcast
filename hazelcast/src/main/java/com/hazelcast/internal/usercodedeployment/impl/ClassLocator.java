@@ -224,7 +224,7 @@ public final class ClassLocator {
         ClassData classData;
         boolean interrupted = false;
         for (Member member : cluster.getMembers()) {
-            if (isCandidateMember(member)) {
+            if (!isCandidateMember(member)) {
                 continue;
             }
             try {
@@ -236,7 +236,7 @@ public final class ClassLocator {
                     return classData;
                 }
             } catch (InterruptedException e) {
-                // question: should we give-up on loading at this point and simply throw ClassNotFoundException?
+                // question: should we give up on loading at this point and simply throw ClassNotFoundException?
                 interrupted = true;
             } catch (Exception e) {
                 if (logger.isFinestEnabled()) {
@@ -262,13 +262,8 @@ public final class ClassLocator {
     }
 
     private boolean isCandidateMember(Member member) {
-        if (member.localMember()) {
-            return true;
-        }
-        if (!memberFilter.accept(member)) {
-            return true;
-        }
-        return false;
+        return !member.localMember()
+                && memberFilter.accept(member);
     }
 
     public Class<?> findLoadedClass(String name) {

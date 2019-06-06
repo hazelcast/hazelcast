@@ -26,8 +26,8 @@ import com.hazelcast.internal.json.RandomPrint;
 import com.hazelcast.internal.json.WriterConfig;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,8 +62,8 @@ import static org.junit.Assert.assertNull;
  * tests.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
 
     @Parameters(name = "InMemoryFormat: {0}")

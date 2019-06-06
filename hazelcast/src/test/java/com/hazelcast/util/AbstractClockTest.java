@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -35,7 +36,7 @@ import static org.junit.Assert.assertEquals;
  * Use {@link #shutdownIsolatedNode()} and {@link #resetClock()} to stop the node and cleanup the properties.
  * <p>
  * Implementations of this class have to run in full isolation, so {@link com.hazelcast.test.HazelcastSerialClassRunner} and
- * no usage of {@link com.hazelcast.test.annotation.ParallelTest}.
+ * no usage of {@link ParallelJVMTest}.
  */
 public abstract class AbstractClockTest extends HazelcastTestSupport {
 

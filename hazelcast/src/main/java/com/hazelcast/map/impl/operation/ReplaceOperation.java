@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public class ReplaceOperation extends BasePutOperation implements MutatingOperation {
 
@@ -32,7 +32,7 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Object oldValue = recordStore.replace(dataKey, dataValue);
         this.oldValue = mapServiceContext.toData(oldValue);
         successful = oldValue != null;
@@ -44,9 +44,9 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -57,7 +57,7 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.REPLACE;
     }
 }

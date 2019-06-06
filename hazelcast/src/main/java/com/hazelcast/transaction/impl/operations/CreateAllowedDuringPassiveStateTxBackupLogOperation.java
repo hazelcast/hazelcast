@@ -40,7 +40,7 @@ public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
     }
 

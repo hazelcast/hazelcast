@@ -63,7 +63,7 @@ public class CompleteRaftGroupMembershipChangesOp extends MetadataRaftGroupOp im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.COMPLETE_RAFT_GROUP_MEMBERSHIP_CHANGES_OP;
     }
 

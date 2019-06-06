@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class MergeBackupOperation extends AbstractAtomicLongOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MERGE_BACKUP;
     }
 

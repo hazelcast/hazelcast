@@ -123,7 +123,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.APPLY_OP;
     }
 

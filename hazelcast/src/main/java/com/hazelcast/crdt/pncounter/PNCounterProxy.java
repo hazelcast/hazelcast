@@ -25,16 +25,15 @@ import com.hazelcast.crdt.pncounter.operations.AddOperation;
 import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -156,10 +155,6 @@ public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> 
      * @see ClusterService#getClusterVersion()
      */
     private long invoke(Operation operation) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-            throw new UnsupportedOperationException(
-                    "PNCounter operations are not supported when cluster version is less than 3.10");
-        }
         return invokeInternal(operation, EMPTY_ADDRESS_LIST, null);
     }
 

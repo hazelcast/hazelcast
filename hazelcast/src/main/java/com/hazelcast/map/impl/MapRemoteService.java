@@ -50,7 +50,8 @@ class MapRemoteService implements RemoteService {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
         MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
-        checkMapConfig(mapConfig, mergePolicyProvider);
+        checkMapConfig(mapConfig, config.getNativeMemoryConfig(), mergePolicyProvider,
+                mapServiceContext.getNodeEngine().getProperties());
 
         Object mergePolicy = mergePolicyProvider.getMergePolicy(mapConfig.getMergePolicyConfig().getPolicy());
         checkMergePolicySupportsInMemoryFormat(name, mergePolicy, mapConfig.getInMemoryFormat(),

@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
+import com.hazelcast.spi.impl.operationservice.QuorumCheckAwareOperation;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -92,7 +92,7 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.UNLOCK_IF_LEASE_EXPIRED;
     }
 

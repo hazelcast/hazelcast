@@ -21,9 +21,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.BitSet;
@@ -33,11 +30,11 @@ import java.util.Map;
 
 /**
  * The OperationService is responsible for executing operations.
- * <p/>
+ * <p>
  * A single operation can be executed locally using {@link #run(Operation)}
  * and {@link #execute(Operation)}. Or it can executed remotely using one of
  * the send methods.
- * <p/>
+ * <p>
  * It also is possible to execute multiple operation on multiple partitions
  * using one of the invoke methods.
  */
@@ -226,7 +223,7 @@ public interface OperationService {
 
     /**
      * Executes an operation remotely.
-     * <p/>
+     * <p>
      * It isn't allowed
      *
      * @param op     the operation to send and execute.

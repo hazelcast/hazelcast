@@ -30,7 +30,7 @@ import java.io.IOException;
  * {@link EventData} which is used only for the subscriber end of a query cache
  * and only for entry based events.
  * For this reason, it is not sent over the wire and is used locally to query cache.
- * <p/>
+ * <p>
  * Throws {@link UnsupportedOperationException} if one tries to serialize an instance of this class.
  *
  * @param <K> the key type.

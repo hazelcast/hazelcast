@@ -72,7 +72,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.MEMBERSHIP_CHANGE_REPLICATE_OP;
     }
 

@@ -60,7 +60,7 @@ public class NotifyTermChangeOp extends RaftOp implements IdentifiedDataSerializ
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.NOTIFY_TERM_CHANGE_OP;
     }
 

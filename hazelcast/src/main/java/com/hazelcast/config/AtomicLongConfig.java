@@ -48,7 +48,7 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ATOMIC_LONG_CONFIG;
     }
 

@@ -27,7 +27,7 @@ import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
@@ -40,7 +40,7 @@ import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalMapEvent> {
 
     private static final String NON_EVICTING_CACHE = "cache";
@@ -104,12 +104,6 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
     @Override
     @Ignore
     public void receiveLoadedEventsWhenLoadAll() {
-        // not tested
-    }
-
-    @Override
-    @Ignore
-    public void receiveAddedEventsWhenLoadAll() {
         // not tested
     }
 

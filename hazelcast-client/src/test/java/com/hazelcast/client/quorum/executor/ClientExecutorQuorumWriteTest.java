@@ -23,7 +23,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.executor.ExecutorQuorumWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -35,7 +35,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientExecutorQuorumWriteTest extends ExecutorQuorumWriteTest {
 
     private static PartitionedClusterClients clients;

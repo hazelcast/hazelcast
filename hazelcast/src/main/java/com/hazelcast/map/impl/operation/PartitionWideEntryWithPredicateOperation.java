@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -44,13 +44,21 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        PartitionWideEntryWithPredicateBackupOperation backupOperation = null;
-        if (backupProcessor != null) {
-            backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (backupProcessor == null) {
+            return null;
         }
-        return backupOperation;
+        if (keysFromIndex != null) {
+            // if we used index we leverage it for the backup too
+            return new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
+        } else {
+            // if no index used we will do a full partition-scan on backup too
+            return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, getPredicate());
+        }
     }
 
     @Override
@@ -73,7 +81,7 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY;
     }
 }

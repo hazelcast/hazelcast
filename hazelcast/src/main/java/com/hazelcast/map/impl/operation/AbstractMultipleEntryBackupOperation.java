@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicate;
 
 /**
@@ -25,12 +25,12 @@ import com.hazelcast.query.Predicate;
  */
 abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
 
-    EntryBackupProcessor backupProcessor;
+    EntryProcessor backupProcessor;
 
     AbstractMultipleEntryBackupOperation() {
     }
 
-    AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    AbstractMultipleEntryBackupOperation(String name, EntryProcessor backupProcessor) {
         super(name);
         this.backupProcessor = backupProcessor;
     }

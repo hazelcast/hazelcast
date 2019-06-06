@@ -128,7 +128,7 @@ public class RaftSemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.RAFT_SEMAPHORE_REGISTRY;
     }
 }

@@ -63,7 +63,7 @@ public final class SingleAttributeProjection<I, O> extends Projection<I, O> impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ProjectionDataSerializerHook.SINGLE_ATTRIBUTE;
     }
 

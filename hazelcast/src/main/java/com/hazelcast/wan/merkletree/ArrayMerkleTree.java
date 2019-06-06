@@ -87,7 +87,7 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     /**
      * Footprint holds the total memory footprint of the Merkle tree and
      * the leaf data blocks.
-     * <p/>
+     * <p>
      * Note that this field leverages a single-writer and a non-atomic
      * operation is executed on the field. See {@link #adjustFootprintWithLeafKeySetChange}
      */

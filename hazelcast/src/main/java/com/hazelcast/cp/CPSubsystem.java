@@ -27,7 +27,7 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
@@ -52,7 +52,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * Data structures in the CP subsystem run in {@link CPGroup}s. A CP group
  * consists of an odd number of {@link CPMember}s between 3 and 7.
  * Each CP group independently runs the Raft consensus algorithm. Operations
- * are committed & executed only after they are successfully replicated to
+ * are committed &amp; executed only after they are successfully replicated to
  * the majority of the CP members in a CP group. For instance, in a CP group of
  * 5 CP members, operations are committed when they are replicated to at least
  * 3 CP members. The size of CP groups are specified via
@@ -154,7 +154,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link IAtomicLong} instance created on the CP
      * subsystem. Hazelcast's {@link IAtomicLong} is a distributed version of
-     * <tt>java.util.concurrent.atomic.AtomicLong</tt>. If no group name is
+     * <code>java.util.concurrent.atomic.AtomicLong</code>. If no group name is
      * given within the "name" parameter, then the {@link IAtomicLong} instance
      * will be created on the DEFAULT CP group. If a group name is given, like
      * {@code .getAtomicLong("myLong@group1")}, the given group will be
@@ -176,7 +176,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link IAtomicReference} instance created on
      * the CP subsystem. Hazelcast's {@link IAtomicReference} is a distributed
-     * version of <tt>java.util.concurrent.atomic.AtomicLong</tt>. If no group
+     * version of <code>java.util.concurrent.atomic.AtomicLong</code>. If no group
      * name is given within the "name" parameter, then
      * the {@link IAtomicReference} instance will be created on the DEFAULT CP
      * group. If a group name is given, like
@@ -199,7 +199,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link ICountDownLatch} instance created on
      * the CP subsystem. Hazelcast's {@link ICountDownLatch} is a distributed
-     * version of <tt>java.util.concurrent.CountDownLatch</tt>. If no group
+     * version of <code>java.util.concurrent.CountDownLatch</code>. If no group
      * name is given within the "name" parameter, then
      * the {@link ICountDownLatch} instance will be created on the DEFAULT CP
      * group. If a group name is given, like
@@ -222,7 +222,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link FencedLock} instance created on the CP
      * subsystem. Hazelcast's {@link FencedLock} is a distributed version of
-     * <tt>java.util.concurrent.locks.Lock</tt>. If no group name is given
+     * <code>java.util.concurrent.locks.Lock</code>. If no group name is given
      * within the "name" parameter, then the {@link FencedLock} instance will
      * be created on the DEFAULT CP group. If a group name is given, like
      * {@code .getLock("myLock@group1")}, the given group will be initialized
@@ -246,7 +246,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link ISemaphore} instance created on the CP
      * subsystem. Hazelcast's {@link ISemaphore} is a distributed version of
-     * <tt>java.util.concurrent.Semaphore</tt>. If no group name is given
+     * <code>java.util.concurrent.Semaphore</code>. If no group name is given
      * within the "name" parameter, then the {@link ISemaphore} instance will
      * be created on the DEFAULT CP group. If a group name is given, like
      * {@code .getSemaphore("mySemaphore@group1")}, the given group will be

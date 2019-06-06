@@ -24,8 +24,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -95,7 +95,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CACHE_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -222,7 +222,7 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CACHE_INVALIDATION_METADATA;
     }
 

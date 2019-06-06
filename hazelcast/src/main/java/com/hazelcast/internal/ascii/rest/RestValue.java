@@ -98,7 +98,7 @@ public class RestValue implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TextProtocolsDataSerializerHook.REST_VALUE;
     }
 }

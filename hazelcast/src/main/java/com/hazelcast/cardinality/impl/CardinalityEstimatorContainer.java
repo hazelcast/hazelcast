@@ -125,7 +125,7 @@ public class CardinalityEstimatorContainer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.CARDINALITY_EST_CONTAINER;
     }
 

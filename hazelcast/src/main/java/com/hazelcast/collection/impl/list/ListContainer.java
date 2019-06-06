@@ -203,7 +203,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_CONTAINER;
     }
 }

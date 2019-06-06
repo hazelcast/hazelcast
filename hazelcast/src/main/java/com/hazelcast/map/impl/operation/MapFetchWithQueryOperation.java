@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -55,7 +55,7 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         final QueryRunner runner = mapServiceContext.getMapQueryRunner(query.getMapName());
         response = runner.runPartitionScanQueryOnPartitionChunk(query, getPartitionId(), lastTableIndex, fetchSize);
     }
@@ -82,7 +82,7 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_WITH_QUERY;
     }
 }

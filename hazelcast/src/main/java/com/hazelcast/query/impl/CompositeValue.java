@@ -53,7 +53,7 @@ import static java.lang.Integer.signum;
  * index key space: (-inf, null] and (null, +inf). The first one is used for the
  * null equality queries and the second one is used for the regular equality and
  * range queries. This separation is needed to ensure that null values are
- * excluded from the regular range queries like "a < 0".
+ * excluded from the regular range queries like "a &lt; 0".
  * <p>
  * A typical ordered index key space layout for the attributes a, b and c looks
  * like this:
@@ -70,19 +70,19 @@ import static java.lang.Integer.signum;
  * an ordered index may be reduced to a range query:
  * <pre>
  * a = null and b = null and c = null
- * [null, null, null] <= [a, b, c] <= [null, null, null]
+ * [null, null, null] &lt;= [a, b, c] &lt;= [null, null, null]
  *
  * a = 2
- * [2, -inf, -inf] < [a, b, c] < [2, +inf, +inf]
+ * [2, -inf, -inf] &lt; [a, b, c] &lt; [2, +inf, +inf]
  *
- * a = 1 and b = 'b' and c > 0.0
- * [1, 'b', 0.0] < [a, b, c] < [1, 'b', +inf]
+ * a = 1 and b = 'b' and c &gt; 0.0
+ * [1, 'b', 0.0] &lt; [a, b, c] &lt; [1, 'b', +inf]
  *
- * a < 2
- * [null, -inf, -inf] < [a, b, c] < [2, -inf, -inf]
+ * a &lt; 2
+ * [null, -inf, -inf] &lt; [a, b, c] &lt; [2, -inf, -inf]
  *
- * a = 1 and b >= 'a' and b < 'z'
- * [1, 'a', -inf] < [a, b, c] < [1, 'z', -inf]
+ * a = 1 and b &gt;= 'a' and b &lt; 'z'
+ * [1, 'a', -inf] &lt; [a, b, c] &lt; [1, 'z', -inf]
  * </pre>
  * The later two examples may look counterintuitive at first, but consider what
  * is the first key that is greater than any other key having [1, 'a'] as a
@@ -194,7 +194,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.COMPOSITE_VALUE;
     }
 
@@ -235,7 +235,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return PredicateDataSerializerHook.NEGATIVE_INFINITY;
         }
 
@@ -274,7 +274,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return PredicateDataSerializerHook.POSITIVE_INFINITY;
         }
 

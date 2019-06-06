@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains Cardinality Estimator functionality for Hazelcast.<br/>
+ * <p>This package contains Cardinality Estimator functionality for Hazelcast.<br>
  *
  * @since 3.8
  */

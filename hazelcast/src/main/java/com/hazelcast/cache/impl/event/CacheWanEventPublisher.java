@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * This interface provides methods to publish wan replication events

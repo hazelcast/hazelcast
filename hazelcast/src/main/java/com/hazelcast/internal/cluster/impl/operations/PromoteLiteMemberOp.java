@@ -55,7 +55,7 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
     }
 }

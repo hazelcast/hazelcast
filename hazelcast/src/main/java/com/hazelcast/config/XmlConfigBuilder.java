@@ -94,11 +94,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
     /**
      * Constructs a {@link XmlConfigBuilder} that loads the configuration
      * with the provided {@link XmlConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link XmlConfigLocator} is {@code null}, a new
      * instance is created and the config is located in every possible
      * places. For these places, please see {@link XmlConfigLocator}.
-     * <p/>
+     * <p>
      * If the provided {@link XmlConfigLocator} is not {@code null}, it
      * is expected that it already located the configuration XML to load
      * from. No further attempt to locate the configuration XML is made

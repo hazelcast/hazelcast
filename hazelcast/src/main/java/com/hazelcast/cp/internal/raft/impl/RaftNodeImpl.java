@@ -312,10 +312,9 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     /**
-     * Returns true if a new entry with the operation is currently allowed to
-     * be replicated. This method can be invoked only when the local Raft node
-     * is the leader.
-     * <p/>
+     * Returns true if a new entry with the operation is allowed to be replicated.
+     * This method can be invoked only when the local Raft node is the leader.
+     * <p>
      * Replication is not allowed, when;
      * <ul>
      * <li>Node is terminating, terminated or stepped down. See {@link RaftNodeStatus}.</li>
@@ -362,7 +361,7 @@ public class RaftNodeImpl implements RaftNode {
      * Returns true if a new query is currently allowed to be executed without
      * appending to the Raft log. This method can be invoked only when
      * the local Raft node is the leader.
-     * <p/>
+     * <p>
      * A new linearizable query execution is not allowed, when;
      * <ul>
      * <li>Node is terminating, terminated or stepped down.

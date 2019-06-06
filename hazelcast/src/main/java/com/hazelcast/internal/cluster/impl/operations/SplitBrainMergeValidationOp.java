@@ -35,7 +35,7 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 
 /**
- * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
+ * Validate whether clusters may merge to recover from a split brain, based on configuration &amp; cluster version.
  */
 public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
@@ -187,7 +187,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
     }
 }

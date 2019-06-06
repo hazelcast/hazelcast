@@ -49,6 +49,8 @@ public class VectorClock implements IdentifiedDataSerializable {
      * Returns logical timestamp for given {@code replicaId}.
      * This method may be called from different threads and the result reflects
      * the latest update on the vector clock.
+     * @param replicaId the replica id.
+     * @return logical timestamp for given {@code replicaId}.
      */
     public Long getTimestampForReplica(String replicaId) {
         return replicaTimestamps.get(replicaId);
@@ -58,6 +60,8 @@ public class VectorClock implements IdentifiedDataSerializable {
      * Sets the logical timestamp for the given {@code replicaId}.
      * This method is not thread safe and concurrent access must be synchronized
      * externally.
+     * @param replicaId the replica id.
+     * @param timestamp the timestamp.
      */
     public void setReplicaTimestamp(String replicaId, long timestamp) {
         replicaTimestamps.put(replicaId, timestamp);
@@ -68,6 +72,7 @@ public class VectorClock implements IdentifiedDataSerializable {
      * the logical timestamps for each replica.
      * This method is not thread safe and concurrent access must be synchronized
      * externally.
+     * @param other the vector clock to merge into this one.
      */
     public void merge(VectorClock other) {
         for (Entry<String, Long> entry : other.replicaTimestamps.entrySet()) {
@@ -86,6 +91,9 @@ public class VectorClock implements IdentifiedDataSerializable {
      * equal to, greater than or concurrent to this vector clock.
      * This method may be called from different threads and the result reflects
      * the latest update on the vector clock.
+     * @param other the vector clock to check against.
+     * @return {@code true} if this vector clock is causally strictly after the
+     * provided vector clock.
      */
     public boolean isAfter(VectorClock other) {
         boolean anyTimestampGreater = false;
@@ -109,12 +117,16 @@ public class VectorClock implements IdentifiedDataSerializable {
      * timestamps for any replica).
      * This method may be called from different threads and the result reflects
      * the latest update on the vector clock.
+     * @return {@code true} if this vector clock is empty.
      */
     public boolean isEmpty() {
         return this.replicaTimestamps.isEmpty();
     }
 
-    /** Returns a set of replica logical timestamps for this vector clock. */
+    /**
+     * Returns a set of replica logical timestamps for this vector clock.
+     * @return a set of replica logical timestamps.
+     */
     public Set<Entry<String, Long>> entrySet() {
         return replicaTimestamps.entrySet();
     }
@@ -170,7 +182,7 @@ public class VectorClock implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.VECTOR_CLOCK;
     }
 }

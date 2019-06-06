@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -51,7 +51,7 @@ public class ApplyOperation<R> extends AbstractAtomicLongOperation implements Mu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return APPLY;
     }
 

@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
@@ -71,7 +71,7 @@ public class DistributedObjectDestroyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DIST_OBJECT_DESTROY;
     }
 }

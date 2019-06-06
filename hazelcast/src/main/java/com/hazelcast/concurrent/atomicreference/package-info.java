@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains IAtomicReferece functionality for Hazelcast.<br/>
+ * <p>This package contains IAtomicReferece functionality for Hazelcast.<br>
  * The IAtomicReference is the distributed version of the {@link java.util.concurrent.atomic.AtomicReference}.
  *
  * @since 3.2

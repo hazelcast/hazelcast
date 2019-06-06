@@ -44,7 +44,6 @@ import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
  *      <li>Unaligned memory access is not supported for CAS operations. </li>
  *      <li>Unaligned memory access is not supported for ordered writes. </li>
  * </ul>
- * </p>
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class AlignmentAwareMemoryAccessor extends UnsafeBasedMemoryAccessor {

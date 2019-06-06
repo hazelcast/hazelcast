@@ -148,7 +148,7 @@ public class MembersUpdateOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
     }
 

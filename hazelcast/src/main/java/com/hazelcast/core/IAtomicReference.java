@@ -28,9 +28,9 @@ import com.hazelcast.cp.CPSubsystem;
  * Async methods immediately return an {@link ICompletableFuture} from which
  * the operation's result can be obtained either in a blocking manner or by
  * registering a callback to be executed upon completion. For example:
- * <pre><code>
- * ICompletableFuture<E> future = atomicRef.getAsync();
- * future.andThen(new ExecutionCallback<E>() {
+ * <pre>
+ * ICompletableFuture&lt;E&gt; future = atomicRef.getAsync();
+ * future.andThen(new ExecutionCallback&lt;E&gt;() {
  *     void onResponse(Long response) {
  *         // do something with the result
  *     }
@@ -39,7 +39,7 @@ import com.hazelcast.cp.CPSubsystem;
  *         // handle failure
  *     }
  * });
- * </code></pre>
+ * </pre>
  * As of version 3.12, Hazelcast offers 2 different {@link IAtomicReference}
  * impls. Behaviour of {@link IAtomicReference} under failure scenarios,
  * including network partitions, depends on the impl. The first impl is

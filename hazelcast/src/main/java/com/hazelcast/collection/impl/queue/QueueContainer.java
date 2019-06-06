@@ -682,8 +682,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * iterates all items, checks equality with data
+     * Iterates all items, checks equality with data
      * This method does not trigger store load.
+     * @param data the data to remove.
+     * @return the item ID of the removed item or {@code -1} if no matching item was found.
      */
     public long remove(Data data) {
         Iterator<QueueItem> iterator = getItemQueue().iterator();
@@ -1095,7 +1097,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_CONTAINER;
     }
 

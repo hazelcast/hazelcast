@@ -36,7 +36,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 /**
  * Used to support deprecated {@link com.hazelcast.core.IMap IMap} listener related methods
  * such as {@link com.hazelcast.core.IMap#addLocalEntryListener(EntryListener)}.
- * <p/>
+ * <p>
  * This is a static factory class which creates various
  * {@link com.hazelcast.map.impl.ListenerAdapter} implementations.
  */

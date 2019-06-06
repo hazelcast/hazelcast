@@ -202,7 +202,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EXECUTOR_CONFIG;
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables notifying about values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ * Enables notifying about values extracted in a {@link com.hazelcast.query.extractor.ValueExtractor}
  *
  * @param <T> type of the extracted value
  */

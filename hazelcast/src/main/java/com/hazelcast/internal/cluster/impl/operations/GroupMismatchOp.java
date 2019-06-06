@@ -45,7 +45,7 @@ public class GroupMismatchOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.GROUP_MISMATCH;
     }
 }

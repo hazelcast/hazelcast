@@ -28,7 +28,7 @@ import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -39,7 +39,7 @@ import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private static final int NODE_COUNT = 4;
@@ -401,13 +401,13 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             RejectMigrationOnComplete destinationListener = new RejectMigrationOnComplete(destinationInstance);
             InternalPartitionServiceImpl destinationPartitionService
                     = (InternalPartitionServiceImpl) getPartitionService(destinationInstance);
-            destinationPartitionService.getMigrationManager().setInternalMigrationListener(destinationListener);
+            destinationPartitionService.getMigrationManager().setMigrationInterceptor(destinationListener);
         }
 
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
 
         CountDownMigrationRollbackOnMaster masterListener = new CountDownMigrationRollbackOnMaster(migration);
-        partitionService.getMigrationManager().setInternalMigrationListener(masterListener);
+        partitionService.getMigrationManager().setMigrationInterceptor(masterListener);
         partitionService.getMigrationManager().scheduleMigration(migration);
         assertOpenEventually(masterListener.latch);
     }
@@ -582,7 +582,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         return getNodeEngineImpl(factory.getInstance(address)).getService(TestMigrationAwareService.SERVICE_NAME);
     }
 
-    private static class RejectMigrationOnComplete extends InternalMigrationListener {
+    private static class RejectMigrationOnComplete implements MigrationInterceptor {
 
         private final HazelcastInstance instance;
 
@@ -597,7 +597,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         }
     }
 
-    private class CountDownMigrationRollbackOnMaster extends InternalMigrationListener {
+    private class CountDownMigrationRollbackOnMaster implements MigrationInterceptor {
 
         private final CountDownLatch latch = new CountDownLatch(1);
 

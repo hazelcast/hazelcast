@@ -555,7 +555,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.NEAR_CACHE_CONFIG;
     }
 

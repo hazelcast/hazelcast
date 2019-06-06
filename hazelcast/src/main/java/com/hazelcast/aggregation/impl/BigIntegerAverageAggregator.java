@@ -67,7 +67,7 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.BIG_INT_AVG;
     }
 

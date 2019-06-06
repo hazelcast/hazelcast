@@ -38,7 +38,7 @@ import static com.hazelcast.util.SetUtil.singletonPartitionIdSet;
 /**
  * Runs query operations in the calling thread (thus blocking it)
  * <p>
- * Used by query operations only: QueryOperation & QueryPartitionOperation
+ * Used by query operations only: QueryOperation &amp; QueryPartitionOperation
  * Should not be used by proxies or any other query related objects.
  */
 public class QueryRunner {
@@ -199,16 +199,6 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, partitions);
         }
 
-        return result;
-    }
-
-    Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        PartitionIdSet partitions = singletonPartitionIdSet(partitionCount, partitionId);
-        Result result = createResult(query, partitions);
-        partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
-        result.completeConstruction(partitions);
         return result;
     }
 

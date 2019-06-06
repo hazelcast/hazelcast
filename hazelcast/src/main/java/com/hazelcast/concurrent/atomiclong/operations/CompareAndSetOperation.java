@@ -19,8 +19,8 @@ package com.hazelcast.concurrent.atomiclong.operations;
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -59,7 +59,7 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COMPARE_AND_SET;
     }
 

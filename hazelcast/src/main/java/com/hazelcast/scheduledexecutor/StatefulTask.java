@@ -20,13 +20,13 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * An interface to provide means for saving & loading state for {@link Runnable} and {@link java.util.concurrent.Callable} tasks
- * scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor will be able
- * to handle state of the task among the replicas in an event of Migration or Node failure.
+ * An interface to provide means for saving &amp; loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
+ * tasks scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor will
+ * be able to handle state of the task among the replicas in an event of Migration or Node failure.
  *
  * Example:
  * <pre>
- * public class CleanUpTask implements Runnable, StatefulTask<String, Integer>, HazelcastInstanceAware {
+ * public class CleanUpTask implements Runnable, StatefulTask&lt;String, Integer&gt;, HazelcastInstanceAware {
  *
  *      private transient HazelcastInstance instance;
  *
@@ -43,11 +43,11 @@ import java.util.concurrent.Callable;
  *      private int cleanUpInvalidRecordsAndReturnCount() {
  *      }
  *
- *      public void save(Map<String, Integer> snapshot) {
+ *      public void save(Map&lt;String, Integer&gt; snapshot) {
  *          snapshot.put("recordsDeletedSoFar", recordsDeletedSoFar);
  *      }
  *
- *      public void load(Map<String, Integer> snapshot) {
+ *      public void load(Map&lt;String, Integer&gt; snapshot) {
  *          if (state.containsKey("recordsDeletedSoFar")) {
  *              recordsDeletedSoFar = snapshot.get("recordsDeletedSoFar");
  *          }
@@ -80,7 +80,7 @@ public interface StatefulTask<K, V> {
      * lifecycle in a single member, before invocation of {@link Runnable#run()} or {@link Callable#call()} to setup task's state
      * as published from the previous owner of the task in the cluster.
      *
-     * <tt>load</tt> will not be called if the snapshot is empty.
+     * <code>load</code> will not be called if the snapshot is empty.
      *
      * @param snapshot The {@link Map} responsible for providing a snapshot of the task's state.
      */

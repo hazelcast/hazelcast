@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
@@ -70,9 +70,10 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         return false;
     }
 
-    public void afterRun() {
+    @Override
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -131,7 +132,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_DELETE;
     }
 }

@@ -32,15 +32,17 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.cp.internal.operation.RaftReplicateOp.CALLER_RUNS_EXECUTOR;
 
 /**
  * The operation that passes a query to leader or a follower of a Raft group.
  * The given query can run locally on leader or a follower, or can be committed
  * to the Raft group, depending on query policy.
- * <p/>
+ * <p>
  * Please note that the given query can be committed twice if the leader
  * commits the query but fails before sending the response, therefore the query
  * operation is expected to have no side-effect.
@@ -82,7 +84,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             ((RaftNodeAware) op).setRaftNode(raftNode);
         }
 
-        raftNode.query(op, queryPolicy).andThen(this);
+        raftNode.query(op, queryPolicy).andThen(this, CALLER_RUNS_EXECUTOR);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DEFAULT_RAFT_GROUP_QUERY_OP;
     }
 

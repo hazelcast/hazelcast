@@ -39,7 +39,7 @@ public class CollectionMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.COLLECTION_MERGING_VALUE;
     }
 }

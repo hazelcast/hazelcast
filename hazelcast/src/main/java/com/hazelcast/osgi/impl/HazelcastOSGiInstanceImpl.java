@@ -30,13 +30,13 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
@@ -47,7 +47,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.quorum.QuorumService;
@@ -113,11 +112,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return delegatedInstance.getReplicatedMap(name);
-    }
-
-    @Override
-    public JobTracker getJobTracker(String name) {
-        return delegatedInstance.getJobTracker(name);
     }
 
     @Override

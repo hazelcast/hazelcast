@@ -31,7 +31,7 @@ public final class QuickMath {
     /**
      * Return true if input argument is power of two.
      * Input has to be a a positive integer.
-     * <p/>
+     * <p>
      * Result is undefined for zero or negative integers.
      *
      * @param x test <code>x</code> to see if it is a power of two
@@ -69,9 +69,9 @@ public final class QuickMath {
 
     /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
-     * <p/>
+     * <p>
      * If the value is &lt;= 0 then 1 will be returned.
-     * <p/>
+     * <p>
      * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
      *
      * @param value from which to search for next power of 2
@@ -83,9 +83,9 @@ public final class QuickMath {
 
     /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
-     * <p/>
+     * <p>
      * If the value is &lt;= 0 then 1 will be returned.
-     * <p/>
+     * <p>
      * This method is not suitable for {@link Long#MIN_VALUE} or numbers greater than 2^62.
      *
      * @param value from which to search for next power of 2
@@ -200,7 +200,7 @@ public final class QuickMath {
      *
      * @param i1 First number to compare with second one
      * @param i2 Second number to compare with first one
-     * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
+     * @return +1 if i1 &gt; i2, -1 if i2 &gt; i1, 0 if i1 and i2 are equals
      */
     public static int compareIntegers(int i1, int i2) {
         if (i1 > i2) {
@@ -217,7 +217,7 @@ public final class QuickMath {
      *
      * @param l1 First number to compare with second one
      * @param l2 Second number to compare with first one
-     * @return +1 if l1 > l2, -1 if l2 > l1, 0 if l1 and l2 are equals
+     * @return +1 if l1 &gt; l2, -1 if l2 &gt; l1, 0 if l1 and l2 are equals
      */
     public static int compareLongs(long l1, long l2) {
         if (l1 > l2) {

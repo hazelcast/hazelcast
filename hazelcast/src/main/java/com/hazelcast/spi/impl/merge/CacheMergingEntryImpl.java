@@ -152,7 +152,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.CACHE_MERGING_ENTRY;
     }
 

@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareO
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
@@ -139,7 +139,7 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TRANSACTION_LOG_RECORD;
     }
 }

@@ -29,7 +29,7 @@ import java.util.Collection;
 /**
  * A global context which contains all sub-contexts which are responsible for all
  * {@link com.hazelcast.map.QueryCache QueryCache} life-cycle management phases.
- * <p/>
+ * <p>
  * Any functionality for a {@link com.hazelcast.map.QueryCache QueryCache} should be accessed
  * on this context. It also helps to make abstractions over auxiliary services to provide different implementations
  * on client and on node sides.
@@ -141,7 +141,7 @@ public interface QueryCacheContext {
 
     /**
      * Only used for testing purposes.
-     * <p/>
+     * <p>
      * Sets {@link SubscriberContext} implementation used by this query-cache context.
      *
      * @param subscriberContext the supplied {@code subscriberContext} to be set.

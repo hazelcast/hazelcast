@@ -155,7 +155,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_CONSUMER_CONFIG;
     }
 

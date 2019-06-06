@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.internal.management.ThreadDumpGenerator;
-import com.hazelcast.spi.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 /**
  *  Operation for generating thread dumps.

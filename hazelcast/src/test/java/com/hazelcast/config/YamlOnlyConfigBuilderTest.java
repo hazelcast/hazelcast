@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Rule;
@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream;
 /**
  * Test cases specific only to YAML based configuration. The cases not
  * YAML specific should be added to {@link YamlConfigBuilderTest}.
- * <p/>
+ * <p>
  * This test class is expected to contain only <strong>extra</strong> test
  * cases over the ones defined in {@link YamlConfigBuilderTest} in order
  * to cover YAML specific cases where YAML configuration derives from the
@@ -40,7 +40,7 @@ import java.io.ByteArrayInputStream;
  * @see YamlConfigBuilderTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class YamlOnlyConfigBuilderTest {
 
     @Rule

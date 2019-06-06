@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * This operation's purpose is to pass the required parameters into
  * {@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.
- * <p/>
+ * <p>
  * Caveat: This operation does not return a response when {@code createAlsoOnOthers} is {@code true} and there are at least one
  * remote members on which the new {@code CacheConfig} needs to be created. When this operation returns {@code null} with {@code
  * createAlsoOnOthers == true}, it is impossible to tell whether it is because the {@code CacheConfig} was not already registered
@@ -174,7 +174,7 @@ public class CacheCreateConfigOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CREATE_CONFIG;
     }
 

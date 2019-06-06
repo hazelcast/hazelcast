@@ -36,7 +36,6 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.EvictionCandidate;
@@ -1477,9 +1476,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Modifying expiry policy is available when cluster version is at least 3.11");
-        }
         ExpiryPolicy expiryPolicyInstance = null;
         if (expiryPolicy instanceof Data) {
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);

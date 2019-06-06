@@ -16,7 +16,7 @@
 
 package classloading;
 
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
  * Checks Hazelcast for {@link ThreadLocal} leaks after the shutdown.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class ThreadLocalLeakTest {
 

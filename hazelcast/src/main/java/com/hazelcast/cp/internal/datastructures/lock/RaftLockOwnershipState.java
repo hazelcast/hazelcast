@@ -79,7 +79,7 @@ public class RaftLockOwnershipState implements IdentifiedDataSerializable {
 
     /**
      * Returns the thread id that holds the lock. If the lock is not held, return value is meaningless.
-     * When the lock is held, pair of <session id, thread id> is unique.
+     * When the lock is held, pair of {@code &lt;session id, thread id&gt} is unique.
      */
     public long getThreadId() {
         return threadId;
@@ -91,7 +91,7 @@ public class RaftLockOwnershipState implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.RAFT_LOCK_OWNERSHIP_STATE;
     }
 

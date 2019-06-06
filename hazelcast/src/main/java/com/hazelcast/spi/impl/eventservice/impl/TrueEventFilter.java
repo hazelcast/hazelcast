@@ -65,7 +65,7 @@ public final class TrueEventFilter implements EventFilter, IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.TRUE_EVENT_FILTER;
     }
 }

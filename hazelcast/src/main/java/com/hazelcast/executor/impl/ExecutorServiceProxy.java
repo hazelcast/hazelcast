@@ -22,21 +22,20 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -305,10 +304,14 @@ public class ExecutorServiceProxy
         checkNotNull(task, "task can't be null");
         checkNotShutdown();
 
+        Data taskData = getNodeEngine().toData(task);
+        return submitToMember(taskData, member);
+    }
+
+    private  <T> Future<T> submitToMember(Data taskData, Member member) {
         NodeEngine nodeEngine = getNodeEngine();
-        Data taskData = nodeEngine.toData(task);
         String uuid = newUnsecureUuidString();
-        Address target = ((MemberImpl) member).getAddress();
+        Address target = member.getAddress();
 
         boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
@@ -328,9 +331,12 @@ public class ExecutorServiceProxy
 
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
+        checkNotNull(task, "task can't be null");
+        checkNotShutdown();
+        Data taskData = getNodeEngine().toData(task);
         Map<Member, Future<T>> futures = createHashMap(members.size());
         for (Member member : members) {
-            futures.put(member, submitToMember(task, member));
+            futures.put(member, submitToMember(taskData, member));
         }
         return futures;
     }
@@ -394,19 +400,25 @@ public class ExecutorServiceProxy
         submitToPartitionOwner(task, callback, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
+    private  <T> void submitToMember(Data taskData, Member member, ExecutionCallback<T> callback) {
+        checkNotShutdown();
+
+        NodeEngine nodeEngine = getNodeEngine();
+        String uuid = newUnsecureUuidString();
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
+        OperationService operationService = nodeEngine.getOperationService();
+        Address address = member.getAddress();
+        operationService
+                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
+                .setExecutionCallback((ExecutionCallback) callback).invoke();
+    }
+
     @Override
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
         checkNotShutdown();
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Data taskData = nodeEngine.toData(task);
-        String uuid = newUnsecureUuidString();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
-        OperationService operationService = nodeEngine.getOperationService();
-        Address address = ((MemberImpl) member).getAddress();
-        operationService
-                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+        Data taskData = getNodeEngine().toData(task);
+        submitToMember(taskData, member, callback);
     }
 
     private String getRejectionMessage() {
@@ -420,8 +432,9 @@ public class ExecutorServiceProxy
         ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(
                 nodeEngine.getLogger(ExecutionCallbackAdapterFactory.class), members, callback);
 
+        Data taskData = nodeEngine.toData(task);
         for (Member member : members) {
-            submitToMember(task, member, executionCallbackFactory.<T>callbackFor(member));
+            submitToMember(taskData, member, executionCallbackFactory.<T>callbackFor(member));
         }
     }
 

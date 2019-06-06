@@ -351,7 +351,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MULTIMAP_CONFIG;
     }
 

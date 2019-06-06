@@ -24,7 +24,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;

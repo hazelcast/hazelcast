@@ -37,7 +37,7 @@ public class AtomicLongMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.ATOMIC_LONG_MERGING_VALUE;
     }
 }

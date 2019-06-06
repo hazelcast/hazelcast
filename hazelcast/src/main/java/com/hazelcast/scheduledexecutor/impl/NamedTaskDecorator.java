@@ -66,7 +66,7 @@ public class NamedTaskDecorator<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.NAMED_TASK_DECORATOR;
     }
 

@@ -21,8 +21,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -68,15 +68,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         equalizeEntryCountWithPrimary();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        try {
-            super.afterRun();
-        } finally {
-            recordStore.disposeDeferredBlocks();
-        }
     }
 
     /**
@@ -130,7 +121,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BATCH_BACKUP;
     }
 

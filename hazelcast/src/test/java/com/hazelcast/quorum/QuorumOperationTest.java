@@ -28,12 +28,12 @@ import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ServiceLoader;
 
@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
  * depending on a set of naming rules.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QuorumOperationTest {
 
     private static final ILogger LOGGER = Logger.getLogger(QuorumOperationTest.class);
@@ -134,7 +134,6 @@ public class QuorumOperationTest {
      */
     private static final Collection<String> NO_QUORUM_PACKAGES = asList(
             "com.hazelcast.flakeidgen.impl.",
-            "com.hazelcast.mapreduce.impl.operation.",
             "com.hazelcast.topic.impl.",
             "com.hazelcast.transaction.impl.xa.operations."
     );

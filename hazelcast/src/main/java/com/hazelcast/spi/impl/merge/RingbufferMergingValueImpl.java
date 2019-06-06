@@ -109,7 +109,7 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.RINGBUFFER_MERGING_ENTRY;
     }
 

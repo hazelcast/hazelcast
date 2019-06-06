@@ -29,7 +29,6 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -147,14 +146,6 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof FlakeIdGeneratorPermission);
-    }
-
-    @Test
-    public void getPermission_MapReduce() {
-        Permission permission = ActionConstants.getPermission("foo", MapReduceService.SERVICE_NAME);
-
-        assertNotNull(permission);
-        assertTrue(permission instanceof MapReducePermission);
     }
 
     @Test

@@ -203,7 +203,7 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.RAFT_GROUP_INFO;
     }
 

@@ -35,7 +35,7 @@ import java.io.IOException;
  * Status of the Raft group will be directly changed to
  * {@link CPGroupStatus#DESTROYED} without gracefully destroying
  * {@link RaftNode} instances first.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class ForceDestroyRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
@@ -67,7 +67,7 @@ public class ForceDestroyRaftGroupOp extends MetadataRaftGroupOp implements Inde
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.FORCE_DESTROY_RAFT_GROUP_OP;
     }
 

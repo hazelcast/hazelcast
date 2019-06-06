@@ -36,15 +36,15 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
         successful = dataOldValue != null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         if (successful) {
-            super.afterRun();
+            super.afterRunInternal();
         }
     }
 
@@ -74,7 +74,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TRY_REMOVE;
     }
 }

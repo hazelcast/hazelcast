@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class GetRemainingLeaseTimeOperation extends AbstractLockOperation implements ReadonlyOperation {
 
@@ -32,7 +32,7 @@ public class GetRemainingLeaseTimeOperation extends AbstractLockOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return LockDataSerializerHook.GET_REMAINING_LEASETIME;
     }
 

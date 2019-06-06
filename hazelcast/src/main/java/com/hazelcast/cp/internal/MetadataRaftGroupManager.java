@@ -36,7 +36,7 @@ import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
@@ -399,7 +400,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return group.id();
             }
 
-            String msg = group.getId() + " already exists with a different size: " + group.memberCount();
+            String msg = group.id() + " already exists with a different size: " + group.memberCount();
             logger.severe(msg);
             throw new IllegalStateException(msg);
         }
@@ -995,7 +996,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return;
             }
 
-            Collection<Member> members = nodeEngine.getClusterService().getMembers();
+            Collection<Member> members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
             for (Member member : latestMembers) {
                 if (!members.contains(member)) {
                     logger.severe(member + " left the cluster while CP subsystem discovery in progress!");

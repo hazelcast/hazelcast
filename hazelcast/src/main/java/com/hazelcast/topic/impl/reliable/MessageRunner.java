@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
+import com.hazelcast.topic.Message;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -28,6 +28,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 
 import java.util.concurrent.ConcurrentMap;
@@ -37,9 +38,9 @@ import java.util.concurrent.Executor;
 /**
  * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an
  * item from the ringbuffer or blocks if no item is available. All data
- * that are read is pushed into the {@link com.hazelcast.core.MessageListener}.
+ * that are read is pushed into the {@link MessageListener}.
  * It is a self-perpetuating stream of async calls.
- * <p/>
+ * <p>
  * The runner keeps track of the sequence.
  */
 public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {

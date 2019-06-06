@@ -50,7 +50,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         try {
             deregisterLocalIMapListener();
             removeAccumulatorInfo();
@@ -122,7 +122,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.DESTROY_QUERY_CACHE;
     }
 }

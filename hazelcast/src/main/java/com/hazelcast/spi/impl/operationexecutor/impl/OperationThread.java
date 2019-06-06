@@ -23,7 +23,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.executor.HazelcastManagedThread;
@@ -36,11 +36,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 /**
  * The OperationThread is responsible for processing operations, packets
  * containing operations and runnable's.
- * <p/>
+ * <p>
  * There are 2 flavors of OperationThread:
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
- * <p/>
+ * <p>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
 public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {

@@ -19,7 +19,7 @@ package com.hazelcast.transaction.impl.operations;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -28,13 +28,13 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX_BACKUP_LOG;
 
 /**
  * Replicates the transactionlog to a remote system.
  *
- * This operation is only executed when durability > 0
+ * This operation is only executed when durability &gt; 0
  */
 public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
@@ -77,7 +77,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return REPLICATE_TX_BACKUP_LOG;
     }
 

@@ -27,7 +27,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLiteMemberTest
         extends HazelcastTestSupport {
 
@@ -205,22 +205,12 @@ public class MapLiteMemberTest
         }
     }
 
-    private static class DummyEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class DummyEntryProcessor implements EntryProcessor<Object, Object, String> {
 
         @Override
-        public Object process(java.util.Map.Entry<Object, Object> entry) {
+        public String process(java.util.Map.Entry<Object, Object> entry) {
             entry.setValue("dummy");
             return "done";
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Object, Object> entry) {
-            process(entry);
-        }
-
-        @Override
-        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
-            return this;
         }
     }
 }

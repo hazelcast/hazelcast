@@ -71,7 +71,7 @@ public class DefaultRaftReplicateOp extends RaftReplicateOp implements Indetermi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DEFAULT_RAFT_GROUP_REPLICATE_OP;
     }
 

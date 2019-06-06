@@ -117,7 +117,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.NEAR_CACHE_PRELOADER_CONFIG;
     }
 
@@ -221,7 +221,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             throw new UnsupportedOperationException("NearCachePreloaderConfigReadOnly is not serializable");
         }
     }

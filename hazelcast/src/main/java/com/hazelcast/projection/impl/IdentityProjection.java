@@ -39,7 +39,7 @@ public final class IdentityProjection<I> extends Projection<I, I> implements Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ProjectionDataSerializerHook.IDENTITY_PROJECTION;
     }
 

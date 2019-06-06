@@ -405,7 +405,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RINGBUFFER_CONFIG;
     }
 

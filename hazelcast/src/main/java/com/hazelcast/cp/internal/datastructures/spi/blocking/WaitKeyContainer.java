@@ -101,7 +101,7 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataServiceDataSerializerHook.WAIT_KEY_CONTAINER;
     }
 

@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.ArrayDeque;
@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * Task for scanning all {@link Accumulator} instances of all {@link com.hazelcast.map.QueryCache}s on this node.
- * <p/>
+ * <p>
  * If it finds any event that needs to be published in an accumulator, it creates and sends
  * {@link AccumulatorConsumerOperation} to relevant partitions.
  *

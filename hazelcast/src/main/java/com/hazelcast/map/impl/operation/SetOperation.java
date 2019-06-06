@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
@@ -35,20 +35,20 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         oldValue = recordStore.set(dataKey, dataValue, ttl, maxIdle);
         newRecord = oldValue == null;
     }
 
     @Override
-    public void afterRun() {
+    protected void afterRunInternal() {
         eventType = newRecord ? ADDED : UPDATED;
 
-        super.afterRun();
+        super.afterRunInternal();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET;
     }
 }

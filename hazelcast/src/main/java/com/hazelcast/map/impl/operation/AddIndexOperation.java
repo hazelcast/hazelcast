@@ -28,15 +28,17 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Iterator;
 
-public class AddIndexOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class AddIndexOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
 
     private String attributeName;
     private boolean ordered;
@@ -51,12 +53,32 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     }
 
     @Override
+    public boolean shouldBackup() {
+        return mapContainer.getTotalBackupCount() > 0;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return mapContainer.getTotalBackupCount();
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AddIndexBackupOperation(name, attributeName, ordered);
+    }
+
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
     @Override
-    public void run() throws Exception {
+    public void runInternal() {
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
@@ -67,6 +89,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
         }
 
         final long now = getNow();
+        @SuppressWarnings("unchecked")
         final Iterator<Record> iterator = recordStore.iterator(now, false);
         SerializationService serializationService = getNodeEngine().getSerializationService();
         while (iterator.hasNext()) {
@@ -105,7 +128,8 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX;
     }
+
 }

@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         QueryCacheContext context = getQueryCacheContext();
         Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheId);
         Accumulator<Sequenced> accumulator = accumulators.get(getPartitionId());
@@ -101,7 +101,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.READ_AND_RESET_ACCUMULATOR;
     }
 }

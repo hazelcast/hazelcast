@@ -23,7 +23,7 @@ import java.io.Serializable;
 /**
  * Credentials is a container object for endpoint (Members and Clients)
  * security attributes.
- * <p/>
+ * <p>
  * It is used on authentication process by {@link javax.security.auth.spi.LoginModule}s.
  */
 @BinaryInterface

@@ -82,7 +82,7 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MERGE_CONTAINER;
     }
 

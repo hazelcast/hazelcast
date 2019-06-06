@@ -18,7 +18,7 @@ package com.hazelcast.test.annotation;
 
 /**
  * Annotates tests which are too slow for the PR builder.
- * <p/>
+ * <p>
  * Will be executed in nightly builds and for code coverage measurements.
  */
 public final class SlowTest {

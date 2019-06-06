@@ -40,7 +40,7 @@ import static java.lang.String.format;
 
 /**
  * Monitors the {@link OperationRunner} instances of the {@link OperationExecutor} to see if operations are slow.
- * <p/>
+ * <p>
  * Slow operations are logged and can be accessed e.g. to write to a log file or report to management center.
  */
 public final class SlowOperationDetector {

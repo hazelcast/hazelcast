@@ -20,7 +20,7 @@ import com.hazelcast.spi.NodeEngine;
 
 /**
  * Descriptor of Hazelcast managed service;
- * <p/>
+ * <p>
  * Used to describe a service provided by {@link ServiceDescriptorProvider}.
  */
 public interface ServiceDescriptor {

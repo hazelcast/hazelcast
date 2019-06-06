@@ -33,7 +33,7 @@ import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
@@ -140,11 +140,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     /**
      * Creates a plain transaction object, without wrapping it
      * inside a TransactionContext.
-     * <p/>
+     * <p>
      * A Transaction is a lower level API than TransactionContext.
      * It's not possible to create/access transactional
      * data structures without TransactionContext.
-     * <p/>
+     * <p>
      * A Transaction object
      * only allows starting/committing/rolling back transaction,
      * accessing state of the transaction
@@ -160,7 +160,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     /**
      * Creates a plain transaction object which can be used while cluster state is {@link ClusterState#PASSIVE},
      * without wrapping it inside a TransactionContext.
-     * <p/>
+     * <p>
      * Also see {@link TransactionManagerServiceImpl#newTransaction(TransactionOptions)} for more details
      *
      * @param options transaction options

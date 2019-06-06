@@ -77,7 +77,7 @@ public class RegexPredicate extends AbstractPredicate {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.REGEX_PREDICATE;
     }
 

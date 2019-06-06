@@ -58,7 +58,7 @@ public final class LongSumAggregator<I> extends AbstractAggregator<I, Number, Lo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.LONG_SUM;
     }
 

@@ -46,7 +46,7 @@ public class TaskWithUnserializableResponse
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

@@ -79,7 +79,7 @@ public class TxQueueItem extends QueueItem {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TX_QUEUE_ITEM;
     }
 

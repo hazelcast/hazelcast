@@ -20,8 +20,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -55,16 +55,15 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         keys = selectThisPartitionsKeys();
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }
 
     @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
-
+    protected void afterRunInternal() {
         invalidateNearCache(keys);
+        super.afterRunInternal();
     }
 
     /**
@@ -117,7 +116,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_ALL;
     }
 }

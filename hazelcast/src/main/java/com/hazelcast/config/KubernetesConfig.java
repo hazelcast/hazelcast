@@ -30,7 +30,7 @@ public class KubernetesConfig
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.KUBERNETES_CONFIG;
     }
 }

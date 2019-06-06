@@ -53,7 +53,7 @@ public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.SHUTDOWN_NODE;
     }
 }

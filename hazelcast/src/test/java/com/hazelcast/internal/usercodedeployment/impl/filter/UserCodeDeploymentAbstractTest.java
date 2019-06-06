@@ -121,7 +121,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setBlacklistedPrefixes("usercodedeployment.blacklisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new BlacklistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new BlacklistedEP();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -145,7 +145,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -169,7 +169,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted, usercodedeployment")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new WhitelistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new WhitelistedEP();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
@@ -188,7 +188,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -213,11 +213,13 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
-    protected void executeSimpleTestScenario(Config config, Config epFilteredConfig, EntryProcessor<Integer, Integer> ep) {
+    protected void executeSimpleTestScenario(Config config,
+                                             Config epFilteredConfig,
+                                             EntryProcessor<Integer, Integer, Integer> ep) {
         int keyCount = 100;
 
         factory = newFactory();

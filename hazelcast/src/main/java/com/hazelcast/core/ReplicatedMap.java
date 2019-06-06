@@ -85,11 +85,10 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Adds the specified entry listener for the specified key.
      * The listener will be notified for all
      * add/remove/update/evict events of the specified key only.
-     * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * This method uses <code>hashCode</code> and <code>equals</code> of the binary form of
+     * the <code>key</code>, not the actual implementations of <code>hashCode</code> and <code>equals</code>
+     * defined in the <code>key</code>'s class.
      *
      * @param listener the entry listener to add
      * @param key      the key to listen to
@@ -117,7 +116,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
 
     /**
-     * Returns a lazy {@link Collection} view of the values contained in this map.<br/>
+     * Returns a lazy {@link Collection} view of the values contained in this map.<br>
      * A LazyCollection is optimized for querying speed (preventing eager deserialization
      * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
      * Any kind of mutating function will throw an
@@ -128,21 +127,21 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.List} or similar data structure.
      * <pre>
-     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     ReplicatedMap&lt;K, V&gt; repMap = ...;
      *     // Returns a LazyCollection
-     *     Collection&lt;V> values = repMap.values();
-     *     List&lt;V> copy = new ArrayList&lt;V>(values);
+     *     Collection&lt;V&gt; values = repMap.values();
+     *     List&lt;V&gt; copy = new ArrayList&lt;V&gt;(values);
      *     if (copy.containsAll(possibleValues)) {
      *         // ...
      *     }
      * </pre>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected on the collection.<br/>
+     * removal, update) might be reflected on the collection.<br>
      * Changes on the map are <b>NOT</b> reflected on the collection on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior. If a specific order is needed, use
      * {@link #values(java.util.Comparator)} to force reordering of the
-     * elements before returning.<br/>
+     * elements before returning.<br>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
@@ -153,9 +152,9 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     /**
      * Returns an eagerly populated {@link Collection} view of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
-     * <b>NOT</b> reflected on the collection, and vice-versa.<br/>
+     * <b>NOT</b> reflected on the collection, and vice-versa.<br>
      * The order of the elements is guaranteed by executing the given
-     * {@link java.util.Comparator} before returning the elements.<br/>
+     * {@link java.util.Comparator} before returning the elements.<br>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
@@ -165,7 +164,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     Collection<V> values(Comparator<V> comparator);
 
     /**
-     * Returns a lazy {@link Set} view of the mappings contained in this map.<br/>
+     * Returns a lazy {@link Set} view of the mappings contained in this map.<br>
      * A LazySet is optimized for querying speed (preventing eager deserialization
      * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
      * Any kind of mutating function will throw an
@@ -176,16 +175,16 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.HashSet}.
      * <pre>
-     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     ReplicatedMap&lt;K, V&gt; repMap = ...;
      *     // Returns a LazySet
-     *     Set&lt;Map.Entry&lt;K, V>> entrySet = repMap.entrySet();
-     *     Set&lt;Map.Entry&lt;K, V>> copy = new HashSet&lt;Map.Entry&lt;K, V>>(entrySet);
+     *     Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet = repMap.entrySet();
+     *     Set&lt;Map.Entry&lt;K, V&gt;&gt; copy = new HashSet&lt;Map.Entry&lt;K, V&gt;&gt;(entrySet);
      * </pre>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected on the set.<br/>
+     * removal, update) might be reflected on the set.<br>
      * Changes on the map are <b>NOT</b> reflected on the set on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
-     * asynchronous replication behavior.<br/>
+     * asynchronous replication behavior.<br>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
@@ -194,7 +193,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     Set<Entry<K, V>> entrySet();
 
     /**
-     * Returns a lazy {@link Set} view of the key contained in this map.<br/>
+     * Returns a lazy {@link Set} view of the key contained in this map.<br>
      * A LazySet is optimized for querying speed (preventing eager deserialization
      * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
      * Any kind of mutating function will throw an
@@ -205,21 +204,21 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.HashSet}.
      * <pre>
-     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     ReplicatedMap&lt;K, V&gt; repMap = ...;
      *     // Returns a LazySet
-     *     Set&lt;K> keySet = repMap.keySet();
-     *     Set&lt;K> copy = new HashSet&lt;K>(keySet);
+     *     Set&lt;K&gt; keySet = repMap.keySet();
+     *     Set&lt;K&gt; copy = new HashSet&lt;K&gt;(keySet);
      *     for (K key : possibleKeys) {
      *       if (!copy.contains(key))
      *         return false;
      *     }
      * </pre>
-     * <p/>
+     * <p>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected on the set.<br/>
+     * removal, update) might be reflected on the set.<br>
      * Changes on the map are <b>NOT</b> reflected on the set on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
-     * asynchronous replication behavior.<br/>
+     * asynchronous replication behavior.<br>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
@@ -232,7 +231,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * LocalReplicatedMapStats is the statistics for the local
      * replicated map and contains information such as getCount
      * putCount, hits, lastUpdateTime etc.
-     * <p/>
+     * <p>
      *
      * @return this replicated map's statistics.
      */

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
@@ -34,20 +34,21 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_TTL_BACKUP;
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.setTtl(dataKey, ttl);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             publishWanUpdate(dataKey, record.getValue());
         }
+        super.afterRunInternal();
     }
 }

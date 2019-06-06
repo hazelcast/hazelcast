@@ -56,7 +56,7 @@ public class SemaphoreEndpoint implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.SEMAPHORE_ENDPOINT;
     }
 

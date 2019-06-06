@@ -56,7 +56,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -360,10 +360,10 @@ public class Node {
                 known = true;
             }
 
-            if (listener instanceof InternalMigrationListener) {
+            if (listener instanceof MigrationInterceptor) {
                 final InternalPartitionServiceImpl partitionService =
                         (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-                partitionService.setInternalMigrationListener((InternalMigrationListener) listener);
+                partitionService.setMigrationInterceptor((MigrationInterceptor) listener);
                 known = true;
             }
 
@@ -649,7 +649,7 @@ public class Node {
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
      * After this method is called,
      * a new join process can be triggered by calling {@link #join()}.
-     * <p/>
+     * <p>
      * This method is called during merge process after a split-brain is detected.
      */
     public void reset() {

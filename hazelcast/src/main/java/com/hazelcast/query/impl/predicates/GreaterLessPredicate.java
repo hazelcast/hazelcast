@@ -113,7 +113,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
     }
 

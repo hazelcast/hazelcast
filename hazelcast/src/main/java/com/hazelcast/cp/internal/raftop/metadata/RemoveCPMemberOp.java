@@ -66,7 +66,7 @@ public class RemoveCPMemberOp extends MetadataRaftGroupOp implements Indetermina
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.REMOVE_CP_MEMBER_OP;
     }
 

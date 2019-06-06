@@ -55,7 +55,7 @@ public class GetSessionsOp extends RaftOp implements IndeterminateOperationState
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.GET_SESSIONS_OP;
     }
 

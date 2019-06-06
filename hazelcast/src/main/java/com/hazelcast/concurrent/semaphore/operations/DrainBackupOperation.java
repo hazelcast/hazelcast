@@ -36,7 +36,7 @@ public class DrainBackupOperation extends SemaphoreBackupOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.DRAIN_BACKUP_OPERATION;
     }
 }

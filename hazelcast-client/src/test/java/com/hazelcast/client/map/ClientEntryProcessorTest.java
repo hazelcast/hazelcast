@@ -18,8 +18,6 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.TruePredicate;
@@ -27,7 +25,7 @@ import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientEntryProcessorTest extends AbstractClientMapTest {
 
     @Test
@@ -70,9 +68,9 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         assertEquals(value1, value2);
     }
 
-    public static class OwnerBackupValueCollector extends AbstractEntryProcessor<String, String> {
+    public static class OwnerBackupValueCollector implements EntryProcessor<String, String, Object> {
 
-        private static final ConcurrentLinkedQueue<String> values = new ConcurrentLinkedQueue<String>();
+        private static final ConcurrentLinkedQueue<String> values = new ConcurrentLinkedQueue<>();
 
         @Override
         public Object process(Map.Entry<String, String> entry) {
@@ -148,7 +146,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         clientMap.executeOnKey(member1Key, new ValueUpdaterReadOnly("newValue"));
     }
 
-    public static final class EP extends AbstractEntryProcessor {
+    public static final class EP implements EntryProcessor {
 
         @Override
         public Object process(Map.Entry entry) {
@@ -180,7 +178,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
     }
 
-    public static class ValueUpdater extends AbstractEntryProcessor {
+    public static class ValueUpdater<K, R> implements EntryProcessor<K, String, R> {
 
         private final String newValue;
 
@@ -189,13 +187,13 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
 
         @Override
-        public Object process(Map.Entry entry) {
+        public R process(Map.Entry<K, String> entry) {
             entry.setValue(newValue);
             return null;
         }
     }
 
-    public static class ValueUpdaterReadOnly implements EntryProcessor, ReadOnly {
+    public static class ValueUpdaterReadOnly<K, R> implements EntryProcessor<K, String, R>, ReadOnly {
 
         private final String newValue;
 
@@ -204,13 +202,13 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
 
         @Override
-        public Object process(Map.Entry entry) {
+        public R process(Map.Entry<K, String> entry) {
             entry.setValue(newValue);
             return null;
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor<K, String, R> getBackupProcessor() {
             return null;
         }
     }

@@ -27,14 +27,14 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ThreadUtil;
 import org.junit.Test;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
     @Test
@@ -120,15 +120,15 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() {
+        protected void runInternal() {
             dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey, getCallerProvenance()));
             successful = dataOldValue != null;
         }
 
         @Override
-        public void afterRun() {
+        protected void afterRunInternal() {
             if (successful) {
-                super.afterRun();
+                super.afterRunInternal();
             }
         }
 
@@ -148,7 +148,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 100;
         }
     }
@@ -163,7 +163,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        protected void runInternal() {
             throw new UnsupportedOperationException("Don't panic this is what we want!");
         }
 
@@ -178,7 +178,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 101;
         }
     }

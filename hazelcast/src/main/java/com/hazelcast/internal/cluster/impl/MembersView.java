@@ -157,7 +157,7 @@ public final class MembersView implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBERS_VIEW;
     }
 

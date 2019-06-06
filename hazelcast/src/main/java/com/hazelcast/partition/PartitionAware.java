@@ -19,9 +19,9 @@ package com.hazelcast.partition;
 /**
  * PartitionAware means that data will be based in the same member based on the partition key
  * and implementing tasks will be executed on the {@link #getPartitionKey()}'s owner member.
- * <p/>
+ * <p>
  * This achieves data affinity. Data and execution occurs on the same partition.
- * <p/>
+ * <p>
  * In Hazelcast, disparate data structures will be stored on the same partition,
  * based on the partition key. For example, if "Steve" was used, then the following would be on one partition.
  * <ul>
@@ -33,10 +33,10 @@ package com.hazelcast.partition;
  *
  * If you have a {@link com.hazelcast.core.IExecutorService} which needs to deal with a customer and a customer's
  * orders, you can achieve optimal performance by putting them on the same partition.
- * <p/>
+ * <p>
  * {@link com.hazelcast.core.DistributedObject} also has a notion of the partition key which is of type String
  * to ensure that the same partition as distributed Objects Strings is used for the partition key.
- * <p/>
+ * <p>
  * @see com.hazelcast.core.DistributedObject
  * @param <T> key type
  */

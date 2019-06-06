@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.Collection;
 import java.util.Map;
@@ -53,7 +53,7 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.GET_CONNECTED_CLIENTS;
     }
 

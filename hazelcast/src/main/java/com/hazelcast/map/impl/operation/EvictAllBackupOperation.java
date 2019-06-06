@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 /**
  * Operation which evicts all keys except locked ones.
@@ -34,7 +34,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         if (recordStore == null) {
             return;
         }
@@ -42,7 +42,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_ALL_BACKUP;
     }
 }

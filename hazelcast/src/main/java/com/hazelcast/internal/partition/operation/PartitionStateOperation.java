@@ -95,7 +95,7 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_STATE_OP;
     }
 }

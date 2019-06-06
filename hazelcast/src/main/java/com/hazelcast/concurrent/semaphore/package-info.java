@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains ISemaphore functionality for Hazelcast.<br/>
+ * <p>This package contains ISemaphore functionality for Hazelcast.<br>
  * The ISemaphore is the distributed version of the {@link java.util.concurrent.Semaphore}.
  *
  * Unfortunately the j.u.c.Semaphore doesn't expose an interface, so the ISemaphore copies most of the

@@ -21,10 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,8 +41,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AntiEntropyCleanupTest extends HazelcastTestSupport {
 
     @Parameters(name = "nodeCount:{0}")

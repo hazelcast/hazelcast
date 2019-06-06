@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -56,7 +56,7 @@ public enum NodeState {
      * {@link Cluster#changeClusterState(ClusterState)}
      * </li>
      * </ul>
-     * <p/>
+     * <p>
      * In {@code PASSIVE} state, all operations will be rejected except operations marked as
      * {@link ReadonlyOperation}, join operations of some members that are explained in
      * {@link ClusterState}, replication / migration operations and heartbeat operations.

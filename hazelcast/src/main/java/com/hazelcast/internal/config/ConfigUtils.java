@@ -88,7 +88,7 @@ public final class ConfigUtils {
      * @throws ConfigurationException if ambiguous configurations are found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see Config#setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see Config##getConfigPatternMatcher()
+     * @see Config#getConfigPatternMatcher()
      */
     public static <T extends NamedConfig> T getConfig(ConfigPatternMatcher configPatternMatcher,
                                                       Map<String, T> configs, String name,

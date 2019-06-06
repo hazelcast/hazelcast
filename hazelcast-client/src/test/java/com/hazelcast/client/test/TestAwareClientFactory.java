@@ -31,9 +31,10 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 
 /**
  * Per test-method factory for Hazelcast clients (and also members as it inherits from {@link TestAwareInstanceFactory}).
- * It configures new clients in the same way as it's done for members in {@link TestAwareInstanceFactory#newHazelcastInstance(com.hazelcast.config.Config)}.
+ * It configures new clients in the same way as it's done for members in
+ * {@link TestAwareInstanceFactory#newHazelcastInstance(com.hazelcast.config.Config)}.
  * <p>
- * <b>Tests using this factory should not be annotated with {@code ParallelTest} category to avoid runs in multiple JVMs.</b>
+ * <b>Tests using this factory should not be annotated with {@code ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class TestAwareClientFactory extends TestAwareInstanceFactory {

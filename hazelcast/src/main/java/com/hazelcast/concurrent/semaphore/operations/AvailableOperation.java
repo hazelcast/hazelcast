@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class AvailableOperation extends SemaphoreOperation implements ReadonlyOperation {
 
@@ -36,7 +36,7 @@ public class AvailableOperation extends SemaphoreOperation implements ReadonlyOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SemaphoreDataSerializerHook.AVAILABLE_OPERATION;
     }
 }

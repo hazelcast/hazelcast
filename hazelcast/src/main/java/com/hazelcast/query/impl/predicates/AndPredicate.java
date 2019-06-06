@@ -189,7 +189,7 @@ public final class AndPredicate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.AND_PREDICATE;
     }
 

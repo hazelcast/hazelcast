@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -118,7 +118,7 @@ public class ItemListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ITEM_LISTENER_CONFIG;
     }
 

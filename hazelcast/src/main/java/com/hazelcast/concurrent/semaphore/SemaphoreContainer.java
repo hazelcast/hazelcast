@@ -175,7 +175,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CONTAINER;
     }
 

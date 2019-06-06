@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import java.util.Map;
 
 /**
- * General contract to define any `id --> item` registration.
+ * General contract to define any {@code id --&gt; item} registration.
  *
  * @param <K> the type of key for reaching an item from this registry.
  * @param <T> the type of item to register.

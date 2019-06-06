@@ -34,7 +34,7 @@ public final class YamlDomChecker {
     }
 
     /**
-     * Performs {@null} checks on the provided YAML node recursively.
+     * Performs {code @null} checks on the provided YAML node recursively.
      *
      * @param node The YAML node to check for {@code null}s
      */

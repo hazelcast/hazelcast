@@ -25,8 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -98,7 +98,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return MAP_INVALIDATION_METADATA_RESPONSE;
         }
 
@@ -226,7 +226,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MAP_INVALIDATION_METADATA;
     }
 

@@ -135,10 +135,10 @@ public interface RecordStore<R extends Record> {
     void accessRecord(Record record, long now);
 
 
-        /**
-         * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
-         * except removeBackup doesn't touch mapstore since it does not return previous value.
-        */
+    /**
+     * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
+     * except removeBackup doesn't touch mapstore since it does not return previous value.
+     */
     void removeBackup(Data dataKey, CallerProvenance provenance);
 
     /**
@@ -154,7 +154,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
      * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
-     * <p/>
+     * <p>
      * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
      * This adds an extra serialization step. For the reason of this behaviour please see issue 1292 on github.
      *
@@ -405,11 +405,11 @@ public interface RecordStore<R extends Record> {
     R getOrNullIfExpired(R record, long now, boolean backup);
 
 
-        /**
-         * Evicts entries from this record-store.
-         *
-         * @param excludedKey this key has lowest priority to be selected for eviction
-         */
+   /**
+     * Evicts entries from this record-store.
+     *
+     * @param excludedKey this key has lowest priority to be selected for eviction
+     */
     void evictEntries(Data excludedKey);
 
     /**

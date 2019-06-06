@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -41,7 +41,7 @@ public class KeyLoadStatusOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() {
         recordStore.updateLoadStatus(true, exception);
     }
 
@@ -58,7 +58,7 @@ public class KeyLoadStatusOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.KEY_LOAD_STATUS;
     }
 }

@@ -29,19 +29,23 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
 
 /**
  * The base class that replicates the given {@link RaftOp}
  * to the target Raft group
- * <p/>
+ * <p>
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
 public abstract class RaftReplicateOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation,
                                                                    ExecutionCallback {
+
+    static final Executor CALLER_RUNS_EXECUTOR = Runnable::run;
+
 
     private CPGroupId groupId;
 
@@ -69,7 +73,7 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             return;
         }
 
-        replicate(raftNode).andThen(this);
+        replicate(raftNode).andThen(this, CALLER_RUNS_EXECUTOR);
     }
 
     protected abstract ICompletableFuture replicate(RaftNode raftNode);

@@ -75,7 +75,7 @@ public class InternalEventJournalCacheEvent implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_INTERNAL_CACHE_EVENT;
     }
 

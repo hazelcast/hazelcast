@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.collection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class CollectionSizeOperation extends CollectionOperation implements ReadonlyOperation {
 
@@ -36,7 +36,7 @@ public class CollectionSizeOperation extends CollectionOperation implements Read
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_SIZE;
     }
 }

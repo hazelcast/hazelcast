@@ -29,12 +29,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * An {@code EndpointQualifier} is a {@code (ProtocolType, String)} tuple that uniquely identifies groups
  * of network connections sharing a common {@link ProtocolType} and the same network settings, when Hazelcast
  * is configured with {@link com.hazelcast.config.AdvancedNetworkConfig} enabled.
- * <p/>
+ * <p>
  * In some cases, just the {@link ProtocolType} is enough (eg since there can be only a single
  * {@link ProtocolType#MEMBER MEMBER} server socket, there can be only one instance of
  * {@link com.hazelcast.config.ServerSocketEndpointConfig ServerSocketEndpointConfig} network
  * configuration for {@code MEMBER} connections).
- * <p/>
+ * <p>
  * When just the {@link ProtocolType} is not enough (for example when configuring outgoing WAN
  * connections to 2 different target clusters), a {@code String identifier} is used to uniquely
  * identify the network configuration.
@@ -128,7 +128,7 @@ public final class EndpointQualifier
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.ENDPOINT_QUALIFIER;
     }
 

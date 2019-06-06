@@ -17,9 +17,9 @@
 package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.COUNT_DOWN_OPERATION;
 
@@ -58,7 +58,7 @@ public class CountDownOperation extends BackupAwareCountDownLatchOperation imple
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return COUNT_DOWN_OPERATION;
     }
 }

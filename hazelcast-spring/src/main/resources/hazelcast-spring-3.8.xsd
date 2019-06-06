@@ -1571,7 +1571,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IQueue"/>
+                    <tool:exports type="com.hazelcast.collection.IQueue"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1595,7 +1595,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                    <tool:exports type="com.hazelcast.topic.ITopic"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1607,7 +1607,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ISet"/>
+                    <tool:exports type="com.hazelcast.collection.ISet"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1619,7 +1619,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IList"/>
+                    <tool:exports type="com.hazelcast.collection.IList"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>

@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -72,6 +71,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.EntryViews.toLazyEntryView;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
@@ -664,9 +664,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean setTtl(Data key, long ttl) {
-        if (mapServiceContext.getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
-        }
         long now = getNow();
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
@@ -944,43 +941,27 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = null;
-        EntryEventType entryEventType = null;
+        EntryEventType entryEventType;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
-            if (canPublishLoadEvent()) {
-                mutationObserver.onLoadRecord(key, record);
-            } else {
-                mutationObserver.onPutRecord(key, record);
-            }
+            mutationObserver.onLoadRecord(key, record);
+            entryEventType = LOADED;
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
             updateRecord(key, record, value, now, true);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
-
             entryEventType = UPDATED;
-
         }
+
         if (!backup) {
             saveIndex(record, oldValue);
-
-            if (entryEventType == UPDATED) {
-                mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.UPDATED, key, oldValue, value);
-            } else {
-                if (canPublishLoadEvent()) {
-                    mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, value);
-                } else {
-                    mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.ADDED, key, null, value);
-                }
-            }
+            mapEventPublisher.publishEvent(callerAddress, name, entryEventType, key, oldValue, value);
         }
-        return oldValue;
-    }
 
-    private boolean canPublishLoadEvent() {
-        return !mapContainer.isAddEventPublishingEnabled();
+        return oldValue;
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {

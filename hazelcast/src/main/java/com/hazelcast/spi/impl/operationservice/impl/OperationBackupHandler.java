@@ -24,9 +24,9 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -34,8 +34,8 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.hasActiveInvocation;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static java.lang.Math.min;
 
 /**

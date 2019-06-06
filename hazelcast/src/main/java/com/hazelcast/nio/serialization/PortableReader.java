@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * Provides a mean of reading portable fields from a binary in form of java primitives
  * arrays of java primitives, nested portable fields and array of portable fields.
- * <p/>
+ * <p>
  * PortableReader read method family support nested paths. For example <code>body.brain.iq</code> is a valid nested path.
  */
 public interface PortableReader {
@@ -199,7 +199,7 @@ public interface PortableReader {
 
     /**
      * {@link PortableWriter#getRawDataOutput()}.
-     * <p/>
+     * <p>
      * Note that portable fields can not read after getRawDataInput() is called. In case this happens,
      * IOException will be thrown.
      *

@@ -157,7 +157,8 @@ public interface NearCache<K, V> extends InitializingObject {
      * this method is called on a wrapper object, result is wrapped
      * object.
      *
-     * @param clazz the type of returning object. @param <T>   the type
+     * @param clazz the type of returning object.
+     * @param <T>   the type
      *              of the class modeled by this Class object
      * @return an instance of the supplied clazz type.
      * @throws IllegalArgumentException if no implementation found for the supplied clazz type.

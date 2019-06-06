@@ -114,7 +114,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CacheDataSerializerHook.GET_CACHE_ENTRY_VIEW_PROCESSOR;
         }
 
@@ -190,7 +190,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return CacheDataSerializerHook.CACHE_BROWSER_ENTRY_VIEW;
         }
 

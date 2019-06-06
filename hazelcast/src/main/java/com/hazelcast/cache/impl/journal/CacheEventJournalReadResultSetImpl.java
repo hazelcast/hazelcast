@@ -64,7 +64,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_READ_RESULT_SET;
     }
 

@@ -59,7 +59,7 @@ public class VoteResponseOp extends AsyncRaftOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.VOTE_RESPONSE_OP;
     }
 }

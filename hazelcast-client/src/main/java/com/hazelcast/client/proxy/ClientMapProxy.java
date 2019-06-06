@@ -102,7 +102,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
@@ -114,7 +113,6 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -129,17 +127,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -153,8 +140,8 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1040,8 +1027,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
         // TODO: putCache
         return new SimpleEntryView<K, V>()
-                .withKey((K) toObject(dataEntryView.getKey()))
-                .withValue((V) toObject(dataEntryView.getValue()))
+                .withKey(toObject(dataEntryView.getKey()))
+                .withValue(toObject(dataEntryView.getValue()))
                 .withCost(dataEntryView.getCost())
                 .withCreationTime(dataEntryView.getCreationTime())
                 .withExpirationTime(dataEntryView.getExpirationTime())
@@ -1121,8 +1108,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         int keysSize = keys.size();
-        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
+        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
         getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
 
         Map<K, V> result = createHashMap(keysSize);
@@ -1138,7 +1125,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         if (partitionToKeyData.isEmpty()) {
             fillPartitionToKeyData(keys, partitionToKeyData, null, null);
         }
-        List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
+        List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
@@ -1162,7 +1149,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
-    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap,
+    protected void fillPartitionToKeyData(Set<K> keys,
+                                          Map<Integer, List<Data>> partitionToKeyData,
+                                          Map<Object, Data> keyMap,
                                           Map<Data, Object> reverseKeyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key : keys) {
@@ -1170,7 +1159,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             int partitionId = partitionService.getPartitionId(keyData);
             List<Data> keyList = partitionToKeyData.get(partitionId);
             if (keyList == null) {
-                keyList = new ArrayList<Data>();
+                keyList = new ArrayList<>();
                 partitionToKeyData.put(partitionId, keyList);
             }
             keyList.add(keyData);
@@ -1188,7 +1177,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -1201,7 +1190,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
         InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
+            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
         return setBuilder.build();
@@ -1238,7 +1227,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
+        ArrayList<Map.Entry> resultList = new ArrayList<>();
         for (Data keyData : resultParameters.response) {
             K key = toObject(keyData);
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
@@ -1260,7 +1249,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
         InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
+            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
         return setBuilder.build();
@@ -1278,11 +1267,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
+        ArrayList<Map.Entry> resultList = new ArrayList<>();
         for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         Set result = getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
         return (Set<Entry<K, V>>) result;
@@ -1299,7 +1288,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1323,11 +1312,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<Entry>(resultParameters.response.size());
+        List<Entry> resultList = new ArrayList<>(resultParameters.response.size());
         for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
+            resultList.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         }
         return (Collection<V>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);
     }
@@ -1370,12 +1359,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKey(@Nonnull K key,
+                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return executeOnKeyInternal(key, entryProcessor);
     }
 
-    public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKeyInternal(Object key,
+                                      EntryProcessor<? super K, ? super V, R> entryProcessor) {
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
         Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1385,13 +1376,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKey(@Nonnull K key,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         submitToKeyInternal(key, entryProcessor, callback);
     }
 
     @SuppressWarnings("unchecked")
-    public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKeyInternal(Object key,
+                                        EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                        ExecutionCallback<? super R> callback) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1405,12 +1400,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return submitToKeyInternal(key, entryProcessor);
     }
 
-    public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
+                                                         EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1423,19 +1420,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
         MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
     }
 
-    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entries) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
         if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
 
-        Map<K, Object> result = createHashMap(entries.size());
+        Map<K, R> result = createHashMap(entries.size());
         for (Entry<Data, Data> entry : entries) {
             K key = toObject(entry.getKey());
             result.put(key, toObject(entry.getValue()));
@@ -1444,7 +1441,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                          @Nonnull Predicate<K, V> predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
 
@@ -1485,7 +1483,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectCodec.ResponseParameters resultParameters =
                 MapProjectCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -1498,44 +1496,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectWithPredicateCodec.ResponseParameters resultParameters =
                 MapProjectWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
-    }
-
-
-    @Override
-    @SuppressWarnings({"deprecation"})
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-        JobTracker jobTracker = getClient().getJobTracker("hz::aggregation-map-" + name);
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    @SuppressWarnings({"deprecation", "unchecked"})
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation, JobTracker jobTracker) {
-        try {
-            Preconditions.isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory != null) {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            throw new HazelcastException(e);
-        }
+        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -1585,7 +1546,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -1596,10 +1558,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeys(Set<K> keys,
+                                                          EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
         if (keys.isEmpty()) {
-            return new SimpleCompletedFuture<Map<K, Object>>(Collections.<K, Object>emptyMap());
+            return new SimpleCompletedFuture<>(Collections.emptyMap());
         }
 
         Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
@@ -1635,7 +1598,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public void putAll(Map<? extends K, ? extends V> map) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-        Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<Integer, List<Map.Entry<Data, Data>>>(partitionCount);
+        Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<>(partitionCount);
 
         for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
             checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
@@ -1645,16 +1608,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
             int partitionId = partitionService.getPartitionId(keyData);
             List<Map.Entry<Data, Data>> partition = entryMap.get(partitionId);
             if (partition == null) {
-                partition = new ArrayList<Map.Entry<Data, Data>>();
+                partition = new ArrayList<>();
                 entryMap.put(partitionId, partition);
             }
-            partition.add(new AbstractMap.SimpleEntry<Data, Data>(keyData, toData(entry.getValue())));
+            partition.add(new AbstractMap.SimpleEntry<>(keyData, toData(entry.getValue())));
         }
         putAllInternal(map, entryMap);
     }
 
     protected void putAllInternal(Map<? extends K, ? extends V> map, Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
-        List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
+        List<Future<?>> futures = new ArrayList<>(entryMap.size());
         for (Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
             Integer partitionId = entry.getKey();
             // if there is only one entry, consider how we can use MapPutRequest
@@ -1705,7 +1668,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @return the iterator for the projected entries
      */
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
-        return new ClientMapPartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
+        return new ClientMapPartitionIterator<>(this, getContext(), fetchSize, partitionId, prefetchValues);
     }
 
     /**
@@ -1742,7 +1705,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "iterator");
-        return new ClientMapQueryPartitionIterator<K, V, R>(this, getContext(), fetchSize, partitionId,
+        return new ClientMapQueryPartitionIterator<>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
     }
 
@@ -1794,7 +1757,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
         if (entryProcessor instanceof ReadOnly) {
-            EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+            EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
             if (backupProcessor != null) {
                 throw new IllegalArgumentException(
                         "EntryProcessor.getBackupProcessor() should be null for a read-only EntryProcessor");
@@ -1873,7 +1836,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValueData,
                                                   int eventType, Member member) {
-            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
+            return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
                     getSerializationService());
         }
 

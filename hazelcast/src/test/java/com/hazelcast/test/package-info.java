@@ -15,9 +15,21 @@
  */
 
 /**
+ * Test execution parallelism is achieved at two levels:
+ * <ul>
+ *     <li>Tests with the {@link com.hazelcast.test.annotation.ParallelJVMTest ParallelJVMTest}
+ *     category are picked up by surefire plugin for execution in multiple JVMs in parallel.
+ *     </li>
+ *     <li>Tests whose methods can be executed concurrently by multiple threads within the
+ *     same JVM should be executed with the {@link com.hazelcast.test.HazelcastParallelClassRunner}.
+ *     Parameterized tests should use the {@link com.hazelcast.test.HazelcastParallelParametersRunnerFactory}
+ *     for multithreaded execution. Enterprise counterparts exist for use in Hazelcast Enterprise tests.
+ *     </li>
+ * </ul>
+ *
  * <h4>Hazelcast Test Runners overview</h4>
  * <table>
- * <tr><th>Class</th><th>Parametric</th><th>Parallel method execution</th></tr>
+ * <tr><th>Class</th><th>Parametric</th><th>Multithreaded method execution</th></tr>
  * <tr>
  * <td>{@link com.hazelcast.test.HazelcastSerialClassRunner}</td>
  * <td>No</td>
@@ -27,11 +39,6 @@
  * <td>{@link com.hazelcast.test.HazelcastParallelClassRunner}</td>
  * <td>No</td>
  * <td>Yes</td>
- * </tr>
- * <tr>
- * <td>{@link com.hazelcast.test.HazelcastParametersRunnerFactory}</td>
- * <td>Yes</td>
- * <td>Based presence of the {@link com.hazelcast.test.annotation.ParallelTest} category</td>
  * </tr>
  * <tr>
  * <td>{@link com.hazelcast.test.HazelcastSerialParametersRunnerFactory}</td>
