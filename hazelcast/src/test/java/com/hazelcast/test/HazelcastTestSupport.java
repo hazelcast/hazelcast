@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -316,7 +317,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Returns the partition ID from a non-partitioned Hazelcast data
-     * structures like {@link com.hazelcast.core.ISet}.
+     * structures like {@link ISet}.
      * <p>
      * The partition ID is read via reflection from the internal
      * {@code partitionId} field. This is needed to support proxied

@@ -16,12 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IQueue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
+ * Contains the configuration for an {@link IQueue}.
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */

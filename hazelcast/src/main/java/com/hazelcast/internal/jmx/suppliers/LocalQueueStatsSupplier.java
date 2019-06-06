@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx.suppliers;
 
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 

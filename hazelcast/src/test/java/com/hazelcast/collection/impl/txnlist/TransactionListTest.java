@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.txnlist;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.test.AssertTask;

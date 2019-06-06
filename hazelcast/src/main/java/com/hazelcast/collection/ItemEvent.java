@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.collection;
+
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.Member;
 
 import java.util.EventObject;
 
@@ -23,7 +26,7 @@ import java.util.EventObject;
  *
  * @param <E> type of the item
  * @see com.hazelcast.core.EntryEvent
- * @see com.hazelcast.core.ICollection#addItemListener(ItemListener, boolean)
+ * @see ICollection#addItemListener(ItemListener, boolean)
  */
 
 public class ItemEvent<E> extends EventObject {

@@ -16,7 +16,8 @@
 
 package com.hazelcast.ringbuffer;
 
-import com.hazelcast.core.BaseQueue;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.BaseQueue;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
@@ -50,7 +51,7 @@ import java.util.Collection;
  * <p>
  * A Ringbuffer currently is a replicated, but not partitioned data structure.
  * So all data is stored in a single partition, similarly to the {@link
- * com.hazelcast.core.IQueue} implementation.
+ * IQueue} implementation.
  * <p>
  * A Ringbuffer can be used in a way similar to the IQueue, but one of the key
  * differences is that a {@code queue.take} is destructive, meaning that only 1

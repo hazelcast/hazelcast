@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.collection;
+
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.TransactionalQueue;
 
 import java.util.concurrent.TimeUnit;
 

@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
-
-import java.util.List;
-
 /**
- * Concurrent, distributed implementation of {@link List}.
- *
- * <p>The Hazelcast IList is not a partitioned data-structure. Entire contents of an IList is stored on a single machine (and
- * in the backup). The IList will not scale by adding more members to the cluster.
- *
- * <p>Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
- *
- * @param <E>
- * @see List
+ * This package contains classes to support the collection API.
  */
-public interface IList<E> extends List<E>, ICollection<E> {
-}
+package com.hazelcast.collection;

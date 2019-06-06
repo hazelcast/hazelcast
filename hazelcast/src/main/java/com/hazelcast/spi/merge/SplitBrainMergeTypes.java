@@ -17,6 +17,9 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
@@ -75,7 +78,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of collections ({@link com.hazelcast.core.ISet} and {@link com.hazelcast.core.IList}).
+     * Provided merge types of collections ({@link ISet} and {@link IList}).
      *
      * @since 3.10
      */
@@ -83,7 +86,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IQueue}.
+     * Provided merge types of {@link IQueue}.
      *
      * @since 3.10
      */

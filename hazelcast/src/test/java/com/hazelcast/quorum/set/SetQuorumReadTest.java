@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.set;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISet;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

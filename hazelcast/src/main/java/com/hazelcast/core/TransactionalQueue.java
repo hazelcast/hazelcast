@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.collection.BaseQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.concurrent.TimeUnit;
