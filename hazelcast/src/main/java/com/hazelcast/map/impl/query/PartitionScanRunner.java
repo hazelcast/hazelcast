@@ -25,10 +25,12 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Metadata;
 import com.hazelcast.query.PagingPredicate;
@@ -86,6 +88,7 @@ public class PartitionScanRunner {
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         LazyMapEntry queryEntry = new LazyMapEntry();
+        StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = (Data) toData(record.getKey());
@@ -98,6 +101,8 @@ public class PartitionScanRunner {
 
             queryEntry.init(serializationService, key, value, extractors);
             queryEntry.setMetadata(metadata);
+            queryEntry.setRecord(record);
+            queryEntry.setStoreAdapter(storeAdapter);
             boolean valid = predicate.apply(queryEntry);
             if (valid && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 result.add(queryEntry);

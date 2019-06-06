@@ -119,9 +119,26 @@ public interface RecordStore<R extends Record> {
     boolean setTtl(Data key, long ttl);
 
     /**
-     * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
-     * except removeBackup doesn't touch mapstore since it does not return previous value.
+     * Checks whether ttl or maxIdle are set on the record.
+     * @param record the record to be checked
+     * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
      */
+    boolean isTtlOrMaxIdleDefined(Record record);
+
+    /**
+     * Callback which is called when the record is being accessed from the record or index store.
+     * <p>
+     * An implementation is not supposed to be thread safe.
+     * @param record the accessed record
+     * @param now the current time
+     */
+    void accessRecord(Record record, long now);
+
+
+        /**
+         * Similar to {@link RecordStore##remove(Data, CallerProvenance)}
+         * except removeBackup doesn't touch mapstore since it does not return previous value.
+        */
     void removeBackup(Data dataKey, CallerProvenance provenance);
 
     /**
@@ -377,10 +394,22 @@ public interface RecordStore<R extends Record> {
     R getRecordOrNull(Data key);
 
     /**
-     * Evicts entries from this record-store.
+     * Check if record is reachable according to TTL or idle times.
+     * If not reachable return null.
      *
-     * @param excludedKey this key has lowest priority to be selected for eviction
+     * @param record the record from record-store.
+     * @param now    current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return null if evictable.
      */
+    R getOrNullIfExpired(R record, long now, boolean backup);
+
+
+        /**
+         * Evicts entries from this record-store.
+         *
+         * @param excludedKey this key has lowest priority to be selected for eviction
+         */
     void evictEntries(Data excludedKey);
 
     /**

@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.PartitionIndexesStats;
@@ -116,9 +117,10 @@ public class Indexes {
      *                canonicalizes it.
      * @param ordered {@code true} if the new index should be ordered, {@code
      *                false} otherwise.
+     * @param partitionStoreAdapter the reference to the store adapter. {@code null} if the index is global.
      * @return the existing or created index.
      */
-    public synchronized InternalIndex addOrGetIndex(String name, boolean ordered) {
+    public synchronized InternalIndex addOrGetIndex(String name, boolean ordered, StoreAdapter partitionStoreAdapter) {
         InternalIndex index = indexesByName.get(name);
         if (index != null) {
             return index;
@@ -137,7 +139,7 @@ public class Indexes {
         }
 
         index = indexProvider.createIndex(name, components, ordered, extractors, serializationService, indexCopyBehavior,
-                stats.createPerIndexStats(ordered, usesCachedQueryableEntries));
+                stats.createPerIndexStats(ordered, usesCachedQueryableEntries), partitionStoreAdapter);
 
         indexesByName.put(name, index);
         attributeIndexRegistry.register(index);

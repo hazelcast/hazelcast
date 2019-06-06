@@ -20,6 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -85,8 +86,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
                 queryCacheConfig, getEvictionListener(), extractors);
 
+        StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new QueryCacheRecordStoreAdapter(recordStore);
         for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
+            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered(), recordStoreAdapter);
         }
     }
 
@@ -218,5 +220,30 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     public void clear() {
         recordStore.clear();
         indexes.destroyIndexes();
+    }
+
+    static final class QueryCacheRecordStoreAdapter implements StoreAdapter<QueryCacheRecord> {
+
+        private final QueryCacheRecordStore recordStore;
+
+        QueryCacheRecordStoreAdapter(QueryCacheRecordStore recordStore) {
+            this.recordStore = recordStore;
+        }
+
+        @Override
+        public boolean evictIfExpired(QueryCacheRecord record, long now, boolean backup) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isTtlOrMaxIdleDefined(QueryCacheRecord record) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isExpirable() {
+            throw new UnsupportedOperationException();
+        }
+
     }
 }

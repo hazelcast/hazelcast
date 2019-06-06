@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.NodeInvokerWrapper;
@@ -72,7 +73,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * @param <K> the key type for this {@link InternalQueryCache}
  * @param <V> the value type for this {@link InternalQueryCache}
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     DefaultQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
@@ -456,7 +457,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void addIndex(String attribute, boolean ordered) {
         checkNotNull(attribute, "attribute cannot be null");
 
-        getIndexes().addOrGetIndex(attribute, ordered);
+        StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new QueryCacheRecordStoreAdapter(recordStore);
+        getIndexes().addOrGetIndex(attribute, ordered, recordStoreAdapter);
 
         InternalSerializationService serializationService = context.getSerializationService();
 

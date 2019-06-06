@@ -68,9 +68,9 @@ public class IndexesTest {
     @Test
     public void testAndWithSingleEntry() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
-        indexes.addOrGetIndex("age", true);
-        indexes.addOrGetIndex("salary", true);
+        indexes.addOrGetIndex("name", false, null);
+        indexes.addOrGetIndex("age", true, null);
+        indexes.addOrGetIndex("salary", true, null);
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -91,9 +91,9 @@ public class IndexesTest {
     @Test
     public void testIndex() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
-        indexes.addOrGetIndex("age", true);
-        indexes.addOrGetIndex("salary", true);
+        indexes.addOrGetIndex("name", false, null);
+        indexes.addOrGetIndex("age", true, null);
+        indexes.addOrGetIndex("salary", true, null);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -110,7 +110,7 @@ public class IndexesTest {
     @Test
     public void testIndex2() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
+        indexes.addOrGetIndex("name", false, null);
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
@@ -144,7 +144,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("name", false);
+        indexes.addOrGetIndex("name", false, null);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -171,7 +171,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex("__key", false);
+        indexes.addOrGetIndex("__key", false, null);
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
@@ -188,14 +188,14 @@ public class IndexesTest {
     public void testNoDuplicateIndexes() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
-        InternalIndex index = indexes.addOrGetIndex("a", false);
+        InternalIndex index = indexes.addOrGetIndex("a", false, null);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex("a", false));
+        assertSame(index, indexes.addOrGetIndex("a", false, null));
 
-        index = indexes.addOrGetIndex("a, b", false);
+        index = indexes.addOrGetIndex("a, b", false, null);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex("a, b", false));
-        assertSame(index, indexes.addOrGetIndex("this.a, b", false));
+        assertSame(index, indexes.addOrGetIndex("a, b", false, null));
+        assertSame(index, indexes.addOrGetIndex("this.a, b", false, null));
     }
 
 }

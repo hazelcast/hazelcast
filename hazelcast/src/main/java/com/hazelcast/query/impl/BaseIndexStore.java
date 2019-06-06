@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
+import com.hazelcast.util.Clock;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,13 +44,24 @@ public abstract class BaseIndexStore implements IndexStore {
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
     private boolean multiResultHasToDetectDuplicates;
+    private final AbstractIndex indexImpl;
+    /**
+     * {@code true} if this index store has at least one candidate entry
+     * for expiration (idle or tll), otherwise {@code false}.
+     * <p>
+     * The field is updated on every update of the index.
+     * <p>
+     * The filed's access is guarded by {@link BaseIndexStore#lock}.
+     */
+    private boolean isIndexStoreExpirable;
 
-    BaseIndexStore(IndexCopyBehavior copyOn) {
+    BaseIndexStore(IndexCopyBehavior copyOn, AbstractIndex indexImpl) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
         } else {
             resultCopyFunctor = new CopyInputFunctor();
         }
+        this.indexImpl = indexImpl;
     }
 
     /**
@@ -161,6 +173,10 @@ public abstract class BaseIndexStore implements IndexStore {
         // nothing to destroy
     }
 
+    public AbstractIndex getIndexImpl() {
+        return indexImpl;
+    }
+
     @SuppressWarnings("unchecked")
     private void unwrapAndInsertToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
         if (newValue == NonTerminalJsonValue.INSTANCE) {
@@ -227,6 +243,17 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
+    void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
+        assert lock.isWriteLockedByCurrentThread();
+        if (record.getStoreAdapter() != null) {
+            isIndexStoreExpirable = record.getStoreAdapter().isExpirable();
+        }
+    }
+
+    boolean isExpirable() {
+        return isIndexStoreExpirable;
+    }
+
     interface CopyFunctor<A, B> {
 
         Map<A, B> invoke(Map<A, B> map);
@@ -239,21 +266,39 @@ public abstract class BaseIndexStore implements IndexStore {
 
     }
 
-    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
+            if (isExpirable()) {
+                long now = Clock.currentTimeMillis();
+                for (Map.Entry<Data, QueryableEntry> entry : map.entrySet()) {
+                    QueryableEntry queryableEntry = entry.getValue();
+                    queryableEntry.getRecord().onAccessSafe(now);
+                }
+            }
             return map;
         }
 
     }
 
-    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
             if (map != null && !map.isEmpty()) {
-                return new HashMap<Data, QueryableEntry>(map);
+                if (isExpirable()) {
+                    HashMap<Data, QueryableEntry> newMap = new HashMap<>(map.size());
+                    long now = Clock.currentTimeMillis();
+                    for (Map.Entry<Data, QueryableEntry> entry : map.entrySet()) {
+                        QueryableEntry queryableEntry = entry.getValue();
+                        queryableEntry.getRecord().onAccessSafe(now);
+                        newMap.put(entry.getKey(), queryableEntry);
+                    }
+                    return newMap;
+                } else {
+                    return new HashMap<Data, QueryableEntry>(map);
+                }
             }
             return map;
         }
