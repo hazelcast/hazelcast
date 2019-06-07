@@ -19,10 +19,11 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalMap;
 
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
- * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
+ * transactional data-structures like the {@link TransactionalMap}.
  *
  * Provides client instance and client connection proxies that need to be accessed for sending invocations.
  */

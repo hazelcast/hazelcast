@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
 
+import com.hazelcast.core.BaseMap;
+import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.Collection;
 import java.util.Set;

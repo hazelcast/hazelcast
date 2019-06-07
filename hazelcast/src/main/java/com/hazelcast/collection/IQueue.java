@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;

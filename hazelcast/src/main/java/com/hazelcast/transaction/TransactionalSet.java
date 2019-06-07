@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
 
 import com.hazelcast.collection.ISet;
-import com.hazelcast.transaction.TransactionalObject;
 
 /**
  * Transactional implementation of {@link ISet}.
