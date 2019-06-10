@@ -23,6 +23,8 @@ issues opened by the Hazelcast customers/team.
 * Improved Config#getConfigurationUrl()'s Javadoc to mention
 that it returns `null` if the `Config` instance has been built from
 a source different than URL or file. [#15109]
+* Improved the Raft snapshotting so that the old log entries are not
+kept when there is no follower with an unknown match index.[#15068]
 * Updated the client failover XSD to include `targetNamespace` that
 has been delivered with Hazelcast IMDG 3.12. [#15057]
 * Updated the Hazelcast Kubernetes dependency to the latest version. [#14899]
@@ -38,6 +40,9 @@ issues in BoringSSL integration. #2907
 
 3. Fixes
 
+* Fixed an issue where the queries like `labels[any] = 0` and `labels[any] = 1`
+were optimized only to `false` since `labels[any]` was interpreted as a
+regular attribute name having a single value.[#15138]
 * Fixed an issue which was causing `OutOfMemoryException` in a
 split-brain situation, due to the client listeners. [#15042]
 * Fixed the authentication mechanism between the clients and members
