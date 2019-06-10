@@ -28,7 +28,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalIndexStatsImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.PerIndexStats;
-import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -99,7 +98,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
             map.put(i, i);
         }
 
-        map.entrySet(new PartitionPredicate(10, Predicates.equal("this", 10)));
+        map.entrySet(Predicates.partitionPredicate(10, Predicates.equal("this", 10)));
         assertTrue(map1.getLocalMapStats().getQueryCount() == 1 && map2.getLocalMapStats().getQueryCount() == 0
                 || map1.getLocalMapStats().getQueryCount() == 0 && map2.getLocalMapStats().getQueryCount() == 1);
         assertEquals(0, map1.getLocalMapStats().getIndexedQueryCount());

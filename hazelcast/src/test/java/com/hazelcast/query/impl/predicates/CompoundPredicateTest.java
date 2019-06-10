@@ -17,8 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,7 +67,7 @@ public class CompoundPredicateTest {
             throws IllegalAccessException, InstantiationException {
 
         CompoundPredicate o = klass.newInstance();
-        Predicate truePredicate = new TruePredicate();
+        Predicate truePredicate = Predicates.alwaysTrue();
         o.setPredicates(new Predicate[]{truePredicate});
         assertEquals(truePredicate, o.getPredicates()[0]);
     }
@@ -78,10 +77,10 @@ public class CompoundPredicateTest {
             throws IllegalAccessException, InstantiationException {
 
         CompoundPredicate o = klass.newInstance();
-        Predicate truePredicate = new TruePredicate();
+        Predicate truePredicate = Predicates.alwaysTrue();
         o.setPredicates(new Predicate[]{truePredicate});
 
-        Predicate falsePredicate = new FalsePredicate();
+        Predicate falsePredicate = Predicates.alwaysFalse();
         o.setPredicates(new Predicate[]{falsePredicate});
 
         fail();

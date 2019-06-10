@@ -24,10 +24,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -114,7 +113,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
             expected.add(iteration);
             for (int i = 0; i < ENTRIES; ++i) {
                 if (withPredicate) {
-                    EntryObject eo = new PredicateBuilder().getEntryObject();
+                    EntryObject eo = Predicates.newPredicateBuilder().getEntryObject();
                     Predicate keyPredicate = eo.key().equal(i);
                     map.executeOnEntries(processor, keyPredicate);
                 } else {
@@ -126,16 +125,13 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         for (int i = 0; i < ENTRIES; i++) {
             final int index = i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
+            assertTrueEventually(() -> {
                     ListHolder holder = map.get(index);
                     String errorText = String.format("Each ListHolder should contain %d entries.\nInvalid list holder content:\n%s\n", ITERATIONS, holder.toString());
                     assertEquals(errorText, ITERATIONS, holder.size());
-                    for (int i = 0; i < ITERATIONS; i++) {
-                        assertEquals(i, holder.get(i));
+                    for (int it = 0; it < ITERATIONS; it++) {
+                        assertEquals(it, holder.get(it));
                     }
-                }
             });
         }
     }
@@ -179,7 +175,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static class ListHolder implements DataSerializable {
 
-        private List<Integer> list = new ArrayList<Integer>();
+        private List<Integer> list = new ArrayList<>();
         private int size;
 
         ListHolder() {
@@ -196,7 +192,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             size = in.readInt();
-            list = new ArrayList<Integer>(size);
+            list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 list.add(in.readInt());
             }

@@ -24,7 +24,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -72,7 +71,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @SuppressWarnings("RedundantCast")
     public void pagingPredicate_fails() {
-        getMapWithNodeCount(1).project(new NullReturningProjection(), new PagingPredicate());
+        getMapWithNodeCount(1).project(new NullReturningProjection(), Predicates.pagingPredicate(1));
     }
 
     @Test

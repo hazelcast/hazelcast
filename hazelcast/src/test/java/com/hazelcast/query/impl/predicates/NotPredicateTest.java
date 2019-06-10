@@ -19,8 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -66,8 +65,8 @@ public class NotPredicateTest {
 
     @Test
     public void apply() {
-        apply(TruePredicate.INSTANCE, false);
-        apply(FalsePredicate.INSTANCE, true);
+        apply(Predicates.alwaysTrue(), false);
+        apply(Predicates.alwaysFalse(), true);
     }
 
     public void apply(Predicate inner, boolean expected) {
@@ -80,7 +79,7 @@ public class NotPredicateTest {
 
     @Test
     public void serialize() {
-        NotPredicate notPredicate = new NotPredicate(TruePredicate.INSTANCE);
+        NotPredicate notPredicate = new NotPredicate(Predicates.alwaysTrue());
 
         Data data = serializationService.toData(notPredicate);
         Object result = serializationService.toObject(data);

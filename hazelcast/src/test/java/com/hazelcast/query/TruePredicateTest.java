@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.predicates.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

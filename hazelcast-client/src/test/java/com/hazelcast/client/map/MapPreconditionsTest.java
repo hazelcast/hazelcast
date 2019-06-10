@@ -28,7 +28,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -316,7 +316,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(mapListener, predicate, null, false);
     }
 
@@ -334,7 +334,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(entryListener, predicate, null, false);
     }
 
@@ -348,7 +348,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(mapListener, predicate, false);
     }
 
@@ -366,7 +366,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(entryListener, predicate, false);
     }
 
@@ -427,7 +427,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(mapListener, predicate, null, true);
     }
 
@@ -445,7 +445,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(entryListener, predicate, null, false);
     }
 
@@ -459,7 +459,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(mapListener, predicate, false);
     }
 
@@ -477,7 +477,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(entryListener, predicate, false);
     }
 
@@ -536,7 +536,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.keySet(TruePredicate.INSTANCE);
+        map.keySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
@@ -550,7 +550,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.entrySet(TruePredicate.INSTANCE);
+        map.entrySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
@@ -564,7 +564,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.values(TruePredicate.INSTANCE);
+        map.values(Predicates.alwaysTrue());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -582,7 +582,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.localKeySet(TruePredicate.INSTANCE);
+        map.localKeySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = UnsupportedOperationException.class)

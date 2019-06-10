@@ -27,9 +27,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
-import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -139,7 +137,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
     public void testListenWithPredicate() {
         ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
         final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, FalsePredicate.INSTANCE);
+        replicatedMap.addEntryListener(listener, Predicates.alwaysFalse());
         replicatedMap.put(2, 2);
         assertTrueFiveSeconds(new AssertTask() {
             @Override
@@ -165,7 +163,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
             public void onEntryEvent(EntryEvent<DeserializationCounter, DeserializationCounter> event) {
                 eventReceivedLatch.countDown();
             }
-        }, TruePredicate.INSTANCE);
+        }, Predicates.alwaysTrue());
 
         DeserializationCounter key = new DeserializationCounter();
         DeserializationCounter value = new DeserializationCounter();

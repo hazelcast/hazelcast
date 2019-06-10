@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryEvictedListener;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,7 +81,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         // 10 states an error margin since eviction does not sweep precise number of entries.
         int margin = 10;
         final CountDownLatch evictedCount = new CountDownLatch(populationCount - maxSize - margin);
-        final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, TruePredicate.INSTANCE, true);
+        final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, Predicates.alwaysTrue(), true);
         String listener = cache.addEntryListener(new EntryEvictedListener() {
             @Override
             public void entryEvicted(EntryEvent event) {

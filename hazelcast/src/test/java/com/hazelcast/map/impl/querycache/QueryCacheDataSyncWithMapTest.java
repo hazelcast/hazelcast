@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -55,7 +55,7 @@ public class QueryCacheDataSyncWithMapTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-        queryCacheConfig.getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+        queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());
 
         MapConfig mapConfig = new MapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
 

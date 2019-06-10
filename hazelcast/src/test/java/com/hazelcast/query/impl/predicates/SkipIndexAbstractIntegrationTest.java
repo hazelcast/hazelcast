@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -39,13 +39,13 @@ public abstract class SkipIndexAbstractIntegrationTest extends HazelcastTestSupp
             map.put(k, new Pojo(k));
         }
 
-        assertEquals(1, map.values(new SqlPredicate("%f=10")).size());
-        assertEquals(9, map.values(new SqlPredicate("%f>10")).size());
-        assertEquals(10, map.values(new SqlPredicate("%f>=10")).size());
-        assertEquals(19, map.values(new SqlPredicate("%f!=10")).size());
-        assertEquals(10, map.values(new SqlPredicate("%f<10")).size());
-        assertEquals(11, map.values(new SqlPredicate("%f<=10")).size());
-        assertEquals(5, map.values(new SqlPredicate("%f in (1,2,3,4,5)")).size());
+        assertEquals(1, map.values(Predicates.sql("%f=10")).size());
+        assertEquals(9, map.values(Predicates.sql("%f>10")).size());
+        assertEquals(10, map.values(Predicates.sql("%f>=10")).size());
+        assertEquals(19, map.values(Predicates.sql("%f!=10")).size());
+        assertEquals(10, map.values(Predicates.sql("%f<10")).size());
+        assertEquals(11, map.values(Predicates.sql("%f<=10")).size());
+        assertEquals(5, map.values(Predicates.sql("%f in (1,2,3,4,5)")).size());
 
         hz.shutdown();
     }
@@ -59,13 +59,13 @@ public abstract class SkipIndexAbstractIntegrationTest extends HazelcastTestSupp
             map.put(k, new Pojo(k));
         }
 
-        assertEquals(1, map.values(new SqlPredicate("%f=10")).size());
-        assertEquals(9, map.values(new SqlPredicate("%f>10")).size());
-        assertEquals(10, map.values(new SqlPredicate("%f>=10")).size());
-        assertEquals(19, map.values(new SqlPredicate("%f!=10")).size());
-        assertEquals(10, map.values(new SqlPredicate("%f<10")).size());
-        assertEquals(11, map.values(new SqlPredicate("%f<=10")).size());
-        assertEquals(5, map.values(new SqlPredicate("%f in (1,2,3,4,5)")).size());
+        assertEquals(1, map.values(Predicates.sql("%f=10")).size());
+        assertEquals(9, map.values(Predicates.sql("%f>10")).size());
+        assertEquals(10, map.values(Predicates.sql("%f>=10")).size());
+        assertEquals(19, map.values(Predicates.sql("%f!=10")).size());
+        assertEquals(10, map.values(Predicates.sql("%f<10")).size());
+        assertEquals(11, map.values(Predicates.sql("%f<=10")).size());
+        assertEquals(5, map.values(Predicates.sql("%f in (1,2,3,4,5)")).size());
 
         hz.shutdown();
     }

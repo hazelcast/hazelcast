@@ -90,25 +90,22 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch endGate = new CountDownLatch(THREADS_NUMBER);
         for (int i = 0; i < THREADS_NUMBER; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        startGate.await();
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    try {
-                        for (int j = 0; j < THREADS_ITERATION; j++) {
-                            map.entrySet(Predicates.alwaysTrue());
-                            map.entrySet(Predicates.equal("this", 10));
-                            map.entrySet(Predicates.lessEqual("this", lessEqualCount));
-                        }
-                    } finally {
-                        endGate.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    startGate.await();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
                 }
-            }.start();
+                try {
+                    for (int j = 0; j < THREADS_ITERATION; j++) {
+                        map.entrySet(Predicates.alwaysTrue());
+                        map.entrySet(Predicates.equal("this", 10));
+                        map.entrySet(Predicates.lessEqual("this", lessEqualCount));
+                    }
+                } finally {
+                    endGate.countDown();
+                }
+            }).start();
         }
 
         startGate.countDown();
@@ -133,26 +130,23 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         final CountDownLatch endGate = new CountDownLatch(THREADS_NUMBER);
         for (int i = 0; i < THREADS_NUMBER; i++) {
             final int threadOrder = i;
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        startGate.await();
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    try {
-                        for (int j = 0; j < THREADS_ITERATION; j++) {
-                            map.put(threadOrder * THREADS_ITERATION + j, j);
-                            map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j);
-                            map.remove(threadOrder * THREADS_ITERATION + j);
-                            map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j * j);
-                        }
-                    } finally {
-                        endGate.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    startGate.await();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
                 }
-            }.start();
+                try {
+                    for (int j = 0; j < THREADS_ITERATION; j++) {
+                        map.put(threadOrder * THREADS_ITERATION + j, j);
+                        map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j);
+                        map.remove(threadOrder * THREADS_ITERATION + j);
+                        map.put((threadOrder + THREADS_NUMBER) * THREADS_ITERATION + j, j * j);
+                    }
+                } finally {
+                    endGate.countDown();
+                }
+            }).start();
         }
 
         startGate.countDown();

@@ -31,6 +31,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,7 +44,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
-
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -641,7 +641,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     private static <K, V> void checkMapClonedCollectionsImmutable(IMap<K, V> map, boolean onMember) {
-        PagingPredicate<K, V> pagingPredicate = new PagingPredicate<K, V>(5);
+        PagingPredicate<K, V> pagingPredicate = Predicates.pagingPredicate(5);
 
         checkCollectionImmutable(map.entrySet());
         checkCollectionImmutable(map.entrySet(e -> true));
@@ -1446,23 +1446,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             test.put(i, i);
         }
 
-        Collection<Integer> values = test.values(new TestPagingPredicate(100));
+        Collection<Integer> values = test.values(Predicates.pagingPredicate(100));
         Type genericSuperClass = values.getClass().getGenericSuperclass();
         Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
         // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
         assertInstanceOf(Class.class, actualType);
-    }
-
-    private static class TestPagingPredicate extends PagingPredicate {
-
-        TestPagingPredicate(int pageSize) {
-            super(pageSize);
-        }
-
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return true;
-        }
     }
 
     @Test

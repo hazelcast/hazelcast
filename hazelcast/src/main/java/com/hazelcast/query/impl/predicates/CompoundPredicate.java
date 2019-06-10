@@ -21,7 +21,7 @@ import com.hazelcast.query.Predicate;
 /**
  * Interface for predicates which operate on an array of sub-predicates.
  * Implementations of this interface must include a default no-args constructor.
- * If a {@code CompoundPredicate} is also a {@link com.hazelcast.query.VisitablePredicate}, taking into account
+ * If a {@code CompoundPredicate} is also a {@link VisitablePredicate}, taking into account
  * the immutability requirements for {@code VisitablePredicate}s, {@link #setPredicates(Predicate[])} should
  * throw an {@code IllegalStateException} when invoked on a {@code CompoundStatement} whose sub-predicates
  * have already been set.
@@ -36,7 +36,7 @@ public interface CompoundPredicate {
 
     /**
      * Set the sub-predicates of this {@code CompoundPredicate}. If a predicate should be treated as effectively
-     * immutable, such as a {@link com.hazelcast.query.VisitablePredicate}, it is advised that this method throws
+     * immutable, such as a {@link VisitablePredicate}, it is advised that this method throws
      * {@link IllegalStateException} when sub-predicates have already been defined.
      * @param predicates
      * @param <K>

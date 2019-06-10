@@ -24,10 +24,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -82,7 +80,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         }
         partitionKey = randomString();
         partitionId = server.getPartitionService().getPartition(partitionKey).getPartitionId();
-        predicate = new PartitionPredicate<String, Integer>(partitionKey, TruePredicate.INSTANCE);
+        predicate = Predicates.partitionPredicate(partitionKey, Predicates.alwaysTrue());
     }
 
     @After
@@ -92,8 +90,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void values_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = Predicates.pagingPredicate(Predicates.alwaysTrue(), 1);
+        predicate = Predicates.partitionPredicate(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.values(predicate).size();
@@ -106,8 +104,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void keys_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = Predicates.pagingPredicate(Predicates.alwaysTrue(), 1);
+        predicate = Predicates.partitionPredicate(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.keySet(predicate).size();
@@ -120,8 +118,8 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void entries_withPagingPredicate() {
-        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<>(Predicates.alwaysTrue(), 1);
-        predicate = new PartitionPredicate<>(randomString(), pagingPredicate);
+        PagingPredicate<String, Integer> pagingPredicate = Predicates.pagingPredicate(Predicates.alwaysTrue(), 1);
+        predicate = Predicates.partitionPredicate(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
             int size = map.entrySet(predicate).size();
@@ -167,7 +165,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
     public void aggregate() {
         int partitionId = 2;
         String keyForPartition = generateKeyForPartition(server, partitionId);
-        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
+        Predicate partitionPredicate = Predicates.partitionPredicate(keyForPartition, Predicates.alwaysTrue());
         Long aggregate = map.aggregate(Aggregators.integerSum(), partitionPredicate);
         Long sum = (long) (partitionId * ITEMS_PER_PARTITION);
         assertEquals(sum, aggregate);
@@ -177,7 +175,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
     public void executeOnEntries() {
         int partitionId = 2;
         String keyForPartition = generateKeyForPartition(server, partitionId);
-        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
+        Predicate partitionPredicate = Predicates.partitionPredicate(keyForPartition, Predicates.alwaysTrue());
         Map<String, Object> entries = map.executeOnEntries(new MyProcessor(), partitionPredicate);
         assertEquals(ITEMS_PER_PARTITION, entries.size());
     }
@@ -202,7 +200,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         sizeBefore = map.size();
         partitionSizeBefore = map.keySet(predicate).size();
         assertEquals(ITEMS_PER_PARTITION, partitionSizeBefore);
-        map.removeAll(new PartitionPredicate<String, Integer>(partitionKey, Predicates.equal("this", ITEMS_PER_PARTITION - 1)));
+        map.removeAll(Predicates.partitionPredicate(partitionKey, Predicates.equal("this", ITEMS_PER_PARTITION - 1)));
         assertEquals(sizeBefore - 1, map.size());
         assertEquals(partitionSizeBefore - 1, map.keySet(predicate).size());
     }
@@ -222,7 +220,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void project() {
-        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(1, TruePredicate.INSTANCE);
+        Predicate partitionPredicate = Predicates.partitionPredicate(1, Predicates.alwaysTrue());
         Collection<Integer> collection = map.project(new PrimitiveValueIncrementingProjection(), partitionPredicate);
         assertEquals(ITEMS_PER_PARTITION, collection.size());
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Index;
@@ -36,7 +35,7 @@ import java.util.Set;
  * values.
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
-public class CompositeEqualPredicate implements Predicate, IndexAwarePredicate {
+public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     final String indexName;
     final String[] components;

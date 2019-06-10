@@ -23,7 +23,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -321,7 +321,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     @Test(expected = MethodNotAvailableException.class)
     public void testExecuteOnEntriesWithPredicate() {
-        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), TruePredicate.INSTANCE);
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), Predicates.alwaysTrue());
     }
 
     @Test

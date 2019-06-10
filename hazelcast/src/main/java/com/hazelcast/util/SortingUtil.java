@@ -121,20 +121,12 @@ public final class SortingUtil {
 
     public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator,
                                                       final IterationType iterationType) {
-        return new Comparator<Map.Entry>() {
-            public int compare(Map.Entry entry1, Map.Entry entry2) {
-                return SortingUtil.compare(comparator, iterationType, entry1, entry2);
-            }
-        };
+        return (entry1, entry2) -> SortingUtil.compare(comparator, iterationType, entry1, entry2);
     }
 
     private static Comparator<QueryableEntry> newComparator(final PagingPredicate pagingPredicate) {
-        return new Comparator<QueryableEntry>() {
-            public int compare(QueryableEntry entry1, QueryableEntry entry2) {
-                return SortingUtil.compare(pagingPredicate.getComparator(),
-                        pagingPredicate.getIterationType(), entry1, entry2);
-            }
-        };
+        return (entry1, entry2) -> SortingUtil
+                .compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
     }
 
     public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,

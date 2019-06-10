@@ -26,7 +26,7 @@ import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.EventLostListener;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -75,7 +75,7 @@ public class ClientQueryCacheEventLostListenerTest extends HazelcastTestSupport 
 
         // expecting one lost event publication per partition.
         final CountDownLatch lostEventCount = new CountDownLatch(1);
-        QueryCache queryCache = mapClient.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
+        QueryCache queryCache = mapClient.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
         queryCache.addEntryListener(new EventLostListener() {
             @Override
             public void eventLost(EventLostEvent event) {

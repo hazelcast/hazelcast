@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -76,11 +77,11 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map1.put(i + 10, i);
         }
 
-        PagingPredicate<Integer, Integer> predicate1 = new PagingPredicate<Integer, Integer>(pageSize);
+        PagingPredicate<Integer, Integer> predicate1 = Predicates.pagingPredicate(pageSize);
         Set<Integer> keySet = map1.localKeySet(predicate1);
 
         int value = 9;
-        Set<Integer> whole = new HashSet<Integer>(size);
+        Set<Integer> whole = new HashSet<>(size);
         while (keySet.size() > 0) {
             for (Integer integer : keySet) {
                 assertTrue(integer > value);
@@ -91,7 +92,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             keySet = map1.localKeySet(predicate1);
         }
 
-        PagingPredicate<Integer, Integer> predicate2 = new PagingPredicate<Integer, Integer>(pageSize);
+        PagingPredicate<Integer, Integer> predicate2 = Predicates.pagingPredicate(pageSize);
         value = 9;
         keySet = map2.localKeySet(predicate2);
         while (keySet.size() > 0) {
@@ -109,7 +110,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testWithoutAnchor() {
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
         predicate.nextPage();
         predicate.nextPage();
         Collection<Integer> values = map.values(predicate);
@@ -138,8 +139,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testPagingWithoutFilteringAndComparator() {
-        Set<Integer> set = new HashSet<Integer>();
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+        Set<Integer> set = new HashSet<>();
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
 
         Collection<Integer> values = map.values(predicate);
         while (values.size() > 0) {
@@ -157,7 +158,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     public void testPagingWithFilteringAndComparator() {
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);
         PagingPredicate<Integer, Integer> predicate
-                = new PagingPredicate<Integer, Integer>(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
+                = Predicates.pagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 8, 7, 6, 5, 4);
@@ -176,7 +177,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         map.addIndex("this", true);
         Predicate<Integer, Integer> lessEqual = Predicates.between("this", 12, 20);
         TestComparator comparator = new TestComparator(false, IterationType.VALUE);
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize);
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 20, 19, 18, 17, 16);
@@ -200,7 +201,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);    // values less than 8
         TestComparator comparator = new TestComparator(true, IterationType.KEY);    //ascending keys
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize);
+        PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize);
 
         Set<Integer> keySet = map.keySet(predicate);
         assertIterableEquals(keySet, 42, 43, 44, 45, 46);
@@ -226,7 +227,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         // ascending values
         TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate
-                = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); //pageSize = 5
+                = Predicates.pagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 0, 1, 1, 2);
@@ -251,7 +252,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         // ascending values
         TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate
-                = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); //pageSize = 5
+                = Predicates.pagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 1, 2, 3);
@@ -284,7 +285,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         };
 
         for (int pageSize : pageSizesToCheck) {
-            final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+            final PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
 
             assertEquals(size, map.keySet(predicate).size());
             for (int page : pagesToCheck) {
@@ -301,7 +302,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.set(i, i);
         }
 
-        int resultSize = map.entrySet(new PagingPredicate(Predicates.equal("this", size), pageSize) {
+        int resultSize = map.entrySet(new PagingPredicateImpl(Predicates.equal("this", size), pageSize) {
             @Override
             public boolean apply(Map.Entry mapEntry) {
                 fail("full scan is not expected");

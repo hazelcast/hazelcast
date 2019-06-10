@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.util.IterationType;
@@ -55,7 +55,7 @@ public class MapValuesMessageTask
 
     @Override
     protected Predicate getPredicate() {
-        return TruePredicate.INSTANCE;
+        return Predicates.alwaysTrue();
     }
 
     @Override

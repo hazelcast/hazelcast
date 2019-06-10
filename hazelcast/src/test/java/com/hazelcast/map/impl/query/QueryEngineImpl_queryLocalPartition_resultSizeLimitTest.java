@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -71,7 +71,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitNotExceeded() {
         fillPartition(limit - 1);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit - 1, result.size());
@@ -81,7 +81,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitNotEquals() {
         fillPartition(limit);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         QueryResult result = (QueryResult) queryEngine.execute(query, Target.LOCAL_NODE);
 
         assertEquals(limit, result.size());
@@ -92,7 +92,7 @@ public class QueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends Haz
     public void checkResultSize_limitExceeded() {
         fillPartition(limit + 1);
 
-        Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
+        Query query = Query.of().mapName(map.getName()).predicate(Predicates.alwaysTrue()).iterationType(ENTRY).build();
         queryEngine.execute(query, Target.LOCAL_NODE);
     }
 

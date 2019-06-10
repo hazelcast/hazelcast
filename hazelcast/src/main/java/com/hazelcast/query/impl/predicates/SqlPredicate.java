@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.SkipIndexPredicate;
-import com.hazelcast.query.impl.predicates.AndPredicate;
-import com.hazelcast.query.impl.predicates.CompoundPredicate;
-import com.hazelcast.query.impl.predicates.OrPredicate;
-import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
-import com.hazelcast.query.impl.predicates.Visitor;
 import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
@@ -51,7 +47,7 @@ import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.regex;
 
 /**
- * This class contains methods related to conversion of sql query to predicate.
+ * This class contains methods related to conversion of 'sql' query to predicate.
  */
 @BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
@@ -71,47 +67,17 @@ public class SqlPredicate
         Predicate create(String attribute, Comparable c);
     }
 
-    private static final ComparisonPredicateFactory EQUAL_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return equal(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory EQUAL_FACTORY = Predicates::equal;
 
-    private static final ComparisonPredicateFactory NOT_EQUAL_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return notEqual(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory NOT_EQUAL_FACTORY = Predicates::notEqual;
 
-    private static final ComparisonPredicateFactory GREATER_THAN_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return greaterThan(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory GREATER_THAN_FACTORY = Predicates::greaterThan;
 
-    private static final ComparisonPredicateFactory GREATER_EQUAL_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return greaterEqual(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory GREATER_EQUAL_FACTORY = Predicates::greaterEqual;
 
-    private static final ComparisonPredicateFactory LESS_EQUAL_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return lessEqual(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory LESS_EQUAL_FACTORY = Predicates::lessEqual;
 
-    private static final ComparisonPredicateFactory LESS_THAN_FACTORY = new ComparisonPredicateFactory() {
-        @Override
-        public Predicate create(String attribute, Comparable c) {
-            return lessThan(attribute, c);
-        }
-    };
+    private static final ComparisonPredicateFactory LESS_THAN_FACTORY = Predicates::lessThan;
 
     transient Predicate predicate;
     private String sql;
@@ -172,10 +138,10 @@ public class SqlPredicate
         return (phrase.length() > 2) ? phrase.replace("''", "'") : phrase;
     }
 
-
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     private Predicate createPredicate(String sql) {
         String paramSql = sql;
-        Map<String, String> mapPhrases = new HashMap<String, String>();
+        Map<String, String> mapPhrases = new HashMap<>();
         int apoIndex = getApostropheIndex(paramSql, 0);
         if (apoIndex != -1) {
             int phraseId = 0;
@@ -185,7 +151,7 @@ public class SqlPredicate
                 int start = apoIndex + 1;
                 int end = getApostropheIndexIgnoringDoubles(paramSql, apoIndex + 1);
                 if (end == -1) {
-                    throw new RuntimeException("Missing ' in sql");
+                    throw new IllegalArgumentException("Missing ' in sql");
                 }
                 String phrase = removeEscapes(paramSql.substring(start, end));
 
@@ -200,11 +166,11 @@ public class SqlPredicate
             newSql.append(paramSql);
             paramSql = newSql.toString();
         }
-        Parser parser = new Parser();
+        SqlParser parser = new SqlParser();
         List<String> sqlTokens = parser.toPrefix(paramSql);
-        List<Object> tokens = new ArrayList<Object>(sqlTokens);
+        List<Object> tokens = new ArrayList<>(sqlTokens);
         if (tokens.size() == 0) {
-            throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
+            throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
             return eval(tokens.get(0));
@@ -283,13 +249,13 @@ public class SqlPredicate
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, flattenCompound(eval(first), eval(second), OrPredicate.class));
                     } else {
-                        throw new RuntimeException("Unknown token " + token);
+                        throw new IllegalArgumentException("Unknown token " + token);
                     }
                     continue root;
                 }
             }
             if (!foundOperand) {
-                throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
+                throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
             }
         }
         return (Predicate) tokens.get(0);
@@ -318,7 +284,7 @@ public class SqlPredicate
 
     private void validateOperandPosition(int pos) {
         if (pos < 0) {
-            throw new RuntimeException("Invalid SQL: [" + sql + "]");
+            throw new IllegalArgumentException("Invalid SQL: [" + sql + "]");
         }
     }
 
@@ -383,13 +349,11 @@ public class SqlPredicate
             predicates = new Predicate[]{predicateLeft, predicateRight};
         }
         try {
-            CompoundPredicate compoundPredicate = klass.newInstance();
+            T compoundPredicate = klass.newInstance();
             compoundPredicate.setPredicates(predicates);
-            return (T) compoundPredicate;
-        } catch (InstantiationException e) {
-            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+            return compoundPredicate;
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new IllegalArgumentException(String.format("%s should have a public default constructor", klass.getName()));
         }
     }
 

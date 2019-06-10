@@ -25,8 +25,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -105,7 +105,7 @@ public class QueryEngineImpl implements QueryEngine {
         if (adjustedQuery.getPredicate() instanceof PagingPredicate) {
             ((PagingPredicate) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
         } else {
-            if (adjustedQuery.getPredicate() == TruePredicate.INSTANCE) {
+            if (adjustedQuery.getPredicate() == Predicates.alwaysTrue()) {
                 queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());
             }
         }

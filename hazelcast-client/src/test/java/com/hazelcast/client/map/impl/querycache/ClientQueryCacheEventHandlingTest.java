@@ -24,7 +24,7 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 

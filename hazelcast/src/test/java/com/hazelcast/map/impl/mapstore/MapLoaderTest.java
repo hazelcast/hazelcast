@@ -39,7 +39,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.nio.Address;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -565,7 +566,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
         assertPredicateResultCorrect(map, predicate);
     }
 
@@ -581,7 +582,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance node = nodeBuilder.getRandomNode();
 
         IMap<Integer, SampleIndexableObject> map = node.getMap(mapName);
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
 
         assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
@@ -764,7 +765,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
+    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final Predicate predicate) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
