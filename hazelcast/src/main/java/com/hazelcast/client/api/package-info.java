@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
-
-import java.util.EventListener;
-
 /**
- * The ClientListener provides the ability to listen to clients connecting and disconnecting from the member.
- *
- * @see Client
- * @see ClientService#addClientListener(ClientListener)
+ * <p>Contains public API for client related functions.</p>
  */
-public interface ClientListener extends EventListener {
-
-    /**
-     * Invoked when a client is connected.
-     *
-     * @param client the client instance
-     */
-    void clientConnected(Client client);
-
-    /**
-     * Invoked when a client is disconnected.
-     *
-     * @param client the client instance
-     */
-    void clientDisconnected(Client client);
-}
+package com.hazelcast.client.api;

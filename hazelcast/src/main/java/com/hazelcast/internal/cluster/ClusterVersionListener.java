@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.version.Version;
 
 /**

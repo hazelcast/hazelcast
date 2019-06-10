@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.api.Client;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.GroupConfig;
@@ -1017,7 +1018,7 @@ public class ClientConfig {
     }
 
     /**
-     * Adds a label for this client {@link com.hazelcast.core.Client} available
+     * Adds a label for this client {@link Client} available
      *
      * @param label The label to be added.
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cluster;
 
 /**
  * The InitializingMembershipListener is a {@link MembershipListener} that first receives a
@@ -26,7 +26,7 @@ package com.hazelcast.core;
  *
  * @author Peter Veentjer.
  * @see Cluster#addMembershipListener(MembershipListener)
- * @see com.hazelcast.core.MembershipEvent#getMembers()
+ * @see MembershipEvent#getMembers()
  */
 public interface InitialMembershipListener extends MembershipListener {
 

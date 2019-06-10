@@ -32,7 +32,7 @@ import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

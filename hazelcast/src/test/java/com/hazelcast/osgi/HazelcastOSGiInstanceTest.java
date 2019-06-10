@@ -17,11 +17,11 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ClientService;
-import com.hazelcast.core.Cluster;
+import com.hazelcast.client.api.ClientService;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;

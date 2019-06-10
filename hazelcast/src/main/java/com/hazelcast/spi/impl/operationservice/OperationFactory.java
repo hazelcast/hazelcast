@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 /**
  * A Factory for creating {@link Operation} instances.
  * <p>The operations that will be sent to all partitions causes redundant serialization and network overhead.
- * An {@link OperationFactory} instance is sent to each {@link com.hazelcast.core.Member} (node) instead to
+ * An {@link OperationFactory} instance is sent to each {@link com.hazelcast.cluster.Member} (node) instead to
  * improve the performance.
  * {@link OperationService} uses this factory to create {@link Operation}s for each partition by calling
  * {@link #createOperation()}

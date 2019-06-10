@@ -20,7 +20,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;

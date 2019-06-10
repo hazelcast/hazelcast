@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.client.api;
+
+import com.hazelcast.cluster.Endpoint;
 
 import java.net.InetSocketAddress;
 import java.util.Set;

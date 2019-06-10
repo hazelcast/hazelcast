@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.EventObject;
 

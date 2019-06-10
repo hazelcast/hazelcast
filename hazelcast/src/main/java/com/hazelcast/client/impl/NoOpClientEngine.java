@@ -18,8 +18,8 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.api.Client;
+import com.hazelcast.client.api.ClientType;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

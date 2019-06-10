@@ -73,7 +73,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;

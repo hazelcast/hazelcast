@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;

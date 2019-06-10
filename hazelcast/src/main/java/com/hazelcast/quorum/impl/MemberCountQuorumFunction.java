@@ -16,7 +16,7 @@
 
 package com.hazelcast.quorum.impl;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.quorum.QuorumFunction;
 
 import java.util.Collection;

@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.DefaultNodeExtension;

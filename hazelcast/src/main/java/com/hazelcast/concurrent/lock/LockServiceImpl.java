@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;

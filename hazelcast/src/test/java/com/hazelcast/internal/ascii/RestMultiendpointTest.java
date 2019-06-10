@@ -21,7 +21,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;

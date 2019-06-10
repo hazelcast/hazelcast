@@ -19,7 +19,7 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.scheduledexecutor.ScheduledExecutorServiceTestSupport.PlainCallableTask;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;

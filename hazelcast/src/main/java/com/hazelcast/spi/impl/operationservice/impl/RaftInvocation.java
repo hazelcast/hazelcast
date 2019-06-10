@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.LocalMemberResetException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;

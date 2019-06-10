@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.exception;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.IndeterminateOperationState;
 
 /**

@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;

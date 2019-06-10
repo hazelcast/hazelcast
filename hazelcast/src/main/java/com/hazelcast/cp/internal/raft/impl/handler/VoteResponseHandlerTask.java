@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftRole;

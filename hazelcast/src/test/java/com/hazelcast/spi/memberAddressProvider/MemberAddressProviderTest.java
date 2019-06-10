@@ -21,7 +21,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MemberAddressProvider;

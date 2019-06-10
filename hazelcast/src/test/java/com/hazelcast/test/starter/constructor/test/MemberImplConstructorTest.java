@@ -17,7 +17,7 @@
 package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

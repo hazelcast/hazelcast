@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;

@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;

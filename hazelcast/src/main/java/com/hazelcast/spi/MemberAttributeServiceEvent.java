@@ -17,9 +17,9 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 
 import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;

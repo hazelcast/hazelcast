@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.Random;
 

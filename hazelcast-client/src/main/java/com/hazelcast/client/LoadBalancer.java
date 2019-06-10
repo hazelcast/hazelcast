@@ -17,8 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 
 /**
  * {@link LoadBalancer} allows you to send operations to one of a number of endpoints(Members).

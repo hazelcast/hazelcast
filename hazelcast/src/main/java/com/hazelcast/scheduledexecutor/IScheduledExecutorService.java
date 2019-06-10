@@ -17,7 +17,7 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.Collection;
 import java.util.List;

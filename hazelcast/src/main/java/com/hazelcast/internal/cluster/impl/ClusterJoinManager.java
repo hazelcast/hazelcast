@@ -17,10 +17,10 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;

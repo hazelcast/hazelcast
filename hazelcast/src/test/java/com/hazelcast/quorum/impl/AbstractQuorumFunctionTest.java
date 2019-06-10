@@ -18,11 +18,11 @@ package com.hazelcast.quorum.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.HeartbeatAware;
 import com.hazelcast.quorum.PingAware;

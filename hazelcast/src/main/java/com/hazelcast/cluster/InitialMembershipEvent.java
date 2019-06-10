@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -44,7 +44,7 @@ public class InitialMembershipEvent extends EventObject {
 
     /**
      * Returns an immutable set of ordered members at the moment this {@link InitialMembershipListener} is
-     * registered. See {@link com.hazelcast.core.Cluster#getMembers()} for more information.
+     * registered. See {@link Cluster#getMembers()} for more information.
      *
      * @return an immutable set of ordered members.
      */

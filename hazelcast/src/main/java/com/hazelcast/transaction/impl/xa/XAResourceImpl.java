@@ -18,7 +18,7 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;

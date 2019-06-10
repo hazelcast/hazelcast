@@ -19,7 +19,7 @@ package com.hazelcast.quorum;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;

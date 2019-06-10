@@ -16,10 +16,10 @@
 
 package com.hazelcast.collection.impl.txnlist;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.collection.IList;
-import com.hazelcast.core.Member;
 import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

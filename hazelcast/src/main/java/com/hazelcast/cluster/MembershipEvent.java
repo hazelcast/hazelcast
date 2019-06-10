@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -25,7 +25,7 @@ import static java.lang.String.format;
 
 /**
  * Membership event fired when a new member is added to the cluster and/or when a member leaves the cluster
- * or when there is a member attribute change via {@link Member#setBooleanAttribute(String, boolean)}
+ * or when there is a member attribute change via {@link Member#setAttribute(String, String)}
  * and similar methods.
  *
  * @see MembershipListener
@@ -72,11 +72,11 @@ public class MembershipEvent extends EventObject {
      * member is removed, the returned set will not include this member. If a member is added, it will include
      * this member.
      * <p>
-     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} method is that the content could already
+     * The problem with calling the {@link Cluster#getMembers()} method is that the content could already
      * have changed while processing this event, so it becomes very difficult to write a deterministic algorithm since
      * you cannot get a deterministic view of the members. This method solves that problem.
      * <p>
-     * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
+     * The set is immutable and ordered. For more information see {@link Cluster#getMembers()}.
      *
      * Warning: If the event is triggered by a member attribute change then {@link #members} is empty.
      *

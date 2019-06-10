@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;

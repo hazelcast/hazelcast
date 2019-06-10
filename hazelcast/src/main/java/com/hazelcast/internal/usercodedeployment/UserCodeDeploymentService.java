@@ -17,7 +17,7 @@
 package com.hazelcast.internal.usercodedeployment;
 
 import com.hazelcast.config.UserCodeDeploymentConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.usercodedeployment.impl.ClassData;
 import com.hazelcast.internal.usercodedeployment.impl.ClassDataProvider;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;

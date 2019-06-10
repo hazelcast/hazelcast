@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl.querycache.publisher;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipAdapter;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
