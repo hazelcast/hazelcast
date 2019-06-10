@@ -24,6 +24,7 @@ import com.hazelcast.jet.kafka.KafkaProcessors;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.TimeoutException;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -70,11 +71,15 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         checkError();
-        inbox.drain((Object item) -> {
-            // Note: send() method can block even though it is declared to not. This is true for Kafka 1.0 and probably
-            // will stay so, unless they change API.
-            producer.send(toRecordFn.apply((T) item), callback);
-        });
+        for (Object item; (item = inbox.peek()) != null; ) {
+            try {
+                producer.send(toRecordFn.apply((T) item), callback);
+            } catch (TimeoutException ignored) {
+                // apply backpressure, the item will be retried
+                return;
+            }
+            inbox.remove();
+        }
     }
 
     @Override
