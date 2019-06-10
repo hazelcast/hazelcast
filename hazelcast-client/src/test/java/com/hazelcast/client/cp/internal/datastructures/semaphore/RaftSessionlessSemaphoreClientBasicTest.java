@@ -18,7 +18,7 @@ package com.hazelcast.client.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSessionlessSemaphoreBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;

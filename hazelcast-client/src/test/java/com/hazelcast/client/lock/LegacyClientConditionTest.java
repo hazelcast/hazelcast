@@ -18,8 +18,8 @@ package com.hazelcast.client.lock;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICondition;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ICondition;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.concurrent.lock.LockResource;
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockResource;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;

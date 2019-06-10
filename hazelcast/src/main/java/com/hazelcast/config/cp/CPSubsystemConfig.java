@@ -18,7 +18,7 @@ package com.hazelcast.config.cp;
 
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPMember;

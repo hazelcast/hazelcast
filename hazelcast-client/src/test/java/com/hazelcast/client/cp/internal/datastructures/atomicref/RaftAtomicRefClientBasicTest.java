@@ -18,7 +18,7 @@ package com.hazelcast.client.cp.internal.datastructures.atomicref;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;

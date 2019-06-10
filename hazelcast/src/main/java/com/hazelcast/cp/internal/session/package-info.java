@@ -16,6 +16,6 @@
 
 /**
  * Contains service classes
- * for the Raft-based {@link com.hazelcast.core.ISemaphore} implementation
+ * for the Raft-based {@link com.hazelcast.cp.ISemaphore} implementation
  */
 package com.hazelcast.cp.internal.session;

@@ -31,7 +31,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleEvent;

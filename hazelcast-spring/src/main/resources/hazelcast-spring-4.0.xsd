@@ -2140,7 +2140,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IAtomicLong"/>
+                    <tool:exports type="com.hazelcast.cp.IAtomicLong"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2152,7 +2152,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IAtomicReference"/>
+                    <tool:exports type="com.hazelcast.cp.IAtomicReference"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2164,7 +2164,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ICountDownLatch"/>
+                    <tool:exports type="com.hazelcast.cp.ICountDownLatch"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2176,7 +2176,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ISemaphore"/>
+                    <tool:exports type="com.hazelcast.cp.ISemaphore"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2188,7 +2188,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ILock"/>
+                    <tool:exports type="com.hazelcast.cp.lock.ILock"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
