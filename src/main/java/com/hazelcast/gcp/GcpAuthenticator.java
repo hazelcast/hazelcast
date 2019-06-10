@@ -101,7 +101,7 @@ class GcpAuthenticator {
         String dataToSign = String.format("%s.%s", headerBase64, claimSetBase64);
 
         String clearPrivateKeyString = clear(privateKeyString);
-        byte[] b1 = Base64.getDecoder().decode(clearPrivateKeyString.getBytes("UTF-8"));
+        byte[] b1 = Base64.getMimeDecoder().decode(clearPrivateKeyString.getBytes("UTF-8"));
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(b1);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         Signature privateSignature = Signature.getInstance("SHA256withRSA");
