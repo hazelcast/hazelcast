@@ -3960,6 +3960,222 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:element name="secure-store-substitution-group" abstract="true"/>
+
+    <xs:complexType name="keystore-entry">
+        <xs:annotation>
+            <xs:documentation>
+                The key entry stored in a Java KeyStore.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the entry.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The password to access the entry.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="keystore">
+        <xs:all>
+            <xs:element name="path" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The path of the KeyStore file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="type" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The type of the KeyStore (JCEKS, PKCS12, etc.).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The password to access the KeyStore (JCEKS, PKCS12, etc.).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="entries" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            The key entries to be looked up in the KeyStore, in the specified order.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence>
+                        <xs:element name="entry" type="keystore-entry" minOccurs="1" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The key entry to be looked up in the KeyStore.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="keystore" type="keystore" substitutionGroup="secure-store-substitution-group">
+        <xs:annotation>
+            <xs:documentation>
+                Java KeyStore Secure Store configuration.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="vault-entry">
+        <xs:annotation>
+            <xs:documentation>
+                The key entry stored in Vault.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the entry.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="vault">
+        <xs:all>
+            <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The address of the Vault server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secret-path" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Vault secret path.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secret-engine-version" minOccurs="0" maxOccurs="1" default="V2">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            The version of Vault secret engine to use.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="non-space-string">
+                        <xs:enumeration value="V1"/>
+                        <xs:enumeration value="V2"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="token" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Vault access token.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="namespace" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Vault namespace.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        SSL/TLS configuration for HTTPS connections.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="entries" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            The key entries to be looked up in Vault, in the specified order.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence>
+                        <xs:element name="entry" type="vault-entry" minOccurs="1" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The key entry to be looked up in Vault.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="vault" type="vault" substitutionGroup="secure-store-substitution-group">
+        <xs:annotation>
+            <xs:documentation>
+                HashiCorp Vault Secure Store configuration.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="secure-store">
+        <xs:sequence>
+            <xs:element ref="secure-store-substitution-group" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="encryption-at-rest">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for hot restart (symmetric) encryption at rest. Encryption is based
+                on Java Cryptography Architecture.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="algorithm" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as AES/CBC/PKCS5Padding, DES/ECB/PKCS5Padding, Blowfish,
+                        or DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="salt" type="xs:string" default="thesalt">
+                <xs:annotation>
+                    <xs:documentation>
+                        Salt value to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secure-store" type="secure-store" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Secure Store configuration. Not required when encryption at rest is disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable symmetric encryption, false to disable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart-persistence">
         <xs:sequence>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
@@ -3975,6 +4191,15 @@
                     <xs:documentation>
                         Base directory for hot backups. Each new backup will be created in a separate directory inside this one.
                         Can be an absolute or relative path to the node startup directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="encryption-at-rest" type="encryption-at-rest" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies parameters for encryption of Hot Restart data. This includes the encryption algorithm
+                        to be used (such as AES, DESede etc.) and the Secure Store configuration for retrieving the
+                        encryption keys.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

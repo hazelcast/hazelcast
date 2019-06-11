@@ -373,6 +373,12 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testHotRestart();
 
     @Test
+    public abstract void testHotRestartEncryptionAtRest_whenJavaKeyStore();
+
+    @Test
+    public abstract void testHotRestartEncryptionAtRest_whenVault();
+
+    @Test
     public abstract void testMapEvictionPolicyClassName();
 
     @Test

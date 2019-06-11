@@ -651,6 +651,26 @@ public final class IOUtil {
     }
 
     /**
+     * Writes {@code len} bytes from the given input stream to the given output stream.
+     * @param input the input stream
+     * @param output the output stream
+     * @param len the number of bytes to write
+     * @throws IOException if there are not enough bytes in the input stream, or if there is any other IO error.
+     */
+    public static void drainTo(InputStream input, OutputStream output, int len) throws IOException {
+        byte[] buffer = new byte[1024];
+        int remaining = len;
+        while (remaining > 0) {
+            int n = input.read(buffer, 0, Math.min(buffer.length, remaining));
+            if (n == -1) {
+                throw new IOException("Not enough bytes in the input stream");
+            }
+            output.write(buffer, 0, n);
+            remaining -= n;
+        }
+    }
+
+    /**
      * Creates a debug String for te given ByteBuffer. Useful when debugging IO.
      * <p>
      * Do not remove even if this method isn't used.
