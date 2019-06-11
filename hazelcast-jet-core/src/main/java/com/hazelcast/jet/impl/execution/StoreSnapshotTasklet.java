@@ -138,9 +138,8 @@ public class StoreSnapshotTasklet implements Tasklet {
     private boolean addToInbox(Object o) {
         if (o instanceof SnapshotBarrier) {
             SnapshotBarrier barrier = (SnapshotBarrier) o;
-            assert pendingSnapshotId <= barrier.snapshotId() : "Unexpected barrier, expected was " +
+            assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was " +
                     pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
-            pendingSnapshotId = barrier.snapshotId();
             hasReachedBarrier = true;
         } else {
             if (!ssWriter.offer((Entry<Data, Data>) o)) {

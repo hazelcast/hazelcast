@@ -47,11 +47,14 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
+import static com.hazelcast.jet.function.FunctionEx.identity;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
+// TODO this test does not test when responses are lost. There is currently no test
+//   harness to simulate that.
 @RunWith(HazelcastSerialClassRunner.class)
 public class OperationLossTest extends JetTestSupport {
 
@@ -92,7 +95,11 @@ public class OperationLossTest extends JetTestSupport {
     private void when_operationLost_then_jobRestarts(int operationId, JobStatus expectedStatus) {
         PacketFiltersUtil.dropOperationsFrom(instance1.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(operationId));
-        DAG dag = new DAG().vertex(new Vertex("v", () -> new NoOutputSourceP()).localParallelism(1));
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
+        Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
+        dag.edge(between(v1, v2).distributed());
+
         Job job = instance1.newJob(dag);
         assertJobStatusEventually(job, expectedStatus);
         // NOT_RUNNING will occur briefly, we might miss to observe it. But restart occurs every
@@ -109,7 +116,11 @@ public class OperationLossTest extends JetTestSupport {
     public void when_completeExecutionOperationLost_then_jobCompletes() {
         PacketFiltersUtil.dropOperationsFrom(instance1.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.COMPLETE_EXECUTION_OP));
-        DAG dag = new DAG().vertex(new Vertex("v", () -> new DummyStatefulP()).localParallelism(1));
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new DummyStatefulP()).localParallelism(1);
+        Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
+        dag.edge(between(v1, v2).distributed());
+
         Job job = instance1.newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
@@ -126,10 +137,14 @@ public class OperationLossTest extends JetTestSupport {
     }
 
     @Test
-    public void when_snapshotOperationLost_then_ignored() {
+    public void when_snapshotOperationLost_then_retried() {
         PacketFiltersUtil.dropOperationsFrom(instance1.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_OPERATION));
-        DAG dag = new DAG().vertex(new Vertex("v", () -> new DummyStatefulP()).localParallelism(1));
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new DummyStatefulP()).localParallelism(1);
+        Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
+        dag.edge(between(v1, v2).distributed());
+
         Job job = instance1.newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(100));
@@ -138,9 +153,9 @@ public class OperationLossTest extends JetTestSupport {
         assertTrueEventually(() -> {
             JobExecutionRecord record = jobRepository.getJobExecutionRecord(job.getId());
             assertNotNull("null JobExecutionRecord", record);
-            assertTrue("ongoingSnapshotId not incremented: " + record.ongoingSnapshotId(),
-                    record.ongoingSnapshotId() >= 2);
-        });
+            assertEquals("ongoingSnapshotId", 0, record.ongoingSnapshotId());
+        }, 20);
+        sleepSeconds(1);
         // now lift the filter and check that a snapshot is done
         logger.info("Lifting the packet filter...");
         PacketFiltersUtil.resetPacketFiltersFrom(instance1.getHazelcastInstance());
@@ -179,7 +194,11 @@ public class OperationLossTest extends JetTestSupport {
     public void when_terminateExecutionOperationLost_then_jobTerminates() {
         PacketFiltersUtil.dropOperationsFrom(instance1.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.TERMINATE_EXECUTION_OP));
-        DAG dag = new DAG().vertex(new Vertex("v", () -> new NoOutputSourceP()).localParallelism(1));
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
+        Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
+        dag.edge(between(v1, v2).distributed());
+
         Job job = instance1.newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         job.cancel();
@@ -198,9 +217,13 @@ public class OperationLossTest extends JetTestSupport {
     public void when_terminalSnapshotOperationLost_then_jobRestarts() {
         PacketFiltersUtil.dropOperationsFrom(instance1.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_OPERATION));
-        DAG dag = new DAG().vertex(new Vertex("v", () -> new NoOutputSourceP()).localParallelism(1));
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
+        Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
+        dag.edge(between(v1, v2).distributed());
+
         Job job = instance1.newJob(dag, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
-        assertJobStatusEventually(job, RUNNING);
+        assertJobStatusEventually(job, RUNNING, 20);
         job.restart();
         // sleep so that the SnapshotOperation is sent out, but lost
         sleepSeconds(1);
@@ -209,5 +232,8 @@ public class OperationLossTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() -> assertEquals(4, NoOutputSourceP.initCount.get()));
+
+        NoOutputSourceP.proceedLatch.countDown();
+        job.join();
     }
 }

@@ -390,8 +390,9 @@ public final class TestProcessors {
     }
 
     /**
-     * A processor that saves dummy constant data to snapshot and asserts it
-     * receives the same data.
+     * A source processor that saves dummy constant data to the snapshot and
+     * asserts that it receives the same data. It emits no output and never
+     * completes.
      */
     public static class DummyStatefulP extends AbstractProcessor {
         public static volatile boolean wasRestored;

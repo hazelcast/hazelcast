@@ -166,7 +166,7 @@ class MasterSnapshotContext {
                 responses -> mc.coordinationService().submitToCoordinatorThread(() ->
                         onSnapshotCompleted(responses, localExecutionId, newSnapshotId, finalMapName, isExport, isTerminal,
                                 future)),
-                null, false);
+                null, true);
     }
 
     private void onSnapshotCompleted(
