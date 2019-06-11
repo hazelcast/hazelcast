@@ -848,14 +848,14 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
                         <version>${maven.checkstyle.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>checkstyle</goal>
-                                </goals>
-                            </execution>
-                        </executions>
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <phase>validate</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>checkstyle</goal>-->
+<!--                                </goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
                         <configuration>
                             <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
                             <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
