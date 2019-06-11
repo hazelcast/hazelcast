@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.impl.AddInterceptorOperationSupplier;
+import com.hazelcast.map.impl.operation.AddInterceptorOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
@@ -50,7 +50,7 @@ public class MapAddInterceptorMessageTask
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapInterceptor mapInterceptor = serializationService.toObject(parameters.interceptor);
         id = mapServiceContext.generateInterceptorId(parameters.name, mapInterceptor);
-        return new AddInterceptorOperationSupplier(id, parameters.name, mapInterceptor);
+        return new AddInterceptorOperationSupplier(parameters.name, id, mapInterceptor);
     }
 
     @Override

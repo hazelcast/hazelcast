@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.function.Supplier;
@@ -26,9 +25,9 @@ public class RemoveInterceptorOperationSupplier implements Supplier<Operation> {
     private final String id;
     private final String name;
 
-    public RemoveInterceptorOperationSupplier(String id, String name) {
-        this.id = id;
+    public RemoveInterceptorOperationSupplier(String name, String id) {
         this.name = name;
+        this.id = id;
     }
 
     @Override

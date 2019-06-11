@@ -768,9 +768,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void removeInterceptor(String id) {
+    public boolean removeInterceptor(String id) {
         ClientMessage request = MapRemoveInterceptorCodec.encodeRequest(name, id);
-        invoke(request);
+        ClientMessage response = invoke(request);
+        return MapRemoveInterceptorCodec.decodeResponse(response).response;
     }
 
     @Override

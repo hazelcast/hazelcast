@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.function.Supplier;
@@ -28,14 +27,14 @@ public class AddInterceptorOperationSupplier implements Supplier<Operation> {
     private final String name;
     private final MapInterceptor mapInterceptor;
 
-    public AddInterceptorOperationSupplier(String id, String name, MapInterceptor mapInterceptor) {
-        this.id = id;
+    public AddInterceptorOperationSupplier(String name, String id, MapInterceptor mapInterceptor) {
         this.name = name;
+        this.id = id;
         this.mapInterceptor = mapInterceptor;
     }
 
     @Override
     public Operation get() {
-        return new AddInterceptorOperation(id, mapInterceptor, name);
+        return new AddInterceptorOperation(name, id, mapInterceptor);
     }
 }
