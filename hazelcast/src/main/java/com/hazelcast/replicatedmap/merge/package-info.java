@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains out-of-the-box merge policies for {@link com.hazelcast.core.ReplicatedMap}.
+ * Contains out-of-the-box merge policies for {@link com.hazelcast.replicatedmap.ReplicatedMap}.
  */
 package com.hazelcast.replicatedmap.merge;

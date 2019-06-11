@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;

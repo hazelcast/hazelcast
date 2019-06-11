@@ -18,6 +18,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.internal.jmx.suppliers.LocalReplicatedMapStatsSupplier;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 
 import java.util.Collection;
@@ -25,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Management bean for {@link com.hazelcast.core.ReplicatedMap}
+ * Management bean for {@link ReplicatedMap}
  */
 @ManagedDescription("ReplicatedMap")
 public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {

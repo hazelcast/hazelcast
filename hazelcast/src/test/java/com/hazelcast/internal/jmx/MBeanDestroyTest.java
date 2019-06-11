@@ -28,7 +28,7 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

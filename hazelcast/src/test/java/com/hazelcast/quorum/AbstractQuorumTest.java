@@ -50,7 +50,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.instance.HazelcastInstanceFactory;

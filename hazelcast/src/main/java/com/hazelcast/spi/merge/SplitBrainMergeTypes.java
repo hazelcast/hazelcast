@@ -22,6 +22,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
 import java.util.Collection;
@@ -60,7 +61,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.ReplicatedMap}.
+     * Provided merge types of {@link ReplicatedMap}.
      *
      * @since 3.10
      */
