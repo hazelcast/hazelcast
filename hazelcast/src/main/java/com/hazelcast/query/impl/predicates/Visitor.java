@@ -28,11 +28,17 @@ import com.hazelcast.query.impl.Indexes;
  */
 public interface Visitor {
 
+    Predicate visit(EqualPredicate predicate, Indexes indexes);
+
+    Predicate visit(NotEqualPredicate predicate, Indexes indexes);
+
     Predicate visit(AndPredicate predicate, Indexes indexes);
 
     Predicate visit(OrPredicate predicate, Indexes indexes);
 
     Predicate visit(NotPredicate predicate, Indexes indexes);
+
+    Predicate visit(InPredicate predicate, Indexes indexes);
 
     Predicate visit(BetweenPredicate predicate, Indexes indexes);
 

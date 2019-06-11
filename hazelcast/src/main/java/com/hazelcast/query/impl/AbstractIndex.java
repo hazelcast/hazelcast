@@ -141,8 +141,13 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public boolean canEvaluate(Class<Predicate> predicateClass) {
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
         return indexStore.canEvaluate(predicateClass);
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        return indexStore.evaluate(predicate, converter);
     }
 
     @Override

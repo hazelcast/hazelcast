@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
@@ -94,8 +95,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public boolean canEvaluate(Class<Predicate> predicateClass) {
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
         return false;
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -111,7 +111,7 @@ public final class ConverterCache {
         }
 
         // try non-composite index first, if any
-        InternalIndex nonCompositeIndex = indexes.getIndex(attribute);
+        InternalIndex nonCompositeIndex = indexes.matchIndex(attribute, QueryContext.IndexMatchHint.NONE);
         if (nonCompositeIndex != null) {
             TypeConverter converter = nonCompositeIndex.getConverter();
             if (isNull(converter)) {

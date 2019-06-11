@@ -16,15 +16,21 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
+import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.query.impl.predicates.InPredicate;
+import com.hazelcast.query.impl.predicates.NotEqualPredicate;
+import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.util.collection.Long2LongHashMap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +38,15 @@ import java.util.Set;
 public class BitmapIndexStore extends BaseIndexStore {
 
     private static final Object CONSUMED = new Object();
+
+    private static final Set<Class<? extends Predicate>> EVALUABLE_PREDICATES = new HashSet<Class<? extends Predicate>>();
+
+    static {
+        EVALUABLE_PREDICATES.add(EqualPredicate.class);
+        EVALUABLE_PREDICATES.add(NotEqualPredicate.class);
+        EVALUABLE_PREDICATES.add(InPredicate.class);
+        EVALUABLE_PREDICATES.add(OrPredicate.class);
+    }
 
     // TODO support index stats
 
@@ -133,8 +148,18 @@ public class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public boolean canEvaluate(Class<Predicate> predicateClass) {
-        return false;
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+        return EVALUABLE_PREDICATES.contains(predicateClass);
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        takeReadLock();
+        try {
+            return toSingleResultSet(toMap(bitmaps.evaluate(predicate, new CanonicalizingConverter(converter))));
+        } finally {
+            releaseReadLock();
+        }
     }
 
     @Override
@@ -304,6 +329,21 @@ public class BitmapIndexStore extends BaseIndexStore {
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+
+    }
+
+    private class CanonicalizingConverter implements TypeConverter {
+
+        private final TypeConverter converter;
+
+        public CanonicalizingConverter(TypeConverter converter) {
+            this.converter = converter;
+        }
+
+        @Override
+        public Comparable convert(Comparable value) {
+            return canonicalize(converter.convert(value));
         }
 
     }

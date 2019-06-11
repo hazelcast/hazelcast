@@ -94,7 +94,9 @@ public interface Index {
      */
     void removeEntry(Data key, Object value, OperationSource operationSource);
 
-    boolean canEvaluate(Class<Predicate> predicateClass);
+    boolean canEvaluate(Class<? extends Predicate> predicateClass);
+
+    Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

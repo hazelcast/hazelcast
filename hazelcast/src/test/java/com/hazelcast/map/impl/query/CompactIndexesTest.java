@@ -21,13 +21,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,6 +34,13 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Random;
+
+import static com.hazelcast.query.Predicates.and;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.in;
+import static com.hazelcast.query.Predicates.notEqual;
+import static com.hazelcast.query.Predicates.or;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -65,6 +71,7 @@ public class CompactIndexesTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore("takes really long time to shutdown")
     public void testConsecutiveIds() throws IOException {
         persons.addIndex("habits[any] -> __key", false);
 
@@ -81,12 +88,13 @@ public class CompactIndexesTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore("takes really long time to shutdown")
     public void testRandomIds() throws IOException {
         persons.addIndex("habits[any] -> __key?", false);
         Random random = new Random();
 
         long start = System.currentTimeMillis();
-        for (long i = 0; i < 10000; ++i) {
+        for (long i = 0; i < 100000; ++i) {
             long[] habits = new long[4000];
             for (int j = 0; j < habits.length; ++j) {
                 habits[j] = (i + j) % 53000;
@@ -100,9 +108,11 @@ public class CompactIndexesTest extends HazelcastTestSupport {
 
     @Test
     public void testQueries() {
+        final int SIZE = 1000;
+
         persons.addIndex("habits[any] -> __key", false);
 
-        for (long i = 0; i < 1000; ++i) {
+        for (long i = 0; i < SIZE; ++i) {
             long[] habits = new long[4000];
             for (int j = 0; j < habits.length; ++j) {
                 habits[j] = (i + j) % 53000;
@@ -111,8 +121,21 @@ public class CompactIndexesTest extends HazelcastTestSupport {
         }
 
         long start = System.currentTimeMillis();
-        Assert.assertEquals(11, persons.values(Predicates.equal("habits[any]", 10)).size());
-        Assert.assertEquals(6, persons.values(Predicates.in("habits[any]", 0, 1, 2, 5)).size());
+
+        assertEquals(11, persons.values(equal("habits[any]", 10)).size());
+
+        assertEquals(6, persons.values(in("habits[any]", 0, 1, 2, 5)).size());
+
+        assertEquals(11, persons.values(or(equal("habits[any]", 10), equal("habits[any]", 5))).size());
+        assertEquals(6, persons.values(and(equal("habits[any]", 10), equal("habits[any]", 5))).size());
+
+        assertEquals(SIZE, persons.values(notEqual("habits[any]", -1)).size());
+        assertEquals(SIZE - 1, persons.values(notEqual("habits[any]", 0)).size());
+
+        assertEquals(1, persons.values(and(equal("habits[any]", 1), notEqual("habits[any]", 0))).size());
+        // this one is slow currently
+        //assertEquals(999, persons.values(or(equal("habits[any]", 0), notEqual("habits[any]", 1))).size());
+
         System.out.println("Queries took " + (System.currentTimeMillis() - start) + "ms");
     }
 

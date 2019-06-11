@@ -217,8 +217,13 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public boolean canEvaluate(Class<Predicate> predicateClass) {
+        public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
             return delegate.canEvaluate(predicateClass);
+        }
+
+        @Override
+        public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+            return delegate.evaluate(predicate, converter);
         }
 
         @Override

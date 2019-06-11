@@ -26,6 +26,16 @@ import com.hazelcast.query.impl.Indexes;
 public abstract class AbstractVisitor implements Visitor {
 
     @Override
+    public Predicate visit(EqualPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
+    public Predicate visit(NotEqualPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
     public Predicate visit(AndPredicate predicate, Indexes indexes) {
         return predicate;
     }
@@ -37,6 +47,11 @@ public abstract class AbstractVisitor implements Visitor {
 
     @Override
     public Predicate visit(NotPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
+    public Predicate visit(InPredicate predicate, Indexes indexes) {
         return predicate;
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -101,7 +102,9 @@ public interface IndexStore {
      */
     void destroy();
 
-    boolean canEvaluate(Class<Predicate> predicateClass);
+    boolean canEvaluate(Class<? extends Predicate> predicateClass);
+
+    Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
 
     /**
      * Obtains entries that have indexed attribute value equal to the given
