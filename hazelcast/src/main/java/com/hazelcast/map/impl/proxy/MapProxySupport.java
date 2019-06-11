@@ -93,6 +93,8 @@ import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.collection.PartitionIdSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -138,6 +140,9 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
+    protected static final String NULL_TTL_UNIT_IS_NOT_ALLOWED = "Null ttlUnit is not allowed!";
+    protected static final String NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED = "Null maxIdleUnit is not allowed!";
+    protected static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null timeunit is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
@@ -1076,7 +1081,10 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    protected String addEntryListenerInternal(Object listener,
+                                              Predicate predicate,
+                                              @Nullable Data key,
+                                              boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
@@ -1237,7 +1245,7 @@ abstract class MapProxySupport<K, V>
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
+    public void addIndex(@Nonnull String attribute, boolean ordered) {
         validateIndexAttribute(attribute);
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
