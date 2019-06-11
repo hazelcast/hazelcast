@@ -467,7 +467,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G -XX:MaxPermSize=128M</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

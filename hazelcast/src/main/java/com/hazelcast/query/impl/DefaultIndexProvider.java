@@ -26,9 +26,9 @@ import com.hazelcast.query.impl.getters.Extractors;
 public class DefaultIndexProvider implements IndexProvider {
 
     @Override
-    public InternalIndex createIndex(String name, String[] components, boolean ordered, Extractors extractors,
-                                     InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        return new IndexImpl(name, components, ordered, ss, extractors, copyBehavior, stats);
+    public InternalIndex createIndex(IndexDefinition definition, Extractors extractors, InternalSerializationService ss,
+                                     IndexCopyBehavior copyBehavior, PerIndexStats stats) {
+        return new IndexImpl(definition, ss, extractors, copyBehavior, stats);
     }
 
 }

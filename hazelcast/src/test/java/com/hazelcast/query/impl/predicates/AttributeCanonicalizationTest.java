@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.IndexDefinition;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,7 +29,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.parseOutCompositeIndexComponents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -39,12 +39,12 @@ public class AttributeCanonicalizationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyComponentIsNotAllowed() {
-        parseOutCompositeIndexComponents("a,");
+        IndexDefinition.parse("a,", false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testDuplicateComponentsAreNotAllowed() {
-        parseOutCompositeIndexComponents("a,b,a");
+        IndexDefinition.parse("a,b,a", false);
     }
 
     @Test

@@ -306,12 +306,12 @@ public final class Numbers {
         return l == (long) d;
     }
 
-    private static boolean isLongRepresentableExceptLong(Class clazz) {
-        return clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
+    public static int compareLongs(long lhs, long rhs) {
+        return lhs < rhs ? -1 : (lhs == rhs ? 0 : +1);
     }
 
-    private static int compareLongs(long lhs, long rhs) {
-        return lhs < rhs ? -1 : (lhs == rhs ? 0 : +1);
+    private static boolean isLongRepresentableExceptLong(Class clazz) {
+        return clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")

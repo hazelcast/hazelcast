@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 /**
  * Store indexes out of turn.
  */
-public class UnorderedIndexStore extends BaseIndexStore {
+public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap =
             new ConcurrentHashMap<Comparable, Map<Data, QueryableEntry>>(1000);
@@ -117,6 +118,11 @@ public class UnorderedIndexStore extends BaseIndexStore {
         } finally {
             releaseWriteLock();
         }
+    }
+
+    @Override
+    public boolean canEvaluate(Class<Predicate> predicateClass) {
+        return false;
     }
 
     @Override

@@ -32,14 +32,21 @@ public class IndexImpl extends AbstractIndex {
 
     private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 
-    public IndexImpl(String name, String[] components, boolean ordered, InternalSerializationService ss, Extractors extractors,
+    public IndexImpl(IndexDefinition definition, InternalSerializationService ss, Extractors extractors,
                      IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        super(name, components, ordered, ss, extractors, copyBehavior, stats);
+        super(definition, ss, extractors, copyBehavior, stats);
     }
 
     @Override
-    protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
-        return ordered ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
+    protected IndexStore createIndexStore(IndexDefinition definition, PerIndexStats stats) {
+        if (definition.getUniqueKey() == null) {
+            return definition.isOrdered() ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
+        } else {
+            if (definition.isOrdered()) {
+                throw new IllegalArgumentException("Ordered compact indexes are not supported");
+            }
+            return new BitmapIndexStore(definition.getUniqueKey(), ss, extractors);
+        }
     }
 
     @Override

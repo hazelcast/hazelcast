@@ -193,7 +193,7 @@ public class AttributeIndexRegistryTest {
         InternalIndex index = Mockito.mock(InternalIndex.class);
         if (components.length == 1) {
             when(index.getName()).thenReturn(components[0]);
-            when(index.getComponents()).thenReturn(null);
+            when(index.getComponents()).thenReturn(components);
         } else {
             when(index.getName()).thenReturn(PredicateUtils.constructCanonicalCompositeIndexName(components));
             when(index.getComponents()).thenReturn(components);

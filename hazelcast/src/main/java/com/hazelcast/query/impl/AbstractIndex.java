@@ -23,6 +23,7 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
@@ -55,24 +56,26 @@ public abstract class AbstractIndex implements InternalIndex {
     private final String name;
     private final String[] components;
     private final boolean ordered;
+    private final String uniqueKey;
     private final PerIndexStats stats;
 
     private volatile TypeConverter converter;
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public AbstractIndex(String name, String[] components, boolean ordered, InternalSerializationService ss,
-                         Extractors extractors, IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        this.name = name;
-        this.components = components;
-        this.ordered = ordered;
+    public AbstractIndex(IndexDefinition definition, InternalSerializationService ss, Extractors extractors,
+                         IndexCopyBehavior copyBehavior, PerIndexStats stats) {
+        this.name = definition.getName();
+        this.components = definition.getComponents();
+        this.ordered = definition.isOrdered();
+        this.uniqueKey = definition.getUniqueKey();
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.indexStore = createIndexStore(ordered, stats);
+        this.indexStore = createIndexStore(definition, stats);
         this.stats = stats;
     }
 
-    protected abstract IndexStore createIndexStore(boolean ordered, PerIndexStats stats);
+    protected abstract IndexStore createIndexStore(IndexDefinition definition, PerIndexStats stats);
 
     @Override
     public String getName() {
@@ -88,6 +91,11 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public boolean isOrdered() {
         return ordered;
+    }
+
+    @Override
+    public String getUniqueKey() {
+        return uniqueKey;
     }
 
     @Override
@@ -128,8 +136,13 @@ public abstract class AbstractIndex implements InternalIndex {
         IndexOperationStats operationStats = stats.createOperationStats();
 
         Object attributeValue = extractAttributeValue(key, value);
-        indexStore.remove(attributeValue, key, operationStats);
+        indexStore.remove(attributeValue, key, value, operationStats);
         stats.onRemove(timestamp, operationStats, operationSource);
+    }
+
+    @Override
+    public boolean canEvaluate(Class<Predicate> predicateClass) {
+        return indexStore.canEvaluate(predicateClass);
     }
 
     @Override
@@ -220,8 +233,8 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     private Object extractAttributeValue(Data key, Object value) {
-        if (components == null) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, name, key, value, null);
+        if (components.length == 1) {
+            return QueryableEntry.extractAttributeValue(extractors, ss, components[0], key, value, null);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
             for (int i = 0; i < components.length; ++i) {
@@ -254,8 +267,8 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     private TypeConverter obtainConverter(QueryableEntry entry) {
-        if (components == null) {
-            return entry.getConverter(name);
+        if (components.length == 1) {
+            return entry.getConverter(components[0]);
         } else {
             CompositeConverter existingConverter = (CompositeConverter) converter;
             TypeConverter[] converters = new TypeConverter[components.length];

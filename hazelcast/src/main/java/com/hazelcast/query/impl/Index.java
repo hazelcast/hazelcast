@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.predicates.PredicateUtils;
 
@@ -40,8 +41,7 @@ public interface Index {
     String getName();
 
     /**
-     * @return the components of this index for composite indexes, {@code null}
-     * for single-attribute non-composite indexes.
+     * @return the components of this index.
      */
     String[] getComponents();
 
@@ -57,6 +57,12 @@ public interface Index {
      * @see #getRecords(Comparable, boolean, Comparable, boolean)
      */
     boolean isOrdered();
+
+    /**
+     * @return the unique key attribute configured for compact indexing, {@code
+     * null} if no unique key configured.
+     */
+    String getUniqueKey();
 
     /**
      * @return the converter associated with this index; or {@code null} if the
@@ -87,6 +93,8 @@ public interface Index {
      *                        attribute value from the entry.
      */
     void removeEntry(Data key, Object value, OperationSource operationSource);
+
+    boolean canEvaluate(Class<Predicate> predicateClass);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

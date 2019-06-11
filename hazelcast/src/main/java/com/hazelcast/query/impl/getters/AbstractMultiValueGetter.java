@@ -24,8 +24,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collection;
 
-
 public abstract class AbstractMultiValueGetter extends Getter {
+
     public static final String REDUCER_ANY_TOKEN = "any";
 
     public static final int DO_NOT_REDUCE = -1;
@@ -94,16 +94,16 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
 
         if (!inputType.isArray()) {
-            throw new IllegalArgumentException("Cannot infer a return type with modifier "
-                    + modifier + " on type " + inputType.getName());
+            throw new IllegalArgumentException(
+                    "Cannot infer a return type with modifier " + modifier + " on type " + inputType.getName());
         }
 
         //ok, it must be an array. let's return array type
         return inputType.getComponentType();
     }
 
-    private void collectResult(MultiResult collector, Object parentObject)
-            throws IllegalAccessException, InvocationTargetException {
+    private void collectResult(MultiResult collector, Object parentObject) throws IllegalAccessException,
+            InvocationTargetException {
         // re-add nulls from parent extraction without extracting further down the path
         if (parentObject == null) {
             collector.add(null);
@@ -140,7 +140,6 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return parseModifier(modifierSuffix);
     }
 
-
     private Object getItemAtPositionOrNull(Object object, int position) {
         if (object == null) {
             return null;
@@ -154,7 +153,6 @@ public abstract class AbstractMultiValueGetter extends Getter {
         throw new IllegalArgumentException("Cannot extract an element from class of type" + object.getClass()
                 + " Collections and Arrays are supported only");
     }
-
 
     private Object getParentObject(Object obj) throws Exception {
         return parent != null ? parent.getValue(obj) : obj;
@@ -172,6 +170,19 @@ public abstract class AbstractMultiValueGetter extends Getter {
     }
 
     private void reducePrimitiveArrayInto(MultiResult collector, Object primitiveArray) {
+        if (primitiveArray instanceof long[]) {
+            // TODO check the improvement (it should be around 10x) and add other types
+            long[] longArray = (long[]) primitiveArray;
+            if (longArray.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (long value : longArray) {
+                    collector.add(value);
+                }
+            }
+            return;
+        }
+
         int length = Array.getLength(primitiveArray);
         if (length == 0) {
             collector.addNullOrEmptyTarget();
@@ -213,7 +224,6 @@ public abstract class AbstractMultiValueGetter extends Getter {
                     + " Only Collections and Arrays are supported.");
         }
     }
-
 
     private static int parseModifier(String modifier) {
         String stringValue = modifier.substring(1, modifier.length() - 1);

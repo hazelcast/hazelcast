@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Set;
 
@@ -34,7 +35,7 @@ public interface IndexStore {
      * the set of values in question, so additional duplicate-eliminating
      * post-processing step can be avoided.
      * <p>
-     * The main difference comparing to {@link BaseIndexStore#canonicalizeScalarForStorage}
+     * The main difference comparing to {@link BaseSingleValueIndexStore#canonicalizeScalarForStorage}
      * is that this method is specifically designed to support the
      * canonicalization of transient non-persistent values (think of query
      * arguments), so a more efficient representation may chosen.
@@ -81,13 +82,14 @@ public interface IndexStore {
      * Removes the existing entry mapping in this index.
      *
      * @param value          the value to remove the mapping from.
-     * @param indexKey       the value to remove the mapping to.
+     * @param entryKey       the entry key to remove the mapping to.
+     * @param entryValue     the entry value to remove the mapping to.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#removeEntry
      * @see IndexOperationStats#onEntryRemoved
      */
-    void remove(Object value, Data indexKey, IndexOperationStats operationStats);
+    void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats);
 
     /**
      * Clears the contents of this index by purging all its entries.
@@ -98,6 +100,8 @@ public interface IndexStore {
      * Destroys this index by releasing all its resources.
      */
     void destroy();
+
+    boolean canEvaluate(Class<Predicate> predicateClass);
 
     /**
      * Obtains entries that have indexed attribute value equal to the given

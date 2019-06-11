@@ -465,8 +465,8 @@ public class IndexTest {
 
     private void testIt(boolean ordered) {
         IndexImpl index =
-                new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), null, ordered, ss, newExtractor(), copyBehavior,
-                        PerIndexStats.EMPTY);
+                new IndexImpl(IndexDefinition.parse(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered), ss, newExtractor(),
+                        copyBehavior, PerIndexStats.EMPTY);
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getRecords(0L, true, 1000L, true).size());
         QueryRecord record5 = newRecord(5L, 55L);

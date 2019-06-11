@@ -66,8 +66,8 @@ public final class ConverterCache {
      */
     public void invalidate(InternalIndex index) {
         String[] components = index.getComponents();
-        if (components == null) {
-            cache.remove(index.getName());
+        if (components.length == 1) {
+            cache.remove(components[0]);
             return;
         }
 
@@ -126,7 +126,7 @@ public final class ConverterCache {
         // scan composite indexes
         for (InternalIndex index : indexesSnapshot) {
             String[] components = index.getComponents();
-            if (components == null) {
+            if (components.length == 1) {
                 // not a composite index
                 continue;
             }
@@ -186,7 +186,7 @@ public final class ConverterCache {
 
             if (component == FULLY_UNRESOLVED) {
                 // we got a non-composite index with a null/transient converter
-                assert index.getComponents() == null;
+                assert index.getComponents().length == 1;
                 TypeConverter converter = index.getConverter();
                 return isNull(converter) ? null : converter;
             }

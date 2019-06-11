@@ -38,4 +38,15 @@ public final class Hashing {
         final int h = (int) fastLongMix(value);
         return h & mask & ~1;
     }
+
+    static int hash(Object value, int mask) {
+        return fastIntMix(value.hashCode()) & mask;
+    }
+
+    static int hashCode(long value) {
+        // Used only for nominal Object.hashCode implementations, no mixing
+        // required.
+        return (int) (value ^ (value >>> 32));
+    }
+
 }

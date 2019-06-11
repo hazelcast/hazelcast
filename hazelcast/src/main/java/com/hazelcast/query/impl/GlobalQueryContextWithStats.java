@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,6 +106,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public String getUniqueKey() {
+            return delegate.getUniqueKey();
+        }
+
+        @Override
         public TypeConverter getConverter() {
             return delegate.getConverter();
         }
@@ -117,6 +123,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public void removeEntry(Data key, Object value, OperationSource operationSource) {
             delegate.removeEntry(key, value, operationSource);
+        }
+
+        @Override
+        public boolean canEvaluate(Class<Predicate> predicateClass) {
+            return delegate.canEvaluate(predicateClass);
         }
 
         @Override
