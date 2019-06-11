@@ -106,8 +106,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                     updateConfig(setter, otherConfigObject, thisSubConfigObject);
                 } else if (returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStore")
                         || returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStoreFactory")
-                        || returnTypeName.equals("com.hazelcast.core.QueueStore")
-                        || returnTypeName.equals("com.hazelcast.core.QueueStoreFactory")) {
+                        || returnTypeName.equals("com.hazelcast.collection.QueueStore")
+                        || returnTypeName.equals("com.hazelcast.collection.QueueStoreFactory")) {
                     cloneStoreInstance(classloader, method, setter, thisConfigObject, otherConfigObject, returnTypeName);
                 } else if (returnTypeName.startsWith("com.hazelcast.memory.MemorySize")) {
                     // ignore

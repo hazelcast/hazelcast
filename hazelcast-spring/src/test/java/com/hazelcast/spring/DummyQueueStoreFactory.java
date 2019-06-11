@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 
 import java.util.Properties;
 
