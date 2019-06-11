@@ -37,7 +37,7 @@ public interface MapServiceContextInterceptorSupport {
 
     void addInterceptor(String id, String mapName, MapInterceptor interceptor);
 
-    void removeInterceptor(String mapName, String id);
+    boolean removeInterceptor(String mapName, String id);
 
     Object interceptGet(String mapName, Object value);
 

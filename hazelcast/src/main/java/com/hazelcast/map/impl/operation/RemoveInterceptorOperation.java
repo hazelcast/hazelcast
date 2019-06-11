@@ -16,71 +16,53 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.NamedOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
-public class RemoveInterceptorOperation extends Operation implements MutatingOperation, NamedOperation,
-                                                                     IdentifiedDataSerializable {
+public class RemoveInterceptorOperation extends MapOperation
+        implements MutatingOperation {
 
-    private MapService mapService;
-    private String mapName;
     private String id;
+    private boolean interceptorRemoved;
 
     public RemoveInterceptorOperation() {
     }
 
     public RemoveInterceptorOperation(String mapName, String id) {
-        this.mapName = mapName;
+        super(mapName);
         this.id = id;
     }
 
     @Override
-    public void run() {
-        mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        mapContainer.getInterceptorRegistry().deregister(id);
+    protected void runInternal() {
+        interceptorRemoved = mapContainer.getInterceptorRegistry().deregister(id);
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return interceptorRemoved;
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
         id = in.readUTF();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
         out.writeUTF(id);
-    }
-
-    @Override
-    public String getName() {
-        return mapName;
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", mapName=").append(mapName);
         sb.append(", id=").append(id);
     }
 

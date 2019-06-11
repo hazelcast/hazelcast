@@ -456,10 +456,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void removeInterceptor(String id) {
+    public boolean removeInterceptor(String id) {
         checkNotNull(id, "Interceptor ID should not be null!");
 
-        removeMapInterceptorInternal(id);
+        return removeMapInterceptorInternal(id);
     }
 
     @Override

@@ -22,7 +22,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.test.AssertTask;
@@ -32,8 +33,10 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,11 +50,41 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InterceptorTest extends HazelcastTestSupport {
+
+    @Test
+    public void removeInterceptor_returns_true_when_interceptor_removed() {
+        HazelcastInstance node = createHazelcastInstance();
+
+        String mapName = "mapWithInterceptor";
+        IMap map = node.getMap(mapName);
+        String id = map.addInterceptor(new SimpleInterceptor());
+
+        assertTrue(map.removeInterceptor(id));
+        assertNoRegisteredInterceptorExists(map);
+    }
+
+    private static void assertNoRegisteredInterceptorExists(IMap map) {
+        String mapName = map.getName();
+        MapService mapservice = (MapService) (((MapProxyImpl) map).getService());
+        mapservice.getMapServiceContext().getMapContainer(mapName).getInterceptorRegistry().getInterceptors();
+    }
+
+    @Test
+    public void removeInterceptor_returns_false_when_there_is_no_interceptor() {
+        HazelcastInstance node = createHazelcastInstance();
+
+        IMap map = node.getMap("mapWithNoInterceptor");
+
+        assertFalse(map.removeInterceptor(UuidUtil.newUnsecureUuidString()));
+        assertNoRegisteredInterceptorExists(map);
+    }
 
     @Test
     public void testMapInterceptor() {

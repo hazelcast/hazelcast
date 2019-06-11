@@ -2001,11 +2001,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     String addInterceptor(MapInterceptor interceptor);
 
     /**
-     * Removes the given interceptor for this map, so it will not intercept operations anymore.
+     * Removes the given interceptor for this map,
+     * so it will not intercept operations anymore.
      *
      * @param id registration ID of the map interceptor
+     * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    void removeInterceptor(String id);
+    boolean removeInterceptor(String id);
 
     /**
      * Adds a {@link MapListener} for this map.

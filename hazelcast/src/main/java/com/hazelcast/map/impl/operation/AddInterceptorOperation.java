@@ -17,32 +17,29 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.NamedOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
-public class AddInterceptorOperation extends Operation implements MutatingOperation, NamedOperation, IdentifiedDataSerializable {
+public class AddInterceptorOperation extends MapOperation
+        implements MutatingOperation {
 
-    private MapService mapService;
     private String id;
     private MapInterceptor mapInterceptor;
-    private String mapName;
 
     public AddInterceptorOperation() {
     }
 
-    public AddInterceptorOperation(String id, MapInterceptor mapInterceptor, String mapName) {
+    public AddInterceptorOperation(String mapName,
+                                   String id,
+                                   MapInterceptor mapInterceptor) {
+        super(mapName);
         this.id = id;
         this.mapInterceptor = mapInterceptor;
-        this.mapName = mapName;
     }
 
     @Override
@@ -51,9 +48,7 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     }
 
     @Override
-    public void run() {
-        mapService = getService();
-        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
+    protected void runInternal() {
         mapContainer.getInterceptorRegistry().register(id, mapInterceptor);
     }
 
@@ -65,7 +60,6 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
         id = in.readUTF();
         mapInterceptor = in.readObject();
     }
@@ -73,7 +67,6 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
         out.writeUTF(id);
         out.writeObject(mapInterceptor);
     }
@@ -82,12 +75,7 @@ public class AddInterceptorOperation extends Operation implements MutatingOperat
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", name=").append(mapName);
-    }
-
-    @Override
-    public String getName() {
-        return mapName;
+        sb.append(", name=").append(name);
     }
 
     @Override

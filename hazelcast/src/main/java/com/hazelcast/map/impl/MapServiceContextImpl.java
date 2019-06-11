@@ -648,9 +648,9 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void removeInterceptor(String mapName, String id) {
+    public boolean removeInterceptor(String mapName, String id) {
         MapContainer mapContainer = getMapContainer(mapName);
-        mapContainer.getInterceptorRegistry().deregister(id);
+        return mapContainer.getInterceptorRegistry().deregister(id);
     }
 
     // TODO: interceptors should get a wrapped object which includes the serialized version
