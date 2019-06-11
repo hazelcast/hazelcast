@@ -136,6 +136,9 @@ public class CompactIndexesTest extends HazelcastTestSupport {
         // this one is slow currently
         //assertEquals(999, persons.values(or(equal("habits[any]", 0), notEqual("habits[any]", 1))).size());
 
+        assertEquals(1,
+                persons.values(and(equal("habits[any]", 0), or(equal("habits[any]", 10), equal("habits[any]", 5)))).size());
+
         System.out.println("Queries took " + (System.currentTimeMillis() - start) + "ms");
     }
 

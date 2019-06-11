@@ -173,11 +173,14 @@ public class AttributeIndexRegistry {
 
         private final int width;
 
+        private final String[] components;
+
         public FirstComponentDecorator(InternalIndex delegate) {
             assert delegate.getComponents().length > 1;
             assert delegate.isOrdered();
             this.delegate = delegate;
             this.width = delegate.getComponents().length;
+            this.components = new String[]{delegate.getComponents()[0]};
         }
 
         @Override
@@ -187,7 +190,7 @@ public class AttributeIndexRegistry {
 
         @Override
         public String[] getComponents() {
-            return null;
+            return components;
         }
 
         @Override
