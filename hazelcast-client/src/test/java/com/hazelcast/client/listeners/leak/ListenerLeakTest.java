@@ -33,7 +33,7 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.listener.MapListener;

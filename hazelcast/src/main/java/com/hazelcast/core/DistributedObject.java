@@ -21,6 +21,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.multimap.MultiMap;
 
 /**
  * Base interface for all distributed objects.

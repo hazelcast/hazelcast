@@ -23,7 +23,6 @@ import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

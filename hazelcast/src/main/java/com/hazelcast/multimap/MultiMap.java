@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.multimap;
 
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 import java.util.Collection;

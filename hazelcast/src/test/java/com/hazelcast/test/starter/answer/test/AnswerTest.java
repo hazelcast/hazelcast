@@ -36,7 +36,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.Node;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.BaseMultiMap;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.BaseMultiMap;
+import com.hazelcast.multimap.MultiMap;
 
 import java.util.Collection;
 
