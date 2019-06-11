@@ -599,10 +599,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addEntryListener(@Nonnull MapListener listener,
                                    @Nonnull Predicate<K, V> predicate,
-                                   @Nonnull K key,
+                                   @Nullable K key,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener, predicate);
 
@@ -612,18 +611,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addEntryListener(@Nonnull EntryListener listener,
                                    @Nonnull Predicate<K, V> predicate,
-                                   @Nonnull K key,
+                                   @Nullable K key,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public String addEntryListener(@Nonnull MapListener listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener, predicate);
@@ -632,7 +632,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener, predicate);

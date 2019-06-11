@@ -691,17 +691,21 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void lock(@Nonnull K key) {
-        lock(key, -1, MILLISECONDS);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        lockInternal(key, timeInMsOrTimeIfNullUnit(-1, MILLISECONDS));
     }
 
     @Override
     public void lock(@Nonnull K key, long leaseTime, @Nullable TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkPositive(leaseTime, "leaseTime should be positive");
+        lockInternal(key, timeInMsOrTimeIfNullUnit(leaseTime, timeUnit));
+    }
 
+    private void lockInternal(@Nonnull K key, long leaseTimeMs) {
         Data keyData = toData(key);
         ClientMessage request = MapLockCodec.encodeRequest(name, keyData, getThreadId(),
-                timeInMsOrTimeIfNullUnit(leaseTime, timeUnit), lockReferenceIdGenerator.getNextReferenceId());
+                leaseTimeMs, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData, Long.MAX_VALUE);
     }
 

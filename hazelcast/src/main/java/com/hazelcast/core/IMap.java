@@ -2286,7 +2286,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     String addEntryListener(@Nonnull MapListener listener,
                             @Nonnull Predicate<K, V> predicate,
-                            @Nonnull K key,
+                            @Nullable K key,
                             boolean includeValue);
 
     /**
@@ -2304,7 +2304,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     String addEntryListener(@Nonnull EntryListener listener,
                             @Nonnull Predicate<K, V> predicate,
-                            @Nonnull K key,
+                            @Nullable K key,
                             boolean includeValue);
 
     /**

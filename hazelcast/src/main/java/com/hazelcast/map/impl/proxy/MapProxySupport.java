@@ -94,6 +94,7 @@ import com.hazelcast.util.collection.PartitionIdSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1080,7 +1081,10 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    protected String addEntryListenerInternal(Object listener,
+                                              Predicate predicate,
+                                              @Nullable Data key,
+                                              boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
