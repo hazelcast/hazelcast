@@ -46,8 +46,7 @@ public final class HazelcastJsonValue {
      * @param string a non null Json string
      */
     public HazelcastJsonValue(String string) {
-        checkNotNull(string);
-        this.string = string;
+        this.string = checkNotNull(string);
     }
 
     /**
@@ -68,13 +67,12 @@ public final class HazelcastJsonValue {
             return false;
         }
 
-        HazelcastJsonValue jsonValue = (HazelcastJsonValue) o;
-
-        return string != null ? string.equals(jsonValue.string) : jsonValue.string == null;
+        HazelcastJsonValue that = (HazelcastJsonValue) o;
+        return string.equals(that.string);
     }
 
     @Override
     public int hashCode() {
-        return string != null ? string.hashCode() : 0;
+        return string.hashCode();
     }
 }
