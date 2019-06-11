@@ -21,71 +21,9 @@ import static java.util.Arrays.copyOf;
 /**
  * Contains configuration for symmetric encryption
  */
-public class SymmetricEncryptionConfig {
+public class SymmetricEncryptionConfig extends AbstractSymmetricEncryptionConfig<SymmetricEncryptionConfig> {
 
-    /**
-     * Default symmetric encryption password
-     */
-    public static final String DEFAULT_SYMMETRIC_PASSWORD = "thepassword";
-
-    /**
-     * Default symmetric encryption salt
-     */
-    public static final String DEFAULT_SYMMETRIC_SALT = "thesalt";
-
-    private static final int ITERATION_COUNT = 19;
-
-    private boolean enabled;
-    private String algorithm = "PBEWithMD5AndDES";
-    private String password = DEFAULT_SYMMETRIC_PASSWORD;
-    private String salt = DEFAULT_SYMMETRIC_SALT;
-    private int iterationCount = ITERATION_COUNT;
     private byte[] key;
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public SymmetricEncryptionConfig setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        return this;
-    }
-
-    public String getAlgorithm() {
-        return algorithm;
-    }
-
-    public SymmetricEncryptionConfig setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-        return this;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public SymmetricEncryptionConfig setPassword(String password) {
-        this.password = password;
-        return this;
-    }
-
-    public String getSalt() {
-        return salt;
-    }
-
-    public SymmetricEncryptionConfig setSalt(String salt) {
-        this.salt = salt;
-        return this;
-    }
-
-    public int getIterationCount() {
-        return iterationCount;
-    }
-
-    public SymmetricEncryptionConfig setIterationCount(int iterationCount) {
-        this.iterationCount = iterationCount;
-        return this;
-    }
 
     public byte[] getKey() {
         return cloneKey(key);
@@ -103,8 +41,8 @@ public class SymmetricEncryptionConfig {
     @Override
     public String toString() {
         return "SymmetricEncryptionConfig{"
-                + "enabled=" + enabled
-                + ", algorithm='" + algorithm + '\''
+                + "enabled=" + isEnabled()
+                + ", algorithm='" + getAlgorithm() + '\''
                 + ", password='***'"
                 + ", salt='***'"
                 + ", iterationCount=***"
