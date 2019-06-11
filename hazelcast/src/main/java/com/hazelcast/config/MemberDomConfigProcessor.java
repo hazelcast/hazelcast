@@ -39,6 +39,7 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,7 +91,9 @@ import static com.hazelcast.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
@@ -273,7 +276,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setUserCodeDeploymentConfig(dcConfig);
     }
 
-    private void handleHotRestartPersistence(Node hrRoot) {
+    private void handleHotRestartPersistence(Node hrRoot)
+            throws Exception {
         HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig()
                 .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
 
@@ -285,25 +289,124 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
-            String value = getTextContent(n);
-            if ("base-dir".equals(name)) {
-                hrConfig.setBaseDir(new File(value).getAbsoluteFile());
-            } else if ("backup-dir".equals(name)) {
-                hrConfig.setBackupDir(new File(value).getAbsoluteFile());
-            } else if (parallelismName.equals(name)) {
-                hrConfig.setParallelism(getIntegerValue(parallelismName, value));
-            } else if (validationTimeoutName.equals(name)) {
-                hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
-            } else if (dataLoadTimeoutName.equals(name)) {
-                hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
-            } else if (clusterDataRecoveryPolicyName.equals(name)) {
-                hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
-                        .valueOf(upperCaseInternal(value)));
-            } else if (autoRemoveStaleDataName.equals(name)) {
-                hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+            if ("encryption-at-rest".equals(name)) {
+                handleEncryptionAtRest(n, hrConfig);
+            } else {
+                String value = getTextContent(n);
+                if ("base-dir".equals(name)) {
+                    hrConfig.setBaseDir(new File(value).getAbsoluteFile());
+                } else if ("backup-dir".equals(name)) {
+                    hrConfig.setBackupDir(new File(value).getAbsoluteFile());
+                } else if (parallelismName.equals(name)) {
+                    hrConfig.setParallelism(getIntegerValue(parallelismName, value));
+                } else if (validationTimeoutName.equals(name)) {
+                    hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
+                } else if (dataLoadTimeoutName.equals(name)) {
+                    hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
+                } else if (clusterDataRecoveryPolicyName.equals(name)) {
+                    hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(value)));
+                } else if (autoRemoveStaleDataName.equals(name)) {
+                    hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+                }
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
+    }
+
+    private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
+            throws Exception {
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        handleViaReflection(encryptionAtRestRoot, hrConfig, encryptionAtRestConfig, "secure-store");
+        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store")) {
+            handleSecureStore(secureStore, encryptionAtRestConfig);
+        }
+        hrConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+    }
+
+    private void handleSecureStore(Node secureStoreRoot, EncryptionAtRestConfig encryptionAtRestConfig) {
+        Node n = firstChildElement(secureStoreRoot);
+        String name = cleanNodeName(n);
+        SecureStoreConfig secureStoreConfig;
+        if ("keystore".equals(name)) {
+            secureStoreConfig = handleJavaKeyStore(n);
+        } else if ("vault".equals(name)) {
+            secureStoreConfig = handleVault(n);
+        } else {
+            throw new InvalidConfigurationException("Unrecognized Secure Store type: " + name);
+        }
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+    }
+
+    private SecureStoreConfig handleJavaKeyStore(Node keyStoreRoot) {
+        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        for (Node n : childElements(keyStoreRoot)) {
+            String name = cleanNodeName(n);
+            if ("entries".equals(name)) {
+                handleJavaKeyStoreEntries(n, keyStoreSecureStoreConfig);
+            } else {
+                String value = getTextContent(n);
+                if ("path".equals(name)) {
+                    keyStoreSecureStoreConfig.setPath(new File(value).getAbsoluteFile());
+                } else if ("type".equals(name)) {
+                    keyStoreSecureStoreConfig.setType(value);
+                } else if ("password".equals(name)) {
+                    keyStoreSecureStoreConfig.setPassword(value);
+                }
+            }
+        }
+        return keyStoreSecureStoreConfig;
+    }
+
+    private void handleJavaKeyStoreEntries(Node entriesRoot, JavaKeyStoreSecureStoreConfig javaKeyStoreSecureStoreConfig) {
+        List<JavaKeyStoreSecureStoreConfig.Entry> entries = new ArrayList<>();
+        for (Node n : childElements(entriesRoot)) {
+            String entryName = getAttribute(n, "name");
+            String password = getAttribute(n, "password");
+            entries.add(new JavaKeyStoreSecureStoreConfig.Entry(entryName, password));
+        }
+        javaKeyStoreSecureStoreConfig.setEntries(entries);
+    }
+
+    private SecureStoreConfig handleVault(Node vaultRoot) {
+        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig();
+        for (Node n : childElements(vaultRoot)) {
+            String name = cleanNodeName(n);
+            if ("entries".equals(name)) {
+                handleVaultEntries(n, vaultSecureStoreConfig);
+            } else {
+                String value = getTextContent(n);
+                if ("address".equals(name)) {
+                    vaultSecureStoreConfig.setAddress(value);
+                } else if ("secret-path".equals(name)) {
+                    vaultSecureStoreConfig.setSecretPath(value);
+                } else if ("token".equals(name)) {
+                    vaultSecureStoreConfig.setToken(value);
+                } else if ("namespace".equals(name)) {
+                    vaultSecureStoreConfig.setNamespace(value);
+                } else if ("secret-engine-version".equals(name)) {
+                    VaultSecureStoreConfig.SecretEngineVersion secretEngineVersion =
+                            VaultSecureStoreConfig.SecretEngineVersion.valueOf(value);
+                    vaultSecureStoreConfig.setSecretEngineVersion(secretEngineVersion);
+                } else if ("ssl".equals(name)) {
+                    handleSSLConfig(n, vaultSecureStoreConfig);
+                }
+            }
+        }
+        return vaultSecureStoreConfig;
+    }
+
+    private void handleSSLConfig(Node node, VaultSecureStoreConfig vaultSecureStoreConfig) {
+        SSLConfig sslConfig = parseSslConfig(node);
+        vaultSecureStoreConfig.setSSLConfig(sslConfig);
+    }
+
+    private void handleVaultEntries(Node entriesRoot, VaultSecureStoreConfig vaultSecureStoreConfig) {
+        List<VaultSecureStoreConfig.Entry> entries = new ArrayList<>();
+        for (Node n : childElements(entriesRoot)) {
+            String entryName = getAttribute(n, "name");
+            entries.add(new VaultSecureStoreConfig.Entry(entryName));
+        }
+        vaultSecureStoreConfig.setEntries(entries);
     }
 
     private void handleCRDTReplication(Node root) {
@@ -981,26 +1084,41 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         handleInterfacesList(node, interfaces);
     }
 
-    protected void handleViaReflection(Node node, Object parent, Object child) throws Exception {
+    protected void handleViaReflection(Node node, Object parent, Object child, String... nodeExclusions) throws Exception {
         NamedNodeMap attributes = node.getAttributes();
         if (attributes != null) {
             for (int a = 0; a < attributes.getLength(); a++) {
                 Node att = attributes.item(a);
-                invokeSetter(child, att, att.getNodeValue());
+                if (!excludeNode(att, nodeExclusions)) {
+                    invokeSetter(child, att, att.getNodeValue());
+                }
             }
         }
         for (Node n : childElements(node)) {
-            if (n instanceof Element) {
+            if (n instanceof Element && !excludeNode(n, nodeExclusions)) {
                 invokeSetter(child, n, getTextContent(n).trim());
             }
         }
         attachChildConfig(parent, child);
     }
 
+    private static boolean excludeNode(Node n, String... nodeExclusions) {
+        if (nodeExclusions.length > 0) {
+            String name = cleanNodeName(n);
+            for (String exclusion : nodeExclusions) {
+                if (name.equals(exclusion)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static void invokeSetter(Object target, Node node, String argument) {
         Method method = getMethod(target, "set" + toPropertyName(cleanNodeName(node)), true);
         if (method == null) {
-            throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: " + node);
+            throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: "
+                    + cleanNodeName(node));
         }
         Class<?> arg = method.getParameterTypes()[0];
         Object coercedArg =

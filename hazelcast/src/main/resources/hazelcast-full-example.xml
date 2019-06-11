@@ -2400,6 +2400,20 @@
             PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition
             table version and successfully restored their data. All other members will leave the cluster and force start themselves.
             If no member restores its data successfully, cluster start fails.
+        - <encryption-at-rest>:
+            Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
+            to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
+            AES/CBC/PKCS5Padding), the encryption salt, and, in the <secure-store> sub-element, the configuration of the Secure
+            Store that it will be used to retrieve the encryption keys.
+            * <keystore>:
+                Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
+                JCEKS or PKCS12), the KeyStore password, and a list of key entries to be looked up in the KeyStore, in the
+                given order (the first key will be considered the current and will be used for encrypting the data).
+            * <vault>:
+                Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the secret path where
+                key entries will be looked up, the access token, the (optional) namespace, the (optional) <ssl> configuration
+                for HTTPS support, and a list of key entries to be looked up in Vault, in the given order (the first key will
+                be considered the current and will be used for encrypting the data).
     -->
     <hot-restart-persistence enabled="true">
         <base-dir>/mnt/hot-restart</base-dir>
@@ -2407,6 +2421,46 @@
         <validation-timeout-seconds>120</validation-timeout-seconds>
         <data-load-timeout-seconds>900</data-load-timeout-seconds>
         <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
+        <encryption-at-rest enabled="true">
+            <algorithm>AES/CBC/PKCS5Padding</algorithm>
+            <salt>somesalt</salt>
+            <secure-store>
+                <keystore>
+                    <path>/path/to/keystore.file</path>
+                    <type>PKCS12</type>
+                    <password>password</password>
+                    <entries>
+                        <entry name="entry" password="entry-password"/>
+                        <entry name="entry2" password="entry2-password"/>
+                    </entries>
+                </keystore>
+                <!--
+                <vault>
+                    <address>http://localhost:1234</address>
+                    <secret-path>secret/path</secret-path>
+                    <token>token</token>
+                    <namespace>namespace</namespace>
+                    <ssl enabled="false">
+                        <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+                        <properties>
+                            <property name="protocol">TLS</property>
+                            <property name="mutualAuthentication">REQUIRED</property>
+                            <property name="keyStore">/opt/hazelcast.keystore</property>
+                            <property name="keyStorePassword">secret.97531</property>
+                            <property name="keyStoreType">JKS</property>
+                            <property name="trustStore">/opt/hazelcast.truststore</property>
+                            <property name="trustStorePassword">changeit</property>
+                            <property name="trustStoreType">JKS</property>
+                        </properties>
+                    </ssl>
+                    <entries>
+                        <entry name="entry"/>
+                        <entry name="entry2"/>
+                    </entries>
+                </vault>
+                -->
+            </secure-store>
+        </encryption-at-rest>
     </hot-restart-persistence>
 
     <!--

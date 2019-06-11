@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -267,7 +268,137 @@ public class ConfigXmlGeneratorTest {
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5).setAutoRemoveStaleData(false);
 
-        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingDisabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPassword("keyStorePassword");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingEnabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPassword("keyStorePassword");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+
+        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) actualConfig.getSecureStoreConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getPassword());
+        assertEquals(1, keyStoreConfig.getEntries().size());
+        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getEntries().get(0).getPassword());
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingEnabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig();
+        secureStoreConfig.setAddress("http://address:1234");
+        secureStoreConfig.setSecretPath("secret/path");
+        secureStoreConfig.setToken("token");
+        secureStoreConfig.setNamespace("namespace");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new VaultSecureStoreConfig.Entry("entry")));
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword", "Hazelcast")
+                 .setProperty("trustStorePassword", "Hazelcast");
+        secureStoreConfig.setSSLConfig(sslConfig);
+
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+
+        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        assertTrue(actualConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) actualConfig.getSecureStoreConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getToken());
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getSSLConfig().getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getSSLConfig().getProperty("trustStorePassword"));
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingDisabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig();
+        secureStoreConfig.setAddress("http://address:1234");
+        secureStoreConfig.setSecretPath("secret/path");
+        secureStoreConfig.setToken("token");
+        secureStoreConfig.setNamespace("namespace");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new VaultSecureStoreConfig.Entry("entry")));
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword", "Hazelcast")
+                 .setProperty("trustStorePassword", "Hazelcast");
+        secureStoreConfig.setSSLConfig(sslConfig);
+
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }

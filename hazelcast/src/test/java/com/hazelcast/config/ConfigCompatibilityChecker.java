@@ -1487,7 +1487,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getParallelism(), c2.getParallelism())
                     && nullSafeEqual(c1.getValidationTimeoutSeconds(), c2.getValidationTimeoutSeconds())
                     && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
-                    && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy()));
+                    && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
+                    && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
         }
     }
 

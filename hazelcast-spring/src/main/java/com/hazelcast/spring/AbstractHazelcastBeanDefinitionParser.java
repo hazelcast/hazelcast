@@ -152,7 +152,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<String>(asList(excludeNames)) : null;
+                    ? new HashSet<>(asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
             for (Node n : childElements(node)) {
                 String name = xmlToJavaName(cleanNodeName(n));
@@ -199,7 +199,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
-            ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
                 BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass);
@@ -214,7 +214,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
-            ManagedList<BeanDefinition> list = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> list = new ManagedList<>();
             for (Node instanceNode : childElements(node)) {
                 BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
                 fillAttributeValues(instanceNode, confBuilder);
@@ -224,8 +224,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleDataSerializableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<Integer, BeanReference>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
+            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<Integer, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("data-serializable-factory".equals(name)) {
@@ -252,7 +252,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             String typeClassName = "type-class";
             String overrideJavaSerializationName = "override-java-serialization";
 
-            ManagedList<BeanDefinition> serializers = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> serializers = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
@@ -308,8 +308,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handlePortableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<Integer, BeanReference>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
+            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<Integer, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("portable-factory".equals(name)) {
@@ -389,7 +389,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected ManagedMap parseProperties(Node node) {
-            ManagedMap<String, String> properties = new ManagedMap<String, String>();
+            ManagedMap<String, String> properties = new ManagedMap<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
                 String propertyName;
@@ -501,7 +501,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             BeanDefinitionBuilder discoveryConfigBuilder = createBeanBuilder(DiscoveryConfig.class);
-            ManagedList<BeanDefinition> discoveryStrategyConfigs = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> discoveryStrategyConfigs = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("discovery-strategy".equals(name)) {
@@ -616,9 +616,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         private AbstractBeanDefinition createFilterListBean(Node node) {
             BeanDefinitionBuilder filterListBuilder = createBeanBuilder(ClassFilter.class);
-            ManagedSet<String> classes = new ManagedSet<String>();
-            ManagedSet<String> packages = new ManagedSet<String>();
-            ManagedSet<String> prefixes = new ManagedSet<String>();
+            ManagedSet<String> classes = new ManagedSet<>();
+            ManagedSet<String> packages = new ManagedSet<>();
+            ManagedSet<String> prefixes = new ManagedSet<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("class".equals(name)) {

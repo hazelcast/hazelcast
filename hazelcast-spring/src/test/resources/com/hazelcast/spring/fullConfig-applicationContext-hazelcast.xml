@@ -802,6 +802,24 @@
                                         cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
                 <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
+                <hz:encryption-at-rest enabled="true">
+                    <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
+                    <hz:salt>sugar</hz:salt>
+                    <hz:secure-store>
+                        <hz:vault>
+                            <hz:address>http://localhost:1234</hz:address>
+                            <hz:secret-path>secret/path</hz:secret-path>
+                            <hz:token>token</hz:token>
+                            <hz:namespace>namespace</hz:namespace>
+                            <hz:ssl enabled="true" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
+                                    factory-implementation="dummySSLContextFactory"/>
+                            <hz:entries>
+                                <hz:entry name="entry"/>
+                                <hz:entry name="entry2"/>
+                            </hz:entries>
+                        </hz:vault>
+                    </hz:secure-store>
+                </hz:encryption-at-rest>
             </hz:hot-restart-persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"
