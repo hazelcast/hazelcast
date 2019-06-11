@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -57,10 +59,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
@@ -455,5 +459,30 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     private static Map.Entry<Integer, String> createEntry(int i) {
         return new SimpleImmutableEntry<>(i, Integer.toString(i));
+    }
+
+    @Test
+    public void when_cancelledAfterBrokerDown_then_cancelsPromptly() {
+        createTopic("topic", 1);
+        DAG dag = new DAG();
+        dag.newVertex("src",
+                KafkaProcessors.streamKafkaP(properties, FunctionEx.identity(), EventTimePolicy.noEventTime(), "topic"))
+           .localParallelism(1);
+
+        Job job = createJetMember().newJob(dag);
+        assertJobStatusEventually(job, RUNNING);
+        sleepSeconds(1);
+        shutdownKafkaCluster();
+        sleepSeconds(3);
+        long start = System.nanoTime();
+        job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException ignored) { }
+        // There was an issue claimed that when the broker was down, job did not cancel.
+        // Let's assert the cancellation didn't take too long.
+        long durationSeconds = NANOSECONDS.toSeconds(System.nanoTime() - start);
+        assertTrue("durationSeconds=" + durationSeconds, durationSeconds < 10);
+        logger.info("Job cancelled in " + durationSeconds + " seconds");
     }
 }
