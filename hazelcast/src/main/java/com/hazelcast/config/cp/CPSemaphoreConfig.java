@@ -17,7 +17,7 @@
 package com.hazelcast.config.cp;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 
 import java.util.concurrent.Semaphore;
 

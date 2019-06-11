@@ -17,10 +17,10 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;

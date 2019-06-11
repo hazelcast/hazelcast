@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
+ * Contains the configuration for an {@link ISemaphore}.
  */
 public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig {
 

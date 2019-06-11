@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.countdownlatch;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

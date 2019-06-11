@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.atomic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
@@ -214,16 +214,6 @@ public class AtomicReferenceQuorumWriteTest extends AbstractQuorumTest {
     @Test(expected = QuorumException.class)
     public void getAndSet_noQuorum() {
         aref(3).getAndSet(object());
-    }
-
-    @Test
-    public void setAndGet_quorum() {
-        aref(0).setAndGet(object());
-    }
-
-    @Test(expected = QuorumException.class)
-    public void setAndGet_noQuorum() {
-        aref(3).setAndGet(object());
     }
 
     @Test

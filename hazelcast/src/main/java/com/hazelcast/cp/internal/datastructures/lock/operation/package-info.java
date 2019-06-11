@@ -16,6 +16,6 @@
 
 /**
  * Contains operations for the Raft-based
- * {@link com.hazelcast.core.ILock} implementation
+ * {@link com.hazelcast.cp.lock.ILock} implementation
  */
 package com.hazelcast.cp.internal.datastructures.lock.operation;

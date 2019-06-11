@@ -21,6 +21,8 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
@@ -103,7 +105,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IAtomicLong}.
+     * Provided merge types of {@link IAtomicLong}.
      *
      * @since 3.10
      */
@@ -111,7 +113,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IAtomicReference}.
+     * Provided merge types of {@link IAtomicReference}.
      *
      * @since 3.10
      */

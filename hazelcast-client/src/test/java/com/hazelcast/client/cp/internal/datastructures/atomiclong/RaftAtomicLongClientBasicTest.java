@@ -18,7 +18,7 @@ package com.hazelcast.client.cp.internal.datastructures.atomiclong;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;

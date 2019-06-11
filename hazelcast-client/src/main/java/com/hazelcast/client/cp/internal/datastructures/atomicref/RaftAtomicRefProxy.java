@@ -29,7 +29,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -114,12 +114,6 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
     @Override
     public T getAndSet(T newValue) {
         return getAndSetAsync(newValue).join();
-    }
-
-    @Override
-    public T setAndGet(T update) {
-        setAsync(update).join();
-        return update;
     }
 
     @Override

@@ -16,14 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
-import com.hazelcast.concurrent.lock.operations.LockOperation;
-import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.InternalCompletableFuture;

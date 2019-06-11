@@ -24,7 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;

@@ -16,10 +16,12 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cp.IAtomicLong;
+
 /**
  * The IdGenerator is responsible for creating unique {@code long} IDs in a cluster, under normal operating scenarios.
  * <p>
- * In theory a {@link com.hazelcast.core.IAtomicLong#incrementAndGet()} could be used to provide the same functionality.
+ * In theory a {@link IAtomicLong#incrementAndGet()} could be used to provide the same functionality.
  * The big difference is that the {@code incrementAndGet} requires one or more remote calls for every invocation and therefore
  * is a performance and scalability bottleneck. The IdGenerator uses an {@link IAtomicLong} under the hood, but instead of
  * doing a remote call for every call to {@link #newId()}, it does it less frequently. It checks out a chunk of 10,000 IDs

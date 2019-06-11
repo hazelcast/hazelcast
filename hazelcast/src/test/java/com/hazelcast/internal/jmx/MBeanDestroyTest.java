@@ -17,14 +17,14 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;

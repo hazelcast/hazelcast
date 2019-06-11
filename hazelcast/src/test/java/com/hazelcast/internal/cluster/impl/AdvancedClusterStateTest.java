@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;

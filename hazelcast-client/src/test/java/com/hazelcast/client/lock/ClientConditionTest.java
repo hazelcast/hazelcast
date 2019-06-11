@@ -17,7 +17,7 @@
 package com.hazelcast.client.lock;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.lock.ConditionAbstractTest;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.ConditionAbstractTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

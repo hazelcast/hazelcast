@@ -27,8 +27,8 @@ import com.hazelcast.client.impl.protocol.codec.LockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockTryLockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.core.ICondition;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ICondition;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.TimeUnit;

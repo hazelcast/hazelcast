@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ILock;
 
 /**
- * Management bean for {@link com.hazelcast.core.ILock}
+ * Management bean for {@link ILock}
  */
 @ManagedDescription("ILock")
 public class LockMBean extends HazelcastMBean<ILock> {

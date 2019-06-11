@@ -23,6 +23,8 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.journal.EventJournal;
@@ -716,7 +718,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ILock} configuration for
+     * Returns a read-only {@link ILock} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -786,7 +788,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ILock} configurations,
+     * Returns the map of {@link ILock} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -797,7 +799,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ILock} configurations,
+     * Sets the map of {@link ILock} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -2277,7 +2279,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ISemaphore}
+     * Returns a read-only {@link ISemaphore}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -2335,7 +2337,7 @@ public class Config {
     }
 
     /**
-     * Adds the {@link com.hazelcast.core.ISemaphore} configuration.
+     * Adds the {@link ISemaphore} configuration.
      * The configuration is saved under the config name, which may be a
      * pattern with which the configuration will be obtained in the future.
      *
@@ -2348,7 +2350,7 @@ public class Config {
     }
 
     /**
-     * Returns the collection of {@link com.hazelcast.core.ISemaphore} configs
+     * Returns the collection of {@link ISemaphore} configs
      * added to this config object.
      *
      * @return semaphore configs
@@ -2358,7 +2360,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ISemaphore} configurations,
+     * Returns the map of {@link ISemaphore} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *

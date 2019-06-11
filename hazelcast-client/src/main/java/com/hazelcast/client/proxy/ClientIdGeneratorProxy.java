@@ -18,8 +18,8 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.idgen.IdGeneratorImpl;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorImpl;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
 
 /**
