@@ -784,8 +784,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object newValue;
         Object oldValue = null;
         if (record == null) {
-            Object notExistingKey = mapServiceContext.toObject(key);
-            EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            EntryView nullEntryView = EntryViews.createLazyNullEntryView(key, serializationService);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;

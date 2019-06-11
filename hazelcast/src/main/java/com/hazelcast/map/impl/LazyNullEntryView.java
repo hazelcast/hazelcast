@@ -17,23 +17,27 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
- * Contains only key no value.
+ * Contains only key and no value.
  *
- * @param <K>
- * @param <V>
+ * @param <K> key type
+ * @param <V> value type
  */
-class NullEntryView<K, V> implements EntryView<K, V> {
+class LazyNullEntryView<K, V> implements EntryView<K, V> {
 
+    private final SerializationService serializationService;
     private K key;
 
-    NullEntryView(K key) {
+    LazyNullEntryView(K key, SerializationService serializationService) {
         this.key = key;
+        this.serializationService = serializationService;
     }
 
     @Override
     public K getKey() {
+        key = serializationService.toObject(key);
         return key;
     }
 

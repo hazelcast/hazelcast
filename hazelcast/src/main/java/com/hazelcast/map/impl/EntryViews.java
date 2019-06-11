@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -38,8 +37,9 @@ public final class EntryViews {
      * @param <V> the type of value.
      * @return returns  null entry view.
      */
-    public static <K, V> EntryView<K, V> createNullEntryView(K key) {
-        return new NullEntryView<>(key);
+    public static <K, V> EntryView<K, V> createLazyNullEntryView(K key,
+                                                                 SerializationService serializationService) {
+        return new LazyNullEntryView<>(key, serializationService);
     }
 
     public static <K, V> EntryView<K, V> createSimpleEntryView() {
@@ -48,20 +48,6 @@ public final class EntryViews {
 
     public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
         return new SimpleEntryView<>(key, value)
-                .withCost(record.getCost())
-                .withVersion(record.getVersion())
-                .withHits(record.getHits())
-                .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(record.getLastUpdateTime())
-                .withTtl(record.getTtl())
-                .withMaxIdle(record.getMaxIdle())
-                .withCreationTime(record.getCreationTime())
-                .withExpirationTime(record.getExpirationTime())
-                .withLastStoredTime(record.getLastStoredTime());
-    }
-
-    public static EntryView<Data, Data> toSimpleEntryView(Record<Data> record) {
-        return new SimpleEntryView<>(record.getKey(), record.getValue())
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
