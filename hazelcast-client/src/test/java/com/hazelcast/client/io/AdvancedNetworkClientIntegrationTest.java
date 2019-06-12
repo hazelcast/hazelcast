@@ -18,16 +18,16 @@ package com.hazelcast.client.io;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
-import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -53,8 +53,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -98,7 +100,7 @@ public class AdvancedNetworkClientIntegrationTest {
         Set<Member> clientViewOfMembers = client.getCluster().getMembers();
         Set<Member> members = instances[1].getCluster().getMembers();
 
-        Set<Address> clientViewOfAddresses = new HashSet<Address>();
+        Set<Address> clientViewOfAddresses = new HashSet<>();
         for (Member member : clientViewOfMembers) {
             clientViewOfAddresses.add(member.getAddress());
         }
@@ -111,8 +113,8 @@ public class AdvancedNetworkClientIntegrationTest {
     @Test
     public void testClientMembershipEvent() {
         client = HazelcastClient.newHazelcastClient(getClientConfig());
-        final AtomicReference<Member> memberAdded = new AtomicReference<Member>();
-        final AtomicReference<Member> memberRemoved = new AtomicReference<Member>();
+        AtomicReference<Member> memberAdded = new AtomicReference<>();
+        AtomicReference<Member> memberRemoved = new AtomicReference<>();
         Address removedMemberAddress = instances[2].getCluster().getLocalMember().getAddressMap().get(CLIENT);
 
         client.getCluster().addMembershipListener(new MembershipListener() {
@@ -134,6 +136,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
         instances[2].shutdown();
         assertClusterSizeEventually(2, instances[0]);
+        assertTrueEventually(() -> assertNotNull(memberRemoved.get()));
 
         assertEquals(memberRemoved.get().getAddress(), removedMemberAddress);
 
