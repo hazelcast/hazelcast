@@ -3016,6 +3016,56 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testHotRestartEncryptionAtRest() {
+        String keystorePath = "/tmp/keystore.jceks";
+        String keystoreType = "JCEKS";
+        String keystorePassword = "password";
+        String entryAlias = "entry";
+        String entryPassword = "entryPassword";
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  hot-restart-persistence:\n"
+                + "    enabled: true\n"
+                + "    encryption-at-rest:\n"
+                + "      enabled: true\n"
+                + "      algorithm: AES\n"
+                + "      salt: some-salt\n"
+                + "      password: some-pass\n"
+                + "      iteration-count: 7531\n"
+                + "      secure-store:\n"
+                + "        keystore:\n"
+                + "          path: " + keystorePath + "\n"
+                + "          type: " + keystoreType + "\n"
+                + "          password: " + keystorePassword + "\n"
+                + "          entries:\n"
+                + "            entry:\n"
+                + "              alias: " + entryAlias + "\n"
+                + "              password: " + entryPassword + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals("some-pass", encryptionAtRestConfig.getPassword());
+        assertEquals(7531, encryptionAtRestConfig.getIterationCount());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
+        assertEquals(keystorePath, keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(keystoreType, keyStoreConfig.getType());
+        assertEquals(keystorePassword, keyStoreConfig.getPassword());
+        List<JavaKeyStoreSecureStoreConfig.Entry> entries = keyStoreConfig.getEntries();
+        assertEquals(1, entries.size());
+        JavaKeyStoreSecureStoreConfig.Entry entry = entries.get(0);
+        assertEquals(entryAlias, entry.getAlias());
+        assertEquals(entryPassword, entry.getPassword());
+    }
+
+    @Override
     @Test
     public void testMapEvictionPolicyClassName() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";

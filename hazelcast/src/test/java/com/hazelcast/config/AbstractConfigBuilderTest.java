@@ -402,6 +402,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testHotRestart();
 
     @Test
+    public abstract void testHotRestartEncryptionAtRest();
+
+    @Test
     public abstract void testMapEvictionPolicyClassName();
 
     @Test

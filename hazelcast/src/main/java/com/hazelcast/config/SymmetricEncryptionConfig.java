@@ -41,8 +41,8 @@ public class SymmetricEncryptionConfig extends AbstractSymmetricEncryptionConfig
     @Override
     public String toString() {
         return "SymmetricEncryptionConfig{"
-                + "enabled=" + isEnabled()
-                + ", algorithm='" + getAlgorithm() + '\''
+                + "enabled=" + enabled
+                + ", algorithm='" + algorithm + '\''
                 + ", password='***'"
                 + ", salt='***'"
                 + ", iterationCount=***"

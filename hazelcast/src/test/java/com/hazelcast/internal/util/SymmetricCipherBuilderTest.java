@@ -18,7 +18,7 @@ import javax.crypto.SecretKey;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.hazelcast.internal.util.CipherHelper.findKeyAlgorithm;
+import static com.hazelcast.internal.util.SymmetricCipherBuilder.findKeyAlgorithm;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -52,7 +52,7 @@ public class SymmetricCipherBuilderTest {
                 .setAlgorithm(algorithm)
                 .setKey(getKey());
 
-        Cipher cipher = new CipherHelper.SymmetricCipherBuilder(config, config.getKey()).create(true);
+        Cipher cipher = new SymmetricCipherBuilder(config).create(true, config.getKey());
 
         assertEquals(algorithm, cipher.getAlgorithm());
     }

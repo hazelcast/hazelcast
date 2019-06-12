@@ -2921,6 +2921,58 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testHotRestartEncryptionAtRest() {
+        String keystorePath = "/tmp/keystore.jceks";
+        String keystoreType = "JCEKS";
+        String keystorePassword = "password";
+        String entryAlias = "entry";
+        String entryPassword = "entryPassword";
+        String xml = HAZELCAST_START_TAG
+                + "<hot-restart-persistence enabled=\"true\">"
+                + "    <encryption-at-rest enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>some-salt</salt>\n"
+                + "        <password>some-pass</password>\n"
+                + "        <iteration-count>7531</iteration-count>\n"
+                + "        <secure-store>\n"
+                + "            <keystore>\n"
+                + "                <path>" + keystorePath + "</path>\n"
+                + "                <type>" + keystoreType + "</type>\n"
+                + "                <password>" + keystorePassword + "</password>\n"
+                + "                <entries>\n"
+                + "                    <entry alias=\"" + entryAlias + "\" password=\"" + entryPassword+ "\"/>\n"
+                + "                </entries>\n"
+                + "            </keystore>\n"
+                + "        </secure-store>\n"
+                + "    </encryption-at-rest>"
+                + "</hot-restart-persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals("some-pass", encryptionAtRestConfig.getPassword());
+        assertEquals(7531, encryptionAtRestConfig.getIterationCount());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig)secureStoreConfig;
+        assertEquals(keystorePath, keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(keystoreType, keyStoreConfig.getType());
+        assertEquals(keystorePassword, keyStoreConfig.getPassword());
+        List<JavaKeyStoreSecureStoreConfig.Entry> entries = keyStoreConfig.getEntries();
+        assertEquals(1, entries.size());
+        JavaKeyStoreSecureStoreConfig.Entry entry = entries.get(0);
+        assertEquals(entryAlias, entry.getAlias());
+        assertEquals(entryPassword, entry.getPassword());
+    }
+
+    @Override
+    @Test
     public void testMapEvictionPolicyClassName() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
         String xml = HAZELCAST_START_TAG

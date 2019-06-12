@@ -3675,6 +3675,86 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:element name="secure-store-substitution-group" abstract="true"/>
+
+    <xs:complexType name="keystore-entry">
+        <xs:attribute name="alias" type="xs:string" use="required"/>
+        <xs:attribute name="password" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="keystore">
+        <xs:all>
+            <xs:element name="path" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="type" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="password" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="entries" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="entry" type="keystore-entry" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="keystore" type="keystore" substitutionGroup="secure-store-substitution-group"/>
+
+    <xs:complexType name="secure-store">
+        <xs:sequence>
+            <xs:element ref="secure-store-substitution-group" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- In an ideal world, we would extend from the symmetric-encryption type here, but sadly
+         it is not possible as symmetric-encryption uses xs:all. -->
+    <xs:complexType name="encryption-at-rest">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for hot restart (symmetric) encryption at rest. Encryption is based
+                on Java Cryptography Architecture.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="algorithm" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, Blowfish,
+                        or DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="salt" type="xs:string" default="thesalt">
+                <xs:annotation>
+                    <xs:documentation>
+                        Salt value to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Pass phrase to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="iteration-count" type="xs:int" default="19">
+                <xs:annotation>
+                    <xs:documentation>
+                        Iteration count to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secure-store" type="secure-store"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable symmetric encryption, false to disable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart-persistence">
         <xs:all>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
@@ -3748,6 +3828,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="encryption-at-rest" type="encryption-at-rest" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>

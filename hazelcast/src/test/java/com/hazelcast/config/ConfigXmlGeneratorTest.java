@@ -45,6 +45,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -271,6 +272,70 @@ public class ConfigXmlGeneratorTest {
         HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenMaskingDisabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        encryptionAtRestConfig.setPassword("password");
+        encryptionAtRestConfig.setIterationCount(10);
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPassword("keyStorePassword");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new JavaKeyStoreSecureStoreConfig.Entry("alias", "entryPassword")));
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenMaskingEnabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        encryptionAtRestConfig.setPassword("password");
+        encryptionAtRestConfig.setIterationCount(10);
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPassword("keyStorePassword");
+        secureStoreConfig.setEntries(Collections.singletonList(
+                new JavaKeyStoreSecureStoreConfig.Entry("alias", "entryPassword")));
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+
+        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, actualConfig.getPassword());
+        assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) actualConfig.getSecureStoreConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getPassword());
+        assertEquals(1, keyStoreConfig.getEntries().size());
+        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getEntries().get(0).getPassword());
     }
 
     @Test

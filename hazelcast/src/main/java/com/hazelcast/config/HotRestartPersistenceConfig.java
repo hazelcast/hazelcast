@@ -296,10 +296,16 @@ public class HotRestartPersistenceConfig {
 
     @Override
     public String toString() {
-        return "HotRestartPersistenceConfig{" + "enabled=" + enabled + ", baseDir=" + baseDir + ", backupDir=" + backupDir
-                + ", parallelism=" + parallelism + ", validationTimeoutSeconds=" + validationTimeoutSeconds
-                + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds + ", clusterDataRecoveryPolicy="
-                + clusterDataRecoveryPolicy + ", autoRemoveStaleData=" + autoRemoveStaleData
-                + ", encryptionAtRestConfig=" +encryptionAtRestConfig + '}';
+        return "HotRestartPersistenceConfig{"
+                + "enabled=" + enabled
+                + ", baseDir=" + baseDir
+                + ", backupDir=" + backupDir
+                + ", parallelism=" + parallelism
+                + ", validationTimeoutSeconds=" + validationTimeoutSeconds
+                + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds
+                + ", clusterDataRecoveryPolicy=" + clusterDataRecoveryPolicy
+                + ", autoRemoveStaleData=" + autoRemoveStaleData
+                + ", encryptionAtRestConfig=" + encryptionAtRestConfig
+                + '}';
     }
 }

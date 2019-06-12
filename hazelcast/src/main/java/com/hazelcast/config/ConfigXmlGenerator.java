@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
@@ -1324,12 +1323,19 @@ public class ConfigXmlGenerator {
         if (sec == null) {
             return;
         }
-        gen.open("symmetric-encryption", "enabled", sec.isEnabled())
-                .node("algorithm", sec.getAlgorithm())
-                .node("salt", getOrMaskValue(sec.getSalt()))
-                .node("password", getOrMaskValue(sec.getPassword()))
-                .node("iteration-count", sec.getIterationCount())
-                .close();
+        gen.open("symmetric-encryption", "enabled", sec.isEnabled());
+        symmetricEncInterceptorConfigXmlBodyGenerator(gen, sec);
+        gen.close();
+    }
+
+    private void symmetricEncInterceptorConfigXmlBodyGenerator(XmlGenerator gen, AbstractSymmetricEncryptionConfig sec) {
+        if (sec == null) {
+            return;
+        }
+        gen.node("algorithm", sec.getAlgorithm())
+           .node("salt", getOrMaskValue(sec.getSalt()))
+           .node("password", getOrMaskValue(sec.getPassword()))
+           .node("iteration-count", sec.getIterationCount());
     }
 
     private static void memberAddressProviderConfigXmlGenerator(XmlGenerator gen,
@@ -1366,7 +1372,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void hotRestartXmlGenerator(XmlGenerator gen, Config config) {
+    private void hotRestartXmlGenerator(XmlGenerator gen, Config config) {
         HotRestartPersistenceConfig hrCfg = config.getHotRestartPersistenceConfig();
         if (hrCfg == null) {
             gen.node("hot-restart-persistence", "enabled", "false");
@@ -1381,8 +1387,45 @@ public class ConfigXmlGenerator {
                 .node("validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds())
                 .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData())
-                .close();
+                .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData());
+
+        encryptionAtRestXmlGenerator(gen, hrCfg.getEncryptionAtRestConfig());
+        gen.close();
+    }
+
+    private void encryptionAtRestXmlGenerator(XmlGenerator gen, EncryptionAtRestConfig encryptionAtRestConfig) {
+        if (encryptionAtRestConfig == null) {
+            gen.node("encryption-at-rest", "enabled", "false");
+            return;
+        }
+        gen.open("encryption-at-rest", "enabled", encryptionAtRestConfig.isEnabled());
+        symmetricEncInterceptorConfigXmlBodyGenerator(gen, encryptionAtRestConfig);
+        secureStoreXmlGenerator(gen, encryptionAtRestConfig.getSecureStoreConfig());
+        gen.close();
+    }
+
+    private void secureStoreXmlGenerator(XmlGenerator gen, SecureStoreConfig secureStoreConfig) {
+        gen.open("secure-store");
+        if (secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig) {
+            javaKeyStoreSecureStoreXmlGenerator(gen, (JavaKeyStoreSecureStoreConfig)secureStoreConfig);
+        }
+        gen.close();
+    }
+
+    private void javaKeyStoreSecureStoreXmlGenerator(XmlGenerator gen, JavaKeyStoreSecureStoreConfig secureStoreConfig) {
+        gen.open("keystore")
+           .node("path", secureStoreConfig.getPath().getAbsolutePath())
+           .node("type", secureStoreConfig.getType())
+           .node("password", getOrMaskValue(secureStoreConfig.getPassword()));
+        gen.open("entries");
+        for (JavaKeyStoreSecureStoreConfig.Entry entry : secureStoreConfig.getEntries()) {
+            gen.open("entry", "alias",
+                    entry.getAlias(), "password",
+                    getOrMaskValue(entry.getPassword()))
+               .close();
+        }
+        gen.close();
+        gen.close();
     }
 
     private static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
@@ -1625,7 +1668,7 @@ public class ConfigXmlGenerator {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
         }
-        for (Entry<Integer, ?> factory : factoryMap.entrySet()) {
+        for (Map.Entry factory : factoryMap.entrySet()) {
             Object value = factory.getValue();
             String className = value instanceof String ? (String) value : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
@@ -1705,7 +1748,7 @@ public class ConfigXmlGenerator {
         public XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
-                for (Entry<String, ? extends Comparable> entry : props.entrySet()) {
+                for (Map.Entry entry : props.entrySet()) {
                     node("property", entry.getValue(), "name", entry.getKey());
                 }
                 close();

@@ -6,6 +6,10 @@ package com.hazelcast.config;
  */
 public class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryptionConfig> {
     /**
+     * Default symmetric encryption algorithm
+     */
+    public static final String DEFAULT_SYMMETRIC_ALGORITHM = "PBEWithMD5AndDES";
+    /**
      * Default symmetric encryption password
      */
     public static final String DEFAULT_SYMMETRIC_PASSWORD = "thepassword";
@@ -17,12 +21,11 @@ public class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryp
 
     private static final int ITERATION_COUNT = 19;
 
-    private boolean enabled;
-    private String algorithm = "PBEWithMD5AndDES";
-    private String password = DEFAULT_SYMMETRIC_PASSWORD;
-    private String salt = DEFAULT_SYMMETRIC_SALT;
-    private int iterationCount = ITERATION_COUNT;
-    private byte[] key;
+    protected boolean enabled;
+    protected String algorithm = DEFAULT_SYMMETRIC_ALGORITHM;
+    protected String password = DEFAULT_SYMMETRIC_PASSWORD;
+    protected String salt = DEFAULT_SYMMETRIC_SALT;
+    protected int iterationCount = ITERATION_COUNT;
 
     public boolean isEnabled() {
         return enabled;
@@ -68,7 +71,5 @@ public class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryp
         this.iterationCount = iterationCount;
         return (T)this;
     }
-
-    // TODO VT equals/hashCode
 
 }
