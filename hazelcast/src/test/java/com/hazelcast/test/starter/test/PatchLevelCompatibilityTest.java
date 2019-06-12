@@ -32,6 +32,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventuall
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 
+@Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class PatchLevelCompatibilityTest {
@@ -73,7 +74,6 @@ public class PatchLevelCompatibilityTest {
         testAllGivenVersions(versions);
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
     @Test
     public void testMap_whenMixed_V37_Cluster() {
         String[] versions = new String[]{"3.7.4", "3.7.5"};
