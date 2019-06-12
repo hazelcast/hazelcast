@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.ringbuffer;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
