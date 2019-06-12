@@ -748,7 +748,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public boolean tryLock(K key,
+    public boolean tryLock(@Nonnull K key,
                            long time, @Nullable TimeUnit timeunit,
                            long leaseTime, @Nullable TimeUnit leaseUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -807,7 +807,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public String addLocalEntryListener(@Nonnull MapListener listener,
                                         @Nonnull Predicate<K, V> predicate,
-                                        K key,
+                                        @Nullable K key,
                                         boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
@@ -815,7 +815,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public String addLocalEntryListener(@Nonnull EntryListener listener,
                                         @Nonnull Predicate<K, V> predicate,
-                                        K key,
+                                        @Nullable K key,
                                         boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
@@ -1178,7 +1178,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Map<K, V> getAll(Set<K> keys) {
+    public Map<K, V> getAll(@Nullable Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
             // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
             return Collections.unmodifiableMap(emptyMap());

@@ -27,6 +27,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.getThreadId;
@@ -44,7 +45,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     @Override
-    public boolean offer(E e) {
+    public boolean offer(@Nonnull E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e1) {
@@ -54,7 +55,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offer(@Nonnull E e, long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
         Data data = toData(e);
         ClientMessage request = TransactionalQueueOfferCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), data, unit.toMillis(timeout));
@@ -62,6 +63,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return TransactionalQueueOfferCodec.decodeResponse(response).response;
     }
 
+    @Nonnull
     @Override
     public E take() throws InterruptedException {
         ClientMessage request = TransactionalQueueTakeCodec.encodeRequest(name, getTransactionId(), getThreadId());
@@ -80,7 +82,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
         ClientMessage request = TransactionalQueuePollCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), unit.toMillis(timeout));
         ClientMessage response = invoke(request);

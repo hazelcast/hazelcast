@@ -44,6 +44,8 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -59,6 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider, ConnectionListener {
 
@@ -98,6 +101,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         this.invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }
 
+    @Nonnull
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         //This method should not be called from registrationExecutor
@@ -133,17 +137,14 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     @Override
-    public boolean deregisterListener(final String userRegistrationId) {
+    public boolean deregisterListener(@Nullable String userRegistrationId) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
+        checkNotNull(userRegistrationId, "Null userRegistrationId is not allowed!");
 
         try {
-            Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() {
-                    return deregisterListenerInternal(userRegistrationId);
-                }
-            });
+            Future<Boolean> future = registrationExecutor.submit(
+                    () -> deregisterListenerInternal(userRegistrationId));
 
             try {
                 return future.get();
@@ -323,7 +324,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.remove(callId);
     }
 
-    private Boolean deregisterListenerInternal(String userRegistrationId) {
+    private Boolean deregisterListenerInternal(@Nullable String userRegistrationId) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 

@@ -1934,7 +1934,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key,
+    boolean tryLock(@Nonnull K key,
                     long time, @Nullable TimeUnit timeunit,
                     long leaseTime, @Nullable TimeUnit leaseTimeunit)
             throws InterruptedException;
@@ -2080,7 +2080,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     String addLocalEntryListener(@Nonnull MapListener listener,
                                  @Nonnull Predicate<K, V> predicate,
-                                 K key,
+                                 @Nullable K key,
                                  boolean includeValue);
 
     /**
@@ -2102,7 +2102,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     String addLocalEntryListener(@Nonnull EntryListener listener,
                                  @Nonnull Predicate<K, V> predicate,
-                                 K key,
+                                 @Nullable K key,
                                  boolean includeValue);
 
     /**
