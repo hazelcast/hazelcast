@@ -16,10 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -78,11 +77,7 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
         Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS);
         String f1Val = f1.get();
@@ -119,11 +114,7 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
         Future<Void> f1 = map.setAsync(key, value1, 3, TimeUnit.SECONDS);
         f1.get();

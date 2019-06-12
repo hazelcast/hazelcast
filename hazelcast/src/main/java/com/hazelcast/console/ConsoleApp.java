@@ -1347,6 +1347,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     @Override
+    public void entryExpired(EntryEvent<Object, Object> event) {
+        println(event);
+    }
+
+    @Override
     public void mapEvicted(MapEvent event) {
         println(event);
     }

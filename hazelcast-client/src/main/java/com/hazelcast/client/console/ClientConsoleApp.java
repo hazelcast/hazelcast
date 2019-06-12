@@ -184,7 +184,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     /**
      * A line reader
      */
-
     static class DefaultLineReader implements LineReader {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
@@ -1343,6 +1342,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     @Override
     public void entryEvicted(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent event) {
         println(event);
     }
 

@@ -28,6 +28,7 @@ import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
@@ -249,8 +250,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEvictAndListener() {
-        IMap<String, String> map = getInstance().getMap("testMapEvictAndListener");
+    public void testMapExpireAndListener() {
+        IMap<String, String> map = getInstance().getMap("testMapExpireAndListener");
 
         final String value1 = "/home/data/file1.dat";
         final String value2 = "/home/data/file2.dat";
@@ -260,16 +261,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            @Override
-            public void entryEvicted(EntryEvent<String, String> event) {
-                if (value1.equals(event.getOldValue())) {
-                    oldValue1.set(event.getOldValue());
-                    latch1.countDown();
-                } else if (value2.equals(event.getOldValue())) {
-                    oldValue2.set(event.getOldValue());
-                    latch2.countDown();
-                }
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> {
+            if (value1.equals(event.getOldValue())) {
+                oldValue1.set(event.getOldValue());
+                latch1.countDown();
+            } else if (value2.equals(event.getOldValue())) {
+                oldValue2.set(event.getOldValue());
+                latch2.countDown();
             }
         }, true);
 
@@ -294,6 +292,11 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchEvicted = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
+            @Override
+            public void entryExpired(EntryEvent<String, String> event) {
+
+            }
+
             @Override
             public void entryAdded(EntryEvent event) {
                 latchAdded.countDown();

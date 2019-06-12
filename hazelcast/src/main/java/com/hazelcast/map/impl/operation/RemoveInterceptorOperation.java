@@ -16,14 +16,18 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
-public class RemoveInterceptorOperation extends MapOperation
+public class RemoveInterceptorOperation extends AbstractNamedOperation
         implements MutatingOperation {
 
     private String id;
@@ -38,8 +42,19 @@ public class RemoveInterceptorOperation extends MapOperation
     }
 
     @Override
-    protected void runInternal() {
-        interceptorRemoved = mapContainer.getInterceptorRegistry().deregister(id);
+    public void run() {
+        interceptorRemoved = getMapContainer().getInterceptorRegistry().deregister(id);
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    private MapContainer getMapContainer() {
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainer(name);
     }
 
     @Override

@@ -443,7 +443,8 @@ public class ListenerTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
+            @Override
+            public void entryExpired(EntryEvent<String, String> event) {
                 value[0] = event.getValue();
                 oldValue[0] = event.getOldValue();
                 latch.countDown();
@@ -747,6 +748,11 @@ public class ListenerTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void entryExpired(EntryEvent<Integer, String> event) {
+
+        }
+
+        @Override
         public void entryRemoved(EntryEvent<Integer, String> event) {
         }
 
@@ -769,6 +775,7 @@ public class ListenerTest extends HazelcastTestSupport {
         final AtomicLong removeCount = new AtomicLong();
         final AtomicLong updateCount = new AtomicLong();
         final AtomicLong evictCount = new AtomicLong();
+        final AtomicLong expiryCount = new AtomicLong();
 
         public CounterEntryListener() {
         }
@@ -791,6 +798,11 @@ public class ListenerTest extends HazelcastTestSupport {
         @Override
         public void entryEvicted(EntryEvent<Object, Object> objectObjectEntryEvent) {
             evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            expiryCount.incrementAndGet();
         }
 
         @Override
