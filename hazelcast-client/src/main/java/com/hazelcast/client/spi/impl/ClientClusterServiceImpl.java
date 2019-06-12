@@ -17,8 +17,8 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;

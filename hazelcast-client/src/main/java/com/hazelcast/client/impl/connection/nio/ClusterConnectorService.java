@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
+package com.hazelcast.client.impl.connection.nio;
+
+import java.util.concurrent.Future;
+
 /**
- * Provides connection interfaces/classes for com.hazelcast.client
- *
- * Everything in this package and its subpackages is private.
+ * Helper to ClientConnectionManager.
+ * selecting owner connection, connecting and disconnecting from cluster implemented in this class.
  */
-package com.hazelcast.client.connection;
+public interface ClusterConnectorService {
+
+    void connectToCluster();
+
+    Future<Void> connectToClusterAsync();
+
+    boolean isClusterAvailable();
+
+    void shutdown();
+
+}

@@ -17,8 +17,8 @@
 package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;

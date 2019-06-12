@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy.txn;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;

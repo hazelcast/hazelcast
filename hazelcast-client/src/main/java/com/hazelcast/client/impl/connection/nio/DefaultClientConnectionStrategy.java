@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection.nio;
+package com.hazelcast.client.impl.connection.nio;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.nio.Address;
 

@@ -21,7 +21,7 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.proxy.txn.xa.XATransactionContextProxy;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection.nio;
+package com.hazelcast.client.impl.connection.nio;
 
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;

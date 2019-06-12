@@ -21,7 +21,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.connection.nio.ClientPlainChannelInitializer;
+import com.hazelcast.client.impl.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientExecutionService;

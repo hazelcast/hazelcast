@@ -17,4 +17,4 @@
 /**
  * Contains classes related to New IO for com.hazelcast.client.connection
  */
-package com.hazelcast.client.connection.nio;
+package com.hazelcast.client.impl.connection.nio;

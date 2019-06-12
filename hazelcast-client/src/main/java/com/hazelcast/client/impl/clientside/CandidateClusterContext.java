@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;

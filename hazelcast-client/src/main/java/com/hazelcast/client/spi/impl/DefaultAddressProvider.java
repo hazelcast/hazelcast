@@ -17,8 +17,8 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.Addresses;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.nio.Address;
 

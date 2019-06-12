@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
+package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

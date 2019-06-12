@@ -20,7 +20,7 @@ import com.hazelcast.client.api.Client;
 import com.hazelcast.client.api.ClientListener;
 import com.hazelcast.client.api.ClientService;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;

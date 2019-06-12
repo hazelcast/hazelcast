@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection.nio;
+package com.hazelcast.client.impl.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;

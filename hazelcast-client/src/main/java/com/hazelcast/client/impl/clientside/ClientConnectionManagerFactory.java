@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 
 public interface ClientConnectionManagerFactory {
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionalMap;

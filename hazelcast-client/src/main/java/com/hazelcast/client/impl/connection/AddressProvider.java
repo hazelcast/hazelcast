@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
+package com.hazelcast.client.impl.connection;
 
 
 import com.hazelcast.nio.Address;

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
+package com.hazelcast.client.impl.connection;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.nio.Address;
@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
+ * Responsible for managing {@link com.hazelcast.client.impl.connection.nio.ClientConnection} objects.
  */
 public interface ClientConnectionManager extends ConnectionListenable {
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.connection.Addresses;
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
