@@ -45,7 +45,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;

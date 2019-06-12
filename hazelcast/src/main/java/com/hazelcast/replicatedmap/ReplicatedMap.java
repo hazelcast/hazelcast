@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.replicatedmap;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 

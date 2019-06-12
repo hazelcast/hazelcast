@@ -17,7 +17,7 @@
 package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 

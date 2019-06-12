@@ -127,7 +127,7 @@ import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.crdt.pncounter.PNCounter;

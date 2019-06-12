@@ -1984,7 +1984,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ReplicatedMap"/>
+                    <tool:exports type="com.hazelcast.replicatedmap.ReplicatedMap"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>

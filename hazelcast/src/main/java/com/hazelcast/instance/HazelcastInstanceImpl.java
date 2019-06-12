@@ -51,7 +51,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.crdt.pncounter.PNCounter;

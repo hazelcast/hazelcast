@@ -23,7 +23,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

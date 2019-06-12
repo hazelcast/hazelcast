@@ -21,7 +21,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;

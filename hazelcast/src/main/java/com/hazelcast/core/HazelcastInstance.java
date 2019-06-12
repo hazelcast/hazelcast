@@ -39,6 +39,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;

@@ -41,7 +41,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;

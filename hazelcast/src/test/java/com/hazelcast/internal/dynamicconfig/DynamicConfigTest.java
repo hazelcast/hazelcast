@@ -65,7 +65,7 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
