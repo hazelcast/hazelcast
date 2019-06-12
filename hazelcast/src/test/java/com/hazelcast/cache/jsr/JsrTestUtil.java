@@ -18,7 +18,7 @@ package com.hazelcast.cache.jsr;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;

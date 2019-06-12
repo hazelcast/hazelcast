@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;

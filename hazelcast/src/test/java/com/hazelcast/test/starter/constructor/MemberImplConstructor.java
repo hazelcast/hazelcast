@@ -46,7 +46,7 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         ClassLoader targetClassloader = targetClass.getClassLoader();
         Class<?> memberVersionClass = targetClassloader.loadClass("com.hazelcast.version.MemberVersion");
 
-        Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+        Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
         Constructor<?> constructor = targetClass
                 .getDeclaredConstructor(Map.class, memberVersionClass, Boolean.TYPE, String.class, Map.class, Boolean.TYPE,
                         Integer.TYPE, hzImplClass);

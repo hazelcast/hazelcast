@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.ASSIGN_PARTITIONS;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.FETCH_PARTITION_STATE;

@@ -27,7 +27,7 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 
 import java.util.Map;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;

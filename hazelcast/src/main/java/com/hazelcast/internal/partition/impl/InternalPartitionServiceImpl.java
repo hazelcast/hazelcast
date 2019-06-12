@@ -23,7 +23,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;

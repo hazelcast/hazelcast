@@ -21,7 +21,7 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;

@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;

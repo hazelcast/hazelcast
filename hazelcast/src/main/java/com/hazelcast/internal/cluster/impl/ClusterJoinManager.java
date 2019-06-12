@@ -21,7 +21,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
@@ -382,7 +383,7 @@ public class ClusterJoinManager {
 
     /**
      * Invoked from master node while executing a join request to validate it, delegating to
-     * {@link com.hazelcast.instance.NodeExtension#validateJoinRequest(JoinMessage)}
+     * {@link NodeExtension#validateJoinRequest(JoinMessage)}
      */
     private boolean validateJoinRequest(JoinRequest joinRequest, Address target) {
         if (clusterService.isMaster()) {

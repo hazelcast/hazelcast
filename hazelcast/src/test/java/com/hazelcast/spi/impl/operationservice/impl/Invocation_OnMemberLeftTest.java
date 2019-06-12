@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
+import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

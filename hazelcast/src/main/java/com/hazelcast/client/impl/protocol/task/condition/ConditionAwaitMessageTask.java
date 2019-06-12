@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.AwaitOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;

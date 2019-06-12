@@ -21,7 +21,7 @@ import com.hazelcast.client.api.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.json.Json;

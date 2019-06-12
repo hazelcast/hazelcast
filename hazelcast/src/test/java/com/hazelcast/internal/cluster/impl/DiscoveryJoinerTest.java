@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.instance.TestUtil.getNode;
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;

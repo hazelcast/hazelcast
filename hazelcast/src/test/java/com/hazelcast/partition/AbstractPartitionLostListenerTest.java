@@ -18,7 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;

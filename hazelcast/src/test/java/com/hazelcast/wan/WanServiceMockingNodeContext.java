@@ -16,9 +16,9 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 
 public class WanServiceMockingNodeContext extends DefaultNodeContext {
     private final WanReplicationService wanReplicationService;

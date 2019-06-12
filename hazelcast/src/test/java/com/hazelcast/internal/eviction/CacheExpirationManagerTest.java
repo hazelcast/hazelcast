@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

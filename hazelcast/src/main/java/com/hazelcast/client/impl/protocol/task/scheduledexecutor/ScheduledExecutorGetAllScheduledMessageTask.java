@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

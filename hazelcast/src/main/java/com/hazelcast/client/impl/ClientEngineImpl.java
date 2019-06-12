@@ -37,7 +37,7 @@ import com.hazelcast.client.api.ClientListener;
 import com.hazelcast.client.api.ClientType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;

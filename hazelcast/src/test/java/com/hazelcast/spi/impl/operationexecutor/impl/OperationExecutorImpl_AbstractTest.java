@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.LoggingServiceImpl;

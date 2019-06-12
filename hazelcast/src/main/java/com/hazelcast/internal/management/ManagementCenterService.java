@@ -23,7 +23,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;

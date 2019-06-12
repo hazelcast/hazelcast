@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;

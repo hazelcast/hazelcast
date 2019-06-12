@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -278,7 +279,7 @@ public interface Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
+     * {@link NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p>
      * If an invalid version transition is requested, for example changing to a different major version, an
@@ -304,7 +305,7 @@ public interface Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
+     * {@link NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p>
      * If an invalid version transition is requested, for example changing to a different major version, an

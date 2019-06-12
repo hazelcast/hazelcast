@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
