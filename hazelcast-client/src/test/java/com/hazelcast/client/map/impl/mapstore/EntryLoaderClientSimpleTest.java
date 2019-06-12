@@ -18,19 +18,21 @@ package com.hazelcast.client.map.impl.mapstore;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.map.impl.mapstore.EntryLoaderSimpleTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryLoaderClientSimpleTest extends EntryLoaderSimpleTest {
 
-    TestHazelcastFactory factory;
+    private TestHazelcastFactory factory;
 
     @Before
     public void setup() {

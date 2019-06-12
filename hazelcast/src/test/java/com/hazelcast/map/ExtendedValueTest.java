@@ -23,26 +23,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.ExtendedValue.NO_TIME_SET;
+import static com.hazelcast.map.MetadataAwareValue.NO_TIME_SET;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({ParallelJVMTest.class, QuickTest.class})
-public class EntryLoaderEntryTest {
+public class ExtendedValueTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullValueIsNotAccepted() {
-        new ExtendedValue<>(null);
+        new MetadataAwareValue<>(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullValueIsNotAccepted_withExpiration() {
-        new ExtendedValue<>(null, -1);
+        new MetadataAwareValue<>(null, -1);
     }
 
     @Test
     public void testWithNoDate() {
-        ExtendedValue entry = new ExtendedValue<>("value");
+        MetadataAwareValue entry = new MetadataAwareValue<>("value");
         assertEquals(NO_TIME_SET, entry.getExpirationTime());
     }
 }

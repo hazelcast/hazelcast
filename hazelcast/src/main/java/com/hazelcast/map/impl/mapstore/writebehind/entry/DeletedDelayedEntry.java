@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
 import com.hazelcast.map.MapStore;
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 
 /**
  * Represents a candidate entry to be deleted from {@link MapStore}
@@ -50,7 +50,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
     @Override
     public long getExpirationTime() {
-        return ExtendedValue.NO_TIME_SET;
+        return MetadataAwareValue.NO_TIME_SET;
     }
 
     @Override

@@ -257,7 +257,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testKeySet() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<String> entries = map.keySet();
         for (int i = 0; i < entryCount; i++) {
             assertContains(entries, "key" + i);
@@ -268,7 +268,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testKeySet_withPredicate() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<String> entries = map.keySet(Predicates.greaterEqual("__key", "key90"));
         for (int i = 90; i < entryCount; i++) {
             assertContains(entries, "key" + i);

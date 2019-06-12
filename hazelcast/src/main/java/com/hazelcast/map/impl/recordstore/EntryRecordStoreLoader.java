@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -32,7 +32,7 @@ class EntryRecordStoreLoader extends BasicRecordStoreLoader {
     }
 
     /**
-     * Transforms a map to a list of serialised alternating key-value pairs.
+     * Transforms a map to a list of serialised key-value-expirationTime sequences.
      *
      * @param entries the map to be transformed
      * @return the list of serialised alternating key-value pairs
@@ -41,7 +41,7 @@ class EntryRecordStoreLoader extends BasicRecordStoreLoader {
         List<Data> keyValueSequence = new ArrayList<>(entries.size() * 2);
         for (Map.Entry<?, ?> entry : entries.entrySet()) {
             Object key = entry.getKey();
-            ExtendedValue loaderEntry = (ExtendedValue) entry.getValue();
+            MetadataAwareValue loaderEntry = (MetadataAwareValue) entry.getValue();
             Object value = loaderEntry.getValue();
             long expirationTime = loaderEntry.getExpirationTime();
             Data dataKey = mapServiceContext.toData(key);

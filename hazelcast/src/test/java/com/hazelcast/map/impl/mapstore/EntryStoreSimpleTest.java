@@ -170,14 +170,14 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testRemove() {
         map.put("key", "value");
         map.remove("key");
-        testEntryStore.assertRecordNotStored("key");
+        assertEntryNotStored("key");
     }
 
     @Test
     public void testRemoveIfSame() {
         map.put("key", "value");
         map.remove("key", "value");
-        testEntryStore.assertRecordNotStored("key");
+        assertEntryNotStored("key");
     }
 
     @Test
@@ -188,7 +188,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
         }
         map.removeAll(Predicates.alwaysTrue());
         for (int i = 0; i < mapSize; i++) {
-            testEntryStore.assertRecordNotStored("k" + i);
+            assertEntryNotStored("k" + i);
         }
     }
 
@@ -196,7 +196,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testRemoveAsync() throws ExecutionException, InterruptedException {
         map.put("key", "value");
         map.removeAsync("key").get();
-        testEntryStore.assertRecordNotStored("key");
+        assertEntryNotStored("key");
     }
 
     @Test
@@ -274,6 +274,10 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testTryPut() {
         map.tryPut("key", "value", 10, TimeUnit.SECONDS);
         assertEntryStore("key", "value");
+    }
+
+    protected void assertEntryNotStored(String key) {
+        testEntryStore.assertRecordNotStored(key);
     }
 
     protected void assertEntryStore(String key, String value) {

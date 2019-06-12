@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.TestEntryStore;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
     Semaphore storeAllPermit = new Semaphore(0);
 
     @Override
-    public void store(K key, ExtendedValue<V> value) {
+    public void store(K key, MetadataAwareValue<V> value) {
         try {
             storePermit.acquire();
         } catch (InterruptedException e) {
@@ -38,7 +38,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
     }
 
     @Override
-    public void storeAll(Map<K, ExtendedValue<V>> map) {
+    public void storeAll(Map<K, MetadataAwareValue<V>> map) {
         try {
             storeAllPermit.acquire();
         } catch (InterruptedException e) {

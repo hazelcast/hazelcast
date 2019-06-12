@@ -23,7 +23,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * time is optional. It is intended to be used with {@link EntryLoader}.
  * @param <V> the type of the value object
  */
-public class ExtendedValue<V> {
+public class MetadataAwareValue<V> {
 
     /**
      * Represents no expiration time for a particular value
@@ -38,7 +38,7 @@ public class ExtendedValue<V> {
      * Creates a value without attaching an expiration time
      * @param value the value
      */
-    public ExtendedValue(V value) {
+    public MetadataAwareValue(V value) {
         this.value = isNotNull(value, "value");
         this.expirationTime = NO_TIME_SET;
     }
@@ -51,7 +51,7 @@ public class ExtendedValue<V> {
      * @param value the value
      * @param expirationTime expiration time associated with the value
      */
-    public ExtendedValue(V value, long expirationTime) {
+    public MetadataAwareValue(V value, long expirationTime) {
         this.value = isNotNull(value, "value");
         this.expirationTime = expirationTime;
     }

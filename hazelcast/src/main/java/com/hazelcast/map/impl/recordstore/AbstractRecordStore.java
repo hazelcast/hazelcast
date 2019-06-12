@@ -151,7 +151,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (countAsAccess) {
             record.onAccess(now);
         }
-        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
+        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
         if (mapStoreOperation) {
             value = runMapStore(record, key, value, now);
         }

@@ -18,15 +18,17 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.mapstore.EntryStoreSimpleTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.concurrent.TimeUnit;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
 
@@ -41,12 +43,19 @@ public class EntryStoreWriteBehindTest extends EntryStoreSimpleTest {
     protected void assertEntryStore(String key, String value) {
         assertTrueEventually(() -> {
             super.assertEntryStore(key, value);
-        }, 10);
+        });
     }
 
     @Override
     protected void assertEntryStore(String key, String value, long remainingTtl, TimeUnit timeUnit, long delta) {
         long expectedExpirationTime = System.currentTimeMillis() + timeUnit.toMillis(remainingTtl);
-        assertTrueEventually(() -> testEntryStore.assertRecordStored(key, value, expectedExpirationTime, delta), 10);
+        assertTrueEventually(() -> testEntryStore.assertRecordStored(key, value, expectedExpirationTime, delta));
+    }
+
+    @Override
+    protected void assertEntryNotStored(String key) {
+        assertTrueEventually(() -> {
+            super.assertEntryNotStored(key);
+        });
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
@@ -380,7 +380,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             // an EntryLoaderEntry for that
             if (withTtl && value != null) {
                 long expirationTime = entry.getExpirationTime();
-                result = operationType.processSingle(key, new ExtendedValue(value, expirationTime), mapStore);
+                result = operationType.processSingle(key, new MetadataAwareValue(value, expirationTime), mapStore);
             } else {
                 result = operationType.processSingle(key, value, mapStore);
             }
@@ -437,7 +437,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
                 if (withTtl && value != null) {
-                    map.put(key, new ExtendedValue(value, entry.getExpirationTime()));
+                    map.put(key, new MetadataAwareValue(value, entry.getExpirationTime()));
                 } else {
                     map.put(key, value);
                 }

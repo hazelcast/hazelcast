@@ -45,8 +45,7 @@ public final class Clock {
     }
 
     /**
-     * Converts a milliseconds offset from configured clock implementation
-     * offset to JVM time offset.
+     * Converts from configured clock implementation offset to JVM time offset
      * @param millis
      * @return
      */
