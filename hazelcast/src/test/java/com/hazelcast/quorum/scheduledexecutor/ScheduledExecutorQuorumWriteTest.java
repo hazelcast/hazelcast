@@ -50,6 +50,7 @@ import static com.hazelcast.quorum.scheduledexecutor.ScheduledExecutorQuorumWrit
 import static com.hazelcast.quorum.scheduledexecutor.ScheduledExecutorQuorumWriteTest.ExecRunnable.runnable;
 import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -74,7 +75,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

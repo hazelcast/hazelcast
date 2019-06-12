@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.ringbuffer;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
@@ -38,6 +37,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -58,7 +58,7 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

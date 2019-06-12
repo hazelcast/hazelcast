@@ -16,12 +16,11 @@
 
 package com.hazelcast.quorum.replicatedmap;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -58,7 +58,7 @@ public class ReplicatedMapQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

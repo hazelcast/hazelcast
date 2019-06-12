@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.queue;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
@@ -39,6 +38,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -59,7 +59,7 @@ public class QueueQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

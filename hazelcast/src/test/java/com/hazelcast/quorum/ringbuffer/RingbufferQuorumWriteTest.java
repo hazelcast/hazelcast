@@ -40,6 +40,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 import static org.hamcrest.core.Is.isA;
 
@@ -61,7 +62,7 @@ public class RingbufferQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

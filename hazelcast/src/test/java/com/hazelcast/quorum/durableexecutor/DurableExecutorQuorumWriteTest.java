@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.durableexecutor;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.quorum.AbstractQuorumTest;
@@ -49,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.quorum.durableexecutor.DurableExecutorQuorumWriteTest.ExecRunnable.callable;
 import static com.hazelcast.quorum.durableexecutor.DurableExecutorQuorumWriteTest.ExecRunnable.runnable;
 import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
 
@@ -70,7 +70,7 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass
