@@ -244,8 +244,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     /**
-     * Returns an operation to put the provided key-value pairs into the
-     * partition record store.
+     * Returns an operation to put the provided key-value-(expirationTime)
+     * sequences into the partition record store.
      *
      * @param loadingSequence the list of serialised alternating key-value pairs
      */
@@ -284,7 +284,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * Invokes an operation to put the provided key-value pairs to the partition
      * record store.
      *
-     * @param loadingSequence the list of serialised alternating key-value pairs
+     * @param loadingSequence the list of serialised key-value-(expirationTime)
+     *                        sequences
      * @return the future representing the pending completion of the put operation
      */
     private Future<?> sendOperation(List<Data> loadingSequence) {

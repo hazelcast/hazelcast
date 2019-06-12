@@ -23,7 +23,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.MapLoader;
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -209,9 +209,9 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         }
         // At this point, the value comes from staging area.
         // This may be a value with expirationTime. So we need
-        // to return an EntryLoaderEntry
+        // to return an ExtendedValue
         if (isWithExpirationTime() && delayedEntry.getValue() != null) {
-            return new ExtendedValue(toObject(delayedEntry.getValue()), delayedEntry.getExpirationTime());
+            return new MetadataAwareValue(toObject(delayedEntry.getValue()), delayedEntry.getExpirationTime());
         }
         return toObject(delayedEntry.getValue());
     }
@@ -243,7 +243,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 Object value = delayedEntry.getValue();
                 if (value != null) {
                     if (isWithExpirationTime()) {
-                        map.put(dataKey, new ExtendedValue(toObject(value), delayedEntry.getExpirationTime()));
+                        map.put(dataKey, new MetadataAwareValue(toObject(value), delayedEntry.getExpirationTime()));
                     } else {
                         map.put(dataKey, toObject(value));
                     }

@@ -22,7 +22,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
@@ -330,7 +330,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return null;
         }
         if (mapDataStore.isWithExpirationTime()) {
-            ExtendedValue loaderEntry = (ExtendedValue) value;
+            MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
             long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
             if (proposedTtl < 0) {
                 return null;
@@ -606,7 +606,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = toData(entry.getKey());
             Object value = entry.getValue();
             if (mapDataStore.isWithExpirationTime()) {
-                ExtendedValue loaderEntry = (ExtendedValue) value;
+                MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
 
                 if (expirationTimeToTtl(loaderEntry.getExpirationTime()) >= 0) {
                     resultMap.put(key, loaderEntry.getValue());
@@ -693,11 +693,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean setTtl(Data key, long ttl) {
         long now = getNow();
         Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
+        Object existingValue = record == null ? mapDataStore.load(key) : record.getValue();
+        if (existingValue == null) {
             return false;
         }
+        if (record == null) {
+            createRecord(key, existingValue, ttl, DEFAULT_MAX_IDLE, now);
+        } else {
+            updateRecord(key, record, existingValue, now, true, ttl, DEFAULT_MAX_IDLE, true);
+        }
         markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
-        setExpirationTimes(ttl, DEFAULT_MAX_IDLE, record, mapContainer.getMapConfig(), true);
         return true;
     }
 
@@ -942,7 +947,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress) {
-        if (expirationTime == ExtendedValue.NO_TIME_SET) {
+        if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
             return putFromLoad(key, value, callerAddress);
         }
         long ttl = expirationTimeToTtl(expirationTime);
@@ -955,6 +960,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object putFromLoadBackup(Data key, Object value) {
         return putFromLoadInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
+    }
+
+    @Override
+    public Object putFromLoadBackup(Data key, Object value, long expirationTime) {
+        if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
+            return putFromLoadBackup(key, value);
+        }
+        long ttl = expirationTimeToTtl(expirationTime);
+        if (ttl < 0) {
+            return null;
+        }
+        return putFromLoadInternal(key, value, ttl, DEFAULT_MAX_IDLE, true, null);
     }
 
     private Object putFromLoadInternal(Data key, Object value, long ttl, long maxIdle, boolean backup, Address callerAddress) {

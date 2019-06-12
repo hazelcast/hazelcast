@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -116,7 +116,7 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         }
     }
 
-    class EntryStore<K, V> extends MapStore<K, ExtendedValue<V>> implements com.hazelcast.map.EntryStore<K, V> {
+    class EntryStore<K, V> extends MapStore<K, MetadataAwareValue<V>> implements com.hazelcast.map.EntryStore<K, V> {
 
     }
 }

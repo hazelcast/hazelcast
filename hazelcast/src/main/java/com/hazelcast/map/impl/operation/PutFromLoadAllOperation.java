@@ -105,7 +105,11 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         }
 
         if (invalidationKeys == null) {
-            invalidationKeys = new ArrayList<>(loadingSequence.size() / 2);
+            if (includesExpirationTime) {
+                invalidationKeys = new ArrayList<>(loadingSequence.size() / 3);
+            } else {
+                invalidationKeys = new ArrayList<>(loadingSequence.size() / 2);
+            }
         }
 
         invalidationKeys.add(key);

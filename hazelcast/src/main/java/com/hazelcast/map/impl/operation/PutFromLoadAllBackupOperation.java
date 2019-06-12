@@ -34,33 +34,35 @@ import java.util.List;
  */
 public class PutFromLoadAllBackupOperation extends MapOperation implements BackupOperation {
 
-    private List<Data> keyValueSequence;
+    private List<Data> loadingSequence;
     private boolean includesExpirationTime;
 
     public PutFromLoadAllBackupOperation() {
-        keyValueSequence = Collections.emptyList();
+        loadingSequence = Collections.emptyList();
     }
 
-    public PutFromLoadAllBackupOperation(String name, List<Data> keyValueSequence, boolean includesExpirationTime) {
+    public PutFromLoadAllBackupOperation(String name, List<Data> loadingSequence, boolean includesExpirationTime) {
         super(name);
-        this.keyValueSequence = keyValueSequence;
+        this.loadingSequence = loadingSequence;
         this.includesExpirationTime = includesExpirationTime;
     }
 
     @Override
     protected void runInternal() {
-        final List<Data> keyValueSequence = this.keyValueSequence;
+        final List<Data> keyValueSequence = this.loadingSequence;
         if (keyValueSequence == null || keyValueSequence.isEmpty()) {
             return;
         }
         for (int i = 0; i < keyValueSequence.size();) {
             final Data key = keyValueSequence.get(i++);
             final Data value = keyValueSequence.get(i++);
-            if (includesExpirationTime) {
-                i++;
-            }
             final Object object = mapServiceContext.toObject(value);
-            recordStore.putFromLoadBackup(key, object);
+            if (includesExpirationTime) {
+                long expirationTime = (long) mapServiceContext.toObject(keyValueSequence.get(i++));
+                recordStore.putFromLoadBackup(key, object, expirationTime);
+            } else {
+                recordStore.putFromLoadBackup(key, object);
+            }
             // the following check is for the case when the putFromLoad does not put the data due to various reasons
             // one of the reasons may be size eviction threshold has been reached
             if (!recordStore.existInMemory(key)) {
@@ -82,7 +84,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(this.includesExpirationTime);
-        final List<Data> keyValueSequence = this.keyValueSequence;
+        final List<Data> keyValueSequence = this.loadingSequence;
         final int size = keyValueSequence.size();
         out.writeInt(size);
         for (Data data : keyValueSequence) {
@@ -96,14 +98,14 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         this.includesExpirationTime = in.readBoolean();
         final int size = in.readInt();
         if (size < 1) {
-            keyValueSequence = Collections.emptyList();
+            loadingSequence = Collections.emptyList();
         } else {
-            final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
+            final List<Data> tmpLoadingSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 Data data = in.readData();
-                tmpKeyValueSequence.add(data);
+                tmpLoadingSequence.add(data);
             }
-            keyValueSequence = tmpKeyValueSequence;
+            loadingSequence = tmpLoadingSequence;
         }
     }
 

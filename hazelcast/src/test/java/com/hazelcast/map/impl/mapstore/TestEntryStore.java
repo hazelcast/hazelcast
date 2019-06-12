@@ -16,12 +16,13 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.EntryStore;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertBetween;
@@ -33,7 +34,7 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
     private static final long NO_TIME = -1;
 
-    private Map<K, Record> records = new HashMap<>();
+    private Map<K, Record> records = new ConcurrentHashMap<>();
     private AtomicInteger loadedEntryCount = new AtomicInteger();
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();
@@ -44,7 +45,7 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
     private AtomicInteger deleteCallCount = new AtomicInteger();
 
     @Override
-    public ExtendedValue<V> load(K key) {
+    public MetadataAwareValue<V> load(K key) {
         loadCallCount.incrementAndGet();
         Record record = records.get(key);
         if (record == null) {
@@ -52,20 +53,20 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
         }
         loadedEntryCount.incrementAndGet();
         if (record.expirationTime == NO_TIME) {
-            return new ExtendedValue<>(record.value);
+            return new MetadataAwareValue<>(record.value);
         } else {
-            return new ExtendedValue<>(record.value, record.expirationTime);
+            return new MetadataAwareValue<>(record.value, record.expirationTime);
         }
     }
 
     @Override
-    public Map<K, ExtendedValue<V>> loadAll(Collection<K> keys) {
+    public Map<K, MetadataAwareValue<V>> loadAll(Collection<K> keys) {
         loadAllCallCount.incrementAndGet();
         loadedEntryCount.addAndGet(keys.size());
-        Map<K, ExtendedValue<V>> map = new HashMap<>(keys.size());
+        Map<K, MetadataAwareValue<V>> map = new HashMap<>(keys.size());
         for (K key: keys) {
             Record record = records.get(key);
-            map.put(key, new ExtendedValue<>(record.value, record.expirationTime));
+            map.put(key, new MetadataAwareValue<>(record.value, record.expirationTime));
         }
         return map;
     }
@@ -77,10 +78,10 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
     }
 
     @Override
-    public void store(K key, ExtendedValue<V> value) {
+    public void store(K key, MetadataAwareValue<V> value) {
         V internalValue = value.getValue();
         long expirationTime = value.getExpirationTime();
-        if (expirationTime == ExtendedValue.NO_TIME_SET) {
+        if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
             records.put(key, new Record(internalValue, NO_TIME));
         } else {
             records.put(key, new Record(internalValue, expirationTime));
@@ -90,13 +91,13 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
     }
 
     @Override
-    public void storeAll(Map<K, ExtendedValue<V>> map) {
-        for (Map.Entry<K, ExtendedValue<V>> mapEntry: map.entrySet()) {
+    public void storeAll(Map<K, MetadataAwareValue<V>> map) {
+        for (Map.Entry<K, MetadataAwareValue<V>> mapEntry: map.entrySet()) {
             K key = mapEntry.getKey();
-            ExtendedValue<V> entry = mapEntry.getValue();
+            MetadataAwareValue<V> entry = mapEntry.getValue();
             V internalValue = entry.getValue();
             long expirationTime = entry.getExpirationTime();
-            if (expirationTime == ExtendedValue.NO_TIME_SET) {
+            if (expirationTime == MetadataAwareValue.NO_TIME_SET) {
                 records.put(key, new Record(internalValue, NO_TIME));
             } else {
                 records.put(key, new Record(internalValue, expirationTime));

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.map.EntryLoader;
-import com.hazelcast.map.ExtendedValue;
+import com.hazelcast.map.MetadataAwareValue;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public class TestEntryLoader implements EntryLoader<String, String> {
     private AtomicInteger loadKeysCallCount = new AtomicInteger();
 
     @Override
-    public ExtendedValue<String> load(String key) {
+    public MetadataAwareValue<String> load(String key) {
         loadCallCount.incrementAndGet();
         if (NULL_RETURNING_KEY.equals(key)) {
             return null;
@@ -47,20 +47,20 @@ public class TestEntryLoader implements EntryLoader<String, String> {
         }
         loadedEntryCount.incrementAndGet();
         if (record.expirationTime == -1) {
-            return new ExtendedValue<>(record.value);
+            return new MetadataAwareValue<>(record.value);
         } else {
-            return new ExtendedValue<>(record.value, record.expirationTime);
+            return new MetadataAwareValue<>(record.value, record.expirationTime);
         }
     }
 
     @Override
-    public Map<String, ExtendedValue<String>> loadAll(Collection<String> keys) {
+    public Map<String, MetadataAwareValue<String>> loadAll(Collection<String> keys) {
         loadAllCallCount.incrementAndGet();
         loadedEntryCount.addAndGet(keys.size());
-        Map<String, ExtendedValue<String>> map = new HashMap<>(keys.size());
+        Map<String, MetadataAwareValue<String>> map = new HashMap<>(keys.size());
         for (String key: keys) {
             Record record = records.get(key);
-            map.put(key, new ExtendedValue<>(record.value, record.expirationTime));
+            map.put(key, new MetadataAwareValue<>(record.value, record.expirationTime));
         }
         return map;
     }
