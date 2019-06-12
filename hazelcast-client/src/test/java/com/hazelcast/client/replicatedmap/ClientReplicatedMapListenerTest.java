@@ -239,6 +239,11 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
+        }
+
+        @Override
         public void mapEvicted(MapEvent event) {
             mapEvictCount.incrementAndGet();
         }

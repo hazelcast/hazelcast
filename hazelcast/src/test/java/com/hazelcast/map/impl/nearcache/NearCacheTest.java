@@ -705,7 +705,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> map = instance.getMap(mapName);
 
         CountDownLatch latch = new CountDownLatch(mapSize);
-        addEntryEvictedListener(map, latch);
+        addEntryExpiredListener(map, latch);
 
         populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
         populateNearCache(map, mapSize);

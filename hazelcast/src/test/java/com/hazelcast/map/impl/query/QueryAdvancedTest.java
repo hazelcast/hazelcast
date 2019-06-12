@@ -123,7 +123,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(allEmployees);
         map.addEntryListener(new EntryAdapter() {
             @Override
-            public void entryEvicted(EntryEvent event) {
+            public void entryExpired(EntryEvent event) {
                 latch.countDown();
             }
         }, false);

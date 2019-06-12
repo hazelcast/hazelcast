@@ -187,6 +187,11 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void entryExpired(EntryEvent event) {
+
+        }
+
+        @Override
         public int hashCode() {
             return getClass().hashCode();
         }

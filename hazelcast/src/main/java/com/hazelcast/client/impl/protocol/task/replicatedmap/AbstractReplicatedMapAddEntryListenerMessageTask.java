@@ -153,6 +153,11 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
+    public void entryExpired(EntryEvent<Object, Object> event) {
+        handleEvent(event);
+    }
+
+    @Override
     public void mapEvicted(MapEvent event) {
         // TODO handle this event
     }

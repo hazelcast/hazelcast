@@ -32,6 +32,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -637,7 +638,7 @@ public class EvictionTest extends HazelcastTestSupport {
         EntryListenerConfig entryListenerConfig = new EntryListenerConfig()
                 .setLocal(true)
                 .setImplementation(new EntryAdapter() {
-                    public void entryEvicted(EntryEvent event) {
+                    public void entryExpired(EntryEvent event) {
                         entryEvictedEventCount.incrementAndGet();
                     }
                 });
@@ -827,13 +828,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
 
         final CountDownLatch latch = new CountDownLatch(entryCount);
-        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                super.entryEvicted(event);
-                latch.countDown();
-            }
-        }, false);
+        map.addEntryListener((EntryExpiredListener<Integer, Integer>) event -> latch.countDown(), false);
 
         // put some sample data
         for (int i = 0; i < entryCount; i++) {
@@ -1111,12 +1106,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, Integer> map = initialNode.getMap(mapName);
 
         final CountDownLatch evictedEntryCounterLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<String, Integer> event) {
-                evictedEntryCounterLatch.countDown();
-            }
-        }, false);
+        map.addEntryListener((EntryExpiredListener<String, Integer>) event -> evictedEntryCounterLatch.countDown(), false);
 
         String key = getClass().getCanonicalName();
 

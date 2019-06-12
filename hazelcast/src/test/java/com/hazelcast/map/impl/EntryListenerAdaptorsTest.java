@@ -66,6 +66,7 @@ public class EntryListenerAdaptorsTest {
 
         int entryAddedCalled;
         int entryEvictedCalled;
+        int entryExpiredCalled;
         int entryRemovedCalled;
         int entryUpdatedCalled;
         int mapClearedCalled;
@@ -79,6 +80,11 @@ public class EntryListenerAdaptorsTest {
         @Override
         public void entryEvicted(EntryEvent event) {
             entryEvictedCalled++;
+        }
+
+        @Override
+        public void entryExpired(EntryEvent event) {
+            entryExpiredCalled++;
         }
 
         @Override

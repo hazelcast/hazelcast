@@ -502,5 +502,10 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         public void entryAdded(EntryEvent<K, V> event) {
 
         }
+
+        @Override
+        public void entryExpired(EntryEvent<K, V> event) {
+
+        }
     }
 }

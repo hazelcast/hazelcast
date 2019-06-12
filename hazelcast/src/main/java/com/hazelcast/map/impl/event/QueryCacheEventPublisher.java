@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.isIncludeValue;
@@ -65,12 +64,6 @@ public class QueryCacheEventPublisher {
 
         String mapName = ((EventData) eventData).getMapName();
         int eventType = ((EventData) eventData).getEventType();
-
-        // in case of expiration, IMap publishes both EVICTED and EXPIRED events for a key
-        // only handling EVICTED event for that key is sufficient
-        if (EXPIRED.getType() == eventType) {
-            return;
-        }
 
         // this collection contains all defined query-caches on an IMap
         Collection<PartitionAccumulatorRegistry> partitionAccumulatorRegistries = getPartitionAccumulatorRegistries(mapName);
