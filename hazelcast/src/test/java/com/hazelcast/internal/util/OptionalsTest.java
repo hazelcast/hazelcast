@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Optional;
 
@@ -27,6 +29,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapIfOptiona
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OptionalsTest {
 
