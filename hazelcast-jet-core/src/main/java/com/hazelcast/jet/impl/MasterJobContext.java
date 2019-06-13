@@ -106,7 +106,7 @@ public class MasterJobContext {
     private final MasterContext mc;
     private final ILogger logger;
 
-    private volatile long executionStartTime;
+    private volatile long executionStartTime = System.nanoTime();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
 
@@ -163,6 +163,7 @@ public class MasterJobContext {
      * fixed yet, reschedules the job restart.
      */
     void tryStartJob(Function<Long, Long> executionIdSupplier) {
+        executionStartTime = System.nanoTime();
         try {
             Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
             if (dagAndClassloader == null) {
@@ -232,7 +233,6 @@ public class MasterJobContext {
             if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
                 return null;
             }
-            executionStartTime = System.nanoTime();
             mc.setJobStatus(STARTING);
 
             // ensure JobExecutionRecord exists
