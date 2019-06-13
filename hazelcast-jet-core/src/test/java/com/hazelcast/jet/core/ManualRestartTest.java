@@ -90,7 +90,7 @@ public class ManualRestartTest extends JetTestSupport {
         JetInstance client = createJetClient();
         Job job = client.newJob(dag, new JobConfig().setAutoScaling(autoRestartOnMemberFailureEnabled));
 
-        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         // When the job is restarted after new members join to the cluster
         int newMemberCount = 2;
@@ -104,7 +104,7 @@ public class ManualRestartTest extends JetTestSupport {
 
         // Then, the job restarts
         int initCount = NODE_COUNT * 2 + newMemberCount;
-        assertTrueEventually(() -> assertEquals(initCount, MockPS.initCount.get()), 10);
+        assertTrueEventually(() -> assertEquals(initCount, MockPS.initCount.get()));
     }
 
     @Test
@@ -116,7 +116,7 @@ public class ManualRestartTest extends JetTestSupport {
         JetInstance client = createJetClient();
         Job job = client.newJob(dag);
 
-        assertJobStatusEventually(job, STARTING, 10);
+        assertJobStatusEventually(job, STARTING);
 
         // Then, the job cannot restart
         exception.expect(IllegalStateException.class);
@@ -175,7 +175,7 @@ public class ManualRestartTest extends JetTestSupport {
         sleepMillis(100);
         FailingMapStore.fail = true;
         job.restart();
-        assertTrueEventually(() -> assertTrue(FailingMapStore.failed), 5);
+        assertTrueEventually(() -> assertTrue(FailingMapStore.failed));
         FailingMapStore.fail = false;
 
         job.join();
