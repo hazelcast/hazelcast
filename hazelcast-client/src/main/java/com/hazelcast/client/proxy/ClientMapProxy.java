@@ -977,37 +977,39 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public String addEntryListener(@Nonnull MapListener listener,
                                    @Nonnull Predicate<K, V> predicate,
-                                   @Nonnull K key,
+                                   @Nullable K key,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
+        return key == null
+                ? addEntryListenerInternal(listenerAdaptor, predicate, includeValue)
+                : addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
 
     @Override
     public String addEntryListener(@Nonnull EntryListener listener,
                                    @Nonnull Predicate<K, V> predicate,
-                                   @Nonnull K key,
+                                   @Nullable K key,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
+        return key == null
+                ? addEntryListenerInternal(listenerAdaptor, predicate, includeValue)
+                : addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor,
-                                            Predicate<K, V> predicate,
-                                            K key,
+    private String addEntryListenerInternal(@Nonnull ListenerAdapter<IMapEvent> listenerAdaptor,
+                                            @Nonnull Predicate<K, V> predicate,
+                                            @Nullable K key,
                                             boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
         Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
-        ListenerMessageCodec codec = createEntryListenerToKeyWithPredicateCodec(includeValue, listenerFlags, keyData,
-                predicateData);
+        ListenerMessageCodec codec = createEntryListenerToKeyWithPredicateCodec(
+                includeValue, listenerFlags, keyData, predicateData);
         return registerListener(codec, handler);
     }
 
@@ -1038,7 +1040,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public String addEntryListener(@Nonnull MapListener listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
@@ -1046,7 +1050,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);

@@ -158,10 +158,6 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, true));
         assertThrowsNPE(m -> m.addEntryListener((EntryListener) null, samplePredicate, "", true));
         assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, "", true));
-        // there's a difference between member-side and client-side behaviour that needs to be fixed
-        // see https://github.com/hazelcast/hazelcast/issues/15155
-        // assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, samplePredicate, null, true));
-        // assertThrowsNPE(m -> m.addEntryListener(sampleMapListener, samplePredicate, null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, "", true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, (Object) null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, samplePredicate, true));
