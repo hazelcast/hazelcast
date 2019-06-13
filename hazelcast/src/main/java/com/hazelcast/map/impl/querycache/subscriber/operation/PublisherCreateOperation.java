@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.querycache.subscriber.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -38,6 +38,7 @@ import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -56,10 +57,11 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 
 /**
- * An idempotent create operation which creates publisher side functionality.
- * And also responsible for running initial snapshot creation phase.
+ * An idempotent create operation which creates
+ * publisher side functionality. And also responsible
+ * for running initial snapshot creation phase.
  */
-public class PublisherCreateOperation extends MapOperation {
+public class PublisherCreateOperation extends AbstractNamedOperation {
 
     private static final long ACCUMULATOR_READ_OPERATION_TIMEOUT_MINUTES = 5;
 
@@ -76,7 +78,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     @Override
-    protected void runInternal() {
+    public void run() {
         boolean populate = info.isPopulate();
         if (populate) {
             info.setPublishable(false);
@@ -149,7 +151,12 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     private QueryCacheContext getContext() {
-        return mapServiceContext.getQueryCacheContext();
+        return getMapServiceContext().getQueryCacheContext();
+    }
+
+    private MapServiceContext getMapServiceContext() {
+        MapService mapService = getService();
+        return mapService.getMapServiceContext();
     }
 
     private QueryResult createSnapshot() {
@@ -163,7 +170,7 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     private QueryResult runInitialQuery() {
-        QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
+        QueryEngine queryEngine = getMapServiceContext().getQueryEngine(name);
         IterationType iterationType = info.isIncludeValue() ? IterationType.ENTRY : IterationType.KEY;
         Query query = Query.of().mapName(name).predicate(info.getPredicate()).iterationType(iterationType).build();
         return queryEngine.execute(query, Target.LOCAL_NODE);
@@ -181,7 +188,7 @@ public class PublisherCreateOperation extends MapOperation {
             if (eventsInOneAcc == null) {
                 continue;
             }
-            eventsInOneAcc = mapServiceContext.toObject(eventsInOneAcc);
+            eventsInOneAcc = getContext().toObject(eventsInOneAcc);
             List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) eventsInOneAcc;
             for (QueryCacheEventData eventData : eventDataList) {
                 if (eventData.getDataKey() == null) {
