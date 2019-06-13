@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+
 public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation implements Notifier {
 
     private List<Operation> opList;
@@ -51,9 +53,7 @@ public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation imp
             op.setNodeEngine(getNodeEngine())
                     .setServiceName(getServiceName())
                     .setPartitionId(getPartitionId());
-            op.beforeRun();
-            op.run();
-            op.afterRun();
+            runDirect(op);
         }
         getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId, getCallId());
     }
