@@ -58,6 +58,12 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
         return config;
     }
 
+    protected Config buildConfig(Config config, InMemoryFormat inMemoryFormat) {
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
+        replicatedMapConfig.setInMemoryFormat(inMemoryFormat);
+        return config;
+    }
+
     protected void assertMatchSuccessfulOperationQuota(double quota, int completeOps, int... values) {
         float[] quotas = new float[values.length];
         Object[] args = new Object[values.length + 1];
