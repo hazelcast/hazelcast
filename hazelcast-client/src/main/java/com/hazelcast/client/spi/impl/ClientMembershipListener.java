@@ -68,7 +68,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberEventV10(com.hazelcast.core.Member member, int eventType) {
+    public void handleMemberEventV10(Member member, int eventType) {
         switch (eventType) {
             case MembershipEvent.MEMBER_ADDED:
                 memberAdded(member);
@@ -83,7 +83,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberListEventV10(Collection<com.hazelcast.core.Member> initialMembers) {
+    public void handleMemberListEventV10(Collection<Member> initialMembers) {
         Set<Member> prevMembers = Collections.emptySet();
         if (!members.isEmpty()) {
             prevMembers = new LinkedHashSet<Member>(members.size());

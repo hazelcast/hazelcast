@@ -272,12 +272,12 @@ public class ClientScheduledExecutorProxy
             throw rethrow(e);
         }
 
-        Collection<Map.Entry<com.hazelcast.core.Member, List<ScheduledTaskHandler>>> urnsPerMember =
+        Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
                 ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response).handlers;
 
         Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<Member, List<IScheduledFuture<V>>>();
 
-        for (Map.Entry<com.hazelcast.core.Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
+        for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
             List<IScheduledFuture<V>> memberTasks = new ArrayList<IScheduledFuture<V>>();
             for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
                 memberTasks.add(new ClientScheduledFutureProxy(scheduledTaskHandler, getContext()));
