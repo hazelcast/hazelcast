@@ -28,12 +28,12 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -735,7 +735,8 @@ public class EvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(numOfEntries);
         map.addEntryListener(new EntryAdapter() {
-            public void entryEvicted(EntryEvent event) {
+            @Override
+            public void entryExpired(EntryEvent event) {
                 latch.countDown();
             }
         }, false);
@@ -763,7 +764,8 @@ public class EvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(putCount);
         map.addEntryListener(new EntryAdapter() {
-            public void entryEvicted(final EntryEvent event) {
+            @Override
+            public void entryExpired(final EntryEvent event) {
                 latch.countDown();
             }
         }, true);
@@ -1023,7 +1025,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            public void entryExpired(EntryEvent<Integer, Integer> event) {
                 evictedEntryLatch.countDown();
                 count.incrementAndGet();
             }
