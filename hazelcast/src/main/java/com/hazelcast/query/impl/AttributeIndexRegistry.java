@@ -225,8 +225,8 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
-            return delegate.evaluate(predicate, converter);
+        public Set<QueryableEntry> evaluate(Predicate predicate) {
+            return delegate.evaluate(predicate);
         }
 
         @Override

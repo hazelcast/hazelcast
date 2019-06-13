@@ -146,7 +146,8 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+    public Set<QueryableEntry> evaluate(Predicate predicate) {
+        assert converter != null;
         return indexStore.evaluate(predicate, converter);
     }
 

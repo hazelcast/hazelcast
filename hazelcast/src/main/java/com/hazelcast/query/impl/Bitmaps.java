@@ -47,13 +47,6 @@ public final class Bitmaps<E> {
         }
     };
 
-    private static final Comparator<PeekableLongIterator> MAX_HEAP_COMPARATOR = new Comparator<PeekableLongIterator>() {
-        @Override
-        public int compare(PeekableLongIterator a, PeekableLongIterator b) {
-            return Numbers.compareLongs(b.peekNext(), a.peekNext());
-        }
-    };
-
     private final Map<Object, HackedRoaringBitmap> bitmaps = new HashMap<Object, HackedRoaringBitmap>();
 
     private final Long2ObjectHashMap<E> entries;
@@ -403,6 +396,7 @@ public final class Bitmaps<E> {
 
             @Override
             public long next() {
+                assert !minHeap.isEmpty();
                 PeekableLongIterator resultIterator = minHeap.poll();
                 assert resultIterator != null;
                 long result = resultIterator.next();
@@ -480,13 +474,13 @@ public final class Bitmaps<E> {
             }
 
             private void advance() {
+                assert iterators != null;
                 if (!iterators[0].hasNext()) {
                     iterators = null;
                     return;
                 }
 
                 long max = iterators[0].peekNext();
-
                 while (true) {
                     long newMax = max;
                     for (int i = 0; i < count; ++i) {

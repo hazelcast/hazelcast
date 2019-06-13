@@ -176,6 +176,7 @@ public class BitmapIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
+            // values already canonicalized here
             return toSingleResultSet(toMap(bitmaps.getHavingAnyOf(values)));
         } finally {
             releaseReadLock();

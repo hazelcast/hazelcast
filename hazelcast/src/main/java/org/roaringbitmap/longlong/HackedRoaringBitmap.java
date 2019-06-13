@@ -38,7 +38,12 @@ public class HackedRoaringBitmap extends Roaring64NavigableMap {
             private long next;
 
             {
-                advance();
+                if (bitmaps.hasNext()) {
+                    Map.Entry<Integer, BitmapDataProvider> bitmapEntry = bitmaps.next();
+                    iteratorHigh = bitmapEntry.getKey();
+                    iterator = bitmapEntry.getValue().getIntIterator();
+                    advance();
+                }
             }
 
             @Override
@@ -67,6 +72,7 @@ public class HackedRoaringBitmap extends Roaring64NavigableMap {
 
             @Override
             public long peekNext() {
+                assert iterator != null;
                 return next;
             }
 
@@ -82,13 +88,15 @@ public class HackedRoaringBitmap extends Roaring64NavigableMap {
 
             @Override
             public long next() {
+                assert iterator != null;
                 long next = this.next;
                 advance();
                 return next;
             }
 
             private void advance() {
-                if (iterator != null && iterator.hasNext()) {
+                assert iterator != null;
+                if (iterator.hasNext()) {
                     next = RoaringIntPacking.pack(iteratorHigh, iterator.next());
                     return;
                 }

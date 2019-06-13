@@ -96,7 +96,7 @@ public interface Index {
 
     boolean canEvaluate(Class<? extends Predicate> predicateClass);
 
-    Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
+    Set<QueryableEntry> evaluate(Predicate predicate);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

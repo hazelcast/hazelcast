@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
@@ -29,12 +28,10 @@ public class EvaluatePredicate implements Predicate, IndexAwarePredicate {
 
     private final Predicate predicate;
     private final String indexName;
-    private final TypeConverter converter;
 
-    public EvaluatePredicate(Predicate predicate, String indexName, TypeConverter converter) {
+    public EvaluatePredicate(Predicate predicate, String indexName) {
         this.predicate = predicate;
         this.indexName = indexName;
-        this.converter = converter;
     }
 
     public Predicate getPredicate() {
@@ -45,10 +42,6 @@ public class EvaluatePredicate implements Predicate, IndexAwarePredicate {
         return indexName;
     }
 
-    public TypeConverter getConverter() {
-        return converter;
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public boolean apply(Map.Entry mapEntry) {
@@ -57,7 +50,7 @@ public class EvaluatePredicate implements Predicate, IndexAwarePredicate {
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        return queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME).evaluate(predicate, converter);
+        return queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME).evaluate(predicate);
     }
 
     @Override

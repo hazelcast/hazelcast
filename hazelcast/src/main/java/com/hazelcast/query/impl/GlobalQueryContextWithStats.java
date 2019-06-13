@@ -131,8 +131,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
-            Set<QueryableEntry> result = delegate.evaluate(predicate, converter);
+        public Set<QueryableEntry> evaluate(Predicate predicate) {
+            Set<QueryableEntry> result = delegate.evaluate(predicate);
             hasQueries = true;
             return result;
         }

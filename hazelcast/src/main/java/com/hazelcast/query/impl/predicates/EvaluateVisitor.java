@@ -40,12 +40,12 @@ public class EvaluateVisitor extends AbstractVisitor {
             return predicate;
         }
 
-        TypeConverter converter = indexes.getConverter(predicate.attributeName);
+        TypeConverter converter = index.getConverter();
         if (converter == null) {
             return predicate;
         }
 
-        return new EvaluatePredicate(predicate, index.getName(), converter);
+        return new EvaluatePredicate(predicate, index.getName());
     }
 
     @Override
@@ -59,12 +59,12 @@ public class EvaluateVisitor extends AbstractVisitor {
             return predicate;
         }
 
-        TypeConverter converter = indexes.getConverter(predicate.attributeName);
+        TypeConverter converter = index.getConverter();
         if (converter == null) {
             return predicate;
         }
 
-        return new EvaluatePredicate(predicate, index.getName(), converter);
+        return new EvaluatePredicate(predicate, index.getName());
     }
 
     @Override
@@ -101,8 +101,7 @@ public class EvaluateVisitor extends AbstractVisitor {
             for (int i = 0; i < groupPredicates.length; ++i) {
                 groupPredicates[i] = group.get(i).getPredicate();
             }
-            output.add(
-                    new EvaluatePredicate(new AndPredicate(groupPredicates), groupEntry.getKey(), group.get(0).getConverter()));
+            output.add(new EvaluatePredicate(new AndPredicate(groupPredicates), groupEntry.getKey()));
         }
 
         return output.size() == 1 ? output.get(0) : new AndPredicate(output.toArray(new Predicate[0]));
@@ -142,7 +141,7 @@ public class EvaluateVisitor extends AbstractVisitor {
             for (int i = 0; i < groupPredicates.length; ++i) {
                 groupPredicates[i] = group.get(i).getPredicate();
             }
-            output.add(new EvaluatePredicate(new OrPredicate(groupPredicates), groupEntry.getKey(), group.get(0).getConverter()));
+            output.add(new EvaluatePredicate(new OrPredicate(groupPredicates), groupEntry.getKey()));
         }
 
         return output.size() == 1 ? output.get(0) : new OrPredicate(output.toArray(new Predicate[0]));
@@ -159,12 +158,12 @@ public class EvaluateVisitor extends AbstractVisitor {
             return predicate;
         }
 
-        TypeConverter converter = indexes.getConverter(predicate.attributeName);
+        TypeConverter converter = index.getConverter();
         if (converter == null) {
             return predicate;
         }
 
-        return new EvaluatePredicate(predicate, index.getName(), converter);
+        return new EvaluatePredicate(predicate, index.getName());
     }
 
 }
