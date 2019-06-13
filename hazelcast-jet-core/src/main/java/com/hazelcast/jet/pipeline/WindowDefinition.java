@@ -69,11 +69,24 @@ public abstract class WindowDefinition {
 
     /**
      * Returns a sliding window definition with the given parameters.
+     * In a sliding window, the incoming items are grouped by fixed-size
+     * and overlapping intervals where the windows "slide" by the given size.
      * <p>
-     * Find more information in the Hazelcast Jet Reference Manual, Sliding and
-     * Tumbling Window.
+     * For example, given the timestamps
+     * {@code [0, 1, 2, 3, 4, 5, 6]}, {@code windowSize} of 4 and {@code @slideBy} of 2,
+     * the timestamps would be grouped into the following windows:
      *
-     * @param windowSize the size of the window (size of the range of the timestamps it covers)
+     * <pre>
+     *     [0, 1], [0, 1, 2, 3], [2, 3, 4, 5], [4, 5, 6], [6]
+     * </pre>
+     *
+     * A sliding window where window size and slide by are the same is equivalent to a
+     * tumbling window.
+     * <p>
+     * Find more information see the Hazelcast Jet Reference Manual section
+     * Sliding and Tumbling Window.
+     *
+     * @param windowSize the size of the window in the items' timestamp unit (typically milliseconds)
      * @param slideBy the size of the sliding step. Window size must be multiple of this number.
      */
     @Nonnull
@@ -82,11 +95,20 @@ public abstract class WindowDefinition {
     }
 
     /**
-     * Returns a tumbling window definition with the given parameters. Tumbling
-     * window is a special case of sliding where the slide is equal to window
-     * size.
+     * Returns a tumbling window definition with the given parameters.
+     * In a tumbling window the incoming items are grouped by
+     * fixed size, contiguous and non-overlapping intervals.
+     * <p>
+     * For example, given the timestamps
+     * {@code [0, 1, 2, 3, 4, 5, 6]} and a {@code windowSize} of 2, the timestamps
+     * would be grouped into the following windows:
      *
-     * @param windowSize the size of the window (size of the range of the timestamps it covers)
+     * <pre>
+     *     [0, 1], [2, 3], [4, 5], [6]
+     * </pre>
+     *
+     * @param windowSize the size of the window in the items' timestamp unit (typically milliseconds)
+     *
      */
     @Nonnull
     public static SlidingWindowDefinition tumbling(long windowSize) {
@@ -95,38 +117,22 @@ public abstract class WindowDefinition {
 
     /**
      * Returns a window definition that aggregates events into session windows.
-     * Events and windows under different grouping keys are treated
-     * independently.
+     * In a session window, the items are grouped into variable size,
+     * non-overlapping windows which are formed by periods of activity followed
+     * by inactivity. A session window is kept open as long as the gap
+     * between the events remains less than the given {@code sessionTimeout} and
+     * is closed when the gap exceeds the timeout.
      * <p>
-     * The functioning of session windows is easiest to explain in terms of the
-     * <em>event interval</em>: the range {@code [timestamp, timestamp +
-     * sessionTimeout)}. Initially an event causes a new session window to be
-     * created, covering exactly the event interval. A following event under
-     * the same key belongs to this window iff its interval overlaps it. The
-     * window is extended to cover the entire interval of the new event. The
-     * event may happen to belong to two existing windows if its interval
-     * bridges the gap between them; in that case they are combined into one.
+     * For example, given the timestamps
+     * {@code [0, 1, 4, 8, 9, 10, 15]} and a {@code sessionTimeout} of 2, the timestamps
+     * would be grouped into the following windows:
      *
-     * <h4>Behavior when changing session timeout on job update</h4>
-     *
-     * It is allowed to change session timeout in an updated pipeline. Windows
-     * are stored in the snapshot with the end time equal to the time of the
-     * latest event + session timeout. A new event after the update will be
-     * merged into the old window using the new timeout. This will cause that
-     * the windows after the update will have varying timeouts until all
-     * windows from before the update are emitted.
-     * <p>
-     * For example: say {@code E(n)} is an event with timestamp {@code n} and
-     * {@code W(m, n)} is a window with {@code startTime=m} and {@code
-     * endTime=n}. Session timeout is 10. We receive {@code E(50)}, we'll store
-     * it in a window {@code W(50, 60)}. Then, job is updated and session
-     * timeout changes to 20. If we then receive {@code E(45)}, we'll handle it
-     * as merging of the restored {@code W(50, 60)} and of {@code W(45, 65)},
-     * created from the new event and new timeout. It will result in {@code
-     * W(45, 65)}. Thus, the actual session timeout in this window will be 15.
-     *
-     * @param sessionTimeout the exclusive upper bound on the difference between any two
-     *                       successive timestamps included in a window.
+     * <pre>
+     *     [0, 1], [4], [8, 9, 10], [15]
+     * </pre>
+     * @param sessionTimeout the upper bound on the difference between any two
+     *                       consecutive timestamps in a window, given in the
+     *                       items' timestamp unit (typically milliseconds)
      */
     @Nonnull
     public static SessionWindowDefinition session(long sessionTimeout) {
