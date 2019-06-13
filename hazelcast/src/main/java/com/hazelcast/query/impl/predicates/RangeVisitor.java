@@ -87,7 +87,7 @@ public class RangeVisitor extends AbstractVisitor {
 
         if (predicate instanceof FalsePredicate) {
             return Ranges.UNSATISFIABLE;
-        } else if (!(predicate instanceof RangePredicate)) {
+        } else if (!isSupportedPredicate(predicate)) {
             return ranges;
         }
 
@@ -108,6 +108,16 @@ public class RangeVisitor extends AbstractVisitor {
         ranges.addRange(attribute, range, existingRange, predicateIndex);
 
         return ranges;
+    }
+
+    private static boolean isSupportedPredicate(Predicate predicate) {
+        if (!(predicate instanceof RangePredicate)) {
+            return false;
+        }
+
+        RangePredicate rangePredicate = (RangePredicate) predicate;
+        // we are unable to reason about multi-value attributes currently
+        return !rangePredicate.getAttribute().contains("[any]");
     }
 
     private static Range intersect(RangePredicate predicate, Range range, Indexes indexes) {
