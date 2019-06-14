@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.executor.IExecutorService;
+
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
@@ -147,7 +149,7 @@ public class SecurityConfig {
      * Executors:
      *
      * <ul>
-     * <li>{@link com.hazelcast.core.IExecutorService}
+     * <li>{@link IExecutorService}
      * <li>{@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
      * <li>{@link com.hazelcast.durableexecutor.DurableExecutorService}
      * </ul>
@@ -162,7 +164,7 @@ public class SecurityConfig {
      * Executors:
      *
      * <ul>
-     * <li>{@link com.hazelcast.core.IExecutorService}
+     * <li>{@link IExecutorService}
      * <li>{@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
      * <li>{@link com.hazelcast.durableexecutor.DurableExecutorService}
      * </ul>

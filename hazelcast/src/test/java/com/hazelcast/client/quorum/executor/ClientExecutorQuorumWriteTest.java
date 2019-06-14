@@ -19,7 +19,7 @@ package com.hazelcast.client.quorum.executor;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.executor.ExecutorQuorumWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;

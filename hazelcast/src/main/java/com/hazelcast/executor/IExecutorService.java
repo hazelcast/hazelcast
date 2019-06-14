@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.executor;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.monitor.LocalExecutorStats;
 
 import java.util.Collection;

@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;

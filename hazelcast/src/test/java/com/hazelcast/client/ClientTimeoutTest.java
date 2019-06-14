@@ -21,7 +21,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;

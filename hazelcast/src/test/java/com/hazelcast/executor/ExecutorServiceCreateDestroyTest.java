@@ -17,7 +17,6 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

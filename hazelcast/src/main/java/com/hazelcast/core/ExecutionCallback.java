@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.executor.IExecutorService;
 
 /**
  * ExecutionCallback allows to asynchronously get notified when the execution is completed,

@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.CancellationException;
@@ -35,7 +36,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * An Abstract DelegatingFuture that can cancel a Runnable/Callable that is executed by an
- * {@link com.hazelcast.core.IExecutorService}.
+ * {@link IExecutorService}.
  * It does this by sending a Cancellation Request to the remote owning member and then cancelling the running task.
  *
  * @param <V> Type of returned object from the get method of this class.

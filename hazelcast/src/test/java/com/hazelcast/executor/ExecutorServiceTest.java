@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;

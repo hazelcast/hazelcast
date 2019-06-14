@@ -41,7 +41,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.collection.IList;
 import com.hazelcast.cp.lock.ILock;

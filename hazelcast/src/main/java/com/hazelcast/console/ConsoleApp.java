@@ -25,7 +25,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;

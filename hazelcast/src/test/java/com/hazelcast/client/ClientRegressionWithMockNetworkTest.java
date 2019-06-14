@@ -30,7 +30,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;

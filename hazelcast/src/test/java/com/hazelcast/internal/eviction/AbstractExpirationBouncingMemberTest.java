@@ -18,7 +18,7 @@ package com.hazelcast.internal.eviction;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MultiExecutionCallback;

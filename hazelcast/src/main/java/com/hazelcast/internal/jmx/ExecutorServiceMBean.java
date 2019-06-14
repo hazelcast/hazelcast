@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 
 
 /**
- * Management bean for {@link com.hazelcast.core.IExecutorService}
+ * Management bean for {@link IExecutorService}
  */
 public class ExecutorServiceMBean extends HazelcastMBean<IExecutorService> {
 

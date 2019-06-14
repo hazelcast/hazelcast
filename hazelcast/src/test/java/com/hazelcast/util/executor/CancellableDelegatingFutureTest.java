@@ -17,7 +17,7 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

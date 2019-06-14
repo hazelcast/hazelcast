@@ -29,7 +29,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.AssertTask;

@@ -16,24 +16,24 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.executor.IExecutorService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
