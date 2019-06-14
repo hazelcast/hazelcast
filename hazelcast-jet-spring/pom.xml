@@ -29,7 +29,7 @@
     <parent>
         <artifactId>hazelcast-jet-root</artifactId>
         <groupId>com.hazelcast.jet</groupId>
-        <version>3.1-SNAPSHOT</version>
+        <version>3.2-SNAPSHOT</version>
     </parent>
 
     <properties>
