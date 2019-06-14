@@ -19,6 +19,8 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
@@ -214,7 +217,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
-        aws(gen, network.getAwsConfig());
+        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         discovery(gen, network.getDiscoveryConfig());
         outboundPort(gen, network.getOutboundPortDefinitions());
         icmp(gen, network.getClientIcmpPingConfig());
@@ -497,22 +500,20 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
-    private static void aws(XmlGenerator gen, ClientAwsConfig aws) {
-        if (aws == null) {
+    private static void aliasedDiscoveryConfigsGenerator(XmlGenerator gen, List<AliasedDiscoveryConfig<?>> configs) {
+        if (configs == null) {
             return;
         }
-        gen.open("aws", "enabled", aws.isEnabled(),
-                "connection-timeout-seconds", aws.getConnectionTimeoutSeconds())
-           .node("inside-aws", aws.isInsideAws())
-           .node("access-key", aws.getAccessKey())
-           .node("secret-key", aws.getSecretKey())
-           .node("iam-role", aws.getIamRole())
-           .node("region", aws.getRegion())
-           .node("host-header", aws.getHostHeader())
-           .node("security-group-name", aws.getSecurityGroupName())
-           .node("tag-key", aws.getTagKey())
-           .node("tag-value", aws.getTagValue())
-           .close();
+        for (AliasedDiscoveryConfig<?> c : configs) {
+            gen.open(AliasedDiscoveryConfigUtils.tagFor(c), "enabled", c.isEnabled());
+            if (c.isUsePublicIp()) {
+                gen.node("use-public-ip", "true");
+            }
+            for (String key : c.getProperties().keySet()) {
+                gen.node(key, c.getProperties().get(key));
+            }
+            gen.close();
+        }
     }
 
     private static void discovery(XmlGenerator gen, DiscoveryConfig discovery) {

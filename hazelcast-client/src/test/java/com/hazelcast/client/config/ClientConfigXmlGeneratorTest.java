@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -55,6 +56,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
@@ -192,34 +194,21 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertProperties(expected.getProperties(), actual.getProperties());
     }
 
-    @Test
-    public void networkAws() {
-        ClientAwsConfig expected = new ClientAwsConfig();
-        expected.setInsideAws(true)
-                .setEnabled(true)
-                .setTagValue(randomString())
-                .setTagKey(randomString())
-                .setSecurityGroupName(randomString())
-                .setHostHeader(randomString())
-                .setRegion(randomString())
-                .setIamRole(randomString())
-                .setSecretKey(randomString())
-                .setAccessKey(randomString())
-                .setConnectionTimeoutSeconds(randomInt());
-        clientConfig.getNetworkConfig().setAwsConfig(expected);
+    public void networkAliasedDiscoveryConfigs() {
+        List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigs = aliasedDiscoveryConfigsFrom(clientConfig.getNetworkConfig());
+        for (AliasedDiscoveryConfig<?> aliasedDiscoveryConfig : aliasedDiscoveryConfigs) {
+            aliasedDiscoveryConfig.setUsePublicIp(true).setEnabled(true);
+            aliasedDiscoveryConfig.setProperty("testKey", "testValue");
+        }
+        ClientConfig actualConfig = newConfigViaGenerator();
+        List<AliasedDiscoveryConfig<?>> generatedConfigs = aliasedDiscoveryConfigsFrom(actualConfig.getNetworkConfig());
 
-        ClientAwsConfig actual = newConfigViaGenerator().getNetworkConfig().getAwsConfig();
-        assertEquals(expected.isInsideAws(), actual.isInsideAws());
-        assertEquals(expected.isEnabled(), actual.isEnabled());
-        assertEquals(expected.getTagValue(), actual.getTagValue());
-        assertEquals(expected.getTagKey(), actual.getTagKey());
-        assertEquals(expected.getSecurityGroupName(), actual.getSecurityGroupName());
-        assertEquals(expected.getHostHeader(), actual.getHostHeader());
-        assertEquals(expected.getRegion(), actual.getRegion());
-        assertEquals(expected.getIamRole(), actual.getIamRole());
-        assertEquals(expected.getSecretKey(), actual.getSecretKey());
-        assertEquals(expected.getAccessKey(), actual.getAccessKey());
-        assertEquals(expected.getConnectionTimeoutSeconds(), actual.getConnectionTimeoutSeconds());
+        for (AliasedDiscoveryConfig<?> generatedDiscoveryConfig : generatedConfigs) {
+            assertTrue(generatedDiscoveryConfig.isEnabled());
+            assertTrue(generatedDiscoveryConfig.isUsePublicIp());
+            String testKey = generatedDiscoveryConfig.getProperty("testKey");
+            assertEquals("testValue", testKey);
+        }
     }
 
     @Test
@@ -255,7 +244,8 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected.getNodeFilterClass(), actual.getNodeFilterClass());
         assertCollection(expected.getDiscoveryStrategyConfigs(), actual.getDiscoveryStrategyConfigs(),
                 new Comparator<DiscoveryStrategyConfig>() {
-                    @Override public int compare(DiscoveryStrategyConfig o1, DiscoveryStrategyConfig o2) {
+                    @Override
+                    public int compare(DiscoveryStrategyConfig o1, DiscoveryStrategyConfig o2) {
                         assertMap(o1.getProperties(), o2.getProperties());
                         return o1.getClassName().equals(o2.getClassName()) ? 0 : -1;
                     }

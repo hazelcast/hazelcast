@@ -17,7 +17,7 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
@@ -89,11 +90,14 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     private AddressProvider createAddressProvider(ClientConfig config) {
         boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
                 .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
-        ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+
+        List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
+                ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
+
         List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
 
-        boolean isAtLeastAProviderConfigured
-                = discoveryEnabled || (awsConfig != null && awsConfig.isEnabled()) || !userConfiguredAddresses.isEmpty();
+        boolean isAtLeastAProviderConfigured = discoveryEnabled || !aliasedDiscoveryConfigs.isEmpty()
+                || !userConfiguredAddresses.isEmpty();
 
         if (isAtLeastAProviderConfigured) {
             // address providers or addresses are configured explicitly, don't add more addresses
