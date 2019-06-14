@@ -16,8 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.Address;
-
 /**
  * This interface is deprecated and will be removed in 4.0. Look for the {@link com.hazelcast.spi.discovery}
  * module as alternative.
@@ -42,7 +40,7 @@ public interface Joiner {
      * the groupname of 2 machines is not the same and they should form different clusters.
      * <p>
      * If blacklist is permanent, then this operation is write-once. It cannot be unblacklisted again.
-     * If blacklist is temporary, blacklist can be removed via {@link #unblacklist(com.hazelcast.nio.Address)}.
+     * If blacklist is temporary, blacklist can be removed via {@link #unblacklist(Address)}.
      * <p>
      * Method is thread-safe.
      * <p>
@@ -51,7 +49,7 @@ public interface Joiner {
      * @param address   the address to blacklist.
      * @param permanent true if blacklist is permanent, false if not.
      * @throws java.lang.NullPointerException if address is null.
-     * @see #isBlacklisted(com.hazelcast.nio.Address)
+     * @see #isBlacklisted(Address)
      */
     void blacklist(Address address, boolean permanent);
 
@@ -77,7 +75,7 @@ public interface Joiner {
      * @param address the address to check.
      * @return true if blacklisted, false otherwise.
      * @throws java.lang.NullPointerException if address is null.
-     * @see #blacklist(com.hazelcast.nio.Address, boolean)
+     * @see #blacklist(Address, boolean)
      */
     boolean isBlacklisted(Address address);
 }

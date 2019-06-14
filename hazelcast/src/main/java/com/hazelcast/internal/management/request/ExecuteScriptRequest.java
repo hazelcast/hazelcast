@@ -22,7 +22,7 @@ import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;

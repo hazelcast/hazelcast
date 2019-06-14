@@ -37,7 +37,7 @@ import com.hazelcast.cp.session.CPSession.CPSessionOwnerType;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;

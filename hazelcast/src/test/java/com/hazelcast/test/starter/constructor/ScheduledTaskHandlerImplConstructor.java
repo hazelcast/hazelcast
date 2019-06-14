@@ -39,7 +39,7 @@ public class ScheduledTaskHandlerImplConstructor extends AbstractStarterObjectCo
 
         if (address != null) {
             ClassLoader targetClassloader = targetClass.getClassLoader();
-            Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.nio.Address");
+            Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.cluster.Address");
 
             // obtain reference to constructor ScheduledTaskHandlerImpl(Address address, String schedulerName, String taskName)
             Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, String.class, String.class);

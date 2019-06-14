@@ -18,7 +18,7 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;

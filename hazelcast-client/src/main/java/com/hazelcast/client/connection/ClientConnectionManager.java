@@ -19,7 +19,7 @@ package com.hazelcast.client.connection;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
 

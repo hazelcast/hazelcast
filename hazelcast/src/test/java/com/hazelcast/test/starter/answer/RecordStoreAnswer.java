@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import org.mockito.invocation.InvocationOnMock;
 

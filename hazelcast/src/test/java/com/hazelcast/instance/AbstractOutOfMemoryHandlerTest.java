@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;

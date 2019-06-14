@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.spi.annotation.PrivateApi;
 

@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SSLConfig;

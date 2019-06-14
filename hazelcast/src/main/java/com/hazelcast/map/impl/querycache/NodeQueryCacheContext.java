@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.NodeEngine;

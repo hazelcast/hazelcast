@@ -24,7 +24,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;

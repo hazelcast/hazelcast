@@ -17,7 +17,7 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionLifecycleListener;
 import com.hazelcast.nio.ConnectionType;

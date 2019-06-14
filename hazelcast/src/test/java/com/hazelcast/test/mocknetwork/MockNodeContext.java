@@ -25,7 +25,7 @@ import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.NodeExtensionFactory;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingNetworkingService;

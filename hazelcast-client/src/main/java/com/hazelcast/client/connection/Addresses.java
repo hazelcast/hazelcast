@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Collection;
 import java.util.LinkedList;

@@ -24,7 +24,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.util.Collection;

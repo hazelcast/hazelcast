@@ -54,7 +54,7 @@ import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
 import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;

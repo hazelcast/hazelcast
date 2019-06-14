@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
@@ -242,7 +243,7 @@ public class PartitionStateManager {
      * Checks all replicas for all partitions. If the cluster service does not contain the member for any
      * address in the partition table, it will remove the address from the partition.
      *
-     * @see ClusterService#getMember(com.hazelcast.nio.Address, String)
+     * @see ClusterService#getMember(Address, String)
      */
     void removeUnknownMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();

@@ -20,7 +20,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 

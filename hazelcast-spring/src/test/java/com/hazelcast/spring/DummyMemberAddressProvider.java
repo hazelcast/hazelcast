@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.MemberAddressProvider;
 
 import java.net.InetSocketAddress;

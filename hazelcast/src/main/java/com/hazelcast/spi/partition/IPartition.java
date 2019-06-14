@@ -17,7 +17,7 @@
 package com.hazelcast.spi.partition;
 
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.Partition;
 
 /**

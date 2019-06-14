@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.discovery;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Map;
 

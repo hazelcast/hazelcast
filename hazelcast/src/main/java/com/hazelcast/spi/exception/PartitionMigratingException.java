@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.exception;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that is thrown when an operation is executed

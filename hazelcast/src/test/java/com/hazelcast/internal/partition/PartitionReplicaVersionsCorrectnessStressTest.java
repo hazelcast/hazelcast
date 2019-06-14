@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;

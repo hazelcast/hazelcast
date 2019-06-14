@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -27,7 +28,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  * The {@link #orderKey} for this processor is equal to the packet partition ID. This means that when running
  * inside a {@link com.hazelcast.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
  *
- * @see EventServiceImpl#sendEvent(com.hazelcast.nio.Address, EventEnvelope, int)
+ * @see EventServiceImpl#sendEvent(Address, EventEnvelope, int)
  */
 public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
 

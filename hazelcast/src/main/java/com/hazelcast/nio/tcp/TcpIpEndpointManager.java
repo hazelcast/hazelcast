@@ -27,7 +27,7 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionLifecycleListener;
 import com.hazelcast.nio.ConnectionListener;

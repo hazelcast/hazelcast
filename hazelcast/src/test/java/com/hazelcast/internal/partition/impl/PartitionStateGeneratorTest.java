@@ -26,7 +26,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.membergroup.ConfigMemberGroupFactory;
 import com.hazelcast.partition.membergroup.DefaultMemberGroup;
 import com.hazelcast.partition.membergroup.HostAwareMemberGroupFactory;

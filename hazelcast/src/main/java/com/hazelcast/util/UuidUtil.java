@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.security.SecureRandom;
 import java.util.Random;

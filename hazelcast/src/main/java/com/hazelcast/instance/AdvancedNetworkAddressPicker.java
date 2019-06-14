@@ -23,7 +23,7 @@ import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.HashMap;

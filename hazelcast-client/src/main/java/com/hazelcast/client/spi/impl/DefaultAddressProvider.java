@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.List;
 

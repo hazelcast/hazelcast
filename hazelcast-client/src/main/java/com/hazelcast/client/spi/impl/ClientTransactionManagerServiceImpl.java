@@ -29,7 +29,7 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;

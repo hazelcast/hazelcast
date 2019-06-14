@@ -28,7 +28,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationI
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LogListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

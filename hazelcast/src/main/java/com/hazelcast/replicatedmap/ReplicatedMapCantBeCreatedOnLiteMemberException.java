@@ -17,7 +17,7 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Thrown when {@link com.hazelcast.core.HazelcastInstance#getReplicatedMap(String)} is invoked on a lite member.

@@ -23,7 +23,7 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionLifecycleListener;

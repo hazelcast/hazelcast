@@ -17,7 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.tcp.FirewallingNetworkingService;
 

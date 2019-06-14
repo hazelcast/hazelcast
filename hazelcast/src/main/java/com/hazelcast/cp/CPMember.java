@@ -19,7 +19,7 @@ package com.hazelcast.cp;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Endpoint;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * A CP member is a Hazelcast member that is internally elected to be part of

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;

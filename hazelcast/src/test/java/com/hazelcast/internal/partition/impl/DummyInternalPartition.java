@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 public class DummyInternalPartition implements InternalPartition {
     private PartitionReplica[] replicas;

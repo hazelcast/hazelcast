@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.Packet;
 
 public class NodeMulticastListener implements MulticastListener {

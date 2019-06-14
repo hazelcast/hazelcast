@@ -20,7 +20,7 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
