@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
-
-import static java.lang.String.format;
+package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.util.Preconditions;
+
+import static java.lang.String.format;
 
 /**
  * Implementation of basic protection against untrusted deserialization. It holds blacklist and whitelist with classnames and
