@@ -874,7 +874,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
-                .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
+                // TODO add merkle tree config when client protocol for map codec is updated
+                //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

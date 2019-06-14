@@ -298,6 +298,10 @@ hazelcast:
 
       read-backup-data: true
 
+      merkle-tree:
+        enabled: true
+        depth: 5
+
       hot-restart:
         fsync: true
 
@@ -803,12 +807,6 @@ hazelcast:
       quorum-type: READ_WRITE
       recently-active-quorum:
         heartbeat-tolerance-millis: 60000
-
-  merkle-tree:
-    map:
-      default:
-        enabled: true
-        depth: 5
 
   hot-restart-persistence:
     enabled: false
