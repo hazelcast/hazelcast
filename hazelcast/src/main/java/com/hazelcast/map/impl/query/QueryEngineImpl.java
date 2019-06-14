@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
@@ -103,7 +104,7 @@ public class QueryEngineImpl implements QueryEngine {
         IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
         Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
         if (adjustedQuery.getPredicate() instanceof PagingPredicate) {
-            ((PagingPredicate) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
+            PagingPredicateAccessor.setIterationType((PagingPredicate) adjustedQuery.getPredicate(), query.getIterationType());
         } else {
             if (adjustedQuery.getPredicate() == Predicates.alwaysTrue()) {
                 queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());

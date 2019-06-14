@@ -126,7 +126,8 @@ public final class SortingUtil {
 
     private static Comparator<QueryableEntry> newComparator(final PagingPredicate pagingPredicate) {
         return (entry1, entry2) -> SortingUtil
-                .compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
+                .compare(pagingPredicate.getComparator(),
+                        PagingPredicateAccessor.getIterationType(pagingPredicate), entry1, entry2);
     }
 
     public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
@@ -185,7 +186,7 @@ public final class SortingUtil {
             return true;
         }
         Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
-        IterationType iterationType = pagingPredicate.getIterationType();
+        IterationType iterationType = PagingPredicateAccessor.getIterationType(pagingPredicate);
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
     }
 

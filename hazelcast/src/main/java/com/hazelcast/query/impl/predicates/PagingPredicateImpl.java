@@ -213,12 +213,10 @@ public class PagingPredicateImpl<K, V> implements PagingPredicate<K, V>, IndexAw
         }
     }
 
-    @Override
     public IterationType getIterationType() {
         return iterationType;
     }
 
-    @Override
     public void setIterationType(IterationType iterationType) {
         this.iterationType = iterationType;
     }

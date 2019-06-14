@@ -17,7 +17,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.util.IterationType;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -111,9 +110,5 @@ public interface PagingPredicate<K, V> extends Predicate<K, V> {
      * @return Map.Entry the anchor object which is the last value object on the previous page
      */
     Map.Entry<K, V> getAnchor();
-
-    IterationType getIterationType();
-
-    void setIterationType(IterationType iterationType);
 
 }
