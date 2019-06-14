@@ -519,7 +519,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         for (Node n : childElements(node)) {
-            String key = cleanNodeName(n);
+            String key = n.getLocalName();
             String value = getTextContent(n).trim();
             config.setProperty(key, value);
         }
