@@ -16,6 +16,13 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
@@ -62,7 +69,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -72,7 +79,6 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -109,31 +115,20 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.collection.QueueStore;
-import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -142,13 +137,16 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -323,6 +321,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
         assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
         assertTrue(testMapConfig.getHotRestartConfig().isFsync());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
@@ -1383,14 +1383,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Test
-    public void testMapMerkleTreeConfigIsWellParsed() {
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig("mapName");
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(15, treeConfig.getDepth());
     }
 
     @Test

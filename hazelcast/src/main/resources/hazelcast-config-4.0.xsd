@@ -46,7 +46,6 @@
                 <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0"
                             maxOccurs="unbounded"/>
                 <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
@@ -321,6 +320,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="1"/>
             <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
@@ -3885,19 +3885,10 @@
                 the duration of the comparison mechanism. Care must be taken to not have
                 large tree depths if the latency of the comparison operation is high.
                 The default depth is 10.
-                This configuration is not tied to a specific data structure and can be
-                reused.
                 See https://en.wikipedia.org/wiki/Merkle_tree.
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="mapName" type="xs:string" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The name of the map to which this config applies.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="depth" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3915,7 +3906,7 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     True if the merkle tree is enabled, false otherwise.

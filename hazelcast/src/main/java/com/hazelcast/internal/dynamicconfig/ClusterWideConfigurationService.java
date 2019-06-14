@@ -133,8 +133,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
             new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, MerkleTreeConfig> mapMerkleTreeConfigs =
-            new ConcurrentHashMap<String, MerkleTreeConfig>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -164,7 +162,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
-            mapMerkleTreeConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
     };
@@ -279,7 +276,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * @param newConfig       Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws InvalidConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws InvalidConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -349,9 +346,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof EventJournalConfig) {
             EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
             registerEventJournalConfig(eventJournalConfig, configCheckMode);
-        } else if (newConfig instanceof MerkleTreeConfig) {
-            MerkleTreeConfig config = (MerkleTreeConfig) newConfig;
-            currentConfig = mapMerkleTreeConfigs.putIfAbsent(config.getMapName(), config);
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
@@ -637,16 +631,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
         return mapEventJournalConfigs;
-    }
-
-    @Override
-    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
-    }
-
-    @Override
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        return mapMerkleTreeConfigs;
     }
 
     @Override

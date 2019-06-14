@@ -319,7 +319,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleMap(Node parentNode) {
+    protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
             MapConfig mapConfig = new MapConfig();
             mapConfig.setName(mapNode.getNodeName());
@@ -374,26 +374,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             EventJournalConfig journalConfig = new EventJournalConfig();
             journalConfig.setCacheName(journalNode.getNodeName());
             handleViaReflection(journalNode, config, journalConfig);
-        }
-    }
-
-    @Override
-    protected void handleMerkleTree(Node node) throws Exception {
-        for (Node typeNode : childElements(node)) {
-            String nodeName = typeNode.getNodeName().toLowerCase();
-            if ("map".equals(nodeName)) {
-                handleMapMerkleTree(typeNode);
-            } else {
-                throw new InvalidConfigurationException("Mapping name should be 'map', but " + nodeName + " found");
-            }
-        }
-    }
-
-    private void handleMapMerkleTree(Node mapNode) throws Exception {
-        for (Node journalNode : childElements(mapNode)) {
-            MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-            merkleTreeConfig.setMapName(journalNode.getNodeName());
-            handleViaReflection(journalNode, config, merkleTreeConfig);
         }
     }
 

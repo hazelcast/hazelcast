@@ -312,6 +312,10 @@
 
         <read-backup-data>true</read-backup-data>
 
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
+
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
@@ -803,11 +807,6 @@
         <quorum-type>READ_WRITE</quorum-type>
         <recently-active-quorum heartbeat-tolerance-millis="60000" />
     </quorum>
-
-    <merkle-tree enabled="true">
-        <mapName>default</mapName>
-        <depth>5</depth>
-    </merkle-tree>
 
     <hot-restart-persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>

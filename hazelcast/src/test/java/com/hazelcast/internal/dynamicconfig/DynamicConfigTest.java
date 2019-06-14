@@ -18,6 +18,8 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -61,23 +63,21 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -234,8 +234,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setClassName("com.hazelcast.Foo");
+              .setEnabled(true)
+              .setClassName("com.hazelcast.Foo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -246,8 +246,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryClassName("com.hazelcast.FactoryFoo");
+              .setEnabled(true)
+              .setFactoryClassName("com.hazelcast.FactoryFoo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -258,8 +258,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byStoreImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setStoreImplementation(new SampleRingbufferStore());
+              .setEnabled(true)
+              .setStoreImplementation(new SampleRingbufferStore());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -270,8 +270,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryImplementation(new SampleRingbufferStoreFactory());
+              .setEnabled(true)
+              .setFactoryImplementation(new SampleRingbufferStoreFactory());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -659,18 +659,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMerkleTreeConfig() {
-        MerkleTreeConfig config = new MerkleTreeConfig()
-                .setEnabled(true)
-                .setMapName(randomName())
-                .setDepth(10);
-
-        driver.getConfig().addMerkleTreeConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
     public void testReliableTopicConfig_whenHasExecutor() {
         ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name)
                 .setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
@@ -830,14 +818,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(MerkleTreeConfig merkleTreeConfig) {
-        String mapName = merkleTreeConfig.getMapName();
-        for (HazelcastInstance instance : members) {
-            MerkleTreeConfig registeredConfig = instance.getConfig().getMapMerkleTreeConfig(mapName);
-            assertEquals(merkleTreeConfig, registeredConfig);
-        }
-    }
-
     private CacheSimpleConfig getCacheConfig() {
         CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
         entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
@@ -894,6 +874,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
+                .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

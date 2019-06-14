@@ -120,6 +120,29 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        if (merkleTreeConfig == null) {
+            return null;
+        }
+        return merkleTreeConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public HotRestartConfig getHotRestartConfig() {
+        final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        if (hotRestartConfig == null) {
+            return null;
+        }
+        return hotRestartConfig.getAsReadOnly();
+    }
+
+    @Override
     public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
         throw throwReadOnly();
     }

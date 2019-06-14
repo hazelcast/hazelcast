@@ -399,6 +399,7 @@
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
+                <hz:merkle-tree enabled="${testMap.merkleTree.enabled}" depth="${testMap.merkleTree.depth}"/>
                 <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
             </hz:map>
             <hz:map name="testMap2"
@@ -536,8 +537,6 @@
 
             <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
                               capacity="123" time-to-live-seconds="321"/>
-
-            <hz:merkle-tree map-name="mapName" enabled="true" depth="15"/>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
                 <hz:entry-listeners>

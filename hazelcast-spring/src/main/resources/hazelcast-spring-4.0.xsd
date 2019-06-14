@@ -713,6 +713,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="map-eviction-policy" type="map-eviction-policy" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
@@ -1229,64 +1230,6 @@
                                             Maximum number of seconds for each entry to stay in the event journal.
                                             Entries that are older than &lt;time-to-live-seconds&gt; are evicted from the journal.
                                             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="merkle-tree" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Configuration for a merkle tree.
-                                        The merkle tree is a data structure used for efficient comparison of the
-                                        difference in the contents of large data structures. The precision of
-                                        such a comparison mechanism is defined by the depth of the merkle tree.
-                                        A larger depth means that a data synchronization mechanism will be able
-                                        to pinpoint a smaller subset of the data structure contents in which a
-                                        change occurred. This causes the synchronization mechanism to be more
-                                        efficient. On the other hand, a larger tree depth means the merkle tree
-                                        will consume more memory.
-                                        A smaller depth means the data synchronization mechanism will have to
-                                        transfer larger chunks of the data structure in which a possible change
-                                        happened. On the other hand, a shallower tree consumes less memory.
-                                        The depth must be between 2 and 27 (exclusive).
-                                        As the comparison mechanism is iterative, a larger depth will also prolong
-                                        the duration of the comparison mechanism. Care must be taken to not have
-                                        large tree depths if the latency of the comparison operation is high.
-                                        The default depth is 10.
-                                        This configuration is not tied to a specific data structure and can be
-                                        reused.
-                                        See https://en.wikipedia.org/wiki/Merkle_tree.
-                                    </xs:documentation>
-                                </xs:annotation>
-                                <xs:attribute name="map-name" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the map to which this config applies.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="enabled" type="parameterized-boolean" default="true">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            True if the merkle tree is enabled, false otherwise.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="depth" type="parameterized-unsigned-int">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The depth of the merkle tree.
-                                            A larger depth means that a data synchronization mechanism will be able
-                                            to pinpoint a smaller subset of the data structure contents in which a
-                                            change occurred. This causes the synchronization mechanism to be more
-                                            efficient. On the other hand, a larger tree depth means the merkle tree
-                                            will consume more memory.
-                                            A smaller depth means the data synchronization mechanism will have to
-                                            transfer larger chunks of the data structure in which a possible change
-                                            happened. On the other hand, a shallower tree consumes less memory.
-                                            The depth must be between 2 and 27 (exclusive). The default depth is 10.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -4214,6 +4157,54 @@
                 <xs:documentation>
                     True if hot-restart is enabled, false otherwise
                     Only available on Hazelcast Enterprise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="merkle-tree">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for a merkle tree.
+                The merkle tree is a data structure used for efficient comparison of the
+                difference in the contents of large data structures. The precision of
+                such a comparison mechanism is defined by the depth of the merkle tree.
+                A larger depth means that a data synchronization mechanism will be able
+                to pinpoint a smaller subset of the data structure contents in which a
+                change occurred. This causes the synchronization mechanism to be more
+                efficient. On the other hand, a larger tree depth means the merkle tree
+                will consume more memory.
+                A smaller depth means the data synchronization mechanism will have to
+                transfer larger chunks of the data structure in which a possible change
+                happened. On the other hand, a shallower tree consumes less memory.
+                The depth must be between 2 and 27 (exclusive).
+                As the comparison mechanism is iterative, a larger depth will also prolong
+                the duration of the comparison mechanism. Care must be taken to not have
+                large tree depths if the latency of the comparison operation is high.
+                The default depth is 10.
+                See https://en.wikipedia.org/wiki/Merkle_tree.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if the merkle tree is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="depth" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    The depth of the merkle tree.
+                    A larger depth means that a data synchronization mechanism will be able
+                    to pinpoint a smaller subset of the data structure contents in which a
+                    change occurred. This causes the synchronization mechanism to be more
+                    efficient. On the other hand, a larger tree depth means the merkle tree
+                    will consume more memory.
+                    A smaller depth means the data synchronization mechanism will have to
+                    transfer larger chunks of the data structure in which a possible change
+                    happened. On the other hand, a shallower tree consumes less memory.
+                    The depth must be between 2 and 27 (exclusive). The default depth is 10.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

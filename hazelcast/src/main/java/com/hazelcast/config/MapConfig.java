@@ -163,6 +163,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+
     private transient MapConfigReadOnly readOnly;
 
     // we use these 2 flags to detect a conflict between (deprecated) #setOptimizeQueries()
@@ -207,6 +209,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+        this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
     }
 
     /**
@@ -887,6 +890,26 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
+     * Gets the {@code MerkleTreeConfig} for this {@code MapConfig}
+     *
+     * @return merkle tree config
+     */
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code MapConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = merkleTreeConfig;
+        return this;
+    }
+
+    /**
      * Get current value cache settings
      *
      * @return current value cache settings
@@ -993,6 +1016,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
+        if (merkleTreeConfig != null ? !merkleTreeConfig.equals(that.merkleTreeConfig) : that.merkleTreeConfig != null) {
+            return false;
+        }
         return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
     }
 
@@ -1022,6 +1048,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (merkleTreeConfig != null ? merkleTreeConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
         return result;
     }
@@ -1042,6 +1069,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
+                + ", merkleTree=" + merkleTreeConfig
                 + ", hotRestart=" + hotRestartConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
@@ -1092,6 +1120,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(partitioningStrategyConfig);
         out.writeUTF(quorumName);
         out.writeObject(hotRestartConfig);
+        out.writeObject(merkleTreeConfig);
         out.writeShort(metadataPolicy.getId());
     }
 
@@ -1121,6 +1150,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         partitioningStrategyConfig = in.readObject();
         quorumName = in.readUTF();
         hotRestartConfig = in.readObject();
+        merkleTreeConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
     }
 }
