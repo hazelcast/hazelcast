@@ -18,9 +18,12 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.partition.MigrationStateImpl;
+import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -32,10 +35,13 @@ public class MigrationStats {
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
     @Probe
-    private final AtomicLong completedMigrations = new AtomicLong();
+    private volatile int plannedMigrations;
 
     @Probe
-    private final AtomicLong totalCompletedMigrations = new AtomicLong();
+    private final AtomicInteger completedMigrations = new AtomicInteger();
+
+    @Probe
+    private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
     @Probe
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
@@ -58,9 +64,11 @@ public class MigrationStats {
     /**
      * Marks start of new repartitioning.
      * Resets stats from previous repartitioning round.
+     * @param migrations number of planned migration tasks
      */
-    void markNewRepartition() {
+    void markNewRepartition(int migrations) {
         lastRepartitionTime.set(Clock.currentTimeMillis());
+        plannedMigrations = migrations;
         elapsedMigrationOperationTime.set(0);
         elapsedDestinationCommitTime.set(0);
         elapsedMigrationTime.set(0);
@@ -95,16 +103,30 @@ public class MigrationStats {
     }
 
     /**
+     * Returns the number of planned migrations on the latest repartitioning round.
+     */
+    public int getPlannedMigrations() {
+        return plannedMigrations;
+    }
+
+    /**
      * Returns the number of completed migrations on the latest repartitioning round.
      */
-    public long getCompletedMigrations() {
+    public int getCompletedMigrations() {
         return completedMigrations.get();
+    }
+
+    /**
+     * Returns the number of remaining migrations on the latest repartitioning round.
+     */
+    public int getRemainingMigrations() {
+        return plannedMigrations - completedMigrations.get();
     }
 
     /**
      * Returns the total number of completed migrations since the beginning.
      */
-    public long getTotalCompletedMigrations() {
+    public int getTotalCompletedMigrations() {
         return totalCompletedMigrations.get();
     }
 
@@ -156,10 +178,17 @@ public class MigrationStats {
         return TimeUnit.NANOSECONDS.toMillis(totalElapsedMigrationTime.get());
     }
 
+    public MigrationState toMigrationState() {
+        return new MigrationStateImpl(lastRepartitionTime.get(), plannedMigrations,
+                completedMigrations.get(), getElapsedMigrationTime());
+    }
+
     public String formatToString(boolean detailed) {
         StringBuilder s = new StringBuilder();
-        s.append("lastRepartitionTime=").append(getLastRepartitionTime())
+        s.append("repartitionTime=").append(getLastRepartitionTime())
+                .append(", plannedMigrations=").append(plannedMigrations)
                 .append(", completedMigrations=").append(getCompletedMigrations())
+                .append(", remainingMigrations=").append(getRemainingMigrations())
                 .append(", totalCompletedMigrations=").append(getTotalCompletedMigrations());
 
         if (detailed) {

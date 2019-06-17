@@ -24,10 +24,10 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
 
@@ -142,7 +142,7 @@ public final class PartitionServiceProxy implements PartitionService {
 
         @Override
         public void handlePartitionLostEvent(int partitionId, int lostBackupCount, Address source) {
-            listener.partitionLost(new PartitionLostEvent(partitionId, lostBackupCount, source));
+            listener.partitionLost(new PartitionLostEventImpl(partitionId, lostBackupCount, source));
         }
 
         @Override

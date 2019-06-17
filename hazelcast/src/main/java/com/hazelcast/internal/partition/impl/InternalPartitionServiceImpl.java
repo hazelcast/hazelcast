@@ -1075,8 +1075,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
-    public void dispatchEvent(PartitionEvent partitionEvent, PartitionEventListener partitionEventListener) {
-        partitionEventListener.onEvent(partitionEvent);
+    public void dispatchEvent(PartitionEvent event, PartitionEventListener<PartitionEvent> partitionEventListener) {
+        partitionEventListener.onEvent(event);
     }
 
     @Override

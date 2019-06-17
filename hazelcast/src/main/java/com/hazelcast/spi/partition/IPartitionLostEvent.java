@@ -17,47 +17,20 @@
 package com.hazelcast.spi.partition;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.serialization.SerializableByConvention;
-
-import java.io.IOException;
-
-import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
- * Internal event that is dispatched to {@link com.hazelcast.spi.PartitionAwareService#onPartitionLost}
+ * Internal event that is dispatched to {@link PartitionAwareService#onPartitionLost}
  * <p>
  * It contains the partition ID, number of replicas that is lost and the address of node that detects the partition lost.
  */
-@SerializableByConvention(PUBLIC_API)
-public class IPartitionLostEvent
-        implements DataSerializable {
-
-    private int partitionId;
-
-    private int lostReplicaIndex;
-
-    private Address eventSource;
-
-    public IPartitionLostEvent() {
-    }
-
-    public IPartitionLostEvent(int partitionId, int lostReplicaIndex, Address eventSource) {
-        this.partitionId = partitionId;
-        this.lostReplicaIndex = lostReplicaIndex;
-        this.eventSource = eventSource;
-    }
+public interface IPartitionLostEvent {
 
     /**
      * The partition ID that is lost.
      *
      * @return the partition ID that is lost
      */
-    public int getPartitionId() {
-        return partitionId;
-    }
+    int getPartitionId();
 
     /**
      * 0-based replica index that is lost for the partition.
@@ -66,37 +39,13 @@ public class IPartitionLostEvent
      *
      * @return 0-based replica index that is lost for the partition
      */
-    public int getLostReplicaIndex() {
-        return lostReplicaIndex;
-    }
+    int getLostReplicaIndex();
 
     /**
      * The address of the node that detects the partition lost.
      *
      * @return the address of the node that detects the partition lost
      */
-    public Address getEventSource() {
-        return eventSource;
-    }
+    Address getEventSource();
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionId);
-        out.writeInt(lostReplicaIndex);
-        eventSource.writeData(out);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        this.partitionId = in.readInt();
-        this.lostReplicaIndex = in.readInt();
-        this.eventSource = new Address();
-        this.eventSource.readData(in);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + "{partitionId=" + partitionId + ", lostReplicaIndex=" + lostReplicaIndex + ", eventSource="
-                + eventSource + '}';
-    }
 }
