@@ -17,7 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
