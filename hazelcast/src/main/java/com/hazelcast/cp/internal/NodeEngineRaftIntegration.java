@@ -87,13 +87,13 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     private final int threadId;
     private final boolean linearizableReadOptimizationEnabled;
 
-    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, CPMember localCPMember) {
+    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, CPMember localCPMember, int partitionId) {
         this.nodeEngine = nodeEngine;
         this.groupId = groupId;
         this.localCPMember = localCPMember;
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.operationService = operationService;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
+        this.partitionId = partitionId;
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) operationService.getOperationExecutor();
         this.threadId = operationExecutor.toPartitionThreadIndex(partitionId);
         this.taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
