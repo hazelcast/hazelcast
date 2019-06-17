@@ -27,14 +27,15 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -80,9 +81,7 @@ public class OnJoinOp
                 }
                 try {
                     // not running via OperationService since we don't want any restrictions like cluster state check etc.
-                    op.beforeRun();
-                    op.run();
-                    op.afterRun();
+                    runDirect(op);
                 } catch (Exception e) {
                     getLogger().warning("Error while running post-join operation: " + op, e);
                 }
