@@ -62,6 +62,24 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public HotRestartConfig getHotRestartConfig() {
+        HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        if (hotRestartConfig == null) {
+            return null;
+        }
+        return hotRestartConfig.getAsReadOnly();
+    }
+
+    @Override
+    public EventJournalConfig getEventJournalConfig() {
+        EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
+        if (eventJournalConfig == null) {
+            return null;
+        }
+        return eventJournalConfig.getAsReadOnly();
+    }
+
+    @Override
     public String getQuorumName() {
         return super.getQuorumName();
     }
@@ -178,6 +196,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     @Override
     public CacheConfiguration<K, V> setCacheWriterFactory(
             Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
         throw throwReadOnly();
     }
 

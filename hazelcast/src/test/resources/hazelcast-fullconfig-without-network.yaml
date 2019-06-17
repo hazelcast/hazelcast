@@ -305,6 +305,11 @@ hazelcast:
       hot-restart:
         fsync: true
 
+      event-journal:
+        enabled: true
+        capacity: 10
+        time-to-live-seconds: 10
+
       # Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
       #
       # On startup, may be loaded in two ways, controlled by the initial-mode attribute:
@@ -555,6 +560,10 @@ hazelcast:
         - DummyListener
       hot-restart:
         fsync: true
+      event-journal:
+        enabled: true
+        capacity: 100
+        time-to-live-seconds: 100
 
   flake-id-generator:
     default:
@@ -816,17 +825,6 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
-
-  event-journal:
-    map:
-      mapName:
-        capacity: 10
-        time-to-live-seconds: 10
-
-    cache:
-      cacheName:
-        capacity: 100
-        time-to-live-seconds: 100
 
   lite-member:
     enabled: true

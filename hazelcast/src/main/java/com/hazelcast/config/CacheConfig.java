@@ -107,6 +107,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new EvictionConfig(config.evictionConfig);
@@ -155,6 +156,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
 

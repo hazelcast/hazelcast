@@ -1545,46 +1545,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapEventJournalConfig() {
-        String journalName = "mapName";
-        String xml = HAZELCAST_START_TAG
-                + "<event-journal enabled=\"false\">\n"
-                + "    <mapName>" + journalName + "</mapName>\n"
-                + "    <capacity>120</capacity>\n"
-                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
-                + "</event-journal>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
-
-        assertFalse(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Override
-    @Test
-    public void testCacheEventJournalConfig() {
-        String journalName = "cacheName";
-        String xml = HAZELCAST_START_TAG
-                + "<event-journal enabled=\"true\">\n"
-                + "    <cacheName>" + journalName + "</cacheName>\n"
-                + "    <capacity>120</capacity>\n"
-                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
-                + "</event-journal>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Override
-    @Test
     public void testFlakeIdGeneratorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<flake-id-generator name='gen'>"
@@ -2054,6 +2014,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
                 + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
+                + "        <event-journal enabled=\"true\">\n"
+                + "            <capacity>120</capacity>\n"
+                + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "          </event-journal>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2095,6 +2059,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+
         assertEquals(1, cacheConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener", cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
         assertEquals(1, cacheConfig.getCacheEntryListeners().size());
@@ -2382,6 +2351,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <merkle-tree enabled=\"true\">\n"
                 + "            <depth>20</depth>\n"
                 + "          </merkle-tree>"
+                + "        <event-journal enabled=\"true\">\n"
+                + "            <capacity>120</capacity>\n"
+                + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "          </event-journal>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2463,6 +2436,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
 
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         assertNotNull(mapStoreConfig);

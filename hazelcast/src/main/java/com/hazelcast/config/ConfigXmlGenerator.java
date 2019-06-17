@@ -149,7 +149,6 @@ public class ConfigXmlGenerator {
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
-        eventJournalXmlGenerator(gen, config);
         partitionGroupXmlGenerator(gen, config);
         cardinalityEstimatorXmlGenerator(gen, config);
         listenerXmlGenerator(gen, config);
@@ -243,25 +242,6 @@ public class ConfigXmlGenerator {
             gen.node("listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()));
         }
         gen.close();
-    }
-
-    private static void eventJournalXmlGenerator(XmlGenerator gen, Config config) {
-        Collection<EventJournalConfig> mapJournalConfigs = config.getMapEventJournalConfigs().values();
-        Collection<EventJournalConfig> cacheJournalConfigs = config.getCacheEventJournalConfigs().values();
-        for (EventJournalConfig c : mapJournalConfigs) {
-            gen.open("event-journal", "enabled", c.isEnabled())
-               .node("mapName", c.getMapName())
-               .node("capacity", c.getCapacity())
-               .node("time-to-live-seconds", c.getTimeToLiveSeconds())
-               .close();
-        }
-        for (EventJournalConfig c : cacheJournalConfigs) {
-            gen.open("event-journal", "enabled", c.isEnabled())
-               .node("cacheName", c.getCacheName())
-               .node("capacity", c.getCapacity())
-               .node("time-to-live-seconds", c.getTimeToLiveSeconds())
-               .close();
-        }
     }
 
     private static void securityXmlGenerator(XmlGenerator gen, Config config) {
@@ -881,6 +861,7 @@ public class ConfigXmlGenerator {
                .node("metadata-policy", m.getMetadataPolicy());
 
             appendMerkleTreeConfig(gen, m.getMerkleTreeConfig());
+            appendEventJournalConfig(gen, m.getEventJournalConfig());
             appendHotRestartConfig(gen, m.getHotRestartConfig());
             mapStoreConfigXmlGenerator(gen, m);
             mapNearCacheConfigXmlGenerator(gen, m.getNearCacheConfig());
@@ -904,6 +885,13 @@ public class ConfigXmlGenerator {
     private static void appendHotRestartConfig(XmlGenerator gen, HotRestartConfig m) {
         gen.open("hot-restart", "enabled", m != null && m.isEnabled())
            .node("fsync", m != null && m.isFsync())
+           .close();
+    }
+
+    private static void appendEventJournalConfig(XmlGenerator gen, EventJournalConfig c) {
+        gen.open("event-journal", "enabled", c.isEnabled())
+           .node("capacity", c.getCapacity())
+           .node("time-to-live-seconds", c.getTimeToLiveSeconds())
            .close();
     }
 
@@ -949,6 +937,7 @@ public class ConfigXmlGenerator {
             cachePartitionLostListenerConfigXmlGenerator(gen, c.getPartitionLostListenerConfigs());
 
             gen.node("merge-policy", c.getMergePolicy());
+            appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendHotRestartConfig(gen, c.getHotRestartConfig());
 
             gen.node("disable-per-entry-invalidation-events", c.isDisablePerEntryInvalidationEvents())

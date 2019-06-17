@@ -166,6 +166,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
 
+    private EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
     private transient MapConfigReadOnly readOnly;
 
     // we use these 2 flags to detect a conflict between (deprecated) #setOptimizeQueries()
@@ -211,6 +213,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.quorumName = config.quorumName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
+        this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
     }
 
     /**
@@ -911,6 +914,26 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
+     * Gets the {@code EventJournalConfig} for this {@code MapConfig}
+     *
+     * @return event journal config
+     */
+    public EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
+    }
+
+    /**
+     * Sets the {@code EventJournalConfig} for this {@code MapConfig}
+     *
+     * @param eventJournalConfig event journal config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
+        return this;
+    }
+
+    /**
      * Get current value cache settings
      *
      * @return current value cache settings
@@ -1020,6 +1043,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!merkleTreeConfig.equals(that.merkleTreeConfig)) {
             return false;
         }
+        if (!eventJournalConfig.equals(that.eventJournalConfig)) {
+            return false;
+        }
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
@@ -1050,6 +1076,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         result = 31 * result + merkleTreeConfig.hashCode();
+        result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
         return result;
     }
@@ -1071,6 +1098,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
                 + ", merkleTree=" + merkleTreeConfig
+                + ", eventJournal=" + eventJournalConfig
                 + ", hotRestart=" + hotRestartConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
@@ -1122,6 +1150,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeUTF(quorumName);
         out.writeObject(hotRestartConfig);
         out.writeObject(merkleTreeConfig);
+        out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
     }
 
@@ -1152,6 +1181,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         quorumName = in.readUTF();
         hotRestartConfig = in.readObject();
         merkleTreeConfig = in.readObject();
+        eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
     }
 }

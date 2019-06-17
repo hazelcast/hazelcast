@@ -111,10 +111,6 @@ public class ConfigCompatibilityChecker {
                 new DurableExecutorConfigChecker());
         checkCompatibleConfigs("scheduled executor", c1, c2, c1.getScheduledExecutorConfigs(), c2.getScheduledExecutorConfigs(),
                 new ScheduledExecutorConfigChecker());
-        checkCompatibleConfigs("map event journal", c1, c2, c1.getMapEventJournalConfigs(), c2.getMapEventJournalConfigs(),
-                new MapEventJournalConfigChecker());
-        checkCompatibleConfigs("cache event journal", c1, c2, c1.getCacheEventJournalConfigs(), c2.getCacheEventJournalConfigs(),
-                new CacheEventJournalConfigChecker());
         checkCompatibleConfigs("multimap", c1, c2, c1.getMultiMapConfigs(), c2.getMultiMapConfigs(), new MultimapConfigChecker());
         checkCompatibleConfigs("replicated map", c1, c2, c1.getReplicatedMapConfigs(), c2.getReplicatedMapConfigs(),
                 new ReplicatedMapConfigChecker());
@@ -234,6 +230,14 @@ public class ConfigCompatibilityChecker {
         return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null && nullSafeEqual(c1.isFsync(), c2.isFsync()));
     }
 
+    private static boolean isCompatible(EventJournalConfig c1, EventJournalConfig c2) {
+        boolean c1Disabled = c1 == null || !c1.isEnabled();
+        boolean c2Disabled = c2 == null || !c2.isEnabled();
+        return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
+                && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds()));
+    }
+
     private static boolean isCompatible(MergePolicyConfig c1, MergePolicyConfig c2) {
         return c1 == c2 || !(c1 == null || c2 == null)
                 && c1.getBatchSize() == c2.getBatchSize()
@@ -276,33 +280,6 @@ public class ConfigCompatibilityChecker {
         @Override
         RingbufferConfig getDefault(Config c) {
             return c.getRingbufferConfig("default");
-        }
-    }
-
-    public static class EventJournalConfigChecker extends ConfigChecker<EventJournalConfig> {
-        @Override
-        boolean check(EventJournalConfig c1, EventJournalConfig c2) {
-            boolean c1Disabled = c1 == null || !c1.isEnabled();
-            boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getMapName(), c2.getMapName())
-                    && nullSafeEqual(c1.getCacheName(), c2.getCacheName())
-                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
-                    && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds()));
-        }
-    }
-
-    public static class MapEventJournalConfigChecker extends EventJournalConfigChecker {
-        @Override
-        EventJournalConfig getDefault(Config c) {
-            return c.getMapEventJournalConfig("default");
-        }
-    }
-
-    public static class CacheEventJournalConfigChecker extends EventJournalConfigChecker {
-        @Override
-        EventJournalConfig getDefault(Config c) {
-            return c.getCacheEventJournalConfig("default");
         }
     }
 
@@ -750,7 +727,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
-                    && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig());
+                    && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig());
         }
 
         private static boolean isCompatible(ExpiryPolicyFactoryConfig c1, ExpiryPolicyFactoryConfig c2) {
@@ -825,6 +803,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isReadBackupData(), c2.isReadBackupData())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMerkleTreeConfig(), c2.getMerkleTreeConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig())
                     && isCompatible(c1.getMapStoreConfig(), c2.getMapStoreConfig())
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())

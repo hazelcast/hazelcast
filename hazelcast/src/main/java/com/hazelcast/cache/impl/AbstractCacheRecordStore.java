@@ -161,7 +161,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.eventJournalConfig = nodeEngine.getConfig().findCacheEventJournalConfig(cacheConfig.getName());
+        this.eventJournalConfig = cacheConfig.getEventJournalConfig();
         this.evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null!");
@@ -1602,7 +1602,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     /**
      * This method marks current replica as expirable and also starts expiration task if necessary.
-     *
+     * <p>
      * The expiration task runs on only primary replicas. Expiration on backup replicas are dictated by primary replicas. However,
      * it is still important to mark a backup replica as expirable because it might be promoted to be the primary in a later time.
      *

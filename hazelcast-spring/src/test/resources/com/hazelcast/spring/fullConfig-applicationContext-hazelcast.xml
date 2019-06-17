@@ -401,6 +401,9 @@
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
                 <hz:merkle-tree enabled="${testMap.merkleTree.enabled}" depth="${testMap.merkleTree.depth}"/>
                 <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
+                <hz:event-journal enabled="${testMap.journal.enabled}"
+                                  capacity="${testMap.journal.capacity}"
+                                  time-to-live-seconds="${testMap.journal.ttl}"/>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -533,10 +536,10 @@
                 </hz:wan-replication-ref>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:hot-restart enabled="true" fsync="true"/>
+                <hz:event-journal enabled="true"
+                                  capacity="123"
+                                  time-to-live-seconds="321"/>
             </hz:cache>
-
-            <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
-                              capacity="123" time-to-live-seconds="321"/>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
                 <hz:entry-listeners>

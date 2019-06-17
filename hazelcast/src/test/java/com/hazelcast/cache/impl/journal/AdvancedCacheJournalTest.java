@@ -58,16 +58,14 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        EventJournalConfig eventJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setCacheName("default");
-
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEvictionConfig().setSize(Integer.MAX_VALUE);
+        Config config = super.getConfig();
+        config.getCacheConfig("default")
+              .setEventJournalConfig(new EventJournalConfig().setEnabled(true));
 
-        return super.getConfig()
+        return config
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT))
-                .addEventJournalConfig(eventJournalConfig)
                 .addCacheConfig(cacheConfig);
     }
 

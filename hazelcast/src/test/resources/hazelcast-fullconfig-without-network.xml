@@ -320,6 +320,11 @@
             <fsync>true</fsync>
         </hot-restart>
 
+        <event-journal enabled="true">
+            <capacity>10</capacity>
+            <time-to-live-seconds>10</time-to-live-seconds>
+        </event-journal>
+
         <!--
             Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
 
@@ -549,6 +554,10 @@
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
+        <event-journal enabled="true">
+            <capacity>100</capacity>
+            <time-to-live-seconds>100</time-to-live-seconds>
+        </event-journal>
     </cache>
 
     <flake-id-generator name="default">
@@ -816,18 +825,6 @@
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
     </hot-restart-persistence>
-
-    <event-journal>
-        <mapName>mapName</mapName>
-        <capacity>10</capacity>
-        <time-to-live-seconds>10</time-to-live-seconds>
-    </event-journal>
-
-    <event-journal>
-        <cacheName>cacheName</cacheName>
-        <capacity>100</capacity>
-        <time-to-live-seconds>100</time-to-live-seconds>
-    </event-journal>
 
     <lite-member enabled="true"/>
 

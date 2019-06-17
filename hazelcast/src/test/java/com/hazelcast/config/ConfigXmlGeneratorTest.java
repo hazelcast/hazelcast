@@ -20,7 +20,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
-import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.QuorumConfigChecker;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -509,6 +508,7 @@ public class ConfigXmlGeneratorTest {
                 .setValueType("valueType")
                 .setReadThrough(true)
                 .setHotRestartConfig(hotRestartConfig())
+                .setEventJournalConfig(eventJournalConfig())
                 .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
                 .setWriteThrough(true)
                 .setPartitionLostListenerConfigs(singletonList(
@@ -1016,6 +1016,7 @@ public class ConfigXmlGeneratorTest {
                 .setWanReplicationRef(wanReplicationRef())
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
                 .setMerkleTreeConfig(merkleTreeConfig())
+                .setEventJournalConfig(eventJournalConfig())
                 .setHotRestartConfig(hotRestartConfig())
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
@@ -1139,38 +1140,6 @@ public class ConfigXmlGeneratorTest {
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
                 xmlConfig.getWanReplicationConfigs());
-    }
-
-    @Test
-    public void testMapEventJournal() {
-        String mapName = "mapName";
-        EventJournalConfig expectedConfig = new EventJournalConfig()
-                .setMapName(mapName)
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-        Config config = new Config().addEventJournalConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        EventJournalConfig actualConfig = xmlConfig.getMapEventJournalConfig(mapName);
-        assertTrue(new EventJournalConfigChecker().check(expectedConfig, actualConfig));
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testCacheEventJournal() {
-        String cacheName = "cacheName";
-        EventJournalConfig expectedConfig = new EventJournalConfig()
-                .setCacheName(cacheName)
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-        Config config = new Config().addEventJournalConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        EventJournalConfig actualConfig = xmlConfig.getCacheEventJournalConfig(cacheName);
-        assertTrue(new EventJournalConfigChecker().check(expectedConfig, actualConfig));
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -1622,6 +1591,13 @@ public class ConfigXmlGeneratorTest {
         return new MerkleTreeConfig()
                 .setEnabled(true)
                 .setDepth(15);
+    }
+
+    private static EventJournalConfig eventJournalConfig() {
+        return new EventJournalConfig()
+                .setEnabled(true)
+                .setCapacity(123)
+                .setTimeToLiveSeconds(321);
     }
 
     private static EvictionConfig evictionConfig() {

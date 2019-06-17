@@ -241,12 +241,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testWanReplicationSyncConfig();
 
     @Test
-    public abstract void testMapEventJournalConfig();
-
-    @Test
-    public abstract void testCacheEventJournalConfig();
-
-    @Test
     public abstract void testFlakeIdGeneratorConfig();
 
     @Test(expected = InvalidConfigurationException.class)

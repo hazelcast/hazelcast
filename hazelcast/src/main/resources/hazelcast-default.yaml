@@ -231,22 +231,6 @@ hazelcast:
         #              ALWAYS: Always cache deserialized values.
         cache-deserialized-values: INDEX-ONLY
 
-  # Configuration for an event journal. The event journal keeps events related
-  # to a specific partition and data structure. For instance, it could keep
-  # map add, update, remove, merge events along with the key, old value, new value and so on.
-  event-journal:
-    map:
-      mapName:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-
-    cache:
-      cacheName:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-
   multimap:
     default:
       backup-count: 1

@@ -98,7 +98,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
     private final DynamicConfigListener listener;
-    private final Object journalMutex = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
@@ -129,10 +128,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, ReliableTopicConfig>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs =
             new ConcurrentHashMap<String, CacheSimpleConfig>();
-    private final ConcurrentMap<String, EventJournalConfig> cacheEventJournalConfigs =
-            new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
-            new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -160,8 +155,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             queueConfigs,
             reliableTopicConfigs,
             cacheSimpleConfigs,
-            cacheEventJournalConfigs,
-            mapEventJournalConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
     };
@@ -343,9 +336,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             if (currentConfig == null) {
                 listener.onConfigRegistered(cacheSimpleConfig);
             }
-        } else if (newConfig instanceof EventJournalConfig) {
-            EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
-            registerEventJournalConfig(eventJournalConfig, configCheckMode);
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
@@ -359,32 +349,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
-    }
-
-    private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, ConfigCheckMode configCheckMode) {
-        String mapName = eventJournalConfig.getMapName();
-        String cacheName = eventJournalConfig.getCacheName();
-        synchronized (journalMutex) {
-            EventJournalConfig currentMapJournalConfig = null;
-            if (mapName != null) {
-                currentMapJournalConfig = mapEventJournalConfigs.putIfAbsent(mapName, eventJournalConfig);
-                checkCurrentConfigNullOrEqual(configCheckMode, currentMapJournalConfig, eventJournalConfig);
-            }
-            if (cacheName != null) {
-                EventJournalConfig currentCacheJournalConfig = cacheEventJournalConfigs.putIfAbsent(cacheName,
-                        eventJournalConfig);
-                try {
-                    checkCurrentConfigNullOrEqual(configCheckMode, currentCacheJournalConfig, eventJournalConfig);
-                } catch (InvalidConfigurationException e) {
-                    // exception when registering cache journal config.
-                    // let's remove map journal if we configured any
-                    if (mapName != null && currentMapJournalConfig == null) {
-                        mapEventJournalConfigs.remove(mapName);
-                    }
-                    throw e;
-                }
-            }
-        }
     }
 
     private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig,
@@ -611,26 +575,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public Map<String, CacheSimpleConfig> getCacheSimpleConfigs() {
         return cacheSimpleConfigs;
-    }
-
-    @Override
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        return cacheEventJournalConfigs;
-    }
-
-    @Override
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        return mapEventJournalConfigs;
     }
 
     @Override

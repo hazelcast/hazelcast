@@ -328,7 +328,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleCache(Node parentNode) {
+    protected void handleCache(Node parentNode) throws Exception {
         for (Node cacheNode : childElements(parentNode)) {
             CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
             cacheConfig.setName(cacheNode.getNodeName());
@@ -343,37 +343,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             String quorumName = quorumNode.getNodeName();
             quorumConfig.setName(quorumName);
             handleQuorumNode(quorumNode, quorumConfig, quorumName);
-        }
-    }
-
-    @Override
-    protected void handleEventJournal(Node node) throws Exception {
-        for (Node typeNode : childElements(node)) {
-            String nodeName = typeNode.getNodeName().toLowerCase();
-            if ("map".equals(nodeName)) {
-                handleMapEventJournal(typeNode);
-            } else if ("cache".equals(nodeName)) {
-                handleCacheEventJournal(typeNode);
-            } else {
-                throw new InvalidConfigurationException("Mapping name should either be 'map' or 'cache', but "
-                        + nodeName + " found");
-            }
-        }
-    }
-
-    private void handleMapEventJournal(Node mapNode) throws Exception {
-        for (Node journalNode : childElements(mapNode)) {
-            EventJournalConfig journalConfig = new EventJournalConfig();
-            journalConfig.setMapName(journalNode.getNodeName());
-            handleViaReflection(journalNode, config, journalConfig);
-        }
-    }
-
-    private void handleCacheEventJournal(Node cacheNode) throws Exception {
-        for (Node journalNode : childElements(cacheNode)) {
-            EventJournalConfig journalConfig = new EventJournalConfig();
-            journalConfig.setCacheName(journalNode.getNodeName());
-            handleViaReflection(journalNode, config, journalConfig);
         }
     }
 
