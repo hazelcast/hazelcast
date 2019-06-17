@@ -297,16 +297,20 @@ To configure **Hazelcast Smart Client**, you need to perform the following steps
 
 **Note:** Hazelcast Client outside Kubernetes cluster works only in the **Kubernetes API** mode (it does not work in the **DNS Lookup** mode).
 
-## Scaling Hazelcast cluster in Kubernetes
+## Rolling Upgrade and Scaling
 
-Hazelcast cluster is easily scalable within Kubernetes. You can use the standard `kubectl scale` command to change the cluster size.
+Hazelcast cluster is easily scalable within Kubernetes. You can use the standard `kubectl scale` command to change the cluster size. The same applies the rolling upgrade procedure, you can depend on the standard Kubernetes behavior and just update the new version to your Deployment/StatefulSet configurations.
 
-Note however that, by default, Hazelcast does not shutdown gracefully. It means that if you suddenly scale down by more than your `backup-count` property (1 by default), you may lose the cluster data. To prevent that from happening, set the following properties:
+Note however that, by default, Hazelcast does not shutdown gracefully. It means that if you suddenly terminate more than your `backup-count` property (1 by default), you may lose the cluster data. To prevent that from happening, set the following properties:
 - `terminationGracePeriodSeconds`:  in your StatefulSet (or Deployment) configuration; the value should be high enough to cover the data migration process
 - `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
 - `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters; the value should be high enough to cover the data migration process
 
-The graceful shutdown configuration is already included in [Hazelcast Helm Charts](#helm-chart).
+Additionally:
+- If you use Deployment (not StatefulSet), you need to set your strategy to [RollingUpdate](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment) and ensure Pods are updated one by one.
+- If you upgrade by the minor version, e.g., `3.11.4 => 3.12` (Enterprise feature), you need to set the following JVM property `-Dhazelcast.cluster.version.auto.upgrade.enabled=true` to make sure the cluster version updates automatically.
+
+All these features are already included in [Hazelcast Helm Charts](#helm-chart).
 
 ## Plugin Usages
 
