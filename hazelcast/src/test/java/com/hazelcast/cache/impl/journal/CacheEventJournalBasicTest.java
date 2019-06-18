@@ -48,24 +48,21 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
 
     @Override
     protected Config getConfig() {
-        final CacheSimpleConfig nonEvictingCache = new CacheSimpleConfig()
-                .setName(NON_EVICTING_CACHE)
-                .setInMemoryFormat(getInMemoryFormat());
-        final MaxSizePolicy maxSizePolicy = getInMemoryFormat() == InMemoryFormat.NATIVE
+        Config config = super.getConfig();
+        CacheSimpleConfig nonEvictingCache = config.getCacheConfig(NON_EVICTING_CACHE)
+                                                   .setInMemoryFormat(getInMemoryFormat());
+        MaxSizePolicy maxSizePolicy = getInMemoryFormat() == InMemoryFormat.NATIVE
                 ? USED_NATIVE_MEMORY_SIZE
                 : DEFAULT_MAX_SIZE_POLICY;
         nonEvictingCache.getEvictionConfig()
                         .setMaximumSizePolicy(maxSizePolicy)
                         .setSize(Integer.MAX_VALUE);
 
-        final CacheSimpleConfig evictingCache = new CacheSimpleConfig()
-                .setName(EVICTING_CACHE)
-                .setInMemoryFormat(getInMemoryFormat());
+        final CacheSimpleConfig evictingCache = config.getCacheConfig(EVICTING_CACHE)
+                                                      .setInMemoryFormat(getInMemoryFormat());
         evictingCache.getEvictionConfig().setMaximumSizePolicy(maxSizePolicy);
 
-        return super.getConfig()
-                    .addCacheConfig(nonEvictingCache)
-                    .addCacheConfig(evictingCache);
+        return config;
     }
 
     protected InMemoryFormat getInMemoryFormat() {

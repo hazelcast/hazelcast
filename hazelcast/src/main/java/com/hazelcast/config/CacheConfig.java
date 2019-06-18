@@ -521,6 +521,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
         out.writeObject(hotRestartConfig);
+        out.writeObject(eventJournalConfig);
 
         out.writeUTF(quorumName);
 
@@ -561,6 +562,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             isManagementEnabled = in.readBoolean();
             isStatisticsEnabled = in.readBoolean();
             hotRestartConfig = in.readObject();
+            eventJournalConfig = in.readObject();
 
             quorumName = in.readUTF();
 
@@ -692,6 +694,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
         target.setEvictionConfig(getEvictionConfig());
         target.setHotRestartConfig(getHotRestartConfig());
+        target.setEventJournalConfig(getEventJournalConfig());
         target.setInMemoryFormat(getInMemoryFormat());
         if (resolved) {
             target.setKeyType(getKeyType());

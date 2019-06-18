@@ -197,16 +197,15 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof EventJournalConfig)) {
             return false;
         }
 
         EventJournalConfig that = (EventJournalConfig) o;
-
         if (enabled != that.enabled) {
             return false;
         }
@@ -218,7 +217,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = (enabled ? 1 : 0);
         result = 31 * result + capacity;
         result = 31 * result + timeToLiveSeconds;
