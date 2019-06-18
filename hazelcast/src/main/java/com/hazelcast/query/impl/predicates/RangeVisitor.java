@@ -73,7 +73,7 @@ public class RangeVisitor extends AbstractVisitor {
             case LESS:
                 return predicate;
             case EQUAL:
-                return new EqualPredicate(predicate.attributeName, from);
+                return Predicates.equal(predicate.attributeName, from);
             case GREATER:
                 return Predicates.alwaysFalse();
 
