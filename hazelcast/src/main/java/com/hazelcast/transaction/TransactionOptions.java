@@ -186,34 +186,34 @@ public final class TransactionOptions implements DataSerializable {
     }
 
     /**
-     * The type of transaction. With the type you have influence on how much guarantee you get
-     * when a member crashes when a transaction is committing.
+     * The type of transaction. With the type you have
+     * influence on how much guarantee you get when a
+     * member crashes when a transaction is committing.
      */
     public enum TransactionType {
 
         /**
-         * The two phase commit is separated in 2 parts. First it tries to execute the prepare; if there are any conflicts,
-         * the prepare will fail. Once the prepare has succeeded, the commit (writing the changes) can be executed.
+         * The one phase transaction executes a transaction using a single
+         * step at the end; committing the changes. There is no prepare
+         * of the transactions, so conflicts are not detected. If there
+         * is a conflict, then when the transaction commits the changes,
+         * some of the changes are written and others are not; leaving
+         * the system in a potentially permanent inconsistent state.
+         */
+        ONE_PHASE(1),
+
+        /**
+         * The two phase commit is separated in 2 parts. First it tries to execute
+         * the prepare; if there are any conflicts, the prepare will fail. Once the
+         * prepare has succeeded, the commit (writing the changes) can be executed.
          *
-         * Hazelcast also provides three phase transaction by automatically copying the backlog to another member so that in case
-         * of failure during a commit, another member can continue the commit from backup. For more information see the
-         * {@link TransactionOptions#setDurability(int)}
+         * Hazelcast also provides three phase transaction by
+         * automatically copying the backlog to another member so
+         * that in case of failure during a commit, another member
+         * can continue the commit from backup. For more information
+         * see the {@link TransactionOptions#setDurability(int)}
          */
-        TWO_PHASE(1),
-
-        /**
-         * @deprecated since 3.6 use ONE_PHASE
-         */
-        @Deprecated
-        LOCAL(2),
-
-        /**
-         * The one phase transaction executes a transaction using a single step at the end; committing the changes. There
-         * is no prepare of the transactions, so conflicts are not detected. If there is a conflict, then when the transaction
-         * commits the changes, some of the changes are written and others are not; leaving the system in a potentially permanent
-         * inconsistent state.
-         */
-        ONE_PHASE(2);
+        TWO_PHASE(2);
 
         private final int value;
 
