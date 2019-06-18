@@ -178,6 +178,8 @@ public class Config {
 
     private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
+    private QueryConfig queryConfig = new QueryConfig();
+
     public Config() {
     }
 
@@ -3395,6 +3397,15 @@ public class Config {
         return this;
     }
 
+    public QueryConfig getQueryConfig() {
+        return queryConfig;
+    }
+
+    public Config setQueryConfig(QueryConfig queryConfig) {
+        this.queryConfig = queryConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Config{"
@@ -3423,6 +3434,7 @@ public class Config {
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + ", cpSubsystemConfig=" + cpSubsystemConfig
+                + ", queryConfig=" + queryConfig
                 + '}';
     }
 }

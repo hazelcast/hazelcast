@@ -22,6 +22,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -68,9 +72,21 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
+    @Test
+    public void testQuery() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = getConfig();
+
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ((HazelcastInstanceProxy)instance).getOriginal().getQueryService().execute(new PhysicalPlan(), null);
+
+        instance.shutdown();
+        instance2.shutdown();
+    }
 
     @Test
     public void testPredicatedEvaluatedSingleThreadedByDefault() {

@@ -192,7 +192,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             ensureNoPartitionProblems(op);
 
-            ensureQuorumPresent(op);
+//            ensureQuorumPresent(op);
 
             op.beforeRun();
 

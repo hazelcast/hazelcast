@@ -44,6 +44,7 @@ import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
@@ -444,5 +445,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String toString() {
         return "HazelcastInstance{name='" + name + "', node=" + node.getThisAddress() + '}';
+    }
+
+    public QueryService getQueryService() {
+        return node.nodeEngine.getService(QueryService.SERVICE_NAME);
     }
 }
