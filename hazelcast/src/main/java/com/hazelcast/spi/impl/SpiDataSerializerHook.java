@@ -21,15 +21,15 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.impl.eventservice.impl.Registration;
-import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
-import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -40,6 +40,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -70,6 +71,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int OPERATION_CONTROL = 19;
     public static final int DISTRIBUTED_OBJECT_NS = 20;
     public static final int REGISTRATION = 21;
+    public static final int NOOP_TENANT_CONTROL = 22;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -127,6 +129,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new DistributedObjectNamespace();
                     case REGISTRATION:
                         return new Registration();
+                    case NOOP_TENANT_CONTROL:
+                        return (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
                     default:
                         return null;
                 }
