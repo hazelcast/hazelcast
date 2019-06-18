@@ -39,8 +39,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
@@ -52,7 +50,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadName;
-import static java.lang.Byte.toUnsignedInt;
 
 @PrivateApi
 public class NodeIOService implements IOService {
