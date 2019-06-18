@@ -165,14 +165,14 @@ public final class TransactionOptions implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(timeoutMillis);
         out.writeInt(durability);
-        out.writeInt(transactionType.value);
+        out.writeInt(transactionType.id);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         timeoutMillis = in.readLong();
         durability = in.readInt();
-        transactionType = TransactionType.getByValue(in.readInt());
+        transactionType = TransactionType.getById(in.readInt());
     }
 
 
@@ -215,24 +215,24 @@ public final class TransactionOptions implements DataSerializable {
          */
         TWO_PHASE(2);
 
-        private final int value;
+        private final int id;
 
-        TransactionType(int value) {
-            this.value = value;
+        TransactionType(int id) {
+            this.id = id;
         }
 
         public int id() {
-            return value;
+            return id;
         }
 
-        public static TransactionType getByValue(int value) {
-            switch (value) {
+        public static TransactionType getById(int id) {
+            switch (id) {
                 case 1:
-                    return TWO_PHASE;
-                case 2:
                     return ONE_PHASE;
+                case 2:
+                    return TWO_PHASE;
                 default:
-                    throw new IllegalArgumentException("Unrecognized value:" + value);
+                    throw new IllegalArgumentException("Unrecognized id:" + id);
             }
         }
     }
