@@ -22,7 +22,8 @@ fi
 #### maximum heap size
 # MAX_HEAP_SIZE=1G
 
-declare -a JAVA_OPTS
+#convert existing opts to an array, separated by space
+JAVA_OPTS=($JAVA_OPTS)
 
 if [ "x$MIN_HEAP_SIZE" != "x" ]; then
     JAVA_OPTS+=("-Xms${MIN_HEAP_SIZE}")
