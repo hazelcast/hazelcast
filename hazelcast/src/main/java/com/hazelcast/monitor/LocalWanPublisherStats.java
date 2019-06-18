@@ -19,9 +19,10 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.WanSyncStats;
-import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
+import com.hazelcast.wan.ConsistencyCheckResult;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Map;
 
@@ -62,8 +63,8 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     /**
      * Returns the current {@link WanPublisherState} of this publisher.
      *
-     * @see com.hazelcast.wan.WanReplicationService#pause(String, String)
-     * @see com.hazelcast.wan.WanReplicationService#stop(String, String)
+     * @see WanReplicationService#pause(String, String)
+     * @see WanReplicationService#stop(String, String)
      */
     WanPublisherState getPublisherState();
 

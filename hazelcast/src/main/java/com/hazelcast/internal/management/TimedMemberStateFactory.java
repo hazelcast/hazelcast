@@ -69,7 +69,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;

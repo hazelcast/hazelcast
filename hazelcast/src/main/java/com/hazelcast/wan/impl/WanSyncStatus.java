@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
 
 /**
  * {@code WanSyncStatus} shows the current status of WAN sync.

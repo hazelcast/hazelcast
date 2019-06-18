@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.merkletree;
+package com.hazelcast.wan.impl.merkletree;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

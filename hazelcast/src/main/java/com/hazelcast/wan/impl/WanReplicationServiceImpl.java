@@ -26,10 +26,9 @@ import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.wan.AddWanConfigResult;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,7 @@ import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
- * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
+ * Open source implementation of the {@link WanReplicationService}
  */
 public class WanReplicationServiceImpl implements WanReplicationService {
 

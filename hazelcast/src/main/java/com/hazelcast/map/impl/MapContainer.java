@@ -57,7 +57,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;

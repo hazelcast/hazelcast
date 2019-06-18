@@ -48,7 +48,7 @@
             <hz:wan-replication name="testWan">
                 <hz:wan-publisher group-name="tokyo"
                                   publisher-id="tokyoPublisherId"
-                                  class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
+                                  class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
                     <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
                     <hz:queue-capacity>1000</hz:queue-capacity>
                     <hz:initial-publisher-state>STOPPED</hz:initial-publisher-state>
@@ -100,7 +100,7 @@
                         <hz:property name="maxEndpoints">2</hz:property>
                     </hz:properties>
                 </hz:wan-publisher>
-                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
+                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
                     <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
                 </hz:wan-publisher>
                 <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer"

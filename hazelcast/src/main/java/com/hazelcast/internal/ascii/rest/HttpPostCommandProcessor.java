@@ -36,8 +36,8 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.AddWanConfigResult;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.AddWanConfigResult;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

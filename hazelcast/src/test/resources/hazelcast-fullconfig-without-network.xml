@@ -62,7 +62,7 @@
     </properties>
     <wan-replication name="my-wan-cluster">
         <wan-publisher group-name="tokyo" publisher-id="tokyoPublisherId">
-            <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
+            <class-name>com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication</class-name>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>

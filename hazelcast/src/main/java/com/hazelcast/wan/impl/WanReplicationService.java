@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanReplicationConfig;
@@ -22,7 +22,8 @@ import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 
 /**
  * This is the WAN replications service API core interface. The

@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
+package com.hazelcast.wan.impl.merkletree;
+
 /**
- * This package contains Merkle tree based anti-entropy implementation
+ * Readonly view of a Merkle tree
  */
-package com.hazelcast.wan.merkletree;
+interface MerkleTreeView {
+    /**
+     * Returns the hash for the node with the given {@code nodeOrder}
+     *
+     * @param nodeOrder The order of the node
+     * @return the hash of the node
+     */
+    int getNodeHash(int nodeOrder);
+
+    /**
+     * Returns the depth of the tree
+     *
+     * @return the depth of the tree
+     */
+    int depth();
+}

@@ -46,7 +46,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

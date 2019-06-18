@@ -19,6 +19,7 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
 

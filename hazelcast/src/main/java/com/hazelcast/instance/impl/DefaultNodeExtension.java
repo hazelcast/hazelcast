@@ -95,7 +95,7 @@ import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import java.util.Collections;

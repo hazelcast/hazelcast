@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.merkletree.MerkleTree;
+import com.hazelcast.wan.impl.merkletree.MerkleTree;
 
 import java.io.IOException;
 import java.util.Collections;

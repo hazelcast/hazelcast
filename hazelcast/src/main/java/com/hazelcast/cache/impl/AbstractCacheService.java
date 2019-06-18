@@ -61,7 +61,7 @@ import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.CacheException;
