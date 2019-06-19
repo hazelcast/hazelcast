@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
@@ -32,13 +31,14 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.invalidation.MemberMapInvalidationMetaDataFetcher;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+
+import java.util.function.Function;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -88,8 +88,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     /**
      * Filters out listeners other than invalidation related ones.
      */
-    @SerializableByConvention
-    private static class InvalidationAcceptorFilter implements IFunction<EventRegistration, Boolean> {
+    private static class InvalidationAcceptorFilter implements Function<EventRegistration, Boolean> {
 
         @Override
         public Boolean apply(EventRegistration eventRegistration) {

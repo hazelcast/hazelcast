@@ -16,8 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.IFunction;
-
+import java.util.function.Function;
 import java.util.function.BiFunction;
 
 
@@ -65,7 +64,7 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    V applyIfAbsent(K key, IFunction<? super K, ? extends V> mappingFunction);
+    V applyIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
 
     /**
      * {@inheritDoc}

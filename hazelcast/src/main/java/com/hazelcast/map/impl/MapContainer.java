@@ -27,8 +27,6 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
@@ -45,7 +43,7 @@ import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -64,6 +62,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -94,7 +93,7 @@ public class MapContainer {
     protected final PartitioningStrategy partitioningStrategy;
     protected final InternalSerializationService serializationService;
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
+    protected final Function<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -371,7 +370,7 @@ public class MapContainer {
         return quorumName;
     }
 
-    public IFunction<Object, Data> toData() {
+    public Function<Object, Data> toData() {
         return toDataFunction;
     }
 
@@ -444,8 +443,7 @@ public class MapContainer {
         return persistWanReplicatedData;
     }
 
-    @SerializableByConvention
-    private class ObjectToData implements IFunction<Object, Data> {
+    private class ObjectToData implements Function<Object, Data> {
         @Override
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();
