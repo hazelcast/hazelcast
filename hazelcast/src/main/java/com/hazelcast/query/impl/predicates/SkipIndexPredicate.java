@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  * <p>
  * It isn't exposed as user API; it will only be created when
  * making use of index suppression option in the
- * {@link com.hazelcast.query.SqlPredicate}
+ * {@link SqlPredicate}
  * <p>
  * SkipIndexPredicate also isn't send over the wire; so we don't
  * need to worry about backward compatibility in future releases.

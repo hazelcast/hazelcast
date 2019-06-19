@@ -20,8 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,7 +80,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.removeAll(TruePredicate.INSTANCE);
+        map.removeAll(Predicates.alwaysTrue());
 
         assertEquals(0, map.size());
     }
@@ -94,7 +93,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.removeAll(FalsePredicate.INSTANCE);
+        map.removeAll(Predicates.alwaysFalse());
 
         assertEquals(MAP_SIZE, map.size());
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,9 +34,9 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ParserTest {
+public class SqlParserTest {
 
-    private final Parser parser = new Parser();
+    private final SqlParser parser = new SqlParser();
 
     @Test
     public void parseEmpty() {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.predicates.Visitor;
 
 /**
  * Predicates which can be visited by optimizer.

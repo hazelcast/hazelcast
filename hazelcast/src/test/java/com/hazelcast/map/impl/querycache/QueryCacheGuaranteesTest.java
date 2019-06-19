@@ -22,7 +22,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -65,7 +65,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> map = getMap(node, mapName);
 
-        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
+        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
 
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
@@ -110,7 +110,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
         HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> map = (IMap<Integer, Integer>) node.<Integer, Integer>getMap(mapName);
 
-        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
+        final QueryCache<Integer, Integer> queryCache = map.getQueryCache(queryCacheName, Predicates.sql("this > 20"), true);
 
         for (int i = 0; i < 30; i++) {
             map.put(i, i);

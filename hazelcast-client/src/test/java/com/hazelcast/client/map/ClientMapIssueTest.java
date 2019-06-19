@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -201,7 +202,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
         predicate.nextPage();
 
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
@@ -225,7 +226,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
         predicate.nextPage();
 
         Collection<Integer> values = map.values(predicate);
@@ -323,7 +324,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(size - i, i);
         }
 
-        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<>(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
         predicate.nextPage();
 
         final Set<Integer> values = map.keySet(predicate);

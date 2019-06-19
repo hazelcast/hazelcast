@@ -19,7 +19,6 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;

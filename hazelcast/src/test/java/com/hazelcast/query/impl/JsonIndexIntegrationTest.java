@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -126,7 +125,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
         assertEquals(299, map.values(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1000, map.values(new SqlPredicate("name == sancar")).size());
+        assertEquals(1000, map.values(Predicates.sql("name == sancar")).size());
 
     }
 
@@ -145,11 +144,11 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
         assertEquals(299, map.values(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1000, map.values(new SqlPredicate("name == sancar")).size());
+        assertEquals(1000, map.values(Predicates.sql("name == sancar")).size());
         map.executeOnEntries(new JsonEntryProcessor());
         assertEquals(1000, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", false))).size());
         assertEquals(0, map.values(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", false))).size());
-        assertEquals(1000, map.values(new SqlPredicate("name == sancar")).size());
+        assertEquals(1000, map.values(Predicates.sql("name == sancar")).size());
 
     }
 
@@ -165,11 +164,11 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
         assertEquals(299, map.values(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1000, map.values(new SqlPredicate("name == sancar")).size());
+        assertEquals(1000, map.values(Predicates.sql("name == sancar")).size());
         map.executeOnEntries(new JsonEntryProcessor());
         assertEquals(1000, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", false))).size());
         assertEquals(0, map.values(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", false))).size());
-        assertEquals(1000, map.values(new SqlPredicate("name == sancar")).size());
+        assertEquals(1000, map.values(Predicates.sql("name == sancar")).size());
 
     }
 

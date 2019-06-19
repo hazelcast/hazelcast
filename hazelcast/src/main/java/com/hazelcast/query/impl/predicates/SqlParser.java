@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +25,7 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 
-class Parser {
+class SqlParser {
     private static final String SPLIT_EXPRESSION = " ";
 
     private static final int PARENTHESIS_PRECEDENCE = 15;
@@ -79,14 +79,14 @@ class Parser {
     private static final String IN_UPPER = " IN ";
     private static final String IN_UPPER_P = " IN(";
 
-    Parser() {
+    SqlParser() {
     }
 
     public List<String> toPrefix(String in) {
         List<String> tokens = buildTokens(alignINClause(in));
 
-        List<String> output = new ArrayList<String>();
-        List<String> stack = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
+        List<String> stack = new ArrayList<>();
         for (String token : tokens) {
             if (isOperand(token)) {
                 if (token.equals(")")) {
@@ -159,7 +159,7 @@ class Parser {
             }
         }
         final String[] tokens = result.toString().split(SPLIT_EXPRESSION);
-        final List<String> list = new ArrayList<String>();
+        final List<String> list = new ArrayList<>();
         for (int i = 0; i < tokens.length; i++) {
             tokens[i] = tokens[i].trim();
             if (!tokens[i].equals("")) {

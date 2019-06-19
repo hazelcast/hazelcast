@@ -23,7 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,7 +64,7 @@ public class ClientQueryCacheSimpleStressTest extends HazelcastTestSupport {
                 .setDelaySeconds(2)
                 .setBatchSize(2)
                 .setPopulate(true)
-                .getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+                .getPredicateConfig().setImplementation(Predicates.alwaysTrue());
 
         config.addQueryCacheConfig(mapName, queryCacheConfig);
     }
@@ -91,7 +91,7 @@ public class ClientQueryCacheSimpleStressTest extends HazelcastTestSupport {
         Thread thread = new Thread(runnable);
         thread.start();
 
-        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, TruePredicate.INSTANCE, true);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, Predicates.alwaysTrue(), true);
 
         thread.join();
 

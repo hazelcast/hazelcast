@@ -18,8 +18,8 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.TypeConverters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -52,7 +52,7 @@ public class RangeVisitor extends AbstractVisitor {
         for (int i = 0; i < predicates.length; ++i) {
             ranges = intersect(predicates, i, ranges, indexes);
             if (ranges == Ranges.UNSATISFIABLE) {
-                return FalsePredicate.INSTANCE;
+                return Predicates.alwaysFalse();
             }
         }
 
@@ -73,9 +73,9 @@ public class RangeVisitor extends AbstractVisitor {
             case LESS:
                 return predicate;
             case EQUAL:
-                return new EqualPredicate(predicate.attributeName, from);
+                return Predicates.equal(predicate.attributeName, from);
             case GREATER:
-                return FalsePredicate.INSTANCE;
+                return Predicates.alwaysFalse();
 
             default:
                 throw new IllegalStateException("Unexpected order: " + order);

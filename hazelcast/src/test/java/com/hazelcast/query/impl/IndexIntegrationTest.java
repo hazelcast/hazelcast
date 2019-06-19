@@ -32,11 +32,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -104,7 +102,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertEquals(currency, trade.currency);
 
         List<Index> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
-        Set<QueryableEntry> dollars = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> dollars = new HashSet<>();
         for (Index index : indexes) {
             Set<QueryableEntry> result = index.getRecords(currency);
             if (result != null) {
@@ -138,7 +136,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         map.put(1, trade);
         map.remove(1);
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("amount").isNull();
         Collection<Trade> values = map.values(predicate);
 
@@ -209,11 +207,11 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         Body body = new Body("body3", leftHand, rightHand);
         map.put(3, body);
 
-        Predicate predicate = new SqlPredicate("limbArray[any].fingerCount = '1'");
+        Predicate predicate = Predicates.sql("limbArray[any].fingerCount = '1'");
         Collection<Body> values = map.values(predicate);
         assertThat(values, hasSize(1));
 
-        predicate = new SqlPredicate("limbCollection[any].fingerCount = '1'");
+        predicate = Predicates.sql("limbCollection[any].fingerCount = '1'");
         values = map.values(predicate);
         assertThat(values, hasSize(1));
     }
@@ -224,7 +222,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));
@@ -234,8 +232,8 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
     static class Body implements Serializable {
         String name;
-        Limb[] limbArray = new Limb[0];
-        Collection<Limb> limbCollection = new ArrayList<Limb>();
+        Limb[] limbArray;
+        Collection<Limb> limbCollection;
 
         Body(String name, Limb... limbs) {
             this.name = name;
@@ -246,9 +244,9 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
     static class Limb implements Serializable {
         String name;
-        Nail[] nailArray = new Nail[0];
+        Nail[] nailArray;
         int fingerCount;
-        Collection<Nail> nailCollection = new ArrayList<Nail>();
+        Collection<Nail> nailCollection;
 
         Limb(String name, Nail... nails) {
             this.name = name;
@@ -303,7 +301,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         SillySequence(int from, int count) {
             this.count = count;
-            this.payloadField = new ArrayList<Integer>(count);
+            this.payloadField = new ArrayList<>(count);
 
             int to = from + count;
             for (int i = from; i < to; i++) {
@@ -353,7 +351,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, Trade> loadAll(Collection<String> keys) {
-            Map<String, Trade> map = new HashMap<String, Trade>();
+            Map<String, Trade> map = new HashMap<>();
             for (String key : keys) {
                 map.put(key, load(key));
             }

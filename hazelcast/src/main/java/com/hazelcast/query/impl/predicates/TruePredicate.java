@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
+import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.Map;

@@ -27,7 +27,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -138,7 +137,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
             public void entryAdded(EntryEvent event) {
                 entryAddedCounter.incrementAndGet();
             }
-        }, new SqlPredicate("__key >= 10"), true);
+        }, Predicates.sql("__key >= 10"), true);
 
         // Restart server
         server.shutdown();

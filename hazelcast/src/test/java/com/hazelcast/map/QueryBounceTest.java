@@ -20,8 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
@@ -103,7 +103,7 @@ public class QueryBounceTest {
     }
 
     protected Predicate makePredicate(String attribute, int min, int max, boolean withIndexes) {
-        return new SqlPredicate(attribute + " >= " + min + " AND " + attribute + " < " + max);
+        return Predicates.sql(attribute + " >= " + min + " AND " + attribute + " < " + max);
     }
 
     public class QueryRunnable implements Runnable {

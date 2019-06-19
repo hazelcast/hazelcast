@@ -29,7 +29,7 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private HazelcastInstance member;
 

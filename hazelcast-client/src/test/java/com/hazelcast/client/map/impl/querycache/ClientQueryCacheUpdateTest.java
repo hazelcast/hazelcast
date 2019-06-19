@@ -22,7 +22,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -54,7 +54,7 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(getConfig());
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
-        queryCacheConfig.getPredicateConfig().setImplementation(new SqlPredicate("id=1"));
+        queryCacheConfig.getPredicateConfig().setImplementation(Predicates.sql("id=1"));
 
         ClientConfig config = new ClientConfig();
         config.addQueryCacheConfig(mapName, queryCacheConfig);

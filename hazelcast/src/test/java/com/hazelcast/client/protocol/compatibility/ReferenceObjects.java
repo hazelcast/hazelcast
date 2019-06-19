@@ -68,8 +68,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -758,7 +758,7 @@ public class ReferenceObjects {
         queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
         queryCacheConfig.setPredicateConfigHolder(new PredicateConfigHolder("com.hazelcast.Predicate", "name LIKE 'Fred%'",
-                serializationService.toData(new TruePredicate())));
+                serializationService.toData(Predicates.alwaysTrue())));
         queryCacheConfig.setIndexConfigs(mapIndexConfigs);
         queryCacheConfig.setListenerConfigs(listenerConfigs);
         queryCacheConfig.setEvictionConfigHolder(evictionConfig);

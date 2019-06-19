@@ -19,7 +19,7 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -210,7 +210,7 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
 
     @Test(expected = MethodNotAvailableException.class)
     public void testExecuteOnEntriesWithPredicate() {
-        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), TruePredicate.INSTANCE);
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), Predicates.alwaysTrue());
     }
 
     @Test

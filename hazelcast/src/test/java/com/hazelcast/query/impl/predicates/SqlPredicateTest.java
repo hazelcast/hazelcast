@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.ObjectWithBigDecimal;
 import com.hazelcast.query.SampleTestObjects.ObjectWithBoolean;
@@ -37,10 +40,6 @@ import com.hazelcast.query.SampleTestObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.predicates.AndPredicate;
-import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
-import com.hazelcast.query.impl.predicates.OrPredicate;
-import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -99,10 +98,10 @@ public class SqlPredicateTest {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     // these are used to test compound predicates flattening
-    private TruePredicate leftOfOr = new TruePredicate();
-    private TruePredicate rightOfOr = new TruePredicate();
-    private TruePredicate leftOfAnd = new TruePredicate();
-    private TruePredicate rightOfAnd = new TruePredicate();
+    private Predicate leftOfOr = Predicates.alwaysTrue();
+    private Predicate rightOfOr = Predicates.alwaysTrue();
+    private Predicate leftOfAnd = Predicates.alwaysTrue();
+    private Predicate rightOfAnd = Predicates.alwaysTrue();
 
     @Test
     public void testSqlPredicates() {
@@ -452,12 +451,12 @@ public class SqlPredicateTest {
         assertEquals("(active=true AND name=)", sql("active AND name=''"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate1() {
         new SqlPredicate("invalid sql");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate2() {
         new SqlPredicate("");
     }
@@ -501,7 +500,7 @@ public class SqlPredicateTest {
     @Test
     public void testOr_whenLeftPredicateOr() {
         OrPredicate predicate1 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
-        TruePredicate predicate2 = new TruePredicate();
+        Predicate predicate2 = Predicates.alwaysTrue();
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
         assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[0]);
@@ -511,7 +510,7 @@ public class SqlPredicateTest {
 
     @Test
     public void testOr_whenRightPredicateOr() {
-        TruePredicate predicate1 = new TruePredicate();
+        Predicate predicate1 = Predicates.alwaysTrue();
         OrPredicate predicate2 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
@@ -522,8 +521,8 @@ public class SqlPredicateTest {
 
     @Test
     public void testOr_whenNoPredicateOr() {
-        TruePredicate predicate1 = new TruePredicate();
-        TruePredicate predicate2 = new TruePredicate();
+        Predicate predicate1 = Predicates.alwaysTrue();
+        Predicate predicate2 = Predicates.alwaysTrue();
         OrPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, OrPredicate.class);
         assertEquals(2, concatenatedOr.getPredicates().length);
         assertSame(predicate1, concatenatedOr.getPredicates()[0]);
@@ -541,7 +540,7 @@ public class SqlPredicateTest {
     @Test
     public void testAnd_whenLeftPredicateAnd() {
         AndPredicate predicate1 = new AndPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
-        TruePredicate predicate2 = new TruePredicate();
+        Predicate predicate2 = Predicates.alwaysTrue();
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
         assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[0]);
@@ -551,7 +550,7 @@ public class SqlPredicateTest {
 
     @Test
     public void testAnd_whenRightPredicateAnd() {
-        TruePredicate predicate1 = new TruePredicate();
+        Predicate predicate1 = Predicates.alwaysTrue();
         AndPredicate predicate2 = new AndPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(3, concatenatedOr.getPredicates().length);
@@ -562,8 +561,8 @@ public class SqlPredicateTest {
 
     @Test
     public void testAnd_whenNoPredicateAnd() {
-        TruePredicate predicate1 = new TruePredicate();
-        TruePredicate predicate2 = new TruePredicate();
+        Predicate predicate1 = Predicates.alwaysTrue();
+        Predicate predicate2 = Predicates.alwaysTrue();
         AndPredicate concatenatedOr = SqlPredicate.flattenCompound(predicate1, predicate2, AndPredicate.class);
         assertEquals(2, concatenatedOr.getPredicates().length);
         assertSame(predicate1, concatenatedOr.getPredicates()[0]);

@@ -24,7 +24,7 @@ import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -262,21 +262,21 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
      */
     private void internalRunQuick() {
         try {
-            map.values(TruePredicate.INSTANCE);
+            map.values(Predicates.alwaysTrue());
             failExpectedException("IMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            map.keySet(TruePredicate.INSTANCE);
+            map.keySet(Predicates.alwaysTrue());
             failExpectedException("IMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            map.entrySet(TruePredicate.INSTANCE);
+            map.entrySet(Predicates.alwaysTrue());
             failExpectedException("IMap.entrySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
@@ -320,7 +320,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         }
 
         try {
-            map.localKeySet(TruePredicate.INSTANCE);
+            map.localKeySet(Predicates.alwaysTrue());
             failExpectedException("IMap.localKeySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
@@ -340,14 +340,14 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
 
         try {
-            txnMap.values(TruePredicate.INSTANCE);
+            txnMap.values(Predicates.alwaysTrue());
             failExpectedException("TransactionalMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            txnMap.keySet(TruePredicate.INSTANCE);
+            txnMap.keySet(Predicates.alwaysTrue());
             failExpectedException("TransactionalMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);

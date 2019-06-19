@@ -21,7 +21,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -220,7 +220,7 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     @SuppressWarnings("unchecked")
     public void removeAll() {
-        map.removeAll(TruePredicate.INSTANCE);
+        map.removeAll(Predicates.alwaysTrue());
     }
 
     @Override
