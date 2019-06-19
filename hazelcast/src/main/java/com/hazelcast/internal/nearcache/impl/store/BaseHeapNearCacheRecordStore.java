@@ -20,7 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
-import com.hazelcast.core.IBiFunction;
+import java.util.function.BiFunction;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -46,7 +46,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     private static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
     private final NearCachePreloader<K> nearCachePreloader;
-    private final IBiFunction<? super K, ? super R, ? extends R> invalidatorFunction = createInvalidatorFunction();
+    private final BiFunction<? super K, ? super R, ? extends R> invalidatorFunction = createInvalidatorFunction();
 
     BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                  ClassLoader classLoader) {
@@ -140,7 +140,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     @SuppressWarnings("unchecked")
     protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        R existingRecord = records.applyIfPresent(key, new IBiFunction<K, R, R>() {
+        R existingRecord = records.applyIfPresent(key, new BiFunction<K, R, R>() {
             @Override
             public R apply(K key, R reservedRecord) {
                 return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
@@ -162,8 +162,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         nearCacheStats.incrementInvalidationRequests();
     }
 
-    private IBiFunction<K, R, R> createInvalidatorFunction() {
-        return new IBiFunction<K, R, R>() {
+    private BiFunction<K, R, R> createInvalidatorFunction() {
+        return new BiFunction<K, R, R>() {
             @Override
             public R apply(K key, R record) {
                 if (canUpdateStats(record)) {
