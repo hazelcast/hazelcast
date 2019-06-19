@@ -20,17 +20,14 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertTrue;
 
 public class JetClassLoaderTest extends JetTestSupport {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
-    public void when_jobCompleted_then_classLoaderShutDown() throws Exception {
+    public void when_jobCompleted_then_classLoaderShutDown() {
         DAG dag = new DAG();
         dag.newVertex("v", LeakClassLoaderP::new).localParallelism(1);
 
@@ -40,9 +37,9 @@ public class JetClassLoaderTest extends JetTestSupport {
         instance.newJob(dag).join();
 
         // Then
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("The classloader used for jobs is disposed after job is completed");
-        LeakClassLoaderP.classLoader.findClass("foo.Class");
+        assertTrue("The classloader should have been shutdown after job completion",
+                LeakClassLoaderP.classLoader.isShutdown()
+        );
     }
 
     private static class LeakClassLoaderP extends AbstractProcessor {

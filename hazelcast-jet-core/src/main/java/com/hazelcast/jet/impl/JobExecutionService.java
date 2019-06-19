@@ -89,7 +89,9 @@ public class JobExecutionService {
                             ClassLoader parent = config.getClassLoaderFactory() != null
                                     ? config.getClassLoaderFactory().getJobClassLoader()
                                     : nodeEngine.getConfigClassLoader();
-                            return new JetClassLoader(parent, jobId, jobRepository.getJobResources(jobId));
+                            return new JetClassLoader(
+                                    nodeEngine, parent, config.getName(), jobId, jobRepository.getJobResources(jobId)
+                            );
                         }));
     }
 
@@ -206,7 +208,8 @@ public class JobExecutionService {
         ExecutionContext created = new ExecutionContext(nodeEngine, taskletExecutionService,
                 jobId, executionId, coordinator, addresses);
         try {
-            created.initialize(plan);
+            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
+            com.hazelcast.jet.impl.util.Util.doWithClassLoader(jobCl, () -> created.initialize(plan));
         } finally {
             ExecutionContext oldContext = executionContexts.put(executionId, created);
             assert oldContext == null : "Duplicate ExecutionContext for execution " + Util.idToString(executionId);
