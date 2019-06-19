@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 
-public final class IdentityProjection<I> extends Projection<I, I> implements IdentifiedDataSerializable {
+public final class IdentityProjection<I> implements Projection<I, I>, IdentifiedDataSerializable {
 
     public static final IdentityProjection<Object> INSTANCE = new IdentityProjection<Object>();
 

@@ -212,14 +212,14 @@ public class MapProjectionTest extends HazelcastTestSupport {
         }
     }
 
-    public static class ExceptionThrowingProjection extends Projection {
+    public static class ExceptionThrowingProjection implements Projection {
         @Override
         public Object transform(Object input) {
             throw new RuntimeException("transform() exception");
         }
     }
 
-    public static class NullReturningProjection extends Projection {
+    public static class NullReturningProjection implements Projection {
         @Override
         public Object transform(Object input) {
             return null;
@@ -227,14 +227,14 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
 
-    public static class PrimitiveValueIncrementingProjection extends Projection<Map.Entry<String, Double>, Double> {
+    public static class PrimitiveValueIncrementingProjection implements Projection<Map.Entry<String, Double>, Double> {
         @Override
         public Double transform(Map.Entry<String, Double> input) {
             return input.getValue() + 1.0d;
         }
     }
 
-    public static class ObjectValueIncrementingProjection extends Projection<Map.Entry<String, Person>, Double> {
+    public static class ObjectValueIncrementingProjection implements Projection<Map.Entry<String, Person>, Double> {
         @Override
         public Double transform(Map.Entry<String, Person> input) {
             return input.getValue().age + 1.0d;

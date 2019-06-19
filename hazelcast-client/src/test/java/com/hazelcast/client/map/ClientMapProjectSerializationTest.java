@@ -59,8 +59,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
 
 
     public static class ValuesProjection
-            extends Projection<Map.Entry<Integer, OnlyDeserializedTwiceObject>, OnlyDeserializedTwiceObject>
-            implements Serializable {
+            implements Projection<Map.Entry<Integer, OnlyDeserializedTwiceObject>, OnlyDeserializedTwiceObject>, Serializable {
 
         @Override
         public OnlyDeserializedTwiceObject transform(Map.Entry<Integer, OnlyDeserializedTwiceObject> input) {
