@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -40,12 +39,7 @@ public class IterableUtilTest {
     @Test
     public void testElementsConverted_whenIterableMapped() throws Exception {
 
-        Iterable<String> strings = IterableUtil.map(numbers, new IFunction<Integer, String>() {
-            @Override
-            public String apply(Integer integer) {
-                return integer.toString();
-            }
-        });
+        Iterable<String> strings = IterableUtil.map(numbers, Object::toString);
 
         Iterator<String> iter = strings.iterator();
         for (Integer i : numbers) {

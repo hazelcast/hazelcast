@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -27,6 +26,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -43,9 +43,9 @@ public abstract class Invalidator {
     protected final EventService eventService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
-    protected final IFunction<EventRegistration, Boolean> eventFilter;
+    protected final Function<EventRegistration, Boolean> eventFilter;
 
-    public Invalidator(String serviceName, IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+    public Invalidator(String serviceName, Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
         this.serviceName = serviceName;
         this.eventFilter = eventFilter;
         this.nodeEngine = nodeEngine;

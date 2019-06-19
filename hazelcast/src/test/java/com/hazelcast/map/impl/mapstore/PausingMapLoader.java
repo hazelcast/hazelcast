@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.util.IterableUtil;
 
@@ -57,14 +56,11 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
     public Iterable<K> loadAllKeys() {
         Iterable<K> allKeys = delegate.loadAllKeys();
 
-        return IterableUtil.map(allKeys, new IFunction<K, K>() {
-            @Override
-            public K apply(K key) {
-                if (counter++ == pauseAt) {
-                    pause();
-                }
-                return key;
+        return IterableUtil.map(allKeys, key -> {
+            if (counter++ == pauseAt) {
+                pause();
             }
+            return key;
         });
     }
 
