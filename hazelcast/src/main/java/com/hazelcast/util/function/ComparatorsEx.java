@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.function;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
 final class ComparatorsEx {
 
     static final ComparatorEx<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
@@ -24,6 +26,7 @@ final class ComparatorsEx {
     private ComparatorsEx() {
     }
 
+    @BinaryInterface
     private static class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
@@ -37,6 +40,7 @@ final class ComparatorsEx {
         }
     }
 
+    @BinaryInterface
     private static class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
@@ -50,6 +54,7 @@ final class ComparatorsEx {
         }
     }
 
+    @BinaryInterface
     public static final class NullComparator<T> implements ComparatorEx<T> {
         private final boolean isNullFirst;
 
