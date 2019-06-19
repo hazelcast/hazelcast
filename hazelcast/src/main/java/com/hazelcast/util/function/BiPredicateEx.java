@@ -26,6 +26,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link BiPredicate
  * java.util.function.BiPredicate} which declares checked exception.
+ *
+ * @param <T> the type of the first argument to the predicate
+ * @param <U> the type of the second argument the predicate
  */
 @FunctionalInterface
 public interface BiPredicateEx<T, U> extends BiPredicate<T, U>, Serializable {

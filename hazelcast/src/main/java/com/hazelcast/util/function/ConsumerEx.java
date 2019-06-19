@@ -26,6 +26,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link Consumer java.util.function.Consumer}
  * which declares checked exception.
+ *
+ * @param <T> the type of the input to the operation
  */
 @FunctionalInterface
 public interface ConsumerEx<T> extends Consumer<T>, Serializable {

@@ -24,6 +24,8 @@ import java.util.function.ToLongFunction;
 /**
  * {@code Serializable} variant of {@link ToLongFunction
  * java.util.function.ToLongFunction} which declares checked exception.
+ *
+ * @param <T> the type of the input to the function
  */
 @FunctionalInterface
 public interface ToLongFunctionEx<T> extends ToLongFunction<T>, Serializable {

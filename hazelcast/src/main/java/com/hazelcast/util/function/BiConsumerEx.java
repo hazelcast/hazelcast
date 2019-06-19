@@ -26,6 +26,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link BiConsumer
  * java.util.function.BiConsumer} which declares checked exception.
+ *
+ * @param <T> the type of the first argument to the operation
+ * @param <U> the type of the second argument to the operation
  */
 @FunctionalInterface
 public interface BiConsumerEx<T, U> extends BiConsumer<T, U>, Serializable {

@@ -24,6 +24,8 @@ import java.util.function.ToDoubleFunction;
 /**
  * {@code Serializable} variant of {@link ToDoubleFunction
  * java.util.function.ToDoubleFunction} which declares checked exception.
+ *
+ * @param <T> the type of the input to the function
  */
 @FunctionalInterface
 public interface ToDoubleFunctionEx<T> extends ToDoubleFunction<T>, Serializable {

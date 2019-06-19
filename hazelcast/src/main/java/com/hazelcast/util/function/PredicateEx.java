@@ -28,6 +28,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link Predicate
  * java.util.function.Predicate} which declares checked exception.
+ *
+ * @param <T> the type of the input to the predicate
  */
 @FunctionalInterface
 public interface PredicateEx<T> extends Predicate<T>, Serializable {

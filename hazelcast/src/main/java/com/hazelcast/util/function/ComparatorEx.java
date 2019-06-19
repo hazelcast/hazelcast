@@ -32,8 +32,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link Comparator java.util.Comparator}
  * which declares checked exception.
+ *
+ * @param <T> the type of objects that may be compared by this comparator
  */
 @FunctionalInterface
+@SuppressWarnings("checkstyle:methodcount")
 public interface ComparatorEx<T> extends Comparator<T>, Serializable {
 
     /**

@@ -24,6 +24,8 @@ import java.util.function.Supplier;
 /**
  * {@code Serializable} variant of {@link Supplier java.util.function.Supplier}
  * which declares checked exception.
+ *
+ * @param <T> the type of results supplied by this supplier
  */
 @FunctionalInterface
 public interface SupplierEx<T> extends Supplier<T>, Serializable {

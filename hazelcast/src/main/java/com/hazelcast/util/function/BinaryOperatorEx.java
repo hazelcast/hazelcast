@@ -27,6 +27,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * {@code Serializable} variant of {@link BinaryOperator
  * java.util.function.BinaryOperator} which declares checked exception.
+ *
+ * @param <T> the type of the operands and result of the operator
  */
 @FunctionalInterface
 public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {
