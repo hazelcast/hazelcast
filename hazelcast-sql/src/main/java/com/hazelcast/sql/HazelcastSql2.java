@@ -73,7 +73,7 @@ public final class HazelcastSql2 {
     }
 
     public Enumerable<Object> execute2(String sql) throws Exception {
-        // TODO: 1. Parse.
+        // 1. ==================== PARSE ====================
         // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
 
@@ -133,7 +133,7 @@ public final class HazelcastSql2 {
 
         System.out.println(">>> Parsed: " + node.getClass().getSimpleName());
 
-        // TODO: 2. Analyze.
+        // 2. ==================== ANALYZE/VALIDATE ====================
         final SqlOperatorTable opTab0 = config.fun(SqlOperatorTable.class, SqlStdOperatorTable.instance());
         final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(opTab0, catalogReader);
 
@@ -149,7 +149,7 @@ public final class HazelcastSql2 {
 
         // TODO: User SqlShuttle to look for unsupported query parts. See Drill's UnsupportedOperatorsVisitor.
 
-        // TODO: 3. Convert to Rel.
+        // 3. ==================== CONVERT TO LOGICAL TREE ====================
 
         // TODO: See SqlConverter.SqlToRelConverterConfig
         final SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder =
@@ -178,7 +178,7 @@ public final class HazelcastSql2 {
 
         System.out.println(">>> Converted REL: " + root);
 
-        // TODO: 4. Optimize
+        // 4. ==================== OPTIMIZE ====================
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
         // TODO: Rules to merge scan and project/filter
@@ -212,14 +212,14 @@ public final class HazelcastSql2 {
         // TODO: See PlannerPhase.LOGICAL - this is where logical expressions are converted!
         // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
 
-        // TODO: 5. Convert to physical
+        // 5. ==================== DECOUPLE FROM CALCITE ====================
         PhysicalPlanVisitor planVisitor = new PhysicalPlanVisitor();
 
         optimizedRootRelNode.visitForPlan(planVisitor);
 
         PhysicalPlan plan = planVisitor.getPlan();
 
-        // TODO: 6. Execute
+        // 6. ==================== EXECUTE ====================
         instance.getQueryService().execute(plan, Collections.emptyList());
 
         // TODO: Result consume is not implemented yet.
