@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
+
 public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private List<Operation> opList;
@@ -47,9 +49,7 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
     public void run() throws Exception {
         for (Operation op : opList) {
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
-            op.beforeRun();
-            op.run();
-            op.afterRun();
+            runDirect(op);
         }
         // changed to forceUnlock because replica-sync of lock causes problems, same as IMap
         // real solution is to make 'lock-and-get' backup-aware

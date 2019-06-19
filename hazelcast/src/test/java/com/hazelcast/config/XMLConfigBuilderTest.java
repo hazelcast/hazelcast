@@ -1932,7 +1932,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(ConfigurationException.class);
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
     }
 
@@ -1947,7 +1947,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(ConfigurationException.class);
+        expected.expect(InvalidConfigurationException.class);
         buildConfig(xml);
     }
 

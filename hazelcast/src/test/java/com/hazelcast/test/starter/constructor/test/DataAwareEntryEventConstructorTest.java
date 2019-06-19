@@ -17,7 +17,7 @@
 package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.serialization.Data;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreInfo;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;

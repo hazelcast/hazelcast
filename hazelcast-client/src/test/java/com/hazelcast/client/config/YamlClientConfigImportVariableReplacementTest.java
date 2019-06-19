@@ -17,7 +17,6 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
@@ -255,7 +254,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() {
         String yaml = ""
                 + "hazelcast-client:\n"

@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.multimap.MultiMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ import java.util.Set;
  *
  * It allows duplicates: The same value can be associated with the same key multiple times
  *
- * The name has a prefix Internal- to avoid confusion with {@link com.hazelcast.core.MultiMap}
+ * The name has a prefix Internal- to avoid confusion with {@link MultiMap}
  *
  * @param <K>
  * @param <V>

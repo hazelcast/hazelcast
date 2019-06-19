@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 

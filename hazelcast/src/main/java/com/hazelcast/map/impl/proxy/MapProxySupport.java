@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.concurrent.lock.LockProxySupport;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
@@ -32,9 +30,9 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -45,14 +43,14 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
-import com.hazelcast.map.impl.operation.AddInterceptorOperation;
+import com.hazelcast.map.impl.operation.AddInterceptorOperationSupplier;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
 import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
+import com.hazelcast.map.impl.operation.RemoveInterceptorOperationSupplier;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -70,6 +68,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
@@ -78,21 +77,24 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.collection.PartitionIdSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -105,9 +107,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -136,9 +140,16 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
+    protected static final String NULL_TTL_UNIT_IS_NOT_ALLOWED = "Null ttlUnit is not allowed!";
+    protected static final String NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED = "Null maxIdleUnit is not allowed!";
+    protected static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null timeunit is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
+    /**
+     * Retry count when an interceptor registration/de-registration operation fails.
+     */
+    private static final int MAX_RETRIES = 100;
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
@@ -1037,36 +1048,22 @@ abstract class MapProxySupport<K, V>
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
-        NodeEngine nodeEngine = getNodeEngine();
         String id = mapServiceContext.generateInterceptorId(name, interceptor);
-        Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        for (Member member : members) {
-            try {
-                AddInterceptorOperation op = new AddInterceptorOperation(id, interceptor, name);
-                Future future = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                future.get();
-            } catch (Throwable t) {
-                throw rethrow(t);
-            }
-        }
+        syncInvokeOnAllMembers(new AddInterceptorOperationSupplier(name, id, interceptor));
         return id;
     }
 
-    public void removeMapInterceptorInternal(String id) {
-        NodeEngine nodeEngine = getNodeEngine();
-        mapServiceContext.removeInterceptor(name, id);
-        Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        for (Member member : members) {
-            try {
-                if (member.localMember()) {
-                    continue;
-                }
-                RemoveInterceptorOperation op = new RemoveInterceptorOperation(name, id);
-                Future future = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                future.get();
-            } catch (Throwable t) {
-                throw rethrow(t);
-            }
+    protected boolean removeMapInterceptorInternal(String id) {
+        return syncInvokeOnAllMembers(new RemoveInterceptorOperationSupplier(name, id));
+    }
+
+    private <T> T syncInvokeOnAllMembers(Supplier<Operation> operationSupplier) {
+        ICompletableFuture<Object> future = invokeOnStableClusterSerial(getNodeEngine(),
+                operationSupplier, MAX_RETRIES);
+        try {
+            return (T) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -1084,7 +1081,10 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    protected String addEntryListenerInternal(Object listener,
+                                              Predicate predicate,
+                                              @Nullable Data key,
+                                              boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
@@ -1178,8 +1178,8 @@ abstract class MapProxySupport<K, V>
     }
 
     public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                                  EntryProcessor<? super K, ? super V, R> entryProcessor,
-                                                                  ExecutionCallback<? super R> callback) {
+                                                                 EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                                                 ExecutionCallback<? super R> callback) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
@@ -1245,7 +1245,7 @@ abstract class MapProxySupport<K, V>
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
+    public void addIndex(@Nonnull String attribute, boolean ordered) {
         validateIndexAttribute(attribute);
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
@@ -1308,12 +1308,12 @@ abstract class MapProxySupport<K, V>
         handleHazelcastInstanceAwareParams(userPredicate);
 
         Query query = Query.of()
-                           .mapName(getName())
-                           .predicate(userPredicate)
-                           .iterationType(iterationType)
-                           .aggregator(aggregator)
-                           .projection(projection)
-                           .build();
+                .mapName(getName())
+                .predicate(userPredicate)
+                .iterationType(iterationType)
+                .aggregator(aggregator)
+                .projection(projection)
+                .build();
         return queryEngine.execute(query, target);
     }
 

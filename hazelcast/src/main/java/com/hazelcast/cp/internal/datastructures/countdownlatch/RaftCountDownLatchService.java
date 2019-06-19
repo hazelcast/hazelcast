@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;

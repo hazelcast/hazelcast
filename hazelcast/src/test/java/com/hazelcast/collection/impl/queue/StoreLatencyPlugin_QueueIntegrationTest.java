@@ -21,7 +21,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.core.QueueStore;
+import com.hazelcast.collection.QueueStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

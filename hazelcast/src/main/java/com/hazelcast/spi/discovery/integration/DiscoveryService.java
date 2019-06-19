@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.discovery.integration;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
@@ -71,7 +72,7 @@ public interface DiscoveryService {
      * may include, but are not limited, to location information like datacenter, rack, host or additional
      * tags to be used for custom purpose.
      * <p>
-     * Information discovered from this method are copied into the {@link com.hazelcast.core.Member}s
+     * Information discovered from this method are copied into the {@link Member}s
      * attributes. Existing attributes will be overridden.
      * <p>
      * The default implementation provides an empty map with no further metadata configured. Returning

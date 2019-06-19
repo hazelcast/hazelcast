@@ -25,7 +25,7 @@ import com.hazelcast.security.Credentials;
  * Credentials is used with ClusterLoginModule for authentication
  * It is also used with SecurityInterceptor and to define principal in client-permissions for authorization.
  *
- * @see Credentials#getPrincipal()
+ * @see Credentials#getName()
  * @see com.hazelcast.security.SecurityInterceptor
  */
 public class ClientSecurityConfig {

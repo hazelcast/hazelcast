@@ -37,6 +37,11 @@ class TestEntryListener implements EntryListener, HazelcastInstanceAware {
     }
 
     @Override
+    public void entryExpired(EntryEvent event) {
+
+    }
+
+    @Override
     public void entryRemoved(EntryEvent event) {
     }
 

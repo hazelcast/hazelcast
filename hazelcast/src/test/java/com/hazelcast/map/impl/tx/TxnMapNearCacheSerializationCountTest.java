@@ -35,6 +35,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -58,7 +59,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THR
 import static java.util.Arrays.asList;
 
 /**
- * Near Cache serialization count tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
+ * Near Cache serialization count tests for {@link TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

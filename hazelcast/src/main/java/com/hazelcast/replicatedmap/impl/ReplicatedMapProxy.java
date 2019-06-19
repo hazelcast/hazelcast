@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
@@ -68,7 +68,7 @@ import static java.lang.Math.log10;
 import static java.lang.Thread.currentThread;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.ReplicatedMap} interface.
+ * Proxy implementation of {@link ReplicatedMap} interface.
  *
  * @param <K> key type
  * @param <V> value type

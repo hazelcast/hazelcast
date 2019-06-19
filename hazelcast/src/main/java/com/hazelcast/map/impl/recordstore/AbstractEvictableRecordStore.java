@@ -296,30 +296,19 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void doPostEvictionOperations(Record record) {
-        // Fire EVICTED event also in case of expiration because historically eviction-listener
-        // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving
-        // this behavior.
+        boolean hasEventRegistration = eventService.hasEventRegistration(SERVICE_NAME, name);
 
         Data key = record.getKey();
         Object value = record.getValue();
-
-        boolean hasEventRegistration = eventService.hasEventRegistration(SERVICE_NAME, name);
-        if (hasEventRegistration) {
-            mapEventPublisher.publishEvent(thisAddress, name, EVICTED, key, value, null);
-        }
 
         long now = getNow();
         boolean idleExpired = isIdleExpired(record, now, false);
         boolean ttlExpired = isTTLExpired(record, now, false);
         boolean expired = idleExpired || ttlExpired;
 
-        if (expired && hasEventRegistration) {
-            // We will be in this if in two cases:
-            // 1. In case of TTL or max-idle-seconds expiration.
-            // 2. When evicting due to the size-based eviction, we are also firing an EXPIRED event
-            //    because there is a possibility that evicted entry may be also an expired one. Trying to catch
-            //    as much as possible expired entries.
-            mapEventPublisher.publishEvent(thisAddress, name, EXPIRED, key, value, null);
+        if (hasEventRegistration) {
+            mapEventPublisher.publishEvent(thisAddress, name,
+                    expired ? EXPIRED : EVICTED, key, value, null);
         }
 
         if (!ttlExpired && idleExpired) {

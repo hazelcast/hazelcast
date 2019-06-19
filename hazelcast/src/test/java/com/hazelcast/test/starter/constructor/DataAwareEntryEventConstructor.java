@@ -35,7 +35,7 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
         // locate required classes on target class loader
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> dataClass = starterClassLoader.loadClass("com.hazelcast.nio.serialization.Data");
-        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.core.Member");
+        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.cluster.Member");
         Class<?> serServiceClass = starterClassLoader.loadClass("com.hazelcast.spi.serialization.SerializationService");
         Constructor<?> constructor = targetClass.getConstructor(memberClass, Integer.TYPE, String.class, dataClass,
                 dataClass, dataClass, dataClass, serServiceClass);

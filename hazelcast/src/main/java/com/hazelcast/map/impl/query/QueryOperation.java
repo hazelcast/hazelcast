@@ -16,20 +16,22 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Offload;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 
@@ -43,8 +45,7 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class QueryOperation extends MapOperation implements ReadonlyOperation {
-
+public class QueryOperation extends AbstractNamedOperation implements ReadonlyOperation {
     private Query query;
     private Result result;
 
@@ -58,25 +59,29 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
 
     @Override
     public CallStatus call() throws Exception {
-        QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
-        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
-            BitSet localPartitions = localPartitions();
-            if (localPartitions.cardinality() == 0) {
-                // important to deal with situation of not having any partitions
-                this.result = queryRunner.populateEmptyResult(query, Collections.<Integer>emptyList());
+        QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+
+        switch (mapContainer.getMapConfig().getInMemoryFormat()) {
+            case BINARY:
+            case OBJECT:
+                result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
                 return DONE_RESPONSE;
-            }
-            return new OffloadedImpl(queryRunner, localPartitions);
-        } else {
-            return super.call();
+            case NATIVE:
+                BitSet localPartitions = localPartitions();
+                if (localPartitions.cardinality() == 0) {
+                    // important to deal with situation of not having any partitions
+                    result = queryRunner.populateEmptyResult(query, Collections.<Integer>emptyList());
+                    return DONE_RESPONSE;
+                } else {
+                    return new OffloadedImpl(queryRunner, localPartitions);
+                }
+            default:
+                throw new IllegalArgumentException("Unsupported in memory format");
         }
-    }
-
-    @Override
-    protected void runInternal() {
-        QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
     }
 
     private int partitionCount() {
@@ -98,7 +103,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         return partitions;
     }
 
-
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
@@ -119,6 +123,11 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     public Object getResponse() {
         return result;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
@@ -151,7 +160,7 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         @Override
         public void start() {
             QueryFuture future = new QueryFuture(localPartitions.cardinality());
-            getOperationService().executeOnPartitions(new QueryTaskFactory(query, future), localPartitions);
+            getOperationService().executeOnPartitions(new QueryTaskFactory(query, queryRunner, future), localPartitions);
             future.andThen(new ExecutionCallbackImpl(queryRunner, query));
         }
     }
@@ -183,25 +192,31 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     private class QueryTaskFactory implements PartitionTaskFactory {
         private final Query query;
         private final QueryFuture future;
+        private final QueryRunner queryRunner;
 
-        QueryTaskFactory(Query query, QueryFuture future) {
+        QueryTaskFactory(Query query, QueryRunner queryRunner, QueryFuture future) {
             this.query = query;
+            this.queryRunner = queryRunner;
             this.future = future;
         }
 
         @Override
         public Object create(int partitionId) {
-            return new QueryTask(query, partitionId, future);
+            return new QueryTask(query, queryRunner, partitionId, future);
         }
     }
 
     private class QueryTask implements Runnable {
-        private final Query query;
-        private final int partitionId;
-        private final QueryFuture future;
 
-        QueryTask(Query query, int partitionId, QueryFuture future) {
+        private final int partitionId;
+        private final Query query;
+        private final QueryFuture future;
+        private final QueryRunner queryRunner;
+
+        QueryTask(Query query, QueryRunner queryRunner,
+                  int partitionId, QueryFuture future) {
             this.query = query;
+            this.queryRunner = queryRunner;
             this.partitionId = partitionId;
             this.future = future;
         }
@@ -215,8 +230,8 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
             }
 
             try {
-                QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(query.getMapName());
-                Result result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
+                Result result
+                        = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
             } catch (Exception ex) {
                 future.completeExceptionally(ex);

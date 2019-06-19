@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;

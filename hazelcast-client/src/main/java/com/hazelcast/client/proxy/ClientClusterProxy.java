@@ -18,9 +18,9 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Client implementation of the {@link com.hazelcast.core.Cluster}.
+ * Client implementation of the {@link Cluster}.
  */
 public class ClientClusterProxy implements Cluster {
 

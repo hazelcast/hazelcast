@@ -43,6 +43,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -139,7 +140,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key) {
+    public ICompletableFuture<V> getAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Object ncKey = toNearCacheKey(key);

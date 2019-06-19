@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.logging.ILogger;

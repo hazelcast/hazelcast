@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
@@ -784,8 +784,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object newValue;
         Object oldValue = null;
         if (record == null) {
-            Object notExistingKey = mapServiceContext.toObject(key);
-            EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            EntryView nullEntryView = EntryViews.createLazyNullEntryView(key, serializationService);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;

@@ -19,22 +19,22 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
+
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
  * Migration operation used by Hazelcast version 3.9
@@ -123,9 +125,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     private void runMigrationOperation(Operation op) throws Exception {
         prepareOperation(op);
-        op.beforeRun();
-        op.run();
-        op.afterRun();
+        runDirect(op);
     }
 
     protected void prepareOperation(Operation op) {

@@ -18,7 +18,7 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

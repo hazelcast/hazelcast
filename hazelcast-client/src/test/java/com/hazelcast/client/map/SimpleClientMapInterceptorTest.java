@@ -23,10 +23,14 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.InterceptorTest;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +38,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,6 +48,8 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
 
     private SimpleClientInterceptor interceptor;
 
@@ -49,8 +57,8 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
     public void setup() {
         Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
-        hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
+        server1 = hazelcastFactory.newHazelcastInstance(config);
+        server2 = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
@@ -108,4 +116,32 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
     }
+
+    @Test
+    public void removeInterceptor_returns_true_when_interceptor_removed() {
+        String mapName = "mapWithInterceptor";
+        IMap map = client.getMap(mapName);
+        String id = map.addInterceptor(new InterceptorTest.SimpleInterceptor());
+
+        assertTrue(map.removeInterceptor(id));
+        assertNoRegisteredInterceptorExists(server1.getMap(mapName));
+        assertNoRegisteredInterceptorExists(server2.getMap(mapName));
+    }
+
+    @Test
+    public void removeInterceptor_returns_false_when_there_is_no_interceptor() {
+        String mapName = "mapWithNoInterceptor";
+        IMap map = client.getMap(mapName);
+
+        assertFalse(map.removeInterceptor(UuidUtil.newUnsecureUuidString()));
+        assertNoRegisteredInterceptorExists(server1.getMap(mapName));
+        assertNoRegisteredInterceptorExists(server2.getMap(mapName));
+    }
+
+    private static void assertNoRegisteredInterceptorExists(IMap map) {
+        String mapName = map.getName();
+        MapService mapservice = (MapService) (((MapProxyImpl) map).getService());
+        mapservice.getMapServiceContext().getMapContainer(mapName).getInterceptorRegistry().getInterceptors();
+    }
+
 }

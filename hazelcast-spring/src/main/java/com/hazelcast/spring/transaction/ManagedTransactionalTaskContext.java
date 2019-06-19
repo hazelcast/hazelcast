@@ -16,11 +16,11 @@
 
 package com.hazelcast.spring.transaction;
 
-import com.hazelcast.core.TransactionalList;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTaskContext;

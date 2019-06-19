@@ -355,7 +355,8 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             } else if ("cache".equals(nodeName)) {
                 handleCacheEventJournal(typeNode);
             } else {
-                throw new ConfigurationException("Mapping name should either be 'map' or 'cache', but " + nodeName + " found");
+                throw new InvalidConfigurationException("Mapping name should either be 'map' or 'cache', but "
+                        + nodeName + " found");
             }
         }
     }
@@ -383,7 +384,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             if ("map".equals(nodeName)) {
                 handleMapMerkleTree(typeNode);
             } else {
-                throw new ConfigurationException("Mapping name should be 'map', but " + nodeName + " found");
+                throw new InvalidConfigurationException("Mapping name should be 'map', but " + nodeName + " found");
             }
         }
     }

@@ -19,7 +19,7 @@ package com.hazelcast.client.quorum.multimap;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.quorum.multimap.MultiMapQuorumReadTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;

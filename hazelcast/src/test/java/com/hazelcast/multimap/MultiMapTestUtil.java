@@ -40,7 +40,7 @@ public final class MultiMapTestUtil {
     }
 
     /**
-     * Returns all backup entries of an {@link com.hazelcast.core.MultiMap} by a given map name.
+     * Returns all backup entries of an {@link MultiMap} by a given map name.
      * <p>
      * Note: This method returns all backups from all nodes and doesn't consider the replica indexes.
      *

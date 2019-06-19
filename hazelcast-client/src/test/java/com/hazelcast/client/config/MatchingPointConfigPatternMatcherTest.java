@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -101,7 +101,7 @@ public class MatchingPointConfigPatternMatcherTest {
         assertEquals(nearCacheConfig3, config.getNearCacheConfig("com.hazelcast.test.sub.myNearCache"));
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMapConfigWildcardMultipleAmbiguousConfigs() {
         NearCacheConfig nearCacheConfig1 = new NearCacheConfig().setName("com.hazelcast*");
         NearCacheConfig nearCacheConfig2 = new NearCacheConfig().setName("*com.hazelcast");

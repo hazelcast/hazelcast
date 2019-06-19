@@ -18,12 +18,12 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MembershipEvent;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -149,7 +149,7 @@ public class CacheServiceTest {
             cacheService.putCacheConfigIfAbsent(newCacheConfig());
             // ensure the exception was not swallowed
             fail("ConfigurationException should have been thrown");
-        } catch (ConfigurationException e) {
+        } catch (InvalidConfigurationException e) {
             // assert the CacheConfigFuture was not put in the configs map
             assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
         }
@@ -185,7 +185,7 @@ public class CacheServiceTest {
         @Override
         protected void additionalCacheConfigSetup(CacheConfig config, boolean existingConfig) {
             if (throwsException) {
-                throw new ConfigurationException("fail");
+                throw new InvalidConfigurationException("fail");
             }
         }
     }

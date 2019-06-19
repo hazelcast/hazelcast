@@ -302,7 +302,7 @@ public class MapConfigTest {
         assertNotEquals(config2, config3);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenCacheDeserializedValuesSetToALWAYS_whenSetOptimizeQueriesToFalse_thenThrowConfigurationException() {
         // given
         MapConfig mapConfig = new MapConfig();
@@ -312,7 +312,7 @@ public class MapConfigTest {
         mapConfig.setOptimizeQueries(false);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenCacheDeserializedValuesSetToNEVER_whenSetOptimizeQueriesToTrue_thenThrowConfigurationException() {
         // given
         MapConfig mapConfig = new MapConfig();
@@ -371,7 +371,7 @@ public class MapConfigTest {
         assertFalse(optimizeQueries);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToNEVER_thenThrowConfigurationException() {
         // given
         MapConfig mapConfig = new MapConfig();
@@ -381,7 +381,7 @@ public class MapConfigTest {
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenSetOptimizeQueryIsFalse_whenSetCacheDeserializedValuesToALWAYS_thenThrowConfigurationException() {
         // given
         MapConfig mapConfig = new MapConfig();
@@ -391,7 +391,7 @@ public class MapConfigTest {
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToINDEX_ONLY_thenThrowConfigurationException() {
         // given
         MapConfig mapConfig = new MapConfig();

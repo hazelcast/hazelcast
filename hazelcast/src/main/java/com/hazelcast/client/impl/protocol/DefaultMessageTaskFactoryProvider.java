@@ -1067,11 +1067,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.atomicreference.AtomicReferenceAlterAndGetMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomicreference.AtomicReferenceSetAndGetMessageTask(clientMessage, node, connection);
-            }
-        };
         factories[com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.atomicreference.AtomicReferenceAlterMessageTask(clientMessage, node, connection);

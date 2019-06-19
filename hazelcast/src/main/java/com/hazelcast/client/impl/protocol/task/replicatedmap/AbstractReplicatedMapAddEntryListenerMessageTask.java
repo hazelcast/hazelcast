@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.Connection;
@@ -149,6 +149,11 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     @Override
     public void entryEvicted(EntryEvent<Object, Object> event) {
+        handleEvent(event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent<Object, Object> event) {
         handleEvent(event);
     }
 

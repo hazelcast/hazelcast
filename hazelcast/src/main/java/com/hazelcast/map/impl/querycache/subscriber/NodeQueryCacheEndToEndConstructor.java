@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;

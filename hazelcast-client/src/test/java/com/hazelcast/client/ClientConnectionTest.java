@@ -16,22 +16,21 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.api.Client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.Client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +46,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -196,14 +194,9 @@ public class ClientConnectionTest extends HazelcastTestSupport {
     @Test
     public void testAsyncConnectionCreationInAsyncMethods() throws ExecutionException, InterruptedException {
         hazelcastFactory.newHazelcastInstance();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
         ClientConfig config = new ClientConfig();
-        WaitingCredentials credentials = new WaitingCredentials("dev", "dev-pass", countDownLatch);
-        config.setCredentials(credentials);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         final IExecutorService executorService = client.getExecutorService(randomString());
-
-        credentials.waitFlag.set(true);
 
         final HazelcastInstance secondInstance = hazelcastFactory.newHazelcastInstance();
 
@@ -234,35 +227,6 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         } finally {
             thread.interrupt();
             thread.join();
-            countDownLatch.countDown();
-        }
-    }
-
-    static class WaitingCredentials extends UsernamePasswordCredentials {
-
-        private final CountDownLatch countDownLatch;
-        AtomicBoolean waitFlag = new AtomicBoolean();
-
-        WaitingCredentials(String username, String password, CountDownLatch countDownLatch) {
-            super(username, password);
-            this.countDownLatch = countDownLatch;
-        }
-
-        @Override
-        public String getUsername() {
-            return super.getUsername();
-        }
-
-        @Override
-        public String getPassword() {
-            if (waitFlag.get()) {
-                try {
-                    countDownLatch.await();
-                } catch (InterruptedException e) {
-                    ignore(e);
-                }
-            }
-            return super.getPassword();
         }
     }
 

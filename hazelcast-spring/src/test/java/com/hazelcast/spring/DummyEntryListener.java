@@ -43,6 +43,11 @@ public class DummyEntryListener implements EntryListener {
     }
 
     @Override
+    public void entryExpired(EntryEvent event) {
+        //System.err.println("Expired: " + event);
+    }
+
+    @Override
     public void mapEvicted(MapEvent event) {
     }
 

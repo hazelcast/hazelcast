@@ -25,7 +25,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;

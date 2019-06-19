@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;

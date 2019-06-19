@@ -22,6 +22,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -64,6 +65,18 @@ public final class PredicateUtils {
      */
     public static boolean isNull(Comparable value) {
         return value == null || value == NULL;
+    }
+
+    /**
+     * Unwraps the given potentially {@link Optional optional} value.
+     *
+     * @param value the potentially optional value to unwrap.
+     * @return an unwrapped value, if the given value is optional; the
+     * original given value, if it's not optional.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T unwrapIfOptional(Object value) {
+        return value instanceof Optional ? ((Optional<T>) value).orElse(null) : (T) value;
     }
 
     /**

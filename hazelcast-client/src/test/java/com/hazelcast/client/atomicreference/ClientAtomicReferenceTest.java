@@ -18,7 +18,7 @@ package com.hazelcast.client.atomicreference;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -129,25 +129,6 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
         assertEquals("bar", serverReference.get());
 
         assertEquals("bar", clientReference.getAndSet(null));
-        assertTrue(serverReference.isNull());
-    }
-
-
-    @Test
-    public void setAndGet() throws Exception {
-        assertNull(clientReference.setAndGet(null));
-        assertTrue(serverReference.isNull());
-
-        assertEquals("foo", clientReference.setAndGet("foo"));
-        assertEquals("foo", serverReference.get());
-
-        assertEquals("foo", clientReference.setAndGet("foo"));
-        assertEquals("foo", serverReference.get());
-
-        assertEquals("bar", clientReference.setAndGet("bar"));
-        assertEquals("bar", serverReference.get());
-
-        assertNull(clientReference.setAndGet(null));
         assertTrue(serverReference.isNull());
     }
 

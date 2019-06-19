@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains {@link com.hazelcast.core.ILock} functionality
+ * Contains {@link com.hazelcast.cp.lock.ILock} functionality
  * based on the Raft algorithm.
  */
 package com.hazelcast.cp.internal.datastructures.lock.proxy;

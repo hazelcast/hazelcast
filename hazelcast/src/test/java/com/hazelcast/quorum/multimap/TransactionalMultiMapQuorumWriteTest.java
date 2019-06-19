@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.multimap;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;

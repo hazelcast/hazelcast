@@ -819,11 +819,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private void validateSetOptimizeQueriesOption(boolean optimizeQueries) {
         if (setCacheDeserializedValuesExplicitlyInvoked) {
             if (optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to true, "
+                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to true, "
                         + "but 'cacheDeserializedValues' is set to NEVER. "
                         + "These are conflicting options. Please remove the `optimize-queries'");
             } else if (!optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.ALWAYS) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to false, "
+                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to false, "
                         + "but 'cacheDeserializedValues' is set to ALWAYS. "
                         + "These are conflicting options. Please remove the `optimize-queries'");
             }
@@ -851,14 +851,14 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
             // we need to be strict with validation to detect conflicts
             boolean optimizeQuerySet = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
             if (optimizeQuerySet && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
+                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
                         + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
                         + "Please remove the `optimize-queries'");
             }
 
             if (cacheDeserializedValues != validatedCacheDeserializedValues) {
                 boolean optimizeQueriesFlagState = cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to "
+                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to "
                         + optimizeQueriesFlagState + " but 'cacheDeserializedValues' is set to "
                         + validatedCacheDeserializedValues + ". These are conflicting options. "
                         + "Please remove the `optimize-queries'");

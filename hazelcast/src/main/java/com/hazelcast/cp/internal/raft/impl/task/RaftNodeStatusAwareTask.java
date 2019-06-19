@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 

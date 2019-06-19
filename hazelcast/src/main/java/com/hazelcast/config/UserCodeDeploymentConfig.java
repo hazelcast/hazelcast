@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cluster.Member;
+
 /**
  * Configuration of User Code Deployment. When enabled, it allows Hazelcast members to load classes from other cluster
  * members. This simplifies deployment as you do not have to deploy your domain classes into the classpath of all
@@ -123,7 +125,7 @@ public class UserCodeDeploymentConfig {
      * Default: {@code null}
      *
      * @return this instance of UserCodeDeploymentConfig for easy method-chaining
-     * @see com.hazelcast.core.Member#setAttribute(String, String)
+     * @see Member#setAttribute(String, String)
      */
     public UserCodeDeploymentConfig setProviderFilter(String providerFilter) {
         this.providerFilter = providerFilter;

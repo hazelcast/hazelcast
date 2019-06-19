@@ -38,7 +38,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
@@ -49,7 +48,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
@@ -801,8 +800,7 @@ public class ReferenceObjects {
             aString), new ArrayStoreException(aString), new StubAuthenticationException(aString), new CacheNotExistsException(
             aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
             aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
-            aString), new ConfigMismatchException(aString), new ConfigurationException(
-            aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
+            aString), new ConfigMismatchException(aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
             aString), new EOFException(aString), new ExecutionException(new IOException()), new HazelcastException(
             aString), new HazelcastInstanceNotActiveException(aString), new HazelcastOverloadException(
             aString), new HazelcastSerializationException(aString), new IOException(aString), new IllegalArgumentException(

@@ -16,10 +16,10 @@
 
 package com.hazelcast.quorum;
 
-import com.hazelcast.concurrent.lock.operations.AbstractLockOperation;
-import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
-import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
-import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.AbstractLockOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.GetLockCountOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.GetRemainingLeaseTimeOperation;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

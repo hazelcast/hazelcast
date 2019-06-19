@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;

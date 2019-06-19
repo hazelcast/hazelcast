@@ -426,7 +426,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() throws Exception {
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"

@@ -19,10 +19,12 @@ package com.hazelcast.nio;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpEndpointManager;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.Map;
 
+@PrivateApi
 public class UnifiedAggregateEndpointManager
         implements AggregateEndpointManager {
 

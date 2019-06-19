@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
@@ -48,7 +48,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
+ * Proxy implementation of {@link TransactionalMap} interface.
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 

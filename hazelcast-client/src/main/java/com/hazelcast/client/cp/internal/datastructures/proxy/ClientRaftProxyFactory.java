@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;

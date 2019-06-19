@@ -17,38 +17,27 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipAdapter;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -185,162 +174,5 @@ public class ClientReconnectTest extends HazelcastTestSupport {
                 .setConnectionAttemptLimit(Integer.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();
-    }
-
-    public abstract static class CustomCredentials extends UsernamePasswordCredentials {
-
-        CustomCredentials() {
-        }
-
-        CustomCredentials(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 1;
-        }
-    }
-
-    public static class CustomCredentials_takesLong extends CustomCredentials {
-
-        private AtomicInteger count;
-        private long sleepMillis;
-
-        CustomCredentials_takesLong(AtomicInteger count, long sleepMillis) {
-            this.count = count;
-            this.sleepMillis = sleepMillis;
-        }
-
-        CustomCredentials_takesLong(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        protected void readPortableInternal(PortableReader reader) throws IOException {
-            if (count.incrementAndGet() == 1) {
-                try {
-                    Thread.sleep(sleepMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            super.readPortableInternal(reader);
-        }
-    }
-
-    @Test
-    public void testClientConnected_withFirstAuthenticationTakingLong() throws InterruptedException {
-        final AtomicInteger customCredentialsRunCount = new AtomicInteger();
-        final long customCredentialsSleepMillis = 30000;
-        SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials_takesLong(customCredentialsRunCount, customCredentialsSleepMillis);
-            }
-        });
-
-        Config config = new Config();
-        config.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setCredentials(new CustomCredentials_takesLong("dev", "dev-pass"));
-        clientConfig.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastClient(clientConfig);
-    }
-
-
-    @Test
-    @Category(SlowTest.class)
-    public void testEndpointCleanup_withFirstAuthenticationTakingLong() throws InterruptedException {
-        final AtomicInteger customCredentialsRunCount = new AtomicInteger();
-        ClientConfig clientConfig = new ClientConfig();
-        int heartbeatTimeoutMillis = 5000;
-        int authenticationTimeout = heartbeatTimeoutMillis;
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(heartbeatTimeoutMillis));
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
-        //Credentials will take longer than connection timeout so that client will close the connection
-        final long customCredentialsSleepMillis = authenticationTimeout * 2;
-
-        SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials_takesLong(customCredentialsRunCount, customCredentialsSleepMillis);
-            }
-        });
-
-        Config config = new Config();
-        config.setSerializationConfig(serializationConfig);
-        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
-        //make sure credentials that takes long is used
-        clientConfig.setCredentials(new CustomCredentials_takesLong("dev", "dev-pass"));
-        clientConfig.setSerializationConfig(serializationConfig);
-        //make sure that client is not connected back after first attempt
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
-        //since client will not be connected, don't block the current test thread
-        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        hazelcastFactory.newHazelcastClient(clientConfig);
-        //Wait for custom credentials to wake up and register endpoint for timed out connection
-        Thread.sleep(customCredentialsSleepMillis + 3000);
-        // registered endpoint should be removed eventually
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = instance.getClientService().getConnectedClients().size();
-                assertEquals(0, size);
-            }
-        });
-    }
-
-    public static class CustomCredentials_retried extends CustomCredentials {
-
-        private static AtomicInteger count = new AtomicInteger();
-
-        public CustomCredentials_retried() {
-        }
-
-        CustomCredentials_retried(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        public String getPassword() {
-            if (count.incrementAndGet() == 1) {
-                throw new HazelcastInstanceNotActiveException();
-            }
-            return super.getPassword();
-        }
-    }
-
-    @Test
-    public void testClientConnected_withFirstAuthenticationRetried() throws InterruptedException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials_retried();
-            }
-        });
-
-        Config config = new Config();
-        config.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-        //first authentication should be able to retried by invocation system. No need to do a second invocation.
-        //By setting attempt limit to one, we are expecting client to connect in first attempt.
-        clientConfig.getNetworkConfig().setConnectionTimeout(30000);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
-        clientConfig.setCredentials(new CustomCredentials_retried("dev", "dev-pass"));
-        clientConfig.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.concurrent.lock.LockResource;
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockResource;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -27,8 +27,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;

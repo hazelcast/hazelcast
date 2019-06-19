@@ -24,23 +24,23 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
-import com.hazelcast.core.ClientListener;
+import com.hazelcast.client.api.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -56,8 +56,8 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.logging.ILogger;
@@ -69,6 +69,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -852,7 +853,7 @@ public class Node {
                      + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
                      + "</dependency>" + LINE_SEPARATOR
                      + " See https://github.com/hazelcast/hazelcast-aws for additional details";
-            throw new ConfigurationException(message, e);
+            throw new InvalidConfigurationException(message, e);
         } catch (Exception e) {
             throw rethrow(e);
         }

@@ -16,7 +16,10 @@
 
 package com.hazelcast.spi.impl.tenantcontrol;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.io.Closeable;
@@ -24,8 +27,7 @@ import java.io.Closeable;
 /**
  * Default no-op implementation of TenantControl
  */
-@SerializableByConvention
-public final class NoopTenantControl implements TenantControl {
+public final class NoopTenantControl implements TenantControl, IdentifiedDataSerializable {
 
     @Override
     public Closeable setTenant(boolean createRequestScope) {
@@ -53,5 +55,25 @@ public final class NoopTenantControl implements TenantControl {
     @Override
     public int hashCode() {
         return 0;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiDataSerializerHook.NOOP_TENANT_CONTROL;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) {
+
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) {
+
     }
 }

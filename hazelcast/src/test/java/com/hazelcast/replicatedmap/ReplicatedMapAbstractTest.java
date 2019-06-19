@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
@@ -54,6 +53,12 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
 
     protected Config buildConfig(InMemoryFormat inMemoryFormat) {
         Config config = new Config();
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
+        replicatedMapConfig.setInMemoryFormat(inMemoryFormat);
+        return config;
+    }
+
+    protected Config buildConfig(Config config, InMemoryFormat inMemoryFormat) {
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
         replicatedMapConfig.setInMemoryFormat(inMemoryFormat);
         return config;

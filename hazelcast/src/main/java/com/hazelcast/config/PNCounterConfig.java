@@ -125,11 +125,11 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
      *
      * @param replicaCount the number of replicas for the CRDT state
      * @return the updated PN counter config
-     * @throws ConfigurationException if the {@code replicaCount} is less than 1
+     * @throws InvalidConfigurationException if the {@code replicaCount} is less than 1
      */
     public PNCounterConfig setReplicaCount(int replicaCount) {
         if (replicaCount < 1) {
-            throw new ConfigurationException("Replica count must be greater or equal to 1");
+            throw new InvalidConfigurationException("Replica count must be greater or equal to 1");
         }
         this.replicaCount = replicaCount;
         return this;

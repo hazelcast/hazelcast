@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
@@ -35,6 +35,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.collection.PartitionIdSet;
@@ -252,7 +253,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         }
     }
 
-    private MapOperation createQueryOperation(Query query, MapServiceContext mapServiceContext) {
+    private Operation createQueryOperation(Query query, MapServiceContext mapServiceContext) {
         return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
     }
 

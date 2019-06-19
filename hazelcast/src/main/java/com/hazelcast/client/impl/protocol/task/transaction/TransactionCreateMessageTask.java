@@ -43,7 +43,7 @@ public class TransactionCreateMessageTask
         TransactionOptions options = new TransactionOptions();
         options.setDurability(parameters.durability);
         options.setTimeout(parameters.timeout, TimeUnit.MILLISECONDS);
-        options.setTransactionType(TransactionOptions.TransactionType.getByValue(parameters.transactionType));
+        options.setTransactionType(TransactionOptions.TransactionType.getById(parameters.transactionType));
 
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();

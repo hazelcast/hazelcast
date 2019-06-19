@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
@@ -235,6 +234,11 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         public void entryEvicted(EntryEvent<Object, Object> event) {
             keys.add(event.getKey());
             evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
         }
 
         @Override

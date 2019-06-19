@@ -17,14 +17,14 @@
 package com.hazelcast.quorum;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
@@ -413,7 +413,7 @@ public class QuorumTest extends HazelcastTestSupport {
         assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
         Config config = new Config();
         config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
@@ -426,7 +426,7 @@ public class QuorumTest extends HazelcastTestSupport {
         createHazelcastInstance(config);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_lessThanHeartbeatInterval_exceptionIsThrown() {
         Config config = new Config();
         config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
@@ -439,7 +439,7 @@ public class QuorumTest extends HazelcastTestSupport {
         createHazelcastInstance(config);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
         Config config = new Config();
         config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
@@ -452,7 +452,7 @@ public class QuorumTest extends HazelcastTestSupport {
         createHazelcastInstance(config);
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_lessThanHeartbeatInterval_exceptionIsThrown() {
         Config config = new Config();
         config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");

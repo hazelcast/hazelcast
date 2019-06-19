@@ -22,9 +22,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.LinkedList;

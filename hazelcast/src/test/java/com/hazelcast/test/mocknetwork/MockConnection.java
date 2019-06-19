@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.security.cert.Certificate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.mocknetwork.MockNetworkingService.MockEndpointManager.isTargetLeft;
@@ -189,5 +190,10 @@ public class MockConnection implements Connection {
                 + "localEndpoint=" + localEndpoint
                 + ", remoteEndpoint=" + remoteEndpoint
                 + ", alive=" + isAlive() + '}';
+    }
+
+    @Override
+    public Certificate[] getRemoteCertificates() {
+        return null;
     }
 }

@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheConfigura
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventService;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheScheduler;
 import com.hazelcast.client.impl.querycache.subscriber.ClientSubscriberContext;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;

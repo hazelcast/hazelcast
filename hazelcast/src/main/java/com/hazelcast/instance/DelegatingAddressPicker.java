@@ -17,8 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.logging.ILogger;
@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.instance.ServerSocketHelper.createServerSocketChannel;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.ServerSocketHelper.createServerSocketChannel;
 
 /**
  * Delegates picking the bind and public address for this instance
@@ -80,12 +80,12 @@ final class DelegatingAddressPicker
     private void validatePublicAddress(InetSocketAddress inetSocketAddress) {
         InetAddress address = inetSocketAddress.getAddress();
         if (address == null) {
-            throw new ConfigurationException("Cannot resolve address '" + inetSocketAddress + "'");
+            throw new InvalidConfigurationException("Cannot resolve address '" + inetSocketAddress + "'");
         }
 
         if (address.isAnyLocalAddress()) {
-            throw new ConfigurationException("Member address provider has to return a specific public address to broadcast to"
-                    + " other members.");
+            throw new InvalidConfigurationException("Member address provider has to return a specific public address "
+                    + "to broadcast to other members.");
         }
     }
 

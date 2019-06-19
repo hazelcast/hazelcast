@@ -25,7 +25,6 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -77,27 +76,17 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
         int value = 1;
 
         final CountDownLatch latch = new CountDownLatch(1);
-        queryCache.addEntryListener(new EntryAddedListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }, true);
+        queryCache.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
 
         map.put(key, value, 1, SECONDS);
 
         latch.await();
-        sleepSeconds(1);
+        sleepAtLeastMillis(1100);
 
         // map#get creates EXPIRED event
         map.get(key);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, queryCache.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
     }
 
     @Test

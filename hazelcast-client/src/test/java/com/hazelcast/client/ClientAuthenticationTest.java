@@ -19,8 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -29,8 +27,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -41,6 +41,9 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     private final String USERNAME = "user";
     private final String PASSWORD = "pass";
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @After
     public void cleanup() {
@@ -69,38 +72,11 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-
-        // make sure there are no credentials sent over the wire
         clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
+
+        // custom credentials are not supported when security is disabled on members
+        expectedException.expect(IllegalStateException.class);
         hazelcastFactory.newHazelcastClient(clientConfig);
-    }
-
-    @Test
-    public void testAuthenticationWithCustomCredentials_when_multipleNodes() {
-        PortableFactory factory = new CustomCredentialsPortableFactory();
-
-        // with this config, the server will authenticate any credential of type CustomCredentials
-        Config config = new Config();
-        config.getGroupConfig()
-                .setName(USERNAME)
-                .setPassword(PASSWORD);
-        config.getSerializationConfig()
-                .addPortableFactory(1, factory);
-
-        hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-
-        // make sure there are no credentials sent over the wire
-        clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        // ensure client opens a connection to all nodes
-        IMap<Integer, Integer> map = hazelcastInstance.getMap(randomName());
-        for (int i = 0; i < 100; i++) {
-            map.put(i, i);
-        }
     }
 
     private class CustomCredentialsPortableFactory implements PortableFactory {
@@ -108,7 +84,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         public Portable create(int classId) {
             return new CustomCredentials() {
                 @Override
-                public String getUsername() {
+                public String getName() {
                     return USERNAME;
                 }
 

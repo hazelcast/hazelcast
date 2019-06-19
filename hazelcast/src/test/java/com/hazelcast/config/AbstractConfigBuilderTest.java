@@ -284,10 +284,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testQuorumListenerConfig();
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown();
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown();
 
     @Test(expected = InvalidConfigurationException.class)

@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntry
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;

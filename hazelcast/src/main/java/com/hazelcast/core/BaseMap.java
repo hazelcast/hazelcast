@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.transaction.TransactionalMap;
 
 import java.util.Collection;
 import java.util.Set;

@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.api.Client;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.api.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
@@ -40,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
 public final class ClientEndpointImpl implements ClientEndpoint {
 

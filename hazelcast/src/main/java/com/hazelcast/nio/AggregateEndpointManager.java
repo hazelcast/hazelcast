@@ -17,9 +17,11 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 
+@PrivateApi
 public interface AggregateEndpointManager
         extends ConnectionListenable {
 

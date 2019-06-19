@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.EntryCostEstimator;

@@ -24,7 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -236,6 +236,11 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         public void entryEvicted(EntryEvent<Object, Object> event) {
             keys.add(event.getKey());
             evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
         }
 
         @Override

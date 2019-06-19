@@ -34,6 +34,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -91,14 +94,15 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
         }
     }
 
-
+    /**
+     * Should notify only expiration listener.
+     */
     @Test
-    public void testExpirationAndEvictionListener_bothNotified_afterExpirationOfEntries() throws Exception {
+    public void expiration_and_eviction_listener_are_not_both_notified_after_expiration() {
         int numberOfPutOperations = 1000;
-        CountDownLatch expirationEventCount = new CountDownLatch(numberOfPutOperations);
-        CountDownLatch evictionEventCount = new CountDownLatch(numberOfPutOperations);
 
-        map.addEntryListener(new ExpirationAndEvictionListener(expirationEventCount, evictionEventCount), true);
+        ExpirationAndEvictionListener listener = new ExpirationAndEvictionListener();
+        map.addEntryListener(listener, true);
 
         for (int i = 0; i < numberOfPutOperations; i++) {
             map.put(i, i, 100, TimeUnit.MILLISECONDS);
@@ -112,29 +116,29 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertOpenEventually(evictionEventCount);
-        assertOpenEventually(expirationEventCount);
+        assertTrueEventually(() -> assertEquals(numberOfPutOperations,
+                listener.expirationEventArrivalCount.get()));
+        assertTrueAllTheTime(() -> assertEquals(0,
+                listener.evictionEventArrivalCount.get()), 3);
     }
 
 
     private static class ExpirationAndEvictionListener implements EntryExpiredListener, EntryEvictedListener {
 
-        private final CountDownLatch expirationEventArrivalCount;
-        private final CountDownLatch evictionEventArrivalCount;
+        private final AtomicInteger expirationEventArrivalCount = new AtomicInteger();
+        private final AtomicInteger evictionEventArrivalCount = new AtomicInteger();
 
-        ExpirationAndEvictionListener(CountDownLatch expirationEventArrivalCount, CountDownLatch evictionEventArrivalCount) {
-            this.expirationEventArrivalCount = expirationEventArrivalCount;
-            this.evictionEventArrivalCount = evictionEventArrivalCount;
+        ExpirationAndEvictionListener() {
         }
 
         @Override
         public void entryExpired(EntryEvent event) {
-            expirationEventArrivalCount.countDown();
+            expirationEventArrivalCount.incrementAndGet();
         }
 
         @Override
         public void entryEvicted(EntryEvent event) {
-            evictionEventArrivalCount.countDown();
+            evictionEventArrivalCount.incrementAndGet();
         }
     }
 

@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;

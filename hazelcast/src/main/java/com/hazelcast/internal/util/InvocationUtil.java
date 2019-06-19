@@ -19,7 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
@@ -66,7 +66,7 @@ public final class InvocationUtil {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
-            return new CompletedFuture<Object>(null, null, new CallerRunsExecutor());
+            return new CompletedFuture(null, null, new CallerRunsExecutor());
         }
 
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
@@ -83,7 +83,7 @@ public final class InvocationUtil {
         // ChainingFuture uses the iterator to start invocations
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
-        return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
+        return new ChainingFuture(invocationIterator, executor, memberIterator, logger);
     }
 
     /**
