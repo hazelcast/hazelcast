@@ -20,6 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlPrepare;
 import com.hazelcast.sql.impl.SqlTable;
 import com.hazelcast.sql.pojos.Person;
+import com.hazelcast.sql.rules.HazelcastFilterRule;
+import com.hazelcast.sql.rules.HazelcastProjectRule;
+import com.hazelcast.sql.rules.HazelcastTableScanRule;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -35,7 +38,6 @@ import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.schema.impl.LongSchemaVersion;
 import org.apache.calcite.sql.SqlNode;
@@ -171,7 +173,11 @@ public final class HazelcastSql2 {
         // TODO: 4. Optimize
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
-        hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
+        // TODO: Rules to merge scan and project/filter
+
+        hepBuilder.addRuleInstance(HazelcastTableScanRule.INSTANCE);
+        hepBuilder.addRuleInstance(HazelcastFilterRule.INSTANCE);
+        hepBuilder.addRuleInstance(HazelcastProjectRule.INSTANCE);
 
         HepPlanner hepPlanner = new HepPlanner(
             hepBuilder.build()
@@ -182,6 +188,8 @@ public final class HazelcastSql2 {
         RelNode optimizedRelNode = hepPlanner.findBestExp();
 
         System.out.println(">>> Optimized REL: " + optimizedRelNode);
+
+        // TODO: Use visitor to find unsupported operations!
 
         // TODO: 5. Convert to physical
 
