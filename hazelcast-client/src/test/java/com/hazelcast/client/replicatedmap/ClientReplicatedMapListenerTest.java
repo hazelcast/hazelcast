@@ -24,12 +24,12 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -208,6 +208,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         final AtomicLong removeCount = new AtomicLong();
         final AtomicLong updateCount = new AtomicLong();
         final AtomicLong evictCount = new AtomicLong();
+        final AtomicLong expiryCount = new AtomicLong();
         final AtomicLong mapClearCount = new AtomicLong();
         final AtomicLong mapEvictCount = new AtomicLong();
 
