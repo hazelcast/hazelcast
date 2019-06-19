@@ -7,5 +7,5 @@ import org.apache.calcite.rel.RelNode;
 public interface HazelcastRel extends HazelcastRelNode {
     Convention LOGICAL = new Convention.Impl("LOGICAL", HazelcastRel.class);
 
-    // TODO: Visitor to produce implementation.
+    void visitForPlan(PhysicalPlanVisitor visitor);
 }

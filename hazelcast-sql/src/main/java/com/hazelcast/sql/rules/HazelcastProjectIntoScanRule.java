@@ -50,7 +50,7 @@ public class HazelcastProjectIntoScanRule extends RelOptRule {
 
         ProjectPushInfo projectPushInfo = getFieldsInformation(scan.getRowType(), project.getProjects());
 
-        HazelcastTableScan newScan = createScan(scan, projectPushInfo);
+        HazelcastTableScanRel newScan = createScan(scan, projectPushInfo);
 
         List<RexNode> newProjects = new ArrayList<>();
         for (RexNode n : project.getChildExps()) {
@@ -261,8 +261,8 @@ public class HazelcastProjectIntoScanRule extends RelOptRule {
      * @param projectPushInfo the source of row type and fields list
      * @return new scan instance
      */
-    protected HazelcastTableScan createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
-        return new HazelcastTableScan(scan.getCluster(),
+    protected HazelcastTableScanRel createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
+        return new HazelcastTableScanRel(scan.getCluster(),
             scan.getTraitSet().plus(HazelcastRel.LOGICAL),
             scan.getTable(),
             projectPushInfo.createNewRowType(scan.getCluster().getTypeFactory())

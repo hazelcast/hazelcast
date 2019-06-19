@@ -37,6 +37,10 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
 
+        // Add some data.
+        for (int i = 0; i < 100; i++)
+            member1.getMap("persons").put(i, new Person(i));
+
         // Execute.
         HazelcastSql2 service = new HazelcastSql2(member1);
 

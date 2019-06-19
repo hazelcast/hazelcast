@@ -6,15 +6,15 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
-public class HazelcastTableScan extends TableScan implements HazelcastRelNode {
+public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
 
     private final RelDataType rowType;
 
-    public HazelcastTableScan(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
+    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
         this(cluster, traitSet, table, table.getRowType());
     }
 
-    public HazelcastTableScan(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
+    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
         super(cluster, traitSet, table);
 
         this.rowType = rowType;
@@ -23,5 +23,10 @@ public class HazelcastTableScan extends TableScan implements HazelcastRelNode {
     @Override
     public RelDataType deriveRowType() {
         return rowType;
+    }
+
+    @Override
+    public void visitForPlan(PhysicalPlanVisitor visitor) {
+        visitor.visit(this);
     }
 }

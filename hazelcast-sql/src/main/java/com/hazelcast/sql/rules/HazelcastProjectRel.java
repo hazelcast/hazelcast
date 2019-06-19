@@ -25,4 +25,9 @@ public class HazelcastProjectRel extends Project implements HazelcastRel {
     public Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
         return new HazelcastProjectRel(getCluster(), traitSet, input, exps, rowType);
     }
+
+    @Override
+    public void visitForPlan(PhysicalPlanVisitor visitor) {
+        throw new UnsupportedOperationException();
+    }
 }

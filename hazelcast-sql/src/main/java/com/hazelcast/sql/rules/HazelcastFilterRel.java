@@ -15,4 +15,9 @@ public class HazelcastFilterRel extends Filter implements HazelcastRel {
     public Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
         return new HazelcastFilterRel(getCluster(), traitSet, input, condition);
     }
+
+    @Override
+    public void visitForPlan(PhysicalPlanVisitor visitor) {
+        throw new UnsupportedOperationException();
+    }
 }

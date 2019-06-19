@@ -23,6 +23,6 @@ public class HazelcastTableScanRule extends RelOptRule {
 
         RelTraitSet traits = access.getTraitSet().plus(HazelcastRel.LOGICAL);
 
-        call.transformTo(new HazelcastTableScan(access.getCluster(), traits, access.getTable()));
+        call.transformTo(new HazelcastTableScanRel(access.getCluster(), traits, access.getTable()));
     }
 }

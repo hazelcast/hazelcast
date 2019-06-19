@@ -105,10 +105,10 @@ public class RootExec extends AbstractExec {
 
         child.consume(rows::add);
 
-        // TODO: Remove print.
-        System.out.println(">>> QUERY RESULT: ");
-
-        for (Row row : rows)
-            System.out.println("\t" + row);
+//        // TODO: Remove print.
+//        System.out.println(">>> QUERY RESULT: ");
+//
+//        for (Row row : rows)
+//            System.out.println("\t" + row);
     }
 }

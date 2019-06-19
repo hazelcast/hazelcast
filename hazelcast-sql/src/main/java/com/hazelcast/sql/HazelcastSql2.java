@@ -17,13 +17,19 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.query.plan.physical.PhysicalNodeVisitor;
+import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlPrepare;
 import com.hazelcast.sql.impl.SqlTable;
 import com.hazelcast.sql.pojos.Person;
 import com.hazelcast.sql.rules.HazelcastFilterRule;
 import com.hazelcast.sql.rules.HazelcastProjectIntoScanRule;
 import com.hazelcast.sql.rules.HazelcastProjectRule;
+import com.hazelcast.sql.rules.HazelcastRootRel;
 import com.hazelcast.sql.rules.HazelcastTableScanRule;
+import com.hazelcast.sql.rules.PhysicalPlanVisitor;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -60,10 +66,10 @@ public final class HazelcastSql2 {
 
     private final SqlPrepare sqlPrepare = new SqlPrepare();
 
-    private final HazelcastInstance instance;
+    private final HazelcastInstanceImpl instance;
 
     public HazelcastSql2(HazelcastInstance instance) {
-        this.instance = instance;
+        this.instance = ((HazelcastInstanceProxy)instance).getOriginal();
     }
 
     public Enumerable<Object> execute2(String sql) throws Exception {
@@ -192,19 +198,33 @@ public final class HazelcastSql2 {
 
         RelNode optimizedRelNode = hepPlanner.findBestExp();
 
-        System.out.println(">>> Optimized REL: " + optimizedRelNode);
+        HazelcastRootRel optimizedRootRelNode = new HazelcastRootRel(
+            optimizedRelNode.getCluster(),
+            optimizedRelNode.getTraitSet(),
+            optimizedRelNode
+        );
+
+        System.out.println(">>> Optimized REL: " + optimizedRootRelNode);
 
         // TODO: Use visitor to find unsupported operations!
-
-        // TODO: 5. Convert to physical
 
         // TODO: See DefaultSqlHandler.convertToDrel
         // TODO: See PlannerPhase.LOGICAL - this is where logical expressions are converted!
         // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
 
-        // TODO: 6. Convert to fragments
+        // TODO: 5. Convert to physical
+        PhysicalPlanVisitor planVisitor = new PhysicalPlanVisitor();
 
-        // TODO: 7. Execute
+        optimizedRootRelNode.visitForPlan(planVisitor);
+
+        PhysicalPlan plan = planVisitor.getPlan();
+
+        // TODO: 6. Execute
+        instance.getQueryService().execute(plan, Collections.emptyList());
+
+        // TODO: Result consume is not implemented yet.
+        Thread.sleep(5000L);
+
         return null;
     }
 
