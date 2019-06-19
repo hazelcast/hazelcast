@@ -2,6 +2,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -21,6 +22,26 @@ import java.util.List;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NewQueryTestFull extends HazelcastTestSupport {
+
+    private static final String QUERY = "select height from persons where age >= 5 order by name";
+//    private static final String QUERY = "select age, height from persons where age >= 5";
+
+    @Test
+    public void testEndtoEnd() throws Exception {
+        // Start several members.
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        Config cfg = new Config();
+
+        HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
+
+        // Execute.
+        HazelcastSql2 service = new HazelcastSql2(member1);
+
+        service.execute2(QUERY);
+    }
+
     @Test
     public void testSqlSimple() throws Exception {
         // Start several members.
@@ -31,16 +52,13 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
 
-        String query = "select height from persons where age >= 5 order by name";
-//        String query = "select age, height from persons where age >= 5";
-
         // Insert data.
         for (int i = 0; i < 100; i++)
             member1.getMap("queryMap").put(i, new Person(i));
 
         HazelcastSql hazelcastSql = HazelcastSql.createFor(member1);
 
-        Enumerable<Object> res = hazelcastSql.query(query);
+        Enumerable<Object> res = hazelcastSql.query(QUERY);
 
         for (Object object : res)
             System.out.println(object instanceof Object[] ? Arrays.deepToString((Object[]) object) : object);

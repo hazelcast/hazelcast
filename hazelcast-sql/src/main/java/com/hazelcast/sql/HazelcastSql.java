@@ -26,30 +26,11 @@ import org.apache.calcite.jdbc.CalcitePrepare;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.linq4j.Enumerable;
-import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.plan.hep.HepPlanner;
-import org.apache.calcite.plan.hep.HepProgramBuilder;
-import org.apache.calcite.plan.volcano.VolcanoPlanner;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
-import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlExplainFormat;
 import org.apache.calcite.sql.SqlExplainLevel;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.validate.SqlConformance;
-import org.apache.calcite.sql.validate.SqlConformanceEnum;
-import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
-import org.apache.calcite.sql2rel.SqlRexConvertlet;
-import org.apache.calcite.sql2rel.SqlRexConvertletTable;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.sql2rel.StandardConvertletTable;
 
+@SuppressWarnings("unchecked")
 public final class HazelcastSql {
 
     private final SqlPrepare sqlPrepare = new SqlPrepare();
@@ -71,79 +52,20 @@ public final class HazelcastSql {
     public Enumerable<Object> query(String query) throws Exception {
         SqlContext context = new SqlContext(javaTypeFactory, schema);
 
-        SqlParser parser = SqlParser.create(query, SqlParser.configBuilder().build());
-
-        SqlNode node = parser.parseQuery();
-
-        JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
-        RexBuilder rexBuilder = new RexBuilder(typeFactory);
-
-        VolcanoPlanner planner = new VolcanoPlanner();
-
-        RelOptCluster cluster = RelOptCluster.create(planner, rexBuilder);
-
-//        HazelcastSqlValidator validator = new HazelcastSqlValidator(
-//            SqlOperatorTable opTab,
-//            SqlValidatorCatalogReader catalogReader,
-//            typeFactory,
-//            SqlConformanceEnum.DEFAULT
-//        );
-
-        SqlToRelConverter converter = new SqlToRelConverter(
-            null, // Expander
-            null, // Validator
-            null, // Catalog
-            cluster, // Cluster
-            StandardConvertletTable.INSTANCE, // SqlRexConvertletTable
-            SqlToRelConverter.configBuilder().withConvertTableAccess(false).build() // Config
-        );
-
-        SqlContext context2 = new SqlContext(javaTypeFactory, schema);
-
-        CalcitePrepare.Dummy.push(context2);
-
-        try {
-            CalcitePrepare.ConvertResult convertResult = sqlPrepare.convert(context, query);
-
-            RelRoot root = convertResult.root;
-
-            System.out.println(root);
-
-            HepProgramBuilder hepBuilder = new HepProgramBuilder();
-
-            hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
-
-            HepPlanner hepPlanner = new HepPlanner(
-                hepBuilder.build()
-            );
-
-            hepPlanner.setRoot(root.rel);
-
-            RelNode transformed = hepPlanner.findBestExp();
-
-            System.out.println(transformed);
-        }
-        finally {
-            CalcitePrepare.Dummy.pop(context2);
-        }
-
-
-
-//        RelRoot relNode = converter.convertQuery(node, false, false);
-
         CalcitePrepare.Dummy.push(context);
         try {
-//        CalcitePrepare.ParseResult parseResult = sqlPrepare.parse(context, query);
-//        System.out.println(parseResult.sqlNode);
+            CalcitePrepare.Query query0 = CalcitePrepare.Query.of(query);
 
-//        CalcitePrepare.ConvertResult convertResult = sqlPrepare.convert(context, query);
-//        System.out.println(convertResult.root);
+            CalcitePrepare.CalciteSignature<Object> calciteSignature = sqlPrepare.prepareSql(
+                context,
+                query0,
+                Object[].class,
+                -1
+            );
 
-            CalcitePrepare.CalciteSignature<Object> calciteSignature =
-                    sqlPrepare.prepareSql(context, CalcitePrepare.Query.of(query), Object[].class, -1);
-            context.setInternalParameters(calciteSignature.internalParameters);
             return calciteSignature.enumerable(context.getDataContext());
-        } finally {
+        }
+        finally {
             CalcitePrepare.Dummy.pop(context);
         }
     }
