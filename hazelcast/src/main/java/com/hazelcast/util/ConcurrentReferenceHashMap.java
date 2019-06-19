@@ -22,7 +22,6 @@ package com.hazelcast.util;
  * http://creativecommons.org/licenses/publicdomain
  */
 
-import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -48,6 +47,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -726,7 +726,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             return oldValue;
         }
 
-        V applyIfPresent(K key, int hash, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V applyIfPresent(K key, int hash, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
                 V oldValue = get(key, hash);
@@ -749,7 +749,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
 
-        V merge(K key, V value, int hash, IBiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        V merge(K key, V value, int hash, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
                 V oldValue = get(key, hash);
@@ -1433,7 +1433,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @Override
-    public V applyIfPresent(K key, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key);
         checkNotNull(remappingFunction);
 
