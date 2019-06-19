@@ -625,7 +625,6 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     private class TestEntryListener implements EntryListener {
-
         int entryAddedCalled;
         int entryEvictedCalled;
         int entryExpiredCalled;

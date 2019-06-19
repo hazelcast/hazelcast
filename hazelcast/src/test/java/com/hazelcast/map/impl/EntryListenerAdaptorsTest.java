@@ -56,6 +56,7 @@ public class EntryListenerAdaptorsTest {
         String msg = "should be called exactly 1 times";
         assertEquals(msg, listener.entryAddedCalled, 1);
         assertEquals(msg, listener.entryEvictedCalled, 1);
+        assertEquals(msg, listener.entryExpiredCalled, 1);
         assertEquals(msg, listener.entryRemovedCalled, 1);
         assertEquals(msg, listener.entryUpdatedCalled, 1);
         assertEquals(msg, listener.mapClearedCalled, 1);

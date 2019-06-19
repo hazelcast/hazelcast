@@ -290,6 +290,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
         final CountDownLatch latchEvicted = new CountDownLatch(1);
+        final CountDownLatch latchExpired = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
             @Override
