@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.SqlContext;
 import com.hazelcast.sql.impl.SqlPrepare;
 import com.hazelcast.sql.impl.SqlTable;
 import com.hazelcast.sql.pojos.Person;
@@ -39,7 +38,6 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.schema.impl.LongSchemaVersion;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -66,14 +64,14 @@ public final class HazelcastSql2 {
 
     public Enumerable<Object> execute2(String sql) throws Exception {
         // TODO: 1. Parse.
+        // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
 
+        // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
         CalciteSchema schema = CalciteSchema.createRootSchema(true);
         schema.add("persons", new SqlTable(typeFactory .createStructType(Person.class), instance.getMap("persons")));
 
         CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
-
-        SqlContext context = new SqlContext(typeFactory, schema);
 
         Properties properties = new Properties();
 
@@ -83,15 +81,17 @@ public final class HazelcastSql2 {
 
         CalciteConnectionConfigImpl config = new CalciteConnectionConfigImpl(properties);
 
-        CalciteCatalogReader catalogReader = new CalciteCatalogReader(
+        // TODO: Our own implemenation of catalog reader! (see DrillCalciteCatalogReader)
+                CalciteCatalogReader catalogReader = new CalciteCatalogReader(
             rootSchema,
             Collections.emptyList(), // Default schema path.
             typeFactory,
             config
         );
 
+        // TODO: Drill's SqlConverter.toRel - see how VolcanoPlanner is instantiated.
         final VolcanoPlanner planner = new VolcanoPlanner(
-            null, // Cosr factory
+            null, // TODO: DrillCostBase.DrillCostFactory
             Contexts.of(config)
         );
 
@@ -99,6 +99,7 @@ public final class HazelcastSql2 {
 
         SqlRexConvertletTable rexConvertletTable = StandardConvertletTable.INSTANCE;
 
+        // TODO: Do we need our own parser config? (See DrillParserConfig)
         SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
         parserConfig.setUnquotedCasing(Casing.UNCHANGED);
@@ -126,6 +127,7 @@ public final class HazelcastSql2 {
         final SqlOperatorTable opTab0 = config.fun(SqlOperatorTable.class, SqlStdOperatorTable.instance());
         final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(opTab0, catalogReader);
 
+        // TODO: Need our own validator, investigate interface
         SqlValidator sqlValidator = new HazelcastSqlValidator(
             opTab,
             catalogReader,
@@ -135,7 +137,11 @@ public final class HazelcastSql2 {
 
         SqlNode validatedNode = sqlValidator.validate(node);
 
+        // TODO: User SqlShuttle to look for unsupported query parts. See Drill's UnsupportedOperatorsVisitor.
+
         // TODO: 3. Convert to Rel.
+
+        // TODO: See SqlConverter.SqlToRelConverterConfig
         final SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder =
             SqlToRelConverter.configBuilder()
                 .withTrimUnusedFields(true)
@@ -143,6 +149,7 @@ public final class HazelcastSql2 {
                 .withExplain(false)
                 .withConvertTableAccess(false);
 
+        // TODO: See DrillRexBuilder
         RexBuilder rexBuilder = new RexBuilder(typeFactory);
         RelOptCluster cluster = RelOptCluster.create(planner, rexBuilder);
 
@@ -156,6 +163,8 @@ public final class HazelcastSql2 {
         );
 
         RelRoot root = sqlToRelConverter.convertQuery(validatedNode, false, true);
+
+        // TODO: See PreProcessLogicalRel and DefaultSqlHandler.validateAndConvert
 
         System.out.println(">>> Converted REL: " + root);
 
@@ -175,6 +184,10 @@ public final class HazelcastSql2 {
         System.out.println(">>> Optimized REL: " + optimizedRelNode);
 
         // TODO: 5. Convert to physical
+
+        // TODO: See DefaultSqlHandler.convertToDrel
+        // TODO: See PlannerPhase.LOGICAL - this is where logical expressions are converted!
+        // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
 
         // TODO: 6. Convert to fragments
 
