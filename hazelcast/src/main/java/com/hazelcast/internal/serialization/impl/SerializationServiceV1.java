@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSeriali
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.ClassNameFilter;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
