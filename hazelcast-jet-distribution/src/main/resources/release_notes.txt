@@ -5,6 +5,47 @@ issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
 The label in the brackets refer to the respective module.
 
+** Hazelcast Jet 3.1 **
+
+1. New Features
+
+[pipeline-api] Enable composite transforms using `apply` operator [#1352]
+[pipeline-api] Add support for fault tolerant sources to SourceBuilder API [#1394]
+[core] YAML configuration support [#1371]
+[integration] Source and sink for Elasticsearch [https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/elasticsearch]
+[integration] Source and sink for InfluxDB [https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/influxdb]
+[beam] First release of Hazelcast Jet Beam Runner [https://beam.apache.org/documentation/runners/jet/]
+
+2. Enhancements
+
+[pipeline-api] New AggregateOperations: `filtering` and `flatMapping` [#1369]
+[pipeline-api] Consecutive transform stages will be merged into one vertex during execution [#1325]
+[pipeline-api] Hash-join operator now supports non-distinct keys on the secondary inputs [#1327]
+[pipeline-api] Idle time out for streaming sources are now configurable using
+               StreamSource.setPartitionIdleTimeout() [#1328]
+[pipeline-api] Optimizations for batch grouping operator to release memory eagerly [#1345]
+[kafka] Kafka client updated to version 2.2
+
+3. Fixes
+
+[jet-cli] Improve parsing of command line arguments for jet.sh [#1409, #1411, #1449]
+[core] Improve handling of errors if operation packets are lost [#1377, #1435]
+[core] Configured classloader in Hazelcast Config should be set as the parent of job classloader [#1395]
+[core] Job classloader will now print a warning if it's used after a job is completed [#1315, #1446]
+[core] Snapshot creation should be handled gracefully even if execution is already completed on a member [#1397]
+[core] Added check to ensure that any explicit Hazelcast IMDG dependency has same version as the shaded one [#1412]
+[core] Fix StackOverFlowError when a very long path in DAG is used [#1430]
+[kafka] Improve Kafka source responsiveness when broker is down [#1429]
+[kafka] Improve handling of TimeoutException in Kafka sink [#1433]
+
+4. Breaking Changes
+
+[pipeline-api] Previously it was possible to close the buffer in SourceBuilder when building a streaming source,
+               however a streaming source by definition should never close. buffer.close() method now throws when
+               called inside a streaming source. [#1394]
+[core] Signatures of SourceProcessors.convenientSourceP and convenientTimestampedSourceP
+       have been updated to support fault tolerance [#1394]
+
 ** Hazelcast Jet 3.0 **
 
 1. New Features

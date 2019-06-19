@@ -1,3 +1,15 @@
+** Hazelcast Jet 3.1 **
+
+* Apache Beam Runner for Hazelcast Jet is released. For more details please see https://beam.apache.org/documentation/runners/jet/
+* New hazelcast-jet-contrib repository containing new connectors:
+   * InfluxDb: https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/influxdb
+   * Elasticsearch: https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/elasticsearch
+* New AggregateOperations: `filtering` and `flatMapping`
+* SourceBuilder API has been extended to add support for fault tolerance
+* Support for composite transforms in Pipeline API through the `apply` operator
+* Jet now supports YAML configuration as well as XML
+* Update Hazelcast IMDG version to 3.12.1
+
 ** Hazelcast Jet 3.0 **
 
 * 3.0 is the first major release of Hazelcast Jet past 0.x, and is versioned at 3.x to align
