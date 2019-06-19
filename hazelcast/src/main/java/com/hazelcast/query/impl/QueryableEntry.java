@@ -53,6 +53,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     // overridden in some subclasses
     public Metadata getMetadata() {
+        // record is not set in plenty of internal unit tests
         if (record != null) {
             return record.getMetadata();
         }

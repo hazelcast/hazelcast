@@ -30,7 +30,7 @@ public class DefaultIndexProvider implements IndexProvider {
     public InternalIndex createIndex(String name, String[] components, boolean ordered, Extractors extractors,
                                      InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats,
                                      StoreAdapter partitionStoreAdapter) {
-        return new IndexImpl(name, components, ordered, ss, extractors, copyBehavior, stats, partitionStoreAdapter);
+        return new IndexImpl(name, components, ordered, ss, extractors, copyBehavior, stats);
     }
 
 }

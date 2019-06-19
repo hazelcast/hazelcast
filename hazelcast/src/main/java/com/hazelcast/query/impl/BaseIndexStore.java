@@ -17,16 +17,21 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.json.NonTerminalJsonValue;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.util.Clock;
 
+import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
@@ -44,7 +49,6 @@ public abstract class BaseIndexStore implements IndexStore {
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
     private boolean multiResultHasToDetectDuplicates;
-    private final AbstractIndex indexImpl;
     /**
      * {@code true} if this index store has at least one candidate entry
      * for expiration (idle or tll), otherwise {@code false}.
@@ -55,13 +59,12 @@ public abstract class BaseIndexStore implements IndexStore {
      */
     private boolean isIndexStoreExpirable;
 
-    BaseIndexStore(IndexCopyBehavior copyOn, AbstractIndex indexImpl) {
+    BaseIndexStore(IndexCopyBehavior copyOn) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
         } else {
             resultCopyFunctor = new CopyInputFunctor();
         }
-        this.indexImpl = indexImpl;
     }
 
     /**
@@ -173,10 +176,6 @@ public abstract class BaseIndexStore implements IndexStore {
         // nothing to destroy
     }
 
-    public AbstractIndex getIndexImpl() {
-        return indexImpl;
-    }
-
     @SuppressWarnings("unchecked")
     private void unwrapAndInsertToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
         if (newValue == NonTerminalJsonValue.INSTANCE) {
@@ -245,6 +244,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
     void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
         assert lock.isWriteLockedByCurrentThread();
+        // StoreAdapter is not set in plenty of internal unit tests
         if (record.getStoreAdapter() != null) {
             isIndexStoreExpirable = record.getStoreAdapter().isExpirable();
         }
@@ -271,11 +271,7 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
             if (isExpirable()) {
-                long now = Clock.currentTimeMillis();
-                for (Map.Entry<Data, QueryableEntry> entry : map.entrySet()) {
-                    QueryableEntry queryableEntry = entry.getValue();
-                    queryableEntry.getRecord().onAccessSafe(now);
-                }
+                return new EvictionAwareHashMapDelegate(map);
             }
             return map;
         }
@@ -287,22 +283,160 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
             if (map != null && !map.isEmpty()) {
+                HashMap<Data, QueryableEntry> newMap = new HashMap<Data, QueryableEntry>(map);
                 if (isExpirable()) {
-                    HashMap<Data, QueryableEntry> newMap = new HashMap<>(map.size());
-                    long now = Clock.currentTimeMillis();
-                    for (Map.Entry<Data, QueryableEntry> entry : map.entrySet()) {
-                        QueryableEntry queryableEntry = entry.getValue();
-                        queryableEntry.getRecord().onAccessSafe(now);
-                        newMap.put(entry.getKey(), queryableEntry);
-                    }
-                    return newMap;
-                } else {
-                    return new HashMap<Data, QueryableEntry>(map);
+                    return new EvictionAwareHashMapDelegate(newMap);
                 }
+                return newMap;
             }
             return map;
         }
 
     }
 
+    /**
+     * This delegating Map updates the {@link Record}'s access time on every
+     * {@link QueryableEntry} retrieved through the {@link HashMap#entrySet()} or {@link HashMap#values()}.
+     *
+     */
+    private static class EvictionAwareHashMapDelegate implements Map<Data, QueryableEntry> {
+
+        private final Map<Data, QueryableEntry> delegateMap;
+
+        EvictionAwareHashMapDelegate(Map<Data, QueryableEntry> map) {
+            this.delegateMap = map;
+        }
+
+        @Override
+        public int size() {
+            return delegateMap.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegateMap.isEmpty();
+        }
+
+        @Override
+        public boolean containsKey(Object o) {
+            return delegateMap.containsKey(o);
+        }
+
+        @Override
+        public boolean containsValue(Object o) {
+            return delegateMap.containsValue(o);
+        }
+
+        @Override
+        public QueryableEntry put(Data data, QueryableEntry queryableEntry) {
+            return delegateMap.put(data, queryableEntry);
+        }
+
+        @Override
+        public QueryableEntry remove(Object o) {
+            return delegateMap.remove(o);
+        }
+
+        @Override
+        public void putAll(Map<? extends Data, ? extends QueryableEntry> map) {
+            delegateMap.putAll(map);
+        }
+
+        @Override
+        public void clear() {
+            delegateMap.clear();
+        }
+
+        @Override
+        public Set<Data> keySet() {
+            return delegateMap.keySet();
+        }
+
+        @Override
+        public QueryableEntry get(Object o) {
+            QueryableEntry queryableEntry = delegateMap.get(o);
+            if (queryableEntry != null) {
+                long now = Clock.currentTimeMillis();
+                queryableEntry.getRecord().onAccessSafe(now);
+            }
+            return queryableEntry;
+        }
+
+        @Override
+        public Collection<QueryableEntry> values() {
+            long now = Clock.currentTimeMillis();
+            return new EvictionAwareSet<QueryableEntry>(delegateMap.values(),
+                    queryableEntry -> queryableEntry.getRecord().onAccessSafe(now));
+        }
+
+        @Override
+        public Set<Entry<Data, QueryableEntry>> entrySet() {
+            long now = Clock.currentTimeMillis();
+            return new EvictionAwareSet<Entry<Data, QueryableEntry>>(delegateMap.entrySet(),
+                    entry -> entry.getValue().getRecord().onAccessSafe(now));
+        }
+
+        private static class EvictionAwareSet<V> extends AbstractSet<V> {
+
+            private final Collection<V> delegateCollection;
+            private final Consumer<V> recordUpdater;
+
+            EvictionAwareSet(Collection<V> delegateCollection, Consumer<V> recordUpdater) {
+                this.delegateCollection = delegateCollection;
+                this.recordUpdater = recordUpdater;
+            }
+
+            @Override
+            public int size() {
+                return delegateCollection.size();
+            }
+
+            @Override
+            public Iterator<V> iterator() {
+                return new EvictionAwareIterator(delegateCollection.iterator());
+            }
+
+            public boolean add(V v) {
+                return delegateCollection.add(v);
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                return delegateCollection.remove(o);
+            }
+
+            @Override
+            public void clear() {
+                delegateCollection.clear();
+            }
+
+            private class EvictionAwareIterator implements Iterator<V> {
+
+                private final Iterator<V> delegateIterator;
+
+                EvictionAwareIterator(Iterator<V> iterator) {
+                    this.delegateIterator = iterator;
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return delegateIterator.hasNext();
+                }
+
+                @Override
+                public V next() {
+                    V next = delegateIterator.next();
+                    if (next != null) {
+                        recordUpdater.accept(next);
+                    }
+                    return next;
+                }
+
+                @Override
+                public void remove() {
+                    delegateIterator.remove();
+                }
+            }
+        }
+    }
 }

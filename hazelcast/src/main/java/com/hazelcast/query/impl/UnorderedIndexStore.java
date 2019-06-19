@@ -39,8 +39,8 @@ public class UnorderedIndexStore extends BaseIndexStore {
 
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
-    public UnorderedIndexStore(IndexCopyBehavior copyOn, AbstractIndex indexImpl) {
-        super(copyOn, indexImpl);
+    public UnorderedIndexStore(IndexCopyBehavior copyOn) {
+        super(copyOn);
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();

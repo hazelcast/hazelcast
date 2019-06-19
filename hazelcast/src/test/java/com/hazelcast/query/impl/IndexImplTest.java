@@ -46,7 +46,7 @@ public class IndexImplTest {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
         Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
         index = new IndexImpl(ATTRIBUTE_NAME, null, false, mockSerializationService, mockExtractors,
-                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY, null);
+                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
     }
 
     @Test

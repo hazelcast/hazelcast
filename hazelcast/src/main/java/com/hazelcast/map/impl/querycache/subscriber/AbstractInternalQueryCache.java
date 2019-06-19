@@ -20,8 +20,6 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.StoreAdapter;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -30,6 +28,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Indexes;
@@ -86,9 +85,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
                 queryCacheConfig, getEvictionListener(), extractors);
 
-        StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new QueryCacheRecordStoreAdapter(recordStore);
+        assert indexes.isGlobal();
         for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered(), recordStoreAdapter);
+            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered(), null);
         }
     }
 
@@ -220,30 +219,5 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     public void clear() {
         recordStore.clear();
         indexes.destroyIndexes();
-    }
-
-    static final class QueryCacheRecordStoreAdapter implements StoreAdapter<QueryCacheRecord> {
-
-        private final QueryCacheRecordStore recordStore;
-
-        QueryCacheRecordStoreAdapter(QueryCacheRecordStore recordStore) {
-            this.recordStore = recordStore;
-        }
-
-        @Override
-        public boolean evictIfExpired(QueryCacheRecord record, long now, boolean backup) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isTtlOrMaxIdleDefined(QueryCacheRecord record) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isExpirable() {
-            throw new UnsupportedOperationException();
-        }
-
     }
 }

@@ -42,8 +42,8 @@ public class OrderedIndexStore extends BaseIndexStore {
 
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
-    public OrderedIndexStore(IndexCopyBehavior copyOn, AbstractIndex indexImpl) {
-        super(copyOn, indexImpl);
+    public OrderedIndexStore(IndexCopyBehavior copyOn) {
+        super(copyOn);
         assert copyOn != null;
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();

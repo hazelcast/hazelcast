@@ -22,7 +22,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.NodeInvokerWrapper;
@@ -457,8 +456,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void addIndex(String attribute, boolean ordered) {
         checkNotNull(attribute, "attribute cannot be null");
 
-        StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new QueryCacheRecordStoreAdapter(recordStore);
-        getIndexes().addOrGetIndex(attribute, ordered, recordStoreAdapter);
+        assert indexes.isGlobal();
+        getIndexes().addOrGetIndex(attribute, ordered, null);
 
         InternalSerializationService serializationService = context.getSerializationService();
 

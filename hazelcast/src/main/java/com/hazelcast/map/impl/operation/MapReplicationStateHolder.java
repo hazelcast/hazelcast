@@ -156,7 +156,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                         .getPartitionContainer(operation.getPartitionId());
                 for (Map.Entry<String, Boolean> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                     Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue(), storeAdapter);
+                    indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue(),
+                            indexes.isGlobal() ? null : storeAdapter);
                 }
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
