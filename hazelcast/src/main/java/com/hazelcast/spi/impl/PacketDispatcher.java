@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.function.Consumer;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 

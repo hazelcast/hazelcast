@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;

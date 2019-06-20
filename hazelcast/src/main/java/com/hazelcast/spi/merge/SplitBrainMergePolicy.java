@@ -18,7 +18,7 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeAware;
 

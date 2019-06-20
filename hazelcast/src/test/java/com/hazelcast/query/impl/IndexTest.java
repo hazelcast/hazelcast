@@ -57,7 +57,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.instance.impl.TestUtil.toData;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

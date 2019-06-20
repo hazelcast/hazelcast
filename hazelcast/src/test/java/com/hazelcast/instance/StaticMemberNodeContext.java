@@ -18,6 +18,10 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.NetworkingService;

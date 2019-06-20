@@ -21,7 +21,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalEventAdapter.EventType;
 import com.hazelcast.ringbuffer.ReadResultSet;

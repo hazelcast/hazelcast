@@ -19,7 +19,7 @@ package com.hazelcast.test.starter.answer;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.NodeEngine;
 import org.mockito.invocation.InvocationOnMock;
 

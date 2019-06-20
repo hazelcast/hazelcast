@@ -23,10 +23,10 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.DefaultNodeContext;
+import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 

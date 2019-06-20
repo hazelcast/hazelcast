@@ -24,7 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;

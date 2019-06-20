@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
