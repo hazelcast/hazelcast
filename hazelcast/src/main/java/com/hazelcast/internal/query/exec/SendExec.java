@@ -40,8 +40,12 @@ public class SendExec extends AbstractExec {
     public IterationResult advance() {
         while (true) {
             if (curBatch == null) {
-                if (upstreamDone)
+                if (upstreamDone) {
+                    for (Outbox outbox : outboxes)
+                        outbox.close();
+
                     return IterationResult.FETCHED_DONE;
+                }
 
                 switch (upstream.advance()) {
                     case FETCHED_DONE:
@@ -60,6 +64,8 @@ public class SendExec extends AbstractExec {
                         curBatchPos = 0;
                         curBatchRowCnt = batchRowCnt;
 
+                        break;
+
                     case WAIT:
                         return IterationResult.WAIT;
 
@@ -71,10 +77,6 @@ public class SendExec extends AbstractExec {
 
             if (!pushRows())
                 return IterationResult.WAIT;
-            else {
-                if (upstreamDone)
-                    return IterationResult.FETCHED_DONE;
-            }
         }
     }
 

@@ -44,8 +44,6 @@ public class Outbox extends Mailbox {
      * @return {@code True} if the outbox can accept more data.
      */
     public boolean onRow(Row row) {
-        System.out.println(">>> OUTBOX [ADDED]: " + this + ": " + row);
-
         if (batch == null)
             batch = new LinkedList<>();
 
@@ -59,7 +57,7 @@ public class Outbox extends Mailbox {
     }
 
     public void close() {
-        System.out.println(">>> OUTBOX [CLOSE]: " + this);
+        System.out.println(">>> OUTBOX [CLOSE]: " + this + ": " + batch.size());
 
         send(true);
     }

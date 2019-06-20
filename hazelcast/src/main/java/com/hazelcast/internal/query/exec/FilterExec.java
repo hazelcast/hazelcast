@@ -59,6 +59,8 @@ public class FilterExec extends AbstractExec {
                             curBatchRowCnt = batchRowCnt;
                         }
 
+                        break;
+
                     case WAIT:
                         return IterationResult.WAIT;
 
