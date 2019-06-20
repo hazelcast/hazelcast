@@ -28,9 +28,8 @@ public class DataWorker extends AbstractWorker<DataTask> {
             handleStartStripe((StartStripeDataTask)task);
         else if (task instanceof BatchDataTask)
             handleBatch((BatchDataTask)task);
-        else if (task instanceof RootDataTask) {
+        else if (task instanceof RootDataTask)
             handleRoot((RootDataTask)task);
-        }
     }
 
     private void handleStartStripe(StartStripeDataTask task) {
@@ -66,7 +65,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
         Inbox inbox = inboxes.get(inboxKey);
 
         // Feed the batch.
-        inbox.onBatch(task.getBatch());
+        inbox.onBatch(task.getSourceStripe(), task.getSourceThread(), task.getBatch());
 
         // Continue iteration.
         inbox.getExec().advance();

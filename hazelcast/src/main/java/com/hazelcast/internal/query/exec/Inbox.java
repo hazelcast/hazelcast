@@ -24,10 +24,10 @@ public class Inbox extends Mailbox {
 
     // TODO: Exceptions!
 
-    public void onBatch(SendBatch batch) {
+    public void onBatch(int sourceStripe, int sourceThread, SendBatch batch) {
         // Batch might be empty in case of last marker.
         if (!batch.getRows().isEmpty()) {
-            System.out.println(">>> INBOX  [ADDED]: " + this + ": " + batch.getRows());
+            System.out.println(">>> INBOX  [ADDED]: " + this + ", sourceStripe=" + sourceStripe + ", sourceThread=" + sourceThread + ": " + batch.getRows().size());
 
             batches.add(batch);
         }

@@ -115,6 +115,7 @@ public class RootExec extends AbstractExec {
      * Reschedule execution of this root node to fetch more data to the user.
      */
     public void reschedule() {
+        // TODO: Double-check that it is not re-scheduledtoo often (e.g. with printout).
         worker.offer(new RootDataTask(worker.getThread(), this));
     }
 }

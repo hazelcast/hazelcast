@@ -42,7 +42,7 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         Config cfg = new Config();
 
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
-        //HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
 
         // Add some data.
         for (int i = 0; i < 100; i++)

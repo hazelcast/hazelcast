@@ -5,6 +5,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.expression.Predicate;
+import com.hazelcast.internal.query.io.EmptyRowBatch;
 import com.hazelcast.internal.query.io.HeapRow;
 import com.hazelcast.internal.query.io.KeyValueRow;
 import com.hazelcast.internal.query.io.Row;
@@ -144,13 +145,16 @@ public class MapScanExec extends AbstractExec {
 
             return IterationResult.FETCHED;
         }
-        else
+        else {
+            currentRow = null;
+
             return IterationResult.FETCHED_DONE;
+        }
     }
 
     @Override
     public RowBatch currentBatch() {
-        return currentRow;
+        return currentRow != null ? currentRow : EmptyRowBatch.INSTANCE;
     }
 
     public Object extract(Object key, Object val, String path) {
