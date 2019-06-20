@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -28,7 +27,6 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
@@ -39,6 +37,7 @@ import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -56,18 +55,21 @@ import java.util.function.Predicate;
 /**
  * Context which is needed by a map service.
  * <p>
- * Shared instances, configurations of all maps can be reached over this context.
+ * Shared instances, configurations of all
+ * maps can be reached over this context.
  * <p>
- * Also this context provides some support methods which are used in map operations and {@link RecordStore} implementations.
- * For example all {@link PartitionContainer} and {@link MapContainer} instances
- * can also be reached by using this interface.
+ * Also this context provides some support methods which are used
+ * in map operations and {@link RecordStore} implementations. For
+ * example all {@link PartitionContainer} and {@link MapContainer}
+ * instances can also be reached by using this interface.
  * <p>
- * It is also responsible for providing methods which are used by lower layers of
- * Hazelcast and exposed on {@link MapService}.
+ * It is also responsible for providing methods which are used by
+ * lower layers of Hazelcast and exposed on {@link MapService}.
  *
  * @see MapManagedService
  */
-public interface MapServiceContext extends MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+public interface MapServiceContext extends MapServiceContextInterceptorSupport,
+        MapServiceContextEventListenerSupport {
 
     Object toObject(Object data);
 
@@ -173,8 +175,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     PartitionContainer[] getPartitionContainers();
 
     void onClusterStateChange(ClusterState newState);
-
-    PartitionScanRunner getPartitionScanRunner();
 
     ResultProcessorRegistry getResultProcessorRegistry();
 
