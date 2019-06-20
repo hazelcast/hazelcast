@@ -127,7 +127,7 @@ public class QueryRootConsumer implements RootConsumer {
                         return row;
 
                     if (done)
-                        throw new NoSuchElementException();
+                        return null;
                     else {
                         // Schedule root advance if needed.
                         if (root != null && !rootScheduled) {

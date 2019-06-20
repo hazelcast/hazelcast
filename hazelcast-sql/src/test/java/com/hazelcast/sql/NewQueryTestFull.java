@@ -51,13 +51,15 @@ public class NewQueryTestFull extends HazelcastTestSupport {
 
         RootConsumer consumer = service.execute2(QUERY);
 
+        List<Row> res = new ArrayList<>();
+
         Iterator<Row> iter = consumer.iterator();
 
-        while (iter.hasNext()) {
-            Row row = iter.next();
+        while (iter.hasNext())
+            res.add(iter.next());
 
-            System.out.println(">>> ROW: " + row);
-        }
+        System.out.println(">>> RES SIZE: " + res.size());
+        System.out.println(">>> RES: " + res);
     }
 
     @Test

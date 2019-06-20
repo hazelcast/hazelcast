@@ -100,7 +100,15 @@ public class RootExec extends AbstractExec {
 
         curBatchPos += consumed;
 
-        return curBatchPos == curBatchSize;
+        if (curBatchPos == curBatchSize) {
+            curBatch = null;
+            curBatchPos = -1;
+            curBatchSize = -1;
+
+            return true;
+        }
+        else
+            return false;
     }
 
     /**
