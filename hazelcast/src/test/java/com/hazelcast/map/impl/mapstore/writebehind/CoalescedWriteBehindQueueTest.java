@@ -109,6 +109,6 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     private DelayedEntry<Data, Object> newEntry(Object key, Object value) {
-        return createDefault(serializationService.toData(key), serializationService.toData(value), 0L, 0);
+        return createDefault(serializationService.toData(key), value, 0L, 0);
     }
 }
