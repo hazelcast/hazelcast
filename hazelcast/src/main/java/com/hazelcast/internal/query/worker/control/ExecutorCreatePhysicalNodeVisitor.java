@@ -178,7 +178,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         Exec res;
 
         if (stripePartsCnt == 0)
-            res =EmptyScanExec.INSTANCE;
+            res = EmptyScanExec.INSTANCE;
         else
             res = new MapScanExec(node.getMapName(), stripeParts, node.getProjections(), node.getFilter());
 

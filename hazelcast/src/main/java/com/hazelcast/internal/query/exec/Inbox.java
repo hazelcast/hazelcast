@@ -1,14 +1,14 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.io.SendBatch;
 
 import java.util.ArrayDeque;
 
 public class Inbox extends Mailbox {
     private final QueryId queryId;
     private final String memberId;
-    private final ArrayDeque<RowBatch> batches = new ArrayDeque<>();
+    private final ArrayDeque<SendBatch> batches = new ArrayDeque<>();
     private int remaining;
 
     /** Executor which should be notified when data arrives. */
@@ -24,7 +24,7 @@ public class Inbox extends Mailbox {
 
     // TODO: Exceptions!
 
-    public void onBatch(RowBatch batch) {
+    public void onBatch(SendBatch batch) {
         // Batch might be empty in case of last marker.
         if (!batch.getRows().isEmpty()) {
             System.out.println(">>> INBOX  [ADDED]: " + this + ": " + batch.getRows());
@@ -48,7 +48,7 @@ public class Inbox extends Mailbox {
         '}';
     }
 
-    public RowBatch poll() {
+    public SendBatch poll() {
         return batches.poll();
     }
 

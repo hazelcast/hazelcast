@@ -1,7 +1,11 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
+import com.hazelcast.internal.query.io.EmptyRowBatch;
+import com.hazelcast.internal.query.io.HeapRowBatch;
 import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.worker.data.DataWorker;
 
 import java.util.function.Consumer;
 
@@ -17,22 +21,17 @@ public class EmptyScanExec implements Exec {
     }
 
     @Override
-    public void setup(QueryContext ctx) {
+    public void setup(QueryContext ctx, DataWorker worker) {
         // No-op.
     }
 
     @Override
-    public IterationResult next() {
+    public IterationResult advance() {
         return IterationResult.FETCHED_DONE;
     }
 
     @Override
-    public void consume(Consumer<Row> consumer) {
-        throw new UnsupportedOperationException("Should not be called.");
-    }
-
-    @Override
-    public int remainingRows() {
-        return 0;
+    public RowBatch currentBatch() {
+        return EmptyRowBatch.INSTANCE;
     }
 }

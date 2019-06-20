@@ -27,12 +27,12 @@ public class KeyValueRow implements Row {
     }
 
     @Override
-    public Object get(int idx) {
+    public Object getColumn(int idx) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int columnCount() {
+    public int getColumnCount() {
         throw new UnsupportedOperationException();
     }
 

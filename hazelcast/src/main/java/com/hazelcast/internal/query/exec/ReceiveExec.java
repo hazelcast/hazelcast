@@ -1,16 +1,17 @@
 package com.hazelcast.internal.query.exec;
 
+import com.hazelcast.internal.query.io.HeapRowBatch;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.io.SendBatch;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ReceiveExec extends AbstractExec {
 
     private final Inbox inbox;
 
-    private List<Row> rows;
+    private RowBatch curBatch;
     private boolean last;
 
     public ReceiveExec(Inbox inbox) {
@@ -18,51 +19,30 @@ public class ReceiveExec extends AbstractExec {
     }
 
     @Override
-    protected void setup0() {
-        // No-op.
-    }
+    public IterationResult advance() {
+        if (last)
+            throw new IllegalStateException("Should not be called.");
 
-    @Override
-    public IterationResult next() {
-        if (rows == null) {
-            if (last)
-                throw new IllegalStateException("Should not be called.");
+        SendBatch batch = inbox.poll();
 
-            RowBatch batch = inbox.poll();
+        if (batch == null)
+            return IterationResult.WAIT;
 
-            if (batch == null)
-                return IterationResult.WAIT;
+        List<Row> rows = batch.getRows();
 
-            rows = batch.getRows();
+        curBatch = new HeapRowBatch(rows);
 
-            if (inbox.closed()) {
-                last = true;
+        if (inbox.closed()) {
+            last = true;
 
-                return IterationResult.FETCHED_DONE;
-            }
-            else
-                return IterationResult.FETCHED;
+            return IterationResult.FETCHED_DONE;
         }
         else
-            throw new IllegalStateException("Should not be called.");
+            return IterationResult.FETCHED;
     }
 
     @Override
-    public void consume(Consumer<Row> consumer) {
-        // TODO: Upper should not invoke it when there are no rows.
-        if (!rows.isEmpty()) {
-            consumer.accept(rows.get(0));
-
-            // TODO: Dirty!
-            rows.remove(0);
-        }
-
-        if (rows.isEmpty())
-            rows = null;
-    }
-
-    @Override
-    public int remainingRows() {
-        return rows != null ? rows.size(): 0;
+    public RowBatch currentBatch() {
+        return curBatch;
     }
 }

@@ -3,6 +3,7 @@ package com.hazelcast.internal.query;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.QueryConfig;
+import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.operation.QueryExecuteOperation;
 import com.hazelcast.internal.query.plan.physical.FragmentPrepareVisitor;
 import com.hazelcast.internal.query.plan.physical.PhysicalNode;
@@ -64,7 +65,10 @@ public class QueryService implements ManagedService, MembershipAwareService {
             if (stopped)
                 throw new IllegalStateException("Node is being stopped.");
 
-            QueryExecuteOperation op = prepareLocalOperation(plan, args);
+            // TODO: Adjustable batch size!
+            RootConsumer consumer = new QueryRootConsumer(1024);
+
+            QueryExecuteOperation op = prepareLocalOperation(plan, args, consumer);
 
             // TODO: Again: race!
             for (Member member : nodeEngine.getClusterService().getMembers()) {
@@ -74,14 +78,15 @@ public class QueryService implements ManagedService, MembershipAwareService {
                 nodeEngine.getOperationService().invokeOnTarget(QueryService.SERVICE_NAME, op, member.getAddress());
             }
 
-            return null;
+            return new QueryHandleImpl(this, op.getQueryId(), consumer);
         }
         finally {
             busyLock.readLock().unlock();
         }
     }
 
-    private QueryExecuteOperation prepareLocalOperation(PhysicalPlan plan, List<Object> args) {
+    private QueryExecuteOperation prepareLocalOperation(PhysicalPlan plan, List<Object> args,
+        RootConsumer rootConsumer) {
         QueryId queryId = prepareQueryId();
         Map<String, PartitionIdSet> partitionMap = preparePartitionMapping();
 
@@ -90,7 +95,7 @@ public class QueryService implements ManagedService, MembershipAwareService {
         for (PhysicalNode node : plan.getNodes())
             fragments.add(fragmentFromNode(node));
 
-        return new QueryExecuteOperation(queryId, partitionMap, fragments, args);
+        return new QueryExecuteOperation(queryId, partitionMap, fragments, args, rootConsumer);
     }
 
     private QueryFragment fragmentFromNode(PhysicalNode node) {

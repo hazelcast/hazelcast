@@ -3,6 +3,7 @@ package com.hazelcast.internal.query.operation;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
+import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,23 +28,27 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Arguments. */
     private List<Object> arguments;
 
+    /** Consumer of results. */
+    private transient RootConsumer rootConsumer;
+
     public QueryExecuteOperation() {
         // No-op.
     }
 
     public QueryExecuteOperation(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments, List<Object> arguments) {
+        List<QueryFragment> fragments, List<Object> arguments, RootConsumer rootConsumer) {
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
         this.arguments = arguments;
+        this.rootConsumer = rootConsumer;
     }
 
     @Override
     public void run() throws Exception {
         QueryService svc = getService();
 
-        ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments);
+        ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
 
         svc.onQueryExecuteRequest(task);
     }
@@ -62,6 +67,10 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
 
     public List<Object> getArguments() {
         return arguments;
+    }
+
+    public RootConsumer getRootConsumer() {
+        return rootConsumer;
     }
 
     @Override

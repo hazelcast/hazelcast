@@ -21,7 +21,7 @@ public class ColumnExpression<T> implements Expression<T> {
 
     @Override public T eval(QueryContext ctx, Row row) {
         // TODO: Type-check?
-        return (T)row.get(idx);
+        return (T)row.getColumn(idx);
     }
 
     @Override

@@ -1,114 +1,112 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.io.Row;
-
-import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import com.hazelcast.internal.query.QueryContext;
+import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.worker.data.DataWorker;
+import com.hazelcast.internal.query.worker.data.RootDataTask;
 
 public class RootExec extends AbstractExec {
     /** Actual executor. */
-    private final Exec child;
+    private final Exec upstream;
 
-    /** Mutex for proper future installation. */
-    private final Object futureMux = new Object();
+    /** Worker. */
+    private DataWorker worker;
 
-    /** Future notified when more results are available. */
-    private CompletableFuture<Consumer<Row>> future;
+    /** User consumer. */
+    private RootConsumer consumer;
 
     /** Whether executor is finished. */
-    private boolean done;
+    private boolean upstreamDone;
 
-    public RootExec(Exec child) {
-        this.child = child;
+    /** Current row batch. */
+    private RowBatch curBatch;
+
+    /** Size of the batch. */
+    private int curBatchSize = -1;
+
+    /** Position within a batch. */
+    private int curBatchPos = -1;
+
+    public RootExec(Exec upstream) {
+        this.upstream = upstream;
     }
 
     @Override
-    protected void setup0() {
-        child.setup(ctx);
+    protected void setup0(QueryContext ctx, DataWorker worker) {
+        upstream.setup(ctx, worker);
+
+        this.worker = worker;
+
+        consumer = ctx.getRootConsumer();
+
+        consumer.setup(this);
     }
 
     @Override
-    public IterationResult next() {
-        synchronized (futureMux) {
-            if (done)
-                return IterationResult.FETCHED_DONE;
-        }
+    public IterationResult advance() {
+        while (true) {
+            if (curBatch == null) {
+                if (upstreamDone) {
+                    consumer.done();
 
-        IterationResult res = child.next();
+                    return IterationResult.FETCHED_DONE;
+                }
 
-        boolean done = false;
-        RuntimeException err = null;
+                switch (upstream.advance()) {
+                    case FETCHED_DONE:
+                        upstreamDone = true;
 
-        switch (res) {
-            case FETCHED:
+                        // Fall-through.
 
-                break;
+                    case FETCHED:
+                        RowBatch batch = upstream.currentBatch();
+                        int batchSize = batch.getRowCount();
 
-            case FETCHED_DONE:
-                done = true;
+                        if (batchSize == 0)
+                            continue;
 
-                break;
+                        curBatch = batch;
+                        curBatchSize = batchSize;
+                        curBatchPos = 0;
 
-            case WAIT:
-                // No results at the moment, wait.
-                return IterationResult.WAIT;
+                        break;
 
-            case ERROR:
-                done = true;
-        }
+                    case WAIT:
+                        return IterationResult.WAIT;
 
-        synchronized (futureMux) {
-            if (done) {
-                this.done = true;
-
+                    default:
+                        // TODO: Propagate error to the user.
+                        throw new UnsupportedOperationException("Unsupported.");
+                }
             }
 
-            consumeAndNotifyFuture();
+            assert curBatch != null;
+
+            if (!consumeBatch())
+                return IterationResult.WAIT;
         }
-
-        return null;
     }
 
     @Override
-    public int remainingRows() {
-        return child.remainingRows();
-    }
-
-    @Override
-    public void consume(Consumer<Row> consumer) {
-        child.consume(consumer);
+    public RowBatch currentBatch() {
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     /**
-     * Install a future which will be notified when some results are available.
-     *
-     * @param future Future.
+     * Try consuming current batch.
      */
-    public void installFuture(CompletableFuture<Consumer<Row>> future) {
-        synchronized (futureMux) {
-            if (this.future != null)
-                throw new IllegalStateException("Future is already installed.");
+    private boolean consumeBatch() {
+        int consumed = consumer.consume(curBatch, curBatchPos);
 
-            this.future = future;
+        curBatchPos += consumed;
 
-            // Notify immediately if result is ready.
-            if (done)
-                consumeAndNotifyFuture();
-        }
+        return curBatchPos == curBatchSize;
     }
 
-    private void consumeAndNotifyFuture() {
-        assert Thread.holdsLock(futureMux);
-
-        ArrayList<Row> rows = new ArrayList<>(child.remainingRows());
-
-        child.consume(rows::add);
-
-//        // TODO: Remove print.
-//        System.out.println(">>> QUERY RESULT: ");
-//
-//        for (Row row : rows)
-//            System.out.println("\t" + row);
+    /**
+     * Reschedule execution of this root node to fetch more data to the user.
+     */
+    public void reschedule() {
+        worker.offer(new RootDataTask(worker.getThread(), this));
     }
 }

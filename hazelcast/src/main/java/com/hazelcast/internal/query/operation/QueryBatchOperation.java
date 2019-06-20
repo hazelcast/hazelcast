@@ -2,14 +2,12 @@ package com.hazelcast.internal.query.operation;
 
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.io.SendBatch;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Execution batch.
@@ -21,7 +19,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     private int sourceThread;
     private int targetStripe;
     private int targetThread;
-    private RowBatch batch;
+    private SendBatch batch;
 
     public QueryBatchOperation() {
         // No-op.
@@ -34,7 +32,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
         int sourceThread,
         int targetStripe,
         int targetThread,
-        RowBatch batch
+        SendBatch batch
     ) {
         this.queryId = queryId;
         this.edgeId = edgeId;

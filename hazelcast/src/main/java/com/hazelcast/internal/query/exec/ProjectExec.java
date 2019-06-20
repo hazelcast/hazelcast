@@ -1,0 +1,101 @@
+package com.hazelcast.internal.query.exec;
+
+import com.hazelcast.internal.query.expression.Expression;
+import com.hazelcast.internal.query.io.HeapRow;
+import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.io.RowBatch;
+
+import java.util.List;
+
+public class ProjectExec extends AbstractExec {
+    /** Upstream executor. */
+    private final Exec upstream;
+
+    /** Projection expressions. */
+    private final List<Expression> projections;
+
+    /** Last upstream batch. */
+    private RowBatch curBatch;
+
+    /** Current position in the last upstream batch. */
+    private int curBatchPos = -1;
+
+    /** Maximum position in the last upstream batch. */
+    private int curBatchRowCnt = -1;
+
+    /** Current row. */
+    private Row curRow;
+
+    /** Whether upstream operator is finished. */
+    private boolean upstreamDone;
+
+    public ProjectExec(Exec upstream, List<Expression> projections) {
+        this.upstream = upstream;
+        this.projections = projections;
+    }
+
+    @Override
+    public IterationResult advance() {
+        if (curBatch == null) {
+            if (upstreamDone)
+                return IterationResult.FETCHED_DONE;
+
+            switch (upstream.advance()) {
+                case FETCHED_DONE:
+                    upstreamDone = true;
+
+                    // Fall-through.
+
+                case FETCHED:
+                    RowBatch batch = upstream.currentBatch();
+                    int batchRowCnt = batch.getRowCount();
+
+                    if (batchRowCnt > 0) {
+                        curBatch = batch;
+                        curBatchPos = 0;
+                        curBatchRowCnt = batchRowCnt;
+                    }
+
+                case WAIT:
+                    return IterationResult.WAIT;
+
+                default:
+                    // TODO: Implement error handling.
+                    throw new UnsupportedOperationException("Implement me");
+            }
+        }
+
+        return advanceCurrentBatch();
+    }
+
+    @Override
+    public RowBatch currentBatch() {
+        return curRow;
+    }
+
+    private IterationResult advanceCurrentBatch() {
+        // Prepare the next row.
+        Row upstreamRow = curBatch.getRow(curBatchPos);
+
+        HeapRow curRow0 = new HeapRow(projections.size());
+
+        int colIdx = 0;
+
+        for (Expression projection : projections)
+            curRow0.set(colIdx++, projection.eval(ctx, upstreamRow));
+
+        curRow = curRow0;
+
+        // Advance position.
+        if (++curBatchPos == curBatchRowCnt) {
+            curBatch = null;
+            curBatchPos = -1;
+            curBatchRowCnt = -1;
+
+            if (upstreamDone)
+                return IterationResult.FETCHED_DONE;
+        }
+
+        return IterationResult.FETCHED;
+    }
+}

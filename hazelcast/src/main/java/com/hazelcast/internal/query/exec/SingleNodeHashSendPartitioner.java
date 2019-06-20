@@ -1,6 +1,5 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.io.Row;
@@ -23,8 +22,8 @@ public class SingleNodeHashSendPartitioner implements SendPartitioner {
         int hash = 0;
 
         if (keyExpressions == null) {
-            for (int i = 0; i < row.columnCount(); i++)
-                hash = hash(hash, row.get(i));
+            for (int i = 0; i < row.getColumnCount(); i++)
+                hash = hash(hash, row.getColumn(i));
         }
         else {
             for (Expression keyExpression : keyExpressions)

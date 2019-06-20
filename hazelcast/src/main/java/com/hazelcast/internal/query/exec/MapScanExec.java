@@ -2,11 +2,14 @@ package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.expression.Predicate;
 import com.hazelcast.internal.query.io.HeapRow;
 import com.hazelcast.internal.query.io.KeyValueRow;
 import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -74,7 +77,7 @@ public class MapScanExec extends AbstractExec {
     }
 
     @Override
-    protected void setup0() {
+    protected void setup0(QueryContext ctx, DataWorker worker) {
         // TODO: Check if map exists.
         map = (MapProxyImpl)ctx.getService().getNodeEngine().getHazelcastInstance().getMap(mapName);
 
@@ -88,7 +91,7 @@ public class MapScanExec extends AbstractExec {
     }
 
     @Override
-    public IterationResult next() {
+    public IterationResult advance() {
         if (rows == null) {
             rows = new ArrayList<Row>();
 
@@ -146,15 +149,8 @@ public class MapScanExec extends AbstractExec {
     }
 
     @Override
-    public void consume(Consumer<Row> consumer) {
-        consumer.accept(currentRow);
-
-        currentRow = null;
-    }
-
-    @Override
-    public int remainingRows() {
-        return currentRow != null ? 1 : 0;
+    public RowBatch currentBatch() {
+        return currentRow;
     }
 
     public Object extract(Object key, Object val, String path) {

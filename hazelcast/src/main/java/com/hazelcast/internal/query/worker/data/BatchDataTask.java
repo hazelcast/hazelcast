@@ -1,11 +1,8 @@
 package com.hazelcast.internal.query.worker.data;
 
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.io.SendBatch;
 import com.hazelcast.internal.query.worker.control.ControlTask;
-
-import java.util.List;
 
 /**
  * Batch with unmapped threads arrived.
@@ -18,10 +15,10 @@ public class BatchDataTask implements ControlTask, DataTask {
     private final int sourceThread;
     private final int targetStripe;
     private int targetThread;
-    private final RowBatch batch;
+    private final SendBatch batch;
 
     public BatchDataTask(QueryId queryId, int edgeId, int sourceStripe, int sourceThread, int targetStripe,
-        int targetThread, RowBatch batch) {
+        int targetThread, SendBatch batch) {
         this.queryId = queryId;
         this.edgeId = edgeId;
         this.sourceStripe = sourceStripe;
@@ -70,7 +67,7 @@ public class BatchDataTask implements ControlTask, DataTask {
         this.targetThread = targetThread;
     }
 
-    public RowBatch getBatch() {
+    public SendBatch getBatch() {
         return batch;
     }
 }

@@ -1,5 +1,6 @@
 package com.hazelcast.internal.query;
 
+import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.worker.control.FragmentDeployment;
 
 import java.util.List;
@@ -10,6 +11,7 @@ public class QueryContext {
     private final QueryService service;
     private final QueryId queryId;
     private final List<Object> arguments;
+    private final RootConsumer rootConsumer;
 
     /** Deployed fragments. */
     private final List<FragmentDeployment> fragmentDeployments;
@@ -17,11 +19,12 @@ public class QueryContext {
     /** Maps an edge to array, whose length is stripe length, and values are data thread IDs. */
     private final Map<Integer, int[]> edgeToStripeMap;
 
-    public QueryContext(QueryService service, QueryId queryId, List<Object> arguments,
+    public QueryContext(QueryService service, QueryId queryId, List<Object> arguments, RootConsumer rootConsumer,
         List<FragmentDeployment> fragmentDeployments, Map<Integer, int[]> edgeToStripeMap) {
         this.service = service;
         this.queryId = queryId;
         this.arguments = arguments;
+        this.rootConsumer = rootConsumer;
         this.fragmentDeployments = fragmentDeployments;
         this.edgeToStripeMap = edgeToStripeMap;
     }
@@ -32,6 +35,10 @@ public class QueryContext {
 
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    public RootConsumer getRootConsumer() {
+        return rootConsumer;
     }
 
     public List<FragmentDeployment> getFragmentDeployments() {

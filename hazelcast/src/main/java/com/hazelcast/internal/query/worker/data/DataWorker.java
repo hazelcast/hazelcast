@@ -3,27 +3,34 @@ package com.hazelcast.internal.query.worker.data;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.internal.query.exec.Inbox;
-import com.hazelcast.internal.query.exec.Outbox;
+import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.worker.AbstractWorker;
 import com.hazelcast.internal.query.worker.WorkerTask;
 import com.hazelcast.internal.query.worker.control.StripeDeployment;
-import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class DataWorker extends AbstractWorker {
+public class DataWorker extends AbstractWorker<DataTask> {
+    private final DataThreadPool dataPool;
+    private final Map<InboxKey, Inbox> inboxes = new HashMap<>();
+    private final int thread;
 
-    private Map<InboxKey, Inbox> inboxes = new HashMap<>();
+    public DataWorker(DataThreadPool dataPool, int thread) {
+        this.dataPool = dataPool;
+        this.thread = thread;
+    }
 
     @Override
-    protected void executeTask(WorkerTask task) {
+    protected void executeTask(DataTask task) {
         if (task instanceof StartStripeDataTask)
             handleStartStripe((StartStripeDataTask)task);
         else if (task instanceof BatchDataTask)
             handleBatch((BatchDataTask)task);
+        else if (task instanceof RootDataTask) {
+            handleRoot((RootDataTask)task);
+        }
     }
 
     private void handleStartStripe(StartStripeDataTask task) {
@@ -42,10 +49,10 @@ public class DataWorker extends AbstractWorker {
         }
 
         // Setup executor.
-        exec.setup(stripeDeployment.getContext());
+        exec.setup(stripeDeployment.getContext(), this);
 
         // Start executor.
-        exec.next();
+        exec.advance();
     }
 
     private void handleBatch(BatchDataTask task) {
@@ -62,7 +69,13 @@ public class DataWorker extends AbstractWorker {
         inbox.onBatch(task.getBatch());
 
         // Continue iteration.
-        inbox.getExec().next();
+        inbox.getExec().advance();
+    }
+
+    private void handleRoot(RootDataTask task) {
+        RootExec root = task.getRootExec();
+
+        root.advance();
     }
 
     @Override
@@ -70,4 +83,11 @@ public class DataWorker extends AbstractWorker {
         // TODO: Handle node stop
     }
 
+    public int getThread() {
+        return thread;
+    }
+
+    public DataThreadPool getDataPool() {
+        return dataPool;
+    }
 }

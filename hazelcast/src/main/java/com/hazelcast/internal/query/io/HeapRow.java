@@ -19,12 +19,12 @@ public class HeapRow implements SerializableRow {
     }
 
     @Override
-    public Object get(int idx) {
+    public Object getColumn(int idx) {
         return values[idx];
     }
 
     @Override
-    public int columnCount() {
+    public int getColumnCount() {
         return values.length;
     }
 

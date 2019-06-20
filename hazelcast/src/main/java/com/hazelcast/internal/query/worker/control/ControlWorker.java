@@ -169,6 +169,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             service,
             queryId,
             task.getArguments(),
+            task.getRootConsumer(),
             fragmentDeployments,
             edgeToStripeMap
         );

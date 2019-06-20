@@ -1,11 +1,10 @@
 package com.hazelcast.internal.query;
 
-import com.hazelcast.internal.query.exec.Exec;
+import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class QueryHandleImpl implements QueryHandle {
@@ -15,16 +14,13 @@ public class QueryHandleImpl implements QueryHandle {
     /** Query ID. */
     private final QueryId queryId;
 
-    /** Root executor. */
-    private final Exec rootExec;
+    /** Consumer. */
+    private final RootConsumer consumer;
 
-    /** Current query state. */
-    private final AtomicReference<QueryState> state = new AtomicReference<>();
-
-    public QueryHandleImpl(QueryService service, QueryId queryId, Exec rootExec) {
+    public QueryHandleImpl(QueryService service, QueryId queryId, RootConsumer consumer) {
         this.service = service;
         this.queryId = queryId;
-        this.rootExec = rootExec;
+        this.consumer = consumer;
     }
 
     @Override

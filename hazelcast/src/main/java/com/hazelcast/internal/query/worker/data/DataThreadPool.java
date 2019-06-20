@@ -12,7 +12,7 @@ public class DataThreadPool extends AbstractThreadPool<DataWorker> {
 
     @Override
     protected DataWorker createWorker(int idx) {
-        return new DataWorker();
+        return new DataWorker(this, idx);
     }
 
     public void submit(DataTask task) {
