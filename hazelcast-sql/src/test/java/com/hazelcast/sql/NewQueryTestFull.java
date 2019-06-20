@@ -23,12 +23,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NewQueryTestFull extends HazelcastTestSupport {
 
-    private static final String QUERY = "select height from persons";
+    private static final String QUERY = "select __key from persons";
 //    private static final String QUERY = "select height from persons where age >= 5 order by name";
 //    private static final String QUERY = "select age, height from persons where age >= 5";
 
@@ -40,7 +42,7 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         Config cfg = new Config();
 
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
+        //HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
 
         // Add some data.
         for (int i = 0; i < 100; i++)
@@ -52,14 +54,26 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         RootConsumer consumer = service.execute2(QUERY);
 
         List<Row> res = new ArrayList<>();
+        Set<Object> setRes = new TreeSet<>();
+        Set<Object> dupSetRes = new TreeSet<>();
 
         Iterator<Row> iter = consumer.iterator();
 
-        while (iter.hasNext())
-            res.add(iter.next());
+        while (iter.hasNext()) {
+            Row row = iter.next();
+
+            res.add(row);
+
+            if (!setRes.add(row.getColumn(0)))
+                dupSetRes.add(row.getColumn(0));
+        }
 
         System.out.println(">>> RES SIZE: " + res.size());
         System.out.println(">>> RES: " + res);
+        System.out.println();
+        System.out.println(">>> SET RES SIZE: " + setRes.size());
+        System.out.println(">>>     SET RES: " + setRes);
+        System.out.println(">>> DUP SET RES: " + dupSetRes);
     }
 
     @Test
