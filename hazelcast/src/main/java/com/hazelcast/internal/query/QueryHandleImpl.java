@@ -37,8 +37,7 @@ public class QueryHandleImpl implements QueryHandle {
         return false;
     }
 
-    @Override
-    public CompletedFuture<Void> consume(Consumer<List<Row>> consumer, int maxRows) {
-        return null;
+    public RootConsumer getConsumer() {
+        return consumer;
     }
 }

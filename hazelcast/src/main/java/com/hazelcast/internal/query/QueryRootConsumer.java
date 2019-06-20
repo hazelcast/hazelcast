@@ -27,7 +27,7 @@ public class QueryRootConsumer implements RootConsumer {
     private boolean rootScheduled;
 
     /** Query root. */
-    private volatile RootExec root;
+    private RootExec root;
 
     /** Iterator. */
     private InternalIterator iter;
@@ -38,7 +38,11 @@ public class QueryRootConsumer implements RootConsumer {
 
     @Override
     public void setup(RootExec root) {
-        this.root = root;
+        synchronized (mux) {
+            this.root = root;
+
+            mux.notifyAll();
+        }
     }
 
     @Override
@@ -126,7 +130,7 @@ public class QueryRootConsumer implements RootConsumer {
                         throw new NoSuchElementException();
                     else {
                         // Schedule root advance if needed.
-                        if (!rootScheduled) {
+                        if (root != null && !rootScheduled) {
                             root.reschedule();
 
                             rootScheduled = true;

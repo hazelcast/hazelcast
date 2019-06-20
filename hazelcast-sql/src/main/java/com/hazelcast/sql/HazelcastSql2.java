@@ -19,6 +19,9 @@ package com.hazelcast.sql;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.query.QueryHandle;
+import com.hazelcast.internal.query.QueryHandleImpl;
+import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.plan.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlPrepare;
@@ -72,7 +75,7 @@ public final class HazelcastSql2 {
         this.instance = ((HazelcastInstanceProxy)instance).getOriginal();
     }
 
-    public Enumerable<Object> execute2(String sql) throws Exception {
+    public RootConsumer execute2(String sql) throws Exception {
         // 1. ==================== PARSE ====================
         // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
@@ -220,12 +223,9 @@ public final class HazelcastSql2 {
         PhysicalPlan plan = planVisitor.getPlan();
 
         // 6. ==================== EXECUTE ====================
-        instance.getQueryService().execute(plan, Collections.emptyList());
+        QueryHandleImpl handle = (QueryHandleImpl) instance.getQueryService().execute(plan, Collections.emptyList());
 
-        // TODO: Result consume is not implemented yet.
-        Thread.sleep(5000L);
-
-        return null;
+        return handle.getConsumer();
     }
 
 }

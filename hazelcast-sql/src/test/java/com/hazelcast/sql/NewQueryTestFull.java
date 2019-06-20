@@ -2,6 +2,10 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.query.QueryHandle;
+import com.hazelcast.internal.query.QueryHandleImpl;
+import com.hazelcast.internal.query.exec.RootConsumer;
+import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -17,6 +21,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -44,7 +49,15 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         // Execute.
         HazelcastSql2 service = new HazelcastSql2(member1);
 
-        service.execute2(QUERY);
+        RootConsumer consumer = service.execute2(QUERY);
+
+        Iterator<Row> iter = consumer.iterator();
+
+        while (iter.hasNext()) {
+            Row row = iter.next();
+
+            System.out.println(">>> ROW: " + row);
+        }
     }
 
     @Test

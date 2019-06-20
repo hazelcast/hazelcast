@@ -20,13 +20,4 @@ public interface QueryHandle {
      * @return {@code True} if cancellation was requested by this call.
      */
     boolean cancel(QueryCancelReason reason, String errMsg);
-
-    /**
-     * Consume up to "maxRows" asynchronously.
-     *
-     * @param consumer Consumer.
-     * @param maxRows Maximum number of rows.
-     * @return Future completed when some rows are available.
-     */
-    CompletedFuture<Void> consume(Consumer<List<Row>> consumer, int maxRows);
 }
