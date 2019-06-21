@@ -31,6 +31,7 @@ import com.hazelcast.sql.rules.HazelcastFilterRule;
 import com.hazelcast.sql.rules.HazelcastProjectIntoScanRule;
 import com.hazelcast.sql.rules.HazelcastProjectRule;
 import com.hazelcast.sql.rules.HazelcastRootRel;
+import com.hazelcast.sql.rules.HazelcastSortRule;
 import com.hazelcast.sql.rules.HazelcastTableScanRule;
 import com.hazelcast.sql.rules.PhysicalPlanVisitor;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -187,8 +188,9 @@ public final class HazelcastSql2 {
         // TODO: Rules to merge scan and project/filter
 
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE); // TODO: Remove once both merge routines are ready
-
         hepBuilder.addRuleInstance(HazelcastProjectIntoScanRule.INSTANCE);
+
+        hepBuilder.addRuleInstance(HazelcastSortRule.INSTANCE);
         hepBuilder.addRuleInstance(HazelcastTableScanRule.INSTANCE);
         hepBuilder.addRuleInstance(HazelcastFilterRule.INSTANCE);
         hepBuilder.addRuleInstance(HazelcastProjectRule.INSTANCE);

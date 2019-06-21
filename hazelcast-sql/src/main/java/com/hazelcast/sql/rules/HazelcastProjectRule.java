@@ -17,7 +17,7 @@ public class HazelcastProjectRule extends RelOptRule {
             // TODO: Why Convention.NONE is used in Drill?
             RelOptRule.operand(LogicalProject.class, RelOptRule.any()),
             RelFactories.LOGICAL_BUILDER,
-            "DrillProjectRule"
+            "HazelcastProjectRule"
         );
     }
 
