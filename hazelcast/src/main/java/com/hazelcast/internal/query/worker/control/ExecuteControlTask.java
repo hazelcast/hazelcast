@@ -45,4 +45,9 @@ public class ExecuteControlTask implements ControlTask {
     public RootConsumer getRootConsumer() {
         return rootConsumer;
     }
+
+    @Override
+    public String toString() {
+        return "ExecuteControlTask{queryId=" + queryId + ", fragments=" + fragments + "}";
+    }
 }

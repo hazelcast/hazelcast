@@ -38,7 +38,7 @@ public abstract class AbstractWorker<T extends WorkerTask> implements Runnable {
 
                 if (nextTask instanceof StopWorkerTask) {
                     try {
-
+                        // TODO
                     }
                     finally {
                         stop = true;

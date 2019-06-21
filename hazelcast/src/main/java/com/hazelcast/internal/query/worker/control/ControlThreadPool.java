@@ -42,6 +42,6 @@ public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
         if (queryId == null)
             return BROADCAST_STRIPE;
         else
-            return queryId.hashCode() % getThreadCount();
+            return Math.abs(queryId.hashCode() % getThreadCount());
     }
 }

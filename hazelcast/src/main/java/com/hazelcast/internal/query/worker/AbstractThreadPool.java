@@ -19,7 +19,7 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
 
             Thread thread = new Thread(worker);
 
-            thread.setName(threadPrexix + "-" + i);
+            thread.setName(threadPrexix + i);
             thread.start();
 
             workers[i] = worker;
