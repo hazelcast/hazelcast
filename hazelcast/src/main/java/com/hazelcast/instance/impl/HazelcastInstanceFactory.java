@@ -18,11 +18,11 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.config.XmlConfigLocator;
 import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.config.YamlConfigLocator;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ModularJavaUtils;
@@ -202,7 +202,7 @@ public final class HazelcastInstanceFactory {
 
         InstanceFuture future = new InstanceFuture();
         if (INSTANCE_MAP.putIfAbsent(name, future) != null) {
-            throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
+            throw new InvalidConfigurationException("HazelcastInstance with name '" + name + "' already exists!");
         }
 
         try {

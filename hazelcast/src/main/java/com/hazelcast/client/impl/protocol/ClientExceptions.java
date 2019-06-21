@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -129,7 +128,6 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.CONCURRENT_MODIFICATION, ConcurrentModificationException.class);
         register(ClientProtocolErrorCodes.CONFIG_MISMATCH, ConfigMismatchException.class);
         register(ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class);
-        register(ClientProtocolErrorCodes.DUPLICATE_INSTANCE_NAME, DuplicateInstanceNameException.class);
         register(ClientProtocolErrorCodes.EOF, EOFException.class);
         register(ClientProtocolErrorCodes.EXECUTION, ExecutionException.class);
         register(ClientProtocolErrorCodes.HAZELCAST, HazelcastException.class);

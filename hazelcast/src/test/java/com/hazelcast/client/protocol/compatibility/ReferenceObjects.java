@@ -44,7 +44,6 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -800,8 +799,8 @@ public class ReferenceObjects {
             aString), new ArrayStoreException(aString), new StubAuthenticationException(aString), new CacheNotExistsException(
             aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
             aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
-            aString), new ConfigMismatchException(aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
-            aString), new EOFException(aString), new ExecutionException(new IOException()), new HazelcastException(
+            aString), new ConfigMismatchException(aString), new DistributedObjectDestroyedException(aString), new EOFException(
+            aString), new ExecutionException(new IOException()), new HazelcastException(
             aString), new HazelcastInstanceNotActiveException(aString), new HazelcastOverloadException(
             aString), new HazelcastSerializationException(aString), new IOException(aString), new IllegalArgumentException(
             aString), new IllegalAccessException(aString), new IllegalAccessError(aString), new IllegalMonitorStateException(
