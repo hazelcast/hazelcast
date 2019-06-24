@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -60,6 +61,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3294,6 +3296,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
         buildConfig(xml);
     }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration() throws IOException {
+        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+
+        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
+
+        assertEquals("/mnt/optane", xmlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
+    }
+
 
     @Override
     protected Config buildCompleteAdvancedNetworkConfig() {
