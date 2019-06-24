@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -135,6 +136,10 @@ public final class EventTimePolicy<T> implements Serializable {
             long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
     ) {
+        checkSerializable(timestampFn, "timestampFn");
+        checkSerializable(timestampFn, "wrapFn");
+        checkSerializable(newWmPolicyFn, "newWmPolicyFn");
+
         return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize,
                 watermarkThrottlingFrameOffset, idleTimeoutMillis);
     }

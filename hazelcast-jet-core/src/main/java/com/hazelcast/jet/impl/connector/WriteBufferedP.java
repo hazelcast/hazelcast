@@ -30,6 +30,8 @@ import com.hazelcast.jet.function.SupplierEx;
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 public final class WriteBufferedP<B, T> implements Processor {
 
     private final FunctionEx<? super Context, B> createFn;
@@ -99,6 +101,11 @@ public final class WriteBufferedP<B, T> implements Processor {
             @Nonnull ConsumerEx<? super B> flushFn,
             @Nonnull ConsumerEx<? super B> destroyFn
     ) {
+        checkSerializable(createFn, "createFn");
+        checkSerializable(onReceiveFn, "onReceiveFn");
+        checkSerializable(flushFn, "flushFn");
+        checkSerializable(destroyFn, "destroyFn");
+
         return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
     }
 }

@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Private API, use {@link SourceProcessors#readFilesP}.
@@ -145,6 +146,9 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
             @Nonnull FunctionEx<? super Path, ? extends Stream<W>> readFileFn,
             @Nonnull BiFunctionEx<? super String, ? super W, ? extends T> mapOutputFn
     ) {
+        checkSerializable(readFileFn, "readFileFn");
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
         return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn, mapOutputFn),
                 2);

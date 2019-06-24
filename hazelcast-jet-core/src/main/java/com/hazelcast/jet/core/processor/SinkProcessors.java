@@ -294,14 +294,14 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsQueueP(
-            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
-            @Nonnull FunctionEx<? super Connection, ? extends Session> sessionF,
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull FunctionEx<? super Connection, ? extends Session> newSessionFn,
             @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn,
             @Nonnull BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
             @Nonnull ConsumerEx<? super Session> flushFn,
             @Nonnull String name
     ) {
-        return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, false);
+        return WriteJmsP.supplier(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, false);
     }
 
     /**
@@ -309,14 +309,14 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsTopicP(
-            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
-            @Nonnull FunctionEx<? super Connection, ? extends Session> sessionF,
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull FunctionEx<? super Connection, ? extends Session> newSessionFn,
             @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn,
             @Nonnull BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
             @Nonnull ConsumerEx<? super Session> flushFn,
             @Nonnull String name
     ) {
-        return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, true);
+        return WriteJmsP.supplier(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, true);
     }
 
     /**
@@ -326,11 +326,9 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends java.sql.Connection> connectionSupplier,
+            @Nonnull SupplierEx<? extends java.sql.Connection> newConnectionFn,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
     ) {
-        checkSerializable(connectionSupplier, "connectionSupplier");
-        checkSerializable(bindFn, "bindFn");
-        return WriteJdbcP.metaSupplier(updateQuery, connectionSupplier, bindFn);
+        return WriteJdbcP.metaSupplier(updateQuery, newConnectionFn, bindFn);
     }
 }

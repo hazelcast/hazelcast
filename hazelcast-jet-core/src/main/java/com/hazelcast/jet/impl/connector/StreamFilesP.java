@@ -48,6 +48,7 @@ import java.util.Queue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -358,6 +359,8 @@ public class StreamFilesP<R> extends AbstractProcessor {
             boolean sharedFileSystem,
             @Nonnull BiFunctionEx<? super String, ? super String, ?> mapOutputFn
     ) {
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
         return ProcessorMetaSupplier.of(() ->
                 new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn), 2);
     }

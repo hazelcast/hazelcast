@@ -195,9 +195,9 @@ public final class JmsSinkBuilder<T> {
 
         FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
         SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
-        SupplierEx<Connection> connectionSupplier = () -> connectionFnLocal.apply(factorySupplierLocal.get());
+        SupplierEx<Connection> newConnectionFn = () -> connectionFnLocal.apply(factorySupplierLocal.get());
         return new SinkImpl<>(sinkName(),
-                WriteJmsP.supplier(connectionSupplier, sessionFn, messageFn, sendFn, flushFn, destinationName, isTopic));
+                WriteJmsP.supplier(newConnectionFn, sessionFn, messageFn, sendFn, flushFn, destinationName, isTopic));
     }
 
     private String sinkName() {

@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -54,16 +55,22 @@ public final class WriteJmsP {
      * SinkProcessors#writeJmsTopicP} instead
      */
     public static <T> ProcessorMetaSupplier supplier(
-            SupplierEx<? extends Connection> connectionSupplier,
-            FunctionEx<? super Connection, ? extends Session> sessionF,
+            SupplierEx<? extends Connection> newConnectionFn,
+            FunctionEx<? super Connection, ? extends Session> newSessionFn,
             BiFunctionEx<? super Session, T, ? extends Message> messageFn,
             BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
             ConsumerEx<? super Session> flushFn,
             String name,
             boolean isTopic
     ) {
+        checkSerializable(newConnectionFn, "newConnectionFn");
+        checkSerializable(newSessionFn, "newSessionFn");
+        checkSerializable(messageFn, "messageFn");
+        checkSerializable(sendFn, "sendFn");
+        checkSerializable(flushFn, "flushFn");
+
         return ProcessorMetaSupplier.of(
-                new Supplier<>(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, isTopic),
+                new Supplier<>(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, isTopic),
                 PREFERRED_LOCAL_PARALLELISM);
     }
 
@@ -71,8 +78,8 @@ public final class WriteJmsP {
 
         static final long serialVersionUID = 1L;
 
-        private final SupplierEx<? extends Connection> connectionSupplier;
-        private final FunctionEx<? super Connection, ? extends Session> sessionF;
+        private final SupplierEx<? extends Connection> newConnectionFn;
+        private final FunctionEx<? super Connection, ? extends Session> newSessionFn;
         private final String name;
         private final boolean isTopic;
         private final BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn;
@@ -81,16 +88,16 @@ public final class WriteJmsP {
 
         private transient Connection connection;
 
-        private Supplier(SupplierEx<? extends Connection> connectionSupplier,
-                         FunctionEx<? super Connection, ? extends Session> sessionF,
+        private Supplier(SupplierEx<? extends Connection> newConnectionFn,
+                         FunctionEx<? super Connection, ? extends Session> newSessionFn,
                          BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn,
                          BiConsumerEx<? super MessageProducer, ? super Message> sendFn,
                          ConsumerEx<? super Session> flushFn,
                          String name,
                          boolean isTopic
         ) {
-            this.connectionSupplier = connectionSupplier;
-            this.sessionF = sessionF;
+            this.newConnectionFn = newConnectionFn;
+            this.newSessionFn = newSessionFn;
             this.messageFn = messageFn;
             this.sendFn = sendFn;
             this.flushFn = flushFn;
@@ -100,7 +107,7 @@ public final class WriteJmsP {
 
         @Override
         public void init(@Nonnull Context ignored) throws Exception {
-            connection = connectionSupplier.get();
+            connection = newConnectionFn.get();
             connection.start();
         }
 
@@ -108,7 +115,7 @@ public final class WriteJmsP {
         @Override
         public Collection<? extends Processor> get(int count) {
             FunctionEx<Processor.Context, JmsContext> createFn = jet -> {
-                Session session = sessionF.apply(connection);
+                Session session = newSessionFn.apply(connection);
                 Destination destination = isTopic ? session.createTopic(name) : session.createQueue(name);
                 MessageProducer producer = session.createProducer(destination);
                 return new JmsContext(session, producer);

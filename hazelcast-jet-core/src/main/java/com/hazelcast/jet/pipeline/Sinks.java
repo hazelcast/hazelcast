@@ -880,7 +880,7 @@ public final class Sinks {
 
     /**
      * Returns a sink that connects to the specified database using the given
-     * {@code connectionSupplier}, prepares a statement using the given {@code
+     * {@code newConnectionFn}, prepares a statement using the given {@code
      * updateQuery} and inserts/updates the items.
      * <p>
      * The {@code updateQuery} should contain a parametrized query. The {@code
@@ -915,7 +915,7 @@ public final class Sinks {
      * <em>insert-or-update</em> statement that can tolerate duplicate writes.
      *
      * @param updateQuery the SQL query which will do the insert/update
-     * @param connectionSupplier the supplier of database connection
+     * @param newConnectionFn the supplier of database connection
      * @param bindFn the function to set the parameters of the statement for
      *                 each item received
      * @param <T> type of the items the sink accepts
@@ -923,11 +923,11 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<Connection> connectionSupplier,
+            @Nonnull SupplierEx<Connection> newConnectionFn,
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(updateQuery, connectionSupplier, bindFn));
+                SinkProcessors.writeJdbcP(updateQuery, newConnectionFn, bindFn));
     }
 
     /**

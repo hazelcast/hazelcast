@@ -36,6 +36,7 @@ import java.sql.SQLNonTransientException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -47,7 +48,7 @@ public final class WriteJdbcP<T> implements Processor {
             new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(10));
     private static final int BATCH_LIMIT = 50;
 
-    private final SupplierEx<? extends Connection> connectionSupplier;
+    private final SupplierEx<? extends Connection> newConnectionFn;
     private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
     private final String updateQuery;
 
@@ -61,11 +62,11 @@ public final class WriteJdbcP<T> implements Processor {
 
     private WriteJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
     ) {
         this.updateQuery = updateQuery;
-        this.connectionSupplier = connectionSupplier;
+        this.newConnectionFn = newConnectionFn;
         this.bindFn = bindFn;
     }
 
@@ -74,12 +75,14 @@ public final class WriteJdbcP<T> implements Processor {
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
-
     ) {
+        checkSerializable(newConnectionFn, "newConnectionFn");
+        checkSerializable(bindFn, "bindFn");
+
         return ProcessorMetaSupplier.preferLocalParallelismOne(() ->
-                new WriteJdbcP<>(updateQuery, connectionSupplier, bindFn));
+                new WriteJdbcP<>(updateQuery, newConnectionFn, bindFn));
     }
 
     @Override
@@ -129,7 +132,7 @@ public final class WriteJdbcP<T> implements Processor {
 
     private boolean connectAndPrepareStatement() {
         try {
-            connection = connectionSupplier.get();
+            connection = newConnectionFn.get();
             connection.setAutoCommit(false);
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
             statement = connection.prepareStatement(updateQuery);

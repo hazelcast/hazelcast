@@ -23,8 +23,8 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.IntStream.range;
 
@@ -53,7 +54,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
     public static final int PREFERRED_LOCAL_PARALLELISM = 4;
 
     private final Connection connection;
-    private final FunctionEx<? super Connection, ? extends Session> sessionFn;
+    private final FunctionEx<? super Connection, ? extends Session> newSessionFn;
     private final FunctionEx<? super Session, ? extends MessageConsumer> consumerFn;
     private final ConsumerEx<? super Session> flushFn;
     private final FunctionEx<? super Message, ? extends T> projectionFn;
@@ -64,14 +65,14 @@ public class StreamJmsP<T> extends AbstractProcessor {
     private Traverser<Object> traverser;
 
     StreamJmsP(Connection connection,
-               FunctionEx<? super Connection, ? extends Session> sessionFn,
+               FunctionEx<? super Connection, ? extends Session> newSessionFn,
                FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
                ConsumerEx<? super Session> flushFn,
                FunctionEx<? super Message, ? extends T> projectionFn,
                EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.connection = connection;
-        this.sessionFn = sessionFn;
+        this.newSessionFn = newSessionFn;
         this.consumerFn = consumerFn;
         this.flushFn = flushFn;
         this.projectionFn = projectionFn;
@@ -86,19 +87,25 @@ public class StreamJmsP<T> extends AbstractProcessor {
      */
     @Nonnull
     public static <T> ProcessorSupplier supplier(
-            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
-            @Nonnull FunctionEx<? super Connection, ? extends Session> sessionFn,
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull FunctionEx<? super Connection, ? extends Session> newSessionFn,
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull ConsumerEx<? super Session> flushFn,
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy);
+        checkSerializable(newConnectionFn, "newConnectionFn");
+        checkSerializable(newSessionFn, "newSessionFn");
+        checkSerializable(consumerFn, "consumerFn");
+        checkSerializable(flushFn, "flushFn");
+        checkSerializable(projectionFn, "projectionFn");
+
+        return new Supplier<>(newConnectionFn, newSessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy);
     }
 
     @Override
     protected void init(@Nonnull Context context) {
-        session = sessionFn.apply(connection);
+        session = newSessionFn.apply(connection);
         consumer = consumerFn.apply(session);
         traverser = ((Traverser<Message>) () -> uncheckCall(() -> consumer.receiveNoWait()))
                 .flatMap(t -> eventTimeMapper.flatMapEvent(projectionFn.apply(t), 0, handleJmsTimestamp(t)))
@@ -130,7 +137,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final SupplierEx<? extends Connection> connectionSupplier;
+        private final SupplierEx<? extends Connection> newConnectionFn;
         private final FunctionEx<? super Connection, ? extends Session> sessionFn;
         private final FunctionEx<? super Session, ? extends MessageConsumer> consumerFn;
         private final ConsumerEx<? super Session> flushFn;
@@ -139,14 +146,14 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         private transient Connection connection;
 
-        private Supplier(SupplierEx<? extends Connection> connectionSupplier,
+        private Supplier(SupplierEx<? extends Connection> newConnectionFn,
                          FunctionEx<? super Connection, ? extends Session> sessionFn,
                          FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
                          ConsumerEx<? super Session> flushFn,
                          FunctionEx<? super Message, ? extends T> projectionFn,
                          EventTimePolicy<? super T> eventTimePolicy
         ) {
-            this.connectionSupplier = connectionSupplier;
+            this.newConnectionFn = newConnectionFn;
             this.sessionFn = sessionFn;
             this.consumerFn = consumerFn;
             this.flushFn = flushFn;
@@ -156,7 +163,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            connection = connectionSupplier.get();
+            connection = newConnectionFn.get();
             connection.start();
         }
 

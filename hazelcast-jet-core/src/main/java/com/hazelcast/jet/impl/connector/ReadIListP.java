@@ -89,10 +89,6 @@ public final class ReadIListP extends AbstractProcessor {
 
     public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
-        return forceTotalParallelismOne(
-                ProcessorSupplier.of(() -> {
-                    return new ReadIListP(listName, clientXml);
-                }), listName
-        );
+        return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(listName, clientXml)), listName);
     }
 }
