@@ -327,11 +327,21 @@ This plugin is included in the official Hazelcast Docker images:
 
 ### Helm Chart
 
-Hazelcast is available in the form of Helm Chart in 3 versions:
+Hazelcast is available in the form of Helm Chart in a few versions:
 
  * [stable/hazelcast](https://github.com/helm/charts/tree/master/stable/hazelcast) - Hazelcast IMDG in the official Helm Chart repository
  * [hazelcast/hazelcast](https://github.com/hazelcast/charts/tree/master/stable/hazelcast) - Hazelcast IMDG with Management Center
  * [hazelcast/hazelcast-enterprise](https://github.com/hazelcast/charts/tree/master/stable/hazelcast-enterprise) - Hazelcast Enterprise with Management Center
+ * [IBM/hazelcast-enterprise](https://github.com/IBM/charts/tree/master/community/hazelcast-enterprise) - Hazelcast Enterprise (with Management Center) dedicated for IBM ICP and IKS environments
+
+You can also check [Hazelcast Helm Charts at Helm Hub](https://hub.helm.sh/charts?q=hazelcast).
+
+### Kubernetes/OpenShift Operator
+
+Hazelcast is available as Kubernetes/OpenShift Operator:
+
+ * [hazelcast/hazelcast-operator](https://github.com/hazelcast/hazelcast-operator) - official Hazelcast Operator repository
+ * [Operator Hub](https://operatorhub.io/operator/hazelcast-operator) - official Hazelcast Operator published at Operator Hub
 
 ### Red Hat OpenShift
 
