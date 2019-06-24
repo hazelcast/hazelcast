@@ -57,7 +57,6 @@ import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
-import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -157,7 +156,6 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.QUORUM, QuorumException.class);
         register(ClientProtocolErrorCodes.REACHED_MAX_SIZE, ReachedMaxSizeException.class);
         register(ClientProtocolErrorCodes.REJECTED_EXECUTION, RejectedExecutionException.class);
-        register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_HAZELCAST, RetryableHazelcastException.class);
         register(ClientProtocolErrorCodes.RETRYABLE_IO, RetryableIOException.class);
         register(ClientProtocolErrorCodes.RUNTIME, RuntimeException.class);

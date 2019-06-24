@@ -60,7 +60,6 @@ import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
-import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -410,12 +409,6 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new RejectedExecutionException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ResponseAlreadySentException(message);
             }
         });
         register(ClientProtocolErrorCodes.RETRYABLE_HAZELCAST, RetryableHazelcastException.class, new ExceptionFactory() {
