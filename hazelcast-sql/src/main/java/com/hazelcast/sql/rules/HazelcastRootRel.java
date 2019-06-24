@@ -12,7 +12,8 @@ public class HazelcastRootRel extends SingleRel implements HazelcastRel  {
 
     @Override
     public void visitForPlan(PhysicalPlanVisitor visitor) {
-        visitor.visit((HazelcastRel)getInput());
+        ((HazelcastRel)getInput()).visitForPlan(visitor);
+
         visitor.visit(this);
     }
 }

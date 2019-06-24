@@ -11,16 +11,18 @@ public class BatchDataTask implements ControlTask, DataTask {
 
     private final QueryId queryId;
     private final int edgeId;
+    private final String sourceMemberId;
     private final int sourceStripe;
     private final int sourceThread;
     private final int targetStripe;
     private int targetThread;
     private final SendBatch batch;
 
-    public BatchDataTask(QueryId queryId, int edgeId, int sourceStripe, int sourceThread, int targetStripe,
-        int targetThread, SendBatch batch) {
+    public BatchDataTask(QueryId queryId, int edgeId, String sourceMemberId, int sourceStripe, int sourceThread,
+        int targetStripe, int targetThread, SendBatch batch) {
         this.queryId = queryId;
         this.edgeId = edgeId;
+        this.sourceMemberId = sourceMemberId;
         this.sourceStripe = sourceStripe;
         this.sourceThread = sourceThread;
         this.targetStripe = targetStripe;
@@ -45,6 +47,10 @@ public class BatchDataTask implements ControlTask, DataTask {
 
     public int getEdgeId() {
         return edgeId;
+    }
+
+    public String getSourceMemberId() {
+        return sourceMemberId;
     }
 
     public int getSourceStripe() {

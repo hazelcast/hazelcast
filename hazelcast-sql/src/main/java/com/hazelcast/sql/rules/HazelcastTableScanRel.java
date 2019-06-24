@@ -29,6 +29,4 @@ public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
     public void visitForPlan(PhysicalPlanVisitor visitor) {
         visitor.visit(this);
     }
-
-
 }

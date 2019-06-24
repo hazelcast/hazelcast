@@ -9,18 +9,18 @@ import java.util.List;
 
 public class ReceiveExec extends AbstractExec {
 
-    private final Inbox inbox;
+    private final SingleInbox inbox;
 
     private RowBatch curBatch;
-    private boolean last;
+    private boolean inboxDone;
 
-    public ReceiveExec(Inbox inbox) {
+    public ReceiveExec(SingleInbox inbox) {
         this.inbox = inbox;
     }
 
     @Override
     public IterationResult advance() {
-        if (last)
+        if (inboxDone)
             throw new IllegalStateException("Should not be called.");
 
         SendBatch batch = inbox.poll();
@@ -33,7 +33,7 @@ public class ReceiveExec extends AbstractExec {
         curBatch = new HeapRowBatch(rows);
 
         if (inbox.closed()) {
-            last = true;
+            inboxDone = true;
 
             return IterationResult.FETCHED_DONE;
         }

@@ -14,8 +14,9 @@ public class ReceivePhysicalNode implements PhysicalNode {
         // No-op.
     }
 
-    public ReceivePhysicalNode(int edgeId) {
+    public ReceivePhysicalNode(int edgeId, int parallelism) {
         this.edgeId = edgeId;
+        this.parallelism = parallelism;
     }
 
     public int getEdgeId() {

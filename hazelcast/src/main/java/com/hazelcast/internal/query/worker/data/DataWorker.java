@@ -65,7 +65,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
         Inbox inbox = inboxes.get(inboxKey);
 
         // Feed the batch.
-        inbox.onBatch(task.getSourceStripe(), task.getSourceThread(), task.getBatch());
+        inbox.onBatch(task.getSourceMemberId(), task.getSourceStripe(), task.getSourceThread(), task.getBatch());
 
         // Continue iteration.
         inbox.getExec().advance();

@@ -3,58 +3,22 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.io.SendBatch;
 
-import java.util.ArrayDeque;
-
-public class Inbox extends Mailbox {
-    private final QueryId queryId;
-    private final String memberId;
-    private final ArrayDeque<SendBatch> batches = new ArrayDeque<>();
-    private int remaining;
+public abstract class Inbox extends Mailbox {
+    protected final QueryId queryId;
+    protected final String memberId;
 
     /** Executor which should be notified when data arrives. */
     private Exec exec;
 
-    public Inbox(QueryId queryId, String memberId, int edgeId, int stripe, int remaining) {
+    protected Inbox(QueryId queryId, String memberId, int edgeId, int stripe) {
         super(edgeId, stripe);
 
         this.queryId = queryId;
         this.memberId = memberId;
-        this.remaining = remaining;
     }
 
-    // TODO: Exceptions!
-
-    public void onBatch(int sourceStripe, int sourceThread, SendBatch batch) {
-        // Batch might be empty in case of last marker.
-        if (!batch.getRows().isEmpty()) {
-            System.out.println(">>> INBOX  [ADDED]: " + this + ", sourceStripe=" + sourceStripe + ", sourceThread=" + sourceThread + ": " + batch.getRows().size());
-
-            batches.add(batch);
-        }
-
-        if (batch.isLast()) {
-            remaining--;
-
-            System.out.println(">>> INBOX  [CLOSE]: " + this + ": " + remaining);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "Inbox {edgeId=" + getEdgeId() +
-            ", member=" + memberId +
-            ", stripe=" + getStripe() +
-            ", thread=" + getThread() +
-        '}';
-    }
-
-    public SendBatch poll() {
-        return batches.poll();
-    }
-
-    public boolean closed() {
-        return remaining == 0;
-    }
+    public abstract void onBatch(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch);
+    public abstract boolean closed();
 
     public Exec getExec() {
         return exec;

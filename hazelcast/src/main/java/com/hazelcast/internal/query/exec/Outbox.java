@@ -71,6 +71,7 @@ public class Outbox extends Mailbox {
         QueryBatchOperation op = new QueryBatchOperation(
             queryId,
             getEdgeId(),
+            nodeEngine.getLocalMember().getUuid(),
             getStripe(),
             getThread(),
             targetStripe,

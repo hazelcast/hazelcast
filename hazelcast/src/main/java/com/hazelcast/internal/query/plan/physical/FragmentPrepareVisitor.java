@@ -41,4 +41,20 @@ public class FragmentPrepareVisitor extends AbstractPhysicalNodeVisitor {
         // TODO: Careful with parallelism override. This should not be the case for a valid plan.
         parallelism = node.getParallelism();
     }
+
+    @Override
+    public void onSortNode(SortPhysicalNode node) {
+        // TODO: No-op?
+    }
+
+    @Override
+    public void onSortMergeReceiveNode(SortMergeReceivePhysicalNode node) {
+        if (inboundEdges == null)
+            inboundEdges = new ArrayList<>(1);
+
+        inboundEdges.add(node.getEdgeId());
+
+        // TODO: WTF?
+        parallelism = node.getParallelism();
+    }
 }

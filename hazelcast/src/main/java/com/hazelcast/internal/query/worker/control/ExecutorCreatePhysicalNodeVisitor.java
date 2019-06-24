@@ -12,11 +12,17 @@ import com.hazelcast.internal.query.exec.Outbox;
 import com.hazelcast.internal.query.exec.ReceiveExec;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.exec.SendExec;
+import com.hazelcast.internal.query.exec.SingleInbox;
+import com.hazelcast.internal.query.exec.SortExec;
+import com.hazelcast.internal.query.exec.SortMergeReceiveExec;
+import com.hazelcast.internal.query.exec.StripedInbox;
 import com.hazelcast.internal.query.plan.physical.MapScanPhysicalNode;
 import com.hazelcast.internal.query.plan.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.plan.physical.ReceivePhysicalNode;
 import com.hazelcast.internal.query.plan.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.plan.physical.SendPhysicalNode;
+import com.hazelcast.internal.query.plan.physical.SortMergeReceivePhysicalNode;
+import com.hazelcast.internal.query.plan.physical.SortPhysicalNode;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.ArrayList;
@@ -40,8 +46,8 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
-    /** Map from send (outbound) edge to it's count. */
-    private final Map<Integer, Integer> sendEdgeCountMap;
+    /** Map from receive (inbound) edge to it's count. */
+    private final Map<Integer, QueryFragment> sendFragmentMap;
 
     /** Map from receive (inbound) edge to it's count. */
     private final Map<Integer, QueryFragment> receiveFragmentMap;
@@ -69,14 +75,14 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         QueryId queryId,
         int partCnt,
         PartitionIdSet localParts,
-        Map<Integer, Integer> sendEdgeCountMap,
+        Map<Integer, QueryFragment> sendFragmentMap,
         Map<Integer, QueryFragment> receiveFragmentMap
     ) {
         this.service = service;
         this.queryId = queryId;
         this.partCnt = partCnt;
         this.localParts = localParts;
-        this.sendEdgeCountMap = sendEdgeCountMap;
+        this.sendFragmentMap = sendFragmentMap;
         this.receiveFragmentMap = receiveFragmentMap;
     }
 
@@ -91,10 +97,14 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     public void onReceiveNode(ReceivePhysicalNode node) {
         // Navigate to sender exec and calculate total number of sender stripes.
         int edgeId = node.getEdgeId();
-        int remaining = sendEdgeCountMap.get(edgeId);
 
+        QueryFragment sendFragment = sendFragmentMap.get(edgeId);
+
+        int remaining = sendFragment.getMemberIds().size() * sendFragment.getParallelism();
+
+        // TODO: Inbox type should depend on sender-receiver edge.
         // Create and register inbox.
-        Inbox inbox = new Inbox(
+        SingleInbox inbox = new SingleInbox(
             queryId,
             service.getNodeEngine().getClusterService().getLocalMember().getUuid(),
             node.getEdgeId(),
@@ -106,6 +116,35 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         // Instantiate executor and put it to stack.
         ReceiveExec res = new ReceiveExec(inbox);
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onSortMergeReceiveNode(SortMergeReceivePhysicalNode node) {
+        // Navigate to sender exec and calculate total number of sender stripes.
+        int edgeId = node.getEdgeId();
+
+        // Create and register inbox.
+        QueryFragment sendFragment = sendFragmentMap.get(edgeId);
+
+        StripedInbox inbox = new StripedInbox(
+            queryId,
+            service.getNodeEngine().getLocalMember().getUuid(),
+            edgeId,
+            stripe,
+            sendFragment.getMemberIds(),
+            sendFragment.getParallelism()
+        );
+
+        inboxes.add(inbox);
+
+        // Instantiate executor and put it to stack.
+        SortMergeReceiveExec res = new SortMergeReceiveExec(
+            inbox,
+            node.getExpressions(),
+            node.getAscs()
+        );
 
         stack.add(res);
     }
@@ -181,6 +220,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             res = EmptyScanExec.INSTANCE;
         else
             res = new MapScanExec(node.getMapName(), stripeParts, node.getProjections(), node.getFilter());
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onSortNode(SortPhysicalNode node) {
+        Exec res = new SortExec(stack.remove(0), node.getExpressions(), node.getAscs());
 
         stack.add(res);
     }

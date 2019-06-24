@@ -186,6 +186,7 @@ public final class HazelcastSql2 {
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
         // TODO: Rules to merge scan and project/filter
+        // TODO: Rule to eliminate sorting if the source is already sorted.
 
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE); // TODO: Remove once both merge routines are ready
         hepBuilder.addRuleInstance(HazelcastProjectIntoScanRule.INSTANCE);

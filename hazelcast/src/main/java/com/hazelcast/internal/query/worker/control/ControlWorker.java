@@ -59,17 +59,14 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
     private void handleExecute(ExecuteControlTask task) {
         // Prepare map of outbound edges to their counts. This is needed to understand when to close the receiver.
-        Map<Integer, Integer> sendEdgeCountMap = new HashMap<>();
+        Map<Integer, QueryFragment> sendFragmentMap = new HashMap<>();
         Map<Integer, QueryFragment> receiveFragmentMap = new HashMap<>();
 
         for (QueryFragment fragment : task.getFragments()) {
             Integer outboundEdge = fragment.getOutboundEdge();
 
-            if (outboundEdge != null) {
-                int outboundEdgeCount = fragment.getParallelism() * fragment.getMemberIds().size();
-
-                sendEdgeCountMap.put(outboundEdge, outboundEdgeCount);
-            }
+            if (outboundEdge != null)
+                sendFragmentMap.put(outboundEdge, fragment);
 
             if (fragment.getInboundEdges() != null) {
                 for (Integer inboundEdge : fragment.getInboundEdges())
@@ -130,7 +127,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                     queryId,
                     partCnt,
                     localParts,
-                    sendEdgeCountMap,
+                    sendFragmentMap,
                     receiveFragmentMap
                 );
 

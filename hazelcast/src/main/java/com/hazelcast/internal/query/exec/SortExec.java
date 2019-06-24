@@ -1,11 +1,15 @@
 package com.hazelcast.internal.query.exec;
 
+import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.QueryUtils;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.io.EmptyRowBatch;
 import com.hazelcast.internal.query.io.HeapRowBatch;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.sort.SortKey;
+import com.hazelcast.internal.query.sort.SortKeyComparator;
+import com.hazelcast.internal.query.worker.data.DataWorker;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,6 +32,7 @@ public class SortExec extends AbstractExec {
     /** Index for unique elements. */
     private long idx;
 
+    // TODO: Merge exprs and ascs to a single class, add null-first/last.
     public SortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
         this.upstream = upstream;
         this.expressions = expressions;
@@ -36,9 +41,16 @@ public class SortExec extends AbstractExec {
     }
 
     @Override
+    protected void setup0(QueryContext ctx, DataWorker worker) {
+        upstream.setup(ctx, worker);
+    }
+
+    @Override
     public IterationResult advance() {
         while (!upstreamDone) {
-            switch (upstream.advance()) {
+            IterationResult upstreamRes = upstream.advance();
+
+            switch (upstreamRes) {
                 case FETCHED_DONE:
                     upstreamDone = true;
 
@@ -91,71 +103,5 @@ public class SortExec extends AbstractExec {
         resList.addAll(map.values());
 
         res = new HeapRowBatch(resList);
-    }
-
-    private static class SortKey {
-
-        private final List<Object> key;
-        private final long idx;
-
-        private SortKey(List<Object> key, long idx) {
-            this.key = key;
-            this.idx = idx;
-        }
-
-        @Override
-        public int hashCode() {
-            return Long.hashCode(idx);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof SortKey) {
-                SortKey other = (SortKey)obj;
-
-                return other.idx == ((SortKey) obj).idx;
-            }
-            else
-                return false;
-        }
-    }
-
-    private static class SortKeyComparator implements Comparator<SortKey> {
-
-        // TODO: Collation
-        // TODO: NULLS FIRST/LAST
-        // TODO: Type inference
-
-        private final List<Boolean> ascs;
-
-        private SortKeyComparator(List<Boolean> ascs) {
-            this.ascs = ascs;
-        }
-
-        @Override
-        public int compare(SortKey o1, SortKey o2) {
-            int res;
-
-            for (int i = 0; i < ascs.size(); i++) {
-                boolean asc = ascs.get(i);
-
-                Object item1 = o1.key.get(i);
-                Object item2 = o2.key.get(i);
-
-                res = QueryUtils.compare(item1, item2);
-
-                if (asc)
-                    res = -res;
-
-                if (res != 0) {
-                    if (!asc)
-                        res = -res;
-
-                    return res;
-                }
-            }
-
-            return Long.compare(o1.idx, o2.idx);
-        }
     }
 }

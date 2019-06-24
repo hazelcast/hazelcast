@@ -15,6 +15,7 @@ import java.io.IOException;
 public class QueryBatchOperation extends QueryAbstractOperation {
     private QueryId queryId;
     private int edgeId;
+    private String sourceMemberId;
     private int sourceStripe;
     private int sourceThread;
     private int targetStripe;
@@ -28,6 +29,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     public QueryBatchOperation(
         QueryId queryId,
         int edgeId,
+        String sourceMemberId,
         int sourceStripe,
         int sourceThread,
         int targetStripe,
@@ -36,6 +38,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     ) {
         this.queryId = queryId;
         this.edgeId = edgeId;
+        this.sourceMemberId = sourceMemberId;
         this.sourceStripe = sourceStripe;
         this.sourceThread = sourceThread;
         this.targetStripe = targetStripe;
@@ -49,7 +52,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     public void run() throws Exception {
         QueryService service = getService();
 
-        service.onQueryBatchRequest(new BatchDataTask(queryId, edgeId, sourceStripe, sourceThread,
+        service.onQueryBatchRequest(new BatchDataTask(queryId, edgeId, sourceMemberId, sourceStripe, sourceThread,
             targetStripe, targetThread, batch));
     }
 
@@ -57,6 +60,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(queryId);
         out.writeInt(edgeId);
+        out.writeUTF(sourceMemberId);
         out.writeInt(sourceStripe);
         out.writeInt(sourceThread);
         out.writeInt(targetStripe);
@@ -68,6 +72,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         queryId = in.readObject();
         edgeId = in.readInt();
+        sourceMemberId = in.readUTF();
         sourceStripe = in.readInt();
         sourceThread = in.readInt();
         targetStripe = in.readInt();

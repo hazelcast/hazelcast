@@ -52,7 +52,8 @@ public class NewQueryTest extends HazelcastTestSupport {
 
         // Root fragment: delivers data to the user.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
-            1 // Edge 1
+            1, // Edge 1
+            1  // Parallelism 1
         );
 
         RootPhysicalNode rootNode = new RootPhysicalNode(
@@ -83,12 +84,10 @@ public class NewQueryTest extends HazelcastTestSupport {
         );
 
         // Physical plan with two fragments
-        PhysicalPlan plan = new PhysicalPlan(
-            asList(
-                rootNode, // Fragment 1: consumer
-                sendNode  // Fragment 2: distributed scan
-            )
-        );
+        PhysicalPlan plan = new PhysicalPlan();
+
+        plan.addNode(rootNode);
+        plan.addNode(sendNode);
 
         QueryService service = ((HazelcastInstanceProxy)member1).getOriginal().getQueryService();
 

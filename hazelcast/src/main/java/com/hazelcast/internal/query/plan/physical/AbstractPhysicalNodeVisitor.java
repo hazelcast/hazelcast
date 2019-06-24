@@ -20,4 +20,14 @@ public abstract class AbstractPhysicalNodeVisitor implements PhysicalNodeVisitor
     public void onMapScanNode(MapScanPhysicalNode node) {
         // No-op.
     }
+
+    @Override
+    public void onSortNode(SortPhysicalNode node) {
+        // No-op.
+    }
+
+    @Override
+    public void onSortMergeReceiveNode(SortMergeReceivePhysicalNode node) {
+        // No-op.
+    }
 }
