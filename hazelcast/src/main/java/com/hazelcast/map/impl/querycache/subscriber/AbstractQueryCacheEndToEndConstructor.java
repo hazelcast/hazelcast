@@ -63,6 +63,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         QueryCacheEventService eventService = context.getQueryCacheEventService();
         ListenerAdapter listener = new SubscriberListener(context, info);
         publisherListenerId = eventService.addPublisherListener(info.getMapName(), info.getCacheId(), listener);
+        queryCache.setPublisherListenerId(publisherListenerId);
     }
 
     /**
@@ -89,8 +90,6 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
                 createSubscriberAccumulator(info);
             }
             createPublisherAccumulator(info);
-
-            queryCache.setPublisherListenerId(this.publisherListenerId);
 
         } catch (Throwable throwable) {
             removeQueryCacheConfig(mapName, request.getCacheName());

@@ -207,7 +207,6 @@ public interface QueryCache<K, V> {
      * Clears and releases all local and remote resources created for this cache.
      */
     void destroy();
-
 }
 
 
