@@ -20,25 +20,22 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-abstract class AbstractWanSyncFinishedEvent extends AbstractWanAntiEntropyEventBase {
-    private final int partitionsSynced;
-    private final long recordsSynced;
-    private final long durationSecs;
+public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEventBase {
+    private final UUID uuid;
 
-    AbstractWanSyncFinishedEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName, long durationSecs,
-                                 long recordsSynced, int partitionsSynced) {
-        super(uuid, wanReplicationName, targetGroupName, mapName);
-        this.durationSecs = durationSecs;
-        this.recordsSynced = recordsSynced;
-        this.partitionsSynced = partitionsSynced;
+    protected AbstractWanAntiEntropyEventBase(UUID uuid, String wanReplicationName, String targetGroupName, String mapName) {
+        super(wanReplicationName, targetGroupName, mapName);
+        this.uuid = uuid;
+    }
+
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("durationSecs", durationSecs);
-        json.add("partitionsSynced", partitionsSynced);
-        json.add("recordsSynced", recordsSynced);
+        json.add("uuid", uuid.toString());
         return json;
     }
 }

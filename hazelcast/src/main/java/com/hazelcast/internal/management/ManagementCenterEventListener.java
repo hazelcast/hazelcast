@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.events;
+package com.hazelcast.internal.management;
 
-import com.hazelcast.internal.management.events.EventMetadata.EventType;
+import com.hazelcast.internal.management.events.Event;
 
-import java.util.UUID;
+/**
+ * Callback interface that captures {@link Event}s logged to Management
+ * Center. It captures only events that are about to be sent to Management
+ * Center. If the {@link ManagementCenterService} is not running or not
+ * enabled, this event listener is not called.
+ *
+ * @see ManagementCenterService#log(Event)
+ */
+@FunctionalInterface
+public interface ManagementCenterEventListener {
 
-import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
-
-public class WanSyncStartedEvent extends AbstractWanAntiEntropyEventBase {
-    public WanSyncStartedEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName) {
-        super(uuid, wanReplicationName, targetGroupName, mapName);
-    }
-
-    @Override
-    public EventType getType() {
-        return WAN_SYNC_STARTED;
-    }
+    /**
+     * Callback for logging MC events.
+     *
+     * @param event The event logged
+     */
+    void onEventLogged(Event event);
 }
