@@ -221,14 +221,14 @@ public class MapQueryPartitionIteratorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class TestProjection extends Projection<Entry<String, String>, String> {
+    private static class TestProjection implements Projection<Entry<String, String>, String> {
         @Override
         public String transform(Map.Entry<String, String> input) {
             return "dummy" + input.getValue();
         }
     }
 
-    private static class GetValueProjection<T> extends Projection<Entry<String, T>, T> {
+    private static class GetValueProjection<T> implements Projection<Entry<String, T>, T> {
         @Override
         public T transform(Map.Entry<String, T> input) {
             return input.getValue();

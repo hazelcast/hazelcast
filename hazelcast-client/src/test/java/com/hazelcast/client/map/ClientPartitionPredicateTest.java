@@ -225,7 +225,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         assertEquals(ITEMS_PER_PARTITION, collection.size());
     }
 
-    public static class PrimitiveValueIncrementingProjection extends Projection<Map.Entry<String, Integer>, Integer> {
+    public static class PrimitiveValueIncrementingProjection implements Projection<Map.Entry<String, Integer>, Integer> {
         @Override
         public Integer transform(Map.Entry<String, Integer> input) {
             return input.getValue() + 1;
