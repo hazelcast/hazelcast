@@ -17,7 +17,6 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.collection.impl.queue.AbstractQueueNullTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.multimap.AbstractMultiMapNullTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;

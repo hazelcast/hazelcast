@@ -43,12 +43,12 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.collection.impl.common.DataAwareItemEvent;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.core.ItemEventType;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
@@ -60,7 +60,6 @@ import java.util.ListIterator;
 
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link IList}.
