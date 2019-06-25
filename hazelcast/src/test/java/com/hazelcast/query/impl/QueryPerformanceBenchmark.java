@@ -209,28 +209,28 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         new Runner(opt).run();
     }
 
-    public static class NameExtractor extends ValueExtractor<Person, Object> {
+    public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getName());
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Person, Object> {
+    public static class LimbNameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getFirstLimb().getName());
         }
     }
 
-    public static class PortableNameExtractor extends ValueExtractor<ValueReader, Object> {
+    public static class PortableNameExtractor implements ValueExtractor<ValueReader, Object> {
         @Override
         public void extract(ValueReader target, Object argument, ValueCollector collector) {
             target.read("name", collector);
         }
     }
 
-    public static class PortableLimbNameExtractor extends ValueExtractor<ValueReader, Object> {
+    public static class PortableLimbNameExtractor implements ValueExtractor<ValueReader, Object> {
         @Override
         public void extract(ValueReader target, Object argument, ValueCollector collector) {
             target.read("firstLimb.name", collector);

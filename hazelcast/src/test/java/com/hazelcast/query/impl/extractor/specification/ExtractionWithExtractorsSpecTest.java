@@ -190,7 +190,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     }
 
     @SuppressWarnings("unchecked")
-    public static class LimbTattoosCountExtractor extends ValueExtractor {
+    public static class LimbTattoosCountExtractor implements ValueExtractor {
         @Override
         public void extract(Object target, Object arguments, final ValueCollector collector) {
             Integer parsedId = Integer.parseInt((String) arguments);

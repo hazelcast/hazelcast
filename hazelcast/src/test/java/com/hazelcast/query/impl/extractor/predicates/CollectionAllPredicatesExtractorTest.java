@@ -89,21 +89,21 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
         };
     }
 
-    public static class IndexOneLimbPowerExtractor extends ValueExtractor<Person, Object> {
+    public static class IndexOneLimbPowerExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.limbs_list.get(1).power);
         }
     }
 
-    public static class IndexOneLimbNameExtractor extends ValueExtractor<Person, Object> {
+    public static class IndexOneLimbNameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.limbs_list.get(1).name);
         }
     }
 
-    public static class ReducedLimbPowerExtractor extends ValueExtractor<Person, Object> {
+    public static class ReducedLimbPowerExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             for (Limb limb : target.limbs_list) {
@@ -112,7 +112,7 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
         }
     }
 
-    public static class ReducedLimbNameExtractor extends ValueExtractor<Person, Object> {
+    public static class ReducedLimbNameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             for (Limb limb : target.limbs_list) {

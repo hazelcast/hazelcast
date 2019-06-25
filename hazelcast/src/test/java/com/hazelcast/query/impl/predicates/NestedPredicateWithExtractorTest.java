@@ -191,7 +191,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         assertEquals(2, limbExtractorExecutions);
     }
 
-    public static class BodyNameExtractor extends ValueExtractor<Body, Object> {
+    public static class BodyNameExtractor implements ValueExtractor<Body, Object> {
 
         @Override
         public void extract(Body target, Object arguments, ValueCollector collector) {
@@ -200,7 +200,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Body, Object> {
+    public static class LimbNameExtractor implements ValueExtractor<Body, Object> {
 
         @Override
         public void extract(Body target, Object arguments, ValueCollector collector) {

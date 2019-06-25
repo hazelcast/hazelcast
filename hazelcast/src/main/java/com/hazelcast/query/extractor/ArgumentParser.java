@@ -28,7 +28,8 @@ package com.hazelcast.query.extractor;
  * @param <I> type of the unparsed argument object (input)
  * @param <O> type of the parsed argument object (output)
  */
-public abstract class ArgumentParser<I, O> {
+@FunctionalInterface
+public interface ArgumentParser<I, O> {
 
     /**
      * This method takes the unparsed argument object as an input and returns
@@ -37,6 +38,6 @@ public abstract class ArgumentParser<I, O> {
      * @param input extraction argument in the specified format
      * @return parsed argument object that will be passed to the {@link ValueExtractor}
      */
-    public abstract O parse(I input);
+    O parse(I input);
 
 }

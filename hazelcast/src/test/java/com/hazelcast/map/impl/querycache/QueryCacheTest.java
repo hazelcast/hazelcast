@@ -233,7 +233,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(50, queryCache);
     }
 
-    public static class EvenNumberEmployeeValueExtractor extends ValueExtractor<Employee, Integer> {
+    public static class EvenNumberEmployeeValueExtractor implements ValueExtractor<Employee, Integer> {
         @Override
         public void extract(Employee target, Integer argument, ValueCollector collector) {
             collector.addObject(target.getId() % 2 == 0);
