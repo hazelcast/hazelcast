@@ -74,8 +74,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends E> c) {
-        checkNotNull(c);
+    public boolean addAll(int index, @Nonnull Collection<? extends E> c) {
+        checkNotNull(c, "Null collection is not allowed");
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListAddAllWithIndexCodec.encodeRequest(name, index, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -93,8 +93,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public E set(int index, E element) {
-        checkNotNull(element);
+    public E set(int index, @Nonnull E element) {
+        checkNotNull(element, "Null item is not allowed");
         Data value = toData(element);
         ClientMessage request = ListSetCodec.encodeRequest(name, index, value);
         ClientMessage response = invokeOnPartition(request);
@@ -103,8 +103,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public void add(int index, E element) {
-        checkNotNull(element);
+    public void add(int index, @Nonnull E element) {
+        checkNotNull(element, "Null item is not allowed");
         Data value = toData(element);
         ClientMessage request = ListAddWithIndexCodec.encodeRequest(name, index, value);
         invokeOnPartition(request);
@@ -135,8 +135,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean contains(Object o) {
-        checkNotNull(o);
+    public boolean contains(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed");
         Data value = toData(o);
         ClientMessage request = ListContainsCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
@@ -159,13 +159,14 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public <T> T[] toArray(T[] a) {
+    public <T> T[] toArray(@Nonnull T[] a) {
+        checkNotNull(a, "Null array parameter is not allowed!");
         return getAll().toArray(a);
     }
 
     @Override
-    public boolean add(E e) {
-        checkNotNull(e);
+    public boolean add(@Nonnull E e) {
+        checkNotNull(e, "Null item is not allowed");
         Data element = toData(e);
         ClientMessage request = ListAddCodec.encodeRequest(name, element);
         ClientMessage response = invokeOnPartition(request);
@@ -174,8 +175,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean remove(Object o) {
-        checkNotNull(o);
+    public boolean remove(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed");
         Data value = toData(o);
         ClientMessage request = ListRemoveCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
@@ -184,8 +185,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean containsAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean containsAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed");
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -194,8 +195,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> c) {
-        checkNotNull(c);
+    public boolean addAll(@Nonnull Collection<? extends E> c) {
+        checkNotNull(c, "Null collection is not allowed");
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -204,8 +205,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean removeAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed");
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -215,8 +216,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean retainAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed");
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -234,7 +235,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     @Nonnull
     @Override
     public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
-        isNotNull(listener, "listener");
+        checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
@@ -276,8 +277,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public int lastIndexOf(Object o) {
-        checkNotNull(o);
+    public int lastIndexOf(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed");
         Data value = toData(o);
         ClientMessage request = ListLastIndexOfCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);

@@ -19,6 +19,8 @@ package com.hazelcast.topic;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalTopicStats;
 
+import javax.annotation.Nonnull;
+
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are
  * delivered to multiple subscribers, which is also known as a publish/subscribe
@@ -59,7 +61,7 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    void publish(E message);
+    void publish(@Nonnull E message);
 
     /**
      * Subscribes to this topic. When a message is published, the
@@ -71,7 +73,7 @@ public interface ITopic<E> extends DistributedObject {
      * @return returns the registration ID
      * @throws java.lang.NullPointerException if listener is {@code null}
      */
-    String addMessageListener(MessageListener<E> listener);
+    @Nonnull String addMessageListener(@Nonnull MessageListener<E> listener);
 
     /**
      * Stops receiving messages for the given message listener.
@@ -81,7 +83,7 @@ public interface ITopic<E> extends DistributedObject {
      * @param registrationId ID of listener registration
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeMessageListener(String registrationId);
+    boolean removeMessageListener(@Nonnull String registrationId);
 
     /**
      * Returns statistics about this topic, like total number of publishes/receives.

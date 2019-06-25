@@ -37,6 +37,7 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -57,6 +58,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     public static final int MAX_BACKOFF = 2000;
     public static final int INITIAL_BACKOFF_MS = 100;
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final Executor executor;
@@ -151,7 +153,8 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public void publish(E payload) {
+    public void publish(@Nonnull E payload) {
+        checkNotNull(payload, "Null message is not allowed!");
         try {
             Data data = nodeEngine.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, thisAddress);
@@ -206,9 +209,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         }
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(MessageListener<E> listener) {
-        checkNotNull(listener, "listener can't be null");
+    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener;
@@ -227,7 +231,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull String registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);

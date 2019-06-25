@@ -36,6 +36,7 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 import com.hazelcast.util.UuidUtil;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -87,7 +88,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public void publish(E payload) {
+    public void publish(@Nonnull E payload) {
+        checkNotNull(payload, "Null message is not allowed!");
         try {
             Data data = serializationService.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, null);
@@ -140,8 +142,9 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         }
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(MessageListener<E> listener) {
+    public String addMessageListener(@Nonnull MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         String id = UuidUtil.newUnsecureUuidString();
@@ -175,7 +178,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull String registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);
