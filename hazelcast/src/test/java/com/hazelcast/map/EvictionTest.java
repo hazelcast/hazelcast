@@ -34,10 +34,10 @@ import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -222,7 +222,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, emp, 0L, SECONDS, 2L, SECONDS);
         }
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
         Predicate predicateCityNull = entryObject.get("city").isNull();
         // Touch the map entry though the index to make sure expiration cleaning task
         // doesn't evict it.
