@@ -210,14 +210,16 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return maxIdle > 0L && maxIdle < Long.MAX_VALUE;
     }
 
-    /**
-     * Check if record is reachable according to TTL or idle times.
-     * If not reachable return null.
-     *
-     * @param record {@link com.hazelcast.map.impl.record.Record}
-     * @return null if evictable.
-     */
-    protected Record getOrNullIfExpired(Record record, long now, boolean backup) {
+    @Override
+    public boolean isTtlOrMaxIdleDefined(Record record) {
+        long ttl = record.getTtl();
+        long maxIdle = record.getMaxIdle();
+        return isTtlDefined(ttl) || isMaxIdleDefined(maxIdle);
+    }
+
+
+    @Override
+    public Record getOrNullIfExpired(Record record, long now, boolean backup) {
         if (!isRecordStoreExpirable()) {
             return record;
         }
@@ -332,7 +334,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
     }
 
-    protected void accessRecord(Record record, long now) {
+    @Override
+    public void accessRecord(Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
         setExpirationTime(record);

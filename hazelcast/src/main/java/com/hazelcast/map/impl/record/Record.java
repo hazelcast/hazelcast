@@ -42,6 +42,12 @@ public interface Record<V> {
 
     void onAccess(long now);
 
+    /**
+     * An implementation must be thread safe if the record might be accessed from multiple threads.
+     *
+     */
+    void onAccessSafe(long now);
+
     void onUpdate(long now);
 
     void onStore();

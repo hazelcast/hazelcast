@@ -34,7 +34,7 @@ public class IndexImpl extends AbstractIndex {
 
     public IndexImpl(String name, String[] components, boolean ordered, InternalSerializationService ss, Extractors extractors,
                      IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        super(name, components, ordered, ss, extractors, copyBehavior, stats);
+        super(name, components, ordered, ss, extractors, copyBehavior, stats, null);
     }
 
     @Override

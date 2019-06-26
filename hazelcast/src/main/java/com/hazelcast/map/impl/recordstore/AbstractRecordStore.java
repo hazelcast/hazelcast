@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -65,6 +66,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final RecordStoreMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
+    private final StoreAdapter storeAdapter;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -82,6 +84,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
                 .createRecordStoreMutationObservers(getName(), partitionId);
         this.mutationObserver = new CompositeRecordStoreMutationObserver<>(mutationObservers);
+        this.storeAdapter = new RecordStoreAdapter(this);
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
@@ -161,7 +164,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            queryableEntry.setMetadata(record.getMetadata());
+            queryableEntry.setRecord(record);
+            queryableEntry.setStoreAdapter(storeAdapter);
             indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }
