@@ -34,7 +34,6 @@ import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
@@ -73,6 +72,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.query.Predicates.newPredicateBuilder;
 import static com.hazelcast.query.SampleTestObjects.Employee;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Math.max;
@@ -222,7 +222,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, emp, 0L, SECONDS, 2L, SECONDS);
         }
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        PredicateBuilder.EntryObject entryObject = newPredicateBuilder().getEntryObject();
         Predicate predicateCityNull = entryObject.get("city").isNull();
         // Touch the map entry though the index to make sure expiration cleaning task
         // doesn't evict it.
