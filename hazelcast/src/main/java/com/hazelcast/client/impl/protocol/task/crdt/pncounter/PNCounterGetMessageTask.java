@@ -25,7 +25,7 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.crdt.pncounter.operations.GetOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;

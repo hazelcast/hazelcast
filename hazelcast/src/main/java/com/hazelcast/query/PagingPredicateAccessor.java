@@ -16,10 +16,15 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
+import com.hazelcast.util.IterationType;
+
 import java.util.Map;
 
 /**
  * This class provides paging accessor of predicate.
+ * <p>
+ * This class is for internal use only and may be changed without any notice.
  */
 public final class PagingPredicateAccessor {
 
@@ -27,13 +32,22 @@ public final class PagingPredicateAccessor {
     }
 
     public static void setAnchor(PagingPredicate predicate, int page, Map.Entry anchor) {
-        predicate.setAnchor(page, anchor);
+        ((PagingPredicateImpl) predicate).setAnchor(page, anchor);
     }
 
     public static Map.Entry<Integer, Map.Entry> getNearestAnchorEntry(PagingPredicate predicate) {
         if (predicate == null) {
             return null;
         }
-        return predicate.getNearestAnchorEntry();
+        return ((PagingPredicateImpl) predicate).getNearestAnchorEntry();
     }
+
+    public static IterationType getIterationType(PagingPredicate predicate) {
+        return ((PagingPredicateImpl) predicate).getIterationType();
+    }
+
+    public static void setIterationType(PagingPredicate predicate, IterationType iterationType) {
+        ((PagingPredicateImpl) predicate).setIterationType(iterationType);
+    }
+
 }

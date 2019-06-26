@@ -25,7 +25,7 @@ import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -103,7 +103,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         IMap<String, String> map = getInitializedMap();
 
         map.lock("key1");
-        Map<String, Object> result = map.executeOnEntries(new TestNonOffloadableEntryProcessor(), TruePredicate.INSTANCE);
+        Map<String, Object> result = map.executeOnEntries(new TestNonOffloadableEntryProcessor(), Predicates.alwaysTrue());
 
         assertTrue((Boolean) result.get("key1"));
         assertFalse((Boolean) result.get("key2"));

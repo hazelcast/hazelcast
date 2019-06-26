@@ -22,8 +22,6 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -52,7 +50,7 @@ import static org.junit.Assert.assertNotEquals;
 public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @Parameters(name = "inMemoryFormat: {0}")
     public static Collection<Object[]> parameters() {
@@ -83,7 +81,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -101,7 +99,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("__key >= " + equalsOrBiggerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("__key >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -119,7 +117,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers to prove whether #keySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("id < " + smallerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("id < " + smallerThan), cache);
     }
 
     @Test
@@ -181,7 +179,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 0;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
 
@@ -226,7 +224,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void testEntrySet_whenIncludeValueFalse() throws Exception {
+    public void testEntrySet_whenIncludeValueFalse() {
         int count = 111;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -240,7 +238,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 0;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("id < " + smallerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("id < " + smallerThan), cache);
     }
 
     @Test
@@ -259,7 +257,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     @Test
@@ -277,7 +275,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -334,7 +332,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     @Test
@@ -351,18 +349,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 0;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     private void assertKeySetSizeEventually(final int expectedSize, final Predicate predicate,
                                             final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Set<Integer> keySet = cache.keySet(predicate);
-                assertEquals("cache size = " + size, expectedSize, keySet.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Set<Integer> keySet = cache.keySet(predicate);
+            assertEquals("cache size = " + size, expectedSize, keySet.size());
         };
 
         assertTrueEventually(task, 10);
@@ -370,13 +365,10 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     private void assertEntrySetSizeEventually(final int expectedSize, final Predicate predicate,
                                               final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Set<Map.Entry<Integer, Employee>> entries = cache.entrySet(predicate);
-                assertEquals("cache size = " + size, expectedSize, entries.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Set<Map.Entry<Integer, Employee>> entries = cache.entrySet(predicate);
+            assertEquals("cache size = " + size, expectedSize, entries.size());
         };
 
         assertTrueEventually(task);
@@ -384,13 +376,10 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     private void assertValuesSizeEventually(final int expectedSize, final Predicate predicate,
                                             final QueryCache<Integer, Employee> cache) {
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int size = cache.size();
-                Collection<Employee> values = cache.values(predicate);
-                assertEquals("cache size = " + size, expectedSize, values.size());
-            }
+        AssertTask task = () -> {
+            int size = cache.size();
+            Collection<Employee> values = cache.values(predicate);
+            assertEquals("cache size = " + size, expectedSize, values.size());
         };
 
         assertTrueEventually(task, 10);

@@ -18,9 +18,9 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.AddressUtil;

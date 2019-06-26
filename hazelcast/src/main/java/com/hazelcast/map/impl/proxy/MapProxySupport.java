@@ -28,7 +28,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
@@ -67,7 +66,6 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
@@ -107,6 +105,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
@@ -1364,8 +1363,7 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    @SerializableByConvention
-    private class KeyToData implements IFunction<K, Data> {
+    private class KeyToData implements Function<K, Data> {
 
         @Override
         public Data apply(K key) {

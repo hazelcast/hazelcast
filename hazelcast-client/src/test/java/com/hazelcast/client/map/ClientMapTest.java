@@ -43,8 +43,8 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.TestSerializationConstants;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -509,7 +509,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         fillMap(map);
 
-        Collection values = map.values(new SqlPredicate("this == value1"));
+        Collection values = map.values(Predicates.sql("this == value1"));
         assertEquals(1, values.size());
         assertEquals("value1", values.iterator().next());
     }
@@ -673,13 +673,13 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         fillMap(map);
 
-        Collection collection = map.values(new SqlPredicate("this == value1"));
+        Collection collection = map.values(Predicates.sql("this == value1"));
         assertEquals("value1", collection.iterator().next());
 
-        Set<String> set = map.keySet(new SqlPredicate("this == value1"));
+        Set<String> set = map.keySet(Predicates.sql("this == value1"));
         assertEquals("key1", set.iterator().next());
 
-        Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
+        Set<Map.Entry<String, String>> set1 = map.entrySet(Predicates.sql("this == value1"));
         assertEquals("key1", set1.iterator().next().getKey());
         assertEquals("value1", set1.iterator().next().getValue());
     }
@@ -790,7 +790,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         EntryListener listener = new IntegerDealEntryListener(gateAdd, gateRemove, gateEvict,
                 gateExpiry, gateUpdate, gateClearAll, gateEvictAll);
 
-        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
+        clientMap.addEntryListener(listener, Predicates.sql("id=1"), 2, true);
         clientMap.put(2, new Deal(1));
         clientMap.put(2, new Deal(1));
         clientMap.remove(2);

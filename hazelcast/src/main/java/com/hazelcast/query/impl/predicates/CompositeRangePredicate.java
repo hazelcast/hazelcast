@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Index;
@@ -40,7 +39,7 @@ import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
  * and {@link BoundedRangePredicate} but for composite indexes and values.
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
-public class CompositeRangePredicate implements Predicate, IndexAwarePredicate {
+public class CompositeRangePredicate implements IndexAwarePredicate {
 
     final String indexName;
     final String[] components;

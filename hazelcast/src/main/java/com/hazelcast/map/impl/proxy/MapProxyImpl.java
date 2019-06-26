@@ -50,7 +50,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -715,7 +715,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Set<K> keySet() {
-        return keySet(TruePredicate.INSTANCE);
+        return keySet(Predicates.alwaysTrue());
     }
 
     @Override
@@ -727,7 +727,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return entrySet(TruePredicate.INSTANCE);
+        return entrySet(Predicates.alwaysTrue());
     }
 
     @Override
@@ -738,7 +738,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Collection<V> values() {
-        return values(TruePredicate.INSTANCE);
+        return values(Predicates.alwaysTrue());
     }
 
     @Override
@@ -756,7 +756,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Set<K> localKeySet() {
-        return localKeySet(TruePredicate.INSTANCE);
+        return localKeySet(Predicates.alwaysTrue());
     }
 
     @Override
@@ -825,7 +825,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
-        return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+        return executeOnEntries(entryProcessor, Predicates.alwaysTrue());
     }
 
     @Override
@@ -852,7 +852,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator) {
-        return aggregate(aggregator, TruePredicate.truePredicate());
+        return aggregate(aggregator, Predicates.alwaysTrue());
     }
 
     @Override
@@ -870,7 +870,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection) {
-        return project(projection, TruePredicate.INSTANCE);
+        return project(projection, Predicates.alwaysTrue());
     }
 
     @Override

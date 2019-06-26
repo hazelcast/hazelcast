@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -141,7 +141,7 @@ public class RangeVisitorTest extends VisitorTestSupport {
     @Test
     public void testBetweenPredicateOptimization() {
         BetweenPredicate predicate = new BetweenPredicate("age", 20, 10);
-        assertSame(FalsePredicate.INSTANCE, visitor.visit(predicate, indexes));
+        assertSame(Predicates.alwaysFalse(), visitor.visit(predicate, indexes));
 
         predicate = new BetweenPredicate("noConverter", 20, 10);
         assertSame(predicate, visitor.visit(predicate, indexes));

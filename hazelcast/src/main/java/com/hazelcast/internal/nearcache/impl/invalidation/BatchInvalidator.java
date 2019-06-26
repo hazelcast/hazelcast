@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
@@ -35,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -62,8 +62,7 @@ public class BatchInvalidator extends Invalidator {
     /**
      * data-structure-name to invalidation-queue mappings.
      */
-    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues
-            = new ConcurrentHashMap<String, InvalidationQueue<Invalidation>>();
+    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues = new ConcurrentHashMap<>();
 
     private final int batchSize;
     private final int batchFrequencySeconds;
@@ -71,7 +70,7 @@ public class BatchInvalidator extends Invalidator {
     private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
-                            IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+                            Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
         super(serviceName, eventFilter, nodeEngine);
 
         this.batchSize = batchSize;

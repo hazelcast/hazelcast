@@ -20,14 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.VersionedPortable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,16 +55,14 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
     }
 
     public SerializationConfig setUpFactory(Config config) {
-        return config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
-            public VersionedPortable create(int classId) {
-                switch (classId) {
-                    case 1:
-                        return new Body();
-                    case 2:
-                        return new Limb();
-                    default:
-                        throw new IllegalStateException("Wrong class ID");
-                }
+        return config.getSerializationConfig().addPortableFactory(1, (classId) -> {
+            switch (classId) {
+                case 1:
+                    return new Body();
+                case 2:
+                    return new Limb();
+                default:
+                    throw new IllegalStateException("Wrong class ID");
             }
         });
     }
@@ -91,7 +87,7 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
         map.put(2, new NestedPredicateVersionedPortablesTest.Body("body2", new NestedPredicateVersionedPortablesTest.Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("limb.name").equal("hand");
         Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(predicate);
 
@@ -108,7 +104,7 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
         map.put(2, new NestedPredicateVersionedPortablesTest.Body("body2", new NestedPredicateVersionedPortablesTest.Limb("leg")));
 
         // WHEN
-        Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(new SqlPredicate("limb.name == 'leg'"));
+        Collection<NestedPredicateVersionedPortablesTest.Body> values = map.values(Predicates.sql("limb.name == 'leg'"));
 
         // THEN
         assertEquals(1, values.size());

@@ -64,7 +64,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     }
 
     @SerializableByConvention
-    private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalMapEvent, T> {
+    private static class ProjectionAdapter<K, V, T> implements Projection<InternalEventJournalMapEvent, T> {
 
         private final Function<? super EventJournalMapEvent<K, V>, ? extends T> projection;
 

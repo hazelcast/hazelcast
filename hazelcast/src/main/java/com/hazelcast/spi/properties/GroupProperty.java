@@ -25,7 +25,7 @@ import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
@@ -829,8 +829,8 @@ public final class GroupProperty {
      * elements, a {@link QueryResultSizeExceededException} will be thrown.
      * <p>
      * This feature prevents an OOME if a single node is requesting the whole data set of the cluster, such as by
-     * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
-     * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
+     * executing a query with {@link Predicates#alwaysTrue()} predicate. This applies internally for the {@link IMap#values()},
+     * {@link IMap#keySet()} and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
      * <p>
      * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
      * Therefore, there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
@@ -842,7 +842,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.query.result.size.limit", -1);
 
     /**
-     * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
+     * Maximum value of local partitions to trigger local pre-check for {@link Predicates#alwaysTrue()} predicate query operations
+     * on maps.
      * <p>
      * To limit the result size of a query ({@link #QUERY_RESULT_SIZE_LIMIT}); a local pre-check on the requesting node can be
      * done before the query is sent to the cluster. Since this may increase the latency, the pre-check is limited to a maximum

@@ -22,7 +22,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -109,7 +109,7 @@ public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(50);
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
-        queryCacheConfig.getPredicateConfig().setImplementation(new TruePredicate());
+        queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());
         queryCacheConfig.setPopulate(true);
 
         clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);

@@ -25,13 +25,15 @@ import com.hazelcast.map.listener.MapClearedListener;
 import com.hazelcast.map.listener.MapEvictedListener;
 
 /**
- * Map Entry listener to get notified when a map entry
- * is added, removed, updated or evicted.  Events will fire as a result
- * of operations carried out via the {@link com.hazelcast.core.IMap} interface.  Events will not fire, for example,
- * for an entry that comes into the Map via the {@link MapLoader} lifecycle.
- * <p>
- * This interface is here for backward compatibility reasons. For a most appropriate alternative
- * please use/check {@link com.hazelcast.map.listener.MapListener} interface.
+ * Map Entry listener to get notified when a map entry is added,
+ * removed, updated, evicted or expired.  Events will fire as a result
+ * of operations carried out via the {@link com.hazelcast.core.IMap}
+ * interface.  Events will not fire, for example, for an entry
+ * that comes into the Map via the {@link MapLoader} lifecycle.
+ * <p/>
+ * This interface is here for backward compatibility reasons.
+ * For a most appropriate alternative please use/check
+ * {@link com.hazelcast.map.listener.MapListener} interface.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
@@ -39,7 +41,12 @@ import com.hazelcast.map.listener.MapEvictedListener;
  * @see com.hazelcast.map.listener.MapListener
  */
 public interface EntryListener<K, V>
-        extends EntryAddedListener<K, V>, EntryUpdatedListener<K, V>, EntryRemovedListener<K, V>,
-        EntryEvictedListener<K, V>, EntryExpiredListener<K, V>, MapClearedListener, MapEvictedListener {
+        extends EntryAddedListener<K, V>,
+        EntryUpdatedListener<K, V>,
+        EntryRemovedListener<K, V>,
+        EntryEvictedListener<K, V>,
+        EntryExpiredListener<K, V>,
+        MapClearedListener,
+        MapEvictedListener {
 
 }

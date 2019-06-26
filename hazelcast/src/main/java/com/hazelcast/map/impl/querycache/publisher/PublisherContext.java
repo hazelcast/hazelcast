@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.spi.NodeEngine;
+
+import java.util.function.Function;
 
 /**
  * Context for a publisher.
@@ -58,7 +59,7 @@ public interface PublisherContext {
      *
      * @return a helper function in order to register listener to {@code IMap}
      */
-    IFunction<String, String> getListenerRegistrator();
+    Function<String, String> getListenerRegistrator();
 
     /**
      * Returns {@link QueryCacheContext} on this node.

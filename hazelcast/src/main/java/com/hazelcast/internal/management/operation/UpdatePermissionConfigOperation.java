@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.nio.ObjectDataInput;

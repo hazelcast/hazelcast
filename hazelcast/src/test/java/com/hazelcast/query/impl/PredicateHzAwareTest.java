@@ -71,8 +71,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
     }
 
     private static class SimpleProjection
-            extends Projection<Map.Entry<String, Integer>, Integer>
-            implements HazelcastInstanceAware, Serializable {
+            implements Projection<Map.Entry<String, Integer>, Integer>, HazelcastInstanceAware, Serializable {
 
         private transient HazelcastInstance instance;
 

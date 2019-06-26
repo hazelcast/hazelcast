@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Test;
@@ -51,54 +51,54 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void test_next_Throws_Exception_On_EmptyPartition() throws Exception {
+    public void test_next_Throws_Exception_On_EmptyPartition() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         proxy.iterator(10, 1,
-                new TestProjection(), TruePredicate.<String, String>truePredicate()).next();
+                new TestProjection(), Predicates.alwaysTrue()).next();
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_null_projection_throws_exception() throws Exception {
+    public void test_null_projection_throws_exception() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
-        proxy.iterator(10, 1, null, TruePredicate.<String, String>truePredicate());
+        proxy.iterator(10, 1, null, Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_null_predicate_throws_exception() throws Exception {
+    public void test_null_predicate_throws_exception() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         proxy.iterator(10, 1, new TestProjection(), null);
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new TestProjection(), TruePredicate.<String, String>truePredicate());
+                new TestProjection(), Predicates.alwaysTrue());
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         String key = generateKeyForPartition(server, 1);
         String value = randomString();
         proxy.put(key, value);
 
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new GetValueProjection<String>(), TruePredicate.<String, String>truePredicate());
+                new GetValueProjection<>(), Predicates.alwaysTrue());
         final String next = iterator.next();
         assertEquals(value, next);
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         String key = generateKeyForPartition(server, 1);
         String value = randomString();
         proxy.put(key, value);
 
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new GetValueProjection<String>(), TruePredicate.<String, String>truePredicate());
+                new GetValueProjection<>(), Predicates.alwaysTrue());
         final String next = iterator.next();
         assertEquals(value, next);
         boolean hasNext = iterator.hasNext();
@@ -106,26 +106,26 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         final String key = generateKeyForPartition(server, 1);
         final String value = randomString();
         proxy.put(key, value);
 
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new TestProjection(), TruePredicate.<String, String>truePredicate());
+                new TestProjection(), Predicates.alwaysTrue());
         assertTrue(iterator.hasNext());
     }
 
     @Test
-    public void test_with_projection_and_true_predicate() throws Exception {
+    public void test_with_projection_and_true_predicate() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         for (int i = 0; i < 100; i++) {
             String key = generateKeyForPartition(server, 1);
             proxy.put(key, randomString());
         }
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new TestProjection(), TruePredicate.<String, String>truePredicate());
+                new TestProjection(), Predicates.alwaysTrue());
 
         final ArrayList<String> projected = collectAll(iterator);
 
@@ -138,7 +138,7 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     }
 
     @Test
-    public void test_with_projection_and_predicate() throws Exception {
+    public void test_with_projection_and_predicate() {
         final ClientMapProxy<String, Integer> intMap = getMapProxy();
 
         for (int i = 0; i < 100; i++) {
@@ -147,12 +147,12 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         }
 
         final Iterator<Map.Entry<String, Integer>> iterator = intMap.iterator(10, 1,
-                Projections.<Entry<String, Integer>>identity(),
+                Projections.identity(),
                 new EvenPredicate());
 
         final ArrayList<Map.Entry<String, Integer>> projected = collectAll(iterator);
         for (Map.Entry<String, Integer> i : projected) {
-            assertTrue(i.getValue() % 2 == 0);
+            assertEquals(0, i.getValue() % 2);
         }
 
         final Collection<Integer> actualValues = intMap.values();
@@ -167,7 +167,7 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     }
 
     private <T> ArrayList<T> collectAll(Iterator<T> iterator) {
-        final ArrayList<T> projected = new ArrayList<T>();
+        final ArrayList<T> projected = new ArrayList<>();
         while (iterator.hasNext()) {
             projected.add(iterator.next());
         }
@@ -175,16 +175,16 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_remove_Throws_Exception() throws Exception {
+    public void test_remove_Throws_Exception() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new TestProjection(), TruePredicate.<String, String>truePredicate());
+                new TestProjection(), Predicates.alwaysTrue());
 
         iterator.remove();
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         final ClientMapProxy<String, String> proxy = getMapProxy();
         String value = randomString();
         for (int i = 0; i < 100; i++) {
@@ -192,7 +192,7 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
             proxy.put(key, value);
         }
         final Iterator<String> iterator = proxy.iterator(10, 1,
-                new GetValueProjection<String>(), TruePredicate.<String, String>truePredicate());
+                new GetValueProjection<>(), Predicates.alwaysTrue());
         for (int i = 0; i < 100; i++) {
             String val = iterator.next();
             assertEquals(value, val);
@@ -215,14 +215,14 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         }
     }
 
-    private static class TestProjection extends Projection<Entry<String, String>, String> {
+    private static class TestProjection implements Projection<Entry<String, String>, String> {
         @Override
         public String transform(Map.Entry<String, String> input) {
             return "dummy" + input.getValue();
         }
     }
 
-    private static class GetValueProjection<T> extends Projection<Entry<String, T>, T> {
+    private static class GetValueProjection<T> implements Projection<Entry<String, T>, T> {
         @Override
         public T transform(Map.Entry<String, T> input) {
             return input.getValue();

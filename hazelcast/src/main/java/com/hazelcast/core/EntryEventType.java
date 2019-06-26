@@ -42,6 +42,10 @@ public enum EntryEventType {
     EVICTED(TypeId.EVICTED),
 
     /**
+     * Fired if an entry is expired.
+     */
+    EXPIRED(TypeId.EXPIRED),
+    /**
      * Fired if all entries are evicted.
      */
     EVICT_ALL(TypeId.EVICT_ALL),
@@ -55,11 +59,6 @@ public enum EntryEventType {
      * Fired if an entry is merged after a network partition.
      */
     MERGED(TypeId.MERGED),
-
-    /**
-     * Fired if an entry is expired.
-     */
-    EXPIRED(TypeId.EXPIRED),
 
     /**
      * Fired if an entry is invalidated.
@@ -123,15 +122,14 @@ public enum EntryEventType {
      */
     @SuppressWarnings("checkstyle:magicnumber")
     private static class TypeId {
-
         private static final int ADDED = 1;
         private static final int REMOVED = 1 << 1;
         private static final int UPDATED = 1 << 2;
         private static final int EVICTED = 1 << 3;
-        private static final int EVICT_ALL = 1 << 4;
-        private static final int CLEAR_ALL = 1 << 5;
-        private static final int MERGED = 1 << 6;
-        private static final int EXPIRED = 1 << 7;
+        private static final int EXPIRED = 1 << 4;
+        private static final int EVICT_ALL = 1 << 5;
+        private static final int CLEAR_ALL = 1 << 6;
+        private static final int MERGED = 1 << 7;
         private static final int INVALIDATION = 1 << 8;
         private static final int LOADED = 1 << 9;
     }

@@ -800,11 +800,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionScanRunner getPartitionScanRunner() {
-        return partitionScanRunner;
-    }
-
-    @Override
     public ResultProcessorRegistry getResultProcessorRegistry() {
         return resultProcessorRegistry;
     }

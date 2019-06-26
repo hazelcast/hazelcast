@@ -27,7 +27,7 @@ import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private final String mapName = randomString();
     private final String cacheName = randomString();
@@ -65,7 +65,7 @@ public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
                 .setDelaySeconds(2)
                 .setBatchSize(2)
                 .setPopulate(true)
-                .getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+                .getPredicateConfig().setImplementation(Predicates.alwaysTrue());
         queryCacheConfig.setEvictionConfig(evictionConfig);
 
         MapConfig mapConfig = new MapConfig(mapName);

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
@@ -38,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAllAccumulators;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -57,11 +57,11 @@ public class DefaultPublisherContext implements PublisherContext {
     private final MapListenerRegistry mapListenerRegistry;
     private final MapPublisherRegistry mapPublisherRegistry;
     private final AccumulatorInfoSupplier accumulatorInfoSupplier;
-    private final IFunction<String, String> listenerRegistrator;
+    private final Function<String, String> listenerRegistrator;
     private final ConcurrentMap<String, ScheduledFuture> removalCandidateFutures;
 
     public DefaultPublisherContext(QueryCacheContext context, NodeEngine nodeEngine,
-                                   IFunction<String, String> listenerRegistrator) {
+                                   Function<String, String> listenerRegistrator) {
         this.context = context;
         this.nodeEngine = nodeEngine;
         this.mapListenerRegistry = new MapListenerRegistry(context);
@@ -100,7 +100,7 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     @Override
-    public IFunction<String, String> getListenerRegistrator() {
+    public Function<String, String> getListenerRegistrator() {
         return listenerRegistrator;
     }
 

@@ -35,7 +35,7 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class NodeStateImpl implements NodeState {
 
     private ClusterState clusterState;
-    private com.hazelcast.instance.NodeState nodeState;
+    private com.hazelcast.instance.impl.NodeState nodeState;
 
     private Version clusterVersion;
     private MemberVersion memberVersion;
@@ -45,12 +45,12 @@ public class NodeStateImpl implements NodeState {
     public NodeStateImpl() {
     }
 
-    public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
+    public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.impl.NodeState nodeState,
                          Version clusterVersion, MemberVersion memberVersion) {
         this(clusterState, nodeState, clusterVersion, memberVersion, Collections.<String, List<String>>emptyMap());
     }
 
-    public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
+    public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.impl.NodeState nodeState,
                          Version clusterVersion, MemberVersion memberVersion, Map<String,
                          List<String>> weakSecretsConfigs) {
         this.clusterState = clusterState;
@@ -66,7 +66,7 @@ public class NodeStateImpl implements NodeState {
     }
 
     @Override
-    public com.hazelcast.instance.NodeState getNodeState() {
+    public com.hazelcast.instance.impl.NodeState getNodeState() {
         return nodeState;
     }
 
@@ -108,7 +108,7 @@ public class NodeStateImpl implements NodeState {
         }
         String jsonNodeState = getString(json, "nodeState", null);
         if (jsonNodeState != null) {
-            nodeState = com.hazelcast.instance.NodeState.valueOf(jsonNodeState);
+            nodeState = com.hazelcast.instance.impl.NodeState.valueOf(jsonNodeState);
         }
         String jsonClusterVersion = getString(json, "clusterVersion", null);
         if (jsonClusterVersion != null) {

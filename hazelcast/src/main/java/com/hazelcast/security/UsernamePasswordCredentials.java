@@ -42,7 +42,7 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
     }
 
     public UsernamePasswordCredentials(String username, String password) {
-        this.name = requireNonNull(username, "Password has to be provided.");
+        this.name = requireNonNull(username, "Username has to be provided.");
         this.password = requireNonNull(password, "Password has to be provided.");
     }
 
