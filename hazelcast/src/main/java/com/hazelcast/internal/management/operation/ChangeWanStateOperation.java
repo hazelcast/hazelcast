@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 /**
  * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and {@code targetGroupName}.

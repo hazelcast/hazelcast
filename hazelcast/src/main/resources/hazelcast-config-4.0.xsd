@@ -2384,7 +2384,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
-                        Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+                        Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication:
                         Waits until a batch size is reached or a delay time is passed.
                     </xs:documentation>
                 </xs:annotation>

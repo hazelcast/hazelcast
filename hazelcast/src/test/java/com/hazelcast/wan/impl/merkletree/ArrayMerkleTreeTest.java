@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.merkletree;
+package com.hazelcast.wan.impl.merkletree;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

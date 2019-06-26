@@ -985,7 +985,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
         assertEquals("tokyo", publisherConfig.getGroupName());
         assertEquals("tokyoPublisherId", publisherConfig.getPublisherId());
-        assertEquals("com.hazelcast.enterprise.wan.replication.WanBatchReplication", publisherConfig.getClassName());
+        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", publisherConfig.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
         assertEquals(1000, publisherConfig.getQueueCapacity());

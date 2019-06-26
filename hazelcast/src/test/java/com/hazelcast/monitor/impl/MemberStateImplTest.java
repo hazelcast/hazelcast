@@ -38,7 +38,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanSyncStatus;
+import com.hazelcast.wan.impl.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

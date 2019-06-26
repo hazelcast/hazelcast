@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.merkletree;
+package com.hazelcast.wan;
 
 /**
  * Result of the last WAN consistency check result

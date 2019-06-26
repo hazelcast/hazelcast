@@ -139,7 +139,7 @@ hazelcast:
   # The "wan-replication" element has the following sub-elements:
   # * "wan-publisher":
   #     Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
-  #     Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+  #     Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication:
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
   # * "wan-consumer":
@@ -269,7 +269,7 @@ hazelcast:
       wan-publisher:
         nycPublisherId:
           group-name: nyc
-          class-name: com.hazelcast.enterprise.wan.replication.WanBatchReplication
+          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
           queue-capacity: 15000
           queue-full-behavior: DISCARD_AFTER_MUTATION
           initial-publisher-state: REPLICATING

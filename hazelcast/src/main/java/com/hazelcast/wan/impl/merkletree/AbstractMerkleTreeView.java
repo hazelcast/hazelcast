@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.merkletree;
+package com.hazelcast.wan.impl.merkletree;
 
 /**
  * Base class for the {@link MerkleTreeView} implementations
