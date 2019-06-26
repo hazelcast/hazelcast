@@ -71,7 +71,7 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @AfterClass
-    public static void after() {
+    public static void afterClass() {
         Hazelcast.shutdownAll();
     }
 

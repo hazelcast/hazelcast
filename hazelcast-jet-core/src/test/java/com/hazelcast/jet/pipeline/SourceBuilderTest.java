@@ -450,7 +450,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .peek()
                 .drainTo(Sinks.list(result));
 
-        Job job = jet().newJob(p, new JobConfig());
+        Job job = jet().newJob(p);
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();

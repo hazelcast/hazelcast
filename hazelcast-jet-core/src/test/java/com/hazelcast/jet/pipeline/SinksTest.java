@@ -73,7 +73,7 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @AfterClass
-    public static void after() {
+    public static void afterClass() {
         Hazelcast.shutdownAll();
     }
 

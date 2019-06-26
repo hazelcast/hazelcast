@@ -18,13 +18,13 @@ package com.hazelcast.jet;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -40,7 +40,6 @@ import static java.lang.Math.max;
  * all tests in the class.
  */
 @RunWith(Parameterized.class)
-@Category(ParallelTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @SuppressWarnings("checkstyle:declarationorder")
 public abstract class TestInClusterSupport extends JetTestSupport {
@@ -91,6 +90,16 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         allJetInstances = null;
         member = null;
         client = null;
+    }
+
+    @After
+    public void after() {
+        for (Job job : allJetInstances()[0].getJobs()) {
+            ditchJob(job, allJetInstances());
+        }
+        for (DistributedObject o : allJetInstances()[0].getHazelcastInstance().getDistributedObjects()) {
+            o.destroy();
+        }
     }
 
     protected static JetInstance[] allJetInstances() {
