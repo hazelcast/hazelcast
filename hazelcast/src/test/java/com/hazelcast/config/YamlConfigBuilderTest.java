@@ -21,9 +21,6 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
@@ -1653,33 +1650,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         // if we (for any reason) get through the parsing, then fail
         fail();
-    }
-
-    @Override
-    @Test
-    public void setMapStoreConfigImplementationTest() {
-        String mapName = "mapStoreImpObjTest";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    " + mapName + ":\n"
-                + "      map-store:\n"
-                + "        enabled: true\n"
-                + "        class-name: com.hazelcast.config.helpers.DummyMapStore\n"
-                + "        write-delay-seconds: 5";
-
-        Config config = buildConfig(yaml);
-        HazelcastInstance hz = createHazelcastInstance(config);
-        IMap<String, String> map = hz.getMap(mapName);
-        // MapStore is not instantiated until the MapContainer is created lazily
-        map.put("sample", "data");
-
-        MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        Object o = mapStoreConfig.getImplementation();
-
-        assertNotNull(o);
-        assertTrue(o instanceof DummyMapStore);
     }
 
     @Override

@@ -253,9 +253,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testParseExceptionIsNotSwallowed();
 
     @Test
-    public abstract void setMapStoreConfigImplementationTest();
-
-    @Test
     public abstract void testMapPartitionLostListenerConfig();
 
     @Test
