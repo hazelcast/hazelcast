@@ -23,9 +23,6 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
@@ -1629,33 +1626,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
         expected.expect(InvalidConfigurationException.class);
         buildConfig(invalidXml);
-    }
-
-    @Override
-    @Test
-    public void setMapStoreConfigImplementationTest() {
-        String mapName = "mapStoreImpObjTest";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"" + mapName + "\">\n"
-                + "    <map-store enabled=\"true\">\n"
-                + "        <class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n"
-                + "        <write-delay-seconds>5</write-delay-seconds>\n"
-                + "    </map-store>\n"
-                + "</map>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        HazelcastInstance hz = createHazelcastInstance(config);
-        IMap<String, String> map = hz.getMap(mapName);
-        // MapStore is not instantiated until the MapContainer is created lazily
-        map.put("sample", "data");
-
-        MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        Object o = mapStoreConfig.getImplementation();
-
-        assertNotNull(o);
-        assertTrue(o instanceof DummyMapStore);
     }
 
     @Override
