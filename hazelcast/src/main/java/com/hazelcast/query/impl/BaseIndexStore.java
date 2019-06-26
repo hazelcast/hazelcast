@@ -271,7 +271,7 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
             if (isExpirable()) {
-                return new EvictionAwareHashMapDelegate(map);
+                return new ExpirationAwareHashMapDelegate(map);
             }
             return map;
         }
@@ -285,7 +285,7 @@ public abstract class BaseIndexStore implements IndexStore {
             if (map != null && !map.isEmpty()) {
                 HashMap<Data, QueryableEntry> newMap = new HashMap<Data, QueryableEntry>(map);
                 if (isExpirable()) {
-                    return new EvictionAwareHashMapDelegate(newMap);
+                    return new ExpirationAwareHashMapDelegate(newMap);
                 }
                 return newMap;
             }
@@ -296,14 +296,15 @@ public abstract class BaseIndexStore implements IndexStore {
 
     /**
      * This delegating Map updates the {@link Record}'s access time on every
-     * {@link QueryableEntry} retrieved through the {@link HashMap#entrySet()} or {@link HashMap#values()}.
+     * {@link QueryableEntry} retrieved through the {@link Map#entrySet()},
+     * {@link Map#get} or {@link Map#values()}.
      *
      */
-    private static class EvictionAwareHashMapDelegate implements Map<Data, QueryableEntry> {
+    private static class ExpirationAwareHashMapDelegate implements Map<Data, QueryableEntry> {
 
         private final Map<Data, QueryableEntry> delegateMap;
 
-        EvictionAwareHashMapDelegate(Map<Data, QueryableEntry> map) {
+        ExpirationAwareHashMapDelegate(Map<Data, QueryableEntry> map) {
             this.delegateMap = map;
         }
 
@@ -365,23 +366,23 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Collection<QueryableEntry> values() {
             long now = Clock.currentTimeMillis();
-            return new EvictionAwareSet<QueryableEntry>(delegateMap.values(),
+            return new ExpirationAwareSet<QueryableEntry>(delegateMap.values(),
                     queryableEntry -> queryableEntry.getRecord().onAccessSafe(now));
         }
 
         @Override
         public Set<Entry<Data, QueryableEntry>> entrySet() {
             long now = Clock.currentTimeMillis();
-            return new EvictionAwareSet<Entry<Data, QueryableEntry>>(delegateMap.entrySet(),
+            return new ExpirationAwareSet<Entry<Data, QueryableEntry>>(delegateMap.entrySet(),
                     entry -> entry.getValue().getRecord().onAccessSafe(now));
         }
 
-        private static class EvictionAwareSet<V> extends AbstractSet<V> {
+        private static class ExpirationAwareSet<V> extends AbstractSet<V> {
 
             private final Collection<V> delegateCollection;
             private final Consumer<V> recordUpdater;
 
-            EvictionAwareSet(Collection<V> delegateCollection, Consumer<V> recordUpdater) {
+            ExpirationAwareSet(Collection<V> delegateCollection, Consumer<V> recordUpdater) {
                 this.delegateCollection = delegateCollection;
                 this.recordUpdater = recordUpdater;
             }
@@ -393,7 +394,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
             @Override
             public Iterator<V> iterator() {
-                return new EvictionAwareIterator(delegateCollection.iterator());
+                return new ExpirationAwareIterator(delegateCollection.iterator());
             }
 
             public boolean add(V v) {
@@ -410,11 +411,11 @@ public abstract class BaseIndexStore implements IndexStore {
                 delegateCollection.clear();
             }
 
-            private class EvictionAwareIterator implements Iterator<V> {
+            private class ExpirationAwareIterator implements Iterator<V> {
 
                 private final Iterator<V> delegateIterator;
 
-                EvictionAwareIterator(Iterator<V> iterator) {
+                ExpirationAwareIterator(Iterator<V> iterator) {
                     this.delegateIterator = iterator;
                 }
 
