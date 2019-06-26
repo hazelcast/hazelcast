@@ -1,4 +1,4 @@
-package com.hazelcast.internal.query.plan.physical;
+package com.hazelcast.internal.query.physical;
 
 public interface PhysicalNodeVisitor {
     void onRootNode(RootPhysicalNode node);

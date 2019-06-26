@@ -1,4 +1,4 @@
-package com.hazelcast.internal.query.plan.physical;
+package com.hazelcast.internal.query.physical;
 
 import com.hazelcast.cluster.Member;
 

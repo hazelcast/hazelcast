@@ -10,7 +10,7 @@ public class QueryContext {
     private final QueryService service;
     private final QueryId queryId;
     private final List<Object> arguments;
-    private final QueryRootConsumer rootConsumer;
+    private final QueryResultConsumer rootConsumer;
 
     /** Deployed fragments. */
     private final List<FragmentDeployment> fragmentDeployments;
@@ -18,7 +18,7 @@ public class QueryContext {
     /** Maps an edge to array, whose length is stripe length, and values are data thread IDs. */
     private final Map<Integer, int[]> edgeToStripeMap;
 
-    public QueryContext(QueryService service, QueryId queryId, List<Object> arguments, QueryRootConsumer rootConsumer,
+    public QueryContext(QueryService service, QueryId queryId, List<Object> arguments, QueryResultConsumer rootConsumer,
         List<FragmentDeployment> fragmentDeployments, Map<Integer, int[]> edgeToStripeMap) {
         this.service = service;
         this.queryId = queryId;
@@ -36,7 +36,7 @@ public class QueryContext {
         return queryId;
     }
 
-    public QueryRootConsumer getRootConsumer() {
+    public QueryResultConsumer getRootConsumer() {
         return rootConsumer;
     }
 

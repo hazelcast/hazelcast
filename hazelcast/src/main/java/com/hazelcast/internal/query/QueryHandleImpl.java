@@ -8,9 +8,9 @@ public class QueryHandleImpl implements QueryHandle {
     private final QueryId queryId;
 
     /** Consumer. */
-    private final QueryRootConsumer consumer;
+    private final QueryResultConsumer consumer;
 
-    public QueryHandleImpl(QueryService service, QueryId queryId, QueryRootConsumer consumer) {
+    public QueryHandleImpl(QueryService service, QueryId queryId, QueryResultConsumer consumer) {
         this.service = service;
         this.queryId = queryId;
         this.consumer = consumer;
@@ -21,16 +21,7 @@ public class QueryHandleImpl implements QueryHandle {
         return queryId;
     }
 
-    @Override
-    public boolean cancel(QueryCancelReason reason, String errMsg) {
-//        if (state.compareAndSet(QueryState.RUNNING, QueryState.CANCELLED)) {
-//            // TODO
-//        }
-
-        return false;
-    }
-
-    public QueryRootConsumer getConsumer() {
+    public QueryResultConsumer getConsumer() {
         return consumer;
     }
 }

@@ -1,4 +1,4 @@
-package com.hazelcast.internal.query.plan.physical;
+package com.hazelcast.internal.query.physical;
 
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.expression.Predicate;
@@ -6,7 +6,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MapScanPhysicalNode implements PhysicalNode {

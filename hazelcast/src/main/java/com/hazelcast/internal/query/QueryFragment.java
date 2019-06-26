@@ -1,18 +1,14 @@
 package com.hazelcast.internal.query;
 
-import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.plan.physical.PhysicalNode;
+import com.hazelcast.internal.query.physical.PhysicalNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public class QueryFragment implements DataSerializable {
     /** Node to be executed (null for root fragment). */

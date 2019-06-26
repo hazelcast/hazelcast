@@ -1,4 +1,4 @@
-package com.hazelcast.internal.query.plan.physical;
+package com.hazelcast.internal.query.physical;
 
 public abstract class AbstractPhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override

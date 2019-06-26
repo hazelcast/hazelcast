@@ -1,7 +1,7 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.QueryRootConsumer;
+import com.hazelcast.internal.query.QueryResultConsumer;
 import com.hazelcast.internal.query.io.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.query.worker.data.RootDataTask;
@@ -14,7 +14,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
     private DataWorker worker;
 
     /** Consumer (user iterator, client listener, etc). */
-    private QueryRootConsumer consumer;
+    private QueryResultConsumer consumer;
 
     /** Current row batch. */
     private RowBatch curBatch;

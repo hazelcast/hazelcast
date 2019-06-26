@@ -21,7 +21,7 @@ public abstract class Inbox extends Mailbox {
      */
     public void onBatch(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
         // Batch might be empty in case of last marker.
-        if (batch.getRows().isEmpty())
+        if (!batch.getRows().isEmpty())
             onBatch0(sourceMemberId, sourceStripe, sourceThread, batch);
 
         if (batch.isLast())

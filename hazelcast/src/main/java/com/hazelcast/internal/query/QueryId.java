@@ -11,6 +11,18 @@ import java.util.UUID;
  * Cluster-wide unique query ID.
  */
 public class QueryId implements DataSerializable {
+    /**
+     * Create new query ID for the given member.
+     *
+     * @param memberId Member ID.
+     * @return Query ID.
+     */
+    public static QueryId create(String memberId) {
+        UUID qryId = UUID.randomUUID();
+
+        return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
+    }
+
     /** Member ID. */
     private String memberId;
 
@@ -21,6 +33,7 @@ public class QueryId implements DataSerializable {
     private long localLow;
 
     public QueryId() {
+        // No-op.
     }
 
     public QueryId(String memberId, long localHigh, long localLow) {
@@ -68,6 +81,7 @@ public class QueryId implements DataSerializable {
     @Override
     public int hashCode() {
         int result = memberId != null ? memberId.hashCode() : 0;
+
         result = 31 * result + (int) (localHigh ^ (localHigh >>> 32));
         result = 31 * result + (int) (localLow ^ (localLow >>> 32));
 
@@ -76,6 +90,6 @@ public class QueryId implements DataSerializable {
 
     @Override
     public String toString() {
-        return "QueryId {memberId=" + memberId + ", id=" + new UUID(localHigh, localLow) + '}';
+        return "QueryId {memberId=" + memberId + ", id=" + getLocalId() + '}';
     }
 }

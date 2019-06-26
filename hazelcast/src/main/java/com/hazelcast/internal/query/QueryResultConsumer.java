@@ -9,7 +9,7 @@ import java.util.Iterator;
 /**
  * Consumer of results.
  */
-public interface QueryRootConsumer {
+public interface QueryResultConsumer {
     /**
      * Perform one-time setup.
      *

@@ -4,10 +4,10 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.QueryConfig;
 import com.hazelcast.internal.query.operation.QueryExecuteOperation;
-import com.hazelcast.internal.query.plan.physical.FragmentPrepareVisitor;
-import com.hazelcast.internal.query.plan.physical.PhysicalNode;
-import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
-import com.hazelcast.internal.query.plan.physical.RootPhysicalNode;
+import com.hazelcast.internal.query.physical.FragmentPrepareVisitor;
+import com.hazelcast.internal.query.physical.PhysicalNode;
+import com.hazelcast.internal.query.physical.PhysicalPlan;
+import com.hazelcast.internal.query.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.worker.control.ControlThreadPool;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
@@ -29,21 +29,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Service responsible for query execution.
  */
-public class QueryService implements ManagedService, MembershipAwareService {
+// TODO: Implement cancel.
+// TODO: Handle membership changes! (MembershipAwareService)
+public class QueryService implements ManagedService {
     /** Unique service name. */
     public static final String SERVICE_NAME = "hz:impl:QueryService";
 
     /** Node engine. */
     private NodeEngine nodeEngine;
-
-    /** Active queries. */
-    private ConcurrentHashMap<QueryId, QueryHandleImpl> activeQueries = new ConcurrentHashMap<>();
 
     /** Lock to handle concurrent events. */
     private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
@@ -64,10 +62,12 @@ public class QueryService implements ManagedService, MembershipAwareService {
             if (stopped)
                 throw new IllegalStateException("Node is being stopped.");
 
-            // TODO: Adjustable batch size!
-            QueryRootConsumer consumer = new QueryRootConsumerImpl(1024);
+            QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
 
-            QueryExecuteOperation op = prepareLocalOperation(plan, args, consumer);
+            // TODO: Adjustable batch size!
+            QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
+
+            QueryExecuteOperation op = prepareLocalOperation(queryId, plan, args, consumer);
 
             // TODO: Again: race!
             for (Member member : nodeEngine.getClusterService().getMembers()) {
@@ -77,16 +77,15 @@ public class QueryService implements ManagedService, MembershipAwareService {
                 nodeEngine.getOperationService().invokeOnTarget(QueryService.SERVICE_NAME, op, member.getAddress());
             }
 
-            return new QueryHandleImpl(this, op.getQueryId(), consumer);
+            return new QueryHandleImpl(this, queryId, consumer);
         }
         finally {
             busyLock.readLock().unlock();
         }
     }
 
-    private QueryExecuteOperation prepareLocalOperation(PhysicalPlan plan, List<Object> args,
-        QueryRootConsumer rootConsumer) {
-        QueryId queryId = prepareQueryId();
+    private QueryExecuteOperation prepareLocalOperation(QueryId queryId, PhysicalPlan plan, List<Object> args,
+        QueryResultConsumer rootConsumer) {
         Map<String, PartitionIdSet> partitionMap = preparePartitionMapping();
 
         List<QueryFragment> fragments = new ArrayList<>(plan.getNodes().size()); // TODO: Null safery
@@ -137,13 +136,6 @@ public class QueryService implements ManagedService, MembershipAwareService {
             controlThreadPool.submit(task);
     }
 
-    public void onQueryCancelRequest(QueryId queryId, QueryCancelReason reason, String errMsg) {
-        QueryHandleImpl handle = activeQueries.get(queryId);
-
-        if (handle != null)
-            handle.cancel(reason, errMsg);
-    }
-
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
@@ -167,28 +159,6 @@ public class QueryService implements ManagedService, MembershipAwareService {
     public void shutdown(boolean terminate) {
         dataThreadPool.shutdown();
         controlThreadPool.shutdown();
-    }
-
-    @Override
-    public void memberAdded(MembershipServiceEvent event) {
-        // TODO
-    }
-
-    @Override
-    public void memberRemoved(MembershipServiceEvent event) {
-        // TODO
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // No-op.
-    }
-
-    private QueryId prepareQueryId() {
-        String memberId = nodeEngine.getLocalMember().getUuid();
-        UUID qryId = UUID.randomUUID();
-
-        return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
     }
 
     /**

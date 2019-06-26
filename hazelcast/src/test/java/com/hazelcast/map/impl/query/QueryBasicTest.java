@@ -23,7 +23,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
+import com.hazelcast.internal.query.physical.PhysicalPlan;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;

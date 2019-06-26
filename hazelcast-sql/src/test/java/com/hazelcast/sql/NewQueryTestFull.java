@@ -2,7 +2,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.query.QueryRootConsumer;
+import com.hazelcast.internal.query.QueryResultConsumer;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,7 +49,7 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         // Execute.
         HazelcastSql2 service = new HazelcastSql2(member1);
 
-        QueryRootConsumer consumer = service.execute2(QUERY);
+        QueryResultConsumer consumer = service.execute2(QUERY);
 
         List<Row> res = new ArrayList<>();
         Set<Object> setRes = new TreeSet<>();

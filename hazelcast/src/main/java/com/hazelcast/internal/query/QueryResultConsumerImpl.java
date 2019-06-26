@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 // TODO: Ability to close the Root from here (through cancellation routine)
-public class QueryRootConsumerImpl implements QueryRootConsumer {
+public class QueryResultConsumerImpl implements QueryResultConsumer {
     /** Maximum size. */
     private final int maxSize;
 
@@ -31,7 +31,7 @@ public class QueryRootConsumerImpl implements QueryRootConsumer {
     /** Iterator. */
     private InternalIterator iter;
 
-    public QueryRootConsumerImpl(int maxSize) {
+    public QueryResultConsumerImpl(int maxSize) {
         this.maxSize = maxSize;
     }
 
