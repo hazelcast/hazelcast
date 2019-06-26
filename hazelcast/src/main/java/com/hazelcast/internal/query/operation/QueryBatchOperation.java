@@ -48,6 +48,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
     @Override
     public void run() throws Exception {
+        // TODO: Avoid "getService" call, use NodeEngine instead.
         QueryService service = getService();
 
         service.onQueryBatchRequest(new BatchDataTask(queryId, edgeId, sourceMemberId, sourceStripe, sourceThread,
@@ -56,7 +57,8 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeObject(queryId);
+        queryId.writeData(out);
+
         out.writeInt(edgeId);
         out.writeUTF(sourceMemberId);
         out.writeInt(sourceStripe);
@@ -69,7 +71,9 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        queryId = in.readObject();
+        queryId = new QueryId();
+        queryId.readData(in);
+
         edgeId = in.readInt();
         sourceMemberId = in.readUTF();
         sourceStripe = in.readInt();

@@ -3,7 +3,7 @@ package com.hazelcast.internal.query.mailbox;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.operation.QueryBatchOperation;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.spi.NodeEngine;

@@ -1,10 +1,10 @@
-package com.hazelcast.internal.query.io;
+package com.hazelcast.internal.query.row;
 
 /**
  * Empty row batch.
  */
 public class EmptyRowBatch implements RowBatch {
-
+    /** Singleton instance. */
     public static final EmptyRowBatch INSTANCE = new EmptyRowBatch();
 
     private EmptyRowBatch() {

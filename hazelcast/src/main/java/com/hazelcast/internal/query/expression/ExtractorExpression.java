@@ -1,8 +1,8 @@
 package com.hazelcast.internal.query.expression;
 
 import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.io.KeyValueRow;
-import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.row.KeyValueRow;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -26,7 +26,7 @@ public class ExtractorExpression<T> implements Expression<T> {
 
         KeyValueRow row0 = (KeyValueRow)row;
 
-        return (T)row0.get(path);
+        return (T)row0.extract(path);
     }
 
     @Override

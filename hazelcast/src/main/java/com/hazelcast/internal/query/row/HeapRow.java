@@ -1,13 +1,17 @@
-package com.hazelcast.internal.query.io;
+package com.hazelcast.internal.query.row;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-public class HeapRow implements SerializableRow {
-
+/**
+ * Row with values stored on heap.
+ */
+public class HeapRow implements Row, DataSerializable {
+    /** Row values. */
     private Object[] values;
 
     public HeapRow() {
@@ -34,8 +38,11 @@ public class HeapRow implements SerializableRow {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Size should be written only once on the batch level.
+        // TODO: Size should be written only once on the batch level (along with metadata?)
+        // TODO: I.e. metadata of the upper object (SendBatch) should govern how values are written?
+        // TODO: But will it work for offheap rows? We will need a kind of "transferTo" then!
 
+        // TODO: Avoid "writeObject" at all cost!
         out.writeObject(values);
     }
 

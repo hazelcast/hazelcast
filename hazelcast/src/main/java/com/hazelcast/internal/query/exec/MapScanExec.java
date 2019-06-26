@@ -5,11 +5,12 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.expression.Predicate;
-import com.hazelcast.internal.query.io.EmptyRowBatch;
-import com.hazelcast.internal.query.io.HeapRow;
-import com.hazelcast.internal.query.io.KeyValueRow;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.row.EmptyRowBatch;
+import com.hazelcast.internal.query.row.HeapRow;
+import com.hazelcast.internal.query.row.KeyValueRow;
+import com.hazelcast.internal.query.row.KeyValueRowExtractor;
+import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.internal.query.row.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapContainer;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -39,7 +39,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 // TODO: Migration support with remote scans.
 // TODO: Ticket for index scans
 // TODO: Ticket for HD and hot-restart scans
-public class MapScanExec extends AbstractExec {
+public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Map name. */
     private final String mapName;
 
@@ -159,6 +159,7 @@ public class MapScanExec extends AbstractExec {
         return currentRow != null ? currentRow : EmptyRowBatch.INSTANCE;
     }
 
+    @Override
     public Object extract(Object key, Object val, String path) {
         Object res;
 

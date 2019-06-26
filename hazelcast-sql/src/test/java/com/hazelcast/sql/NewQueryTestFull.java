@@ -3,7 +3,7 @@ package com.hazelcast.sql;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.query.QueryResultConsumer;
-import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

@@ -1,13 +1,15 @@
-package com.hazelcast.internal.query.io;
+package com.hazelcast.internal.query.row;
 
 import java.util.List;
 
-// TODO: Array based? Reuse for large result sets (i.e. able to reset?)
-public class HeapRowBatch implements RowBatch {
-
+/**
+ * Batch where rows are organized in a list.
+ */
+public class ListRowBatch implements RowBatch {
+    /** Rows. */
     private final List<Row> rows;
 
-    public HeapRowBatch(List<Row> rows) {
+    public ListRowBatch(List<Row> rows) {
         this.rows = rows;
     }
 

@@ -1,7 +1,7 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.row.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 
 /**

@@ -2,7 +2,7 @@ package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
-import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.mailbox.Outbox;
 
 /**

@@ -1,9 +1,9 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.expression.Expression;
-import com.hazelcast.internal.query.io.HeapRow;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.row.HeapRow;
+import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.internal.query.row.RowBatch;
 
 import java.util.List;
 

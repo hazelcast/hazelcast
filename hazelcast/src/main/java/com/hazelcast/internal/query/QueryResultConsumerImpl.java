@@ -1,8 +1,8 @@
 package com.hazelcast.internal.query;
 
 import com.hazelcast.internal.query.exec.RootExec;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.internal.query.row.RowBatch;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;

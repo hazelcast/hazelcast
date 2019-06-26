@@ -1,9 +1,9 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.expression.Expression;
-import com.hazelcast.internal.query.io.HeapRowBatch;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.row.ListRowBatch;
+import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.internal.query.row.RowBatch;
 import com.hazelcast.internal.query.mailbox.SendBatch;
 import com.hazelcast.internal.query.mailbox.StripedInbox;
 import com.hazelcast.internal.query.sort.SortKey;
@@ -162,7 +162,7 @@ public class SortMergeReceiveExec extends AbstractExec {
             }
         }
 
-        curBatch = new HeapRowBatch(rows);
+        curBatch = new ListRowBatch(rows);
     }
 
     /**

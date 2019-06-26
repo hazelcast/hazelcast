@@ -1,7 +1,7 @@
 package com.hazelcast.internal.query.expression;
 
 import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

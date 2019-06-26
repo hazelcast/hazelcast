@@ -1,9 +1,8 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.io.HeapRowBatch;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.RowBatch;
-import com.hazelcast.internal.query.io.SerializableRow;
+import com.hazelcast.internal.query.row.ListRowBatch;
+import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.internal.query.row.RowBatch;
 import com.hazelcast.internal.query.mailbox.SendBatch;
 import com.hazelcast.internal.query.mailbox.SingleInbox;
 
@@ -32,7 +31,7 @@ public class ReceiveExec extends AbstractExec {
 
         List<Row> rows = batch.getRows();
 
-        curBatch = new HeapRowBatch(rows);
+        curBatch = new ListRowBatch(rows);
 
         if (inbox.closed()) {
             inboxDone = true;

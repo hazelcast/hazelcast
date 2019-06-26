@@ -1,7 +1,6 @@
 package com.hazelcast.internal.query.mailbox;
 
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.internal.query.io.SerializableRow;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -11,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// TODO: Implemente metadata!.
+// TODO: Implement metadata!.
 public class SendBatch implements DataSerializable {
     /** Rows being transferred. */
     private List<Row> rows;
@@ -41,7 +40,7 @@ public class SendBatch implements DataSerializable {
         out.writeInt(rows.size());
 
         for (Row row : rows)
-            // TODO: "writeObject" appears to be too heavy. Find a way to avoid that.
+            // TODO: "writeObject" appears to be too heavy. Find a way to avoid that (e.g. factories).
             out.writeObject(row);
 
         out.writeBoolean(last);

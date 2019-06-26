@@ -1,5 +1,8 @@
-package com.hazelcast.internal.query.io;
+package com.hazelcast.internal.query.row;
 
+/**
+ * Single row.
+ */
 public interface Row extends RowBatch {
     /**
      * Get column by index.
