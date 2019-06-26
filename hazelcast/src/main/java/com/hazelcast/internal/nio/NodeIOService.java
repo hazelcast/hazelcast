@@ -32,6 +32,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
@@ -403,5 +404,10 @@ public class NodeIOService implements IOService {
     @Override
     public MemcacheProtocolConfig getMemcacheProtocolConfig() {
         return memcacheProtocolConfig;
+    }
+
+    @Override
+    public AuditlogService getEventLogService() {
+        return node.getNodeExtension().getAuditlogService();
     }
 }

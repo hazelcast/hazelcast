@@ -23,6 +23,8 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.auditlog.AuditlogService;
+import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -379,5 +381,10 @@ public class MockIOService implements IOService {
     @Override
     public MemcacheProtocolConfig getMemcacheProtocolConfig() {
         return new MemcacheProtocolConfig();
+    }
+
+    @Override
+    public AuditlogService getEventLogService() {
+        return NoOpAuditlogService.INSTANCE;
     }
 }

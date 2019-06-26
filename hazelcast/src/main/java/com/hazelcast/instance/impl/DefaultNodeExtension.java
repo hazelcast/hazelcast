@@ -34,6 +34,8 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.auditlog.AuditlogService;
+import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
@@ -504,5 +506,10 @@ public class DefaultNodeExtension implements NodeExtension {
 
     public void setLicenseKey(String licenseKey) {
         // NOP
+    }
+
+    @Override
+    public AuditlogService getAuditlogService() {
+        return NoOpAuditlogService.INSTANCE;
     }
 }

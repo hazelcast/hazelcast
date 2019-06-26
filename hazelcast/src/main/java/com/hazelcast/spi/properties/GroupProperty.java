@@ -1085,6 +1085,8 @@ public final class GroupProperty {
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
+    public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
+
     private GroupProperty() {
     }
 }
