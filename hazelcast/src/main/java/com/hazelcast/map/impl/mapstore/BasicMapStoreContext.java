@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -125,8 +124,6 @@ final class BasicMapStoreContext implements MapStoreContext {
         final MapStoreWrapper storeWrapper = new MapStoreWrapper(mapName, store);
         storeWrapper.instrument(nodeEngine);
 
-        setStoreImplToWritableMapStoreConfig(nodeEngine, mapName, store);
-
         context.setMapName(mapName);
         context.setMapStoreConfig(mapStoreConfig);
         context.setPartitioningStrategy(partitioningStrategy);
@@ -140,14 +137,6 @@ final class BasicMapStoreContext implements MapStoreContext {
         callLifecycleSupportInit(context);
 
         return context;
-    }
-
-    private static void setStoreImplToWritableMapStoreConfig(NodeEngine nodeEngine, String mapName, Object store) {
-        final Config config = nodeEngine.getConfig();
-        // get writable config (not read-only one) from node engine.
-        final MapConfig mapConfig = config.getMapConfig(mapName);
-        final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        mapStoreConfig.setImplementation(store);
     }
 
     private static MapStoreManager createMapStoreManager(MapStoreContext mapStoreContext) {
