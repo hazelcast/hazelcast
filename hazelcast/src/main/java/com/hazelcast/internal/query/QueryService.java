@@ -3,7 +3,6 @@ package com.hazelcast.internal.query;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.QueryConfig;
-import com.hazelcast.internal.query.exec.RootConsumer;
 import com.hazelcast.internal.query.operation.QueryExecuteOperation;
 import com.hazelcast.internal.query.plan.physical.FragmentPrepareVisitor;
 import com.hazelcast.internal.query.plan.physical.PhysicalNode;
@@ -66,7 +65,7 @@ public class QueryService implements ManagedService, MembershipAwareService {
                 throw new IllegalStateException("Node is being stopped.");
 
             // TODO: Adjustable batch size!
-            RootConsumer consumer = new QueryRootConsumer(1024);
+            QueryRootConsumer consumer = new QueryRootConsumerImpl(1024);
 
             QueryExecuteOperation op = prepareLocalOperation(plan, args, consumer);
 
@@ -86,7 +85,7 @@ public class QueryService implements ManagedService, MembershipAwareService {
     }
 
     private QueryExecuteOperation prepareLocalOperation(PhysicalPlan plan, List<Object> args,
-        RootConsumer rootConsumer) {
+        QueryRootConsumer rootConsumer) {
         QueryId queryId = prepareQueryId();
         Map<String, PartitionIdSet> partitionMap = preparePartitionMapping();
 

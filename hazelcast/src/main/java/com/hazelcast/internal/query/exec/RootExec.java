@@ -1,6 +1,7 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
+import com.hazelcast.internal.query.QueryRootConsumer;
 import com.hazelcast.internal.query.io.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.query.worker.data.RootDataTask;
@@ -10,7 +11,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
     private DataWorker worker;
 
     /** User consumer. */
-    private RootConsumer consumer;
+    private QueryRootConsumer consumer;
 
     /** Current row batch. */
     private RowBatch curBatch;
@@ -107,6 +108,8 @@ public class RootExec extends AbstractUpstreamAwareExec {
      */
     public void reschedule() {
         // TODO: Double-check that it is not re-scheduled too often (e.g. with printout).
-        worker.offer(new RootDataTask(worker.getThread(), this));
+        RootDataTask task = new RootDataTask(worker.getThread(), this);
+
+        worker.offer(task);
     }
 }

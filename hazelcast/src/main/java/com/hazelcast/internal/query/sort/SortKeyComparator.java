@@ -1,14 +1,9 @@
 package com.hazelcast.internal.query.sort;
 
-import com.hazelcast.internal.query.QueryUtils;
-
 import java.util.Comparator;
 import java.util.List;
 
 public class SortKeyComparator implements Comparator<SortKey> {
-    // TODO: Collation
-    // TODO: NULLS FIRST/LAST
-    // TODO: Type inference
 
     private final List<Boolean> ascs;
 
@@ -27,7 +22,13 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Object item2 = o2.getKey().get(i);
 
             // TODO: ANSI-compliant sort rules.
-            res = QueryUtils.compare(item1, item2);
+            // TODO: Comparable checks.
+            // TODO: Proper NULL handling.
+            // TODO: Proper collation and type comparisons!
+            Comparable item1Comp = (Comparable)item1;
+            Comparable item2Comp = (Comparable)item2;
+
+            res = item1Comp.compareTo(item2Comp);
 
             if (!asc)
                 res = -res;

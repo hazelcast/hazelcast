@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.query.QueryHandleImpl;
-import com.hazelcast.internal.query.exec.RootConsumer;
+import com.hazelcast.internal.query.QueryRootConsumer;
 import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlPrepare;
 import com.hazelcast.sql.impl.SqlTable;
@@ -73,7 +73,7 @@ public final class HazelcastSql2 {
         this.instance = ((HazelcastInstanceProxy)instance).getOriginal();
     }
 
-    public RootConsumer execute2(String sql) throws Exception {
+    public QueryRootConsumer execute2(String sql) throws Exception {
         // 1. ==================== PARSE ====================
         // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();

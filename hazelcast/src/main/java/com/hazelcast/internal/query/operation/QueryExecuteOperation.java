@@ -3,7 +3,7 @@ package com.hazelcast.internal.query.operation;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.exec.RootConsumer;
+import com.hazelcast.internal.query.QueryRootConsumer;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,14 +29,14 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     private List<Object> arguments;
 
     /** Consumer of results. */
-    private transient RootConsumer rootConsumer;
+    private transient QueryRootConsumer rootConsumer;
 
     public QueryExecuteOperation() {
         // No-op.
     }
 
     public QueryExecuteOperation(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments, List<Object> arguments, RootConsumer rootConsumer) {
+        List<QueryFragment> fragments, List<Object> arguments, QueryRootConsumer rootConsumer) {
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
@@ -69,7 +69,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         return arguments;
     }
 
-    public RootConsumer getRootConsumer() {
+    public QueryRootConsumer getRootConsumer() {
         return rootConsumer;
     }
 

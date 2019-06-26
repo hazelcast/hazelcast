@@ -2,7 +2,7 @@ package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.exec.RootConsumer;
+import com.hazelcast.internal.query.QueryRootConsumer;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Collections;
@@ -14,10 +14,10 @@ public class ExecuteControlTask implements ControlTask {
     private final Map<String, PartitionIdSet> partitionMapping;
     private final List<QueryFragment> fragments;
     private final List<Object> arguments;
-    private final RootConsumer rootConsumer;
+    private final QueryRootConsumer rootConsumer;
 
     public ExecuteControlTask(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments, List<Object> arguments, RootConsumer rootConsumer) {
+        List<QueryFragment> fragments, List<Object> arguments, QueryRootConsumer rootConsumer) {
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
@@ -42,7 +42,7 @@ public class ExecuteControlTask implements ControlTask {
         return arguments;
     }
 
-    public RootConsumer getRootConsumer() {
+    public QueryRootConsumer getRootConsumer() {
         return rootConsumer;
     }
 

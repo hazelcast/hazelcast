@@ -1,12 +1,5 @@
 package com.hazelcast.internal.query;
 
-import com.hazelcast.internal.query.exec.RootConsumer;
-import com.hazelcast.internal.query.io.Row;
-import com.hazelcast.util.executor.CompletedFuture;
-
-import java.util.List;
-import java.util.function.Consumer;
-
 public class QueryHandleImpl implements QueryHandle {
     /** Service */
     private final QueryService service;
@@ -15,9 +8,9 @@ public class QueryHandleImpl implements QueryHandle {
     private final QueryId queryId;
 
     /** Consumer. */
-    private final RootConsumer consumer;
+    private final QueryRootConsumer consumer;
 
-    public QueryHandleImpl(QueryService service, QueryId queryId, RootConsumer consumer) {
+    public QueryHandleImpl(QueryService service, QueryId queryId, QueryRootConsumer consumer) {
         this.service = service;
         this.queryId = queryId;
         this.consumer = consumer;
@@ -37,7 +30,7 @@ public class QueryHandleImpl implements QueryHandle {
         return false;
     }
 
-    public RootConsumer getConsumer() {
+    public QueryRootConsumer getConsumer() {
         return consumer;
     }
 }
