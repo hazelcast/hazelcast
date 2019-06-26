@@ -170,7 +170,7 @@ Maven snippet:
     <dependency>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet</artifactId>
-        <version>3.1-SNAPSHOT</version>
+        <version>3.2-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
