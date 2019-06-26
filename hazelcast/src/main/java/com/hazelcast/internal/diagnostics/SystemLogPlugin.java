@@ -22,7 +22,7 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

@@ -22,7 +22,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;

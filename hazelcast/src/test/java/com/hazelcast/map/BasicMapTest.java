@@ -24,13 +24,14 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.IBiFunction;
+import java.util.function.BiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,7 +44,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
-
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -219,7 +219,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
 
         map.put("presentKey", new AtomicBoolean(false));
-        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
             @Override
             public AtomicBoolean apply(String key, AtomicBoolean value) {
                 return new AtomicBoolean(true);
@@ -228,7 +228,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertNotNull(value);
         assertTrue(value.get());
 
-        value = emulateComputeIfPresent(map, "absentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+        value = emulateComputeIfPresent(map, "absentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
             @Override
             public AtomicBoolean apply(String s, AtomicBoolean atomicBoolean) {
                 fail("should not be called");
@@ -290,6 +290,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
         final CountDownLatch latchEvicted = new CountDownLatch(1);
+        final CountDownLatch latchExpired = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
             @Override
@@ -640,7 +641,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     private static <K, V> void checkMapClonedCollectionsImmutable(IMap<K, V> map, boolean onMember) {
-        PagingPredicate<K, V> pagingPredicate = new PagingPredicate<K, V>(5);
+        PagingPredicate<K, V> pagingPredicate = Predicates.pagingPredicate(5);
 
         checkCollectionImmutable(map.entrySet());
         checkCollectionImmutable(map.entrySet(e -> true));
@@ -1445,23 +1446,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             test.put(i, i);
         }
 
-        Collection<Integer> values = test.values(new TestPagingPredicate(100));
+        Collection<Integer> values = test.values(Predicates.pagingPredicate(100));
         Type genericSuperClass = values.getClass().getGenericSuperclass();
         Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
         // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
         assertInstanceOf(Class.class, actualType);
-    }
-
-    private static class TestPagingPredicate extends PagingPredicate {
-
-        TestPagingPredicate(int pageSize) {
-            super(pageSize);
-        }
-
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return true;
-        }
     }
 
     @Test
@@ -1894,7 +1883,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     private static <K, V> V emulateComputeIfPresent(ConcurrentMap<K, V> map, K key,
-                                                    IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                                                    BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         // emulates ConcurrentMap.computeIfPresent() introduced in Java 8
 
         Preconditions.checkNotNull(remappingFunction);

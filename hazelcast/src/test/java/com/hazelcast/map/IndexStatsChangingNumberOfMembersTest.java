@@ -383,7 +383,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        List<Indexes> allIndexes = new ArrayList<>();
         for (IMap map : maps) {
             allIndexes.addAll(getAllIndexes(map));
         }

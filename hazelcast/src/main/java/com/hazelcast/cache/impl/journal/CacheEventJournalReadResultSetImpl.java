@@ -69,7 +69,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     }
 
     @SerializableByConvention
-    private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalCacheEvent, T> {
+    private static class ProjectionAdapter<K, V, T> implements Projection<InternalEventJournalCacheEvent, T> {
 
         private final Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 

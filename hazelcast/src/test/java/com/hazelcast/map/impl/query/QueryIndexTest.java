@@ -19,14 +19,14 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -86,7 +86,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
             imap.put(object.getName(), object);
         }
 
-        EntryObject entry = new PredicateBuilder().getEntryObject();
+        EntryObject entry = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = entry.get("attribute").greaterEqual(new CustomAttribute(5, 200));
 
         Collection<CustomObject> values = imap.values(predicate);
@@ -112,10 +112,10 @@ public class QueryIndexTest extends HazelcastTestSupport {
             Value v = new Value("name" + i, i < 5 ? null : new ValueType("type" + i), i);
             map.put("" + i, v);
         }
-        Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type8", "type6");
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("type.typeName").in("type8", "type6");
         Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(2, values.size());
-        List<String> typeNames = new ArrayList<String>();
+        List<String> typeNames = new ArrayList<>();
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
@@ -134,10 +134,10 @@ public class QueryIndexTest extends HazelcastTestSupport {
             Value v = new Value("name" + i, new ValueType("type" + i), i);
             map.put("" + i, v);
         }
-        Predicate predicate = new SqlPredicate("type.typeName='type1'");
+        Predicate predicate = Predicates.sql("type.typeName='type1'");
         Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(1, values.size());
-        List<String> typeNames = new ArrayList<String>();
+        List<String> typeNames = new ArrayList<>();
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
@@ -154,7 +154,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
             map.put("" + i, v);
         }
         map.clear();
-        Predicate predicate = new SqlPredicate("name='name0'");
+        Predicate predicate = Predicates.sql("name='name0'");
         Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(0, values.size());
     }
@@ -168,7 +168,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         map.put("0", new Value("name"));
         map.put("0", new Value("newName"));
 
-        Collection<SampleTestObjects.Value> values = map.values(new SqlPredicate("name='name'"));
+        Collection<SampleTestObjects.Value> values = map.values(Predicates.sql("name='name'"));
         assertEquals(0, values.size());
     }
 
@@ -178,7 +178,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         IMap<String, Employee> map = h1.getMap("employees");
         map.addIndex("name", false);
         map.put("1", new Employee(1L, "joe", 30, true, 100D));
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder a = e.get("name").equal("joe");
         Predicate b = e.get("age").equal("30");
         Collection<Employee> actual = map.values(a.and(b));
@@ -199,11 +199,11 @@ public class QueryIndexTest extends HazelcastTestSupport {
         map.put(1, new Value("abc", 1));
         map.put(2, new Value("xyz", 2));
         map.put(3, new Value("aaa", 3));
-        assertEquals(3, map.values(new SqlPredicate("name != 'aac'")).size());
-        assertEquals(2, map.values(new SqlPredicate("index != 2")).size());
-        assertEquals(3, map.values(new SqlPredicate("name <> 'aac'")).size());
-        assertEquals(2, map.values(new SqlPredicate("index <> 2")).size());
-        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
+        assertEquals(3, map.values(Predicates.sql("name != 'aac'")).size());
+        assertEquals(2, map.values(Predicates.sql("index != 2")).size());
+        assertEquals(3, map.values(Predicates.sql("name <> 'aac'")).size());
+        assertEquals(2, map.values(Predicates.sql("index <> 2")).size());
+        assertEquals(3, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
+        assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
     }
 }

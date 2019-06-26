@@ -18,10 +18,9 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,7 +67,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("name").equal("body1");
         Collection<Body> values = map.values(predicate);
 
@@ -84,7 +83,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        Collection<Body> values = map.values(new SqlPredicate("name == 'body1'"));
+        Collection<Body> values = map.values(Predicates.sql("name == 'body1'"));
 
         // THEN
         assertEquals(1, values.size());
@@ -98,7 +97,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("limb.name").equal("leg");
         Collection<Body> values = map.values(predicate);
 
@@ -114,7 +113,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        Collection<Body> values = map.values(new SqlPredicate("limb.name == 'leg'"));
+        Collection<Body> values = map.values(Predicates.sql("limb.name == 'leg'"));
 
         // THEN
         assertEquals(1, values.size());

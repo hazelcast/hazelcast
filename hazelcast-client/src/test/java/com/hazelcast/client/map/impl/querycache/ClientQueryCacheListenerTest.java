@@ -29,8 +29,7 @@ import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -53,10 +52,10 @@ import static org.junit.Assert.assertTrue;
 public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> INTEGER_TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> INTEGER_TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private static TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -82,7 +81,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
 
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
         final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
-        cache.addEntryListener(listener, new SqlPredicate("id > 100"), true);
+        cache.addEntryListener(listener, Predicates.sql("id > 100"), true);
 
         final int putCount = 111;
         for (int i = 0; i < putCount; i++) {
@@ -108,7 +107,7 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
         int keyToListen = 109;
         final QueryCacheAdditionListener listener = new QueryCacheAdditionListener();
-        cache.addEntryListener(listener, new SqlPredicate("id > 100"), keyToListen,
+        cache.addEntryListener(listener, Predicates.sql("id > 100"), keyToListen,
                 true);
 
         int putCount = 111;
@@ -136,10 +135,10 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
         int keyToListen = 109;
 
         final QueryCacheAdditionListener addListener = new QueryCacheAdditionListener();
-        cache.addEntryListener(addListener, new SqlPredicate("id > 100"), keyToListen, true);
+        cache.addEntryListener(addListener, Predicates.sql("id > 100"), keyToListen, true);
 
         final QueryCacheRemovalListener removeListener = new QueryCacheRemovalListener();
-        cache.addEntryListener(removeListener, new SqlPredicate("id > 100"), keyToListen, true);
+        cache.addEntryListener(removeListener, Predicates.sql("id > 100"), keyToListen, true);
 
         // populate map before construction of query cache
         int count = 111;

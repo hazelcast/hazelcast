@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.IMapEvent;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.core.IMapEvent;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -34,7 +33,6 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ContextMutexFactory;
@@ -42,6 +40,7 @@ import com.hazelcast.util.ContextMutexFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
@@ -189,8 +188,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         }, name);
     }
 
-    @SerializableByConvention
-    private class RegisterMapListenerFunction implements IFunction<String, String> {
+    private class RegisterMapListenerFunction implements Function<String, String> {
         @Override
         public String apply(String name) {
             return registerLocalIMapListener(name);

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWi
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.map.impl.MapService;

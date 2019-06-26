@@ -21,7 +21,7 @@ import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 
 import java.util.Collection;
 import java.util.Map;
@@ -233,7 +233,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String values(String query) {
         Collection coll;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = Predicates.sql(query);
             coll = managedObject.values(predicate);
         } else {
             coll = managedObject.values();
@@ -256,7 +256,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String entrySet(String query) {
         Set<Map.Entry> entrySet;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = Predicates.sql(query);
             entrySet = managedObject.entrySet(predicate);
         } else {
             entrySet = managedObject.entrySet();

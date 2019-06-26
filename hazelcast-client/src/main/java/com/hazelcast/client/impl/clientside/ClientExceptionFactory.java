@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -237,12 +236,6 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new DistributedObjectDestroyedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.DUPLICATE_INSTANCE_NAME, DuplicateInstanceNameException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new DuplicateInstanceNameException(message);
             }
         });
         register(ClientProtocolErrorCodes.EOF, EOFException.class, new ExceptionFactory() {

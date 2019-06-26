@@ -75,22 +75,22 @@ public class CompositeIndexesBenchmark {
 
     @Benchmark
     public void benchmarkRegularPointQuery() {
-        map.values(new SqlPredicate("f1 = 0 and f2 = 1"));
+        map.values(Predicates.sql("f1 = 0 and f2 = 1"));
     }
 
     @Benchmark
     public void benchmarkCompositePointQuery() {
-        map.values(new SqlPredicate("f3 = 0 and f4 = 1"));
+        map.values(Predicates.sql("f3 = 0 and f4 = 1"));
     }
 
     @Benchmark
     public void benchmarkRegularRangeQuery() {
-        map.values(new SqlPredicate("f5 = 0 and f6 < 1"));
+        map.values(Predicates.sql("f5 = 0 and f6 < 1"));
     }
 
     @Benchmark
     public void benchmarkCompositeRangeQuery() {
-        map.values(new SqlPredicate("f7 = 0 and f8 < 1"));
+        map.values(Predicates.sql("f7 = 0 and f8 < 1"));
     }
 
     public static class Pojo implements DataSerializable {

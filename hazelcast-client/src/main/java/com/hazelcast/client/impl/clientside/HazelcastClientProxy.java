@@ -47,7 +47,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.instance.TerminatedLifecycleService;
+import com.hazelcast.instance.impl.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.quorum.QuorumService;

@@ -38,7 +38,8 @@ import java.io.Serializable;
  * @param <O> output type
  * @since 3.8
  */
-public abstract class Projection<I, O> implements Serializable {
+@FunctionalInterface
+public interface Projection<I, O> extends Serializable {
 
     /**
      * Transforms the input object into the output object.
@@ -46,6 +47,6 @@ public abstract class Projection<I, O> implements Serializable {
      * @param input object.
      * @return the output object.
      */
-    public abstract O transform(I input);
+    O transform(I input);
 
 }

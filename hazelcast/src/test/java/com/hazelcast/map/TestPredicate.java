@@ -16,9 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 
 import java.util.Map;
 import java.util.Set;

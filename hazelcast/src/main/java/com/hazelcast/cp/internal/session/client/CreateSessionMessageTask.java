@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.session.SessionResponse;
 import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;

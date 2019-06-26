@@ -36,7 +36,7 @@ public class NodeStateImplTest {
     @Test
     public void toJson() throws Exception {
         ClusterState clusterState = ClusterState.ACTIVE;
-        com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
+        com.hazelcast.instance.impl.NodeState nodeState = com.hazelcast.instance.impl.NodeState.PASSIVE;
         Version clusterVersion = Version.of("3.8");
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
 

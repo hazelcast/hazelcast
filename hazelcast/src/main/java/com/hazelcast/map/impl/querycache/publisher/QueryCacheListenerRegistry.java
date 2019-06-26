@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -26,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Holds IDs of registered listeners which are registered to listen underlying
@@ -39,7 +39,7 @@ public class QueryCacheListenerRegistry implements Registry<String, String> {
             new ConstructorFunction<String, String>() {
                 @Override
                 public String createNew(String ignored) {
-                    IFunction<String, String> registration = context.getPublisherContext().getListenerRegistrator();
+                    Function<String, String> registration = context.getPublisherContext().getListenerRegistrator();
                     return registration.apply(mapName);
                 }
             };

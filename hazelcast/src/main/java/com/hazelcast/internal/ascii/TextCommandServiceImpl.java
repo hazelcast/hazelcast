@@ -18,8 +18,8 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.memcache.BulkGetCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.DeleteCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.EntryConverter;

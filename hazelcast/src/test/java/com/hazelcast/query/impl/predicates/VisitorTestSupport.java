@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.ObjectTestUtils;
 

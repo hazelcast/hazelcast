@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.CoreService;

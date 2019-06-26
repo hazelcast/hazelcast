@@ -18,11 +18,12 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,7 +40,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.instance.impl.TestUtil.toData;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -77,11 +78,11 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
         int count = 10;
-        Set<String> ages = new HashSet<String>(count);
+        Set<String> ages = new HashSet<>(count);
         for (int i = 0; i < count; i++) {
             ages.add(String.valueOf(i));
         }
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder predicate =
                 entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
         Set<QueryableEntry> results = indexes.query(predicate);
@@ -101,8 +102,8 @@ public class IndexesTest {
         }
 
         for (int i = 0; i < 10; i++) {
-            SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate));
+            Predicate predicate = Predicates.sql("salary=161 and age >20 and age <23");
+            Set<QueryableEntry> results = new HashSet<>(indexes.query(predicate));
             assertEquals(5, results.size());
         }
     }
@@ -129,7 +130,7 @@ public class IndexesTest {
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
-        assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
+        assertEquals(8, new HashSet<>(indexes.query(Predicates.sql("name > 'aac'"))).size());
     }
 
     protected Extractors newExtractor() {
@@ -163,7 +164,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
 
         assertNull("There should be no result", query);
     }
@@ -179,7 +180,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
 
         assertEquals(89, query.size());
     }

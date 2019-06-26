@@ -44,7 +44,6 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -68,8 +67,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -758,7 +757,7 @@ public class ReferenceObjects {
         queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
         queryCacheConfig.setPredicateConfigHolder(new PredicateConfigHolder("com.hazelcast.Predicate", "name LIKE 'Fred%'",
-                serializationService.toData(new TruePredicate())));
+                serializationService.toData(Predicates.alwaysTrue())));
         queryCacheConfig.setIndexConfigs(mapIndexConfigs);
         queryCacheConfig.setListenerConfigs(listenerConfigs);
         queryCacheConfig.setEvictionConfigHolder(evictionConfig);
@@ -800,8 +799,8 @@ public class ReferenceObjects {
             aString), new ArrayStoreException(aString), new StubAuthenticationException(aString), new CacheNotExistsException(
             aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
             aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
-            aString), new ConfigMismatchException(aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
-            aString), new EOFException(aString), new ExecutionException(new IOException()), new HazelcastException(
+            aString), new ConfigMismatchException(aString), new DistributedObjectDestroyedException(aString), new EOFException(
+            aString), new ExecutionException(new IOException()), new HazelcastException(
             aString), new HazelcastInstanceNotActiveException(aString), new HazelcastOverloadException(
             aString), new HazelcastSerializationException(aString), new IOException(aString), new IllegalArgumentException(
             aString), new IllegalAccessException(aString), new IllegalAccessError(aString), new IllegalMonitorStateException(

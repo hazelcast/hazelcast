@@ -30,7 +30,7 @@ import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.CPGroupInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.session.CPSession;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;

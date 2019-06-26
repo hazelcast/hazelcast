@@ -24,11 +24,10 @@ import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactor
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
@@ -199,7 +198,7 @@ public final class HazelcastClient {
             proxy = new HazelcastClientProxy(client);
 
             if (CLIENTS.putIfAbsent(client.getName(), proxy) != null) {
-                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
+                throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
                         + "' already exists!");
             }
         } finally {

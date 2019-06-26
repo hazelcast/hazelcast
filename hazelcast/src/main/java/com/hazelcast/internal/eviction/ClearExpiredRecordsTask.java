@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.core.IBiFunction;
+import java.util.function.BiFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
@@ -95,7 +95,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
                 newBackupExpiryOpFilter(), nodeEngine);
     }
 
-    protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
+    protected BiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
         return (partitionId, replicaIndex) -> {
             IPartition partition = partitionService.getPartition(partitionId);
             return partition.getReplicaAddress(replicaIndex) != null;
@@ -272,8 +272,8 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         }
     }
 
-    private IBiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
-        return new IBiFunction<S, Collection<ExpiredKey>, Operation>() {
+    private BiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
+        return new BiFunction<S, Collection<ExpiredKey>, Operation>() {
             @Override
             public Operation apply(S recordStore, Collection<ExpiredKey> expiredKeys) {
                 return newBackupExpiryOp(recordStore, expiredKeys);

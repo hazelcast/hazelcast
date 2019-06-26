@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -114,7 +115,7 @@ public class HazelcastTest extends HazelcastTestSupport {
         assertTrue(hc1 == hc3);
     }
 
-    @Test(expected = DuplicateInstanceNameException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNewInstanceByNameFail() {
         Config config = new Config();
         config.setInstanceName("test");

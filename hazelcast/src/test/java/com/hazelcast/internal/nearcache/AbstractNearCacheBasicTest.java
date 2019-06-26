@@ -29,7 +29,7 @@ import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
@@ -893,7 +893,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor);
             assertResultMap(resultMap);
         } else if (method == DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE) {
-            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor, TruePredicate.INSTANCE);
+            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor, Predicates.alwaysTrue());
             assertResultMap(resultMap);
         } else if (method == DataStructureMethods.PUT_ALL) {
             adapter.putAll(invalidationMap);

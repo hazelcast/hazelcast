@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.instance.Node}.
+ * {@link Node}.
  * <p>
  * Usage:
  * <pre><code>

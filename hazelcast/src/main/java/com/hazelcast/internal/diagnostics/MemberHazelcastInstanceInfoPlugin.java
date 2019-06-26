@@ -17,7 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
