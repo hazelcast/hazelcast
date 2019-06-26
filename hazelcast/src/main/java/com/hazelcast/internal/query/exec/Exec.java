@@ -2,7 +2,6 @@ package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.io.RowBatch;
-import com.hazelcast.internal.query.io.SendBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 
 /**
@@ -13,6 +12,7 @@ public interface Exec {
      * One-time setup of the executor.
      *
      * @param ctx Context.
+     * @param worker Worker responsible for execution of this instance.
      */
     void setup(QueryContext ctx, DataWorker worker);
 
@@ -24,7 +24,7 @@ public interface Exec {
     IterationResult advance();
 
     /**
-     * @return Current batch available in response to {@link #advance()} call.
+     * @return Current batch available in response to the previous {@link #advance()} call. Should never be null.
      */
     RowBatch currentBatch();
 }

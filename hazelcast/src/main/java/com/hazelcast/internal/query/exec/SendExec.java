@@ -1,19 +1,14 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
-import com.hazelcast.internal.query.worker.data.DataWorker;
 
-public class SendExec extends AbstractExec {
-    private final Exec upstream;
+public class SendExec extends AbstractUpstreamAwareExec {
 
     private final int edgeId;
     private final Expression<Integer> partitionHasher;
     private final Outbox[] outboxes;
-
-    private boolean upstreamDone;
 
     /** Last upstream batch. */
     private RowBatch curBatch;
@@ -25,15 +20,11 @@ public class SendExec extends AbstractExec {
     private int curBatchRowCnt = -1;
 
     public SendExec(Exec upstream, int edgeId, Expression<Integer> partitionHasher, Outbox[] outboxes) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.edgeId = edgeId;
         this.partitionHasher = partitionHasher;
         this.outboxes = outboxes;
-    }
-
-    @Override
-    protected void setup0(QueryContext ctx, DataWorker worker) {
-        upstream.setup(ctx, worker);
     }
 
     @Override
@@ -47,14 +38,10 @@ public class SendExec extends AbstractExec {
                     return IterationResult.FETCHED_DONE;
                 }
 
-                switch (upstream.advance()) {
+                switch (advanceUpstream()) {
                     case FETCHED_DONE:
-                        upstreamDone = true;
-
-                        // Fall-through.
-
                     case FETCHED:
-                        RowBatch batch = upstream.currentBatch();
+                        RowBatch batch = upstreamCurrentBatch;
                         int batchRowCnt = batch.getRowCount();
 
                         if (batchRowCnt == 0)
@@ -70,8 +57,7 @@ public class SendExec extends AbstractExec {
                         return IterationResult.WAIT;
 
                     default:
-                        // TODO: Error handling.
-                        throw new UnsupportedOperationException("Implement me");
+                        throw new IllegalStateException("Should not reach this.");
                 }
             }
 

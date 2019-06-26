@@ -5,18 +5,12 @@ import com.hazelcast.internal.query.io.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.query.worker.data.RootDataTask;
 
-public class RootExec extends AbstractExec {
-    /** Actual executor. */
-    private final Exec upstream;
-
+public class RootExec extends AbstractUpstreamAwareExec {
     /** Worker. */
     private DataWorker worker;
 
     /** User consumer. */
     private RootConsumer consumer;
-
-    /** Whether executor is finished. */
-    private boolean upstreamDone;
 
     /** Current row batch. */
     private RowBatch curBatch;
@@ -28,13 +22,11 @@ public class RootExec extends AbstractExec {
     private int curBatchPos = -1;
 
     public RootExec(Exec upstream) {
-        this.upstream = upstream;
+        super(upstream);
     }
 
     @Override
-    protected void setup0(QueryContext ctx, DataWorker worker) {
-        upstream.setup(ctx, worker);
-
+    protected void setup1(QueryContext ctx, DataWorker worker) {
         this.worker = worker;
 
         consumer = ctx.getRootConsumer();
@@ -52,14 +44,14 @@ public class RootExec extends AbstractExec {
                     return IterationResult.FETCHED_DONE;
                 }
 
-                switch (upstream.advance()) {
+                switch (advanceUpstream()) {
                     case FETCHED_DONE:
                         upstreamDone = true;
 
                         // Fall-through.
 
                     case FETCHED:
-                        RowBatch batch = upstream.currentBatch();
+                        RowBatch batch = upstreamCurrentBatch;
                         int batchSize = batch.getRowCount();
 
                         if (batchSize == 0)
@@ -75,8 +67,7 @@ public class RootExec extends AbstractExec {
                         return IterationResult.WAIT;
 
                     default:
-                        // TODO: Propagate error to the user.
-                        throw new UnsupportedOperationException("Unsupported.");
+                        throw new IllegalStateException("Should not reach this.");
                 }
             }
 
@@ -115,7 +106,7 @@ public class RootExec extends AbstractExec {
      * Reschedule execution of this root node to fetch more data to the user.
      */
     public void reschedule() {
-        // TODO: Double-check that it is not re-scheduledtoo often (e.g. with printout).
+        // TODO: Double-check that it is not re-scheduled too often (e.g. with printout).
         worker.offer(new RootDataTask(worker.getThread(), this));
     }
 }

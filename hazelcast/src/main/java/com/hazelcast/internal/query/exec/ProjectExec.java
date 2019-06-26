@@ -7,10 +7,7 @@ import com.hazelcast.internal.query.io.RowBatch;
 
 import java.util.List;
 
-public class ProjectExec extends AbstractExec {
-    /** Upstream executor. */
-    private final Exec upstream;
-
+public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Projection expressions. */
     private final List<Expression> projections;
 
@@ -26,11 +23,9 @@ public class ProjectExec extends AbstractExec {
     /** Current row. */
     private Row curRow;
 
-    /** Whether upstream operator is finished. */
-    private boolean upstreamDone;
-
     public ProjectExec(Exec upstream, List<Expression> projections) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.projections = projections;
     }
 
@@ -40,14 +35,10 @@ public class ProjectExec extends AbstractExec {
             if (upstreamDone)
                 return IterationResult.FETCHED_DONE;
 
-            switch (upstream.advance()) {
+            switch (advanceUpstream()) {
                 case FETCHED_DONE:
-                    upstreamDone = true;
-
-                    // Fall-through.
-
                 case FETCHED:
-                    RowBatch batch = upstream.currentBatch();
+                    RowBatch batch = upstreamCurrentBatch;
                     int batchRowCnt = batch.getRowCount();
 
                     if (batchRowCnt > 0) {
@@ -60,8 +51,7 @@ public class ProjectExec extends AbstractExec {
                     return IterationResult.WAIT;
 
                 default:
-                    // TODO: Implement error handling.
-                    throw new UnsupportedOperationException("Implement me");
+                    throw new IllegalStateException("Should not reach this.");
             }
         }
 

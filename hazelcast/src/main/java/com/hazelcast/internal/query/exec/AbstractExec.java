@@ -3,12 +3,15 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 
+/**
+ * Abstract executor.
+ */
 public abstract class AbstractExec implements Exec {
 
     protected QueryContext ctx;
 
     @Override
-    public void setup(QueryContext ctx, DataWorker worker) {
+    public final void setup(QueryContext ctx, DataWorker worker) {
         this.ctx = ctx;
 
         setup0(ctx, worker);

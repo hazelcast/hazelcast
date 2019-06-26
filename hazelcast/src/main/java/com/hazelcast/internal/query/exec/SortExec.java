@@ -1,7 +1,5 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.QueryUtils;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.io.EmptyRowBatch;
 import com.hazelcast.internal.query.io.HeapRowBatch;
@@ -9,16 +7,13 @@ import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
 import com.hazelcast.internal.query.sort.SortKey;
 import com.hazelcast.internal.query.sort.SortKeyComparator;
-import com.hazelcast.internal.query.worker.data.DataWorker;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
 
-public class SortExec extends AbstractExec {
+public class SortExec extends AbstractUpstreamAwareExec {
 
-    private final Exec upstream;
     private final List<Expression> expressions;
 
     private final TreeMap<SortKey, Row> map;
@@ -26,37 +21,25 @@ public class SortExec extends AbstractExec {
     /** Resulting batch. */
     private RowBatch res;
 
-    /** Whether upstream is finished. */
-    private boolean upstreamDone;
-
     /** Index for unique elements. */
     private long idx;
 
     // TODO: Merge exprs and ascs to a single class, add null-first/last.
     public SortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.expressions = expressions;
 
         map = new TreeMap<>(new SortKeyComparator(ascs));
     }
 
     @Override
-    protected void setup0(QueryContext ctx, DataWorker worker) {
-        upstream.setup(ctx, worker);
-    }
-
-    @Override
     public IterationResult advance() {
         while (!upstreamDone) {
-            IterationResult upstreamRes = upstream.advance();
-
-            switch (upstreamRes) {
+            switch (advanceUpstream()) {
                 case FETCHED_DONE:
-                    upstreamDone = true;
-
-                    // Fall-through.
                 case FETCHED:
-                    consumeBatch(upstream.currentBatch());
+                    consumeBatch(upstreamCurrentBatch);
 
                     continue;
 
@@ -64,8 +47,7 @@ public class SortExec extends AbstractExec {
                     return IterationResult.WAIT;
 
                 default:
-                    // TODO: Implement error handling.
-                    throw new UnsupportedOperationException("Implement me");
+                    throw new IllegalStateException("Should not reach this.");
             }
         }
 

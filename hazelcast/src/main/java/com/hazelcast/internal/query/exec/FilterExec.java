@@ -7,10 +7,7 @@ import com.hazelcast.internal.query.io.RowBatch;
 /**
  * Filter executor.
  */
-public class FilterExec extends AbstractExec {
-    /** Upstream executor. */
-    private final Exec upstream;
-
+public class FilterExec extends AbstractUpstreamAwareExec {
     /** Filter. */
     private final Predicate filter;
 
@@ -26,11 +23,9 @@ public class FilterExec extends AbstractExec {
     /** Current row. */
     private Row curRow;
 
-    /** Whether upstream operator is finished. */
-    private boolean upstreamDone;
-
     public FilterExec(Exec upstream, Predicate filter) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.filter = filter;
     }
 
@@ -43,14 +38,10 @@ public class FilterExec extends AbstractExec {
                 if (upstreamDone)
                     return IterationResult.FETCHED_DONE;
 
-                switch (upstream.advance()) {
+                switch (advanceUpstream()) {
                     case FETCHED_DONE:
-                        upstreamDone = true;
-
-                        // Fall-through.
-
                     case FETCHED:
-                        RowBatch batch = upstream.currentBatch();
+                        RowBatch batch = upstreamCurrentBatch;
                         int batchRowCnt = batch.getRowCount();
 
                         if (batchRowCnt > 0) {
@@ -65,8 +56,7 @@ public class FilterExec extends AbstractExec {
                         return IterationResult.WAIT;
 
                     default:
-                        // TODO: Implement error handling.
-                        throw new UnsupportedOperationException("Implement me");
+                        throw new IllegalStateException("Should not reach this.");
                 }
             }
 
