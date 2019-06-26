@@ -7,7 +7,7 @@ import com.hazelcast.internal.query.worker.data.DataWorker;
  * Abstract executor.
  */
 public abstract class AbstractExec implements Exec {
-
+    /** Global query context. */
     protected QueryContext ctx;
 
     @Override

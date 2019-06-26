@@ -1,18 +1,31 @@
-package com.hazelcast.internal.query.exec;
+package com.hazelcast.internal.query.mailbox;
 
+import com.hazelcast.internal.query.QueryId;
+
+/**
+ * Base class for inboxes and outboxes.
+ */
 public abstract class Mailbox {
+    /** Query ID. */
+    protected final QueryId queryId;
+
     /** Edge ID. */
-    private final int edgeId;
+    protected final int edgeId;
     
     /** Stripe (known in advance). */
-    private final int stripe;
+    protected final int stripe;
     
     /** Thread (known after prepare). */
     private int thread;
 
-    public Mailbox(int edgeId, int stripe) {
+    public Mailbox(QueryId queryId, int edgeId, int stripe) {
+        this.queryId = queryId;
         this.edgeId = edgeId;
         this.stripe = stripe;
+    }
+
+    public QueryId getQueryId() {
+        return queryId;
     }
 
     public int getEdgeId() {

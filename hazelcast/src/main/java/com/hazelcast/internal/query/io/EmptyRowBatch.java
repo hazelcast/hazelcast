@@ -12,7 +12,7 @@ public class EmptyRowBatch implements RowBatch {
     }
 
     @Override
-    public Row getRow(int idx) {
+    public SerializableRow getRow(int idx) {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

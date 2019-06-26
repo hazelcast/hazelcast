@@ -5,12 +5,18 @@ import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.worker.AbstractThreadPool;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
 
+/**
+ * Control thread pool. Responsible for query initiation and cancel as well as for reactions on asynchronous
+ * events which may affect query execution: migration, member leave.
+ */
 public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
-
+    /** Prefix for thread names in this pool. */
     private static final String THREAD_PREFIX = "query-control-";
-    private static final int BROADCAST_STRIPE = -1;
 
+    /** Query service. */
     private final QueryService queryService;
+
+    /** Data pool. */
     private final DataThreadPool dataPool;
 
     public ControlThreadPool(QueryService queryService, int threadCnt, DataThreadPool dataPool) {
@@ -26,22 +32,17 @@ public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
     }
 
     public void submit(ControlTask task) {
-        int stripe = resolveStripe(task);
+        QueryId queryId = task.getQueryId();
 
-        if (stripe == BROADCAST_STRIPE) {
+        if (queryId == null) {
+            // Tasks without a query ID should be broadcasted to all stripes.
             for (int i = 0; i < workers.length; i++)
                 getWorker(i).offer(task);
         }
-        else
+        else {
+            int stripe = Math.abs(queryId.hashCode() % getThreadCount());
+
             getWorker(stripe).offer(task);
-    }
-
-    private int resolveStripe(ControlTask task) {
-        QueryId queryId = task.getQueryId();
-
-        if (queryId == null)
-            return BROADCAST_STRIPE;
-        else
-            return Math.abs(queryId.hashCode() % getThreadCount());
+        }
     }
 }

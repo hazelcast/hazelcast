@@ -2,7 +2,7 @@ package com.hazelcast.internal.query.operation;
 
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.io.SendBatch;
+import com.hazelcast.internal.query.mailbox.SendBatch;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,8 +46,6 @@ public class QueryBatchOperation extends QueryAbstractOperation {
         this.batch = batch;
     }
 
-    // TODO: Metadata.
-
     @Override
     public void run() throws Exception {
         QueryService service = getService();
@@ -65,7 +63,8 @@ public class QueryBatchOperation extends QueryAbstractOperation {
         out.writeInt(sourceThread);
         out.writeInt(targetStripe);
         out.writeInt(targetThread);
-        out.writeObject(batch);
+
+        batch.writeData(out);
     }
 
     @Override
@@ -77,6 +76,8 @@ public class QueryBatchOperation extends QueryAbstractOperation {
         sourceThread = in.readInt();
         targetStripe = in.readInt();
         targetThread = in.readInt();
-        batch = in.readObject();
+
+        batch = new SendBatch();
+        batch.readData(in);
     }
 }

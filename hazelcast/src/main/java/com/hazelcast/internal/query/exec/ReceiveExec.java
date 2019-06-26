@@ -3,7 +3,9 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.io.HeapRowBatch;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
-import com.hazelcast.internal.query.io.SendBatch;
+import com.hazelcast.internal.query.io.SerializableRow;
+import com.hazelcast.internal.query.mailbox.SendBatch;
+import com.hazelcast.internal.query.mailbox.SingleInbox;
 
 import java.util.List;
 

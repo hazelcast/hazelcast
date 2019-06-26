@@ -6,16 +6,16 @@ import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.exec.EmptyScanExec;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.exec.Inbox;
+import com.hazelcast.internal.query.mailbox.Inbox;
 import com.hazelcast.internal.query.exec.MapScanExec;
-import com.hazelcast.internal.query.exec.Outbox;
+import com.hazelcast.internal.query.mailbox.Outbox;
 import com.hazelcast.internal.query.exec.ReceiveExec;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.exec.SendExec;
-import com.hazelcast.internal.query.exec.SingleInbox;
+import com.hazelcast.internal.query.mailbox.SingleInbox;
 import com.hazelcast.internal.query.exec.SortExec;
 import com.hazelcast.internal.query.exec.SortMergeReceiveExec;
-import com.hazelcast.internal.query.exec.StripedInbox;
+import com.hazelcast.internal.query.mailbox.StripedInbox;
 import com.hazelcast.internal.query.plan.physical.MapScanPhysicalNode;
 import com.hazelcast.internal.query.plan.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.plan.physical.ReceivePhysicalNode;
@@ -106,7 +106,6 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         // Create and register inbox.
         SingleInbox inbox = new SingleInbox(
             queryId,
-            service.getNodeEngine().getClusterService().getLocalMember().getUuid(),
             node.getEdgeId(),
             stripe,
             remaining
@@ -130,7 +129,6 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         StripedInbox inbox = new StripedInbox(
             queryId,
-            service.getNodeEngine().getLocalMember().getUuid(),
             edgeId,
             stripe,
             sendFragment.getMemberIds(),

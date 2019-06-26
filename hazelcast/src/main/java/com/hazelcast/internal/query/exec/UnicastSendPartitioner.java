@@ -2,6 +2,7 @@ package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.io.Row;
+import com.hazelcast.internal.query.mailbox.Outbox;
 
 public class UnicastSendPartitioner implements SendPartitioner {
     /** Predefined outbox. */

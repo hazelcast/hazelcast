@@ -2,10 +2,9 @@ package com.hazelcast.internal.query.worker.data;
 
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.exec.Inbox;
+import com.hazelcast.internal.query.mailbox.Inbox;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.worker.AbstractWorker;
-import com.hazelcast.internal.query.worker.WorkerTask;
 import com.hazelcast.internal.query.worker.control.StripeDeployment;
 
 import java.util.HashMap;
@@ -13,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 public class DataWorker extends AbstractWorker<DataTask> {
+    /** Stripe not mapped to any thread yet. */
+    public static final int UNMAPPED_STRIPE = -1;
+
     private final DataThreadPool dataPool;
     private final Map<InboxKey, Inbox> inboxes = new HashMap<>();
     private final int thread;

@@ -1,21 +1,36 @@
 package com.hazelcast.internal.query.worker.data;
 
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.io.SendBatch;
+import com.hazelcast.internal.query.mailbox.SendBatch;
 import com.hazelcast.internal.query.worker.control.ControlTask;
 
 /**
- * Batch with unmapped threads arrived.
+ * Task to process incoming batch. Batch may be either mapped or unmapped. In the first case we submit it directly
+ * to the data pool. Otherwise we pass it through the control pool to perform mapping when local context is ready.
  */
 public class BatchDataTask implements ControlTask, DataTask {
-
+    /** Query ID. */
     private final QueryId queryId;
+
+    /** Edge. */
     private final int edgeId;
+
+    /** Source member which sent this batch. */
     private final String sourceMemberId;
+
+    /** Source member stripe. */
     private final int sourceStripe;
+
+    /** Source member thread. */
     private final int sourceThread;
+
+    /** Target stripe. */
     private final int targetStripe;
+
+    /** Target thread. May be unknown on early execution stages. */
     private int targetThread;
+
+    /** Data. */
     private final SendBatch batch;
 
     public BatchDataTask(QueryId queryId, int edgeId, String sourceMemberId, int sourceStripe, int sourceThread,
@@ -28,11 +43,6 @@ public class BatchDataTask implements ControlTask, DataTask {
         this.targetStripe = targetStripe;
         this.targetThread = targetThread;
         this.batch = batch;
-    }
-
-    public boolean isMapped() {
-        // TODO: Magic variable.
-        return getTargetThread() != -1;
     }
 
     @Override
@@ -67,6 +77,10 @@ public class BatchDataTask implements ControlTask, DataTask {
 
     public int getTargetThread() {
         return targetThread;
+    }
+
+    public boolean isMapped() {
+        return getTargetThread() != DataWorker.UNMAPPED_STRIPE;
     }
 
     public void setTargetThread(int targetThread) {

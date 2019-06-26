@@ -37,6 +37,8 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  * Scans the map.
  */
 // TODO: Migration support with remote scans.
+// TODO: Ticket for index scans
+// TODO: Ticket for HD and hot-restart scans
 public class MapScanExec extends AbstractExec {
     /** Map name. */
     private final String mapName;

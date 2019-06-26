@@ -6,11 +6,14 @@ import com.hazelcast.internal.query.io.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.internal.query.worker.data.RootDataTask;
 
+/**
+ * Root executor which consumes results from the upstream stages and pass them to target consumer.
+ */
 public class RootExec extends AbstractUpstreamAwareExec {
     /** Worker. */
     private DataWorker worker;
 
-    /** User consumer. */
+    /** Consumer (user iterator, client listener, etc). */
     private QueryRootConsumer consumer;
 
     /** Current row batch. */
@@ -47,10 +50,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
                 switch (advanceUpstream()) {
                     case FETCHED_DONE:
-                        upstreamDone = true;
-
-                        // Fall-through.
-
                     case FETCHED:
                         RowBatch batch = upstreamCurrentBatch;
                         int batchSize = batch.getRowCount();
@@ -108,8 +107,15 @@ public class RootExec extends AbstractUpstreamAwareExec {
      */
     public void reschedule() {
         // TODO: Double-check that it is not re-scheduled too often (e.g. with printout).
-        RootDataTask task = new RootDataTask(worker.getThread(), this);
+        RootDataTask task = new RootDataTask(this);
 
         worker.offer(task);
+    }
+
+    /**
+     * @return Thread responsible for execution of this task.
+     */
+    public int getThread() {
+        return worker.getThread();
     }
 }

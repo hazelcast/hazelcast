@@ -29,7 +29,7 @@ public class DataThreadPool extends AbstractThreadPool<DataWorker> {
     private int resolveStripe(DataTask task) {
         int thread = task.getThread();
 
-        if (thread == -1) // TODO: Magic constant
+        if (thread == DataWorker.UNMAPPED_STRIPE)
             return BROADCAST_STRIPE;
         else
             return thread % getThreadCount();

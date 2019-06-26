@@ -2,8 +2,8 @@ package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.exec.Inbox;
-import com.hazelcast.internal.query.exec.Outbox;
+import com.hazelcast.internal.query.mailbox.Inbox;
+import com.hazelcast.internal.query.mailbox.Outbox;
 
 import java.util.List;
 

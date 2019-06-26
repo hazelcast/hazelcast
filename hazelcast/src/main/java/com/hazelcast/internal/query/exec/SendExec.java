@@ -3,6 +3,7 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.io.Row;
 import com.hazelcast.internal.query.io.RowBatch;
+import com.hazelcast.internal.query.mailbox.Outbox;
 
 public class SendExec extends AbstractUpstreamAwareExec {
 
@@ -33,7 +34,7 @@ public class SendExec extends AbstractUpstreamAwareExec {
             if (curBatch == null) {
                 if (upstreamDone) {
                     for (Outbox outbox : outboxes)
-                        outbox.close();
+                        outbox.flush();
 
                     return IterationResult.FETCHED_DONE;
                 }
