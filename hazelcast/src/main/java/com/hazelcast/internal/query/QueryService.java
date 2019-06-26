@@ -157,8 +157,6 @@ public class QueryService implements ManagedService, MembershipAwareService {
 
         dataThreadPool.start();
         controlThreadPool.start();
-
-        QueryServiceMetadata.setQueryDataThreads(nodeEngine.getLocalMember(), cfg.getDataThreadCount());
     }
 
     @Override

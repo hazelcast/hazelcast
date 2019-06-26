@@ -17,12 +17,10 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.internal.query.QueryHandle;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.query.QueryHandleImpl;
 import com.hazelcast.internal.query.exec.RootConsumer;
-import com.hazelcast.internal.query.plan.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.plan.physical.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlPrepare;
 import com.hazelcast.sql.impl.SqlTable;
@@ -40,7 +38,6 @@ import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
-import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.hep.HepPlanner;

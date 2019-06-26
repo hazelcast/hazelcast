@@ -2,10 +2,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.query.QueryHandle;
 import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.internal.query.expression.ConstantExpression;
 import com.hazelcast.internal.query.expression.EqualsPredicate;
 import com.hazelcast.internal.query.expression.Expression;
