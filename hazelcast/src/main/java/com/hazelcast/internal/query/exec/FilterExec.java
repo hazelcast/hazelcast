@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.expression.Predicate;
+import com.hazelcast.sql.impl.expression.Predicate;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 

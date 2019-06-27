@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.internal.query.expression.ColumnExpression;
-import com.hazelcast.internal.query.expression.ConstantExpression;
-import com.hazelcast.internal.query.expression.Expression;
-import com.hazelcast.internal.query.expression.ExtractorExpression;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExtractorExpression;
 import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
 import com.hazelcast.internal.query.physical.PhysicalNode;
 import com.hazelcast.internal.query.physical.PhysicalPlan;

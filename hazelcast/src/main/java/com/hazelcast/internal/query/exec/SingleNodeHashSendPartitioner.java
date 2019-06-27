@@ -1,7 +1,7 @@
 package com.hazelcast.internal.query.exec;
 
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.internal.query.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 

@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.physical;
 
-import com.hazelcast.internal.query.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
