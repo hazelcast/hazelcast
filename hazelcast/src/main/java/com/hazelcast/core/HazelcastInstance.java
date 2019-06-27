@@ -43,6 +43,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -526,6 +527,13 @@ public interface HazelcastInstance {
      * @return the CP subsystem that offers a set of in-memory linearizable data structures
      */
     CPSubsystem getCPSubsystem();
+
+    /**
+     * Returns SQL service.
+     *
+     * @return SQL service.
+     */
+    SqlService getSqlService();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

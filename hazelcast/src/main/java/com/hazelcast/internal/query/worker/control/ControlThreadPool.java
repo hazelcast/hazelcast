@@ -1,9 +1,10 @@
 package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.worker.AbstractThreadPool;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 /**
  * Control thread pool. Responsible for query initiation and cancel as well as for reactions on asynchronous
@@ -14,21 +15,26 @@ public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
     private static final String THREAD_PREFIX = "query-control-";
 
     /** Query service. */
-    private final QueryService queryService;
+    private final SqlServiceImpl service;
+
+    /** Node engine. */
+    private final NodeEngine nodeEngine;
 
     /** Data pool. */
     private final DataThreadPool dataPool;
 
-    public ControlThreadPool(QueryService queryService, int threadCnt, DataThreadPool dataPool) {
+    public ControlThreadPool(SqlServiceImpl service, NodeEngine nodeEngine, int threadCnt,
+        DataThreadPool dataPool) {
         super(THREAD_PREFIX, threadCnt);
 
-        this.queryService = queryService;
+        this.service = service;
+        this.nodeEngine = nodeEngine;
         this.dataPool = dataPool;
     }
 
     @Override
     protected ControlWorker createWorker(int idx) {
-        return new ControlWorker(queryService, dataPool);
+        return new ControlWorker(service, nodeEngine, dataPool);
     }
 
     public void submit(ControlTask task) {

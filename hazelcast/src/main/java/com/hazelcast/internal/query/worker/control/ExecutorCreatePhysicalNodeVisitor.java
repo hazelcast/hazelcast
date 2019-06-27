@@ -3,18 +3,17 @@ package com.hazelcast.internal.query.worker.control;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.exec.EmptyScanExec;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.mailbox.Inbox;
 import com.hazelcast.internal.query.exec.MapScanExec;
-import com.hazelcast.internal.query.mailbox.Outbox;
 import com.hazelcast.internal.query.exec.ReceiveExec;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.exec.SendExec;
-import com.hazelcast.internal.query.mailbox.SingleInbox;
 import com.hazelcast.internal.query.exec.SortExec;
 import com.hazelcast.internal.query.exec.SortMergeReceiveExec;
+import com.hazelcast.internal.query.mailbox.Inbox;
+import com.hazelcast.internal.query.mailbox.Outbox;
+import com.hazelcast.internal.query.mailbox.SingleInbox;
 import com.hazelcast.internal.query.mailbox.StripedInbox;
 import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
 import com.hazelcast.internal.query.physical.PhysicalNodeVisitor;
@@ -23,6 +22,7 @@ import com.hazelcast.internal.query.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.physical.SendPhysicalNode;
 import com.hazelcast.internal.query.physical.SortMergeReceivePhysicalNode;
 import com.hazelcast.internal.query.physical.SortPhysicalNode;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.ArrayList;
@@ -34,8 +34,8 @@ import java.util.Map;
  * Visitor which builds an executor for every observed node.
  */
 public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
-    /** Service. */
-    private final QueryService service;
+    /** Node engine. */
+    private final NodeEngine nodeEngine;
 
     /** Query ID. */
     private final QueryId queryId;
@@ -71,14 +71,14 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     private List<Outbox> outboxes = new ArrayList<>();
 
     public ExecutorCreatePhysicalNodeVisitor(
-        QueryService service,
+        NodeEngine nodeEngine,
         QueryId queryId,
         int partCnt,
         PartitionIdSet localParts,
         Map<Integer, QueryFragment> sendFragmentMap,
         Map<Integer, QueryFragment> receiveFragmentMap
     ) {
-        this.service = service;
+        this.nodeEngine = nodeEngine;
         this.queryId = queryId;
         this.partCnt = partCnt;
         this.localParts = localParts;
@@ -170,14 +170,14 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
             for (String receiveMemberId : receiveFragment.getMemberIds()) {
                 // TODO: Race! Get all members in advance!
-                Member receiveMember = service.getNodeEngine().getClusterService().getMember(receiveMemberId);
+                Member receiveMember = nodeEngine.getClusterService().getMember(receiveMemberId);
 
                 for (int j = 0; j < receiveFragment.getParallelism(); j++) {
                     Outbox outbox = new Outbox(
                         node.getEdgeId(),
                         stripe,
                         queryId,
-                        service.getNodeEngine(),
+                        nodeEngine,
                         receiveMember,
                         1024, // TODO: Configurable batching.
                         j

@@ -3,6 +3,7 @@ package com.hazelcast.internal.query;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.row.RowBatch;
+import com.hazelcast.sql.SqlRow;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -73,7 +74,7 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     }
 
     @Override
-    public Iterator<Row> iterator() {
+    public Iterator<SqlRow> iterator() {
         if (iter != null)
             throw new IllegalStateException("Iterator can be opened only once.");
 
@@ -85,7 +86,7 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     /**
      * Iterator over results.
      */
-    private class InternalIterator implements Iterator<Row> {
+    private class InternalIterator implements Iterator<SqlRow> {
         /** Current row. */
         private Row currentRow;
 

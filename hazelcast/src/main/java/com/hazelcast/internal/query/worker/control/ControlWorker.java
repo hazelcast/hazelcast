@@ -5,7 +5,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.internal.query.mailbox.Inbox;
 import com.hazelcast.internal.query.mailbox.Outbox;
@@ -13,6 +12,8 @@ import com.hazelcast.internal.query.worker.AbstractWorker;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
 import com.hazelcast.internal.query.worker.data.StartStripeDataTask;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ import java.util.Map;
 
 public class ControlWorker extends AbstractWorker<ControlTask> {
 
-    private final QueryService service;
+    private final SqlServiceImpl service;
+    private final NodeEngine nodeEngine;
     private final DataThreadPool dataPool;
 
     // TODO: Use better algorithm for data worker distribution.
@@ -35,8 +37,9 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
     /** Pending batches. */
     private final HashMap<QueryId, List<BatchDataTask>> pendingBatches = new HashMap<>();
 
-    public ControlWorker(QueryService service, DataThreadPool dataPool) {
+    public ControlWorker(SqlServiceImpl service, NodeEngine nodeEngine, DataThreadPool dataPool) {
         this.service = service;
+        this.nodeEngine = nodeEngine;
         this.dataPool = dataPool;
     }
 
@@ -78,7 +81,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
         // Build partition to member map for data partitioners.
         // TODO: Is it safe to call this locally (e.g. in case of cluster merge?)
-        int partCnt = service.getNodeEngine().getPartitionService().getPartitionCount();
+        int partCnt = nodeEngine.getPartitionService().getPartitionCount();
 
         MemberImpl[] partitionMap = new MemberImpl[partCnt];
 
@@ -88,7 +91,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             String memberId = entry.getKey();
 
             // TODO: May be dead here, careful.
-            MemberImpl member = service.getNodeEngine().getClusterService().getMember(memberId);
+            MemberImpl member = nodeEngine.getClusterService().getMember(memberId);
 
             for (int i = 0; i < partCnt; i++) {
                 if (entry.getValue().contains(i))
@@ -108,7 +111,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
         for (QueryFragment fragment : task.getFragments()) {
             // Skip fragments which should not execute on a node.
-            if (!fragment.getMemberIds().contains(service.getNodeEngine().getLocalMember().getUuid()))
+            if (!fragment.getMemberIds().contains(nodeEngine.getLocalMember().getUuid()))
                 continue;
 
             List<StripeDeployment> stripeDeployments = new ArrayList<>(fragment.getParallelism());
@@ -120,10 +123,10 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                 List<Member> members = new ArrayList<>();
 
                 for (String memberId : fragment.getMemberIds())
-                    members.add(service.getNodeEngine().getClusterService().getMember(memberId));
+                    members.add(nodeEngine.getClusterService().getMember(memberId));
 
                 ExecutorCreatePhysicalNodeVisitor visitor = new ExecutorCreatePhysicalNodeVisitor(
-                    service,
+                    nodeEngine,
                     queryId,
                     partCnt,
                     localParts,
@@ -163,7 +166,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
         // Register context.
         QueryContext ctx = new QueryContext(
-            service,
+            nodeEngine,
             queryId,
             task.getArguments(),
             task.getRootConsumer(),

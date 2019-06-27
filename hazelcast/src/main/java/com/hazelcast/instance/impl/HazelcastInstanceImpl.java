@@ -35,11 +35,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
@@ -81,6 +76,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -429,6 +425,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
+    public SqlService getSqlService() {
+        return node.getNodeEngine().getSqlService();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -448,9 +449,5 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String toString() {
         return "HazelcastInstance{name='" + name + "', node=" + node.getThisAddress() + '}';
-    }
-
-    public QueryService getQueryService() {
-        return node.nodeEngine.getService(QueryService.SERVICE_NAME);
     }
 }

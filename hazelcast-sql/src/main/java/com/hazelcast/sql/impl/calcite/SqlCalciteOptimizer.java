@@ -1,28 +1,10 @@
-/*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com.hazelcast.sql.impl.calcite;
 
-package com.hazelcast.sql;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.query.QueryHandleImpl;
-import com.hazelcast.internal.query.QueryResultConsumer;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.query.physical.PhysicalPlan;
-import com.hazelcast.sql.impl.SqlPrepare;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.SqlTable;
 import com.hazelcast.sql.pojos.Person;
 import com.hazelcast.sql.rules.HazelcastFilterRule;
@@ -63,24 +45,30 @@ import org.apache.calcite.sql2rel.StandardConvertletTable;
 import java.util.Collections;
 import java.util.Properties;
 
-public final class HazelcastSql2 {
+/**
+ * Calcite-based SQL optimizer.
+ */
+public class SqlCalciteOptimizer implements SqlOptimizer {
+    /** Node engine. */
+    private final NodeEngine nodeEngine;
 
-    private final SqlPrepare sqlPrepare = new SqlPrepare();
+    /** Logger. */
+    private final ILogger logger;
 
-    private final HazelcastInstanceImpl instance;
-
-    public HazelcastSql2(HazelcastInstance instance) {
-        this.instance = ((HazelcastInstanceProxy)instance).getOriginal();
+    public SqlCalciteOptimizer(NodeEngine nodeEngine, ILogger logger) {
+        this.nodeEngine = nodeEngine;
+        this.logger = logger;
     }
 
-    public QueryResultConsumer execute2(String sql) throws Exception {
+    @Override
+    public PhysicalPlan prepare(String sql) {
         // 1. ==================== PARSE ====================
         // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
 
         // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
         CalciteSchema schema = CalciteSchema.createRootSchema(true);
-        schema.add("persons", new SqlTable(typeFactory .createStructType(Person.class), instance.getMap("persons")));
+        schema.add("persons", new SqlTable(typeFactory .createStructType(Person.class), nodeEngine.getHazelcastInstance().getMap("persons")));
 
         CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
 
@@ -93,7 +81,7 @@ public final class HazelcastSql2 {
         CalciteConnectionConfigImpl config = new CalciteConnectionConfigImpl(properties);
 
         // TODO: Our own implemenation of catalog reader! (see DrillCalciteCatalogReader)
-                CalciteCatalogReader catalogReader = new CalciteCatalogReader(
+        CalciteCatalogReader catalogReader = new CalciteCatalogReader(
             rootSchema,
             Collections.emptyList(), // Default schema path.
             typeFactory,
@@ -110,36 +98,14 @@ public final class HazelcastSql2 {
 
         SqlRexConvertletTable rexConvertletTable = StandardConvertletTable.INSTANCE;
 
-        // TODO: Do we need our own parser config? (See DrillParserConfig)
-        SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
-
-        parserConfig.setUnquotedCasing(Casing.UNCHANGED);
-        parserConfig.setQuotedCasing(Casing.UNCHANGED);
-        parserConfig.setCaseSensitive(true);
-
-        parserConfig.setQuotedCasing(config.quotedCasing());
-        parserConfig.setUnquotedCasing(config.unquotedCasing());
-        parserConfig.setQuoting(config.quoting());
-        parserConfig.setConformance(config.conformance());
-        parserConfig.setCaseSensitive(config.caseSensitive());
-
-        SqlParserImplFactory parserFactory = config.parserFactory(SqlParserImplFactory.class, null);
-
-        if (parserFactory != null)
-            parserConfig.setParserFactory(parserFactory);
-
-        SqlParser parser = SqlParser.create(sql, parserConfig.build());
-
-        SqlNode node = parser.parseStmt();
-
-        System.out.println(">>> Parsed: " + node.getClass().getSimpleName());
+        SqlNode node = parse(sql, config);
 
         // 2. ==================== ANALYZE/VALIDATE ====================
         final SqlOperatorTable opTab0 = config.fun(SqlOperatorTable.class, SqlStdOperatorTable.instance());
         final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(opTab0, catalogReader);
 
         // TODO: Need our own validator, investigate interface
-        SqlValidator sqlValidator = new HazelcastSqlValidator(
+        SqlValidator sqlValidator = new SqlCalciteValidator(
             opTab,
             catalogReader,
             typeFactory,
@@ -222,10 +188,42 @@ public final class HazelcastSql2 {
 
         PhysicalPlan plan = planVisitor.getPlan();
 
-        // 6. ==================== EXECUTE ====================
-        QueryHandleImpl handle = (QueryHandleImpl) instance.getQueryService().execute(plan, Collections.emptyList());
-
-        return handle.getConsumer();
+        return plan;
     }
 
+    // TODO: Remove CalciteConnectionConfigImpl.
+    private SqlNode parse(String sql, CalciteConnectionConfigImpl config) {
+        try {
+            // TODO: Do we need our own parser config? (See DrillParserConfig)
+            SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
+
+            parserConfig.setUnquotedCasing(Casing.UNCHANGED);
+            parserConfig.setQuotedCasing(Casing.UNCHANGED);
+            parserConfig.setCaseSensitive(true);
+
+            parserConfig.setQuotedCasing(config.quotedCasing());
+            parserConfig.setUnquotedCasing(config.unquotedCasing());
+            parserConfig.setQuoting(config.quoting());
+            parserConfig.setConformance(config.conformance());
+            parserConfig.setCaseSensitive(config.caseSensitive());
+
+            SqlParserImplFactory parserFactory = config.parserFactory(SqlParserImplFactory.class, null);
+
+            if (parserFactory != null)
+                parserConfig.setParserFactory(parserFactory);
+
+            SqlParser parser = SqlParser.create(sql, parserConfig.build());
+
+            SqlNode node = parser.parseStmt();
+
+            // TODO: Remove.
+            System.out.println(">>> Parsed: " + node.getClass().getSimpleName());
+
+            return node;
+        }
+        catch (Exception e) {
+            // TODO: Follow exception policies in HZ
+            throw new HazelcastException("Failed to parse SQL: " + sql, e);
+        }
+    }
 }

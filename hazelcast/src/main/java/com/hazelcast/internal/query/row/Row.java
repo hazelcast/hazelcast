@@ -1,22 +1,11 @@
 package com.hazelcast.internal.query.row;
 
+import com.hazelcast.sql.SqlRow;
+
 /**
  * Single row.
  */
-public interface Row extends RowBatch {
-    /**
-     * Get column by index.
-     *
-     * @param idx Index.
-     * @return Column value.
-     */
-    Object getColumn(int idx);
-
-    /**
-     * @return Number of columns in a row.
-     */
-    int getColumnCount();
-
+public interface Row extends RowBatch, SqlRow {
     @Override
     default Row getRow(int idx) {
         return this;

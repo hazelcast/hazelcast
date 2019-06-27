@@ -35,6 +35,7 @@ import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
@@ -287,6 +288,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public CPSubsystem getCPSubsystem() {
         return delegatedInstance.getCPSubsystem();
+    }
+
+    @Override
+    public SqlService getSqlService() {
+        return delegatedInstance.getSqlService();
     }
 
     @Override

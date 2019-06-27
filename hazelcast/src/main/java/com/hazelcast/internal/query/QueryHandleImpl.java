@@ -1,17 +1,13 @@
 package com.hazelcast.internal.query;
 
 public class QueryHandleImpl implements QueryHandle {
-    /** Service */
-    private final QueryService service;
-
     /** Query ID. */
     private final QueryId queryId;
 
     /** Consumer. */
     private final QueryResultConsumer consumer;
 
-    public QueryHandleImpl(QueryService service, QueryId queryId, QueryResultConsumer consumer) {
-        this.service = service;
+    public QueryHandleImpl(QueryId queryId, QueryResultConsumer consumer) {
         this.queryId = queryId;
         this.consumer = consumer;
     }
@@ -19,6 +15,11 @@ public class QueryHandleImpl implements QueryHandle {
     @Override
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    @Override
+    public void close() {
+        // TODO: Cancel/close support.
     }
 
     public QueryResultConsumer getConsumer() {

@@ -1,8 +1,14 @@
-package com.hazelcast.internal.query;
+package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.QueryConfig;
+import com.hazelcast.internal.query.QueryFragment;
+import com.hazelcast.internal.query.QueryHandleImpl;
+import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.internal.query.QueryResultConsumer;
+import com.hazelcast.internal.query.QueryResultConsumerImpl;
 import com.hazelcast.internal.query.operation.QueryExecuteOperation;
 import com.hazelcast.internal.query.physical.FragmentPrepareVisitor;
 import com.hazelcast.internal.query.physical.PhysicalNode;
@@ -12,14 +18,15 @@ import com.hazelcast.internal.query.worker.control.ControlThreadPool;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MemberAttributeServiceEvent;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.util.collection.PartitionIdSet;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,20 +35,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Service responsible for query execution.
+ * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
 // TODO: Implement cancel.
 // TODO: Handle membership changes! (MembershipAwareService)
-public class QueryService implements ManagedService {
-    /** Unique service name. */
-    public static final String SERVICE_NAME = "hz:impl:QueryService";
+public class SqlServiceImpl implements SqlService, ManagedService {
+    /** Calcite optimizer class name. */
+    private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.SqlCalciteOptimizer";
 
     /** Node engine. */
-    private NodeEngine nodeEngine;
+    private final NodeEngine nodeEngine;
+
+    /** Logger. */
+    private final ILogger logger;
+
+    /** Query optimizer. */
+    private final SqlOptimizer optimizer;
 
     /** Lock to handle concurrent events. */
     private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
@@ -52,7 +64,48 @@ public class QueryService implements ManagedService {
     private ControlThreadPool controlThreadPool;
     private DataThreadPool dataThreadPool;
 
-    public QueryHandle execute(PhysicalPlan plan, List<Object> args) {
+    public SqlServiceImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+
+        this.logger = nodeEngine.getLogger(QueueService.class);
+
+        optimizer = createOptimizer(nodeEngine, logger);
+
+        QueryConfig cfg = nodeEngine.getConfig().getQueryConfig();
+
+        // TODO: Validate config values.
+        dataThreadPool = new DataThreadPool(cfg.getDataThreadCount());
+        controlThreadPool = new ControlThreadPool(this, nodeEngine, cfg.getControlThreadCount(), dataThreadPool);
+    }
+
+    @Override
+    public SqlCursor query(String sql, Object... args) {
+        // TODO: Implement plan cache.
+        PhysicalPlan plan = optimizer.prepare(sql);
+
+        List<Object> args0;
+
+        if (args == null || args.length == 0)
+            args0 = Collections.emptyList();
+        else {
+            args0 = new ArrayList<>(args.length);
+
+            Collections.addAll(args0, args);
+        }
+
+        QueryHandleImpl handle = execute0(plan, args0);
+
+        return new SqlCursorImpl(handle);
+    }
+
+    /**
+     * Internal query execution routine.
+     *
+     * @param plan Plan.
+     * @param args Arguments.
+     * @return Result.
+     */
+    private QueryHandleImpl execute0(PhysicalPlan plan, List<Object> args) {
         if (args == null)
             args = Collections.emptyList();
 
@@ -74,10 +127,10 @@ public class QueryService implements ManagedService {
                 // TODO: Execute local operation directly.
                 // TODO: Execute remote operation without generic pool (PacketDispatcher?)
 
-                nodeEngine.getOperationService().invokeOnTarget(QueryService.SERVICE_NAME, op, member.getAddress());
+                nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
             }
 
-            return new QueryHandleImpl(this, queryId, consumer);
+            return new QueryHandleImpl(queryId, consumer);
         }
         finally {
             busyLock.readLock().unlock();
@@ -138,14 +191,6 @@ public class QueryService implements ManagedService {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
-
-        QueryConfig cfg = nodeEngine.getConfig().getQueryConfig();
-
-        // TODO: Validate config values.
-        dataThreadPool = new DataThreadPool(cfg.getDataThreadCount());
-        controlThreadPool = new ControlThreadPool(this, cfg.getControlThreadCount(), dataThreadPool);
-
         dataThreadPool.start();
         controlThreadPool.start();
     }
@@ -188,5 +233,32 @@ public class QueryService implements ManagedService {
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    /**
+     * Create either normal or no-op optimizer instance.
+     *
+     * @param nodeEngine Node engine.
+     * @param logger Logger.
+     * @return Optimizer.
+     */
+    @SuppressWarnings("unchecked")
+    private static SqlOptimizer createOptimizer(NodeEngine nodeEngine, ILogger logger) {
+        SqlOptimizer res;
+
+        try {
+            Class cls = Class.forName(OPTIMIZER_CLASS);
+
+            Constructor<SqlOptimizer> ctor = cls.getConstructor(NodeEngine.class, ILogger.class);
+
+            res = ctor.newInstance(nodeEngine, logger);
+        }
+        catch (ReflectiveOperationException e) {
+            logger.info(OPTIMIZER_CLASS + " is not in the classpath, fallback to no-op implementation.");
+
+            res = new SqlNoopOptimizer();
+        }
+
+        return res;
     }
 }

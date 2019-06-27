@@ -82,7 +82,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     @Override
     protected void setup0(QueryContext ctx, DataWorker worker) {
         // TODO: Check if map exists.
-        map = (MapProxyImpl)ctx.getService().getNodeEngine().getHazelcastInstance().getMap(mapName);
+        map = (MapProxyImpl)ctx.getNodeEngine().getHazelcastInstance().getMap(mapName);
 
         mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
         mapServiceContext = mapService.getMapServiceContext();

@@ -3,6 +3,7 @@ package com.hazelcast.internal.query;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.row.RowBatch;
+import com.hazelcast.sql.SqlRow;
 
 import java.util.Iterator;
 
@@ -36,5 +37,5 @@ public interface QueryResultConsumer {
      *
      * @return Iterator.
      */
-    Iterator<Row> iterator();
+    Iterator<SqlRow> iterator();
 }

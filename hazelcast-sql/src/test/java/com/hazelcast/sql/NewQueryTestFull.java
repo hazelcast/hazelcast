@@ -2,21 +2,17 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.query.QueryResultConsumer;
-import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.linq4j.Enumerable;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -47,18 +43,16 @@ public class NewQueryTestFull extends HazelcastTestSupport {
             member1.getMap("persons").put(i, new Person(i));
 
         // Execute.
-        HazelcastSql2 service = new HazelcastSql2(member1);
+        SqlCursor cursor = member1.getSqlService().query(QUERY);
 
-        QueryResultConsumer consumer = service.execute2(QUERY);
-
-        List<Row> res = new ArrayList<>();
+        List<SqlRow> res = new ArrayList<>();
         Set<Object> setRes = new TreeSet<>();
         Set<Object> dupSetRes = new TreeSet<>();
 
-        Iterator<Row> iter = consumer.iterator();
+        Iterator<SqlRow> iter = cursor.iterator();
 
         while (iter.hasNext()) {
-            Row row = iter.next();
+            SqlRow row = iter.next();
 
             res.add(row);
 
@@ -72,28 +66,6 @@ public class NewQueryTestFull extends HazelcastTestSupport {
         System.out.println(">>> SET RES SIZE: " + setRes.size());
         System.out.println(">>>     SET RES: " + setRes);
         System.out.println(">>> DUP SET RES: " + dupSetRes);
-    }
-
-    @Test
-    public void testSqlSimple() throws Exception {
-        // Start several members.
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        Config cfg = new Config();
-
-        HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
-
-        // Insert data.
-        for (int i = 0; i < 100; i++)
-            member1.getMap("queryMap").put(i, new Person(i));
-
-        HazelcastSql hazelcastSql = HazelcastSql.createFor(member1);
-
-        Enumerable<Object> res = hazelcastSql.query(QUERY);
-
-        for (Object object : res)
-            System.out.println(object instanceof Object[] ? Arrays.deepToString((Object[]) object) : object);
     }
 
     @SuppressWarnings("unchecked")

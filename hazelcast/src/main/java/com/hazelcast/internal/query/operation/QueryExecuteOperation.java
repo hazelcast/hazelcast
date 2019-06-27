@@ -3,10 +3,10 @@ package com.hazelcast.internal.query.operation;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryResultConsumer;
-import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     @Override
     public void run() throws Exception {
         // TODO: Avoid "getService" call, use NodeEngine instead.
-        QueryService svc = getService();
+        SqlServiceImpl svc = getService();
 
         ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
 

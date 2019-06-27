@@ -30,6 +30,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
@@ -106,6 +107,13 @@ public interface NodeEngine {
      * @return the QuorumService
      */
     QuorumService getQuorumService();
+
+    /**
+     * Get SQL service.
+     *
+     * @return SQL service.
+     */
+    SqlService getSqlService();
 
     /**
      * Gets the TransactionManagerService.

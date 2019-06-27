@@ -2,11 +2,11 @@ package com.hazelcast.internal.query.mailbox;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryService;
-import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.operation.QueryBatchOperation;
+import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.SqlService;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -95,7 +95,7 @@ public class Outbox extends Mailbox {
         );
 
         // TODO: Catch exception, propagate it upwards with proper message.
-        nodeEngine.getOperationService().invokeOnTarget(QueryService.SERVICE_NAME, op, targetMember.getAddress());
+        nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, targetMember.getAddress());
 
         batch = null;
     }

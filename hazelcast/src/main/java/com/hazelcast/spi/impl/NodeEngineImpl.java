@@ -70,6 +70,8 @@ import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
@@ -116,6 +118,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
     private final QuorumServiceImpl quorumService;
+    private final SqlServiceImpl sqlService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
@@ -152,10 +155,13 @@ public class NodeEngineImpl implements NodeEngine {
             this.quorumService = new QuorumServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
+            this.sqlService = new SqlServiceImpl(this);
+
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+            serviceManager.registerService(SqlService.SERVICE_NAME, sqlService);
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -305,6 +311,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public QuorumServiceImpl getQuorumService() {
         return quorumService;
+    }
+
+    @Override
+    public SqlService getSqlService() {
+        return sqlService;
     }
 
     @Override

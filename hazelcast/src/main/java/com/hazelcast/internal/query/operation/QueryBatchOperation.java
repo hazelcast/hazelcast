@@ -1,11 +1,11 @@
 package com.hazelcast.internal.query.operation;
 
 import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryService;
 import com.hazelcast.internal.query.mailbox.SendBatch;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
     @Override
     public void run() throws Exception {
         // TODO: Avoid "getService" call, use NodeEngine instead.
-        QueryService service = getService();
+        SqlServiceImpl service = getService();
 
         service.onQueryBatchRequest(new BatchDataTask(queryId, edgeId, sourceMemberId, sourceStripe, sourceThread,
             targetStripe, targetThread, batch));
