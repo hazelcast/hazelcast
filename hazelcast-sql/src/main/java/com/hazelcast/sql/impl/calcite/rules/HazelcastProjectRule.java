@@ -1,12 +1,13 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite.rules;
 
+import com.hazelcast.sql.impl.calcite.rels.HazelcastProjectRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 
 public class HazelcastProjectRule extends RelOptRule {

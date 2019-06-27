@@ -1,4 +1,4 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite.rels;
 
 import org.apache.calcite.rel.RelNode;
 

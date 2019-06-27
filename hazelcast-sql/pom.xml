@@ -65,12 +65,6 @@
             <version>1.19.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.calcite.avatica</groupId>
-            <artifactId>avatica-server</artifactId>
-            <version>1.13.0</version>
-        </dependency>
-
         <!--
           Dependencies below are overriding hazelcast-root's ones. It should
           be safe since everything is already shaded into hazelcast and

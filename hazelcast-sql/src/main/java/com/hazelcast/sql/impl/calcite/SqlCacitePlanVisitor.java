@@ -1,4 +1,4 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.internal.query.expression.ColumnExpression;
 import com.hazelcast.internal.query.expression.ConstantExpression;
@@ -12,12 +12,16 @@ import com.hazelcast.internal.query.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.physical.SendPhysicalNode;
 import com.hazelcast.internal.query.physical.SortMergeReceivePhysicalNode;
 import com.hazelcast.internal.query.physical.SortPhysicalNode;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastSortRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastTableScanRel;
 import org.apache.calcite.rel.RelFieldCollation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PhysicalPlanVisitor {
+public class SqlCacitePlanVisitor {
 
     private PhysicalPlan plan = new PhysicalPlan();
     private List<PhysicalNode> nodes = new ArrayList<>();

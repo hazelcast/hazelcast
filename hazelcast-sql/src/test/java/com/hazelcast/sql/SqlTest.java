@@ -21,7 +21,7 @@ import java.util.TreeSet;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NewQueryTestFull extends HazelcastTestSupport {
+public class SqlTest extends HazelcastTestSupport {
 
 //    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
     private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
@@ -29,7 +29,7 @@ public class NewQueryTestFull extends HazelcastTestSupport {
 //    private static final String QUERY = "select age, height from persons where age >= 5";
 
     @Test
-    public void testEndtoEnd() throws Exception {
+    public void testSimpleQuery() throws Exception {
         // Start several members.
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 

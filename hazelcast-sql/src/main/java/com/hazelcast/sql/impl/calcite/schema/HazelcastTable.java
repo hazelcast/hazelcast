@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.instance.BuildInfoProvider;
-import org.apache.calcite.avatica.DriverVersion;
-import org.apache.calcite.avatica.remote.Driver;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.schema.impl.AbstractTable;
 
-public class RemoteJdbcDriver extends Driver {
+public class HazelcastTable extends AbstractTable {
 
-    static {
-        new RemoteJdbcDriver().register();
+    private final RelDataType rowType;
+
+    public HazelcastTable(RelDataType rowType) {
+        this.rowType = rowType;
     }
 
     @Override
-    protected String getConnectStringPrefix() {
-        return "jdbc:remote:hazelcast:";
+    public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        return rowType;
     }
-
-    @Override
-    protected DriverVersion createDriverVersion() {
-        return new DriverVersion("Hazelcast Remote JDBC Driver", "0.1", "Hazelcast",
-                BuildInfoProvider.getBuildInfo().getVersion(), false, 0, 1, 0, 1);
-    }
-
 }

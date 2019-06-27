@@ -1,5 +1,7 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite.rels;
 
+import com.hazelcast.sql.impl.calcite.SqlCacitePlanVisitor;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -26,7 +28,7 @@ public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(PhysicalPlanVisitor visitor) {
+    public void visitForPlan(SqlCacitePlanVisitor visitor) {
         visitor.visit(this);
     }
 }

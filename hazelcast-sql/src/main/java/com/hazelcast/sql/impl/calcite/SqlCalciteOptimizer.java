@@ -5,15 +5,14 @@ import com.hazelcast.internal.query.physical.PhysicalPlan;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.SqlOptimizer;
-import com.hazelcast.sql.impl.SqlTable;
-import com.hazelcast.sql.pojos.Person;
-import com.hazelcast.sql.rules.HazelcastFilterRule;
-import com.hazelcast.sql.rules.HazelcastProjectIntoScanRule;
-import com.hazelcast.sql.rules.HazelcastProjectRule;
-import com.hazelcast.sql.rules.HazelcastRootRel;
-import com.hazelcast.sql.rules.HazelcastSortRule;
-import com.hazelcast.sql.rules.HazelcastTableScanRule;
-import com.hazelcast.sql.rules.PhysicalPlanVisitor;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.Person;
+import com.hazelcast.sql.impl.calcite.rules.HazelcastFilterRule;
+import com.hazelcast.sql.impl.calcite.rules.HazelcastProjectIntoScanRule;
+import com.hazelcast.sql.impl.calcite.rules.HazelcastProjectRule;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
+import com.hazelcast.sql.impl.calcite.rules.HazelcastSortRule;
+import com.hazelcast.sql.impl.calcite.rules.HazelcastTableScanRule;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -68,7 +67,8 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
         CalciteSchema schema = CalciteSchema.createRootSchema(true);
-        schema.add("persons", new SqlTable(typeFactory .createStructType(Person.class), nodeEngine.getHazelcastInstance().getMap("persons")));
+
+        schema.add("persons", new HazelcastTable(typeFactory.createStructType(Person.class)));
 
         CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
 
@@ -182,7 +182,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
 
         // 5. ==================== DECOUPLE FROM CALCITE ====================
-        PhysicalPlanVisitor planVisitor = new PhysicalPlanVisitor();
+        SqlCacitePlanVisitor planVisitor = new SqlCacitePlanVisitor();
 
         optimizedRootRelNode.visitForPlan(planVisitor);
 

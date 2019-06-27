@@ -1,5 +1,6 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite.rels;
 
+import com.hazelcast.sql.impl.calcite.SqlCacitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -17,7 +18,7 @@ public class HazelcastFilterRel extends Filter implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(PhysicalPlanVisitor visitor) {
+    public void visitForPlan(SqlCacitePlanVisitor visitor) {
         throw new UnsupportedOperationException();
     }
 }

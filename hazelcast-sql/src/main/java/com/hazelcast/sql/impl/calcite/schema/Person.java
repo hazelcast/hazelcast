@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.pojos;
+package com.hazelcast.sql.impl.calcite.schema;
 
 import java.io.Serializable;
 
+// TODO: To be removed.
 public class Person implements Serializable {
 
     public final int __key;

@@ -35,7 +35,6 @@
         <module>hazelcast-build-utils</module>
         <module>hazelcast-all</module>
         <module>hazelcast-sql</module>
-        <module>hazelcast-jdbc</module>
     </modules>
 
     <properties>

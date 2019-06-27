@@ -1,5 +1,7 @@
-package com.hazelcast.sql.rules;
+package com.hazelcast.sql.impl.calcite.rules;
 
+import com.hazelcast.sql.impl.calcite.rels.HazelcastFilterRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
