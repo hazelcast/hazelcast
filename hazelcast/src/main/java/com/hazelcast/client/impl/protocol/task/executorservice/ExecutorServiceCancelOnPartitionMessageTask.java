@@ -39,7 +39,7 @@ public class ExecutorServiceCancelOnPartitionMessageTask
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
         final String serviceName = DistributedExecutorService.SERVICE_NAME;
         CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
-        return operationService.createInvocationBuilder(serviceName, op, parameters.partitionId);
+        return operationService.createInvocationBuilder(serviceName, op, getPartitionId());
     }
 
     @Override
