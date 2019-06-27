@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql;
 
-import java.util.List;
-
 /**
  * Cursor over SQL query result.
  */
