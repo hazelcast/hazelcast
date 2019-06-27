@@ -62,7 +62,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
 
     /** --- STATE MACHINE --- */
 
-    // TODO: To iterator without collection!
+    // TODO: To iterator without collection! https://github.com/hazelcast/hazelcast/issues/15228
     private Collection<Row> rows;
     private Iterator<Row> rowsIter;
 
@@ -105,7 +105,6 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
                 // Per-partition stuff.
                 PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(i);
 
-                // TODO: Doesn't work for single-threaded HD
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
 
                 // TODO: Clock should be global?
