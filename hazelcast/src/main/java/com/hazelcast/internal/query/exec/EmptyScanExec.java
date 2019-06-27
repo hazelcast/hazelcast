@@ -1,8 +1,8 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.row.EmptyRowBatch;
-import com.hazelcast.internal.query.row.RowBatch;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 
 /**

@@ -16,30 +16,36 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlRow;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
-
 /**
- * Cursor implementation.
+ * Handle to running query.
  */
-public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
+public class QueryHandle {
+    /** Query ID. */
+    private final QueryId queryId;
 
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
+    /** Consumer. */
+    private final QueryResultConsumer consumer;
+
+    public QueryHandle(QueryId queryId, QueryResultConsumer consumer) {
+        this.queryId = queryId;
+        this.consumer = consumer;
     }
 
-    @Override @Nonnull
-    public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
+    /**
+     * @return Query ID.
+     */
+    public QueryId getQueryId() {
+        return queryId;
     }
 
-    @Override
-    public void close() throws Exception {
-        handle.close();
+    /**
+     * Close the handle.
+     */
+    public void close() {
+        // TODO: Cancel/close support.
+    }
+
+    public QueryResultConsumer getConsumer() {
+        return consumer;
     }
 }

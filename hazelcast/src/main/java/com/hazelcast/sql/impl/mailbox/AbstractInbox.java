@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
-import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
 
 /**

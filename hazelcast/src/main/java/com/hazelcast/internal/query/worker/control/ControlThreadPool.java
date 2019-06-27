@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.worker.control;
 
-import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.internal.query.worker.AbstractThreadPool;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
 import com.hazelcast.spi.NodeEngine;

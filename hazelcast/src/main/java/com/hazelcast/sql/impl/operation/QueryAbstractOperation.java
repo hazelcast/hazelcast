@@ -14,32 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlRow;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.SqlService;
 
 /**
- * Cursor implementation.
+ * Base class for all query operations.
  */
-public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
-
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
-    }
-
-    @Override @Nonnull
-    public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
-    }
-
+public abstract class QueryAbstractOperation extends Operation {
     @Override
-    public void close() throws Exception {
-        handle.close();
+    public String getServiceName() {
+        return SqlService.SERVICE_NAME;
     }
 }

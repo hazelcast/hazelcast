@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.worker.data;
 
-import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.internal.query.worker.control.ControlTask;
 

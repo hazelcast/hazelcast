@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.operation.QueryBatchOperation;
-import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.operation.QueryBatchOperation;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.internal.query.worker.data.DataWorker;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.SqlService;

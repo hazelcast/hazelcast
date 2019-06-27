@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.worker.control;
 
-import com.hazelcast.internal.query.QueryContext;
+import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;

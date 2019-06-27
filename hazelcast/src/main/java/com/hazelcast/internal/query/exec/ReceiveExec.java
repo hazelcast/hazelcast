@@ -1,8 +1,8 @@
 package com.hazelcast.internal.query.exec;
 
-import com.hazelcast.internal.query.row.ListRowBatch;
-import com.hazelcast.internal.query.row.Row;
-import com.hazelcast.internal.query.row.RowBatch;
+import com.hazelcast.sql.impl.row.ListRowBatch;
+import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
 

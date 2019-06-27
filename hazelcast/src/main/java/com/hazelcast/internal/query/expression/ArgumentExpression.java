@@ -1,7 +1,7 @@
 package com.hazelcast.internal.query.expression;
 
-import com.hazelcast.internal.query.QueryContext;
-import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -22,7 +22,7 @@ public class ArgumentExpression<T> implements Expression<T> {
     @Override
     public T eval(QueryContext ctx, Row row) {
         // TODO: Type-check
-        return (T)ctx.arguments(idx);
+        return (T)ctx.getArgument(idx);
     }
 
     @Override

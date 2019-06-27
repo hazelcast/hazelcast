@@ -14,32 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlRow;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
+import java.util.List;
 
 /**
- * Cursor implementation.
+ * Batch where rows are organized in a list.
  */
-public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
+public class ListRowBatch implements RowBatch {
+    /** Rows. */
+    private final List<Row> rows;
 
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
-    }
-
-    @Override @Nonnull
-    public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
+    public ListRowBatch(List<Row> rows) {
+        this.rows = rows;
     }
 
     @Override
-    public void close() throws Exception {
-        handle.close();
+    public Row getRow(int idx) {
+        return rows.get(idx);
+    }
+
+    @Override
+    public int getRowCount() {
+        return rows.size();
     }
 }

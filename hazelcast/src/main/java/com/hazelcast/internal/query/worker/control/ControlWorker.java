@@ -2,9 +2,9 @@ package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.query.QueryContext;
+import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.internal.query.QueryFragment;
-import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
@@ -49,8 +49,6 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             handleExecute((ExecuteControlTask)task);
         else if (task instanceof BatchDataTask)
             handleBatch((BatchDataTask)task);
-        else if (task instanceof CancelControlTask)
-            handleCancel((CancelControlTask)task);
 
         // TODO: Other tasks.
     }
@@ -228,13 +226,5 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
             service.onQueryBatchRequest(task);
         }
-    }
-
-    private void handleCancel(CancelControlTask task) {
-        // TODO
-    }
-
-    private void handleMember(MemberLeaveControlTask task) {
-        // TODO
     }
 }

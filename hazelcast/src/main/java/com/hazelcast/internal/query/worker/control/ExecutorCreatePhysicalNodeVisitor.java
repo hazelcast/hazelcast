@@ -2,7 +2,7 @@ package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryFragment;
-import com.hazelcast.internal.query.QueryId;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.internal.query.exec.EmptyScanExec;
 import com.hazelcast.internal.query.exec.Exec;
 import com.hazelcast.internal.query.exec.MapScanExec;

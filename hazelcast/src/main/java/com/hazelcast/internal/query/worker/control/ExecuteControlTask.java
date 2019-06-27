@@ -1,8 +1,8 @@
 package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.internal.query.QueryFragment;
-import com.hazelcast.internal.query.QueryId;
-import com.hazelcast.internal.query.QueryResultConsumer;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Collections;

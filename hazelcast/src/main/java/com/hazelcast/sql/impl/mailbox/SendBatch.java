@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
-import com.hazelcast.internal.query.row.Row;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
