@@ -1,9 +1,9 @@
 package com.hazelcast.internal.query.worker.data;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.internal.query.exec.Exec;
+import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
-import com.hazelcast.internal.query.exec.RootExec;
+import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.internal.query.worker.AbstractWorker;
 import com.hazelcast.internal.query.worker.control.StripeDeployment;
 

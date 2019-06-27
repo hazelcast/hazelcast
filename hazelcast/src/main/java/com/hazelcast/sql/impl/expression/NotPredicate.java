@@ -23,8 +23,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Negation predicate.
+ */
 public class NotPredicate implements Predicate {
-
+    /** Child predicate. */
     private Predicate child;
 
     public NotPredicate() {

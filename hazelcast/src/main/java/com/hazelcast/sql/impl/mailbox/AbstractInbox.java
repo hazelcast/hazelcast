@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.internal.query.exec.Exec;
+import com.hazelcast.sql.impl.exec.Exec;
 
 /**
  * Abstract inbox implementation.

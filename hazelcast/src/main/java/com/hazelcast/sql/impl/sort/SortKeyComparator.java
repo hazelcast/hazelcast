@@ -47,6 +47,7 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Comparable item1Comp = (Comparable)item1;
             Comparable item2Comp = (Comparable)item2;
 
+            //noinspection unchecked
             res = item1Comp.compareTo(item2Comp);
 
             if (!asc)

@@ -40,6 +40,7 @@ public class ArgumentExpression<T> implements Expression<T> {
         this.idx = idx;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
         // TODO: Type system with inference.

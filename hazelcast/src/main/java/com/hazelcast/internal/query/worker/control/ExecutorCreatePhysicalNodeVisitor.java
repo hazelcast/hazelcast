@@ -3,14 +3,14 @@ package com.hazelcast.internal.query.worker.control;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.internal.query.exec.EmptyScanExec;
-import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.exec.MapScanExec;
-import com.hazelcast.internal.query.exec.ReceiveExec;
-import com.hazelcast.internal.query.exec.RootExec;
-import com.hazelcast.internal.query.exec.SendExec;
-import com.hazelcast.internal.query.exec.SortExec;
-import com.hazelcast.internal.query.exec.SortMergeReceiveExec;
+import com.hazelcast.sql.impl.exec.EmptyScanExec;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.exec.MapScanExec;
+import com.hazelcast.sql.impl.exec.ReceiveExec;
+import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.impl.exec.SendExec;
+import com.hazelcast.sql.impl.exec.SortExec;
+import com.hazelcast.sql.impl.exec.SortMergeReceiveExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
@@ -190,7 +190,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             }
         }
 
-        exec = new SendExec(stack.get(0), node.getEdgeId(), node.getPartitionHasher(), sendOutboxes);
+        exec = new SendExec(stack.get(0), node.getPartitionHasher(), sendOutboxes);
     }
 
     @Override

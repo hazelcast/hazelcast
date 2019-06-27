@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.query.exec.RootExec;
+import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.SqlRow;
 

@@ -62,6 +62,7 @@ public class SendBatch implements DataSerializable {
         out.writeBoolean(last);
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int rowCnt = in.readInt();

@@ -41,6 +41,7 @@ public class ExtractorExpression<T> implements Expression<T> {
         this.path = path;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
         assert row instanceof KeyValueRow;

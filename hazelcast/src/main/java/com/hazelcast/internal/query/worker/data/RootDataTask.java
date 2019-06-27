@@ -1,6 +1,6 @@
 package com.hazelcast.internal.query.worker.data;
 
-import com.hazelcast.internal.query.exec.RootExec;
+import com.hazelcast.sql.impl.exec.RootExec;
 
 /**
  * The task to get more results from the root executor. Submitted from user thread.

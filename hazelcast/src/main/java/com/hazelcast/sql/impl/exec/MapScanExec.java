@@ -1,7 +1,33 @@
-package com.hazelcast.internal.query.exec;
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.query.worker.data.DataWorker;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.Predicate;
@@ -11,17 +37,6 @@ import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.internal.query.worker.data.DataWorker;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -34,7 +49,7 @@ import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 /**
- * Scans the map.
+ * Executor for map scan.
  */
 // TODO: Migration support with remote scans.
 // TODO: Ticket for index scans
@@ -52,21 +67,24 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Filter. */
     private final Predicate filter;
 
-    // TODO: Abstract out and re-use
-    private MapProxyImpl map;
-    private MapService mapService;
+    /** Map service context. */
     private MapServiceContext mapServiceContext;
-    private MapContainer mapContainer;
+
+    /** Extractors. */
     private Extractors extractors;
+
+    /** Serialization service. */
     private InternalSerializationService serializationService;
 
-    /** --- STATE MACHINE --- */
-
     // TODO: To iterator without collection! https://github.com/hazelcast/hazelcast/issues/15228
+    /** All rows fetched on first access. */
     private Collection<Row> rows;
+
+    /** Iterator over rows. */
     private Iterator<Row> rowsIter;
 
-    // TODO: Batch.
+    // TODO: To batched implementation to minimize number of virtual calls?
+    /** Current row. */
     private Row currentRow;
 
     /** Row to get data with extractors. */
@@ -82,21 +100,22 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     @Override
     protected void setup0(QueryContext ctx, DataWorker worker) {
         // TODO: Check if map exists.
-        map = (MapProxyImpl)ctx.getNodeEngine().getHazelcastInstance().getMap(mapName);
+        MapProxyImpl map = (MapProxyImpl)ctx.getNodeEngine().getHazelcastInstance().getMap(mapName);
+        MapService mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
 
-        mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
         mapServiceContext = mapService.getMapServiceContext();
-        mapContainer = mapServiceContext.getMapContainer(mapName);
+
         extractors = mapServiceContext.getExtractors(mapName);
         serializationService = (InternalSerializationService)map.getNodeEngine().getSerializationService();
 
         keyValueRow = new KeyValueRow(this);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public IterationResult advance() {
         if (rows == null) {
-            rows = new ArrayList<Row>();
+            rows = new ArrayList<>();
 
             for (int i = 0; i < parts.getPartitionCount(); i++) {
                 if (!parts.contains(i))
@@ -162,12 +181,10 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     public Object extract(Object key, Object val, String path) {
         Object res;
 
-        if (KEY_ATTRIBUTE_NAME.value().equals(path)) {
+        if (KEY_ATTRIBUTE_NAME.value().equals(path))
             res = key;
-        }
-        else if (THIS_ATTRIBUTE_NAME.value().equals(path)) {
+        else if (THIS_ATTRIBUTE_NAME.value().equals(path))
             res = val;
-        }
         else {
             boolean isKey = path.startsWith(KEY_ATTRIBUTE_NAME.value());
 
@@ -180,7 +197,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
             else
                 target = val;
 
-            // TODO: Metadata
+            // TODO: What to do with metadata here (last argument)?
             res = extractors.extract(target, path, null);
         }
 

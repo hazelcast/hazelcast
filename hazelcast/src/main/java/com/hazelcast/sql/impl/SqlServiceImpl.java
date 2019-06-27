@@ -71,6 +71,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
 
     /** Whether the service is stopped. */
+    // TODO: Implement node stop support.
     private boolean stopped;
 
     private ControlThreadPool controlThreadPool;

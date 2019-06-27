@@ -1,14 +1,35 @@
-package com.hazelcast.internal.query.exec;
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.mailbox.Outbox;
 
+/**
+ * Executor which sends results to remote stripes.
+ */
 public class SendExec extends AbstractUpstreamAwareExec {
-
-    private final int edgeId;
+    /** Expression to get the hash of the stripe. */
+    // TODO: Something is wrong with this abstraction as it is tightly bound to outbox resolution. Rework.
     private final Expression<Integer> partitionHasher;
+
+    /** Outboxes. */
     private final Outbox[] outboxes;
 
     /** Last upstream batch. */
@@ -20,10 +41,9 @@ public class SendExec extends AbstractUpstreamAwareExec {
     /** Maximum position in the last upstream batch. */
     private int curBatchRowCnt = -1;
 
-    public SendExec(Exec upstream, int edgeId, Expression<Integer> partitionHasher, Outbox[] outboxes) {
+    public SendExec(Exec upstream, Expression<Integer> partitionHasher, Outbox[] outboxes) {
         super(upstream);
 
-        this.edgeId = edgeId;
         this.partitionHasher = partitionHasher;
         this.outboxes = outboxes;
     }

@@ -35,6 +35,7 @@ public class ColumnExpression<T> implements Expression<T> {
         this.idx = idx;
     }
 
+    @SuppressWarnings("unchecked")
     @Override public T eval(QueryContext ctx, Row row) {
         // TODO: Type-check?
         return (T)row.getColumn(idx);

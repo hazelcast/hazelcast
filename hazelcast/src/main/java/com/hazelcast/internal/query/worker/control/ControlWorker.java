@@ -5,7 +5,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.internal.query.exec.Exec;
+import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.internal.query.worker.AbstractWorker;
