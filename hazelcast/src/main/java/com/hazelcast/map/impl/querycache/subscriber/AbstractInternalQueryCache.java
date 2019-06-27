@@ -40,6 +40,7 @@ import java.util.Set;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Contains helper methods for {@link
@@ -102,7 +103,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     @Override
     public void setPublisherListenerId(String publisherListenerId) {
-        this.publisherListenerId = publisherListenerId;
+        this.publisherListenerId = requireNonNull(publisherListenerId, "publisherListenerId cannot be null");
     }
 
     @Override

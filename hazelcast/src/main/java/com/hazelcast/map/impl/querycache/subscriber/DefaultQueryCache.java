@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -496,10 +496,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return;
         }
 
-        // 1. Reset subscriber side resources
+        // 1. Reset client-side subscriber resources
         subscriberAccumulator.reset();
 
-        // 2. Reset/recreate publisher, which is always on server side, resources.
+        // 2. Reset/recreate server-side publisher resources
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(cacheName)
                 .forMap(delegate)
