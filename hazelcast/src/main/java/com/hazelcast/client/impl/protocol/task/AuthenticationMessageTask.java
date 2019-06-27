@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.newcodecs.Authentication;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
@@ -32,16 +32,15 @@ import java.util.List;
 /**
  * Default Authentication with username password handling task
  */
-public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
+public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Authentication.Request> {
 
     public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        final ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
+    protected Authentication.Request decodeClientMessage() {
+        final Authentication.Request parameters = Authentication.Request.decode(clientMessage);
         final String uuid = parameters.uuid;
         final String ownerUuid = parameters.ownerUuid;
         if (uuid != null && uuid.length() > 0) {
@@ -49,22 +48,20 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
-        if (parameters.clientHazelcastVersionExist) {
-            clientVersion = parameters.clientHazelcastVersion;
-        }
 
-        if (parameters.clientNameExist) {
-            clientName = parameters.clientName;
-        }
-
-        if (parameters.labelsExist) {
-            labels = Collections.unmodifiableSet(new HashSet<String>(parameters.labels));
-        } else {
-            labels = Collections.emptySet();
-        }
-        partitionCount = parameters.partitionCountExist ? parameters.partitionCount : null;
-        clusterId = parameters.clusterIdExist ? parameters.clusterId : null;
+        clientVersion = parameters.clientHazelcastVersion.orElse(null);
+        clientName = parameters.clientName.orElse(null);
+        labels = parameters.labels.map(strings -> Collections.unmodifiableSet(new HashSet<>(strings))).
+                orElse(Collections.emptySet());
+        partitionCount = parameters.partitionCount.orElse(null);
+        clusterId = parameters.clusterId.orElse(null);
         return parameters;
+    }
+
+    @Override
+    protected Authentication.Request decodeClientMessage(ClientMessage clientMessage) {
+        //TODO SANCAR delete this
+        return null;
     }
 
     @Override
@@ -75,9 +72,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
                                        List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
-        return ClientAuthenticationCodec
-                .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
-                        cleanedUpMembers, partitionCount, clusterId);
+        return Authentication.Response.encode(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
+                cleanedUpMembers, partitionCount, clusterId);
     }
 
     @Override

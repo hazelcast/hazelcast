@@ -91,14 +91,15 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
+    //make abstract
+    protected P decodeClientMessage() {
+        return null;
+    }
+
+    //delete this
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
 
     protected abstract ClientMessage encodeResponse(Object response);
-
-    @Override
-    public int getPartitionId() {
-        return clientMessage.getPartitionId();
-    }
 
     @Override
     public final void run() {
@@ -121,7 +122,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
-        parameters = decodeClientMessage(clientMessage);
+        parameters = decodeClientMessage();
         assert addressesDecodedWithTranslation() : formatWrongAddressInDecodedMessage();
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
@@ -201,8 +202,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
-        resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        resultClientMessage.setVersion(ClientMessage.VERSION);
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
         // not allow any interleaving with operations. It will only slow down the system. Framing should be done inside
@@ -273,7 +272,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return true;
     }
 
-    final String formatWrongAddressInDecodedMessage() {
+    private String formatWrongAddressInDecodedMessage() {
         return "Decoded message of type " + parameters.getClass() + " contains untranslated addresses. "
                 + "Use ClientEngine.memberAddressOf to translate addresses while decoding this client message.";
     }

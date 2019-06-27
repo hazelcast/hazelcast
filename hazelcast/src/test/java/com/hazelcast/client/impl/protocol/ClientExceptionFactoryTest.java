@@ -109,8 +109,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
     @Test
     public void testException() {
         ClientMessage exceptionMessage = exceptions.createExceptionMessage(throwable);
-        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
-        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
+        Throwable resurrectedThrowable = exceptionFactory.createException(exceptionMessage);
 
         if (!exceptionEquals(throwable, resurrectedThrowable)) {
             assertEquals(throwable, resurrectedThrowable);

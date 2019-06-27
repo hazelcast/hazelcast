@@ -151,8 +151,8 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         if (decodedResponse != VOID) {
             return decodedResponse;
         }
-        ClientMessage message = ClientMessage.createForDecode(clientMessage.buffer(), 0);
-        Object newDecodedResponse = clientMessageDecoder.decodeClientMessage(message);
+        //Since frames are read, there should be no need to re-read to client message
+        Object newDecodedResponse = clientMessageDecoder.decodeClientMessage(clientMessage);
 
         DECODED_RESPONSE.compareAndSet(this, VOID, newDecodedResponse);
         return newDecodedResponse;

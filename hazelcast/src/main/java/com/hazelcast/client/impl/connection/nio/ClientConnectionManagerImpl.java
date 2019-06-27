@@ -30,12 +30,12 @@ import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.protocol.newcodecs.Authentication;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -617,11 +617,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
-                return ClientAuthenticationCodec
-                        .encodeRequest(cr.getName(), cr.getPassword(), uuid, ownerUuid,
-                                asOwner, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                labels, clusterPartitionCount, resolvedClusterId);
+                return Authentication.Request.encode(cr.getName(), cr.getPassword(), uuid, ownerUuid,
+                        asOwner, ClientTypes.JAVA,
+                        serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
+                        labels, clusterPartitionCount, resolvedClusterId);
             } else {
                 Data data;
                 if (credentials instanceof TokenCredentials) {
@@ -677,9 +676,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         @Override
         public void onResponse(ClientMessage response) {
             timeoutTaskFuture.cancel(true);
-            ClientAuthenticationCodec.ResponseParameters result;
+            Authentication.Response result;
             try {
-                result = ClientAuthenticationCodec.decodeResponse(response);
+                result = Authentication.Response.decode(response);
             } catch (HazelcastException e) {
                 onFailure(e);
                 return;
@@ -707,16 +706,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
 
-        private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
-            if (result.partitionCountExist) {
-                clusterPartitionCount = result.partitionCount;
-            }
-            if (result.clusterIdExist) {
-                clusterId = result.clusterId;
-            }
-            if (result.serverHazelcastVersionExist) {
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-            }
+        private void handleSuccessResult(Authentication.Response result) {
+            clusterPartitionCount = result.partitionCount.orElse(null);
+            clusterId = result.clusterId.orElse(null);
+            result.serverHazelcastVersion.ifPresent(connection::setConnectedServerVersion);
             connection.setRemoteEndpoint(result.address);
             if (asOwner) {
                 connection.setIsAuthenticatedAsOwner();
@@ -727,7 +720,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
 
-        private boolean checkFailoverSupportIfNeeded(ClientAuthenticationCodec.ResponseParameters result) {
+        private boolean checkFailoverSupportIfNeeded(Authentication.Response result) {
             if (!asOwner) {
                 return true;
             }
@@ -736,8 +729,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return true;
             }
 
-            if (!result.serverHazelcastVersionExist
-                    || BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
+            if (!result.serverHazelcastVersion.isPresent() ||
+                    BuildInfo.calculateVersion(result.serverHazelcastVersion.get()) < BuildInfo.calculateVersion("3.12")) {
                 //this means that server is too old and failover not supported
                 //IllegalStateException will cause client to give up trying on this cluster
                 onFailure(new ClientNotAllowedInClusterException("Cluster does not support failover. "

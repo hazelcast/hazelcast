@@ -61,7 +61,8 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             return;
         }
 
-        int partitionId = getPartitionId();
+        //TODO SANCAR wrong usage needs to be fixed before 4.0
+        int partitionId = clientMessage.getPartitionId();
         boolean invokedOnPartition = partitionId != -1;
         if (!invokedOnPartition) {
             // We got an old client which is sending -1 as a partition ID in its messages

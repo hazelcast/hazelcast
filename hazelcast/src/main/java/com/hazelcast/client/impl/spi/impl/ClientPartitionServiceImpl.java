@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
@@ -29,7 +29,6 @@ import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -37,6 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
@@ -170,7 +170,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
      * The partitions can be empty on the response, client will not apply the empty partition table,
      * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
      */
-    private void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+    private void processPartitionResponse(Connection connection, Map<Address, List<Integer>> partitions,
                                           int partitionStateVersion,
                                           boolean partitionStateVersionExist) {
 
@@ -198,7 +198,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+    private boolean shouldBeApplied(Connection connection, Map<Address, List<Integer>> partitions,
                                     int partitionStateVersion, boolean partitionStateVersionExist, PartitionTable current) {
         if (partitions.isEmpty()) {
             if (logger.isFinestEnabled()) {
@@ -234,9 +234,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 + ". Current state version: " + current.partitionSateVersion));
     }
 
-    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
+    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Map<Address, List<Integer>> partitions) {
         Int2ObjectHashMap<Address> newPartitions = new Int2ObjectHashMap<Address>();
-        for (Map.Entry<Address, List<Integer>> entry : partitions) {
+        for (Map.Entry<Address, List<Integer>> entry : partitions.entrySet()) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
                 newPartitions.put(partition, address);

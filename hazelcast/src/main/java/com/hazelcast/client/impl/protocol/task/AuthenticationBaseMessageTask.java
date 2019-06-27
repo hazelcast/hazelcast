@@ -50,7 +50,7 @@ import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZAT
  * Base authentication task
  */
 public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P>
-        implements BlockingMessageTask {
+        implements BlockingMessageTask, UrgentMessageTask {
 
     protected transient ClientPrincipal principal;
     protected transient String clientName;
@@ -76,6 +76,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
             logger.fine("Processed owner authentication with principal " + principal);
         }
         return prepareAuthenticatedClientMessage();
+    }
+
+    @Override
+    public int getPartitionId() {
+        return -1;
     }
 
     @Override

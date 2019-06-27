@@ -77,16 +77,16 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     }
 
     private static void prepopulate(InternalQueryCache queryCache, ClientMessage clientMessage, boolean includeValue) {
-        int responseSize = clientMessage.getInt();
-        for (int responseIndex = 0; responseIndex < responseSize; ++responseIndex) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
-
-            Data dataKey = clientMessage.getData();
-            Data dataValue = includeValue ? clientMessage.getData() : null;
-
-            queryCache.prepopulate(dataKey, dataValue);
-        }
+//        int responseSize = clientMessage.getInt();
+//        for (int responseIndex = 0; responseIndex < responseSize; ++responseIndex) {
+//            if (queryCache.reachedMaxCapacity()) {
+//                break;
+//            }
+//
+//            Data dataKey = clientMessage.getData();
+//            Data dataValue = includeValue ? clientMessage.getData() : null;
+//
+//            queryCache.prepopulate(dataKey, dataValue);
+//        }
     }
 }

@@ -16,18 +16,13 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.client.impl.protocol.util.BufferBuilder;
-import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
-import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
-import com.hazelcast.client.impl.protocol.util.SafeBuffer;
-import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
 /**
  * <p>
@@ -39,344 +34,206 @@ import java.util.Arrays;
  * </p>
  * <pre>
  * 0                   1                   2                   3
- * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |R|                      Frame Length                           |
- * +-------------+---------------+---------------------------------+
- * |  Version    |B|E|  Flags    |               Type              |
- * +-------------+---------------+---------------------------------+
- * |                                                               |
- * +                       CorrelationId                           +
- * |                                                               |
- * +---------------------------------------------------------------+
- * |                        PartitionId                            |
- * +-----------------------------+---------------------------------+
- * |        Data Offset          |                                 |
- * +-----------------------------+                                 |
- * |                      Message Payload Data                    ...
- * |                                                              ...
+ * <p>
+ * Client Message is the carrier framed data as defined below.
+ * </p>
+ * <p>
+ * Any request parameter, response or event data will be carried in
+ * the payload.
+ * </p>
+ * <p/>
+ * <pre>
+ *
+ * request         = frame-length flags message-type correlation-id *1partition-id *fix-sized-param *var-sized-param
+ * response        = normal-response | event-response | error
+ * normal-response = frame-length flags  correlation-id *fix-sized-param *var-sized-param
+ * event-response  = frame-length flags correlation-id  partition-id *fix-sized-param *var-sized-param
+ *
+ * ;current structure of error design is subject to change because of missing features (nested cause, missing ability for user exceptions).
+ *
+ * error               = frame-length error-response-flags correlationId error-code cause-error-code class-name cause-class-name message *stack-trace-element
+ * error-code          = int32
+ * cause-error-code    = int32
+ * class-name          = utf8
+ * message             = utf8
+ * cause-class-name    = utf8
+ * stack-trace-element = line-number class-name method-name *1file-name
+ * method-name         = utf8
+ * file-name           = utf8
+ * line-number         = int32
+ *
+ * client-message               = message-first-frame *var-sized-param
+ * message-first-frame          = frame-length flags message-type correlation-id *fix-sized-param
+ * first-frame-flags            = %b1 %b1 %b0 13unused ; begin-fragment:1 end-fragment:1 final:0 ......
+ * frame-length                 = int32
+ * message-type                 = int16
+ * correlation-id               = int64
+ *
+ * var-sized-param              = string-frame / custom-type-frames / list-frames / map-frames
+ * map-frames                   = list-frames list-frames                                       ; key-frames value-frames
+ * list-frames                  = var-sized-param-list-frames | fixed-sized-param-list-frame
+ *
+ *
+ * string-frame                 = frame-length flags *OCTET ; Contains UTF-8 encoded octets
+ *
+ * custom-type-frames           = begin-frame *1custom-type-first-frame *var-sized-param end-frame
+ * custom-type-first-frame      = frame-length flags *fix-sized-param
+ *
+ * var-sized-param-list-frames  = begin-frame *var-sized-param  end-frame  ; all elements should be same type
+ * fixed-sized-param-list-frame = frame-length flags *fixed-sized-param    ; all elements should be same type
+ *
+ * begin-frame                  = %x00 %x00 %x00 %x05 begin-flags                               ; frame-length is always 5
+ * begin-flags                  = begin-fragment end-fragment final %b1 %b0 is-null 10reserved  ; begin data structure: 1, end data structure: 0
+ * end-frame                    = %x00 %x00 %x00 %x05 end-flags                                 ; frame-length is always 5
+ * end-flags                    = begin-fragment end-fragment final %b1 %b0 is-null 10reserved  ; next:0 or 1, begin list: 0, end list: 1
+ *
+ * flags          = begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
+ * begin-fragment = BIT ; reserved for fragmentation
+ * end-fragment   = BIT ; reserved for fragmentation
+ * final          = BIT ; set to 1 when this frame is the last frame of the client-message
+ * is-null        = BIT ; set to 1 if this frame represents a null field.
+ * begin          = BIT ; set to 1 if this is a begin-frame. begin-frame represents begin of a custom-type or a variable-field-list, 0 otherwise
+ * end            = BIT ; set to 1 if this an end-frame. end-frame represents end of a custom-type or a variable-field-list, 0 otherwise
+ * reserved       = BIT ; Reserved for future usage.
+ * unused         = BIT ; Irrelevant int this context
+ * is-event       = BIT ;
+ *
+ * fixed-sized-param        = *OCTET
+ * ;fixed-sized-param       = OCTET / boolean / int16 / int32 / int64 / UUID
+ * ;boolean                 = %x00 / %x01
+ * ;int16                   = 16BIT
+ * ;int32                   = 32BIT
+ * ;int64                   = 64BIT
+ * ;UUID                    = int64 int64
  * </pre>
  */
-public class ClientMessage
-        extends MessageFlyweight
-        implements OutboundFrame {
+public class ClientMessage implements OutboundFrame, Iterable<ClientMessage.Frame> {
 
-    /**
-     * Current protocol version
-     */
-    public static final short VERSION = 1;
+    public static final int TYPE_FIELD_OFFSET = 0;
+    public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
 
-    /**
-     * Begin Flag
-     */
-    public static final short BEGIN_FLAG = 0x80;
+    //offset valid for fragmentation frames only
+    public static final int FRAGMENTATION_ID_OFFSET = 0;
 
-    /**
-     * End Flag
-     */
-    public static final short END_FLAG = 0x40;
+    //optional fixed partition id field offset
+    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
-    /**
-     * Begin and End Flags
-     */
-    public static final short BEGIN_AND_END_FLAGS = (short) (BEGIN_FLAG | END_FLAG);
+    // 1 1 1 0 1 0 ....
+    // 0 1 1 0 1 0 ....
+    // 1 1 0 0 0 0
+    public static final int DEFAULT_FLAGS = 0;
+    public static final int BEGIN_FRAGMENT = 1 << 15;
+    public static final int END_FRAGMENT = 1 << 14;
+    public static final int UNFRAGEMENTED_MESSAGE = BEGIN_FRAGMENT | END_FRAGMENT;
+    public static final int FINAL = 1 << 13;
+    public static final int BEGIN_DATA_STRUCTURE = 1 << 12;
+    public static final int END_DATA_STRUCTURE = 1 << 11;
+    public static final int IS_NULL = 1 << 10;
+    public static final int IS_EVENT = 1 << 9;
 
-    /**
-     * Listener Event Flag
-     */
-    public static final short LISTENER_EVENT_FLAG = 0x01;
+    //frame length + flags
+    public static final int SIZE_OF_FRAMELENGHT_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
+    public static Frame NULL_FRAME = new Frame(null, IS_NULL);
+    public static Frame BEGIN_FRAME = new Frame(null, BEGIN_DATA_STRUCTURE);
+    public static Frame END_FRAME = new Frame(null, END_DATA_STRUCTURE);
 
-    /**
-     * ClientMessage Fixed Header size in bytes
-     */
-    public static final int HEADER_SIZE;
-
-    private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";
-    private static final boolean USE_UNSAFE = Boolean.getBoolean(PROP_HAZELCAST_PROTOCOL_UNSAFE);
-
-    private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
-    private static final int VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
-    private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
-    private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
-    private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
-    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
-    private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
-
-    static {
-
-        HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
+    public LinkedList<Frame> getFrames() {
+        return frames;
     }
 
-    private transient int writeOffset;
+    public static class Frame {
+        public byte[] content;
+        //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
+        public int flags;
+
+        public Frame(byte[] content, int flags) {
+            this.content = content;
+            this.flags = flags;
+        }
+
+        public Frame copy() {
+            byte[] newContent = Arrays.copyOf(content, content.length);
+            return new Frame(newContent, flags);
+        }
+
+        public boolean isDataStructureEndFrame() {
+            return ClientMessage.isFlagSet(flags, END_DATA_STRUCTURE);
+        }
+
+        public boolean isNullFrame() {
+            return ClientMessage.isFlagSet(flags, IS_NULL);
+        }
+
+        public int getSize() {
+            if (content == null) {
+                return SIZE_OF_FRAMELENGHT_AND_FLAGS;
+            } else {
+                return SIZE_OF_FRAMELENGHT_AND_FLAGS + content.length;
+            }
+        }
+    }
+
+    LinkedList<Frame> frames;
+
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
-    private Connection connection;
+    private transient Connection connection;
 
-    protected ClientMessage() {
+
+    private ClientMessage() {
+
     }
 
-    public Connection getConnection() {
-        return connection;
+    public static ClientMessage createForEncode() {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.frames = new LinkedList<>();
+        return clientMessage;
     }
 
-    public void setConnection(Connection connection) {
-        this.connection = connection;
+    public static ClientMessage createForDecode(LinkedList<Frame> frames) {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.frames = frames;
+        return clientMessage;
     }
 
-    protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
-        ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
-        setDataOffset(HEADER_SIZE);
-        setFrameLength(HEADER_SIZE);
-        index(getDataOffset());
-        setPartitionId(-1);
+    public short getMessageType() {
+        return Bits.readShortL(frames.get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
-    private void ensureHeaderSize(int offset, int length) {
-        if (length - offset < HEADER_SIZE) {
-            throw new IndexOutOfBoundsException("ClientMessage buffer must contain at least "
-                    + HEADER_SIZE + " bytes! length: " + length + ", offset: " + offset);
-        }
-    }
-
-    protected void wrapForDecode(ClientProtocolBuffer buffer, int offset) {
-        ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
-        index(getDataOffset());
-    }
-
-    /**
-     * Returns the version field value.
-     *
-     * @return The version field value.
-     */
-    public short getVersion() {
-        return uint8Get(VERSION_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the version field value.
-     *
-     * @param version The value to set in the version field.
-     * @return The ClientMessage with the new version field value.
-     */
-    public ClientMessage setVersion(final short version) {
-        uint8Put(VERSION_FIELD_OFFSET, version);
+    public ClientMessage setMessageType(short messageType) {
+        Bits.writeShortL(frames.get(0).content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
-    /**
-     * @param flag Check this flag to see if it is set.
-     * @return true if the given flag is set, false otherwise.
-     */
-    public boolean isFlagSet(short flag) {
-        int i = getFlags() & flag;
-        return i == flag;
-    }
-
-    /**
-     * Returns the flags field value.
-     *
-     * @return The flags field value.
-     */
-    public short getFlags() {
-        return uint8Get(FLAGS_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the flags field value.
-     *
-     * @param flags The value to set in the flags field.
-     * @return The ClientMessage with the new flags field value.
-     */
-    public ClientMessage addFlag(final short flags) {
-        uint8Put(FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
-        return this;
-    }
-
-    /**
-     * Returns the message type field.
-     *
-     * @return The message type field value.
-     */
-    public int getMessageType() {
-        return uint16Get(TYPE_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the message type field.
-     *
-     * @param type The value to set in the message type field.
-     * @return The ClientMessage with the new message type field value.
-     */
-    public ClientMessage setMessageType(final int type) {
-        uint16Put(TYPE_FIELD_OFFSET, type);
-        return this;
-    }
-
-    /**
-     * Returns the frame length field.
-     *
-     * @return The frame length field.
-     */
-    public int getFrameLength() {
-        return int32Get(FRAME_LENGTH_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the frame length field.
-     *
-     * @param length The value to set in the frame length field.
-     * @return The ClientMessage with the new frame length field value.
-     */
-    public ClientMessage setFrameLength(final int length) {
-        int32Set(FRAME_LENGTH_FIELD_OFFSET, length);
-        return this;
-    }
-
-    /**
-     * Returns the correlation ID field.
-     *
-     * @return The correlation ID field.
-     */
     public long getCorrelationId() {
-        return int64Get(CORRELATION_ID_FIELD_OFFSET);
+        return Bits.readLongL(frames.get(0).content, CORRELATION_ID_FIELD_OFFSET);
     }
 
-    /**
-     * Sets the correlation ID field.
-     *
-     * @param correlationId The value to set in the correlation ID field.
-     * @return The ClientMessage with the new correlation ID field value.
-     */
-    public ClientMessage setCorrelationId(final long correlationId) {
-        int64Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
+    public ClientMessage setCorrelationId(long correlationId) {
+        Bits.writeLongL(frames.get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
-    /**
-     * Returns the partition ID field.
-     *
-     * @return The partition ID field.
-     */
     public int getPartitionId() {
-        return int32Get(PARTITION_ID_FIELD_OFFSET);
+        return Bits.readIntL(frames.get(0).content, PARTITION_ID_FIELD_OFFSET);
     }
 
-    /**
-     * Sets the partition ID field.
-     *
-     * @param partitionId The value to set in the partitions ID field.
-     * @return The ClientMessage with the new partitions ID field value.
-     */
-    public ClientMessage setPartitionId(final int partitionId) {
-        int32Set(PARTITION_ID_FIELD_OFFSET, partitionId);
+    public ClientMessage setPartitionId(int partitionId) {
+        Bits.writeIntL(frames.get(0).content, PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
-    /**
-     * Returns the setDataOffset field.
-     *
-     * @return The setDataOffset type field value.
-     */
-    public int getDataOffset() {
-        return uint16Get(DATA_OFFSET_FIELD_OFFSET);
+    public ListIterator<Frame> iterator() {
+        return frames.listIterator();
     }
 
-    /**
-     * Sets the dataOffset field.
-     *
-     * @param dataOffset The value to set in the dataOffset field.
-     * @return The ClientMessage with the new dataOffset field value.
-     */
-    public ClientMessage setDataOffset(final int dataOffset) {
-        uint16Put(DATA_OFFSET_FIELD_OFFSET, dataOffset);
-        return this;
+    public void addFrame(Frame frame) {
+        frames.add(frame);
     }
 
-    public ClientMessage updateFrameLength() {
-        setFrameLength(index());
-        return this;
-    }
-
-    public boolean writeTo(ByteBuffer dst) {
-        byte[] byteArray = buffer.byteArray();
-        int size = getFrameLength();
-
-        // the number of bytes that can be written to the bb
-        int bytesWritable = dst.remaining();
-
-        // the number of bytes that need to be written
-        int bytesNeeded = size - writeOffset;
-
-        int bytesWrite;
-        boolean done;
-        if (bytesWritable >= bytesNeeded) {
-            // all bytes for the value are available
-            bytesWrite = bytesNeeded;
-            done = true;
-        } else {
-            // not all bytes for the value are available. Write as much as is available
-            bytesWrite = bytesWritable;
-            done = false;
-        }
-
-        dst.put(byteArray, writeOffset, bytesWrite);
-        writeOffset += bytesWrite;
-
-        if (done) {
-            // clear the write offset so that same client message can be resend if needed
-            writeOffset = 0;
-        }
-        return done;
-    }
-
-    public boolean readFrom(ByteBuffer src) {
-        int frameLength = 0;
-        if (this.buffer == null) {
-            // init internal buffer
-            final int remaining = src.remaining();
-            if (remaining < Bits.INT_SIZE_IN_BYTES) {
-                // we don't have even the frame length ready
-                return false;
-            }
-            frameLength = Bits.readIntL(src);
-            // we need to restore the position; as if we didn't read the frame-length
-            src.position(src.position() - Bits.INT_SIZE_IN_BYTES);
-            if (frameLength < HEADER_SIZE) {
-                throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
-            }
-            wrap(new byte[frameLength], 0, USE_UNSAFE);
-        }
-        frameLength = frameLength > 0 ? frameLength : getFrameLength();
-        accumulate(src, frameLength - index());
-        return isComplete();
-    }
-
-    private int accumulate(ByteBuffer src, int length) {
-        int remaining = src.remaining();
-        int readLength = remaining < length ? remaining : length;
-        if (readLength > 0) {
-            buffer.putBytes(index(), src, readLength);
-            index(index() + readLength);
-            return readLength;
-        }
-        return 0;
-    }
-
-    /**
-     * Checks the frame size and total data size to validate the message size.
-     *
-     * @return true if the message is constructed.
-     */
-    public boolean isComplete() {
-        return (index() >= HEADER_SIZE) && (index() == getFrameLength());
-    }
-
-    @Override
-    public boolean isUrgent() {
-        return false;
+    public int getHeaderFlags() {
+        return frames.get(0).flags;
     }
 
     public boolean isRetryable() {
@@ -403,89 +260,66 @@ public class ClientMessage
         return operationName;
     }
 
+    public static boolean isFlagSet(int flags, int flagMask) {
+        int i = flags & flagMask;
+        return i == flagMask;
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public int getFrameLength() {
+        int frameLength = 0;
+        for (Frame frame : frames) {
+            frameLength += frame.getSize();
+        }
+        return frameLength;
+    }
+
+    public boolean isUrgent() {
+        return false;
+    }
+
     @Override
     public String toString() {
-        int len = index();
         final StringBuilder sb = new StringBuilder("ClientMessage{");
-        sb.append("connection=").append(connection);
-        sb.append(", length=").append(len);
-        if (len >= HEADER_SIZE) {
-            sb.append(", correlationId=").append(getCorrelationId());
-            sb.append(", operation=").append(operationName);
-            sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
-            sb.append(", partitionId=").append(getPartitionId());
-            sb.append(", isComplete=").append(isComplete());
-            sb.append(", isRetryable=").append(isRetryable());
-            sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
-            sb.append(", writeOffset=").append(writeOffset);
-        }
+//        sb.append("connection=").append(connection);
+        sb.append(", length=").append(getFrameLength());
+//        sb.append(", correlationId=").append(getCorrelationId());
+//        sb.append(", operation=").append(operationName);
+//        sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
+//        sb.append(", isRetryable=").append(isRetryable());
+//        sb.append(", isEvent=").append(isFlagSet(frames.get(0).flags, IS_EVENT));
         sb.append('}');
         return sb.toString();
     }
 
-    public static ClientMessage create() {
-        return new ClientMessage();
-    }
+    /**
+     * Copies the clientMessage efficiently with correlation id
+     * Only initialFrame is duplicated, rest of the frames are shared
+     *
+     * @param correlationId new id
+     * @return the copy message
+     */
+    public ClientMessage copyWithNewCorrelationId(long correlationId) {
+        ClientMessage newMessage = new ClientMessage();
+        newMessage.frames = new LinkedList<>(frames);
 
-    public static ClientMessage createForEncode(int initialCapacity) {
-        if (initialCapacity < 0) {
-            throw new MaxMessageSizeExceeded();
-        }
-        if (USE_UNSAFE) {
-            return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
-        } else {
-            return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
-        }
-    }
+        Frame initialFrameCopy = newMessage.frames.get(0).copy();
+        newMessage.frames.set(0, initialFrameCopy);
 
-    public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForEncode(buffer, offset);
-        return clientMessage;
-    }
+        newMessage.setCorrelationId(correlationId);
 
-    public static ClientMessage createForDecode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForDecode(buffer, offset);
-        return clientMessage;
-    }
-
-    public ClientMessage copy() {
-        byte[] oldBinary = buffer().byteArray();
-        byte[] bytes = Arrays.copyOf(oldBinary, oldBinary.length);
-        ClientMessage newMessage = ClientMessage.createForDecode(BufferBuilder.createBuffer(bytes), 0);
         newMessage.isRetryable = isRetryable;
         newMessage.acquiresResource = acquiresResource;
         newMessage.operationName = operationName;
+
         return newMessage;
     }
 
-    @Override
-    public int hashCode() {
-        return ByteBuffer.wrap(buffer().byteArray(), 0, getFrameLength()).hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ClientMessage that = (ClientMessage) o;
-
-        byte[] thisBytes = this.buffer().byteArray();
-        byte[] thatBytes = that.buffer().byteArray();
-        if (this.getFrameLength() != that.getFrameLength()) {
-            return false;
-        }
-        for (int i = 0; i < this.getFrameLength(); i++) {
-            if (thisBytes[i] != thatBytes[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
 }

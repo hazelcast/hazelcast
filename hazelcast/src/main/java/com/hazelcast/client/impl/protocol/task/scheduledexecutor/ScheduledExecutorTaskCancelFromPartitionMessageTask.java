@@ -40,7 +40,7 @@ public class ScheduledExecutorTaskCancelFromPartitionMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(clientMessage.getPartitionId(),
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(getPartitionId(),
                 parameters.schedulerName,
                 parameters.taskName);
         return new CancelTaskOperation(handler, parameters.mayInterruptIfRunning);

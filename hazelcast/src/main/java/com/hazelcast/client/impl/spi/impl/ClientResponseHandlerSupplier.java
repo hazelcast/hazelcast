@@ -138,7 +138,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private void handleResponse(ClientMessage message) {
         long correlationId = message.getCorrelationId();
 
-        ClientInvocation future = invocationService.deRegisterCallId(correlationId);
+        ClientInvocation future = invocationService.deregisterInvocation(correlationId);
         if (future == null) {
             logger.warning("No call for callId: " + correlationId + ", response: " + message);
             return;

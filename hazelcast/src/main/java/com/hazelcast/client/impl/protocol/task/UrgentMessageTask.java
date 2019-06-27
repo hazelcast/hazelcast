@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-/**
- * Interface for all client message tasks to implement
- */
-public interface MessageTask extends Runnable {
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
+
+public interface UrgentMessageTask extends UrgentSystemOperation, PartitionSpecificRunnable {
 }

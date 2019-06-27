@@ -74,7 +74,8 @@ public class HeartbeatManager implements Runnable {
 
         long now = Clock.currentTimeMillis();
         for (final ClientConnection connection : clientConnectionManager.getActiveConnections()) {
-            checkConnection(now, connection);
+            //TODO SANCAR implement ping
+//            checkConnection(now, connection);
         }
     }
 

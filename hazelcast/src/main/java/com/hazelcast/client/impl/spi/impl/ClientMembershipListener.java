@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.newcodecs.AddMembershipListener;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -136,7 +137,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     void listenMembershipEvents(Connection ownerConnection) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
-        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
+        ClientMessage clientMessage = AddMembershipListener.Request.encode(false);
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();

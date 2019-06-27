@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.client.impl.protocol.newcodecs.AddPartitionListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Connection;
@@ -29,7 +29,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class AddPartitionListenerMessageTask
-        extends AbstractCallableMessageTask<ClientAddPartitionListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<AddPartitionListener.Request> {
 
     public AddPartitionListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -52,13 +52,18 @@ public class AddPartitionListenerMessageTask
     }
 
     @Override
-    protected ClientAddPartitionListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientAddPartitionListenerCodec.decodeRequest(clientMessage);
+    protected AddPartitionListener.Request decodeClientMessage() {
+        return AddPartitionListener.Request.decode(clientMessage);
+    }
+
+    @Override
+    protected AddPartitionListener.Request decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddPartitionListenerCodec.encodeResponse();
+        return AddPartitionListener.Response.encode();
     }
 
     @Override
