@@ -3,7 +3,7 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.row.RowBatch;
-import com.hazelcast.internal.query.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
 
 public class SendExec extends AbstractUpstreamAwareExec {
 

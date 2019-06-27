@@ -6,8 +6,8 @@ import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.mailbox.Inbox;
-import com.hazelcast.internal.query.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.internal.query.worker.AbstractWorker;
 import com.hazelcast.internal.query.worker.data.BatchDataTask;
 import com.hazelcast.internal.query.worker.data.DataThreadPool;
@@ -140,13 +140,13 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                 fragment.getNode().visit(visitor);
 
                 Exec exec = visitor.getExec();
-                List<Inbox> inboxes = visitor.getInboxes();
+                List<AbstractInbox> inboxes = visitor.getInboxes();
                 List<Outbox> outboxes = visitor.getOutboxes();
 
                 // Target thread is resolved *after* the executor is created, because it may depend in executor cost.
                 int thread = lastDataThreadIdx++ % dataPool.getStripeCount();
 
-                for (Inbox inbox : inboxes)
+                for (AbstractInbox inbox : inboxes)
                     inbox.setThread(thread);
 
                 for (Outbox outbox : outboxes)

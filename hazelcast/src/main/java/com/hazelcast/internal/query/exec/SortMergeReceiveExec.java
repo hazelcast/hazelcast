@@ -4,8 +4,8 @@ import com.hazelcast.internal.query.expression.Expression;
 import com.hazelcast.internal.query.row.ListRowBatch;
 import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.row.RowBatch;
-import com.hazelcast.internal.query.mailbox.SendBatch;
-import com.hazelcast.internal.query.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.mailbox.SendBatch;
+import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.internal.query.sort.SortKey;
 import com.hazelcast.internal.query.sort.SortKeyComparator;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SortMergeReceiveExec extends AbstractExec {
-    /** Inbox to consume results from. */
+    /** AbstractInbox to consume results from. */
     private final StripedInbox inbox;
 
     /** Expressions. */

@@ -2,8 +2,8 @@ package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.internal.query.QueryContext;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.mailbox.Inbox;
-import com.hazelcast.internal.query.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ public class StripeDeployment {
     private final Exec exec;
     private final int sripe;
     private final int thread;
-    private final List<Inbox> inboxes;
+    private final List<AbstractInbox> inboxes;
     private final List<Outbox> outboxes;
 
     private QueryContext ctx;
@@ -23,7 +23,7 @@ public class StripeDeployment {
 
     private volatile boolean done;
 
-    public StripeDeployment(Exec exec, int stripe, int thread, List<Inbox> inboxes, List<Outbox> outboxes) {
+    public StripeDeployment(Exec exec, int stripe, int thread, List<AbstractInbox> inboxes, List<Outbox> outboxes) {
         this.exec = exec;
         this.sripe = stripe;
         this.thread = thread;
@@ -43,7 +43,7 @@ public class StripeDeployment {
         return thread;
     }
 
-    public List<Inbox> getInboxes() {
+    public List<AbstractInbox> getInboxes() {
         return inboxes;
     }
 

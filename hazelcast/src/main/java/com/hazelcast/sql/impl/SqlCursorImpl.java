@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.query.QueryHandleImpl;
+import com.hazelcast.internal.query.QueryHandle;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 
@@ -28,9 +28,9 @@ import java.util.Iterator;
  */
 public class SqlCursorImpl implements SqlCursor {
     /** Handle. */
-    private final QueryHandleImpl handle;
+    private final QueryHandle handle;
 
-    public SqlCursorImpl(QueryHandleImpl handle) {
+    public SqlCursorImpl(QueryHandle handle) {
         this.handle = handle;
     }
 

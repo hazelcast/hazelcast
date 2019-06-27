@@ -11,10 +11,10 @@ import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.exec.SendExec;
 import com.hazelcast.internal.query.exec.SortExec;
 import com.hazelcast.internal.query.exec.SortMergeReceiveExec;
-import com.hazelcast.internal.query.mailbox.Inbox;
-import com.hazelcast.internal.query.mailbox.Outbox;
-import com.hazelcast.internal.query.mailbox.SingleInbox;
-import com.hazelcast.internal.query.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.SingleInbox;
+import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
 import com.hazelcast.internal.query.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
@@ -67,7 +67,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Result. */
     private Exec exec;
 
-    private List<Inbox> inboxes = new ArrayList<>();
+    private List<AbstractInbox> inboxes = new ArrayList<>();
     private List<Outbox> outboxes = new ArrayList<>();
 
     public ExecutorCreatePhysicalNodeVisitor(
@@ -102,7 +102,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         int remaining = sendFragment.getMemberIds().size() * sendFragment.getParallelism();
 
-        // TODO: Inbox type should depend on sender-receiver edge.
+        // TODO: AbstractInbox type should depend on sender-receiver edge.
         // Create and register inbox.
         SingleInbox inbox = new SingleInbox(
             queryId,
@@ -233,7 +233,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         return exec;
     }
 
-    public List<Inbox> getInboxes() {
+    public List<AbstractInbox> getInboxes() {
         return inboxes != null ? inboxes : Collections.emptyList();
     }
 

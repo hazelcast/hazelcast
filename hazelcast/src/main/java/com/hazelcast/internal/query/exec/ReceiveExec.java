@@ -3,8 +3,8 @@ package com.hazelcast.internal.query.exec;
 import com.hazelcast.internal.query.row.ListRowBatch;
 import com.hazelcast.internal.query.row.Row;
 import com.hazelcast.internal.query.row.RowBatch;
-import com.hazelcast.internal.query.mailbox.SendBatch;
-import com.hazelcast.internal.query.mailbox.SingleInbox;
+import com.hazelcast.sql.impl.mailbox.SendBatch;
+import com.hazelcast.sql.impl.mailbox.SingleInbox;
 
 import java.util.List;
 

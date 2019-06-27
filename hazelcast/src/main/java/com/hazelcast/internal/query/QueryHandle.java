@@ -1,13 +1,35 @@
 package com.hazelcast.internal.query;
 
-public interface QueryHandle {
+/**
+ * Handle to running query.
+ */
+public class QueryHandle {
+    /** Query ID. */
+    private final QueryId queryId;
+
+    /** Consumer. */
+    private final QueryResultConsumer consumer;
+
+    public QueryHandle(QueryId queryId, QueryResultConsumer consumer) {
+        this.queryId = queryId;
+        this.consumer = consumer;
+    }
+
     /**
-     * @return Unique query ID.
+     * @return Query ID.
      */
-    QueryId getQueryId();
+    public QueryId getQueryId() {
+        return queryId;
+    }
 
     /**
      * Close the handle.
      */
-    void close();
+    public void close() {
+        // TODO: Cancel/close support.
+    }
+
+    public QueryResultConsumer getConsumer() {
+        return consumer;
+    }
 }

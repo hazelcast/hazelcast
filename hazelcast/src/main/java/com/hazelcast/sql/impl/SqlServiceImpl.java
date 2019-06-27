@@ -21,7 +21,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.QueryConfig;
 import com.hazelcast.internal.query.QueryFragment;
-import com.hazelcast.internal.query.QueryHandleImpl;
+import com.hazelcast.internal.query.QueryHandle;
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.QueryResultConsumer;
 import com.hazelcast.internal.query.QueryResultConsumerImpl;
@@ -109,7 +109,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
             Collections.addAll(args0, args);
         }
 
-        QueryHandleImpl handle = execute0(plan, args0);
+        QueryHandle handle = execute0(plan, args0);
 
         return new SqlCursorImpl(handle);
     }
@@ -121,7 +121,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
      * @param args Arguments.
      * @return Result.
      */
-    private QueryHandleImpl execute0(PhysicalPlan plan, List<Object> args) {
+    private QueryHandle execute0(PhysicalPlan plan, List<Object> args) {
         if (args == null)
             args = Collections.emptyList();
 
@@ -146,7 +146,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
                 nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
             }
 
-            return new QueryHandleImpl(queryId, consumer);
+            return new QueryHandle(queryId, consumer);
         }
         finally {
             busyLock.readLock().unlock();

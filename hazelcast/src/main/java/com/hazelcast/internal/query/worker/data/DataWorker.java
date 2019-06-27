@@ -2,7 +2,7 @@ package com.hazelcast.internal.query.worker.data;
 
 import com.hazelcast.internal.query.QueryId;
 import com.hazelcast.internal.query.exec.Exec;
-import com.hazelcast.internal.query.mailbox.Inbox;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.internal.query.exec.RootExec;
 import com.hazelcast.internal.query.worker.AbstractWorker;
 import com.hazelcast.internal.query.worker.control.StripeDeployment;
@@ -16,7 +16,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
     public static final int UNMAPPED_STRIPE = -1;
 
     private final DataThreadPool dataPool;
-    private final Map<InboxKey, Inbox> inboxes = new HashMap<>();
+    private final Map<InboxKey, AbstractInbox> inboxes = new HashMap<>();
     private final int thread;
 
     public DataWorker(DataThreadPool dataPool, int thread) {
@@ -41,9 +41,9 @@ public class DataWorker extends AbstractWorker<DataTask> {
         Exec exec = stripeDeployment.getExec();
 
         // Setup and register inboxes.
-        List<Inbox> stripeInboxes = stripeDeployment.getInboxes();
+        List<AbstractInbox> stripeInboxes = stripeDeployment.getInboxes();
 
-        for (Inbox inbox : stripeInboxes) {
+        for (AbstractInbox inbox : stripeInboxes) {
             inbox.setExec(exec);
 
             inboxes.put(new InboxKey(queryId, inbox.getEdgeId(), inbox.getStripe()), inbox);
@@ -64,7 +64,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
 
         InboxKey inboxKey = new InboxKey(queryId, edgeId, stripe);
 
-        Inbox inbox = inboxes.get(inboxKey);
+        AbstractInbox inbox = inboxes.get(inboxKey);
 
         // Feed the batch.
         inbox.onBatch(task.getSourceMemberId(), task.getSourceStripe(), task.getSourceThread(), task.getBatch());
