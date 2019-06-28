@@ -75,10 +75,11 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         this.logger = logger;
     }
 
+
+
     @Override
     public PhysicalPlan prepare(String sql) {
         // 1. ==================== PARSE ====================
-        // TODO: DrillTypeSystem is set here. Investigate why.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
 
         // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
@@ -114,7 +115,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         SqlRexConvertletTable rexConvertletTable = StandardConvertletTable.INSTANCE;
 
-        SqlNode node = parse(sql, config);
+        SqlNode node = parse(sql);
 
         // 2. ==================== ANALYZE/VALIDATE ====================
         final SqlOperatorTable opTab0 = config.fun(SqlOperatorTable.class, SqlStdOperatorTable.instance());
@@ -207,38 +208,25 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         return plan;
     }
 
-    // TODO: Remove CalciteConnectionConfigImpl.
-    private SqlNode parse(String sql, CalciteConnectionConfigImpl config) {
+    /**
+     * Parse SQL query and return SQL node.
+     *
+     * @param sql SQL.
+     * @return Node.
+     */
+    private SqlNode parse(String sql) {
         try {
-            // TODO: Do we need our own parser config? (See DrillParserConfig)
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
             parserConfig.setUnquotedCasing(Casing.UNCHANGED);
-            parserConfig.setQuotedCasing(Casing.UNCHANGED);
-            parserConfig.setCaseSensitive(true);
-
-            parserConfig.setQuotedCasing(config.quotedCasing());
-            parserConfig.setUnquotedCasing(config.unquotedCasing());
-            parserConfig.setQuoting(config.quoting());
-            parserConfig.setConformance(config.conformance());
-            parserConfig.setCaseSensitive(config.caseSensitive());
-
-            SqlParserImplFactory parserFactory = config.parserFactory(SqlParserImplFactory.class, null);
-
-            if (parserFactory != null)
-                parserConfig.setParserFactory(parserFactory);
+            parserConfig.setConformance(SqlCalciteConformance.INSTANCE);
 
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
 
-            SqlNode node = parser.parseStmt();
-
-            // TODO: Remove.
-            System.out.println(">>> Parsed: " + node.getClass().getSimpleName());
-
-            return node;
+            return parser.parseStmt();
         }
         catch (Exception e) {
-            // TODO: Follow exception policies in HZ
+            // TODO: Throw proper parse exception.
             throw new HazelcastException("Failed to parse SQL: " + sql, e);
         }
     }
