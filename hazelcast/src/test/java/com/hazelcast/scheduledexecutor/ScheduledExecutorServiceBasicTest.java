@@ -771,6 +771,35 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
+    public void schedule_withNamedInstanceAware_whenLocalRun()
+            throws InterruptedException {
+        HazelcastInstance[] instances = createClusterWithCount(1);
+        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        latch.trySetCount(1);
+
+        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        s.schedule(TaskUtils.named("blah", new PlainInstanceAwareRunnableTask("latch")), 1, TimeUnit.SECONDS);
+
+        latch.await(20, SECONDS);
+        assertEquals(0, latch.getCount());
+    }
+
+    @Test
+    public void schedule_withNamedInstanceAware_whenRemoteRun()
+            throws InterruptedException {
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        latch.trySetCount(1);
+
+        MemberImpl member = getNodeEngineImpl(instances[1]).getLocalMember();
+        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        s.scheduleOnMember(TaskUtils.named("blah", new PlainInstanceAwareRunnableTask("latch")), member, 1, TimeUnit.SECONDS);
+
+        latch.await(20, SECONDS);
+        assertEquals(0, latch.getCount());
+    }
+
+    @Test
     public void scheduleWithRepetition() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
 
