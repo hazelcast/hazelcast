@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Abstract inbox implementation.
@@ -36,7 +37,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
     }
 
     /**
-     * Handle batch arrival. Always invoked from {@link com.hazelcast.internal.query.worker.data.DataWorker}.
+     * Handle batch arrival. Always invoked from {@link DataWorker}.
      */
     public void onBatch(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
         // Batch might be empty in case of last marker.

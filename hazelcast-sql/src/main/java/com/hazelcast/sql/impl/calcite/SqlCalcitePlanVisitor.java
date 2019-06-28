@@ -22,15 +22,14 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
-import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
-import com.hazelcast.internal.query.physical.PhysicalNode;
-import com.hazelcast.internal.query.physical.PhysicalPlan;
-import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
-import com.hazelcast.internal.query.physical.RootPhysicalNode;
-import com.hazelcast.internal.query.physical.SendPhysicalNode;
-import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.internal.query.physical.SortPhysicalNode;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.PhysicalPlan;
+import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
+import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+import com.hazelcast.sql.impl.physical.SendPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
 import com.hazelcast.sql.impl.calcite.rels.HazelcastSortRel;
 import com.hazelcast.sql.impl.calcite.rels.HazelcastTableScanRel;
@@ -78,9 +77,9 @@ public class SqlCalcitePlanVisitor {
             plan.addNode(sendNode);
 
             ReceiveSortMergePhysicalNode receiveNode = new ReceiveSortMergePhysicalNode(
+                currentEdgeId,
                 upstreamNode0.getExpressions(),
-                upstreamNode0.getAscs(),
-                currentEdgeId
+                upstreamNode0.getAscs()
             );
 
             RootPhysicalNode rootNode = new RootPhysicalNode(
@@ -128,8 +127,7 @@ public class SqlCalcitePlanVisitor {
         MapScanPhysicalNode scanNode = new MapScanPhysicalNode(
             mapName, // Scan
             projection, // Project
-            null,       // Filter: // TODO: Need to implement FilterExec and merge rule!
-            1           // Parallelism
+            null       // Filter: // TODO: Need to implement FilterExec and merge rule!
         );
 
         upstreamNodes.add(scanNode);

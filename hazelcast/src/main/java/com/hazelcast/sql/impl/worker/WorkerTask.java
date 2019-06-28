@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker;
 
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.worker.WorkerTask;
-
-public interface ControlTask extends WorkerTask {
-    QueryId getQueryId();
+/**
+ * Marker interface for worker task.
+ */
+public interface WorkerTask {
+    // No-op.
 }

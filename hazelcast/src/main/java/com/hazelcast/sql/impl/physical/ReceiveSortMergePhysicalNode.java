@@ -14,30 +14,41 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Physical node which receives from remote stripes and performs sort-merge.
+ */
 public class ReceiveSortMergePhysicalNode implements PhysicalNode {
-
-    private List<Expression> expressions;
-    private List<Boolean> ascs;
+    /** Edge iD. */
     private int edgeId;
+
+    /** Expressions to be used for sorting. */
+    private List<Expression> expressions;
+
+    /** Sort directions. */
+    // TODO: Fix collation!
+    private List<Boolean> ascs;
 
     public ReceiveSortMergePhysicalNode() {
         // No-op.
     }
 
-    public ReceiveSortMergePhysicalNode(List<Expression> expressions, List<Boolean> ascs, int edgeId) {
+    public ReceiveSortMergePhysicalNode(int edgeId, List<Expression> expressions, List<Boolean> ascs) {
+        this.edgeId = edgeId;
         this.expressions = expressions;
         this.ascs = ascs;
-        this.edgeId = edgeId;
+    }
+
+    public int getEdgeId() {
+        return edgeId;
     }
 
     public List<Expression> getExpressions() {
@@ -48,10 +59,6 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
         return ascs;
     }
 
-    public int getEdgeId() {
-        return edgeId;
-    }
-
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onReceiveSortMergeNode(this);
@@ -59,15 +66,15 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(edgeId);
         out.writeObject(expressions);
         out.writeObject(ascs);
-        out.writeInt(edgeId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        edgeId = in.readInt();
         expressions = in.readObject();
         ascs = in.readObject();
-        edgeId = in.readInt();
     }
 }

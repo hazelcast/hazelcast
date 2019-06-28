@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
 

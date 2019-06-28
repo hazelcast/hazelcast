@@ -14,35 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.Predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.Predicate;
 
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Node to scan a map.
+ */
 public class MapScanPhysicalNode implements PhysicalNode {
-
+    /** Map name. */
     private String mapName;
-    private List<Expression> projections;
-    private Predicate filter;
-    private int parallelism;
 
-    // TODO: Explicit partition list.
+    /** Projections. */
+    private List<Expression> projections;
+
+    /** Filter. */
+    private Predicate filter;
+
+    // TODO: Explicit partition list in case of partition pruning.
 
     public MapScanPhysicalNode() {
         // No-op.
     }
 
-    public MapScanPhysicalNode(String mapName, List<Expression> projections, Predicate filter, int parallelism) {
+    public MapScanPhysicalNode(String mapName, List<Expression> projections, Predicate filter) {
         this.mapName = mapName;
         this.projections = projections;
         this.filter = filter;
-        this.parallelism = parallelism;
     }
 
     public String getMapName() {
@@ -57,10 +61,6 @@ public class MapScanPhysicalNode implements PhysicalNode {
         return filter;
     }
 
-    public int getParallelism() {
-        return parallelism;
-    }
-
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onMapScanNode(this);
@@ -71,7 +71,6 @@ public class MapScanPhysicalNode implements PhysicalNode {
         out.writeUTF(mapName);
         out.writeObject(projections);
         out.writeObject(filter);
-        out.writeInt(parallelism);
     }
 
     @Override
@@ -79,6 +78,5 @@ public class MapScanPhysicalNode implements PhysicalNode {
         mapName = in.readUTF();
         projections = in.readObject();
         filter = in.readObject();
-        parallelism = in.readInt();
     }
 }

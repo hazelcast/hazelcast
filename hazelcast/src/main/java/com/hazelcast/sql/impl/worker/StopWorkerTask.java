@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.worker;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+/**
+ * Task to stop a worker.
+ */
+public class StopWorkerTask implements WorkerTask {
+    /** Singleton instance. */
+    public static final StopWorkerTask INSTANCE = new StopWorkerTask();
 
-public interface PhysicalNode extends DataSerializable {
-    /**
-     * Visit the node.
-     *
-     * @param visitor Visitor.
-     */
-    void visit(PhysicalNodeVisitor visitor);
+    private StopWorkerTask() {
+        // No-op.
+    }
 }

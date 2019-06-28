@@ -17,7 +17,7 @@
 package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.query.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.EmptyScanExec;
 import com.hazelcast.sql.impl.exec.Exec;
@@ -31,13 +31,13 @@ import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
-import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
-import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
-import com.hazelcast.internal.query.physical.RootPhysicalNode;
-import com.hazelcast.internal.query.physical.SendPhysicalNode;
-import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.internal.query.physical.SortPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
+import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+import com.hazelcast.sql.impl.physical.SendPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.collection.PartitionIdSet;
 

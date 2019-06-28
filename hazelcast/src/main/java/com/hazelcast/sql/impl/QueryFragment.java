@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.query.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -26,6 +26,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Single query fragment. Represents a node to be executed, it's inbound and outbound edges, members where it is
+ * to be executed.
+ */
 public class QueryFragment implements DataSerializable {
     /** Node to be executed (null for root fragment). */
     private PhysicalNode node;

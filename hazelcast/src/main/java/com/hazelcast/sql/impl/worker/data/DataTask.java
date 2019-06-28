@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.worker.WorkerTask;
 
-public interface ControlTask extends WorkerTask {
-    QueryId getQueryId();
+/**
+ * Data task, performed in data pool.
+ */
+public interface DataTask extends WorkerTask {
+    /**
+     * @return ID of data thread.
+     */
+    int getThread();
 }

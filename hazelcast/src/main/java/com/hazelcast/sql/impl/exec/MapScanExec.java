@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.query.worker.data.DataWorker;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;

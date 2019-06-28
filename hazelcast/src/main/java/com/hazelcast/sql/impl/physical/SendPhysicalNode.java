@@ -14,37 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 
+/**
+ * Node which sends data to remote stripes.
+ */
 public class SendPhysicalNode implements PhysicalNode {
     /** Edge ID. */
     private int edgeId;
 
-    /** Child node. */
-    private PhysicalNode delegate;
+    /** Upstream. */
+    private PhysicalNode upstream;
 
     /** Partition hasher (get partition hash from row). */
     private Expression<Integer> partitionHasher;
 
     /** Whether data partitions should be used to resolve target. */
-    // TODO: Somethins is wrong here! partitionHasher + useDataPartitions should be the same?
+    // TODO: Something is wrong here! partitionHasher + useDataPartitions should be the same?
     private boolean useDataPartitions;
 
     public SendPhysicalNode() {
         // No-op.
     }
 
-    public SendPhysicalNode(int edgeId, PhysicalNode delegate, Expression<Integer> partitionHasher,
+    public SendPhysicalNode(int edgeId, PhysicalNode upstream, Expression<Integer> partitionHasher,
         boolean useDataPartitions) {
         this.edgeId = edgeId;
-        this.delegate = delegate;
+        this.upstream = upstream;
         this.partitionHasher = partitionHasher;
         this.useDataPartitions = useDataPartitions;
     }
@@ -53,8 +55,8 @@ public class SendPhysicalNode implements PhysicalNode {
         return edgeId;
     }
 
-    public PhysicalNode getDelegate() {
-        return delegate;
+    public PhysicalNode getUpstream() {
+        return upstream;
     }
 
     public Expression<Integer> getPartitionHasher() {
@@ -67,7 +69,7 @@ public class SendPhysicalNode implements PhysicalNode {
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
-        delegate.visit(visitor);
+        upstream.visit(visitor);
 
         visitor.onSendNode(this);
     }
@@ -75,7 +77,7 @@ public class SendPhysicalNode implements PhysicalNode {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        out.writeObject(delegate);
+        out.writeObject(upstream);
         out.writeObject(partitionHasher);
         out.writeBoolean(useDataPartitions);
     }
@@ -83,7 +85,7 @@ public class SendPhysicalNode implements PhysicalNode {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        delegate = in.readObject();
+        upstream = in.readObject();
         partitionHasher = in.readObject();
         useDataPartitions = in.readBoolean();
     }

@@ -16,13 +16,6 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
-import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
-import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.internal.query.physical.RootPhysicalNode;
-import com.hazelcast.internal.query.physical.SendPhysicalNode;
-import com.hazelcast.internal.query.physical.SortPhysicalNode;
-
 /**
  * Physical node visitor.
  */

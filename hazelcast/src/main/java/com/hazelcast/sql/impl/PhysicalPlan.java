@@ -14,11 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.worker.WorkerTask;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
 
-public interface ControlTask extends WorkerTask {
-    QueryId getQueryId();
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Base physical plan.
+ */
+// TODO: Remove me!
+public class PhysicalPlan {
+    private final List<PhysicalNode> nodes = new ArrayList<>();
+
+    public PhysicalPlan() {
+        // No-op.
+    }
+
+    public List<PhysicalNode> getNodes() {
+        return nodes;
+    }
+
+    public void addNode(PhysicalNode node) {
+        nodes.add(node);
+    }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.query.physical.PhysicalPlan;
+import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.SqlOptimizer;

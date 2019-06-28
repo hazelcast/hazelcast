@@ -14,38 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.cluster.Member;
+import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.impl.worker.data.DataTask;
 
-public class SendDestination {
+/**
+ * The task to get more results from the root executor. Submitted from user thread.
+ */
+public class RootDataTask implements DataTask {
+    /** Root executor. */
+    private final RootExec rootExec;
 
-    private final Member member;
-    private final int stripe;
-    private int thread;
-
-    public SendDestination(Member member, int stripe) {
-        this.member = member;
-        this.stripe = stripe;
+    public RootDataTask(RootExec rootExec) {
+        this.rootExec = rootExec;
     }
 
-    public Member getMember() {
-        return member;
+    RootExec getRootExec() {
+        return rootExec;
     }
 
-    public int getStripe() {
-        return stripe;
-    }
-
+    @Override
     public int getThread() {
-        return thread;
-    }
-
-    /**
-     * Callback invoked when the thread for the given strip is resolved.
-     *
-     */
-    private void onThreadResolved(int thread) {
-        this.thread = thread;
+        return rootExec.getThread();
     }
 }

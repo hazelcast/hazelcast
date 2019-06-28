@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.query.physical.PhysicalPlan;
-
 /**
  * No-op optimizer.
  */

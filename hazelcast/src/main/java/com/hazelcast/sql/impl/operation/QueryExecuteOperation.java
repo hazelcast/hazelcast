@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.internal.query.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.internal.query.worker.control.ExecuteControlTask;

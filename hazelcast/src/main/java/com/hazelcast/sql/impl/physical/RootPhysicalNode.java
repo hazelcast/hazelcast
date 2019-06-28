@@ -14,62 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
-import java.util.List;
 
-public class SortPhysicalNode implements PhysicalNode {
-
+/**
+ * Root physical node. Performs final collection of results.
+ */
+public class RootPhysicalNode implements PhysicalNode {
+    /** Upstream node. */
     private PhysicalNode upstream;
-    private List<Expression> expressions;
-    private List<Boolean> ascs;
 
-    public SortPhysicalNode() {
+    public RootPhysicalNode() {
         // No-op.
     }
 
-    public SortPhysicalNode(PhysicalNode upstream, List<Expression> expressions, List<Boolean> ascs) {
+    public RootPhysicalNode(PhysicalNode upstream) {
         this.upstream = upstream;
-        this.expressions = expressions;
-        this.ascs = ascs;
     }
 
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
-    public List<Expression> getExpressions() {
-        return expressions;
-    }
-
-    public List<Boolean> getAscs() {
-        return ascs;
-    }
-
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         upstream.visit(visitor);
 
-        visitor.onSortNode(this);
+        visitor.onRootNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        // TODO: Optimize nodes serde.
         out.writeObject(upstream);
-        out.writeObject(expressions);
-        out.writeObject(ascs);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
-        expressions = in.readObject();
-        ascs = in.readObject();
     }
 }

@@ -1,40 +1,67 @@
-package com.hazelcast.internal.query.worker.data;
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package com.hazelcast.sql.impl.worker.data;
+
+import com.hazelcast.internal.query.worker.control.StripeDeployment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.exec.RootExec;
-import com.hazelcast.internal.query.worker.AbstractWorker;
-import com.hazelcast.internal.query.worker.control.StripeDeployment;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.InboxKey;
+import com.hazelcast.sql.impl.worker.AbstractWorker;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Worker which process data requests.
+ */
+// TODO: Cleanup on query finish.
 public class DataWorker extends AbstractWorker<DataTask> {
     /** Stripe not mapped to any thread yet. */
     public static final int UNMAPPED_STRIPE = -1;
 
-    private final DataThreadPool dataPool;
+    /** Registered inboxes. */
     private final Map<InboxKey, AbstractInbox> inboxes = new HashMap<>();
+
+    /** Thread index. */
     private final int thread;
 
-    public DataWorker(DataThreadPool dataPool, int thread) {
-        this.dataPool = dataPool;
+    public DataWorker(int thread) {
         this.thread = thread;
     }
 
     @Override
     protected void executeTask(DataTask task) {
         if (task instanceof StartStripeDataTask)
-            handleStartStripe((StartStripeDataTask)task);
+            handleStartStripeTask((StartStripeDataTask)task);
         else if (task instanceof BatchDataTask)
-            handleBatch((BatchDataTask)task);
+            handleBatchTask((BatchDataTask)task);
         else if (task instanceof RootDataTask)
-            handleRoot((RootDataTask)task);
+            handleRootTask((RootDataTask)task);
     }
 
-    private void handleStartStripe(StartStripeDataTask task) {
+    /**
+     * Start stripe execution.
+     *
+     * @param task Task descriptor.
+     */
+    private void handleStartStripeTask(StartStripeDataTask task) {
         StripeDeployment stripeDeployment = task.getStripeDeployment();
 
         QueryId queryId = stripeDeployment.getContext().getQueryId();
@@ -56,7 +83,12 @@ public class DataWorker extends AbstractWorker<DataTask> {
         exec.advance();
     }
 
-    private void handleBatch(BatchDataTask task) {
+    /**
+     * Process incoming batch.
+     *
+     * @param task Task descriptor.
+     */
+    private void handleBatchTask(BatchDataTask task) {
         // Locate the inbox.
         QueryId queryId = task.getQueryId();
         int edgeId = task.getEdgeId();
@@ -70,12 +102,19 @@ public class DataWorker extends AbstractWorker<DataTask> {
         inbox.onBatch(task.getSourceMemberId(), task.getSourceStripe(), task.getSourceThread(), task.getBatch());
 
         // Continue iteration.
+        // TODO: Handle exception!
         inbox.getExec().advance();
     }
 
-    private void handleRoot(RootDataTask task) {
+    /**
+     * Try transferring data to user.
+     *
+     * @param task Task descriptor.
+     */
+    private void handleRootTask(RootDataTask task) {
         RootExec root = task.getRootExec();
 
+        // TODO: Handle exception!
         root.advance();
     }
 
@@ -84,11 +123,10 @@ public class DataWorker extends AbstractWorker<DataTask> {
         // TODO: Handle node stop
     }
 
+    /**
+     * @return Thread index.
+     */
     public int getThread() {
         return thread;
-    }
-
-    public DataThreadPool getDataPool() {
-        return dataPool;
     }
 }

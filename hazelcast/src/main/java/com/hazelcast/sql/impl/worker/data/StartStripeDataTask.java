@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.sql.impl.worker.data.DataWorker;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.internal.query.worker.control.StripeDeployment;
+import com.hazelcast.sql.impl.worker.data.DataTask;
 
 /**
- * Abstract executor.
+ * Task to start stripe execution.
  */
-public abstract class AbstractExec implements Exec {
-    /** Global query context. */
-    protected QueryContext ctx;
+public class StartStripeDataTask implements DataTask {
+    /** Deployment. */
+    private final StripeDeployment stripeDeployment;
 
-    @Override
-    public final void setup(QueryContext ctx, DataWorker worker) {
-        this.ctx = ctx;
-
-        setup0(ctx, worker);
+    public StartStripeDataTask(StripeDeployment stripeDeployment) {
+        this.stripeDeployment = stripeDeployment;
     }
 
-    protected void setup0(QueryContext ctx, DataWorker worker) {
-        // No-op.
+    public StripeDeployment getStripeDeployment() {
+        return stripeDeployment;
+    }
+
+    @Override
+    public int getThread() {
+        return stripeDeployment.getThread();
     }
 }

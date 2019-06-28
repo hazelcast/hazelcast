@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.internal.query.worker.data.DataWorker;
-import com.hazelcast.internal.query.worker.data.RootDataTask;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
+import com.hazelcast.sql.impl.worker.data.RootDataTask;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.sql.impl.row.RowBatch;

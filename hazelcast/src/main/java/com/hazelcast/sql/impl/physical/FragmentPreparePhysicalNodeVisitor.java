@@ -16,10 +16,6 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
-import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.internal.query.physical.SendPhysicalNode;
-
 import java.util.ArrayList;
 import java.util.List;
 

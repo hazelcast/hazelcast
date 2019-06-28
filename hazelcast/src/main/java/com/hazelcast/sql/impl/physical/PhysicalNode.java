@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.physical;
+package com.hazelcast.sql.impl.physical;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * Base physical plan.
+ * Physical node.
  */
-public class PhysicalPlan {
-    private final List<PhysicalNode> nodes = new ArrayList<>();
-
-    public PhysicalPlan() {
-        // No-op.
-    }
-
-    public List<PhysicalNode> getNodes() {
-        return nodes;
-    }
-
-    public void addNode(PhysicalNode node) {
-        nodes.add(node);
-    }
+public interface PhysicalNode extends DataSerializable {
+    /**
+     * Visit the node.
+     *
+     * @param visitor Visitor.
+     */
+    void visit(PhysicalNodeVisitor visitor);
 }
