@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.impl.calcite.rels.HazelcastFilterRel;
+import com.hazelcast.sql.impl.calcite.rels.HazelcastProjectRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -26,7 +28,7 @@ import com.hazelcast.internal.query.physical.PhysicalPlan;
 import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
 import com.hazelcast.internal.query.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.physical.SendPhysicalNode;
-import com.hazelcast.internal.query.physical.SortMergeReceivePhysicalNode;
+import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
 import com.hazelcast.internal.query.physical.SortPhysicalNode;
 import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
 import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
@@ -37,32 +39,30 @@ import org.apache.calcite.rel.RelFieldCollation;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlCacitePlanVisitor {
-
+/**
+ * Plan visitor.
+ */
+public class SqlCalcitePlanVisitor {
+    /** Prepared fragments. */
     private PhysicalPlan plan = new PhysicalPlan();
-    private List<PhysicalNode> nodes = new ArrayList<>();
+
+    /** Upstream nodes. Normally it is a one node, except of multi-source operations (e.g. joins, sets, subqueries). */
+    private List<PhysicalNode> upstreamNodes = new ArrayList<>();
+
+    /** Current edge ID. */
     private int currentEdgeId;
 
-    public void visit(HazelcastRel rel) {
-        // TODO: Add project
-        // TODO: Add filter
-
-        if (rel instanceof HazelcastRootRel)
-            handleRoot((HazelcastRootRel)rel);
-        else if (rel instanceof HazelcastTableScanRel)
-            handleScan((HazelcastTableScanRel)rel);
-        else if (rel instanceof HazelcastSortRel)
-            handleSort((HazelcastSortRel)rel);
-        else
-            throw new UnsupportedOperationException("Unsupported: " + rel);
-    }
-
-    private void handleRoot(HazelcastRootRel root) {
+    /**
+     * Visit root node.
+     *
+     * @param root Root node.
+     */
+    public void visitRoot(HazelcastRootRel root) {
         // TODO: In correct implementation we should always compare two adjacent nodes and decide whether new
         // TODO: fragment is needed.
         currentEdgeId++;
 
-        PhysicalNode upstreamNode = nodes.remove(0);
+        PhysicalNode upstreamNode = this.upstreamNodes.remove(0);
 
         if (upstreamNode instanceof SortPhysicalNode) {
             SortPhysicalNode upstreamNode0 = (SortPhysicalNode)upstreamNode;
@@ -77,10 +77,9 @@ public class SqlCacitePlanVisitor {
 
             plan.addNode(sendNode);
 
-            SortMergeReceivePhysicalNode receiveNode = new SortMergeReceivePhysicalNode(
+            ReceiveSortMergePhysicalNode receiveNode = new ReceiveSortMergePhysicalNode(
                 upstreamNode0.getExpressions(),
                 upstreamNode0.getAscs(),
-                1,
                 currentEdgeId
             );
 
@@ -102,14 +101,19 @@ public class SqlCacitePlanVisitor {
             plan.addNode(sendNode);
 
             RootPhysicalNode rootNode = new RootPhysicalNode(
-                new ReceivePhysicalNode(currentEdgeId, 1)
+                new ReceivePhysicalNode(currentEdgeId)
             );
 
             plan.addNode(rootNode);
         }
     }
 
-    private void handleScan(HazelcastTableScanRel scan) {
+    /**
+     * Visit table scan.
+     *
+     * @param scan Table scan.
+     */
+    public void visitTableScan(HazelcastTableScanRel scan) {
         // TODO: Handle schemas (in future)!
         String mapName = scan.getTable().getQualifiedName().get(0);
 
@@ -128,11 +132,36 @@ public class SqlCacitePlanVisitor {
             1           // Parallelism
         );
 
-        nodes.add(scanNode);
+        upstreamNodes.add(scanNode);
     }
 
-    private void handleSort(HazelcastSortRel sort) {
-        assert nodes.size() == 1;
+    /**
+     * Visit project.
+     *
+     * @param project Project.
+     */
+    public void visitProject(HazelcastProjectRel project) {
+        // TODO: Implement.
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Visit filter.
+     *
+     * @param filter Filter.
+     */
+    public void visitFilter(HazelcastFilterRel filter) {
+        // TODO: Implement.
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Visit sort.
+     *
+     * @param sort Sort.
+     */
+    public void visitSort(HazelcastSortRel sort) {
+        assert upstreamNodes.size() == 1;
 
         List<RelFieldCollation> collations = sort.getCollation().getFieldCollations();
 
@@ -149,9 +178,9 @@ public class SqlCacitePlanVisitor {
             ascs.add(!direction.isDescending());
         }
 
-        SortPhysicalNode sortNode = new SortPhysicalNode(nodes.remove(0), expressions, ascs);
+        SortPhysicalNode sortNode = new SortPhysicalNode(upstreamNodes.remove(0), expressions, ascs);
 
-        nodes.add(sortNode);
+        upstreamNodes.add(sortNode);
     }
 
     public PhysicalPlan getPlan() {

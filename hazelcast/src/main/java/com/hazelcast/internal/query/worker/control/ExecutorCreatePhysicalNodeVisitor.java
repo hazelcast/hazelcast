@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.query.worker.control;
 
 import com.hazelcast.cluster.Member;
@@ -10,17 +26,17 @@ import com.hazelcast.sql.impl.exec.ReceiveExec;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.exec.SendExec;
 import com.hazelcast.sql.impl.exec.SortExec;
-import com.hazelcast.sql.impl.exec.SortMergeReceiveExec;
+import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.internal.query.physical.MapScanPhysicalNode;
-import com.hazelcast.internal.query.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.internal.query.physical.ReceivePhysicalNode;
 import com.hazelcast.internal.query.physical.RootPhysicalNode;
 import com.hazelcast.internal.query.physical.SendPhysicalNode;
-import com.hazelcast.internal.query.physical.SortMergeReceivePhysicalNode;
+import com.hazelcast.internal.query.physical.ReceiveSortMergePhysicalNode;
 import com.hazelcast.internal.query.physical.SortPhysicalNode;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.collection.PartitionIdSet;
@@ -120,7 +136,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     }
 
     @Override
-    public void onSortMergeReceiveNode(SortMergeReceivePhysicalNode node) {
+    public void onReceiveSortMergeNode(ReceiveSortMergePhysicalNode node) {
         // Navigate to sender exec and calculate total number of sender stripes.
         int edgeId = node.getEdgeId();
 
@@ -138,7 +154,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         inboxes.add(inbox);
 
         // Instantiate executor and put it to stack.
-        SortMergeReceiveExec res = new SortMergeReceiveExec(
+        ReceiveSortMergeExec res = new ReceiveSortMergeExec(
             inbox,
             node.getExpressions(),
             node.getAscs()

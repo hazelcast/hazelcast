@@ -198,7 +198,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
 
         // 5. ==================== DECOUPLE FROM CALCITE ====================
-        SqlCacitePlanVisitor planVisitor = new SqlCacitePlanVisitor();
+        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
 
         optimizedRootRelNode.visitForPlan(planVisitor);
 

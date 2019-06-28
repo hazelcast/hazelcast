@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.QueryConfig;
 import com.hazelcast.internal.query.QueryFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
-import com.hazelcast.internal.query.physical.FragmentPrepareVisitor;
+import com.hazelcast.sql.impl.physical.FragmentPreparePhysicalNodeVisitor;
 import com.hazelcast.internal.query.physical.PhysicalNode;
 import com.hazelcast.internal.query.physical.PhysicalPlan;
 import com.hazelcast.internal.query.physical.RootPhysicalNode;
@@ -163,7 +163,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     }
 
     private QueryFragment fragmentFromNode(PhysicalNode node) {
-        FragmentPrepareVisitor visitor = new FragmentPrepareVisitor();
+        FragmentPreparePhysicalNodeVisitor visitor = new FragmentPreparePhysicalNodeVisitor();
 
         node.visit(visitor);
 
@@ -177,17 +177,13 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         for (Member member : members)
             memberIds.add(member.getUuid());
 
-        int parallelism = visitor.getParallelism();
-
-        if (parallelism <= 0)
-            parallelism = 1;
-
+        // TODO: Support parallelism: https://github.com/hazelcast/hazelcast/issues/15229
         return new QueryFragment(
             node,
             visitor.getOutboundEdge(),
             visitor.getInboundEdges(),
             memberIds,
-            parallelism
+            1
         );
     }
 

@@ -97,10 +97,4 @@ public class QueryFragment implements DataSerializable {
         memberIds = in.readObject();
         parallelism = in.readInt();
     }
-
-    @Override
-    public String toString() {
-        // TODO: Proper toString
-        return "QueryFragment{node=" + node.getClass().getSimpleName() + ", memberIds=" + memberIds + "}";
-    }
 }

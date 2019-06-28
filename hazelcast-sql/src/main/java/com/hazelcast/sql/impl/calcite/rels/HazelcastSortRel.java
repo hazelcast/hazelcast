@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.rels;
 
-import com.hazelcast.sql.impl.calcite.SqlCacitePlanVisitor;
+import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
@@ -51,9 +51,9 @@ public class HazelcastSortRel extends Sort implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(SqlCacitePlanVisitor visitor) {
-        visitor.visit((HazelcastRel)getInput());
+    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
+        ((HazelcastRel)getInput()).visitForPlan(visitor);
 
-        visitor.visit(this);
+        visitor.visitSort(this);
     }
 }

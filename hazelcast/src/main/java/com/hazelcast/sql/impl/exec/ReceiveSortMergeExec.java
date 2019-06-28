@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Executor which receives entries from multiple sources and merge them into a single sorted stream.
  */
-public class SortMergeReceiveExec extends AbstractExec {
+public class ReceiveSortMergeExec extends AbstractExec {
     /** AbstractInbox to consume results from. */
     private final StripedInbox inbox;
 
@@ -54,7 +54,7 @@ public class SortMergeReceiveExec extends AbstractExec {
     private boolean inputsAvailable;
 
     @SuppressWarnings("unchecked")
-    public SortMergeReceiveExec(StripedInbox inbox, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceiveSortMergeExec(StripedInbox inbox, List<Expression> expressions, List<Boolean> ascs) {
         this.inbox = inbox;
         this.expressions = expressions;
 

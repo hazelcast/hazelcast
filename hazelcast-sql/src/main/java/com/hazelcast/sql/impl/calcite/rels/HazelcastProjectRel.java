@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.rels;
 
-import com.hazelcast.sql.impl.calcite.SqlCacitePlanVisitor;
+import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -43,7 +43,9 @@ public class HazelcastProjectRel extends Project implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(SqlCacitePlanVisitor visitor) {
-        throw new UnsupportedOperationException();
+    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
+        ((HazelcastRel)getInput()).visitForPlan(visitor);
+
+        visitor.visitProject(this);
     }
 }

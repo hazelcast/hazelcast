@@ -16,14 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite.rels;
 
-import com.hazelcast.sql.impl.calcite.SqlCacitePlanVisitor;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
+// TODO: getDigest - should we implement it?
 public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
 
     private final RelDataType rowType;
@@ -44,7 +44,7 @@ public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(SqlCacitePlanVisitor visitor) {
-        visitor.visit(this);
+    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
+        visitor.visitTableScan(this);
     }
 }
