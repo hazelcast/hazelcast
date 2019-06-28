@@ -33,11 +33,8 @@ public class SendPhysicalNode implements PhysicalNode {
     private PhysicalNode upstream;
 
     /** Partition hasher (get partition hash from row). */
+    // TODO: Fix! Something is wrong with this concept.
     private Expression<Integer> partitionHasher;
-
-    /** Whether data partitions should be used to resolve target. */
-    // TODO: Something is wrong here! partitionHasher + useDataPartitions should be the same?
-    private boolean useDataPartitions;
 
     public SendPhysicalNode() {
         // No-op.
@@ -48,7 +45,6 @@ public class SendPhysicalNode implements PhysicalNode {
         this.edgeId = edgeId;
         this.upstream = upstream;
         this.partitionHasher = partitionHasher;
-        this.useDataPartitions = useDataPartitions;
     }
 
     public int getEdgeId() {
@@ -63,10 +59,6 @@ public class SendPhysicalNode implements PhysicalNode {
         return partitionHasher;
     }
 
-    public boolean isUseDataPartitions() {
-        return useDataPartitions;
-    }
-
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         upstream.visit(visitor);
@@ -79,7 +71,6 @@ public class SendPhysicalNode implements PhysicalNode {
         out.writeInt(edgeId);
         out.writeObject(upstream);
         out.writeObject(partitionHasher);
-        out.writeBoolean(useDataPartitions);
     }
 
     @Override
@@ -87,6 +78,5 @@ public class SendPhysicalNode implements PhysicalNode {
         edgeId = in.readInt();
         upstream = in.readObject();
         partitionHasher = in.readObject();
-        useDataPartitions = in.readBoolean();
     }
 }

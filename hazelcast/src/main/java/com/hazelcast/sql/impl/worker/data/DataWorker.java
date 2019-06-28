@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.internal.query.worker.control.StripeDeployment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.InboxKey;
 import com.hazelcast.sql.impl.worker.AbstractWorker;
+import com.hazelcast.sql.impl.worker.control.StripeDeployment;
 
 import java.util.HashMap;
 import java.util.List;

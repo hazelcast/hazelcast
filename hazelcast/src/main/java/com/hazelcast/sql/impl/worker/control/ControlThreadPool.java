@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.control;
 
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.worker.AbstractThreadPool;
 import com.hazelcast.sql.impl.worker.data.DataThreadPool;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 
 /**
  * Control thread pool. Responsible for query initiation and cancel as well as for reactions on asynchronous
@@ -53,6 +53,11 @@ public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
         return new ControlWorker(service, nodeEngine, dataPool);
     }
 
+    /**
+     * Submit a task.
+     *
+     * @param task Task.
+     */
     public void submit(ControlTask task) {
         QueryId queryId = task.getQueryId();
 

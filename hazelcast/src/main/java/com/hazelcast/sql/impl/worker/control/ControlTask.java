@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.control;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.worker.WorkerTask;
 
+/**
+ * Control task (start query, stop query, handle cluster events).
+ */
 public interface ControlTask extends WorkerTask {
+    /**
+     * @return Query ID or {@code null} in case of event which should be delivered to all stripes.
+     */
     QueryId getQueryId();
 }

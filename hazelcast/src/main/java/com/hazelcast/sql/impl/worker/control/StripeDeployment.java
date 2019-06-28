@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.control;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.Exec;
@@ -24,35 +24,52 @@ import com.hazelcast.sql.impl.mailbox.Outbox;
 import java.util.List;
 
 /**
- * Deployment of a single fragment.
+ * Deployment of a single fragment on a single stripe.
  */
 public class StripeDeployment {
-
+    /** Executor. */
     private final Exec exec;
-    private final int sripe;
+
+    /** Stripe index. */
+    private final int stripe;
+
+    /** Thread index. */
     private final int thread;
+
+    /** Inboxes. */
     private final List<AbstractInbox> inboxes;
+
+    /** Outboxes. */
     private final List<Outbox> outboxes;
 
+    /** Query context. */
     private QueryContext ctx;
+
+    /** Parent fragment. */
     private FragmentDeployment fragmentDeployment;
 
+    /** Whether stripe execution is finished. */
     private volatile boolean done;
 
     public StripeDeployment(Exec exec, int stripe, int thread, List<AbstractInbox> inboxes, List<Outbox> outboxes) {
         this.exec = exec;
-        this.sripe = stripe;
+        this.stripe = stripe;
         this.thread = thread;
         this.inboxes = inboxes;
         this.outboxes = outboxes;
+    }
+
+    public void initialize(QueryContext ctx, FragmentDeployment fragmentDeployment) {
+        this.ctx = ctx;
+        this.fragmentDeployment = fragmentDeployment;
     }
 
     public Exec getExec() {
         return exec;
     }
 
-    public int getSripe() {
-        return sripe;
+    public int getStripe() {
+        return stripe;
     }
 
     public int getThread() {
@@ -82,10 +99,5 @@ public class StripeDeployment {
 
     public FragmentDeployment getFragmentDeployment() {
         return fragmentDeployment;
-    }
-
-    public void initialize(QueryContext ctx, FragmentDeployment fragmentDeployment) {
-        this.ctx = ctx;
-        this.fragmentDeployment = fragmentDeployment;
     }
 }

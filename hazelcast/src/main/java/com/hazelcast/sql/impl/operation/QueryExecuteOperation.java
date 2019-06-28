@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
-import com.hazelcast.internal.query.worker.control.ExecuteControlTask;
+import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.SqlServiceImpl;

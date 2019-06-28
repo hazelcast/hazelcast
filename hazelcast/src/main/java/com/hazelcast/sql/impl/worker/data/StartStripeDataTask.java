@@ -16,8 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.internal.query.worker.control.StripeDeployment;
-import com.hazelcast.sql.impl.worker.data.DataTask;
+import com.hazelcast.sql.impl.worker.control.StripeDeployment;
 
 /**
  * Task to start stripe execution.

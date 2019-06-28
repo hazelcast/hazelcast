@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.control;
 
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
@@ -25,11 +25,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Task to start query execution.
+ */
 public class ExecuteControlTask implements ControlTask {
+    /** Query ID. */
     private final QueryId queryId;
+
+    /** Partition mapping. */
     private final Map<String, PartitionIdSet> partitionMapping;
+
+    /** Fragments. */
     private final List<QueryFragment> fragments;
+
+    /** Query arguments. */
     private final List<Object> arguments;
+
+    /** Root consumer (available only on initiating node). */
     private final QueryResultConsumer rootConsumer;
 
     public ExecuteControlTask(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
@@ -60,10 +72,5 @@ public class ExecuteControlTask implements ControlTask {
 
     public QueryResultConsumer getRootConsumer() {
         return rootConsumer;
-    }
-
-    @Override
-    public String toString() {
-        return "ExecuteControlTask{queryId=" + queryId + ", fragments=" + fragments + "}";
     }
 }

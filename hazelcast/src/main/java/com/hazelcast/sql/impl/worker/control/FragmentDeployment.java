@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.query.worker.control;
+package com.hazelcast.sql.impl.worker.control;
 
 import java.util.List;
 
+/**
+ * Fragment deployment with relevant stripes.
+ */
 public class FragmentDeployment {
-
+    /** Stripes. */
     private final List<StripeDeployment> stripes;
 
     public FragmentDeployment(List<StripeDeployment> stripes) {

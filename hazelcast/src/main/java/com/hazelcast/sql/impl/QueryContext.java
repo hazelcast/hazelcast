@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.query.worker.control.FragmentDeployment;
+import com.hazelcast.sql.impl.worker.control.FragmentDeployment;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.List;

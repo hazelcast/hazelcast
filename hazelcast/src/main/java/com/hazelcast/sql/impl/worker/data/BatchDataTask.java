@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.worker.data;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
-import com.hazelcast.internal.query.worker.control.ControlTask;
+import com.hazelcast.sql.impl.worker.control.ControlTask;
 
 /**
  * Task to process incoming batch. Batch may be either mapped or unmapped. In the first case we submit it directly

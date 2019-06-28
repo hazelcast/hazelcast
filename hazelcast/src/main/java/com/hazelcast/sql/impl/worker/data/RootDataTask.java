@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.worker.data;
 
 import com.hazelcast.sql.impl.exec.RootExec;
-import com.hazelcast.sql.impl.worker.data.DataTask;
 
 /**
  * The task to get more results from the root executor. Submitted from user thread.
