@@ -346,3 +346,7 @@ Hazelcast is available as Kubernetes/OpenShift Operator:
 ### Red Hat OpenShift
 
 The plugin is used to provide the OpenShift integration, please check [Hazelcast OpenShift Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/openshift) for details.
+
+### Istio
+
+Hazelcast works correctly with Istio >= 1.1.0 without any need of additional configuration. You can use it in both client-server and embedded modes. Also, the Hazelcast cluster can be either outside or inside the Istio mesh.
