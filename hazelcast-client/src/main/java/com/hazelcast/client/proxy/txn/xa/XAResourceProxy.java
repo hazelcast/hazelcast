@@ -204,13 +204,8 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     public Xid[] recover(int flag) throws XAException {
         ClientMessage request = XATransactionCollectTransactionsCodec.encodeRequest();
         ClientMessage response = invoke(request);
-        Collection<Data> list = XATransactionCollectTransactionsCodec.decodeResponse(response).response;
-        SerializableXID[] xidArray = new SerializableXID[list.size()];
-        int index = 0;
-        for (Data xidData : list) {
-            xidArray[index++] = toObject(xidData);
-        }
-        return xidArray;
+        Collection<Xid> list = XATransactionCollectTransactionsCodec.decodeResponse(response).response;
+        return list.toArray(new Xid[0]);
     }
 
     @Override

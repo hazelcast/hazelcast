@@ -61,8 +61,7 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     }
 
     private List fetchWithoutPrefetchValues(HazelcastClientInstanceImpl client) {
-        ClientMessage request = MapFetchKeysCodec.encodeRequest(mapProxy.getName(), partitionId,
-                lastTableIndex, fetchSize);
+        ClientMessage request = MapFetchKeysCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize);
         ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
@@ -75,8 +74,7 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
     }
 
     private List fetchWithPrefetchValues(HazelcastClientInstanceImpl client) {
-        ClientMessage request = MapFetchEntriesCodec.encodeRequest(mapProxy.getName(), partitionId, lastTableIndex,
-                fetchSize);
+        ClientMessage request = MapFetchEntriesCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize);
         ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
