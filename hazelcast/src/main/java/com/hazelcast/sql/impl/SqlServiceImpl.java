@@ -160,6 +160,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         return new QueryExecuteOperation(queryId, partitionMap, fragments, args, rootConsumer);
     }
 
+    // TODO: Move to Calcite module.
     private QueryFragment fragmentFromNode(PhysicalNode node) {
         FragmentPreparePhysicalNodeVisitor visitor = new FragmentPreparePhysicalNodeVisitor();
 
