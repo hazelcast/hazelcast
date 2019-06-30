@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
@@ -48,6 +46,9 @@ public class HazelcastSortPhysicalRule extends RelOptRule {
             .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
             .plus(HazelcastDistributionTrait.ANY);
 
+        // Current implementation doesn't enforce any traits on child data sources.
+        // Resulting tree is: Merge (SINGLETON) <- Scan (ANY) <- Input (ANY).
+        // This way we do not produce addiotional exchanges.
         HazelcastSortPhysicalRel newSort = new HazelcastSortPhysicalRel(
             sort.getCluster(),
             sort.getTraitSet().plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL).plus(HazelcastDistributionTrait.ANY),
