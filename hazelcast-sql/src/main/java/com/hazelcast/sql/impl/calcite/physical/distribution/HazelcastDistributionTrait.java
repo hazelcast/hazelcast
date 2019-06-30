@@ -6,6 +6,7 @@ import org.apache.calcite.plan.RelTraitDef;
 
 public class HazelcastDistributionTrait implements RelTrait {
 
+    public static final HazelcastDistributionTrait PARTITIONED = new HazelcastDistributionTrait(HazelcastDistributionType.PARTITIONED);
     public static final HazelcastDistributionTrait SINGLETON = new HazelcastDistributionTrait(HazelcastDistributionType.SINGLETON);
     public static final HazelcastDistributionTrait ANY = new HazelcastDistributionTrait(HazelcastDistributionType.ANY);
 
