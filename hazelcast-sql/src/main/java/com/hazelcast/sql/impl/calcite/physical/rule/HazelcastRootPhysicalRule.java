@@ -46,14 +46,12 @@ public class HazelcastRootPhysicalRule extends RelOptRule {
         HazelcastRootRel root = call.rel(0);
         RelNode input = call.rel(1);
 
-        // TODO: Proper partitioning.
         RelTraitSet traits = input.getTraitSet()
             .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
             .plus(HazelcastDistributionTrait.SINGLETON);
 
         final RelNode convertedInput = convert(input, traits.simplify());
 
-        // TODO: Add proper partitioning.
         HazelcastRootPhysicalRel rootPhysical = new HazelcastRootPhysicalRel(
             root.getCluster(),
             root.getTraitSet().plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL).plus(HazelcastDistributionTrait.SINGLETON),

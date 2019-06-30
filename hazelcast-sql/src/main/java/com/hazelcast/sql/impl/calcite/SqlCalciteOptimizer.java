@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributio
 import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastRootPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastSortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastTableScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.Person;
@@ -245,14 +246,14 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
      * @return Optimized physical node.
      */
     private HazelcastPhysicalRel processPhysical(VolcanoPlanner planner, HazelcastRel logicalRel) {
-        // TODO: Define rules.
+        // TODO: Cache rules
         RuleSet rules = RuleSets.ofList(
+            HazelcastSortPhysicalRule.INSTANCE,
             HazelcastRootPhysicalRule.INSTANCE,
             HazelcastTableScanPhysicalRule.INSTANCE,
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
-        // TODO: Add distribution trait here.
         RelTraitSet traits = logicalRel.getTraitSet()
             .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
             .plus(HazelcastDistributionTrait.SINGLETON);
