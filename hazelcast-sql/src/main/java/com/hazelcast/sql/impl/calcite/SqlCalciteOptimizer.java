@@ -16,19 +16,26 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastRootPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastTableScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.Person;
-import com.hazelcast.sql.impl.calcite.rules.HazelcastFilterRule;
-import com.hazelcast.sql.impl.calcite.rules.HazelcastProjectIntoScanRule;
-import com.hazelcast.sql.impl.calcite.rules.HazelcastProjectRule;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
-import com.hazelcast.sql.impl.calcite.rules.HazelcastSortRule;
-import com.hazelcast.sql.impl.calcite.rules.HazelcastTableScanRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastFilterRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectIntoScanRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectRule;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastSortRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastTableScanRule;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -36,13 +43,19 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.Contexts;
+import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
+import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelDistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.schema.impl.LongSchemaVersion;
@@ -50,12 +63,15 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.apache.calcite.tools.Program;
+import org.apache.calcite.tools.Programs;
+import org.apache.calcite.tools.RuleSet;
+import org.apache.calcite.tools.RuleSets;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -111,6 +127,12 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
             Contexts.of(config)
         );
 
+        planner.clearRelTraitDefs();
+        planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+        // planner.addRelTraitDef(RelDistributionTraitDef.INSTANCE);
+        planner.addRelTraitDef(HazelcastDistributionTraitDef.INSTANCE);
+        planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
+
         // TODO: Add various rules (see CalcitePrepareImpl.createPlanner)
 
         SqlRexConvertletTable rexConvertletTable = StandardConvertletTable.INSTANCE;
@@ -163,10 +185,31 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         System.out.println(">>> Converted REL: " + root);
 
         // 4. ==================== OPTIMIZE ====================
+        HazelcastRel logicalRel = processLogical(root.rel);
+        HazelcastPhysicalRel physicalRel = processPhysical(planner, logicalRel);
+
+        // TODO: Use visitor to find unsupported operations!
+
+        // TODO: See DefaultSqlHandler.convertToDrel
+        // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
+
+        // 5. ==================== DECOUPLE FROM CALCITE ====================
+        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
+
+        logicalRel.visitForPlan(planVisitor);
+
+        PhysicalPlan plan = planVisitor.getPlan();
+
+        return plan;
+    }
+
+    private HazelcastRel processLogical(RelNode rel) {
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
         // TODO: Rules to merge scan and project/filter
         // TODO: Rule to eliminate sorting if the source is already sorted.
+
+        hepBuilder.addRuleInstance(new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER));
 
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE); // TODO: Remove once both merge routines are ready
         hepBuilder.addRuleInstance(HazelcastProjectIntoScanRule.INSTANCE);
@@ -180,32 +223,51 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
             hepBuilder.build()
         );
 
-        hepPlanner.setRoot(root.rel);
+        hepPlanner.setRoot(rel);
 
-        RelNode optimizedRelNode = hepPlanner.findBestExp();
+        RelNode optimizedRel = hepPlanner.findBestExp();
 
-        HazelcastRootRel optimizedRootRelNode = new HazelcastRootRel(
-            optimizedRelNode.getCluster(),
-            optimizedRelNode.getTraitSet(),
-            optimizedRelNode
+        HazelcastRootRel res = new HazelcastRootRel(
+            optimizedRel.getCluster(),
+            optimizedRel.getTraitSet(),
+            optimizedRel
         );
 
-        System.out.println(">>> Optimized REL: " + optimizedRootRelNode);
+        System.out.println(">>> Processed logical: " + res);
 
-        // TODO: Use visitor to find unsupported operations!
+        return res;
+    }
 
-        // TODO: See DefaultSqlHandler.convertToDrel
-        // TODO: See PlannerPhase.LOGICAL - this is where logical expressions are converted!
-        // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
+    /**
+     * Optimize physical nodes.
+     *
+     * @param logicalRel Logical node.
+     * @return Optimized physical node.
+     */
+    private HazelcastPhysicalRel processPhysical(VolcanoPlanner planner, HazelcastRel logicalRel) {
+        // TODO: Define rules.
+        RuleSet rules = RuleSets.ofList(
+            HazelcastRootPhysicalRule.INSTANCE,
+            HazelcastTableScanPhysicalRule.INSTANCE,
+            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
+        );
 
-        // 5. ==================== DECOUPLE FROM CALCITE ====================
-        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
+        // TODO: Add distribution trait here.
+        RelTraitSet traits = logicalRel.getTraitSet()
+            .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(HazelcastDistributionTrait.SINGLETON);
 
-        optimizedRootRelNode.visitForPlan(planVisitor);
+        final Program program = Programs.of(rules);
 
-        PhysicalPlan plan = planVisitor.getPlan();
+        RelNode res = program.run(
+            planner,
+            logicalRel,
+            traits,
+            ImmutableList.of(),
+            ImmutableList.of()
+        );
 
-        return plan;
+        return (HazelcastPhysicalRel)res;
     }
 
     /**

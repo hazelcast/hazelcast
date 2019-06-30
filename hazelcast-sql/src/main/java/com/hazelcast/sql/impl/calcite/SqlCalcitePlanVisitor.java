@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.rels.HazelcastFilterRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastProjectRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastFilterRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastProjectRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -30,9 +30,9 @@ import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRootRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastSortRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastTableScanRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastTableScanRel;
 import org.apache.calcite.rel.RelFieldCollation;
 
 import java.util.ArrayList;

@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.logical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rel.SingleRel;
 
-public class HazelcastFilterRel extends Filter implements HazelcastRel {
-    public HazelcastFilterRel(RelOptCluster cluster, RelTraitSet traits, RelNode child, RexNode condition) {
-        super(cluster, traits, child, condition);
+import java.util.List;
+
+public class HazelcastRootRel extends SingleRel implements HazelcastRel {
+    public HazelcastRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
-    public Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
-        return new HazelcastFilterRel(getCluster(), traitSet, input, condition);
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new HazelcastRootRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override
     public void visitForPlan(SqlCalcitePlanVisitor visitor) {
         ((HazelcastRel)getInput()).visitForPlan(visitor);
 
-        visitor.visitFilter(this);
+        visitor.visitRoot(this);
     }
 }

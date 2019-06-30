@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rules;
+package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.rels.HazelcastFilterRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastFilterRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;

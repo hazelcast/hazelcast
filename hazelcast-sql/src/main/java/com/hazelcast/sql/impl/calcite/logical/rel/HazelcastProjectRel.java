@@ -14,46 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.logical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 
-public class HazelcastSortRel extends Sort implements HazelcastRel {
-    public HazelcastSortRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode child,
-        RelCollation collation
-    ) {
-        super(cluster, traits, child, collation);
-    }
+import java.util.List;
 
-    public HazelcastSortRel(
+public class HazelcastProjectRel extends Project implements HazelcastRel {
+    public HazelcastProjectRel(
         RelOptCluster cluster,
         RelTraitSet traits,
-        RelNode child,
-        RelCollation collation,
-        RexNode offset,
-        RexNode fetch
+        RelNode input,
+        List<? extends RexNode> projects,
+        RelDataType rowType
     ) {
-        super(cluster, traits, child, collation, offset, fetch);
+        super(cluster, traits, input, projects, rowType);
     }
 
     @Override
-    public Sort copy(RelTraitSet traitSet, RelNode newInput, RelCollation newCollation, RexNode offset, RexNode fetch) {
-        return new HazelcastSortRel(getCluster(), traitSet, input, collation, offset, fetch);
+    public Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
+        return new HazelcastProjectRel(getCluster(), traitSet, input, exps, rowType);
     }
 
     @Override
     public void visitForPlan(SqlCalcitePlanVisitor visitor) {
         ((HazelcastRel)getInput()).visitForPlan(visitor);
 
-        visitor.visitSort(this);
+        visitor.visitProject(this);
     }
 }

@@ -14,38 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.logical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.List;
-
-public class HazelcastProjectRel extends Project implements HazelcastRel {
-    public HazelcastProjectRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode input,
-        List<? extends RexNode> projects,
-        RelDataType rowType
-    ) {
-        super(cluster, traits, input, projects, rowType);
+public class HazelcastFilterRel extends Filter implements HazelcastRel {
+    public HazelcastFilterRel(RelOptCluster cluster, RelTraitSet traits, RelNode child, RexNode condition) {
+        super(cluster, traits, child, condition);
     }
 
     @Override
-    public Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
-        return new HazelcastProjectRel(getCluster(), traitSet, input, exps, rowType);
+    public Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
+        return new HazelcastFilterRel(getCluster(), traitSet, input, condition);
     }
 
     @Override
     public void visitForPlan(SqlCalcitePlanVisitor visitor) {
         ((HazelcastRel)getInput()).visitForPlan(visitor);
 
-        visitor.visitProject(this);
+        visitor.visitFilter(this);
     }
 }

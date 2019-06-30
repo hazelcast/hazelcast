@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.physical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
+import java.util.List;
+
 // TODO: getDigest - should we implement it?
-public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
+public class HazelcastTableScanPhysicalRel extends TableScan implements HazelcastPhysicalRel {
 
     private final RelDataType rowType;
 
-    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
+    public HazelcastTableScanPhysicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
         this(cluster, traitSet, table, table.getRowType());
     }
 
-    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
+    public HazelcastTableScanPhysicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
         super(cluster, traitSet, table);
 
         this.rowType = rowType;
@@ -44,7 +48,7 @@ public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
     }
 
     @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        visitor.visitTableScan(this);
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new HazelcastTableScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), this.rowType);
     }
 }

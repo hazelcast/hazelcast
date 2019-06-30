@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rules;
+package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastSortRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -31,8 +32,7 @@ public class HazelcastSortRule extends RelOptRule {
 
     private HazelcastSortRule() {
         super(
-            // TODO: Why Convention.NONE is used in Drill?
-            RelOptRule.operand(LogicalSort.class, RelOptRule.any()),
+            RelOptRule.operand(LogicalSort.class, Convention.NONE, RelOptRule.any()),
             RelFactories.LOGICAL_BUILDER,
             "HazelcastSortRule"
         );

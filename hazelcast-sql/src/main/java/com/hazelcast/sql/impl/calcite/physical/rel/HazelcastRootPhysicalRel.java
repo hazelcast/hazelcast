@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.physical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 
-public class HazelcastRootRel extends SingleRel implements HazelcastRel  {
-    public HazelcastRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+import java.util.List;
+
+public class HazelcastRootPhysicalRel extends SingleRel implements HazelcastPhysicalRel {
+    public HazelcastRootPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
 
     @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        ((HazelcastRel)getInput()).visitForPlan(visitor);
-
-        visitor.visitRoot(this);
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new HazelcastRootPhysicalRel(this.getCluster(), traitSet, sole(inputs));
     }
 }

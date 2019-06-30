@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite;
 
 import org.apache.calcite.rel.RelNode;
 
+/**
+ * Marker interface for Hazelcast rel node.
+ */
 public interface HazelcastRelNode extends RelNode {
     // No-op.
 }

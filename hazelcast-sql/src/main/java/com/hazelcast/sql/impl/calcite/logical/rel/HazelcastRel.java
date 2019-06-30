@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rels;
+package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.Convention;
 

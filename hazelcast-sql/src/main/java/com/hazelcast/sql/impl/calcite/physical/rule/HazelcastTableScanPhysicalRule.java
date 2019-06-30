@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rules;
+package com.hazelcast.sql.impl.calcite.physical.rule;
 
-import com.hazelcast.sql.impl.calcite.rels.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.rels.HazelcastTableScanRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastTableScanRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastTableScanPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 
-public class HazelcastTableScanRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new HazelcastTableScanRule();
+public class HazelcastTableScanPhysicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new HazelcastTableScanPhysicalRule();
 
-    private HazelcastTableScanRule() {
+    private HazelcastTableScanPhysicalRule() {
         super(
-            RelOptRule.operand(LogicalTableScan.class, RelOptRule.any()),
-            RelFactories.LOGICAL_BUILDER,
-            "HazelcastTableScanRule"
+            RelOptRule.operand(HazelcastTableScanRel.class, RelOptRule.any()),
+            "HazelcastTableScanPhysicalRule"
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        LogicalTableScan access = call.rel(0);
+        HazelcastTableScanRel scan = call.rel(0);
 
-        RelTraitSet traits = access.getTraitSet().plus(HazelcastRel.LOGICAL);
+        // TODO: Proper partitioning.
+        RelTraitSet traits = scan.getTraitSet().plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL);
 
-        call.transformTo(new HazelcastTableScanRel(access.getCluster(), traits, access.getTable()));
+        call.transformTo(new HazelcastTableScanPhysicalRel(scan.getCluster(), traits, scan.getTable(), scan.deriveRowType()));
     }
 }
