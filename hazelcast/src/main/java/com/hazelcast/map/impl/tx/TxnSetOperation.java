@@ -21,20 +21,25 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
+import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
+
 /**
  * An operation to unlock and set (key,value) on the partition .
  */
-public class TxnSetOperation extends BasePutOperation implements MapTxnOperation, MutatingOperation {
+public class TxnSetOperation extends BasePutOperation
+        implements MapTxnOperation, MutatingOperation {
 
     private long version;
     private String ownerUuid;
@@ -44,7 +49,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     public TxnSetOperation() {
     }
 
-    public TxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {
+    public TxnSetOperation(String name, Data dataKey,
+                           Data value, long version, long ttl) {
         super(name, dataKey, value);
         this.version = version;
         this.ttl = ttl;
@@ -105,10 +111,6 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     @Override
-    protected boolean shouldUnlockKeyOnBackup() {
-        return true;
-    }
-
     public void onWaitExpire() {
         sendResponse(false);
     }
@@ -118,6 +120,18 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         return shouldBackup && recordStore.getRecord(dataKey) != null;
     }
 
+    @Override
+    public Operation getBackupOperation() {
+        Record record = recordStore.getRecord(dataKey);
+        RecordInfo replicationInfo = buildRecordInfo(record);
+        if (isPostProcessing(recordStore)) {
+            dataValue = mapServiceContext.toData(record.getValue());
+        }
+        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo,
+                putTransient, disableWanReplicationEvent);
+    }
+
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
     }

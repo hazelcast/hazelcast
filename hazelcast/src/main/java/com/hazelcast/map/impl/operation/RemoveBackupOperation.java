@@ -26,32 +26,18 @@ import java.io.IOException;
 
 public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
-    protected boolean unlockKey;
-
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, Data dataKey) {
+    public RemoveBackupOperation(String name, Data dataKey,
+                                 boolean disableWanReplicationEvent) {
         super(name, dataKey);
-    }
-
-    public RemoveBackupOperation(String name, Data dataKey, boolean unlockKey) {
-        super(name, dataKey);
-        this.unlockKey = unlockKey;
-    }
-
-    public RemoveBackupOperation(String name, Data dataKey, boolean unlockKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey);
-        this.unlockKey = unlockKey;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     @Override
     protected void runInternal() {
         recordStore.removeBackup(dataKey, getCallerProvenance());
-        if (unlockKey) {
-            recordStore.forceUnlock(dataKey);
-        }
     }
 
     @Override
@@ -75,14 +61,12 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(unlockKey);
         out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        unlockKey = in.readBoolean();
         disableWanReplicationEvent = in.readBoolean();
     }
 
