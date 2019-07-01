@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -28,15 +26,11 @@ import org.apache.calcite.rel.type.RelDataType;
 import java.util.List;
 
 // TODO: getDigest - should we implement it?
-public class HazelcastTableScanPhysicalRel extends TableScan implements HazelcastPhysicalRel {
+public class MapScanPhysicalRel extends TableScan implements PhysicalRel {
 
     private final RelDataType rowType;
 
-    public HazelcastTableScanPhysicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
-        this(cluster, traitSet, table, table.getRowType());
-    }
-
-    public HazelcastTableScanPhysicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
+    public MapScanPhysicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
         super(cluster, traitSet, table);
 
         this.rowType = rowType;
@@ -49,6 +43,6 @@ public class HazelcastTableScanPhysicalRel extends TableScan implements Hazelcas
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new HazelcastTableScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), this.rowType);
+        return new MapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), this.rowType);
     }
 }

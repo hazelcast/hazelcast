@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastProjectRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastTableScanRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Project;
@@ -47,14 +47,15 @@ import java.util.List;
 import java.util.Map;
 
 // TODO: Remove Drill copy-paste.
-public class HazelcastProjectIntoScanRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new HazelcastProjectIntoScanRule();
+public class ProjectIntoScanLogicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new ProjectIntoScanLogicalRule();
 
-    private HazelcastProjectIntoScanRule() {
+    private ProjectIntoScanLogicalRule() {
         super(
+            // TODO: Set NONE convention.
             RelOptRule.operand(LogicalProject.class, RelOptRule.some(RelOptRule.operand(LogicalTableScan.class, RelOptRule.any()))),
             RelFactories.LOGICAL_BUILDER,
-            "HazelcastFilterRule"
+            "ProjectIntoScanLogicalRule"
         );
     }
 
@@ -69,14 +70,14 @@ public class HazelcastProjectIntoScanRule extends RelOptRule {
 
         ProjectPushInfo projectPushInfo = getFieldsInformation(scan.getRowType(), project.getProjects());
 
-        HazelcastTableScanRel newScan = createScan(scan, projectPushInfo);
+        MapScanLogicalRel newScan = createScan(scan, projectPushInfo);
 
         List<RexNode> newProjects = new ArrayList<>();
         for (RexNode n : project.getChildExps()) {
             newProjects.add(n.accept(projectPushInfo.getInputReWriter()));
         }
 
-        HazelcastProjectRel newProject = createProject(project, newScan, newProjects);
+        ProjectLogicalRel newProject = createProject(project, newScan, newProjects);
 
         if (ProjectRemoveRule.isTrivial(newProject))
             call.transformTo(newScan);
@@ -280,17 +281,17 @@ public class HazelcastProjectIntoScanRule extends RelOptRule {
      * @param projectPushInfo the source of row type and fields list
      * @return new scan instance
      */
-    protected HazelcastTableScanRel createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
-        return new HazelcastTableScanRel(scan.getCluster(),
-            scan.getTraitSet().plus(HazelcastRel.LOGICAL),
+    protected MapScanLogicalRel createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
+        return new MapScanLogicalRel(scan.getCluster(),
+            scan.getTraitSet().plus(LogicalRel.LOGICAL),
             scan.getTable(),
             projectPushInfo.createNewRowType(scan.getCluster().getTypeFactory())
         );
     }
 
-    protected HazelcastProjectRel createProject(Project project, TableScan newScan, List<RexNode> newProjects) {
-        return new HazelcastProjectRel(project.getCluster(),
-            project.getTraitSet().plus(HazelcastRel.LOGICAL),
+    protected ProjectLogicalRel createProject(Project project, TableScan newScan, List<RexNode> newProjects) {
+        return new ProjectLogicalRel(project.getCluster(),
+            project.getTraitSet().plus(LogicalRel.LOGICAL),
             newScan,
             newProjects,
             project.getRowType()

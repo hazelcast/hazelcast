@@ -16,39 +16,44 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastFilterRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.logical.LogicalProject;
 
-public class HazelcastFilterRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new HazelcastFilterRule();
+public class ProjectLogicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new ProjectLogicalRule();
 
-    private HazelcastFilterRule() {
+    private ProjectLogicalRule() {
         super(
-            // TODO: Why convention NONE is used in Drill?
-            RelOptRule.operand(LogicalFilter.class, RelOptRule.any()),
+            // TODO: Set NONE convention.
+            RelOptRule.operand(LogicalProject.class, RelOptRule.any()),
             RelFactories.LOGICAL_BUILDER,
-            "HazelcastFilterRule"
+            "ProjectLogicalRule"
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        final LogicalFilter filter = call.rel(0);
-        final RelNode input = filter.getInput();
+        Project project = call.rel(0);
 
-        // TODO: What is this?
-        final RelNode convertedInput = convert(input, input.getTraitSet().plus(HazelcastRel.LOGICAL).simplify());
+        RelNode input = project.getInput();
 
-        call.transformTo(new HazelcastFilterRel(
-            filter.getCluster(),
-            convertedInput.getTraitSet(),
+        RelTraitSet traits = project.getTraitSet().plus(LogicalRel.LOGICAL);
+
+        RelNode convertedInput = convert(input, input.getTraitSet().plus(LogicalRel.LOGICAL).simplify());
+
+        call.transformTo(new ProjectLogicalRel(
+            project.getCluster(),
+            traits,
             convertedInput,
-            filter.getCondition()
-        ));
+            project.getProjects(),
+            project.getRowType())
+        );
     }
 }

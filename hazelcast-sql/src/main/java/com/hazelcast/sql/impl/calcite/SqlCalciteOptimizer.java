@@ -22,19 +22,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastFilterRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectIntoScanRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastSortRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastTableScanRule;
-import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastRootPhysicalRule;
-import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastSortPhysicalRule;
-import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastTableScanPhysicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.LogicalMapScanRule;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rule.MapScanPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.Person;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -110,10 +110,10 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         RelNode rel = doConvertToRel(node, sqlToRelConverter);
 
         // 4. Perform logical heuristic optimization.
-        HazelcastRel logicalRel = doOptimizeLogical(rel);
+        LogicalRel logicalRel = doOptimizeLogical(rel);
 
         // 5. Perform physical cost-based optimization.
-        HazelcastPhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
+        PhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
 
         // 6. Convert to executable plan.
         SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
@@ -174,7 +174,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
-        planner.addRelTraitDef(HazelcastDistributionTraitDef.INSTANCE);
+        planner.addRelTraitDef(PhysicalDistributionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
 
         return planner;
@@ -231,7 +231,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         return root.rel;
     }
 
-    private HazelcastRel doOptimizeLogical(RelNode rel) {
+    private LogicalRel doOptimizeLogical(RelNode rel) {
         // TODO: Rules to merge scan and project/filter
         // TODO: Rule to eliminate sorting if the source is already sorted.
         // TODO: Cache rules and posslbly the whole planner.
@@ -241,12 +241,12 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         hepBuilder.addRuleInstance(new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER));
 
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE); // TODO: Remove once both merge routines are ready
-        hepBuilder.addRuleInstance(HazelcastProjectIntoScanRule.INSTANCE);
+        hepBuilder.addRuleInstance(ProjectIntoScanLogicalRule.INSTANCE);
 
-        hepBuilder.addRuleInstance(HazelcastSortRule.INSTANCE);
-        hepBuilder.addRuleInstance(HazelcastTableScanRule.INSTANCE);
-        hepBuilder.addRuleInstance(HazelcastFilterRule.INSTANCE);
-        hepBuilder.addRuleInstance(HazelcastProjectRule.INSTANCE);
+        hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
+        hepBuilder.addRuleInstance(LogicalMapScanRule.INSTANCE);
+        hepBuilder.addRuleInstance(FilterLogicalRule.INSTANCE);
+        hepBuilder.addRuleInstance(ProjectLogicalRule.INSTANCE);
 
         HepPlanner hepPlanner = new HepPlanner(
             hepBuilder.build()
@@ -256,7 +256,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         RelNode optimizedRel = hepPlanner.findBestExp();
 
-        HazelcastRootRel res = new HazelcastRootRel(
+        RootLogicalRel res = new RootLogicalRel(
             optimizedRel.getCluster(),
             optimizedRel.getTraitSet(),
             optimizedRel
@@ -271,18 +271,18 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
      * @param logicalRel Logical node.
      * @return Optimized physical node.
      */
-    private HazelcastPhysicalRel doOptimizePhysical(VolcanoPlanner planner, HazelcastRel logicalRel) {
+    private PhysicalRel doOptimizePhysical(VolcanoPlanner planner, LogicalRel logicalRel) {
         // TODO: Cache rules
         RuleSet rules = RuleSets.ofList(
-            HazelcastSortPhysicalRule.INSTANCE,
-            HazelcastRootPhysicalRule.INSTANCE,
-            HazelcastTableScanPhysicalRule.INSTANCE,
+            SortPhysicalRule.INSTANCE,
+            RootPhysicalRule.INSTANCE,
+            MapScanPhysicalRule.INSTANCE,
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
         RelTraitSet traits = logicalRel.getTraitSet()
-            .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
-            .plus(HazelcastDistributionTrait.SINGLETON);
+            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(PhysicalDistributionTrait.SINGLETON);
 
         final Program program = Programs.of(rules);
 
@@ -294,6 +294,6 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
             ImmutableList.of()
         );
 
-        return (HazelcastPhysicalRel)res;
+        return (PhysicalRel)res;
     }
 }

@@ -7,13 +7,13 @@ import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
-public class HazelcastSingletonExchangePhysicalRel extends SingleRel implements HazelcastPhysicalRel {
-    public HazelcastSingletonExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+public class SingletonExchangePhysicalRel extends SingleRel implements PhysicalRel {
+    public SingletonExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new HazelcastSingletonExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
+        return new SingletonExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 }

@@ -20,8 +20,8 @@ import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.Convention;
 
-public interface HazelcastRel extends HazelcastRelNode {
-    Convention LOGICAL = new Convention.Impl("LOGICAL", HazelcastRel.class);
+public interface LogicalRel extends HazelcastRelNode {
+    Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 
     void visitForPlan(SqlCalcitePlanVisitor visitor);
 }

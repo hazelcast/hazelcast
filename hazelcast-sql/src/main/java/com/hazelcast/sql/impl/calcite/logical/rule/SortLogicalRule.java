@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -27,14 +27,14 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalSort;
 
-public class HazelcastSortRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new HazelcastSortRule();
+public class SortLogicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new SortLogicalRule();
 
-    private HazelcastSortRule() {
+    private SortLogicalRule() {
         super(
             RelOptRule.operand(LogicalSort.class, Convention.NONE, RelOptRule.any()),
             RelFactories.LOGICAL_BUILDER,
-            "HazelcastSortRule"
+            "SortLogicalRule"
         );
     }
 
@@ -49,14 +49,14 @@ public class HazelcastSortRule extends RelOptRule {
         final Sort sort = call.rel(0);
 
         final RelNode input = sort.getInput();
-        final RelTraitSet traits = sort.getTraitSet().plus(HazelcastRel.LOGICAL);
+        final RelTraitSet traits = sort.getTraitSet().plus(LogicalRel.LOGICAL);
 
         // TODO: Why this call is needed?
-        RelNode convertedInput = convert(input, input.getTraitSet().plus(HazelcastRel.LOGICAL).simplify());
+        RelNode convertedInput = convert(input, input.getTraitSet().plus(LogicalRel.LOGICAL).simplify());
 
-        call.transformTo(new HazelcastSortRel(
+        call.transformTo(new SortLogicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(HazelcastRel.LOGICAL),
+            sort.getTraitSet().plus(LogicalRel.LOGICAL),
             convertedInput,
             sort.getCollation(),
             sort.offset,

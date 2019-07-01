@@ -8,11 +8,11 @@ import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
-public class HazelcastSortMergeExchangePhysicalRel extends SingleRel implements HazelcastPhysicalRel {
+public class SortMergeExchangePhysicalRel extends SingleRel implements PhysicalRel {
 
     private final RelCollation collation;
 
-    public HazelcastSortMergeExchangePhysicalRel(
+    public SortMergeExchangePhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelNode input,
@@ -29,6 +29,6 @@ public class HazelcastSortMergeExchangePhysicalRel extends SingleRel implements 
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new HazelcastSortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
+        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
     }
 }

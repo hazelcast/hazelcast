@@ -16,42 +16,43 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastSortMergeExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastSortPhysicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 
-public class HazelcastSortPhysicalRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new HazelcastSortPhysicalRule();
+public class SortPhysicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new SortPhysicalRule();
 
-    private HazelcastSortPhysicalRule() {
+    private SortPhysicalRule() {
+        // TODO: Set LOGICAL convention.
         super(
-            RelOptRule.operand(HazelcastSortRel.class, RelOptRule.some(RelOptRule.operand(RelNode.class, RelOptRule.any()))),
-            //RelOptRule.operand(HazelcastSortRel.class, HazelcastRel.LOGICAL, RelOptRule.any()),
-            "HazelcastSortPhysicalRule"
+            RelOptRule.operand(SortLogicalRel.class, RelOptRule.some(RelOptRule.operand(RelNode.class, RelOptRule.any()))),
+            //RelOptRule.operand(SortLogicalRel.class, LogicalRel.LOGICAL, RelOptRule.any()),
+            "SortPhysicalRule"
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        HazelcastSortRel sort = call.rel(0);
+        SortLogicalRel sort = call.rel(0);
         RelNode input = sort.getInput();
 
         RelTraitSet inputTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
-            .plus(HazelcastDistributionTrait.ANY);
+            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(PhysicalDistributionTrait.ANY);
 
         // Current implementation doesn't enforce any traits on child data sources.
         // Resulting tree is: Merge (SINGLETON) <- Scan (ANY) <- Input (ANY).
         // This way we do not produce addiotional exchanges.
-        HazelcastSortPhysicalRel newSort = new HazelcastSortPhysicalRel(
+        SortPhysicalRel newSort = new SortPhysicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL).plus(HazelcastDistributionTrait.ANY),
+            sort.getTraitSet().plus(PhysicalRel.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.ANY),
             convert(input, inputTraits),
             sort.getCollation(),
             sort.offset,
@@ -59,11 +60,11 @@ public class HazelcastSortPhysicalRule extends RelOptRule {
         );
 
         RelTraitSet exchangeTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastPhysicalRel.HAZELCAST_PHYSICAL)
-            .plus(HazelcastDistributionTrait.SINGLETON)
+            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(PhysicalDistributionTrait.SINGLETON)
             .plus(sort.getCollation());
 
-        HazelcastSortMergeExchangePhysicalRel newSortExchange = new HazelcastSortMergeExchangePhysicalRel(
+        SortMergeExchangePhysicalRel newSortExchange = new SortMergeExchangePhysicalRel(
             sort.getCluster(),
             exchangeTraits,
             newSort,

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.logical.rel;
+package com.hazelcast.sql.impl.calcite.physical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
@@ -24,17 +23,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rex.RexNode;
 
-public class HazelcastSortRel extends Sort implements HazelcastRel {
-    public HazelcastSortRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode child,
-        RelCollation collation
-    ) {
-        super(cluster, traits, child, collation);
-    }
-
-    public HazelcastSortRel(
+public class SortPhysicalRel extends Sort implements PhysicalRel {
+    public SortPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traits,
         RelNode child,
@@ -47,13 +37,6 @@ public class HazelcastSortRel extends Sort implements HazelcastRel {
 
     @Override
     public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new HazelcastSortRel(getCluster(), traitSet, input, collation, offset, fetch);
-    }
-
-    @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        ((HazelcastRel)getInput()).visitForPlan(visitor);
-
-        visitor.visitSort(this);
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch);
     }
 }

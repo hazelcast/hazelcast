@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastFilterRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastProjectRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -30,9 +30,9 @@ import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastSortRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastTableScanRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.rel.RelFieldCollation;
 
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class SqlCalcitePlanVisitor {
      *
      * @param root Root node.
      */
-    public void visitRoot(HazelcastRootRel root) {
+    public void visitRoot(RootLogicalRel root) {
         // TODO: In correct implementation we should always compare two adjacent nodes and decide whether new
         // TODO: fragment is needed.
         currentEdgeId++;
@@ -112,7 +112,7 @@ public class SqlCalcitePlanVisitor {
      *
      * @param scan Table scan.
      */
-    public void visitTableScan(HazelcastTableScanRel scan) {
+    public void visitTableScan(MapScanLogicalRel scan) {
         // TODO: Handle schemas (in future)!
         String mapName = scan.getTable().getQualifiedName().get(0);
 
@@ -138,7 +138,7 @@ public class SqlCalcitePlanVisitor {
      *
      * @param project Project.
      */
-    public void visitProject(HazelcastProjectRel project) {
+    public void visitProject(ProjectLogicalRel project) {
         // TODO: Implement.
         throw new UnsupportedOperationException("Not implemented");
     }
@@ -148,7 +148,7 @@ public class SqlCalcitePlanVisitor {
      *
      * @param filter Filter.
      */
-    public void visitFilter(HazelcastFilterRel filter) {
+    public void visitFilter(FilterLogicalRel filter) {
         // TODO: Implement.
         throw new UnsupportedOperationException("Not implemented");
     }
@@ -158,7 +158,7 @@ public class SqlCalcitePlanVisitor {
      *
      * @param sort Sort.
      */
-    public void visitSort(HazelcastSortRel sort) {
+    public void visitSort(SortLogicalRel sort) {
         assert upstreamNodes.size() == 1;
 
         List<RelFieldCollation> collations = sort.getCollation().getFieldCollations();

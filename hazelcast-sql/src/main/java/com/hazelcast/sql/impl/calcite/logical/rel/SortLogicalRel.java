@@ -19,25 +19,41 @@ package com.hazelcast.sql.impl.calcite.logical.rel;
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rex.RexNode;
 
-import java.util.List;
+public class SortLogicalRel extends Sort implements LogicalRel {
+    public SortLogicalRel(
+        RelOptCluster cluster,
+        RelTraitSet traits,
+        RelNode child,
+        RelCollation collation
+    ) {
+        super(cluster, traits, child, collation);
+    }
 
-public class HazelcastRootRel extends SingleRel implements HazelcastRel {
-    public HazelcastRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
-        super(cluster, traits, input);
+    public SortLogicalRel(
+        RelOptCluster cluster,
+        RelTraitSet traits,
+        RelNode child,
+        RelCollation collation,
+        RexNode offset,
+        RexNode fetch
+    ) {
+        super(cluster, traits, child, collation, offset, fetch);
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new HazelcastRootRel(getCluster(), traitSet, sole(inputs));
+    public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
+        return new SortLogicalRel(getCluster(), traitSet, input, collation, offset, fetch);
     }
 
     @Override
     public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        ((HazelcastRel)getInput()).visitForPlan(visitor);
+        ((LogicalRel)getInput()).visitForPlan(visitor);
 
-        visitor.visitRoot(this);
+        visitor.visitSort(this);
     }
 }

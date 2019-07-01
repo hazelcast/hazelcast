@@ -18,33 +18,26 @@ package com.hazelcast.sql.impl.calcite.logical.rel;
 
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.SingleRel;
 
-// TODO: getDigest - should we implement it?
-public class HazelcastTableScanRel extends TableScan implements HazelcastRel {
+import java.util.List;
 
-    private final RelDataType rowType;
-
-    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
-        this(cluster, traitSet, table, table.getRowType());
-    }
-
-    public HazelcastTableScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
-        super(cluster, traitSet, table);
-
-        this.rowType = rowType;
+public class RootLogicalRel extends SingleRel implements LogicalRel {
+    public RootLogicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
-    public RelDataType deriveRowType() {
-        return rowType;
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new RootLogicalRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override
     public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        visitor.visitTableScan(this);
+        ((LogicalRel)getInput()).visitForPlan(visitor);
+
+        visitor.visitRoot(this);
     }
 }

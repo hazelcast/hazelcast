@@ -1,6 +1,6 @@
 package com.hazelcast.sql.impl.calcite.physical.distribution;
 
-public enum HazelcastDistributionType {
+public enum PhysicalDistributionType {
     PARTITIONED,
     SINGLETON,
     ANY
