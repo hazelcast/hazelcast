@@ -45,6 +45,7 @@ import com.hazelcast.util.Preconditions;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -164,9 +165,9 @@ public final class Jet {
         Properties hzProperties = hzConfig.getProperties();
 
         // Disable HZ shutdown hook, as we will use the Jet-specific property instead
-        String hzHookEnabled = hzProperties.getProperty(
-                SHUTDOWNHOOK_ENABLED.getName(), SHUTDOWNHOOK_ENABLED.getDefaultValue()
-        );
+        String hzHookEnabled = Optional.ofNullable(hzConfig.getProperty(SHUTDOWNHOOK_ENABLED.getName()))
+                .orElse(SHUTDOWNHOOK_ENABLED.getDefaultValue());
+
         if (!jetProps.containsKey(JET_SHUTDOWNHOOK_ENABLED)) {
             jetProps.setProperty(JET_SHUTDOWNHOOK_ENABLED.getName(), hzHookEnabled);
         }
