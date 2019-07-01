@@ -45,4 +45,9 @@ public class MapScanPhysicalRel extends TableScan implements PhysicalRel {
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new MapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), this.rowType);
     }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        visitor.onMapScan(this);
+    }
 }

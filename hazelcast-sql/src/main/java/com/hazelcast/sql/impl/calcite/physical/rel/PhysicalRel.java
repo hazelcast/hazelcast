@@ -6,5 +6,5 @@ import com.hazelcast.sql.impl.calcite.SqlCalciteRelNode;
  * Marker interface for physical relations.
  */
 public interface PhysicalRel extends SqlCalciteRelNode {
-    // No-op.
+    void visit(PhysicalRelVisitor visitor);
 }

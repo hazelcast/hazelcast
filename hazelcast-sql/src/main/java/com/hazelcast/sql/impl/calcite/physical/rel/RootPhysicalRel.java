@@ -32,4 +32,11 @@ public class RootPhysicalRel extends SingleRel implements PhysicalRel {
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new RootPhysicalRel(this.getCluster(), traitSet, sole(inputs));
     }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        ((PhysicalRel)input).visit(visitor);
+
+        visitor.onRoot(this);
+    }
 }

@@ -39,4 +39,11 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
         return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch);
     }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        ((PhysicalRel)input).visit(visitor);
+
+        visitor.onSort(this);
+    }
 }

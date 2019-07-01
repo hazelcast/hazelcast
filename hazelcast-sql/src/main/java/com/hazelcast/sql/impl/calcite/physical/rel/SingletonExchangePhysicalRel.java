@@ -16,4 +16,11 @@ public class SingletonExchangePhysicalRel extends SingleRel implements PhysicalR
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new SingletonExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
     }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        ((PhysicalRel)input).visit(visitor);
+
+        visitor.onSingletonExchange(this);
+    }
 }

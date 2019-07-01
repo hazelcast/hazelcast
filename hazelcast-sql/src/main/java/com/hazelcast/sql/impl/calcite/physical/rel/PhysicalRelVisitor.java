@@ -1,7 +1,7 @@
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
 /**
- * Visitor over physical expressions.
+ * Visitor over physical relations.
  */
 public interface PhysicalRelVisitor {
     void onRoot(RootPhysicalRel root);

@@ -31,4 +31,11 @@ public class SortMergeExchangePhysicalRel extends SingleRel implements PhysicalR
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
     }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        ((PhysicalRel)input).visit(visitor);
+
+        visitor.onSortMergeExchange(this);
+    }
 }
