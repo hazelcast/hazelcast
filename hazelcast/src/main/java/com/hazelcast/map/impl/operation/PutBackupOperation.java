@@ -35,19 +35,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     private RecordInfo recordInfo;
     private boolean putTransient;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
-        this(name, dataKey, dataValue, recordInfo, false, false);
-    }
-
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean putTransient) {
-        this(name, dataKey, dataValue, recordInfo, false, putTransient);
-    }
-
-    public PutBackupOperation(String name, Data dataKey, Data dataValue,
-                              RecordInfo recordInfo, boolean unlockKey, boolean putTransient) {
-        this(name, dataKey, dataValue, recordInfo, unlockKey, putTransient, false);
-    }
-
     public PutBackupOperation(String name, Data dataKey, Data dataValue,
                               RecordInfo recordInfo, boolean unlockKey, boolean putTransient,
                               boolean disableWanReplicationEvent) {
@@ -65,7 +52,8 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     protected void runInternal() {
         ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
         maxIdle = recordInfo != null ? recordInfo.getMaxIdle() : maxIdle;
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, maxIdle, putTransient, getCallerProvenance());
+        Record record = recordStore.putBackup(dataKey, dataValue, ttl,
+                maxIdle, putTransient, getCallerProvenance());
 
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);
