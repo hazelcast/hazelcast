@@ -18,11 +18,17 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastFilterRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectIntoScanRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastSortRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastTableScanRule;
 import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.distribution.HazelcastDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.HazelcastPhysicalRel;
@@ -31,14 +37,9 @@ import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastSortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.HazelcastTableScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.Person;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastFilterRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectIntoScanRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastProjectRule;
-import com.hazelcast.sql.impl.calcite.logical.rel.HazelcastRootRel;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastSortRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.HazelcastTableScanRule;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
+import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -52,8 +53,8 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
-import org.apache.calcite.rel.RelDistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
@@ -66,7 +67,6 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.Program;
@@ -92,13 +92,50 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         this.logger = logger;
     }
 
-
-
     @Override
     public PhysicalPlan prepare(String sql) {
-        // 1. ==================== PARSE ====================
+        // 1. Prepare context.
+        // TODO: Cache as much as possible.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
+        CalciteConnectionConfig config = prepareConfig();
+        Prepare.CatalogReader catalogReader = prepareCatalogReader(typeFactory, config);
+        SqlValidator validator = prepareValidator(typeFactory, catalogReader);
+        VolcanoPlanner planner = preparePlanner(config);
+        SqlToRelConverter sqlToRelConverter = prepareSqlToRelConverter(typeFactory, catalogReader, validator, planner);
 
+        // 2. Parse SQL string and validate it.
+        SqlNode node = doParse(sql, validator);
+
+        // 3. Convert to REL.
+        RelNode rel = doConvertToRel(node, sqlToRelConverter);
+
+        // 4. Perform logical heuristic optimization.
+        HazelcastRel logicalRel = doOptimizeLogical(rel);
+
+        // 5. Perform physical cost-based optimization.
+        HazelcastPhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
+
+        // 6. Convert to executable plan.
+        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
+
+        logicalRel.visitForPlan(planVisitor);
+
+        return planVisitor.getPlan();
+    }
+
+    private CalciteConnectionConfig prepareConfig() {
+        // TODO: Cache
+        // TODO: Can we avoid using CalciteConnectionCalciteConnectionConfigImpl?
+        Properties properties = new Properties();
+
+        properties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        properties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        properties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
+
+        return new CalciteConnectionConfigImpl(properties);
+    }
+
+    private Prepare.CatalogReader prepareCatalogReader(JavaTypeFactory typeFactory, CalciteConnectionConfig config) {
         // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
         CalciteSchema schema = CalciteSchema.createRootSchema(true);
 
@@ -106,22 +143,29 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
 
-        Properties properties = new Properties();
-
-        properties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        properties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        properties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
-
-        CalciteConnectionConfigImpl config = new CalciteConnectionConfigImpl(properties);
-
         // TODO: Our own implemenation of catalog reader! (see DrillCalciteCatalogReader)
-        CalciteCatalogReader catalogReader = new CalciteCatalogReader(
+        return new CalciteCatalogReader(
             rootSchema,
             Collections.emptyList(), // Default schema path.
             typeFactory,
             config
         );
+    }
 
+    private SqlValidator prepareValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
+        // TODO: Operator table which support only functions supported by Hazelcast.
+        final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(), catalogReader);
+
+        // TODO: Need our own validator, investigate interface
+        return new SqlCalciteValidator(
+            opTab,
+            catalogReader,
+            typeFactory,
+            SqlCalciteConformance.INSTANCE
+        );
+    }
+
+    private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
         // TODO: Drill's SqlConverter.toRel - see how VolcanoPlanner is instantiated.
         final VolcanoPlanner planner = new VolcanoPlanner(
             null, // TODO: DrillCostBase.DrillCostFactory
@@ -130,34 +174,18 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
-        // planner.addRelTraitDef(RelDistributionTraitDef.INSTANCE);
         planner.addRelTraitDef(HazelcastDistributionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
 
-        // TODO: Add various rules (see CalcitePrepareImpl.createPlanner)
+        return planner;
+    }
 
-        SqlRexConvertletTable rexConvertletTable = StandardConvertletTable.INSTANCE;
-
-        SqlNode node = parse(sql);
-
-        // 2. ==================== ANALYZE/VALIDATE ====================
-        final SqlOperatorTable opTab0 = config.fun(SqlOperatorTable.class, SqlStdOperatorTable.instance());
-        final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(opTab0, catalogReader);
-
-        // TODO: Need our own validator, investigate interface
-        SqlValidator sqlValidator = new SqlCalciteValidator(
-            opTab,
-            catalogReader,
-            typeFactory,
-            config.conformance()
-        );
-
-        SqlNode validatedNode = sqlValidator.validate(node);
-
-        // TODO: User SqlShuttle to look for unsupported query parts. See Drill's UnsupportedOperatorsVisitor.
-
-        // 3. ==================== CONVERT TO LOGICAL TREE ====================
-
+    private SqlToRelConverter prepareSqlToRelConverter(
+        JavaTypeFactory typeFactory,
+        Prepare.CatalogReader catalogReader,
+        SqlValidator validator,
+        VolcanoPlanner planner
+    ) {
         // TODO: See SqlConverter.SqlToRelConverterConfig
         final SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder =
             SqlToRelConverter.configBuilder()
@@ -166,49 +194,49 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
                 .withExplain(false)
                 .withConvertTableAccess(false);
 
-        // TODO: See DrillRexBuilder
-        RexBuilder rexBuilder = new RexBuilder(typeFactory);
-        RelOptCluster cluster = RelOptCluster.create(planner, rexBuilder);
-
-        SqlToRelConverter sqlToRelConverter = new SqlToRelConverter(
+        return new SqlToRelConverter(
             null, // TODO: ViewExpander, see CalcitePrepareImpl which implements this interface
-            sqlValidator,
+            validator,
             catalogReader,
-            cluster,
-            rexConvertletTable,
+            RelOptCluster.create(planner, new RexBuilder(typeFactory)), // TODO: See DrillRexBuilder
+            StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );
-
-        RelRoot root = sqlToRelConverter.convertQuery(validatedNode, false, true);
-
-        // TODO: See PreProcessLogicalRel and DefaultSqlHandler.validateAndConvert
-
-        System.out.println(">>> Converted REL: " + root);
-
-        // 4. ==================== OPTIMIZE ====================
-        HazelcastRel logicalRel = processLogical(root.rel);
-        HazelcastPhysicalRel physicalRel = processPhysical(planner, logicalRel);
-
-        // TODO: Use visitor to find unsupported operations!
-
-        // TODO: See DefaultSqlHandler.convertToDrel
-        // TODO: See DrillPushProjectIntoScanRule and ParquetPushDownFilter for how project/filter are merged into scan.
-
-        // 5. ==================== DECOUPLE FROM CALCITE ====================
-        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
-
-        logicalRel.visitForPlan(planVisitor);
-
-        PhysicalPlan plan = planVisitor.getPlan();
-
-        return plan;
     }
 
-    private HazelcastRel processLogical(RelNode rel) {
-        HepProgramBuilder hepBuilder = new HepProgramBuilder();
+    private SqlNode doParse(String sql, SqlValidator validator) {
+        try {
+            SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
+            parserConfig.setUnquotedCasing(Casing.UNCHANGED);
+            parserConfig.setConformance(SqlCalciteConformance.INSTANCE);
+
+            // TODO: Can we cache it?
+            SqlParser parser = SqlParser.create(sql, parserConfig.build());
+
+            SqlNode node = parser.parseStmt();
+
+            // TODO: Use SqlShuttle to look for unsupported query parts. See Drill's UnsupportedOperatorsVisitor.
+            return validator.validate(node);
+        }
+        catch (Exception e) {
+            // TODO: Throw proper parse exception.
+            throw new HazelcastException("Failed to parse SQL: " + sql, e);
+        }
+    }
+
+    private RelNode doConvertToRel(SqlNode node, SqlToRelConverter sqlToRelConverter) {
+        RelRoot root = sqlToRelConverter.convertQuery(node, false, true);
+
+        return root.rel;
+    }
+
+    private HazelcastRel doOptimizeLogical(RelNode rel) {
         // TODO: Rules to merge scan and project/filter
         // TODO: Rule to eliminate sorting if the source is already sorted.
+        // TODO: Cache rules and posslbly the whole planner.
+
+        HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
         hepBuilder.addRuleInstance(new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER));
 
@@ -234,8 +262,6 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
             optimizedRel
         );
 
-        System.out.println(">>> Processed logical: " + res);
-
         return res;
     }
 
@@ -245,7 +271,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
      * @param logicalRel Logical node.
      * @return Optimized physical node.
      */
-    private HazelcastPhysicalRel processPhysical(VolcanoPlanner planner, HazelcastRel logicalRel) {
+    private HazelcastPhysicalRel doOptimizePhysical(VolcanoPlanner planner, HazelcastRel logicalRel) {
         // TODO: Cache rules
         RuleSet rules = RuleSets.ofList(
             HazelcastSortPhysicalRule.INSTANCE,
@@ -269,28 +295,5 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         );
 
         return (HazelcastPhysicalRel)res;
-    }
-
-    /**
-     * Parse SQL query and return SQL node.
-     *
-     * @param sql SQL.
-     * @return Node.
-     */
-    private SqlNode parse(String sql) {
-        try {
-            SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
-
-            parserConfig.setUnquotedCasing(Casing.UNCHANGED);
-            parserConfig.setConformance(SqlCalciteConformance.INSTANCE);
-
-            SqlParser parser = SqlParser.create(sql, parserConfig.build());
-
-            return parser.parseStmt();
-        }
-        catch (Exception e) {
-            // TODO: Throw proper parse exception.
-            throw new HazelcastException("Failed to parse SQL: " + sql, e);
-        }
     }
 }
