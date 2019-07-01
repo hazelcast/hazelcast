@@ -306,6 +306,28 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     }
 
+
+    static class PlainInstanceAwareRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+
+        private final String latchName;
+
+        private transient HazelcastInstance instance;
+
+        public PlainInstanceAwareRunnableTask(String latchName) {
+            this.latchName = latchName;
+        }
+
+        @Override
+        public void run() {
+            this.instance.getCountDownLatch(latchName).countDown();
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            instance = hazelcastInstance;
+        }
+    }
+
     static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {
 
         @Override
