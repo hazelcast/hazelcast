@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.Sort;
@@ -49,14 +48,12 @@ public class SortLogicalRule extends RelOptRule {
         final Sort sort = call.rel(0);
 
         final RelNode input = sort.getInput();
-        final RelTraitSet traits = sort.getTraitSet().plus(LogicalRel.LOGICAL);
 
-        // TODO: Why this call is needed?
-        RelNode convertedInput = convert(input, input.getTraitSet().plus(LogicalRel.LOGICAL).simplify());
+        RelNode convertedInput = convert(input, input.getTraitSet().plus(SqlCalciteConventions.LOGICAL).simplify());
 
         call.transformTo(new SortLogicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(LogicalRel.LOGICAL),
+            sort.getTraitSet().plus(SqlCalciteConventions.LOGICAL),
             convertedInput,
             sort.getCollation(),
             sort.offset,

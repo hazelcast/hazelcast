@@ -21,6 +21,6 @@ import org.apache.calcite.rel.RelNode;
 /**
  * Marker interface for Hazelcast rel node.
  */
-public interface HazelcastRelNode extends RelNode {
+public interface SqlCalciteRelNode extends RelNode {
     // No-op.
 }

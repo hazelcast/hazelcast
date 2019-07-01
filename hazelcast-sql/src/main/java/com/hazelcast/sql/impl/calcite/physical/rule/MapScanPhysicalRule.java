@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -40,7 +40,7 @@ public class MapScanPhysicalRule extends RelOptRule {
         MapScanLogicalRel scan = call.rel(0);
 
         RelTraitSet traits = scan.getTraitSet()
-            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.PARTITIONED);
 
         call.transformTo(new MapScanPhysicalRel(scan.getCluster(), traits, scan.getTable(), scan.deriveRowType()));

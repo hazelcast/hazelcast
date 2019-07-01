@@ -25,10 +25,10 @@ import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.LogicalMapScanRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.LogicalMapScanRule;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
@@ -256,13 +256,11 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         RelNode optimizedRel = hepPlanner.findBestExp();
 
-        RootLogicalRel res = new RootLogicalRel(
+        return new RootLogicalRel(
             optimizedRel.getCluster(),
             optimizedRel.getTraitSet(),
             optimizedRel
         );
-
-        return res;
     }
 
     /**
@@ -281,7 +279,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         );
 
         RelTraitSet traits = logicalRel.getTraitSet()
-            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON);
 
         final Program program = Programs.of(rules);

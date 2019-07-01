@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -42,14 +42,14 @@ public class RootPhysicalRule extends RelOptRule {
         RelNode input = call.rel(1);
 
         RelTraitSet traits = input.getTraitSet()
-            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON);
 
         final RelNode convertedInput = convert(input, traits.simplify());
 
         RootPhysicalRel rootPhysical = new RootPhysicalRel(
             root.getCluster(),
-            root.getTraitSet().plus(PhysicalRel.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.SINGLETON),
+            root.getTraitSet().plus(SqlCalciteConventions.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.SINGLETON),
             convertedInput
         );
 

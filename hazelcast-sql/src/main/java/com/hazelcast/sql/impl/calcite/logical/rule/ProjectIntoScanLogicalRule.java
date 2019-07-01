@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Project;
@@ -283,7 +283,7 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
      */
     protected MapScanLogicalRel createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
         return new MapScanLogicalRel(scan.getCluster(),
-            scan.getTraitSet().plus(LogicalRel.LOGICAL),
+            scan.getTraitSet().plus(SqlCalciteConventions.LOGICAL),
             scan.getTable(),
             projectPushInfo.createNewRowType(scan.getCluster().getTypeFactory())
         );
@@ -291,7 +291,7 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
 
     protected ProjectLogicalRel createProject(Project project, TableScan newScan, List<RexNode> newProjects) {
         return new ProjectLogicalRel(project.getCluster(),
-            project.getTraitSet().plus(LogicalRel.LOGICAL),
+            project.getTraitSet().plus(SqlCalciteConventions.LOGICAL),
             newScan,
             newProjects,
             project.getRowType()

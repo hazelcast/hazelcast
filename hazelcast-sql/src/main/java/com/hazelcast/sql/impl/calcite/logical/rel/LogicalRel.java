@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
 import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.sql.impl.calcite.SqlCalciteRelNode;
 
-public interface LogicalRel extends HazelcastRelNode {
-    Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
-
+/**
+ * Marker interface for logical relations.
+ */
+public interface LogicalRel extends SqlCalciteRelNode {
     void visitForPlan(SqlCalcitePlanVisitor visitor);
 }

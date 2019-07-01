@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -42,7 +42,7 @@ public class FilterLogicalRule extends RelOptRule {
         final RelNode input = filter.getInput();
 
         // TODO: What is this?
-        final RelNode convertedInput = convert(input, input.getTraitSet().plus(LogicalRel.LOGICAL).simplify());
+        final RelNode convertedInput = convert(input, input.getTraitSet().plus(SqlCalciteConventions.LOGICAL).simplify());
 
         call.transformTo(new FilterLogicalRel(
             filter.getCluster(),

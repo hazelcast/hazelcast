@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
+import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
@@ -44,7 +44,7 @@ public class SortPhysicalRule extends RelOptRule {
         RelNode input = sort.getInput();
 
         RelTraitSet inputTraits = RelTraitSet.createEmpty()
-            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.ANY);
 
         // Current implementation doesn't enforce any traits on child data sources.
@@ -52,7 +52,7 @@ public class SortPhysicalRule extends RelOptRule {
         // This way we do not produce addiotional exchanges.
         SortPhysicalRel newSort = new SortPhysicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(PhysicalRel.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.ANY),
+            sort.getTraitSet().plus(SqlCalciteConventions.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.ANY),
             convert(input, inputTraits),
             sort.getCollation(),
             sort.offset,
@@ -60,7 +60,7 @@ public class SortPhysicalRule extends RelOptRule {
         );
 
         RelTraitSet exchangeTraits = RelTraitSet.createEmpty()
-            .plus(PhysicalRel.HAZELCAST_PHYSICAL)
+            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON)
             .plus(sort.getCollation());
 
