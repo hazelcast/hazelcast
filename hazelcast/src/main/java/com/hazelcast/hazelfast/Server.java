@@ -134,6 +134,7 @@ public class Server {
     public void start() throws IOException {
         serverSocket = ServerSocketChannel.open();
         serverAddress = new InetSocketAddress(bindAddress, port);
+        log("serverAddress:" + serverAddress);
         serverSocket.bind(serverAddress);
 
         serverSocket.socket().setReceiveBufferSize(receiveBufferSize);
@@ -336,7 +337,7 @@ public class Server {
                         try {
                             InternalCompletableFuture<Long> f = node.nodeEngine.getOperationService().invokeOnPartition(operation, true);
                             result = f.get();
-                            if(result==null){
+                            if (result == null) {
                                 throw new NullPointerException("result can't be null");
                             }
                         } catch (Exception e) {
@@ -457,7 +458,7 @@ public class Server {
     }
 
     public static class Context {
-        private int serverThreadCount = 16;
+        private int serverThreadCount = Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
 
         private String bindAddress = "0.0.0.0";
         private int startPort = 1111;

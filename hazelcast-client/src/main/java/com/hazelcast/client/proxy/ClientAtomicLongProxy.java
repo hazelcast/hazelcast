@@ -89,13 +89,7 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
     @Override
     public long get() {
-        Client client = threadLocal.get();
-        if (client == null) {
-            client = new Client(new Client.Context()
-                    .hostname("10.0.0.146"));
-            client.start();
-            threadLocal.set(client);
-        }
+        Client client = client();
 
         try {
             ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
@@ -112,6 +106,17 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
             throw new RuntimeException(e);
         }
         return 0;
+    }
+
+    private Client client() {
+        Client client = threadLocal.get();
+        if (client == null) {
+            client = new Client(new Client.Context()
+                    .hostname("10.212.40.101"));
+            client.start();
+            threadLocal.set(client);
+        }
+        return client;
     }
 
     @Override

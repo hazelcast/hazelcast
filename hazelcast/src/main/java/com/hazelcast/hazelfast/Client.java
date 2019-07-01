@@ -65,9 +65,9 @@ public class Client {
 
     public void start()  {
        try {
-           log("Connecting to Server on startPort 1111...");
-
            this.address = new InetSocketAddress(hostname, 1111);
+           log("Connecting to Server "+address);
+
            sendBuf = allocateByteBuffer(directBuffers, receiveBufferSize);
            receiveBuf = allocateByteBuffer(directBuffers, sendBufferSize);
            socketChannel = SocketChannel.open(address);
