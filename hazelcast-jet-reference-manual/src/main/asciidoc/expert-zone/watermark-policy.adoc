@@ -1,0 +1,56 @@
+[[watermark-policy]]
+= Watermark Policy
+
+As mentioned in the
+<<time-ordering>> chapter, determining the watermark is somewhat of a black art; it's
+about superimposing order over a disordered stream of events. We must
+decide at which point it stops making sense to wait even longer for data
+about past events to arrive. There's a tension between two opposing
+forces here:
+
+- wait as long as possible to account for all the data;
+- get results as soon as possible.
+
+While there are ways to (kind of) achieve both, there's a significant
+associated cost in terms of complexity and overall performance. Hazelcast
+Jet takes a simple approach and strictly triages stream items into
+"`still on time`" and "`late`", discarding the latter.
+
+{jet-javadoc}/core/WatermarkPolicy.html[`WatermarkPolicy`]
+is the abstraction that computes the value of the watermark for a
+(sub)stream of disordered data items. It takes as input the timestamp of
+each observed item and outputs the current watermark value.
+
+== Predefined Watermark Policy
+
+We provide a simple, data-agnostic watermark policy, the
+{jet-javadoc}/core/WatermarkPolicies.html#limitingLag-long-[`limitingLag()`]
+policy. This policy will maintain a watermark that lags behind the
+highest observed event timestamp by a configured amount. In other words,
+each time an event with the highest timestamp so far is encountered,
+this policy advances the watermark to `eventTimestamp - lag`. This puts
+a limit on the spread between timestamps in the stream: all events whose
+timestamp is more than the configured `lag` behind the highest timestamp
+are considered late.
+
+[[watermark-throttling]]
+== Watermark Throttling
+
+The policy objects presented above will return the "`ideal`" watermark
+value according to their logic; however it would be too much overhead to
+insert a watermark item each time the ideal watermark advances
+(typically every millisecond). The
+{jet-javadoc}/core/EventTimePolicy.html#watermarkThrottlingFrameSize--[`EventTimePolicy.watermarkThrottlingFrameSize()`]
+and
+{jet-javadoc}/core/EventTimePolicy.html#watermarkThrottlingFrameOffset--[`EventTimePolicy.watermarkThrottlingFrameOffset()`]
+are the parameters that control the watermark interval.
+
+Since the watermark is only needed for windowing aggregation, we can
+emit only those watermarks, that will cause a new window to be emitted.
+In case of sliding windows, the _throttling frame size_ and _offset_
+should correspond to the sliding step and frame offset of the sliding
+window. Session windows can emit windows at any moment, using high
+_throttling frame size_ will increase latency as the event time only
+advances with the arrival of a newer watermark. For session window in
+the Pipeline API, we use 100ms as the _throttling frame size_ or less,
+if the session timeout is short.

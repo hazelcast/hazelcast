@@ -1,0 +1,59 @@
+[[command-line]]
+= Jet Command Line Tool
+
+Jet comes with a command line tool, `jet.sh` which you can use to submit
+jobs and do basic management of their lifecycle. It supports these
+commands:
+
+[%header]
+|===
+|Command|Description
+|`cluster`|Shows current cluster state and information about members
+|`list-jobs`|Lists running jobs on the cluster
+|`submit`|Submits a job to the cluster
+|`cancel`|Cancels a running job
+|`suspend`|Suspends a running job
+|`resume`|Resumes a suspended job
+|`restart`|Restarts a running job
+|`list-snapshots`|Lists saved snapshots on the cluster
+|`save-snapshot`|Saves a named snapshot from a job (Jet Enterprise only)
+|`delete-snapshot`|Deletes a named snapshot
+|===
+
+The command line uses the Jet client under the hood and thus needs to be
+configured with connection information to the cluster. By default,
+the command line tools uses the `hazelcast-client.xml` found in the
+`config` path of the distribution. It's also possible to specify
+connection parameters explicitly. For example, to list all the
+jobs running on the cluster you can use the following command:
+
+....
+bin/jet.sh -a 192.168.0.1:5701,192.168.0.1:5702 -g my-group list-jobs
+....
+
+This command would try to connect to either `192.168.0.1:5701`
+or `192.168.0.2:5702` using group name `my-group` and will list
+all the running jobs on the cluster. If you want to use the tool
+with a different `client.xml` you can do it as follows:
+
+....
+bin/jet.sh -f client.xml list-jobs
+....
+
+For more details on how to use the command line tool please refer to its own
+documentation which can be retrieved by the command `jet.sh --help`
+
+[[management-center]]
+= Management Center
+
+Hazelcast Jet Management Center is a management and monitoring suite providing
+a live overview of the Hazelcast Jet cluster.
+Management Center includes a tool for diagnosing data flow within the
+running Hazelcast Jet job. It provides a visualization of the computational
+stages and allows you to peek into the stats across the data flow graph
+enabling you to diagnose bottlenecks.
+
+Please refer to the {jet-mc-refman}[Hazelcast Jet Management Center Reference Manual]
+for installation and usage instructions.
+
+image::management-center-job-detail.png[Job Detail,align="center"]

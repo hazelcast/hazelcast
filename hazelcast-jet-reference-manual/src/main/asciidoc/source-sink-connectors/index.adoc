@@ -1,0 +1,22 @@
+[[source-sink-connectors]]
+= Source and Sink Connectors
+
+:leveloffset: +1
+
+include::overview.adoc[]
+
+include::imdg.adoc[]
+
+include::kafka.adoc[]
+
+include::hdfs.adoc[]
+
+include::file-socket.adoc[]
+
+include::jdbc.adoc[]
+
+include::jms.adoc[]
+
+include::source-sink-builder.adoc[]
+
+:leveloffset: -1

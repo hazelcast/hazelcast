@@ -1,0 +1,241 @@
+[[fault-tolerance]]
+= Configure Fault Tolerance
+
+Jet has features to allow an unbounded stream processing job to proceed
+correctly in the face of Jet members failing and leaving the cluster.
+
+Jet takes snapshots of the entire state of the computation at regular
+intervals. It coordinates the snapshot across the cluster and
+synchronizes it with a checkpoint on the data source. The source must
+ensure that, in the case of a restart, it will be able to replay all the
+data it emitted after the last checkpoint. Each of the other components
+in the job will restore its processing state to exactly what it was at
+the time of the last snapshot. If a cluster member goes away, Jet will
+restart the job on the remaining members, rewind the sources to the
+last checkpoint, restore the state of processing from the last
+snapshot, and then seamlessly continue from that point.
+
+== Exactly-Once
+
+"Exactly-once processing" means the output is consistent with processing
+each stream item exactly once. This is the ultimate guarantee you can
+ask for.
+
+As of version 0.6, Hazelcast Jet supports exactly-once processing with
+the source being either a Hazelcast `IMap` journal or a Kafka topic,
+and the sink being a Hazelcast `IMap`.
+
+If you configure Jet for exactly-once but use Kafka as the sink, after a
+job restart you may get duplicates in the output. As opposed to doubly
+processing an input item, this is more benign because it just means
+getting the exact same result twice.
+
+== At-Least-Once
+
+"At-least-once processing" means the output is consistent with
+processing each stream item at least once. Some items may get processed
+again after a restart, as if they represented new events. This is a
+lesser guarantee that Jet can deliver at a higher throughput and lower
+latency. In some cases it is good enough.
+
+In some other cases, however, duplicate processing of data items can
+have quite surprising consequences. There is more information about this
+in our <<pitfalls-alo, Jet Concepts>> chapter.
+
+== Enable Fault Tolerance
+
+Fault tolerance is off by default. To activate it for a job, create a
+`JobConfig` object and set the
+{jet-javadoc}/config/JobConfig.html#setProcessingGuarantee-com.hazelcast.jet.config.ProcessingGuarantee-[_processing guarantee_].
+You can also configure
+{jet-javadoc}/config/JobConfig.html#setSnapshotIntervalMillis-long-[_snapshot interval_].
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s1]
+----
+
+Using less frequent snapshots, more data will have to be replayed
+and the temporary spike in the latency of the output will be greater.
+More frequent snapshots will reduce the throughput and introduce more
+latency variation during regular processing.
+
+== Automatic Elasticity
+
+You can
+{jet-javadoc}/config/JobConfig.html#setAutoScaling-boolean-[configure]
+the behavior of what will happen when members are added or removed from
+the cluster.
+
+* If auto-scaling is enabled and a member is added or removed, the job
+will automatically restart. In case of member addition, it will
+restart after a delay.
+
+* If auto-scaling is disabled and a member is added, Jet takes no
+action and the job will not use the added member; you have to manually
+restart it. If a member is removed (after a shutdown or a failure), Jet
+suspends the job. You have to manually resume it.
+
+By default, auto-scaling is enabled.
+
+== Level of Safety
+
+Jet doesn't delegate its fault tolerance to an outside system, it backs
+up the state to its own `IMap` objects. `IMap` is a replicated
+in-memory data structure, storing each key-value pair on a configurable
+number of cluster members. By default it will make a single backup
+copy, resulting in a system that tolerates the failure of a single
+member at a time. You can tweak this setting when starting Jet, for
+example increase the backup count to two:
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s2]
+----
+
+_Note:_ if multiple members are lost simultaneously, some data from the
+backing IMaps can be lost. This is not currently checked and the job
+will restart with some state data from the snapshot missing, or it
+might fail if classpath resources were added and are missing. We plan
+to address this in future releases.
+
+== Split-Brain Protection
+
+A specific kind of failure is a so-called "split brain". It happens on
+network failure when a member or members think the other members left
+the cluster, but in fact they still run, but don't see each other over
+the network. Now we have two or more fully-functioning Jet clusters
+where there was supposed to be one. Each one will recover and restart
+the same Jet job, making it to run multiple times.
+
+Hazelcast Jet offers a mechanism to reduce this hazard:
+{jet-javadoc}/config/JobConfig.html#setSplitBrainProtection-boolean-[_split-brain
+protection_]. It works by ensuring that a job can be restarted only in
+a cluster whose size is more than half of what it was before the job
+was suspended. Enable split-brain protection like this:
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s3]
+----
+
+If there's an even number of members in your cluster, this may mean the
+job will not be able to restart at all if the cluster splits into two
+equally-sized parts. We recommend having an odd number of members.
+
+Note also that you should ensure there is no split-brain condition at
+the moment you are introducing new members to the cluster. If that
+happens, both sub-clusters may grow to more than half of the previous
+size. This will defuse the split-brain protection mechanism.
+
+= Configure Lossless Cluster Restart (Enterprise Only)
+
+The fault tolerance feature we described in the previous section is
+entirely RAM-based, the snapshotted state isn't persisted. Given the
+redundancy present in the cluster, this is sufficient to maintain a
+running cluster across single-node failures (or multiple-node, depending
+on the backup count), but it doesn't cover the case when the entire
+cluster must shut down.
+
+Hazelcast IMDG Enterprise HD has the Hot Restart Persistence feature
+which Jet uses to allow you to gracefully shut down the cluster at any
+time and have the snapshot data of all the jobs preserved. After you
+restart the cluster, Jet automatically restores the data and resumes the
+jobs.
+
+Hot Restart Persistence works by persisting the RAM-based snapshot data.
+Even with the fastest solid-state storage, this dramatically reduces the
+maximum snapshotting throughput available to Jet: while DRAM can take up
+to 50 GB/s, a high-end storage device caps at 2 GB/s. Keep in mind that
+this is throughput per member, so even on a minimal cluster of 3
+machines, this is actually 6 GB/s available to Jet. Also, this
+throughput limit does not apply to the data going through the Jet
+pipeline, but only to the periodic saving of the state present in the
+pipeline. Typically the state scales with the number of distinct keys
+seen within the time window.
+
+Tu use Lossless Cluster Restart, enable it in `hazelcast-jet.xml`:
+
+[source]
+----
+<hazelcast-jet xmlns="http://www.hazelcast.com/schema/jet-config">
+    <instance>
+        <lossless-restart-enabled>false</lossless-restart-enabled>
+    </instance>
+</hazelcast-jet>
+----
+
+To set the base directory where the data will be stored, configure Hot
+Restart in the {hz-refman}#global-hot-restart-configuration[IMDG
+configuration]:
+
+[source]
+----
+<hazelcast xmlns="http://www.hazelcast.com/schema/config">
+    <hot-restart-persistence enabled="true">
+        <base-dir>/mnt/hot-restart</base-dir>
+        <parallelism>2</parallelism>
+    </hot-restart-persistence>
+</hazelcast>
+----
+
+Quick programmatic example:
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s4]
+----
+
+To have the cluster shut down gracefully, as required for this feature
+to work, do not kill the Jet instances one by one. As you are killing
+them, the cluster starts working hard to rebalance the data on the
+remaining members. This usually leads to out-of-memory failures and the
+loss of all data.
+
+The entire cluster can be shut down gracefully in several ways:
+
+- on the command line:
+[source]
+----
+$ cluster.sh -o shutdown
+----
+
+- using the Jet Management Center
+
+- programmatically:
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s5]
+----
+
+The first two ways make use of Jet's REST endpoint, which isn't enabled
+by default. You can enable it by setting the property
+
+----
+hazelcast.rest.enabled=true
+----
+
+This can be either a system property (`-Dhazelcast.rest.enabled=true`)
+or a property in the Hazelcast Jet configuration:
+
+----
+<hazelcast-jet xmlns="http://www.hazelcast.com/schema/jet-config">
+    <properties>
+       <property name="hazelcast.rest.enabled">true</property>
+    </properties>
+</hazelcast-jet>
+----
+
+or
+
+[source]
+----
+include::{javasource}/ConfigureFaultTolerance.java[tag=s6]
+----
+
+Since the Hot Restart data is saved locally on each member, all the
+members must be present after the restart for Jet to be able to reload
+the data. Beyond that, there's no special action to take: as soon as the
+cluster re-forms, it will automatically reload the persisted snapshots
+and resume the jobs.

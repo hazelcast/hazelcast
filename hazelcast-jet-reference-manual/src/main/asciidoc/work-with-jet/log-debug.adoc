@@ -1,0 +1,222 @@
+[[logging-and-debugging]]
+= Monitor Execution and Diagnose Problems
+
+== Configure Logging
+
+Jet, like Hazelcast IMDG, does not depend on a specific logging
+framework and has built-in adapters for a variety of logging frameworks.
+You can also write a new adapter to integrate with loggers Jet doesn't
+natively support. To use one of the built-in adapters, set the
+`hazelcast.logging.type` property to one of the following:
+
+* `jdk`: java.util.logging (default)
+* `log4j`: Apache Log4j
+* `log4j2`: Apache Log4j 2
+* `slf4j`: SLF4J
+* `none`: Turn off logging
+
+For example, to configure Jet to use Log4j, you can do one of the
+following:
+
+[source]
+----
+include::{javasource}/LogDebug.java[tag=s1]
+----
+
+or
+
+[source]
+----
+include::{javasource}/LogDebug.java[tag=s2]
+----
+
+For more detailed information about how to configure logging, please
+refer to the {hz-refman}#logging-configuration[IMDG reference manual].
+
+== Inspect Output of Individual Stages
+
+While debugging your pipeline you'll want to see the output of an
+individual stage. You can achieve it by using the
+{jet-javadoc}/pipeline/GeneralStage.html#peek--[`peek()`] stage. For example:
+
+[source]
+----
+include::{javasource}/LogDebug.java[tag=s3]
+----
+
+<1> Logs all the word tokens emitted by the filtering stage
+
+If you run it like this:
+
+[source]
+----
+include::{javasource}/LogDebug.java[tag=s4]
+----
+
+this is how your output may look:
+
+....
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#1
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: quick
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#2
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: brown
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#0
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: the
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#4
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: dog
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#3
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: lazy
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#0
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: jumped
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#2
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: the
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#1
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: over
+Mar 20, 2018 2:43:24 PM com.hazelcast.jet.impl.processor.PeekWrappedP.filter#3
+INFO: [192.168.5.12]:5702 [jet] [0.7-SNAPSHOT] Output to ordinal 0: fox
+....
+
+The logger name of
+`com.hazelcast.jet.impl.processor.PeekWrappedP.filter#1` consists of the
+following parts:
+
+* `com.hazelcast.jet.impl.processor.PeekWrappedP`: the type of the
+processor writing the log message
+* `filter`: the name of the vertex the processor belongs to
+* `#0`: index of the processor within the vertex. The index is unique
+cluster-wide.
+
+For more information about logging when using the Core API, see the
+<<inspecting-processor-input-and-output, Best Practices>> section.
+
+[[metrics-monitoring]]
+== Monitor Metrics
+
+Jet exposes metrics using the JVM's standard JMX interface. You can use
+tools such as Java Mission Control or JConsole to display them. All
+Jet-related beans are stored under
+`com.hazelcast.jet/Metrics/<instanceName>/` node.
+
+=== Configuration
+
+The metrics collection is enabled by default. You can configure it
+using the `hazelcast-jet.xml` file:
+
+[source,xml,subs="attributes+"]
+----
+<metrics enabled="true" jmxEnabled="true">
+    <!-- The number of seconds the metrics will be retained on
+         the instance -->
+    <retention-seconds>5</retention-seconds>
+
+    <!-- The metrics collection interval in seconds -->
+    <collection-interval-seconds>5</collection-interval-seconds>
+
+    <!-- whether metrics should be collected for data structures.
+         Metrics collection can have some overhead if there is a
+         large number of data structures -->
+    <metrics-for-data-structures>false</metrics-for-data-structures>
+</metrics>
+----
+
+or using `JetConfig` object:
+
+[source]
+----
+include::{javasource}/integration/JmxIntegration.java[tag=s1]
+----
+
+=== Exposed JMX MBeans
+
+[cols="2,3"]
+|===
+|Property|Description
+
+|`cooperativeWorker=<N>`
+
+|* **iterationCount**: The total number of iterations the driver of tasklets in cooperative
+thread N makes. It should increase by at least 250 iterations/s. Lower
+value means some of the cooperative processors blocks for too long.
+
+* **taskletCount**:The number of assigned tasklets to cooperative thread N
+
+|*Job-related metrics, nested under* +
+`job=<jobId>` +
+&nbsp;&nbsp; `/exec=<executionId>` +
+&nbsp;&nbsp; `/vertex=<vertexName>`
+|All job-related metrics are nested under these nodes. If the vertex is
+a source or a sink, additionally `source=true` or `sink=true` is
+inserted to the tree.
+
+|`/ordinal=<N>`
+
+|This MBean groups metrics for input or output ordinal _N_.
+
+Values in this section are 0 for non-distributed edges, they only
+account for data actually transmitted over the network between members.
+This numbers include watermarks, snapshot barriers etc.
+
+* **distributedBytesIn**: Total number of bytes received from remote
+members +
+* **distributedBytesOut**: Total number of bytes sent to remote members +
+* **distributedItemsIn**: Total number of items received from remote
+members +
+* **distributedItemsOut**: Total number of items sent to remote members
+
+|`/proc=N`
+|This MBean groups metrics for processor instance _N_. The _N_ is
+global processor index. Processor is the parallel worker doing the work
+of the vertex.
+
+* **topObservedWm**: This value is equal to the highest `coalescedWm` on
+any input edge of this processor +
+* **coalescedWm**: The highest watermark received from _all_ inputs that
+was sent to the processor to handle +
+* **lastForwardedWm**: Last watermark emitted by the processor to output +
+* **lastForwardedWmLatency**: The difference between `lastForwardedWn`
+and the system time at the moment when metrics were collected
+
+* **queuesCapacity**: The total capacity of input queues +
+* **queuesSize**: The total number of items waiting in input queues
+
+All input queues for all edges to the processor are summed in the above
+two metrics. If size is close to capacity, backpressure is applied and
+this processor is a bottleneck. Only input edges with equal priority are
+summed. If the processor has input edges with different priority, only
+edges with the highest priority will be reflected, after those are
+exhausted edges with the next lower priority will be reflected and so
+on.
+
+|`/proc=N` +
+&nbsp;&nbsp; `/ordinal=M`
+|This MBean groups metrics pertaining to processor instance _N_ and
+input or output edge _M_. _M_ can be a number, or it can be `snapshot`
+for output items written to state snapshot.
+
+* **topObservedWm**: The highest received watermark from _any_ input on
+edge _N_ +
+* **coalescedWm**: The highest watermark received from _all_ upstream
+processors on edge _N_ +
+
+* **emittedCount**: The number of emitted items. This number includes
+watermarks, snapshot barriers etc. Unlike `distributedItemsOut`, it
+includes items emitted items to local processors. +
+* **receivedCount**: The number of received items. This number does not
+include watermarks, snapshot barriers etc. It's the number of items the
+`Processor.process` method will receive. +
+* **receivedBatches**: The number of received batches.
+`Processor.process` receives a batch of items at a time, this is the
+number of such batches. By dividing _receivedCount_ by
+_receivedBatches_, you get the average batch size. It will be 1 under
+low load.
+
+|===
+
+=== Hazelcast IMDG Metrics
+Since Jet is built on top of Hazelcast IMDG the metrics exposed by IMDG are also
+available and are observable as MBeans under the node
+`com.hazelcast/Metrics/<instanceName>/`.
+
+For further information on the IMDG metrics pleaso consult the
+{hz-refman}[Hazelcast IMDG Reference Manual]
+.

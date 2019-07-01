@@ -1,0 +1,147 @@
+[[connector-files]]
+= Files
+
+Hazelcast Jet provides file and TCP/IP socket connectors that have
+limited production use, but are simple and can be very useful in an
+early rapid prototyping phase. They assume the data is in the form of
+plain text and emit/receive data items which represent individual lines
+of text.
+
+These connectors are not fault-tolerant. On job restart they behave the
+as if you started a new job. The sources don't do snapshotting. The
+sinks don't suppress duplicate data.
+
+
+== File Sources
+
+The file sources are designed to work with the local and shared file
+systems. For local file system, the sources expect to see on each member
+just the files that member should read. You can achieve the effect of a
+distributed source if you manually prepare a different set of files on
+each member. For shared file system, the sources split the work so that
+each member will read a part of the files.
+
+There are two flavors of the file source: bounded and unbounded.
+
+Here's an example with the
+{jet-javadoc}/pipeline/Sources.html#files-java.lang.String-[bounded source]:
+
+[source]
+----
+include::{javasource}/integration/FileAndSocket.java[tag=s1]
+----
+
+This will log on each Jet member the contents of all the files in the
+specified directory. When the source reads all the files, the job
+completes. If the files change while the job is running, the behavior
+is undefined.
+
+Here's an example with the
+{jet-javadoc}/pipeline/Sources.html#fileWatcher-java.lang.String-[unbounded source]:
+
+[source]
+----
+include::{javasource}/integration/FileAndSocket.java[tag=s2]
+----
+
+It will watch the directory for changes. It will emit only new contents added
+after startup: both new files and new content appended to existing ones. Files
+must be updated in an append-only fashion; if the existing content changes, the
+behavior is undefined.
+
+If you delete the watched directory, the job will complete.
+
+== File Sink
+
+The {jet-javadoc}/pipeline/Sinks.html#files-java.lang.String-[file sink]
+can work with either a local or a shared network file system. Each
+member will write to different file names. You can achieve the effect of
+a distributed sink if you manually collect all the output files on all
+members and combine their contents.
+
+Here's a small example of usage:
+
+[source]
+----
+include::{javasource}/integration/FileAndSocket.java[tag=s3]
+----
+
+[[connector-files-avro]]
+== Avro
+
+Hazelcast Jet provides Apache Avro file source and sink for batch
+processing jobs. This is a specialized version of file connector.
+Avro connector assumes the data is in the `Avro Object Container File`
+format.
+
+=== Avro File Source
+
+Avro file source reads the files in the specified directory using the
+given datum reader supplier and emits the records to downstream.
+
+Here's an example with a
+{jet-javadoc}/avro/AvroSources.html#files-java.lang.String-java.lang.Class-[reflect datum reader]:
+
+[source]
+----
+include::{javasource}/integration/Avro.java[tag=s1]
+----
+
+This will log on each Jet member the records of all the files in the
+specified directory. When the source reads all the files, the job
+completes. If the files change while the job is running, the behavior
+is undefined.
+
+=== Avro File Sink
+
+Avro file sink writes the records to the files using the given datum
+writer and schema suppliers. The sink always overwrites the existing
+files, does not append.
+
+Here is an example with a
+{jet-javadoc}/avro/AvroSinks.html#files-java.lang.String-com.hazelcast.jet.function.SupplierEx-[generic datum writer]:
+
+[source]
+----
+include::{javasource}/integration/Avro.java[tag=s2]
+----
+
+[[connector-socket]]
+= TCP/IP Socket
+
+== Socket Source
+
+The socket source opens a blocking client TCP/IP socket and receives
+data over it. The data must be lines of plain text.
+
+Each underlying worker of the Socket Source connector opens its own
+client socket and asks for data from it. The user supplies the
+`host:port` connection details. The server side should ensure a
+meaningful dispersion of data among all the connected clients, but
+how it does it is outside of Jet's control.
+
+Here's a simple example:
+
+[source]
+----
+include::{javasource}/integration/FileAndSocket.java[tag=s4]
+----
+
+
+You can study a comprehensive
+{jet-samples}/sockets/src/main/java/StreamTextSocket.java[code sample]
+including a sample socket server using Netty.
+
+=== Sink
+
+The socket sink opens a blocking client TCP/IP socket and sends data
+over it. The data must be in the form of lines of plain text. To get
+meaningful behavior, the server side must collect and combine them from
+all the concurrently connected clients.
+
+Here's a simple example:
+
+[source]
+----
+include::{javasource}/integration/FileAndSocket.java[tag=s5]
+----

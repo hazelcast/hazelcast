@@ -117,13 +117,13 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-all</artifactId>
-            <version>5.15.3</version>
+            <version>${activemq.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq.tooling</groupId>
             <artifactId>activemq-junit</artifactId>
-            <version>5.15.3</version>
+            <version>${activemq.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -1,0 +1,395 @@
+[[start-jet]]
+= Start Jet
+
+To create a Jet cluster, we simply start some Jet instances. Normally
+these would be started on separate machines, but for simple practice
+we can use the same JVM for two instances. Even though they are in the
+same JVM, they'll communicate over the network interface.
+
+[source]
+----
+include::{javasource}/StartJet.java[tag=s1]
+----
+
+These two instances should automatically discover each other using IP
+multicast and form a cluster. You should see a log output similar to the
+following:
+
+....
+Members [2] {
+  Member [10.0.1.3]:5701 - f1e30062-e87e-4e97-83bc-6b4756ef6ea3
+  Member [10.0.1.3]:5702 - d7b66a8c-5bc1-4476-a528-795a8a2d9d97 this
+}
+....
+
+This means the members successfully formed a cluster. Since the Jet
+instances start their own threads, it is important to explicitly shut
+them down at the end of your program; otherwise the Java process will
+remain alive after the `main()` method completes:
+
+[source]
+----
+include::{javasource}/StartJet.java[tag=s2]
+----
+
+It is important to use at least 2 members when developing because
+otherwise Jet doesn't serialize the stream items and serialization
+errors will not be discovered.
+
+[[build-pipeline]]
+= Build the Computation Pipeline
+
+The general shape of any data processing pipeline is `drawFromSource ->
+transform -> drainToSink` and the natural way to build it is from source
+to sink. The <<pipeline-api, Pipeline API>> follows this pattern. For
+example,
+
+[source]
+----
+include::{javasource}/BuildComputation.java[tag=s1]
+----
+
+Refer to the chapter on the <<pipeline-api, Pipeline API>> for full
+details.
+
+[[serializable-lambda]]
+= Watch out for Capturing Lambdas
+
+A typical Jet pipeline involves lambda expressions. Since the whole
+pipeline definition must be serialized to be sent to the cluster, the
+lambda expressions must be serializable as well. The Java standard
+provides an essential building block: if the static type of the lambda
+is a subtype of `Serializable`, you will automatically get a lambda
+instance that can serialize itself.
+
+None of the functional interfaces in the JDK extend `Serializable`, so
+we had to mirror the entire `java.util.function` package in our own
+`com.hazelcast.jet.function` with all the interfaces subtyped and made
+`Serializable`. Each subtype has the name of the original with
+`Ex` appended. For example, a `FunctionEx` is just
+like `Function`, but implements `Serializable`. We use these types
+everywhere in the Pipeline API.
+
+As always with this kind of magic, auto-serializability of lambdas has
+its flipside: it is easy to overlook what's going on.
+
+If the lambda references a variable in the outer scope, the variable is
+captured and must also be serializable. If it references an instance
+variable of the enclosing class, it implicitly captures `this` so the
+entire class will be serialized. For example, this will fail because
+`JetJob1` doesn't implement `Serializable`:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s3]
+----
+
+<1> Refers to `instanceVar`, capturing `this`, but `JetJob1` is not
+`Serializable` so this call will fail.
+
+Just adding `implements Serializable` to `JetJob1` would be a viable
+workaround here. However, consider something just a bit different:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s4]
+----
+
+<1> A non-serializable field.
+
+<2> Refers to `instanceVar`, capturing `this`. `JetJob2` is declared as
+`Serializable`, but has a non-serializable field and this fails.
+
+Even though we never refer to `fileOut`, we are still capturing the
+entire `JetJob2` instance. We might mark `fileOut` as `transient`, but
+the sane approach is to avoid referring to instance variables of the
+surrounding class. We can simply achieve this by assigning to a local
+variable, then referring to that variable inside the lambda:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s5]
+----
+
+<1> Declare a local variable that loads the value of the instance field.
+
+<2> By referring to the local variable `findMe` we avoid capturing
+`this` and the job runs fine.
+
+Another common pitfall is capturing an instance of `DateTimeFormatter`
+or a similar non-serializable class:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s6]
+----
+
+<1> Captures the non-serializable `formatter`, so this fails.
+
+Sometimes we can get away by using one of the preconfigured formatters
+available in the JDK:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s7]
+----
+
+<1> Accesses the static final field `ISO_LOCAL_TIME`. Static fields are
+not subject to lambda capture, they are dereferenced when the code runs
+on the target machine.
+
+This refers to a `static final` field in the JDK, so the instance is
+available on any JVM. If this is not available, you may create a
+static final field in your own class, but you can also use
+`mapUsingContext()`. In this case you provide a serializable factory
+that Jet will ask to create an object on the target member. The object
+it returns doesn't have to be serializable. Here's an example of that:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s8]
+----
+
+<1> Create a `ContextFactory`.
+<2> Supply it to `mapUsingContext()`.
+<3> Your mapping function now gets the object the factory created.
+
+[[job]]
+= Submit a Jet Job and Manage its Lifecycle
+
+This is how you submit a Jet pipeline for execution:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s1]
+----
+
+If you want to submit a Core API DAG, the syntax is identical:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s2]
+----
+
+Job submission is a fire-and-forget action: once a client submits it,
+the job has a life of its own independent of the submitter. It can
+disconnect and any other client or Jet member can obtain its own `Job`
+instance that controls the same job.
+
+You can use the same API to submit a job from either a client machine
+or directly on an instance of a Jet cluster member. The same `Pipeline`
+or `DAG` instance can be submitted for execution many times.
+
+== JobConfig
+
+To gain more control over how Jet will run your job, you can pass in a
+`JobConfig` instance. For example, you can give your job a
+human-readable name:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s3]
+----
+
+Please note that you can have a single active job, i.e., running / suspended /
+waiting to be run, in the cluster with the same name. You get
+`JobAlreadyExistsException` if you make another submission. You can reuse
+the job name after the active job is completed.
+
+If you have a microservice deployment where each package contains a jet member
+and makes the same job submission, you can ensure that the job runs only once
+by using the `newJobIfAbsent()` API. If a named job is submitted with this API,
+Jet does not create a second job if there is already an active job
+with the same name. Instead, it returns you a reference for the active job,
+as shown in the following snippet.
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s6]
+----
+
+
+== Remember that a Jet Job is Distributed
+
+The API to submit a job to Jet is in a way deceptively simple: "just
+call a method". As long as you're toying around with Jet instances
+started locally in a single JVM, everything will indeed work. However,
+as soon as you try to deploy to an actual cluster, you'll face the
+consequences of the fact that your job definition must travel over the
+wire to reach remote members which don't have your code on their
+classpath.
+
+Your custom code must be packaged with the Jet job. For simple examples
+you can have everything in a single class and use code like this:
+
+[source]
+----
+include::{javasource}/StartJet.java[tag=s3]
+----
+
+If you forget to do this, or don't add all the classes involved, you
+may get a quite confusing exception:
+
+[source]
+----
+java.lang.ClassCastException:
+cannot assign instance of java.lang.invoke.SerializedLambda
+to field com.hazelcast.jet.core.ProcessorMetaSupplier$1.val$addressToSupplier
+of type com.hazelcast.jet.function.FunctionEx
+in instance of com.hazelcast.jet.core.ProcessorMetaSupplier$1
+----
+
+`SerializedLambda` actually declares `readResolve()`, which would
+normally transform it into an instance of the correct functional
+interface type. If this method throws an exception, Java doesn't report
+it but keeps the `SerializedLambda` instance and continues the
+deserialization. Later in the process it will try to assign it to
+a field whose type is the target type of the lambda
+(`FunctionEx` in the example above) and at that point it will
+fail with the `ClassCastException`. If you see this kind of error,
+double-check the list of classes you have added to the Jet job.
+
+For more complex jobs it will become more practical to first package the
+job in a JAR and then use a command-line utility to submit it, as
+explained next.
+
+[[jet-submit]]
+== Submit a Job from the Command Line
+
+Jet comes with the `jet.sh` script, which allows you to submit a
+Jet job packaged in a JAR file. You can find it in the Jet distribution
+zip file, in the `bin` directory. On Windows use `jet.bat`. To use
+it, follow these steps:
+
+* Write your `main()` method and your Jet code the usual way, but call
+{jet-javadoc}/server/JetBootstrap.html[`JetBootstrap.getInstance()`]
+instead of `Jet.newJetClient()` to acquire a Jet client instance.
+* Create a runnable JAR which declares its `Main-Class` in `MANIFEST.MF`.
+
+* Run your JAR, but instead of `java -jar jetjob.jar` use `jet.sh
+submit jetjob.jar`.
+
+* The script will create a Jet client and configure it from
+`hazelcast-client.xml` located in the `config` directory of Jet's
+distribution. Adjust that file to suit your needs.
+
+For example, write a class like this:
+
+[source]
+----
+include::{javasource}/StartJet.java[tag=s4]
+----
+
+After building the JAR, submit the job:
+
+----
+$ jet.sh submit jetjob.jar
+----
+
+== Manage a Submitted Job
+
+`jet.newJob()` and `jet.getJob(jobId)` return a
+{jet-javadoc}/Job.html[Job] object, which you can use to monitor the
+job and change its status:
+
+* {jet-javadoc}/Job.html#suspend--[Job.suspend]: the job will stop
+running, but its metadata will be kept and it can be resumed later. Use
+this for example if you want to restart the members one by one and you
+don't want the job to restart multiple times in the meantime
+
+* {jet-javadoc}/Job.html#resume--[Job.resume]: resumes a previously
+suspended job
+
+* {jet-javadoc}/Job.html#restart--[Job.restart]: stops and restarts the
+job to make use of new members added to the cluster (if automatic
+scaling is disabled)
+
+* {jet-javadoc}/Job.html#cancel--[Job.cancel]: the job will stop
+running and will be marked as completed. It cannot be restarted later
+
+You can also get the job's name, configuration, and submission time via
+`job.getName()`, `job.getConfig()`, and `job.getSubmissionTime()`.
+`job.getStatus()` will give you the current status of the job (running,
+failed, completed etc.). You can also call `job.getFuture()` to block
+until the job completes and then get its final outcome (either success
+or failure).
+
+Jet does not support canceling the job with `future.cancel()`, instead
+you must call `job.cancel()`. This is due to the mismatch in the
+semantics between `future.cancel()` on one side and `job.cancel()` plus
+`job.getStatus()` on the other: the future immediately transitions to
+"`completed by cancellation`", but it will take some time until the
+actual job in the cluster changes to that state. Not to confuse the
+users with these differences we decided to make `future.cancel()` fail
+with an exception.
+
+== Job Upgrade
+
+*Note:* Job Upgrade is only available in <<install-hazelcast-jet-enterprise-optional, Jet Enterprise>>
+
+Jet allows you to upgrade a job while preserving its state. This is useful 
+for bug fixing or to improve the application.
+
+The new pipeline has to be compatible with the old one, for more details
+about what you can change in the pipeline, see
+<<update-a-dag-without-losing-the-state>>.
+
+Job Upgrades use the snapshots. The Job state is exported to 
+the snapshot and the new job version starts from from the snapshot.
+
+If you want to preserve the state of the cancelled job, use
+`cancelAndExportSnapshot`:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s8]
+----
+
+You can also export the state and keep the job running. Both
+old and new version can then run in parallel. This is useful e.g. 
+for an A/B testing.
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s9]
+----
+
+Then use the exported snapshot to submit a new job. The Job will 
+use the state in the snapshot as its initial state:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s10]
+----
+
+The exported snapshots used for Job Upgrades differ from the 
+snapshots used for the <<fault-tolerance, Fault Tolerance>>. 
+Exported snapshots aren't deleted automatically by Jet. Therefore you can
+also use the exported snapshot as a point of recovery.
+When  you no longer need the exported snapshot, delete it.
+
+== Get a List of All Submitted Jobs
+
+Jet keeps an inventory of all the jobs submitted to it, including those
+that have already completed. Access the full list with `jet.getJobs()`.
+You can use any `Job` instance from that list to monitor and manage a
+job, whether it was you or some other client that submitted it.
+
+This example tells you what Jet has been up to in the last five minutes:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s4]
+----
+
+To only return all jobs submitted with a particular name, you can call
+`jet.getJobs(name)`, or `jet.getJob(name)` to get just the latest one.
+
+Here's how you can check the statistics on a job named `my-job`:
+
+[source]
+----
+include::{javasource}/ManageJob.java[tag=s5]
+----
+
+*Note:* data about completed jobs are evicted after 7 days.

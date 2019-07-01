@@ -1,0 +1,6 @@
+= Management Center Integration
+
+Jet exposes metrics using the JVM's standard JMX interface. See the <<metrics-monitoring>> section.
+
+These metrics are also exposed in the Jet Management Center. Please
+refer to the {jet-mc-refman}[Hazelcast Jet Management Center Reference Manual] for more information.

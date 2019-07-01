@@ -1,0 +1,544 @@
+
+[[get-started]]
+= Get Started
+
+In this section we'll get you started using Hazelcast Jet. We'll show
+you how to set up a Java project with the proper dependencies and a
+quick Hello World example to verify your setup.
+
+[[requirements]]
+== Requirements
+
+In the good tradition of Hazelcast products, Jet is distributed as a JAR
+with no other dependencies. It requires JRE version 8 or higher to run.
+
+== Install Hazelcast Jet
+
+The easiest way to start using Hazelcast Jet is to add it as a
+dependency to your project.
+
+Hazelcast Jet is published on the Maven repositories. Add the following
+lines to your `pom.xml`:
+
+[source,xml,subs="attributes+"]
+----
+<dependencies>
+  <dependency>
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet</artifactId>
+    <version>{jet-version}</version>
+  </dependency>
+</dependencies>
+----
+
+If you prefer to use Gradle, execute the following command:
+
+[source,groovy,subs="attributes+"]
+----
+compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
+----
+
+Alternatively you can download the latest
+https://jet.hazelcast.org/download[distribution package of Hazelcast Jet]
+and add the `hazelcast-jet-{jet-version}.jar` file to your classpath.
+
+== Install Hazelcast Jet Enterprise (Optional)
+
+Hazelcast Jet Enterprise is a commercial edition of Hazelcast Jet. It's
+built on top of Hazelcast Jet open source and extends it with the
+following features:
+
+* <<security, Security Suite>>
+* Lossless Restart (in Jet 3.0)
+* Job Upgrades (in Jet 3.0)
+* Enterprise PaaS Deployment Environment (Pivotal Cloud Foundry,
+   Openshift Container Platform (Jet 3.0))
+
+Hazelcast Jet Enterprise is available on a Hazelcast Maven repository.
+Add the following lines to your `pom.xml`:
+
+[source,xml,subs="attributes+"]
+----
+<repository>
+   <id>Hazelcast Private Snapshot Repository</id>
+   <url>https://repository.hazelcast.com/snapshot/</url>
+</repository>
+<repository>
+   <id>Hazelcast Private Release Repository</id>
+   <url>https://repository.hazelcast.com/release/</url>
+</repository>
+----
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+   <groupId>com.hazelcast</groupId>
+   <artifactId>hazelcast-enterprise</artifactId>
+   <version>{jet-version}</version>
+</dependency>
+----
+
+You can download the Hazelcast Jet Enterprise package from
+https://hazelcast.com/hazelcast-enterprise-download/[hazelcast.com].
+
+=== Set the License Key
+
+To use Hazelcast Jet Enterprise, you must set the license key using one
+of the configuration methods shown below. You can request a trial
+license key at https://hazelcast.com/hazelcast-enterprise-download/[hazelcast.com].
+
+Hazelcast Jet Enterprise license keys are required only to run the Jet
+cluster. A Jet client can access the Enterprise features without the
+license key.
+
+The license key can be configured using one of the following methods:
+
+==== Hazelcast Configuration File
+
+Replace the value for the `<license-key>` tag inside the `hazelcast.xml`
+file in the config folder:
+
+[source,xml,subs="attributes+"]
+----
+  <hazelcast ..>
+      ...
+      <license-key>ENTER LICENSE KEY HERE</license-key>
+      ...
+  </hazelcast>
+----
+
+===== Programmatic Configuration
+
+License key also can be set in the Jet config object as follows:
+
+[source,java]
+----
+JetConfig config = new JetConfig();
+config.getHazelcastConfig().setLicenseKey( "Your Enterprise License Key" );
+----
+
+==== System Property
+
+Set the following system property:
+
+----
+-Dhazelcast.enterprise.license.key=Your Enterprise License Key
+----
+
+=== Hazelcast Jet Management Center
+
+Hazelcast Jet Management Center is a management and monitoring suite
+providing a live overview of the Hazelcast Jet cluster. It's a
+standalone tool with a web console.
+
+Please see the {jet-mc-refman}[Hazelcast Jet Management Center Reference Manual] for the installation
+instructions.
+
+[[verify-your-setup]]
+== Verify Your Setup With a Word Count Example
+
+You can verify your setup by running this simple program. It processes
+the contents of a Hazelcast `IList` that contains lines of text, finds
+the number of occurrences of each word in it, and stores its results
+in a Hazelcast `IMap`. In a distributed  computation job the input and
+output cannot be simple in-memory structures like a Java `List`; they
+must be accessible to any member of the computing cluster and must
+persist after a job ends. This is why we use Hazelcast structures.
+
+[source]
+----
+include::{javasource}/HelloWorld.java[]
+----
+
+You should expect to see a lot of logging output from Jet (sent to
+`stderr`) and two lines on `stdout`:
+
+----
+Count of hello: 4
+Count of world: 5
+----
+
+[[java-util-stream]]
+== Reuse Your java.util.stream Knowledge
+
+If you've already used Java's Stream API, you'll find many similarities
+in Jet's Pipeline API. They both construct a processing pipeline by
+adding processing steps (stages). Both are FP-oriented APIs with lambdas
+playing a key role. Simple transformations like map/filter even look
+exactly the same. The main concern is knowing where the similarities
+end. Here are some typical gotchas if the Stream API has set some
+expectations for you:
+
+- All lambdas in Jet <<serializable-lambda, get serialized>> so they can
+be sent to remote cluster members. If your lambda captures a variable
+from the surrounding scope, that variable's contents must be serialized
+as well. If you refer to an instance variable, the entire instance
+holding it must be serialized. It's quite easy to accidentally capture
+and serialize the entire `this` object and everything it refers to.
+
+- The pipeline you construct doesn't execute itself, you must explicitly
+{jet-javadoc}/JetInstance.html#newJob-com.hazelcast.jet.pipeline.Pipeline-[submit]
+it to a Jet cluster.
+
+- Since you're submitting the computation to an external system, you
+don't get the result in the return value of a method call. The pipeline
+explicitly specifies where it will store the results (to a
+<<pipeline-source-sink, data sink>>).
+
+- Whereas in the Stream API the aggregation is the terminal step, the
+one that immediately makes your pipeline execute, in Jet it is just
+another transformation (an intermediate step).
+
+Finally, you'll notice that Jet's Pipeline API is much more powerful
+than the Stream API. Here are a few highlights:
+
+- <<cogroup, joining streams>>
+- forking streams
+- <<windowed-aggregation, windowed aggregation over infinite streams>>
+- <<fault-tolerance, fault tolerance>>
+- <<source-sink-connectors, connectors to 3rd party systems>>
+
+=== Example: List Transformation
+
+Here's a simple example of list transformation with the Stream API:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s1a]
+----
+
+Here's the equivalent in Jet. Note that we're transforming Hazelcast
+`IList` s:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s1b]
+----
+
+=== Example: Grouping and Aggregation
+
+Here's an example of grouping and aggregation with the Stream API. We
+compute a histogram of words by their length:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s2a]
+----
+
+And here's how to aggregate in Jet:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s2b]
+----
+
+Note that the result of `aggregate` is just another pipeline stage, you
+can apply more transforms to it before draining to the sink.
+
+=== Example: Collector vs. AggregateOperation
+
+If you have ever written your own
+{jdk-javadoc}/java/util/stream/Collector.html[Collector] for the
+Stream API, you'll find that Jet's <<implement-your-aggregate-operation,
+AggregateOperation>> is quite similar and you can transfer your skill
+to it.
+
+Here's a Stream API collector that computes the sum of input items:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s3a]
+----
+
+And here's Jet's aggregate operation doing the same:
+
+[source]
+----
+include::{javasource}/GetStarted.java[tag=s3b]
+----
+
+Compared to `Collector`, `AggregateOperation` defines two more
+primitives:
+
+- `deduct` reverses a previous `combine`. It's an optional primitive and
+serves to optimize sliding window aggregation.
+- `export` is similar to `finish`, the difference being that `export`
+must preserve the accumulator's state and `finish` doesn't. Jet uses
+`finish` wherever applicable as it can be implemented more optimally.
+In this example we use the same lambda for both primitives.
+
+
+== Deploy Using Docker
+
+You can deploy your Hazelcast Jet projects using the Docker containers.
+Hazelcast Jet has the following images on Docker:
+
+- Hazelcast Jet
+- Hazelcast Jet Enterprise
+- Hazelcast Jet Management Center
+
+After you pull an image from the Docker registry, you can run your image
+to start the Jet Management Center or a Jet instance with its default
+configuration. All repositories provide the latest stable releases but
+you can pull a specific release, too. You can also specify environment
+variables when running the image.
+
+If you want to start customized instances of Jet or Jet Management Center,
+you can extend the the above listed images by providing your own
+configuration file. This feature is provided as a Hazelcast Jet plugin.
+Please see their own GitHub repos at
+https://github.com/hazelcast/hazelcast-jet-docker[Hazelcast Jet Docker]
+and
+https://github.com/hazelcast/hazelcast-jet-management-center-docker[Hazelcast Jet Management Center Docker]
+for details on configurations and usages.
+
+== Deploy Using Kubernetes
+
+Hazelcast Jet provides Kubernetes-ready Docker images which you can
+easily deploy into Kubernetes environments. These images use the
+https://github.com/hazelcast/hazelcast-kubernetes[Hazelcast Kubernetes]
+plugin to discover other Hazelcast Jet members in the Kubernetes
+environment by interacting with the Kubernetes API.
+
+Using Kubernetes API requires granting certain permissions. Therefore,
+you need to create Role Based Access Control definition, (`rbac.yaml`),
+with the following content. You can check out the
+https://github.com/hazelcast/hazelcast-kubernetes[Hazelcast Kubernetes]
+plugin for more details on this manner.
+
+Here is the content of `rbac.yaml`:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+```
+
+You can grant the required permissions stated above using the following
+command:
+
+```bash
+kubectl apply -f rbac.yaml
+```
+
+Then, you need to configure Hazelcast Jet to use Kubernetes Discovery to
+discover other members, to do so create a file named
+`hazelcast-jet-config.yaml` with the contents as shown below.
+
+Here is the content of `hazelcast-jet-config.yaml`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hazelcast-jet-configuration
+data:
+  hazelcast.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
+                   xmlns="http://www.hazelcast.com/schema/config"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <properties>
+        <property name="hazelcast.discovery.enabled">true</property>
+      </properties>
+      <network>
+        <join>
+          <multicast enabled="false"/>
+          <tcp-ip enabled="false" />
+          <discovery-strategies>
+            <discovery-strategy enabled="true" class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+              <properties>
+               <property name="service-name">hazelcast-jet-service</property>
+               <property name="namespace">default</property>
+              </properties>
+            </discovery-strategy>
+          </discovery-strategies>
+        </join>
+      </network>
+    </hazelcast>
+```
+
+The following command will create a ConfigMap object in the Kubernetes
+Cluster.
+
+```bash
+kubectl apply -f hazelcast-jet-config.yaml
+```
+
+This object holds our Kubernetes Discovery enabled Hazelcast Jet
+configuration. You will use this configuration when you create pods as
+explained below.
+
+You need to create a StatefulSet, which manages pods that are based on
+an identical container spec, and a Service, which is an abstraction
+defining a logical set of pods and a policy using which to access them.
+These two should be defined in the (`hazelcast-jet.yaml`) file, as shown
+below.
+
+Here is the content of `hazelcast-jet.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hazelcast-jet
+  labels:
+    app: hazelcast-jet
+spec:
+  replicas: 2
+  serviceName: hazelcast-jet-service
+  selector:
+    matchLabels:
+      app: hazelcast-jet
+  template:
+    metadata:
+      labels:
+        app: hazelcast-jet
+    spec:
+      containers:
+      - name: hazelcast-jet
+        image: hazelcast/hazelcast-jet:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: hazelcast-jet
+          containerPort: 5701
+        livenessProbe:
+          httpGet:
+            path: /hazelcast/health/node-state
+            port: 5701
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /hazelcast/health/node-state
+            port: 5701
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 1
+        volumeMounts:
+        - name: hazelcast-jet-storage
+          mountPath: /data/hazelcast-jet
+        env:
+        - name: JAVA_OPTS
+          value: "-Dhazelcast.rest.enabled=true -Dhazelcast.config=/data/hazelcast-jet/hazelcast.xml"
+      volumes:
+      - name: hazelcast-jet-storage
+        configMap:
+          name: hazelcast-jet-configuration
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hazelcast-jet-service
+spec:
+  selector:
+    app: hazelcast-jet
+  ports:
+  - protocol: TCP
+    port: 5701
+```
+
+After creating the (`hazelcast-jet.yaml`) file with the content above,
+run the following command to create the Service and StatefulSet:
+
+```bash
+kubectl apply -f hazelcast-jet.yaml
+```
+
+After that, you can inspect the pod logs to see that they formed a
+cluster using the following command:
+
+```bash
+kubectl logs hazelcast-jet-0
+```
+
+It should output a log similar to the one below:
+
+```bash
+....
+Nov 15, 2018 9:39:15 AM com.hazelcast.internal.cluster.ClusterService
+INFO: [172.17.0.2]:5701 [dev] [0.7]
+
+Members {size:2, ver:2} [
+	Member [172.17.0.2]:5701 - d935437e-143e-4e3f-81d6-f3ece16eb23e this
+	Member [172.17.0.6]:5701 - 88472d6c-1cae-4b0d-9681-f6da6199bc9c
+]
+....
+```
+
+For more details about deployment and information on how to submit the
+Hazelcast Jet jobs to your cluster, see the
+{jet-samples}/integration/kubernetes[Kubernetes Integration] code sample.
+
+== Deployment using Helm
+
+You can deploy Hazelcast Jet using the Helm charts. These charts provide
+an easy way to package and deploy applications on Kubernetes.
+
+You can install the chart using the following command:
+
+```bash
+helm install stable/hazelcast-jet
+```
+
+See
+https://github.com/helm/charts/tree/master/stable/hazelcast-jet[Hazelcast Jet Helm Chart]
+for more details on configuration and the
+https://github.com/hazelcast/charts#troubleshooting-in-kubernetes-environments[Troubleshooting in Kubernetes Environments]
+section if you encounter any issues.
+
+Apart from the official Helm charts for Hazelcast Jet, we do also provide
+Helm charts for https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet[Hazelcast Jet with Hazelcast Jet Management Center]
+and https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet-enterprise[Hazelcast Jet Enterprise] 
+on the https://github.com/hazelcast/charts[Hazelcast Enterprise Helm Chart Repository].
+
+== Scaling the Cluster in Kubernetes
+
+Hazelcast Jet cluster is easily scalable within Kubernetes. You can use
+the standard `kubectl scale` command to change the cluster size. See
+https://kubernetes.io/docs/tasks/run-application/scale-stateful-set/#scaling-statefulsets[Scaling StatefulSets]
+for more information.
+
+Note however that, by default, Hazelcast Jet is configured to `TERMINATE`
+on receiving the `SIGTERM` signal from Kubernetes, which means that a
+container stops quickly, but the cluster's data safety relies on the
+backup stored by other Hazelcast Jet members. If you suddenly scale down
+by more than your `backup-count` property (1 by default), you may lose
+the cluster data.
+
+The other option is to use the `GRACEFUL` shutdown, which triggers the
+partition migration before shutting down the Hazelcast Jet member.
+Note that it may take some time depending on your data size.
+
+To use graceful shutdown approach, set the following properties:
+- `terminationGracePeriodSeconds`:  in your StatefulSet (or Deployment)
+configuration; the value defines how much time Kubernetes waits
+before terminating the pod and it should be high enough to cover the
+data migration process. Default value is 30 seconds
+- `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
+(`JAVA_OPTS` environment variable)
+- `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters
+(`JAVA_OPTS` environment variable) ; the value should be high enough to
+cover the data migration process. Default value is 600 seconds
+
+The graceful shutdown configuration is already included in
+https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet[Hazelcast Jet Helm Chart].
+
+With the <<automatic-elasticity, Automatic Elasticity>> feature, your
+jobs will be automatically restarted from the latest known snapshot when
+you downscale your cluster. For more details about snapshotting and
+processing guarantees see <<fault-tolerance, Fault Tolerance>> section.

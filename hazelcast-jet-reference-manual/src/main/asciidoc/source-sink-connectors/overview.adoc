@@ -1,0 +1,321 @@
+Jet accesses data sources and sinks via its _connectors_. They are a
+computation job's point of contact with the outside world.
+
+= Concerns
+
+Although the connectors do their best to unify the various kinds of
+resources under the same "`data stream`" paradigm, there are still many
+concerns that need your attention.
+
+== Is it Unbounded?
+
+The first decision when building a Jet computation job is whether it
+will deal with bounded or unbounded data. A typical example of a bounded
+resource is a persistent storage system, whereas an unbounded one is
+usually like a FIFO queue, discarding old data. This is true both for
+sources and sinks.
+
+Bounded data is handled in batch jobs and there are less concerns to
+deal with. Examples of finite resources are the Hazelcast `IMap`/`ICache`
+and the Hadoop Distributed File System (HDFS). In the unbounded category
+the most popular choice is Kafka, but a Hazelcast `IMap`/`ICache` can
+also be used as an infinite source of update events (via the Event
+Journal feature). You can also set up an `IMap`/`ICache` as a sink for
+an infinite amount of data, either by ensuring that the size of the
+keyset will be finite or by allowing the eviction of old entries.
+
+== Is it Replayable?
+
+Most finite data sources are replayable because they come from
+persistent storage. You can easily replay the whole dataset. However, an
+infinite data source may be of such nature that it can be consumed only
+once. An example is the TCP socket connector. Such sources are bad at
+fault tolerance: if anything goes wrong during the computation, it
+cannot be retried.
+
+=== Does it Support Checkpointing?
+
+You cannot retry to process an infinite data stream from the very
+beginning. You must save the complete state at regular intervals, then
+replay the input stream from the last saved position (_checkpoint_).
+Jet can create snapshots of its internal processing state, but for this
+to be useful the data source must have the ability to replay its data
+from the chosen point, discarding everything before it. Both Kafka and
+the Hazelcast Event Journal support this.
+
+== Is it Distributed?
+
+A distributed computation engine prefers to work with distributed data
+resources. If the resource is not distributed, all Jet members will have
+to contend for access to a single endpoint. Kafka, HDFS, `IMap` and
+`ICache` are all distributed. On the other hand, an `IList` is not: it
+resides on a single member. When used as a source, only one Jet member
+pulls its data. When used as a sink, all Jet members send their data
+to the one that holds it.
+
+A <<file-sources, file>> source/sink operating in local mode is a sort
+of a "manually distributed" resource, each member accessing its own
+local filesystem. You have to manually arrange the files so that on each
+member there is a subset of the full dataset. When used as a sink, you
+have to manually gather all the pieces that Jet created.
+
+The file source/sink can also operate in shared mode, accessing a shared
+filesystem mounted as a local directory.
+
+== What about Data Locality?
+
+If you're looking to achieve record-breaking throughput for your
+application, you'll have to think carefully how close you can deliver
+your data to the location where Jet will consume and process it. For
+example, if your source is HDFS, you should align the topologies of the
+Hadoop and Jet clusters so that each machine that hosts an HDFS member
+also hosts a Jet member. Jet will automatically figure this out and
+arrange for each member to consume only the slice of data stored
+locally.
+
+If you're using `IMap`/`ICache` as data sources, you have two basic
+choices: have Jet connect to a Hazelcast IMDG cluster, or use Jet itself
+to host the data (since a Jet cluster is at the same time a Hazelcast
+IMDG cluster). In the second case Jet will automatically ensure a
+data-local access pattern, but there's a caveat: if the Jet job causes
+an error of unrestricted scope, such as `OutOfMemoryError` or
+`StackOverflowError`, it will have unpredictable consequences for the
+state of the whole Jet member, jeopardizing the integrity of the data
+stored on it.
+
+= Overview of Sources and Sinks
+
+The table below gives you a high-level overview of all the source and
+sink connectors we deliver with Jet. There are links to Javadoc and
+code samples. The sections following this one present each connector in
+more detail.
+
+
+.Sources and Sinks
+|===
+|Resource|Javadoc|Sample|Unbounded?|Replayable?|Checkpointing?|Distributed?|Data Locality
+
+|<<connector-imdg, IMap>>
+|{jet-javadoc}/pipeline/Sources.html#map-java.lang.String-com.hazelcast.query.Predicate-com.hazelcast.projection.Projection-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#map-java.lang.String-[Sink]
+|{jet-samples}/hazelcast-connectors/src/main/java/MapSourceAndSinks.java[Sample]
+|❌
+|✅
+|❌
+|✅
+|Src ✅
+
+Sink ❌
+
+|<<connector-imdg, ICache>>
+|{jet-javadoc}/pipeline/Sources.html#cache-java.lang.String-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#cache-java.lang.String-[Sink]
+|{jet-samples}/hazelcast-connectors/src/main/java/CacheSourceAndSink.java[Sample]
+|❌
+|✅
+|❌
+|✅
+|Src ✅
+
+Sink ❌
+
+|<<connector-imdg-external, IMap in another cluster>>
+|{jet-javadoc}/pipeline/Sources.html#remoteMap-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.query.Predicate-com.hazelcast.projection.Projection-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#remoteMap-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
+|{jet-samples}/hazelcast-connectors/src/main/java/RemoteMapSourceAndSink.java[Sample]
+|❌
+|✅
+|❌
+|✅
+|❌
+
+|<<connector-imdg-external, ICache in another cluster>>
+|{jet-javadoc}/pipeline/Sources.html#remoteCache-java.lang.String-com.hazelcast.client.config.ClientConfig-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#remoteCache-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
+|
+|❌
+|✅
+|❌
+|✅
+|❌
+
+|<<connector-imdg-journal, IMap's Event Journal>>
+|{jet-javadoc}/pipeline/Sources.html#mapJournal-java.lang.String-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|{jet-samples}/event-journal/src/main/java/MapJournalSource.java[Sample]
+|✅
+|✅
+|✅
+|✅
+|✅
+
+
+|<<connector-imdg-journal, ICache's Event Journal>>
+|{jet-javadoc}/pipeline/Sources.html#cacheJournal-java.lang.String-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|
+|✅
+|✅
+|✅
+|✅
+|✅
+
+|Event Journal of IMap in another cluster
+|{jet-javadoc}/pipeline/Sources.html#remoteMapJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|{jet-samples}/event-journal/src/main/java/RemoteMapJournalSource.java[Sample]
+|✅
+|✅
+|✅
+|✅
+|❌
+
+|Event Journal of ICache in another cluster
+|{jet-javadoc}/pipeline/Sources.html#remoteCacheJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|
+|✅
+|✅
+|✅
+|✅
+|❌
+
+|<<imdg-list, IList>>
+|{jet-javadoc}/pipeline/Sources.html#list-java.lang.String-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#list-java.lang.String-[Sink]
+|{jet-samples}/hazelcast-connectors/src/main/java/ListSourceAndSink.java[Sample]
+|❌
+|✅
+|❌
+|❌
+|✅
+
+|IList in another cluster
+|{jet-javadoc}/pipeline/Sources.html#remoteList-java.lang.String-com.hazelcast.client.config.ClientConfig-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#remoteList-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
+|{jet-samples}/hazelcast-connectors/src/main/java/RemoteListSourceAndSink.java[Sample]
+|❌
+|✅
+|❌
+|❌
+|❌
+
+|<<hdfs>>
+|{jet-javadoc}/hadoop/HdfsSources.html[Source]
+
+{jet-javadoc}/hadoop/HdfsSinks.html[Sink]
+|{jet-samples}/hadoop/src/main/java/HadoopWordCount.java[Sample]
+|❌
+|✅
+|❌
+|✅
+|✅
+
+|<<kafka>>
+|{jet-javadoc}/kafka/KafkaSources.html[Source]
+
+{jet-javadoc}/kafka/KafkaSinks.html[Sink]
+|{jet-samples}/kafka/src/main/java/KafkaSource.java[Source]
+|✅
+|✅
+|✅
+|✅
+|❌
+
+|<<connector-files, Files>>
+|{jet-javadoc}/pipeline/Sources.html#files-java.lang.String-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#files-java.lang.String-[Sink]
+|{jet-samples}/file-io/src/main/java/AccessLogAnalyzer.java[Sample]
+|❌
+|✅
+|❌
+|✅
+|Local FS ✅
+
+ Shared FS ❌
+
+|<<connector-files, File Watcher>>
+|{jet-javadoc}/pipeline/Sources.html#fileWatcher-java.lang.String-[Source]
+|{jet-samples}/file-io/src/main/java/AccessLogStreamAnalyzer.java[Sample]
+|✅
+|❌
+|❌
+|✅
+|Local FS ✅
+
+ Shared FS ❌
+
+|<<connector-files-avro, Avro>>
+|{jet-javadoc}/avro/AvroSources.html#files-java.lang.String-java.lang.Class-[Source]
+
+{jet-javadoc}/avro/AvroSinks.html#files-java.lang.String-com.hazelcast.jet.function.SupplierEx-[Sink]
+|{jet-samples}/file-io/src/main/java/avro/AvroSource.java[Source Sample]
+
+{jet-samples}/file-io/src/main/java/avro/AvroSink.java[Sink Sample]
+|❌
+|✅
+|❌
+|✅
+|Local FS ✅
+
+ Shared FS ❌
+
+|<<connector-socket, TCP Socket>>
+|{jet-javadoc}/pipeline/Sources.html#socket-java.lang.String-int-java.nio.charset.Charset-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#socket-java.lang.String-int-com.hazelcast.jet.function.FunctionEx-java.nio.charset.Charset-[Sink]
+|{jet-samples}/sockets/src/main/java/StreamTextSocket.java[Source]
+
+{jet-samples}/sockets/src/main/java/WriteTextSocket.java[Sink]
+|✅
+|❌
+|❌
+|❌
+|❌
+
+|<<jms>>
+|{jet-javadoc}/pipeline/Sources.html#jmsQueue-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Queue Source]
+{jet-javadoc}/pipeline/Sources.html#jmsTopic-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Topic Source]
+
+{jet-javadoc}/pipeline/Sinks.html#jmsQueue-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Queue Sink]
+{jet-javadoc}/pipeline/Sinks.html#jmsTopic-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Topic Sink]
+|{jet-samples}/jms/src/main/java/JmsQueueSample.java[Queue Sample]
+
+{jet-samples}/jms/src/main/java/JmsTopicSample.java[Topic Sample]
+|✅
+|❌
+|❌
+|Queue Source ✅
+
+Queue Sink ✅
+
+Topic Source ❌
+
+Topic Sink ✅
+|❌
+
+|<<jdbc>>
+|{jet-javadoc}/pipeline/Sources.html#jdbc-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.ToResultSetFunction-com.hazelcast.jet.function.FunctionEx-[Source]
+
+{jet-javadoc}/pipeline/Sinks.html#jdbc-java.lang.String-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.BiConsumerEx-[Sink]
+|{jet-samples}/jdbc/src/main/java/JdbcSource.java[Source Sample]
+
+{jet-samples}/jdbc/src/main/java/JdbcSink.java[Sink Sample]
+|❌
+|✅
+|❌
+|✅
+|❌
+
+|Application Log
+|{jet-javadoc}/pipeline/Sinks.html#logger-com.hazelcast.jet.function.FunctionEx-[Sink]
+|{jet-samples}/enrichment/src/main/java/Enrichment.java[Sink]
+|N/A
+|N/A
+|❌
+|❌
+|✅
+|===

@@ -1,0 +1,195 @@
+[[pipeline-cheatsheet]]
+= Pipeline API Cheatsheet
+
+[cols="5s,95a", stripe="none"]
+|===
+|Transform s| Sample
+|Map
+|Apply a mapping function to each input item independently. You can also
+do filtering by mapping to `null`.
+
+This example converts the input lines of text to lowercase:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s1]
+----
+|Filter
+|Apply a filtering function to each input item to decide whether to
+pass it to the output.
+
+This example removes all empty strings from the stream:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s2]
+----
+
+|Flatmap
+|Map each item to arbitrarily many items using a function that returns a
+`Traverser` over the result items.
+
+This example splits the lines of text into individual words:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s3]
+----
+
+|Distinct
+|Suppress duplicate items from a stream. If you apply a grouping key,
+two items mapping to the same key will be duplicates. This operation
+applies primarily to batch streams, but also works on a windowed
+unbounded stream.
+
+This example takes a batch stage with strings and creates a stage with
+distinct strings and another where the four-character prefix of the
+strings is unique:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s11]
+----
+
+|Merge
+|Merge the contents of two streams into one. The item type in the
+right-hand stage must be the same or a subtype of the one in the
+left-hand stage.
+
+This example merges the streams from New York and Tokyo stock exchanges:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s12]
+----
+
+|Enrich by Many-to-One Join
+|Perform a many-to-one join with arbitrarily many enriching streams.
+The stream on which you invoke `hashJoin` holds foreign keys for
+the items in the enriching streams.
+
+This example enriches a stream of stock trades with detailed info on the
+stock involved:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s4]
+----
+
+|Enrich by Map Lookup
+|For each stream item, look up a value from a Hazelcast map and
+transform (enrich) the item using it. Similar to a hash-join with the
+map's entry set, but values don't get stale (at the expense of
+throughput).
+
+This example enriches a stream of stock trades with detailed info on the
+stock involved:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s4a]
+----
+
+|Aggregate
+|Aggregates all the stream items with the `AggregateOperation` you
+supply.
+
+This example counts the stream items:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s5]
+----
+
+|Group and Aggregate
+|Group the items by key and perform an `AggregateOperation` on each
+group.
+
+This example calculates the number of occurrences of each word in the
+stream:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s6]
+----
+
+|Windowed Group and Aggregate
+|Perform grouping and aggregation on an unbounded stream by splitting it
+into bounded windows.
+
+This example calculates the number of occurrences of each word in a
+stream of tweets within the last second:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s7]
+----
+
+|Join on Common Key
+|Perform a many-to-many join of several streams on a common key.
+Apply an `AggregateOperation` on each group. As a special case, you can
+specify an aggregate operation that gives you all the joined items
+without transformation.
+
+This example joins a "page visits" stream with a "payments" stream in a
+Web Shop application. For each user it gives you all the recorded page
+views and payments:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s8]
+----
+
+|Streaming Join on a Common Key
+|Like the above, but also apply a window to the unbounded stream. It
+joins all the items belonging to the same window.
+
+This example joins two unbounded streams, "page visits" and "payments".
+For each user it gives you all the page views and payments that they
+performed within the last minute and updates the result every second:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s9]
+----
+
+|Rolling Aggregation
+|Keep performing the same aggregate operation forever, getting the
+current result after each item.
+
+This example tracks the largest trade observed in a stream:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s10]
+----
+
+|Apply a User-Defined Transform
+|Modularize and reuse your pipeline code by extracting transforms to
+methods.
+
+For example, in this pipeline:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=apply1]
+----
+
+you can extract the `map` and `flatMap` stages to a method:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=apply2]
+----
+
+and then use it like this:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=apply3]
+----
+
+|Transform with Custom Processor
+|Add a stage with a custom Core API processor to the pipeline.
+
+Suppose you have this identity-mapping processor:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=custom-transform-1]
+----
+
+Then you can add it to the pipeline this way (suppose you added the
+method to the `Util` class:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=custom-transform-2]
+----
+
+Note that the Core API is for advanced use cases and you'll rarely need
+it.
+
+|===

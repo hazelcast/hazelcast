@@ -1,0 +1,16 @@
+[[work-with-jet]]
+= Work With Jet
+
+:leveloffset: +1
+
+include::start-jet-submit-job.adoc[]
+
+include::configure-fault-tolerance.adoc[]
+
+include::performance-considerations.adoc[]
+
+include::log-debug.adoc[]
+
+include::job-management.adoc[]
+
+:leveloffset: -1

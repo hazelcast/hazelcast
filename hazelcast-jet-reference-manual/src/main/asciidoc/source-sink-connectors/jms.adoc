@@ -1,0 +1,66 @@
+= JMS
+
+JMS (Java Message Service) connector can be used both as a source and a
+sink for infinite stream processing. The connector is not fault-tolerant.
+On job restart it behaves as if you have started a new job. The source
+does not do snapshotting, the sink does not suppress duplicate data.
+
+In order to use JMS connector, user should include a JMS Client in
+classpath. IO failures are generally handled by JMS Client and do not
+cause the connector to fail. Most of the clients offer a configuration
+parameter to enable auto-reconnection, refer to client documentation for
+details.
+
+== Using JMS as a Source
+
+The JMS source opens a connection to the JMS server for each member.
+Then each underlying worker of the source creates a session and a
+message consumer using that connection. The user supplies necessary
+functions to create the connection, session and message consumer.
+
+The JMS source uses non-blocking API to receive the messages and
+transforms each message to a desired output object using supplied
+projection function. Source flushes the session after receiving each
+message using the supplied flush function.
+
+The following code snippets show streaming messages from a JMS queue
+and a JMS topic using ActiveMQ JMS Client.
+
+[source]
+----
+include::{javasource}/integration/JMS.java[tag=s1]
+----
+[source]
+----
+include::{javasource}/integration/JMS.java[tag=s2]
+----
+
+The JMS topic is a non-distributed source, if messages are consumed by
+multiple consumer, all of them will get the same messages. Therefore the
+source operates on a single member with local parallelism of 1. Setting
+local parallelism to a value other than 1 causes
+`IllegalArgumentException`.
+
+== Using JMS as a Sink
+
+The JMS sink opens a connection to the JMS server for each member. Then
+each underlying worker of the sink creates a session and a message
+producer using that connection. The user supplies necessary functions
+and parameters to create the connection, session and message producer.
+
+The JMS sink uses the supplied function to create a `Message` object for
+each input item and sends this message using the supplied send function.
+After a batch of messages is sent, sink flushes the session using the
+supplied flush function.
+
+The following code snippets show writing to a JMS queue and a JMS topic
+using ActiveMQ JMS Client.
+
+[source]
+----
+include::{javasource}/integration/JMS.java[tag=s3]
+----
+[source]
+----
+include::{javasource}/integration/JMS.java[tag=s4]
+----

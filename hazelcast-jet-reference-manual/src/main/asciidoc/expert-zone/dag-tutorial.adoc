@@ -1,0 +1,525 @@
+= How to Build a DAG
+
+== Bounded Stream (Batch) DAG
+
+Let's use the Core API to build the Word Count DAG, already described in
+an <<word-count-dag-model, earlier section>>:
+
+image::word-count-dag.png[Word Count DAG,250,300,align="center"]
+
+We start by instantiating the DAG class and adding the source vertex:
+
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s0]
+----
+
+Note how we can build the DAG outside the context of any running Jet
+instances: it is a pure POJO.
+
+The source vertex will read the lines from the `IMap` and emit items of
+type `Map.Entry<Integer, String>` to the next vertex. The key of the
+entry is the line number, and the value is the line itself. The built-in
+map-reading processor will do just what we want: on each member it will
+read only the data local to that member.
+
+The next vertex is the _tokenizer_, which does a simple "flat-mapping"
+operation (transforms one input item into zero or more output items).
+The low-level support for such a processor is a part of Jet's library,
+we just need to provide the mapping function:
+
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s1]
+----
+
+This creates a processor that applies the given function to each
+incoming item, obtaining zero or more output items, and emits them.
+Specifically, our processor accepts items of type `Entry<Integer,
+String>`, splits the entry value into lowercase words, and emits all
+non-empty words. The function must return a `Traverser`, which is a
+functional interface used to traverse a sequence of non-null items. Its
+purpose is equivalent to the standard Java `Iterator`, but avoids the
+cumbersome two-method API. Since a lot of support for cooperative
+multithreading in Hazelcast Jet deals with sequence traversal, this
+abstraction simplifies many of its aspects.
+
+The next vertex will do the actual word count. We can use the built-in
+`accumulateByKey` processor for this:
+
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s2]
+----
+
+This processor maintains a hashtable that maps each distinct key to its
+accumulated value. We specify `wholeItem()` as the _key extractor_
+function: our input item is just the word, which is also the grouping
+key. The second argument is the kind of aggregate operation we want to
+perform: counting. We are relying on Jet's out-of-the-box
+definitions here, but it is easy to define your own aggregate operations
+and key extractors. The processor emits nothing until it has received
+all the input, and at that point it emits the hashtable as a stream of
+`Entry<String, Long>`.
+
+Next is the combining step which computes the grand totals from
+individual members' contributions. This is the code:
+
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s3]
+----
+
+`combineByKey` is designed to be used downstream of `accumulateByKey`,
+which is why it doesn't need an explicit key extractor. The aggregate
+operation must be the same as on `accumulateByKey`.
+
+The final vertex is the sink; we want to store the output in
+another `IMap`:
+
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s4]
+----
+
+Now that we have all the vertices, we must connect them into a graph and
+specify the edge type as discussed in the previous section. Here's the
+code:
+
+[[wordcount-dag-edges]]
+[source]
+----
+include::{javasource}/WordCountCoreApi.java[tag=s5]
+----
+
+<1> Here we chose a _local partitioned_ edge. For each word, there will
+be a processor responsible for it on each member so that no items must
+travel across the network. In the `partitioned()` call we specify two
+things: the function that extracts the partitioning key (`wholeItem()`
+&mdash; same as the grouping key extractor), and the policy object that
+decides how to compute the partition ID from the key. Here we use the
+built-in `HASH_CODE`, which will derive the ID from `Object.hashCode()`.
+As long as the definitions of `equals()/hashCode()` on the key object 
+match our expected notion of key equality, this policy is always safe 
+to use on a local edge.
+
+<2> is a _distributed partitioned_ edge: for each word there is a single
+`combiner` processor in the whole cluster responsible for it and items
+will be sent over the network if needed. The partitioning key is again
+the word, but here it is the key part of the `Map.Entry<String, Long>`.
+We are using the default partitioning policy here (Hazelcast's own
+partitioning scheme). It is the slower-but-safe choice on a distributed
+edge. Detailed inspection shows that hashcode-based partitioning would
+be safe as well because all of `String`, `Long`, and `Map.Entry` have
+the hash function specified in their Javadoc.
+
+You can access a full, self-contained Java program with the above DAG
+code at the
+{jet-refman-src}/src/main/java/WordCountCoreApi.java[Hazelcast Jet Reference Manual repository].
+
+== Unbounded Stream DAG
+
+For this example we'll build a simple Jet job that monitors trading
+events on a stock market, categorizes the events by stock ticker, and
+reports the number of trades per time unit (the time window). In terms
+of DAG design, not much changes going from batch to streaming. This is
+how it looks:
+
+image::stock-exchange-dag.png[Trade monitoring DAG,300,900,align="center"]
+
+We have the same cascade of source, two-stage aggregation, and sink. The
+source is the event journal of a Hazelcast IMap (we assume some other
+process continuously updates this map with trade events). On the sink
+side there's another mapping vertex, `format-output`, that transforms
+the window result items into lines of text. The `sink` vertex writes
+these lines to a file.
+
+Here's the DAG-building code in full:
+
+[source]
+----
+include::{javasource}/StockExchangeCoreApi.java[tag=s1]
+----
+
+You can see quite a lot of code going into the setup of the streaming
+source. Let's zoom in on it:
+
+<1> filtering and mapping functions we supply directly to the source.
+Hazelcast IMDG will apply them before serializing and sending to Jet so
+this saves network traffic and CPU.
+<2> where to start from in map's event journal: the oldest entry still
+available.
+<3> function to apply to the event object to get its timestamp.
+<4> <<watermark-policy, watermark policy>>. Here we use the simplest
+kind, `limitingLag`, which will make the watermark lag behind the top
+observed event timestamp by the fixed amount we specified (3 seconds).
+<5> <<watermark-throttling, watermark emission policy>> that tells Jet
+when to actually send a watermark event. Since the sliding window
+processor ignores all watermark events that belong to the same frame, we
+configure a matching policy that emits only one watermark per frame.
+<6> partition idle timeout. This is a countermeasure to stalling
+problems that occur when some of the IMap partitions don't receive any
+updates. Due to watermark coalescing this could stall the entire stream,
+but with this setting a partition will be marked as idle after 3 seconds
+of inactivity and then the rest of the system behaves as if it didn't
+exist.
+<7> Here we use `mapUsingContextP` which allows us to create an object
+available to the processor at a late point, after all the job
+serialization-deserialization is done. In this case we need it because
+the Java 8 `DateTimeFormatter` isn't serializable.
+
+The full code of this sample is in
+{jet-samples}/core-api/sliding-windows-core-api/src/main/java/StockExchangeCoreApi.java[StockExchangeCoreApi.java]
+and running it you'll get an endless stream of data accumulating on the
+disk. To spare your filesystem we've limited the execution time to 10
+seconds.
+
+[[tf-idf]]
+== Advanced Batch DAG &mdash; Inverted TF-IDF Index
+
+In this tutorial we'll explore what the Core API DAG model offers beyond
+the capabilities of the Pipeline API. Our DAG will feature splits,
+joins, broadcast, and prioritized edges. We'll access data from the file
+system and show a simple technique to distribute file reading across Jet
+members. Several vertices we use can't be implemented in terms of
+out-of-the-box processors, so we'll also show you how to implement your
+own with minimum boilerplate.
+
+The full code is available at the `hazelcast-jet-code-samples`
+repository:
+
+{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams.java]
+
+{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfCoreApi.java[TfIdfCoreApi.java]
+
+Let us first introduce the problem. The inverted index is a basic data
+structure in the domain of full-text search. First used in the 1950s, it
+is still at the core of modern information retrieval systems such as
+Lucene. The goal is to be able to quickly find the documents that
+contain a given set of search terms, and to sort them by relevance. To
+understand it we'll need to throw in some terminology.
+
+- A _document_ is treated as a list of words that has a unique ID. It is
+useful to define the notion of a _document index_ which maps each
+document ID to the list of words it contains. We won't build this index;
+it's just for the sake of explanation.
+- The _inverted index_ is the inverse of the document index: it maps
+each word to the list of documents that contain it. This is the
+fundamental building block in our search algorithm: it will allow us to
+find in O(1) time all documents relevant to a search term.
+- In the inverted index, each entry in the list is assigned a _TF-IDF
+score_ which quantifies how relevant the document is to the search
+request.
+    - Let DF (_document frequency_) be the length of the list: the
+    number of documents that contain the word.
+    - Let D be the total number of documents that were indexed.
+    - IDF (_inverse document frequency_) is equal to `log(D/DF)`.
+    - TF (_term frequency_) is the number of occurrences of the word in
+    the document.
+    - TF-IDF score is simply the product of `TF * IDF`.
+
+Note that IDF is a property of the word itself: it quantifies the
+relevance of each entered word to the search request as a whole. The
+list of entered words can be perceived as a list of filtering functions
+that we apply to the full set of documents. A more relevant word will
+apply a stronger filter. Specifically, common words like "`the`", "`it`",
+"`on`" act as pure "pass-through" filters and consequently have an IDF of
+zero, making them completely irrelevant to the search.
+
+TF, on the other hand, is the property of the combination of word and
+document, and tells us how relevant the document is to the word,
+regardless of the relevance of the word itself.
+
+When the user enters a search phrase:
+
+1. each individual term from the phrase is looked up in the inverted
+index;
+2. an intersection is found of all the lists, resulting in the list of
+documents that contain all the words;
+3. each document is scored by summing the TF-IDF contributions of each
+word;
+4. the result list is sorted by score (descending) and presented to the
+user.
+
+Let's have a look at a specific search phrase:
+
+[source,text]
+----
+the man in the black suit murdered the king
+----
+
+The list of documents that contain all the above words is quite long...
+how do we decide which are the most relevant? The TF-IDF logic will make
+those stand out that have an above-average occurrence of words that are
+generally rare across all documents. For example, "`murdered`" occurs in
+far fewer documents than "`black`"... so given two documents where one
+has the same number of "`murdered`" as the other one has of "`black`",
+the one with "`murdered`" wins because its word is more salient in
+general. On the other hand, "`suit`" and "`king`" might have a similar
+IDF, so the document that simply contains more of both wins.
+
+Also note the limitation of this technique: a phrase is treated as just
+the sum of its parts; a document may contain the exact phrase and this
+will not affect its score.
+
+[[building-inverted-index]]
+=== Building the Inverted Index with Java Streams
+
+To warm us up, let's see what it takes to build the inverted index with
+just thread parallelism and without the ability to scale out across
+many machines. It is expressible in Java Streams API without too much
+work. The full code is {jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[here].
+
+We'll start by preparing a `Stream<Entry<Long, String>> docWords`: a
+stream of all the words found in all the documents. We use `Map.Entry` as
+a holder of a pair of values (a 2-tuple) and here we have a pair of
+`Long docId` and `String word`:
+
+[source]
+----
+include::{javasource}/TfIdfJdkStreams.java[tag=s1]
+----
+
+We know the number of all documents so we can compute `double
+logDocCount`, the logarithm of the document count:
+
+[source]
+----
+include::{javasource}/TfIdfJdkStreams.java[tag=s2]
+----
+
+Calculating TF is very easy, just count the number of occurrences of
+each distinct pair and save the result in a `Map<Entry<Long, String>,
+Long>`:
+
+[source]
+----
+include::{javasource}/TfIdfJdkStreams.java[tag=s3]
+----
+
+And now we build the inverted index. We start from `tfMap`, group by
+word, and the list under each word already matches our final product:
+the list of all the documents containing the word. We finish off by
+applying a transformation to the list: currently it's just the raw
+entries from the `tf` map, but we need pairs `(docId, tfIDfScore)`.
+
+[source]
+----
+include::{javasource}/TfIdfJdkStreams.java[tag=s4]
+----
+
+The search function can be implemented with another Streams expression,
+which you can review in the
+{jet-samples}/core-api/tf-idf-core-api/src/main/java/SearchGui.java[SearchGui]
+class. You can also run the
+{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams]
+class and take the inverted index for a spin, making actual searches.
+
+There is one last concept in this model that we haven't mentioned yet:
+the _stopword set_. It contains those words that are known in advance to
+be common enough to occur in every document. Without treatment, these
+words are the worst case for the inverted index: the document list under
+each such word is the longest possible, and the score of all documents
+is zero due to zero IDF. They raise the index's memory footprint without
+providing any value. The cure is to prepare a file, `stopwords.txt`,
+which is read in advance into a `Set<String>` and used to filter out the
+words in the tokenization phase. The same set is used to cross out words
+from the user's search phrase, as if they weren't entered. We'll add this
+feature to our DAG based model in the following section.
+
+=== Translating to Jet DAG
+
+Our DAG as a whole will look relatively complex, but it can be
+understood as a "`backbone`" (cascade of vertices) starting from a
+source and ending in a sink with several more vertices attached on the
+side. This is just the backbone:
+
+image::tf-idf-backbone.png[Backbone of the TF-IDF DAG,250,750,align="center"]
+
+. The data source is a Hazelcast `IMap` which holds a mapping from
+document ID to its filename. The source vertex will emit all the map's
+entries, but only a subset on each cluster member.
+. `doc-lines` opens each file named by the map entry and emits all its
+lines in the `(docId, line)` format.
+. `tokenize` transforms each line into a sequence of its words, again
+paired with the document ID, so it emits `(docId, word)`.
+. `tf` builds a set of all distinct pairs emitted from `tokenize` and
+maintains the count of each pair's occurrences (its TF score).
+. `tf-idf` takes that set, groups the pairs by word, and calculates
+the TF-IDF scores. It emits the results to the sink, which saves them
+to a distributed `IMap`.
+
+Edge types follow the same pattern as in the word-counting job: after
+flatmapping there is first a local, then a distributed partitioned edge.
+The logic behind it is not the same, though: TF can actually compute the
+final TF scores by observing just the local data. This is because it
+treats each document separately (document ID is a part of the grouping
+key) and the source data is already partitioned by document ID. The
+TF-IDF vertex does something similar to word count's combining, but
+there's again a twist: it will group the TF entries by word, but instead
+of just merging them into a single result per word, it will keep them
+all in lists.
+
+To this cascade we add a `stopword-source` which reads the stopwords
+file, parses it into a `HashSet`, and sends the whole set as a single
+item to the `tokenize` vertex. We also add a vertex that takes the data
+from `doc-source` and simply counts its items; this is the total
+document count used in the TF-IDF formula. We end up with this DAG:
+
+image::tf-idf-full.png[The TF-IDF DAG,550,750,align="center"]
+
+The choice of edge types into and out of `doc-count` may look
+surprising, so let's examine it. We start with the `doc-source` vertex,
+which emits one item per document, but its output is distributed across
+the cluster. To get the full document count on each member, each
+`doc-count` processor must get all the items, and that's just what the
+distributed broadcast edge will achieve. We'll configure `doc-count`
+with local parallelism of 1, so there will be one processor on every
+member, each observing all the `doc-source` items. The output of
+`doc-count` must reach all `tf-idf` processors on the same member, so we
+use the local broadcast edge.
+
+Another thing to note are the two flat-mapping vertices: `doc-lines` and
+`tokenize`. From a purely semantic standpoint, composing flatmap with
+flatmap yields just another flatmap. As we'll see below, we're using
+custom code for these two processors... so why did we choose to separate
+the logic this way? There are actually two good reasons. The first one
+has to do with Jet's cooperative multithreading model: `doc-lines` makes
+blocking file IO calls, so it must be declared _non-cooperative_;
+tokenization is pure computation so it can be in a _cooperative_
+processor. The second one is more general: the workload of `doc-lines`
+is very uneven. It consists of waiting, then suddenly coming up with a
+whole block of data. If we left tokenization there, performance would
+suffer because first the CPU would be forced to sit idle, then we'd be
+late in making the next IO call while tokenizing the input. The separate
+vertex can proceed at full speed all the time.
+
+=== Implementation Code
+
+As we announced, some of the processors in our DAG will need custom
+implementation code. Let's start from the source vertex. It is easy,
+just the standard `IMap` reader:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s1]
+----
+
+The stopwords-producing processor has custom code, but it's quite
+simple:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s2]
+----
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s3]
+----
+
+Since this is a source processor, all its action happens in
+`complete()`. It emits a single item: the `HashSet` built directly from
+the text file's lines.
+
+The `doc-count` processor can be built from the primitives provided in
+Jet's library:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s4]
+----
+
+The `doc-lines` processor is more of a mouthful, but still built from
+existing primitives:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s5]
+----
+
+Let's break down this expression... `Processors.flatMap` returns a
+standard processor that emits an arbitrary number of items for each
+received item. We already saw one in the introductory Word Count
+example. There we created a traverser from an array, here we create it
+from a Java stream. We additionally apply the `nonCooperative()` wrapper
+which will declare all the created processors non-cooperative. We
+already explained why we do this: this processor will make blocking I/O
+calls.
+
+`tokenize` is another custom vertex:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s6]
+----
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s7]
+----
+
+This is a processor that must deal with two different inbound edges. It
+receives the stopword set over edge 0 and then it does a flatmapping
+operation on edge 1. The logic presented here uses the same approach as
+the implementation of the provided `Processors.flatMap()` processor:
+there is a single instance of `FlatMapper` that holds the business logic
+of the transformation, and `tryProcess1()` directly delegates into it.
+If `FlatMapper` is done emitting the previous items, it will accept the
+new item, apply the user-provided transformation, and start emitting the
+output items. If the outbox refuses a pending item, it will return
+`false`, which will make the framework call the same `tryProcess1()`
+method later, with the same input item.
+
+Let's show the code that creates the `tokenize` 's two inbound edges:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s8]
+----
+
+Especially note the `.priority(-1)` part: this ensures that there will
+be no attempt to deliver any data coming from `docLines` before all the
+data from `stopwordSource` is already delivered. The processor would
+fail if it had to tokenize a line before it has its stopword set in
+place.
+
+`tf` is another simple vertex, built purely from the provided
+primitives:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s9]
+----
+
+`tf-idf` is the most complex processor:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s10]
+----
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s11]
+----
+
+This is quite a lot of code, but each of the three pieces is not too
+difficult to follow:
+
+. `tryProcess0()` accepts a single item, the total document count.
+. `tryProcess1()` performs a boilerplate group-and-aggregate operation,
+collecting a list of items under each key.
+. `complete()` outputs the accumulated results, also applying the final
+transformation on each one: replacing the TF score with the final
+TF-IDF score. It relies on a _lazy_ traverser, which holds a
+`Supplier<Traverser>` and will obtain the inner traverser from it the
+first time `next()` is called. This makes it very simple to write code
+that obtains a traverser from a map after it has been populated.
+
+Finally, our DAG is terminated by a sink vertex:
+
+[source]
+----
+include::{javasource}/TfIdfCoreApi.java[tag=s12]
+----

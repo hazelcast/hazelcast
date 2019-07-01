@@ -1,0 +1,38 @@
+[[preface]]
+= Preface
+
+[[naming]]
+== Naming
+
+* *Hazelcast Jet* or just *Jet* refers to the distributed data
+processing engine provided by Hazelcast, Inc.
+* *Hazelcast IMDG* or just *Hazelcast* refers to the Hazelcast in-memory
+data grid middleware. *Hazelcast* is also the name of the company
+(Hazelcast, Inc.) providing Hazelcast IMDG and Hazelcast Jet.
+
+[[licensing]]
+== Licensing
+
+Hazelcast Jet and Hazelcast Jet Reference Manual are free and provided
+under the Apache License, Version 2.0.
+
+[[trademarks]]
+== Trademarks
+
+Hazelcast is a registered trademark of Hazelcast, Inc. All other
+trademarks in this manual are held by their respective owners.
+
+[[getting-help]]
+== Getting Help
+
+The Jet team provides support to its community via these channels:
+
+* https://stackoverflow.com/questions/tagged/hazelcast-jet[Stack Overflow]
+(ask a question on how to use Jet properly and troubleshoot your setup)
+* https://groups.google.com/forum/#!forum/hazelcast-jet[Hazelcast Jet mailing list]
+(propose features and discuss your ideas with the team)
+* https://github.com/hazelcast/hazelcast-jet/issues[GitHub's issue tracking]
+(report your confirmed issues)
+
+For information on the commercial support for Hazelcast Jet, please see
+https://hazelcast.com/pricing/hazelcast-jet-annual-subscription-plans[this page on hazelcast.com].

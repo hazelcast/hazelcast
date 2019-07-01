@@ -1,0 +1,52 @@
+[[overview]]
+= Overview of Jet
+
+Jet is a distributed data processing engine that treats the data as a
+stream. It can process both static datasets (i.e., _batch jobs_) and
+live event streams. It can compute aggregate functions over infinite
+data streams by using the concept of <<kinds-of-windows, _windowing_>>:
+dividing the stream into a sequence of subsets (windows) and applying
+the aggregate function over each window.
+
+With unbounded event streams there arises the issue of failures in the
+cluster. Jet can <<fault-tolerance, tolerate failures>> of individual
+members without loss, offering the _exactly-once_ processing guarantee.
+
+You deploy Jet to a cluster of machines and then submit your processing
+jobs to it. Jet will automatically make all the cluster members
+participate in processing your data. It can <<source-sink-connectors,
+connect>> to a distributed data source such as Kafka, Hadoop Distributed
+File System, or a Hazelcast IMDG cluster. Each member of the Jet cluster
+will consume a slice of the distributed data, which makes it easy to
+scale up to any level of throughput.
+
+Jet is built on top of the Hazelcast IMDG technology and thanks to this
+the Jet cluster can also play the role of the data source and sink. If
+you use Jet this way, you can achieve perfect data locality and
+top-of-the-class throughputs.
+
+image::jet-architecture.png[Architecture Overview,align="center"]
+
+The main programming paradigm you'll use with Jet is that of a
+_processing pipeline_, which is a network of interconnected _stages_.
+The stages form a _directed acyclic graph_ (a DAG) and the connections
+between them indicate the path along which the data flows. Data
+processing happens inside each stage. You describe the pipeline using
+the <<pipeline-api, Pipeline API>>.
+
+Internally Jet converts the pipeline into its native representation, the
+<<dag, Core API DAG>>, which describes the layout of the processing
+units and the rules for routing the data between them. It is possible to
+use the Core API to directly create the native representation, but it's
+much more complex and error-prone.
+
+To run the computation Jet uses a <<cooperative-multithreading,
+cooperative multithreading>> execution engine, which means it can run
+many Core API `Processor` s on the same JVM thread. A processor
+corresponds to a standalone single-threaded task that processes a stream
+of data. The processors are implemented in such a way that they don't
+block the thread while waiting for more data, or while waiting for the
+receiving processor to accept it. By not depending on OS-level thread
+scheduling Jet can achieve greater throughput and better saturate the
+CPU cores. It can also drive many more processors than the OS can
+manage native threads.

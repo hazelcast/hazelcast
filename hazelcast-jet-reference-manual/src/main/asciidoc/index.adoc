@@ -1,0 +1,87 @@
+include::attributes.adoc[]
+:icons: font
+:idprefix:
+:idseparator: -
+:imagesdir: images
+:safe-mode: SECURE
+:sectanchors:
+:sectlinks:
+:source-highlighter: coderay
+:source-indent: 0
+:source-language: java
+:stylesheet: stylesheets/hazelcast.css
+:toc: left
+:toc-title: Hazelcast Jet {jet-version} Reference Manual
+:toclevels: 2
+:docinfo: shared
+
+image::logo_dark.png[]
+
+:leveloffset: 1
+
+= Hazelcast Jet Reference Manual
+Version {jet-version}
+
+Welcome to the Hazelcast Jet Reference Manual. This manual includes
+concepts, instructions, and samples to guide you on how to use Hazelcast
+Jet to build and execute computation jobs.
+
+As the reader of this manual you should be familiar with the Java
+programming language.
+
+= Summary of Contents
+
+. <<overview, Overview>> presents the basic concepts of Hazelcast Jet
+and provides high-level orientation.
+
+. <<get-started>> leads you through the steps to get Hazelcast Jet up
+and running on your machine. You can copy-paste the provided code to
+execute your first Jet job.
+
+. <<work-with-jet>> show you how to configure Jet, start a Jet cluster,
+manage jobs, etc.
+
+. <<pipeline-api>> introduces Jet's Pipeline API. This is the API you
+use to build the computation you want Jet to execute.
+
+. <<source-sink-connectors>> presents the source and sink connectors
+that Jet provides.
+
+. <<configuration>> explains how to configure Jet. You can tune its
+performance, level of safety in fault-tolerant jobs, configure the
+underlying IMDG cluster, etc.
+
+. <<concepts>> presents some fundamental concepts that
+make Jet work. Understanding them will help you get the most of
+Hazelcast Jet.
+
+. <<expert-zone>> presents the material you need to understand if you
+want to successfully use the Core API. You don't need this knowledge to
+use Jet. It is relevant only if you plan to implement custom processors
+or build the DAG by directly using the Core API.
+
+include::preface.adoc[]
+
+:numbered:
+
+include::overview.adoc[]
+
+include::get-started.adoc[]
+
+include::work-with-jet/index.adoc[]
+
+include::pipeline-api/index.adoc[]
+
+include::source-sink-connectors/index.adoc[]
+
+include::configuration.adoc[]
+
+include::security.adoc[]
+
+include::jet-concepts.adoc[]
+
+include::expert-zone/index.adoc[]
+
+include::appendix.adoc[]
+
+include::glossary.adoc[]

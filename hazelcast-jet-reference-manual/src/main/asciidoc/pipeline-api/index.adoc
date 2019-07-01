@@ -1,0 +1,12 @@
+[[pipeline-api]]
+= The Pipeline API
+
+:leveloffset: +1
+
+include::pipeline-api.adoc[]
+
+include::pipeline-cheatsheet.adoc[]
+
+include::implement-aggregation.adoc[]
+
+:leveloffset: -1

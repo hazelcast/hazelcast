@@ -1,0 +1,240 @@
+[[source-sink-builder]]
+= Source and Sink Builders
+
+If Jet doesn't natively support the data source/sink you need, you can
+build a connector for it yourself by using the
+{jet-javadoc}/pipeline/SourceBuilder.html[`SourceBuilder`] and
+{jet-javadoc}/pipeline/Sinks.html[`SinkBuilder`].
+
+== Source Builder
+
+To make your custom source connector you need two basic ingredients:
+
+. a context object that holds all the resources and state you need to
+keep track of
+. a stateless function, `fillBufferFn`, taking two parameters: the state
+object and a buffer object provided by Jet
+
+Jet repeatedly calls `fillBufferFn` whenever it needs more data items.
+Optimally, the function will fill the buffer with the items it can
+acquire without blocking. A hundred items at a time is enough to
+eliminate any per-call overheads within Jet. The function may block as
+well (it's running inside a <<non-cooperative-processor, non-cooperative
+processor>>), but taking longer than a second to complete can have
+negative effects on the overall performance of the processing pipeline.
+
+=== Build a Bounded (Batch) Source
+
+In this example we build a source that emits the lines of a file:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s1]
+----
+<1> here we pass `createFn`, the factory of state objects
+<2> the main logic goes to `fillBufferFn`
+<3> call `buf.close()` to mark the end of the bounded data stream
+
+The file must be available on all the members of the Jet cluster for
+this to work. Only one member will actually read it, but you can't
+choose or predict which one.
+
+The code above emits a single item per `fillBufferFn` call. To ensure we
+get the best performance, we can improve it to emit the data in chunks:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s1a]
+----
+
+=== Build an Unbounded (Stream) Source
+
+Here's how you can build a simple source that keeps polling a URL,
+emitting all the lines it gets in the response:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s2]
+----
+
+Our state object is an instance of the Apache HTTP Client. It maintains
+a connection pool so it will reuse the same connection for all our
+requests. Note that we're making a blocking call here, but it's expected
+to respond quickly. In a more serious production setting we could
+configure timeouts on the HTTP client to limit the blocking time. We'd
+also have to add error handling so we just retry on failure instead of
+causing the whole Jet job to fail.
+
+=== Build a Stream Source with Event Timestamps
+
+To make the data usable for windowed aggregation, each event item must
+be timestamped. If the source doesn't emit timestamped events, you'll
+have to add them while building the processing pipeline. It's more
+convenient and efficient to add the timestamps right at the source. Jet
+offers you an API variant specifically tailored to this need. Let's say
+that in the above example the first 9 characters denote the event's
+timestamp. We can extract them as follows:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s2a]
+----
+
+=== Distributed Stream Source
+
+In the examples we showed so far the source was non-distributed: Jet
+will create just a single processor in the whole cluster to serve all
+the data. This is an easy and obvious way to create a source connector.
+
+If you want to create a distributed source, the challenge is
+coordinating all the parallel instances to appear as a single, unified
+source. Each instance must emit its unique slice of the whole data
+stream. Jet passes the {jet-javadoc}/core/Processor.Context.html[`Processor.Context`]
+to your `createFn` and you can use it to identify each state object you
+create. Consult the properties
+{jet-javadoc}/core/ProcessorMetaSupplier.Context.html#totalParallelism--[`totalParallelism`]
+and
+{jet-javadoc}/core/Processor.Context.html#globalProcessorIndex--[`globalProcessorIndex`]:
+Jet will call `createFn` exactly once with each `globalProcessorIndex`
+from 0 to `totalParallelism - 1` and you can use this to slice up the
+data.
+
+Here's a rudimentary example that shows how such a scheme could work:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s3]
+----
+<1> we request two parallel processors on each Jet member
+
+This is a distributed source that generates a bounded sequence of
+integers. If the Jet cluster has two members, the source will have
+four parallel generators. The first one will generate numbers 0, 4, 8,
+..., the second one 1, 5, 9, ..., etc.
+
+In the real world there are some fundamental differences. The data
+source is partitioned in advance and you cannot expect the number of
+partitions to perfectly match your topology. Instead you must write
+some logic that distributes, more or less evenly, M partitions over N
+processors.
+
+There's a specifically nasty problem hiding in this scheme: when we
+assign several partitions to a single processor and consume the data
+from each partition in chunks, the difference in the timestamp of the
+last event we fetch from partition _i_ and the first item from partition
+_j_ can be very large, much larger than the maximum lateness we
+configured. By the time it receives these events, Jet has already
+completed the processing of their window and moved on. The items must be
+dropped as "too late to process".
+
+Jet has a mechanism that mitigates this issue by individually tracking
+the highest timestamp from each partition and emitting the appropriate
+watermark items that account for the lagging partitions. It is available
+if you create a custom source processor using the Core API, but it's not
+currently exposed through the source builder. Refer to the section on
+<<custom-source-sink-vertex, custom source vertices>> and to the Javadoc
+of {jet-javadoc}/core/EventTimeMapper.html[`EventTimeMapper`].
+
+=== Add Fault Tolerance to your Source
+
+If you want your source to behave correctly within a streaming Jet job
+that has a <<fault-tolerance, processing guarantee>> configured
+(at-least-once or exactly-once), you must help Jet with saving the
+operational state of your context object to the snapshot storage. There
+are two functions you must supply:
+
+. `createSnapshotFn` returns a serializable object that has all the data
+you'll need to restore the operational state
+. `restoreSnapshotFn` applies the previously saved snapshot to the
+current context object
+
+While a job is running, Jet calls `createSnapshotFn` at regular
+intervals to save the current state. When Jet resumes a job, it will:
+
+1. create your context object the usual way, by calling `createFn`
+2. retrieve the latest snapshot object from its storage
+3. pass the context and snapshot objects to `restoreSnapshotFn`
+4. start calling `fillBufferFn`, which must start by emitting the same
+item it was about to emit when `createSnapshotFn` was called.
+
+You'll find that `restoreSnapshotFn`, somewhat unexpectedly, accepts
+not one but a list of snapshot objects. If you're building a simple,
+non-distributed source, this list will have just one member. However,
+the same logic must work for distributed sources as well, and a
+distributed source runs on many parallel processors at the same
+time. Each of them will produce its own snapshot object. After a restart
+the number of parallel processors may be different than before (because
+you added a Jet cluster member, for example), so there's no one-to-one
+mapping between the processors before and after the restart. This is why
+Jet passes all the snapshot objects to all the processors, and your
+logic must work out which part of their data to use. See
+<<distributed-stream-source>> chapter for more information.
+
+Here's a brief example with a fault-tolerant streaming source that
+generates a sequence of integers:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s3a]
+----
+
+<1> the snapshotting function returns the current number to emit
+<2> the restoring function sets the number from the snapshot to the
+current state
+
+== Sink Builder
+
+To make your custom sink connector you need two basic ingredients:
+
+. an object that will hold all the state you need to keep track of
+. a stateless function, `receiveFn`, taking two parameters: the state
+object and a data item sent to the sink
+
+This is a simple example with a file sink:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s4]
+----
+
+This will create the file `output.txt` on each member, so the overall
+job output consists of the contents of all these files put together.
+
+Note that we're using blocking IO here. Jet will use <<non-cooperative-processor,
+non-cooperative processors>> for the sink, so we're allowed to do that.
+For good overall job performance we should still ensure that the call
+`receiveFn` doesn't take more than a second to complete.
+
+In the above example our state object is a `PrintWriter`, which has
+internal buffering. Jet allows us to make buffering a first-class
+concern and deal with it explicitly by taking an optional `flushFn`
+which it will call at regular intervals. Here's our example modified to
+do explicit buffering and flushing:
+
+[source]
+----
+include::{javasource}/integration/SourceSinkBuilders.java[tag=s5]
+----
+
+In this case we don't need the `destroyFn` because we keep the file
+closed while not appending to it. Through the use of buffering we
+drown out the overhead of opening and closing the file each time and
+we get an overall more robust solution.
+
+=== Sink Parallelism
+
+Jet builds a sink that is _distributed_: each member of the Jet cluster
+has a processor running it. You can configure how many parallel
+processors there are on each member (the _local parallelism_) by calling
+`SinkBuilder.preferredLocalParallelism()`. By default there will be one
+processor per member.
+
+=== Fault Tolerance
+
+The sink you get from the sink builder doesn't participate in the fault
+tolerance protocol. You can't preserve any internal state if a job fails
+and gets restarted. In a job with snapshotting enabled your sink will
+still receive every item at least once. If the system you're storing
+the data into is idempotent, ignoring duplicate items, this will have
+the effect of the _exactly-once_ guarantee.
+

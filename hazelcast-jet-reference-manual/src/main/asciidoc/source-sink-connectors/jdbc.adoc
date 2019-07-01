@@ -1,0 +1,93 @@
+= JDBC
+
+Jet contains both JDBC source and a sink. They can be used to read or
+write from/to relational databases or another source that supports the
+standard JDBC API.
+
+The source is only a batch-style source: it reads records that are
+produced by one SQL query and once all records are emitted, the source
+completes. The sink can work in both batch and streaming jobs.
+
+The connector is not fault-tolerant. On job restart it behaves as if you
+have started a new job. The source does not do snapshotting, the sink
+does not suppress duplicate data.
+
+In order to use JDBC connector, user should include a JDBC Driver in
+classpath.
+
+== Using the JDBC Source
+
+The JDBC source comes in two versions:
+
+. *Parallel:* You will need to provide a `ToResultSetFunction` that will
+create one query for each parallel worker to query part of the data.
+
+. *Non-parallel:* There will be only one parallel worker that will read
+all the records.
+
+=== Example of parallel source
+
+Here we use _modulo_ operator to select a part of the keys, but any
+query returning non-overlapping subsets is possible. Note that this way
+might not actually perform better that the non-parallel version unless
+the underlying table is actually physically partitioned by this key.
+
+[source]
+----
+include::{javasource}/integration/JDBC.java[tag=s1]
+----
+
+=== Example of non-parallel source
+
+A single worker of the source will fetch the whole result set with a
+single query. You need to provide just one SQL query.
+
+[source]
+----
+include::{javasource}/integration/JDBC.java[tag=s2]
+----
+
+Output function gets the `ResultSet` and creates desired output object.
+The function is called for each row of the result set, user should not
+call `ResultSet#next()` or any other cursor-navigating functions.
+
+The source does not save any state to snapshot. If the job is restarted,
+it will re-emit all entries.
+
+Any `SQLException` will cause the job to fail. The default local
+parallelism for this processor is 1.
+
+
+== Using the JDBC Sink
+
+The JDBC sink connects to the specified database using the given
+connection supplier, prepares a statement using the given update query
+and inserts/updates the items.
+
+The update query should be a parametrized query. The bind function will
+receive a `PreparedStatement` created for this query and should bind
+parameters to it. It should not execute the query, call commit or any
+other method.
+
+The records will be committed after each batch of records and a batch
+mode will be used (if the driver supports it). Auto-commit will be
+disabled on the connection.
+
+In case of an `SQLException` the processor will automatically try to
+reconnect and the job won't fail, except for the
+`SQLNonTransientException` subclass. The default local parallelism for
+this sink is 1.
+
+No state is saved to snapshot for this sink. After the job is restarted,
+the items will likely be duplicated, providing an _at-least-once_
+guarantee. For this reason you should not use `INSERT` statement which
+can fail on duplicate primary key. Rather use an *insert-or-update*
+statement that can tolerate duplicate writes.
+
+The following code snippet shows writing the `Person` objects to a
+database table:
+
+[source]
+----
+include::{javasource}/integration/JDBC.java[tag=s3]
+----

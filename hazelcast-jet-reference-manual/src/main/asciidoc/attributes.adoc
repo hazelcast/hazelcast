@@ -1,0 +1,8 @@
+:jet-javadoc: https://docs.hazelcast.org/docs/jet/latest-dev/javadoc/com/hazelcast/jet
+:jet-samples: https://github.com/hazelcast/hazelcast-jet-code-samples/blob/master
+:jet-refman-src: https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master
+:jet-core: https://github.com/hazelcast/hazelcast-jet/blob/master/hazelcast-jet-core/src/main/java/com/hazelcast/jet
+:jet-mc-refman: https://docs.hazelcast.org/docs/jet-management-center/latest/manual/
+:hz-refman: https://docs.hazelcast.org/docs/{hz-version}/manual/html-single/index.html
+:hz-javadoc: https://docs.hazelcast.org/docs/{hz-version}/javadoc/com/hazelcast
+:jdk-javadoc: https://docs.oracle.com/javase/9/docs/api

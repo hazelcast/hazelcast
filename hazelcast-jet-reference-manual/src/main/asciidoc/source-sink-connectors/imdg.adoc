@@ -1,0 +1,241 @@
+[[connector-imdg]]
+= Hazelcast IMap and ICache
+
+Hazelcast IMDG's `IMap` and `ICache` are very similar in the way Jet
+uses them and largely interchangeable. `IMap` has a bit more features.
+The simplest way to use them is as finite sources of their contents, but
+if you enable the Event Journal on a map/cache, you'll be able to use
+it as a source of an infinite stream of update events
+(<<connector-imdg-journal, see below>>).
+
+The most basic usage is very simple, here are snippets to use `IMap`
+and `ICache` as a source and a sink:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s1]
+----
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s2]
+----
+
+In these snippets we draw from and drain to the same kind of structure,
+but you can use any combination.
+
+[[connector-imdg-external]]
+== Access an External Cluster
+
+To access a Hazelcast IMDG cluster separate from the Jet cluster, you
+have to provide Hazelcast client configuration for the connection. In
+this simple example we use programmatic configuration to draw from and
+drain to remote `IMap` and `ICache`. Just for variety, we funnel the
+data from `IMap` to `ICache` and vice versa:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s7]
+----
+
+For a full discussion on how to configure your client connection, refer
+to the {hz-refman}#configuring-java-client[Hazelcast IMDG documentation]
+on this topic.
+
+== Optimize Data Traffic at the Source
+
+If your use case calls for some filtering and/or transformation of the
+data you retrieve, you can optimize the traffic volume by providing a
+filtering predicate and an arbitrary transformation function to the
+source connector itself and they'll get applied on the remote side,
+before sending:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s8]
+----
+
+The same optimization works on a local `IMap`, too, but has less impact.
+However, Hazelcast IMDG goes a step further in optimizing your filtering
+and mapping to a degree that matters even locally. If you don't need
+fully general functions, but can express your predicate via
+{hz-javadoc}/query/Predicates.html[`Predicates`]
+or
+{hz-javadoc}/query/PredicateBuilder.html[`PredicateBuilder`],
+they will create a specialized predicate instance that can test the
+object without deserializing it. Similarly, if the mapping you need is
+of a constrained kind where you just extract one or more object fields
+(attributes), you can specify a _projection_ instead of a general
+mapping lambda:
+{hz-javadoc}/projection/Projections.html#singleAttribute-java.lang.String-[`Projections.singleAttribute()`]
+or {hz-javadoc}/projection/Projections.html#multiAttribute-java.lang.String...-[
+`Projections.multiAttribute()`].
+These will extract the listed attributes without deserializing the whole
+object. For these optimizations to work, however, your objects must
+employ Hazelcast's {hz-refman}#implementing-portable-serialization[portable serialization].
+They are especially relevant if the volume of data you need in the Jet
+job is significantly less than the volume of the stored data.
+
+Note that the above feature is not available on `ICache`. It is,
+however, available on `ICache`'s event journal, which we introduce next.
+
+[[connector-imdg-journal]]
+== Receive an Infinite Stream of Update Events
+
+You can use `IMap`/`ICache` as sources of infinite event streams. For
+this to work you have to enable the Event Journal on your data
+structure. This is a feature you set in the Jet/IMDG instance
+configuration, which means you cannot change it while the cluster is
+running.
+
+This is how you enable the Event Journal on an `IMap`:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s9]
+----
+
+The default journal capacity is 10,000 and the default time-to-live is 0
+(which means "`unlimited`"). Since the entire event journal is kept in
+RAM, you should take care to adjust these values to match your use case.
+
+The configuration API for `ICache` is identical:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s10]
+----
+
+Once properly configured, you use Event Journal sources like this:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s11]
+----
+
+`IMap` and `ICache` are on an equal footing here. The second argument,
+`START_FROM_CURRENT` here, means "start receiving from events that occur
+after the processing starts". If you specify `START_FROM_OLDEST`, you'll
+get all the events still on record.
+
+This version of methods will only emit `ADDED` and `UPDATED` event
+types. Also, it will map the event object to simple `Map.Entry` with the
+key and new value. To make a different choice, use the overloads that
+allow you to specify your own projection and filtering. For example,
+you can request all event types and full event objects:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s12]
+----
+
+Note the type of the stream element: `EventJournalMapEvent` and
+`EventJournalCacheEvent`. These are almost the same and have these
+methods:
+
+- `getKey()`
+- `getOldValue()`
+- `getNewValue()`
+- `getType()`
+
+The only difference is the return type of `getType()` which is specific
+to each kind of structure and gives detailed insight into what kind of
+event it reports. _Add_, _remove_ and _update_ are the basic ones, but
+there are also _evict_, _clear_, _expire_ and some others.
+
+Finally, you can get all of the above from a map/cache in another
+cluster, you just have to prepend `remote` to the source names and add a
+`ClientConfig`, for example:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s13]
+----
+
+== Update Entries in IMap
+
+When you use an `IMap` as a sink, instead of just pushing the data into
+it you may have to merge the new with the existing data or delete the
+existing data. Hazelcast Jet supports this with map-updating sinks which
+rely on Hazelcast IMDG's {hz-refman}#entry-processor[Entry Processor]
+feature. An entry processor allows you to atomically execute a piece of
+code against a map entry, in a data-local manner.
+
+The updating sinks come in three variants:
+
+1. {jet-javadoc}/pipeline/Sinks.html#mapWithMerging-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BinaryOperatorEx-[`mapWithMerging`],
+where you provide a function that computes the map value from the
+stream item and a merging function that gets called if a value already
+exists in the map. Here's an example that concatenates string values:
++
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s3]
+----
++
+NOTE: This operation is **NOT** lock-aware, it will process the entries
+regardless whether they are locked or not. We significantly boost
+performance by applying the update function in batches, but this
+operation doesn't respect the locks. If you use this method on locked
+entries, it will break the mutual exclusion contract. Use
+`mapWithEntryProcessor` if you need the proper locking behavior.
+2. {jet-javadoc}/pipeline/Sinks.html#mapWithUpdating-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[`mapWithUpdating`],
+where you provide a single updating function that combines the roles of
+the two functions in `mapWithMerging`. It will be called on the stream
+item and the existing value, if any. Here's an example that concatenates
+string values:
++
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s4]
+----
++
+NOTE: This operation is **NOT** lock-aware, it will process the entries
+regardless whether they are locked or not. We significantly boost
+performance by applying the update function in batches, but this
+operation doesn't respect the locks. If you use this method on locked
+entries, it will break the mutual exclusion contract. Use
+`mapWithEntryProcessor` if you need the proper locking behavior.
++
+3. {jet-javadoc}/pipeline/Sinks.html#mapWithEntryProcessor-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.FunctionEx-[`mapWithEntryProcessor`],
+where you provide a function that returns a full-blown `EntryProcessor`
+instance that will be submitted to the map. This is the most general
+variant, but can't use batching that the other variants do and thus has
+a higher cost per item. You should use it only if you need a specialized
+entry processor that can't be expressed in terms of the other variants.
+This example takes the values of the map and submits an entry processor
+that increments the values by 5:
++
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s5]
+include::{javasource}/integration/ImdgConnectors.java[tag=s6]
+----
+
+[[imdg-list]]
+= Hazelcast IList
+
+Whereas `IMap` and `ICache` are the recommended choice of data sources
+and sinks in Jet jobs, Jet supports `IList` purely for convenience
+during prototyping, unit testing and similar non-production situations.
+It is not a partitioned data structure and only one cluster member has
+all the contents. In a distributed Jet job all the members will compete
+for access to the single member holding it.
+
+With that said, `IList` is very simple to use. Here's an example how to
+fill it with test data, consume it in a Jet job, dump its results into
+another list, and fetch the results (we assume you already have a Jet
+instance in the variable `jet`):
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s14]
+----
+
+You can access a list in an external cluster as well, by providing a
+`ClientConfig` object:
+
+[source]
+----
+include::{javasource}/integration/ImdgConnectors.java[tag=s15]
+----

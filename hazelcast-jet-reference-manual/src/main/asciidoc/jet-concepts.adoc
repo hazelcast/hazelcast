@@ -1,0 +1,910 @@
+[[concepts]]
+= Jet Concepts
+
+In this chapter we will take a deep dive into the fundamentals of
+distributed computing and Jet's specific take on it. You'll find that
+having some intuition and insight into how distributed computing
+actually works in Jet makes a big difference when diagnosing your
+pipeline and improving its performance.
+
+Jet performs high performance in-memory data processing by modeling the
+computation as a _Directed Acyclic Graph (DAG)_, where vertices
+represent computation and edges represent data flows. A vertex receives
+data from its inbound edges, performs a step in the computation, and
+emits data to its outbound edges. Both the edge and the vertex are
+distributed entities: there are many parallel instances of the
+`Processor` type that perform a single vertex's computation work on
+each cluster member. An edge between two vertices is implemented with
+many data connections, both within a member (concurrent SPSC queues) and
+between members (Hazelcast network connections).
+
+One of the major reasons to divide the full computation task into
+several vertices is _data partitioning_: the ability to split the data
+stream into slices which can be processed in parallel, independently of
+each other. This is how Jet can parallelize and distribute the
+_group-and-aggregate_ stream transformation, the major workhorse in
+distributed computing. To make this work, there must be a function which
+computes the _partitioning key_ for each item and makes all related
+items map to the same key. Jet can then route all such items to the same
+processor instance, but has the freedom to route items with different
+keys to different processors.
+
+Typically your computation job consists of a _mapping_ vertex, where you
+pre-process the input data into a form that's ready to be partitioned,
+followed by the grouping-and-aggregating vertex. The edge between them
+contains the partitioning logic.
+
+[[word-count-dag-model]]
+== Modeling the Computation as a DAG
+
+We'll take one specific problem, the Word Count, dissect it and explain
+how it gets computed in a Jet cluster. Let us first see the definition
+of the computation in the Pipeline API:
+
+[source]
+----
+include::{javasource}/WhatIsDistributedComputing.java[tag=s1]
+----
+
+Now let's step back from this and start from the single-threaded Java
+code that solves the problem for a basic data structure such as an
+`ArrayList`. If you have some familiarity with the `java.util.stream`
+API, this is how you'd express it:
+
+[source]
+----
+include::{javasource}/WhatIsDistributedComputing.java[tag=s2]
+----
+
+You can notice a strong similarity with the Pipeline API formulation,
+but the way it's executed is radically different. Java will compute it
+in a single thread, basically running this code:
+
+[source]
+----
+include::{javasource}/WhatIsDistributedComputing.java[tag=s3]
+----
+
+The j.u.s. formulation helps us see the steps taken to process each data
+item:
+
+1. `lines.stream()`: read the items (lines of text) from the data source
+(we'll call this the "`source`" step).
+2. `flatMap()`+`filter()`: split each line into lowercase words,
+avoiding empty strings (the tokenizing step).
+3. `collect()`: group equal words together and count them (the
+accumulating step).
+
+Our next move is to express these steps as a DAG. We'll start with a
+single-threaded model and then make several transformations to reach a
+parallelized, distributed one, discussing at each step the concerns that
+arise and how to meet them.
+
+We can represent the steps outlined above in a directed acyclic graph
+(DAG):
+
+image::wordcount-dag.png[Word-counting DAG,600,170,align="center"]
+
+The simplest, single-threaded code (shown above) deals with each item as
+it is produced: the outer loop reads the lines, the inner loop that runs
+for each line deals with the words on that line, and inside the inner
+loop we populate the result map with running counts.
+
+However, just by modeling the computation as a DAG, we've split the work
+into isolated steps with clear data interfaces between them. We can
+perform the same computation by running a separate thread for each step.
+Roughly speaking, these are the snippets the threads would be executing:
+
+[source]
+include::{javasource}/WhatIsDistributedComputing.java[tag=s4]
+
+[source]
+include::{javasource}/WhatIsDistributedComputing.java[tag=s5]
+
+[source]
+include::{javasource}/WhatIsDistributedComputing.java[tag=s6]
+
+The source loop feeds the tokenizer loop over a concurrent queue, the
+tokenizer feeds the accumulator loop, and after the accumulator is done
+receiving, it emits its results to the sink. Diagrammatically it looks
+like this:
+
+image::wordcount-dag-queue.png[Word-counting DAG with concurrent queues shown,600,170,align="center"]
+
+This transformation brought us a _pipelined_ architecture: while the
+tokenizer is busy with the regex work, the accumulator is updating the
+map using the data the tokenizer is done with; and the source and sink
+stages are pumping the data from/to the environment. Our design is now
+able to engage more than one CPU core and will complete that much
+sooner; however, we're still limited by the number of vertices. We'll be
+able utilize two or three cores regardless of how many are available. To
+move forward we must try to parallelize the work of each individual
+vertex.
+
+Given that our input is an in-memory list of lines, the bottleneck
+occurs in the processing stages (tokenizing and accumulating). Let's
+first attack the tokenizing stage: it is a so-called "embarrassingly
+parallelizable" task because the processing of each line is completely
+self-contained. At this point we have to make a clear distinction
+between the notions of _vertex_ and _processor_: there can be several
+processors doing the work of a single vertex. Let's add another
+tokenizing processor:
+
+image::wordcount-tokenizer.png[Word-counting DAG with tokenizer vertex parallelized,600,170,align="center"]
+
+The input processor can now use all the available tokenizers as a pool
+and submit to any one whose queue has some room.
+
+The next step is parallelizing the accumulator vertex, but this is
+trickier: accumulators count word occurrences so using them as a pool
+will result in each processor observing almost all distinct words
+(entries taking space in its hashtable), but the counts will be partial
+and will need combining. The common strategy to reduce memory usage is
+to ensure that all occurrences of the same word go to the same
+processor. This is called "`data partitioning`" and in Jet we'll use a
+_partitioned edge_ between the tokenizer and the accumulator:
+
+image::wordcount-partitioned.png[Word-counting DAG with tokenizer and accumulator parallelized,600,170,align="center"]
+
+As a word is emitted from the tokenizer, it goes through a "`switchboard`"
+stage where it's routed to the correct downstream processor. To
+determine where a word should be routed, we can calculate its hashcode
+and use the lowest bit to address either accumulator 0 or accumulator 1.
+
+At this point we have a blueprint for a fully functional parallelized
+computation job which can max out all the CPU cores given enough
+instances of tokenizing and accumulating processors. The next challenge
+is making this work across machines.
+
+For starters, our input can no longer be a simple in-memory list because
+that would mean each machine processes the same data. To exploit the
+cluster as a unified computation device, each cluster member must
+observe only a slice of the dataset. Given that a Jet instance is also a
+fully functional Hazelcast IMDG instance and a Jet cluster is also a
+Hazelcast IMDG cluster, the natural choice is to pre-load our data into
+an `IMap`, which will be automatically partitioned and distributed
+across the members. Now each Jet member can just read the slice of data
+that was stored locally on it.
+
+When run in a cluster, Jet will instantiate a replica of the whole DAG
+on each member. On a two-member cluster there will be two source
+processors, four tokenizers, and so on. The trickiest part is the
+partitioned edge between tokenizer and accumulator: each accumulator is
+supposed to receive its own subset of words. That means that, for
+example, a word emitted from tokenizer 0 will have to travel across the
+network to reach accumulator 3, if that's the one that happens to own
+it. On average we can expect every other word to need network transport,
+causing both serious network traffic and serialization/deserialization
+CPU load.
+
+There is a simple trick we can employ to avoid most of this traffic,
+closely related to what we pointed above as a source of problems when
+parallelizing locally: members of the cluster can be used as a pool,
+each doing its own partial word counts, and then send their results to a
+combining vertex. Note that this means sending only one item per
+distinct word. Here's the rough equivalent of the code the combining
+vertex executes:
+
+[source]
+include::{javasource}/WhatIsDistributedComputing.java[tag=s7]
+
+As noted above, such a scheme takes more memory due to more hashtable
+entries on each member, but it saves network traffic (an issue we didn't
+have within a member). Given that memory costs scale with the number of
+distinct keys (english words in our case), the memory cost is
+more-or-less constant regardless of how much book material we process.
+On the other hand, network traffic scales with the total data size so
+the more material we process, the more we save on network traffic.
+
+Jet distinguishes between _local_ and _distributed_ edges, so we'll use
+a _local partitioned_ edge for `tokenize`->`accumulate` and a
+_distributed partitioned_ edge for `accumulate`->`combine`. With this
+move we've finalized our DAG design, which can be illustrated by the
+following diagram:
+
+image::wordcount-distributed.png[Word-counting DAG parallelized and distributed,600,170,align="center"]
+
+[[unbounded-stream-processing]]
+== Unbounded Stream Processing
+
+So far we've worked with a bounded (finite) stream processing task.
+In general, you provide Jet with one or more pre-existing datasets and
+order it to mine them for interesting information. The most important
+workhorse in this area is the "join, group and aggregate" operation: you
+define a classifying function that computes a grouping key for each of
+the datasets and an aggregate operation that will be performed on all
+the items in each group, yielding one result item per distinct key. Jet
+can apply the same operation on unbounded data streams as well.
+
+=== The Importance of "`Right Now`"
+
+In batch jobs the data we process represents a point-in-time snapshot of
+our state of knowledge (for example, warehouse inventory where
+individual data items represent items on stock). We can recapitulate
+each business day by setting up regular snapshots and batch jobs.
+However, there is more value hiding in the freshest data &mdash; our
+business can win by reacting to minute-old or even second-old updates.
+To get there we must make a shift from the finite to the infinite: from
+the snapshot to a continuous influx of events that update our state of
+knowledge. For example, an event could pop up in our stream every time
+an item is checked in or out of the warehouse.
+
+A single word that captures the above story is _latency_: we want our
+system to minimize the latency from observing an event to acting upon
+it.
+
+=== Windowing
+
+In an unbounded stream, the dimension of time is always there.  Consider
+a batch job: it may process a dataset labeled "`Wednesday`", but the
+computation itself doesn't have to know this. Its results will be
+understood from the outside to be "`about Wednesday`". An endless stream,
+on the other hand, delivers information about the reality as it is
+unfolding, in near-real time, and the computation itself must deal with
+time explicitly.
+
+Another point: in a batch it is obvious when to stop aggregating and
+emit the results: when we have exhausted the whole dataset. However,
+with unbounded streams we need a policy on how to select bounded chunks
+whose aggregate results we are interested in. This is called
+_windowing_. We imagine the window as a time interval laid over the time
+axis. A given window contains only the events that belong to that
+interval.
+
+A very basic type of window is the _tumbling window_, which can be
+imagined to advance by tumbling over each time. There is no overlap
+between the successive positions of the window. In other words, it
+splits the time-series data into batches delimited by points on the time
+axis. The result of this is very similar to running a sequence of batch
+jobs, one per time interval.
+
+A more useful and powerful policy is the _sliding window_: instead of
+splitting the data at fixed boundaries, it lets it roll in
+incrementally, new data gradually displacing the old. The window
+(pseudo)continuously slides along the time axis.
+
+Another popular policy is called the _session window_ and it's used to
+detect bursts of activity by correlating events bunched together on the
+time axis. In an analogy to a user's session with a web application,
+the session window "`closes`" when the specified session timeout elapses
+with no further events.
+
+[[time-ordering]]
+=== Time Ordering and the Watermark
+
+Usually the time of observing an event is explicitly written in a field
+of the stream item. There is no guarantee that items will occur in the
+stream ordered by the value of that field; in fact in many cases it is
+certain that they won't. Consider events gathered from users of a mobile
+app: for all kinds of reasons the items will arrive to our datacenter
+out of order, even with significant delays due to connectivity issues.
+
+This disorder in the event stream makes it more difficult to formally
+specify a rule that tells us at which point all the data for a given
+window has been gathered, allowing us to emit the aggregated result.
+
+To approach these challenges we use the concept of the
+{jet-javadoc}/core/Watermark.html[_watermark_].
+It is a timestamped item Jet inserts into the stream that says "from
+this point on there will be no more items with timestamp less than
+this". Unfortunately, we almost never know for sure when such a
+statement becomes true and there is always a chance some events will
+arrive even later. If we do observe such an offending item, we must
+categorize it as "`too late`" and just filter it out.
+
+Note the tension in defining the "`perfect`" watermark for a given use
+case: it is bad both the more we wait and the less we wait to emit a
+given watermark. The more we wait, the higher the latency of getting the
+results of the computation; the less we wait, the worse their accuracy
+due to missed events.
+
+For these reasons Jet cannot determine the watermark on its own, you
+must decide how much disorder to accept (and expect).
+
+== Sliding and Tumbling Window
+
+Many quantities, like "`the current rate of change of a price`" require
+you to aggregate your data over some time period. This is what makes the
+sliding window so important: it tracks the value of such a quantity in
+real time.
+
+Calculating a single sliding window result can be quite computationally
+intensive, but we also expect it to slide smoothly and give a new result
+often, even many times per second. This is why we gave special attention
+to optimizing this computation.
+
+We optimize especially heavily for those aggregate operations that have
+a cheap way of combining partial results and even more so for those
+which can cheaply undo the combining. For cheap combining you have to
+express your operation in terms of a commutative and associative (CA for
+short) function; to undo a combine you need the notion of "`negating`" an
+argument to the function. A great many operations can be expressed
+through CA functions: average, variance, standard deviation and linear
+regression are some examples. All of these also support the undoing
+(which we call _deduct_). The computation of extreme values (min/max) is
+an example that has CA, but no good notion of negation and thus doesn't
+support deducting.
+
+This is the way we leverage the above properties: our sliding window
+actually "`hops`" in fixed-size steps. The length of the window is an
+integer multiple of the step size. Under such a definition, the
+_tumbling_ window becomes just a special case with one step per window.
+
+This allows us to divide the timestamp axis into _frames_ of equal
+length and assign each event to its frame. Instead of keeping the event
+object, we immediately pass it to the aggregate operation's _accumulate_
+primitive. To compute a sliding window, we take all the frames covered
+by it and combine them. Finally, to compute the next window, we just
+_deduct_ the trailing frame and _combine_ the leading frame into the
+existing result.
+
+Even without _deduct_ the above process is much cheaper than the most
+naïve approach where you'd keep all data and recompute everything from
+scratch each time. After accumulating an item just once, the rest of the
+process has fixed cost regardless of input size. With _deduct_, the
+fixed cost approaches zero.
+
+=== Example: 30-second Window Sliding by 10 Seconds
+
+We'll now illustrate the above story with a specific example: we'll
+construct a 30-second window which slides by 10 seconds (i.e., three
+steps per window). The aggregate operation is to simply count the number
+of events. In the diagrams we label the events as _minutes:seconds_.
+This is the outline of the process:
+
+1. Throw each event into its "`bucket`" (the frame whose time interval it
+belongs to).
+2. Instead of keeping the items in the frame, just keep the item count.
+3. Combine the frames into three different positions of the sliding
+window, yielding the final result: the number of events that occurred
+within the window's timespan.
+
+image::windowing-frames.png[Grouping disordered events by frame and then to sliding window,800,800,align="center"]
+
+
+This would be a useful interpretation of the results: "At the time 1:30,
+the 30-second running average was 8/30 = 0.27 events per second. Over
+the next 20 seconds it increased to 10/30 = 0.33 events per second."
+
+Keep in mind that the whole diagram represents what happens on just one
+cluster member and for just one grouping key. The same process is going
+on simultaneously for all the keys on all the members.
+
+=== Two-stage aggregation
+
+The concept of frame combining helps us implement two-stage aggregation
+as well. In the first stage the individual members come up with their
+partial results by frame and send them over a distributed edge to the
+second stage, which combines the frames with the same timestamp. After
+having combined all the partial frames from members, it combines the
+results along the event time axis into the sliding window.
+
+image::combining-frames.png[Combining partial frames in two-stage aggregation,800,800,align="center"]
+
+== Session Window
+
+In the abstract sense, the session window is a quite intuitive concept:
+it simply captures a burst of events. If no new events occur within the
+configured session timeout, the window closes. However, because the Jet
+processor encounters events out of their original order, this kind of
+window becomes quite tricky to compute.
+
+The way Jet computes the session windows is easiest to explain in terms
+of the _event interval_: the range
+`[eventTimestamp, eventTimestamp + sessionTimeout]`.
+Initially an event causes a new session window to be created, covering
+exactly the event interval.
+
+image::session-window-1.png[Session window: single event,250,200,align="center"]
+
+
+A following event under the same key belongs to this window iff its
+interval overlaps it. The window is extended to cover the entire
+interval of the new event.
+
+image::session-window-2.png[Session window: extend with another event,150,120,align="center"]
+
+If the event intervals don't overlap, Jet creates new session window for
+the new event.
+
+image::session-window-3.png[Session window: create a new window after session timeout,300,110,align="center"]
+
+An event may happen to belong to two existing windows if its interval
+bridges the gap between them; in that case they are combined into one.
+
+image::session-window-4.png[Session window: an event may merge two existing windows,300,110,align="center"]
+
+
+Once the watermark has passed the closing time of a session window, Jet
+can close it and emit the result of its aggregation.
+
+== Fault Tolerance and Processing Guarantees
+
+One less-than-obvious consequence of stepping up from finite to infinite
+streams is the difficulty of forever maintaining the continuity of the
+output, even in the face of changing cluster topology. A Jet node may
+leave the cluster due to an internal error, loss of networking, or
+deliberate shutdown for maintenance. This will cause the computation job
+to be suspended. Except for the obvious problem of new data pouring in
+while we're down, we have a much more fiddly issue of restarting the
+computation in a differently laid-out cluster exactly where it left off
+and neither miss anything nor process it twice. The technical term for
+this is the "exactly-once processing guarantee".
+
+Jet achieves fault tolerance in streaming jobs by making a snapshot of
+the internal processing state at regular intervals. If a member of the
+cluster fails while a job is running, Jet will detect this and restart
+the job on the new cluster topology. It will restore its internal state
+from the snapshot and tell the source to start sending data from the
+last "`committed`" position (where the snapshot was taken). The data
+source must have built-in support to replay the data from the given
+checkpoint. The sink must either support transactions or be
+_idempotent_, tolerating duplicate submission of data.
+
+In a Jet cluster, one member is the _coordinator_. It tells other
+members what to do and they report to it any status changes. The
+coordinator may fail and the cluster will automatically re-elect another
+one. If any other member fails, the coordinator restarts the job on the
+remaining members.
+
+== Update a DAG Without Losing the State
+
+If you need to do a change in the pipeline or DAG, you need to submit a
+new job. The old job has to be cancelled and a new one with modified
+pipeline has to be submitted. To preserve the state, you have to export
+it before you cancel the old job and start the new job with the exported
+state.
+
+There are 2 ways of exporting the state:
+
+- {jet-javadoc}/Job.html#cancelAndExportSnapshot-java.lang.String-[`Job.cancelAndExportSnapshot(String name)`]:
+exports a snapshot and cancels the job. This method is useful for starting
+the job anew with an updated pipeline
+
+- {jet-javadoc}/Job.html#exportSnapshot-java.lang.String-[`Job.exportSnapshot(String
+name)`]: exports a snapshot and keeps the job running. Useful for
+forking the job, for example in A/B testing scenario or for moving the
+state to the test environment
+
+[source]
+----
+include::{javasource}/JobUpdate.java[tag=s1]
+----
+
+=== State Compatibility
+
+The state has to be compatible with the updated pipeline. The snapshot
+contains separate data for each vertex, identified by the vertex name.
+If a snapshot doesn't contain data for a vertex, it will be restored
+with an empty state. If a snapshot contains data for a vertex that does
+not exist, that data will be ignored. If the vertex name matches, then
+it depends on the specific processor type what type of change is
+allowed.
+
+From this follows:
+
+- you can add and new stateful stages and remove existing ones without
+breaking compatibility. This includes adding/removing a source or sink
+or adding a new aggregation path from existing sources (see also
+<<non-unique-name-update>>).
+
+- you can freely add, remove or change stateless stages, such as
+filter/map/flatMap stages, sinks and others
+
+==== Recombining the Frames of Sliding Windows
+
+Jet supports changing of sliding window size or sliding step. In some
+situations, however, you can have incorrect data on the output.
+
+Sliding windows in Jet accumulate input items into _frames_ (see
+<<sliding-and-tumbling-window>>). The frame size is equal to the slide
+step of the window. The processor saves the
+{jet-javadoc}/aggregate/AggregateOperation.html#createFn--[aggregation's
+accumulator] to the snapshot, one for each key and frame.
+
+If the slide step changes, the frames in the snapshot won't match those
+needed for the new slide step. You can do this change, but the frames will
+be recombined into new frames based on their end timestamps.
+
+.Example recombining 10-second frames into 15-second frames
+image::recombining-frames.png[Recombining restored frames,600,175,align="center"]
+
+As you see on the figure, frame `1:10` will be put into frame `1:15`.
+Frames `1:20` and `1:30` will be
+{jet-javadoc}/aggregate/AggregateOperation.html#combineFn--[combined]
+into frame `1:30`. This means that events with timestamp between `1:10` to
+`1:15` will be incorrectly accumulated into frame `1:15`-`1:30`.
+
+You also can extend the window size, but the first emitted windows after
+restoring will miss older events. The reason for this is that the frames
+were already purged, see the image:
+
+.Example extending window size
+image::extending-window-size.png[Example extending window size,600,279,align="center"]
+
+In the example above, the 20-second window was extended to a 30-second
+one, sliding step (i.e. frame size) was unchanged. As you see, the
+frames after restore match the frames when the snapshot was saved, so no
+recombining will occur. However, the next window to emit at `1:30` will
+miss events between `0:50`-`1:00`, because the frame containing them was
+already purged because it wasn't needed for the original 20-second
+window. The window at `1:40` will be correct. Reducing the window size
+has no such issue.
+
+==== State Compatibility of Other Processors
+
+Here are examples of other supported changes to the parameters of
+pipeline stages. For details, consult the javadoc of each stage.
+
+* change session window timeout
+* change connection parameters of sources/sinks
+* change parameters of aggregate operation: for example, change the
+comparator of `AggregateOperation.minBy()`
+* replace the aggregate operation, if the accumulator type is the same:
+for example, change `counting()` to `summingLong()`, if that makes sense
+* any change to stateless stages
+
+The following changes are not supported:
+
+* change a sliding window to a session window
+* replace aggregation operation for one with incompatible accumulator
+type
+* assign a different name to a stage
+
+[[non-unique-name-update]]
+==== Update a Job with Auto-Assigned Stage Names
+
+The Pipeline API allows you to set the name of a stage using
+{jet-javadoc}/pipeline/Stage.html#setName-java.lang.String-[`Stage.setName`],
+but if you don't set it, Jet generates the name based on the stage type.
+If this would result in the same name for multiple stages, Jet appends
+`-N` to the name, where the `N` is a sequence number. For example, if
+you have 3 sliding window aggregations in the job, their names will be
+`sliding-window`, `sliding-window-2` and `sliding-window-3`. The number
+sequence follows the order in which you added the stages to the
+`Pipeline`.
+
+When Jet translates the pipeline into the Core API DAG, it uses the
+name of the stage to name the vertex that implements it. Since the
+vertex name identifies the data element in the state snapshot, it's very
+important to keep it equal when you change the pipeline to a new version.
+For example, you can't reorder the aggregations or remove the first one
+because that would change the names and incorrect state will be restored
+to the vertex. Therefore we recommend that you explicitly assign a
+unique name to every stage in the pipeline you intend to use and
+maintain over a long term.
+
+==== Caveats When Changing the Grouping Key
+
+You can change the key-extracting function for a `groupingKey`'s, but
+keep in mind that the snapshotted state has keys extracted with the old
+key extractor. If the new keys aren't equal, they will create new groups.
+
+You can also change the key type. In this case, however, the job may
+fail with a `ClassCastException` because the downstream might expect a
+different type than it will actually receive. For example, if you change
+the key type from `Integer` to `Long`, the downstream stage of a window
+aggregation will expect `KeyedWindowResult<Long, V>`, but can actually
+get `KeyedWindowResult<Integer, V>`.
+
+==== State compatibility with Further Versions
+
+Jet does not guarantee snapshot compatibility between major releases.
+Snapshot created in older version might not work in newer major version.
+Bugfix releases are compatible.
+
+[[jet-execution-model]]
+== Jet's Execution Model
+
+At the heart of Jet is the {jet-core}/TaskletExecutionService.java[`TaskletExecutionService`].
+It manages the threads that perform all the computation in a Jet job.
+Although this class is not formally a part of Jet's public API,
+understanding how it schedules code for execution is essential if you
+want to implement a cooperative processor.
+
+[[cooperative-multithreading]]
+=== Cooperative Multithreading
+
+Cooperative multithreading is one of the core features of Jet and can be
+roughly compared to
+https://en.wikipedia.org/wiki/Green_threads[green threads].
+It is purely a library-level feature and does not involve any low-level
+system or JVM tricks; the `Processor` API is simply designed in such a
+way that the processor can do a small amount of work each time it is
+invoked, then yield back to the Jet engine. The engine manages a thread
+pool of fixed size and on each thread, the processors take their turn in
+a round-robin fashion.
+
+The point of cooperative multithreading is better performance. Several
+factors contribute to this:
+
+- The overhead of context switching between processors is much lower
+since the operating system's thread scheduler is not involved.
+- The worker thread driving the processors stays on the same core for
+longer periods, preserving the CPU cache lines.
+- The worker thread has direct knowledge of the ability of a processor
+to make progress (by inspecting its input/output buffers).
+
+[[tasklet]]
+=== Tasklet
+
+The execution service doesn't deal with processors directly; instead it
+deals with _tasklets_.
+{jet-core}/impl/execution/Tasklet.java[`Tasklet`] is a very simple
+functional interface derived from the standard Java `Callable<ProgressState>`.
+The execution service manages a pool of worker threads, each being
+responsible for a list of tasklets. The worker thread simply invokes the
+`call()` methods on its tasklets in a round-robin fashion. The method's
+return value tells whether the tasklet made progress and whether it is
+now done.
+
+The most important tasklet is the one driving a processor
+(`ProcessorTasklet`); there are a few others that deal with network
+sending/receiving and taking snapshots.
+
+[[exponential-backoff]]
+=== Exponential Backoff
+
+If none of the worker's tasklets report having made progress, the worker
+will go to a short sleep. If this happens again after it wakes up, it
+will sleep for twice as long. Once it reaches 1 ms sleep time, it will
+continue retrying once per millisecond to see if any tasklets can make
+progress.
+
+[[processor-tasklet]]
+=== ProcessorTasklet
+
+{jet-core}/impl/execution/ProcessorTasklet.java[`ProcessorTasklet`]
+is the one that drives a processor. It manages its inbox, outbox,
+inbound/outbound concurrent queues, and tracks the current processor
+state so it knows which of its callback methods to call.
+
+During each `tasklet.call()`, `ProcessorTasklet` makes one call into
+one of its processor's callbacks. It determines the processor's progress
+status and reports it to the execution service.
+
+[[non-cooperative-processor]]
+=== Non-Cooperative Processor
+
+If a processor declares itself as non-cooperative, the execution service
+will start a dedicated Java thread for its tasklet to run on.
+
+Even if it's non-cooperative, the processor's callback methods must
+still make sure they don't run for longer than a second or so at a time.
+Jet can't start a snapshot until all the processors have yielded control
+back to it.
+
+[[running-a-jet-job]]
+== What Happens When you Submit a Job
+
+When you submit a `Job` to it, Jet replicates the DAG to the whole Jet
+cluster and executes a copy of it on each member.
+
+image::dag-distribution.png[DAG Distribution]
+
+Jet executes the job on a user-configurable number of threads which use
+work stealing to balance the amount of work being done on each thread.
+Each worker thread has a list of tasklets it is in charge of and as
+tasklets complete at different rates, the remaining ones are moved
+between workers to keep the load balanced.
+
+Each instance of a `Processor` is wrapped in one tasklet which the
+execution service repeatedly executes until it is done. A vertex with a
+parallelism of 8 running on 4 members would have a total of 32 tasklets
+running at the same time. Each member has the same number of tasklets
+running.
+
+image::parallelism-model.png[Tasklet execution model,800,400]
+
+When you make a request to execute a Job, the corresponding DAG and
+additional resources are deployed to the Jet cluster. Jet builds an
+execution plan for the DAG on each member, which creates the associated
+tasklets for each Vertex and connects them to their inputs and outputs.
+
+Jet uses Single Producer/Single Consumer ringbuffers to transfer the
+data between processors on the same member. They are data-type agnostic,
+so any data type can be used to transfer the data between vertices.
+
+Ringbuffers, being bounded queues, introduce natural backpressure into
+the system; if a consumer’s ringbuffer is full, the producer will have
+to back off until it can enqueue the next item. When data is sent to
+another member over the network, there is no natural backpressure, so
+Jet uses explicit signaling in the form of adaptive receive windows.
+
+== Distributed Snapshot
+
+The technique Jet uses to achieve
+<<fault-tolerance-and-processing-guarantees, fault tolerance>>
+is called a "`distributed snapshot`", described in a
+https://www.microsoft.com/en-us/research/wp-content/uploads/2016/12/Determining-Global-States-of-a-Distributed-System.pdf[paper by Chandy and Lamport].
+At regular intervals, Jet raises a global flag that says "it's time for
+another snapshot". All processors belonging to source vertices observe
+the flag, create a checkpoint on their source, emit a barrier item
+to the downstream processors and resume processing.
+
+As the barrier item reaches a processor, it stops what it's doing and
+emits its state to the snapshot storage. Once complete, it forwards the
+barrier item to its downstream processors.
+
+Due to parallelism, in most cases a processor receives data from more
+than one upstream processor. It will receive the barrier item from each
+of them at separate times, but it must start taking a snapshot at a
+single point in time. There are two approaches it can take, as explained
+below.
+
+=== Exactly-Once Snapshotting
+
+With _exactly-once_ configured, as soon as the processor gets a barrier
+item in any input stream (from any upstream processor), it must stop
+consuming it until it gets the same barrier item in all the streams:
+
+image::exactly-once-1.png[Exactly-once processing: received one barrier,300,110,align="center"]
+
+1. At the barrier in stream X, but not Y. Must not accept any more X
+items.
++
+image::exactly-once-2.png[Exactly-once processing: received both barriers,300,110,align="center"]
++
+2. At the barrier in both streams, taking a snapshot.
++
+image::exactly-once-3.png[Exactly-once processing: forward the barrier,300,110,align="center"]
++
+3. Snapshot done, barrier forwarded. Can resume consuming all streams.
+
+=== At-Least-Once Snapshotting
+
+With _at-least-once_ configured, the processor can keep consuming all
+the streams until it gets all the barriers, at which point it will stop
+to take the snapshot:
+
+image::at-least-once-1.png[At-Least-once processing: received one barrier,300,110,align="center"]
+
+1. At the barrier in stream X, but not Y. Carry on consuming all
+streams.
++
+image::at-least-once-2.png[At-Least-once processing: received both barriers,300,110,align="center"]
++
+2. At the barrier in both streams, already consumed `x1` and `x2`.
+Taking a snapshot.
++
+image::at-least-once-3.png[At-Least-once processing: forward the barrier,300,110,align="center"]
++
+3. Snapshot done, barrier forwarded.
+
+
+Even though `x1` and `x2` occur after the barrier, the processor
+consumed and processed them, updating its state accordingly. If the
+computation job stops and restarts, this state will be restored from the
+snapshot and then the source will replay `x1` and `x2`. The processor
+will think it got two new items.
+
+== Dropped Late Events
+
+At times, you might encounter a line like the following in your logs:
+
+```plain
+Event dropped, late by 123ms. currentWatermark=14:23:10.256, eventTime=14:23:10.123, event=FooEvent
+```
+
+The most obvious cause to check is to make sure that there are no two
+events `E1` and `E2` in any source partition where `E2` is positioned
+after `E1` in the stream and `E1.timestamp - allowedLag > E2.timestamp`.
+
+Besides this obvious reason, there are few more possible causes:
+
+- If timestamps are not added in source, source streams might be split
+and merged in an unpredictable way. See
+<<caveats-of-not-adding-timestamps-in-source>>. Also Map Journal and
+Cache Journal sources currently don't coalesce watermarks in source,
+they fall into this category too.
+
+- Source partitions can be marked as idle. The idle timeout is hardcoded
+for pipeline api to
+{jet-javadoc}/core/EventTimePolicy.html#DEFAULT_IDLE_TIMEOUT[`DEFAULT_IDLE_TIMEOUT`].
+If the partition isn't really idle, but rather is stalled, after it
+resumes, events from it can be late because it was excluded from
+coalescing.
+
+_Note:_ items are not dropped unless there is need to. For example,
+`map` operation never drops items, even if they come late. Currently
+only windowing aggregations drop events, because they purge data from
+memory as the event time passes.
+
+== Stream Skew
+
+We <<time-ordering, explained>> how we use the concept of watermark to
+impose order onto a disordered data stream. However, items arriving out
+of order aren't our only challenge; modern stream sources like Kafka are
+partitioned and distributed so "`the stream`" is actually a set of
+independent substreams, moving on in parallel. Substantial time
+difference may arise between events being processed on each one, but our
+system must produce coherent output as if there was only one stream. We
+meet this challenge by coalescing watermarks: as the data travels over a
+partitioned/distributed edge, we make sure the downstream processor
+observes the correct watermark value, which is the least of watermarks
+received from the contributing substreams.
+
+=== Rules of Watermark Propagation
+
+Watermark objects are sent interleaved with other stream items, but are
+handled specially:
+
+* The value of the watermark a processor emits must be strictly
+  increasing. Jet will throw an exception if it detects a non-increasing
+  watermark.
+
+* When a processor receives a watermark, it should add it to the outbox.
+  The processor is allowed to delay the watermark: for example, if the
+  processor does async mapping, it should emit the watermark after it
+  received responses for all items that came before it. Sink processors
+  don't have to emit watermarks.
+
+* The watermark item is always broadcast, regardless of the edge type.
+  This means that all N upstream processors send their watermark to all
+  M downstream processors.
+
+* The processor will observe only a watermark that was received from
+  all upstream processors and from all upstream edges. This is called
+  _watermark coalescing_.
+
+Jet's internal class
+{jet-core}/impl/execution/WatermarkCoalescer.java[`WatermarkCoalescer`]
+manages watermarks received from multiple inputs. As it receives
+watermark items from them, its duty is to decide when to forward the
+watermark downstream. This happens at two levels:
+
+* between multiple queues backing single edge
+* between multiple input edges to single processor
+
+=== Idle inputs
+
+A special object called _idle message_ can be emitted from source
+processor when the processor sees no events for configured _idle
+timeout_. This can happen in real life when some external partitions
+have no events while others do.
+
+When an _idle message_ is received from an input, that input will be
+excluded from watermark coalescing. This means that we will not wait to
+receive watermark from the idle input. It will allow the other active
+inputs to be processed without further delay. When the idle timeout is
+disabled and some processor doesn't emit any watermarks (because it sees
+no events), the processing will stall indefinitely.
+
+[[pitfalls-alo]]
+== The Pitfalls of At-Least-Once Processing
+
+In some cases _at-least-once_ semantics can have consequences of quite
+an unexpected magnitude, as we discuss next.
+
+=== Apparent Data Loss
+
+Imagine a very simple kind of processor: it matches up the items that
+belong to a _pair_ based on some rule. If it receives item A first, it
+remembers it. Later on, when it receives item B, it emits that fact
+to its outbound edge and forgets about the two items. It may also first
+receive B and wait for A.
+
+Now imagine this sequence: `A -> BARRIER -> B`. In at-least-once the
+processor may observe both A and B, emit its output, and forget about
+them, all before taking the snapshot. After the restart, item B will be
+replayed because it occurred after the last barrier, but item A won't.
+Now the processor is stuck forever in a state where it's expecting A and
+has no idea it already got it and emitted that fact.
+
+Problems similar to this may happen with any state the processor keeps
+until it has got enough information to emit the results and then forgets
+it. By the time it takes a snapshot, the post-barrier items will have
+caused it to forget facts about some pre-barrier items. After a restart
+it will behave as though it has never observed those pre-barrier items,
+resulting in behavior equivalent to data loss.
+
+=== Non-Monotonic Watermark
+
+One special case of the above story concerns watermark items. Thanks to
+watermark coalescing, processors are typically implemented against the
+invariant that the watermark value always increases. However, in
+_at-least-once_ the post-barrier watermark items will advance the
+processor's watermark value. After the job restarts and the state gets
+restored to the snapshotted point, the watermark will appear to have
+gone back, breaking the invariant. This can again lead to apparent data
+loss.

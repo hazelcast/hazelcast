@@ -1,0 +1,147 @@
+= Performance Considerations
+
+== Standard Java Serialization is Slow
+
+When it comes to serializing the description of a Jet job, performance
+is not critical. However, for the data passing through the pipeline,
+the cost of the serialize-deserialize cycle can easily dwarf the cost of
+actual data transfer, especially on high-end LANs typical for data
+centers. In this context the performance of Java serialization is so
+poor that it regularly becomes the bottleneck. This is due to its heavy
+usage of reflection, overheads in the serialized form, etc.
+
+Since Hazelcast IMDG faced the same problem a long time ago, we have
+mature support for optimized custom serialization and in Jet you can
+use it for stream data. In essence, you must implement a
+`StreamSerializer` for the objects you emit from your processors and
+register it in Jet configuration:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s9]
+----
+
+Consult the chapter on
+{hz-refman}#custom-serialization[custom serialization]
+in Hazelcast IMDG's reference manual for more details.
+
+Note the limitation implied here: the serializers must be registered
+with Jet on startup because this is how it is supported in Hazelcast
+IMDG. There is a plan to improve this and allow serializers to be
+registered on individual Jet jobs.
+
+== Sharing Data Between Pipeline Stages
+
+Jet only serializes an item when it actually sends it to another member.
+If the target processor is on the same member, it will receive the exact
+same instance. To catch (de)serialization issues early on, we recommend
+using a 2-member local Jet cluster for development and testing.
+
+Sharing the same objects between stages is good for performance, but it
+places a higher degree of responsibility on the developer. You can
+follow these rules of thumb to avoid concurrency bugs:
+
+* don't use an item after emitting it
+* don't mutate an item you received
+
+Working with immutable objects has its price: you incur allocation and
+GC pressure by creating the copies and you waste additional CPU time
+copying the data. This is why we also present fine-grained rules you
+_must_ follow to stay safe while sharing the data between pipeline
+stages.
+
+**1. Never mutate an item you emitted.**
+
+It is never safe to mutate an item you emitted. The downstream stages
+will see your changes and lose the original data you emitted, at best.
+Since the changes are concurrent, they may also see completely broken
+data, if the object is not thread-safe.
+
+One use case where it's especially tempting to mutate the item after
+emitting is rolling aggregation. Consider this example where we use
+`mapUsingContext` to implement a custom rolling aggregation:
+
+[source]
+----
+include::{javasource}/Serialization.java[tag=modify-emitted]
+----
+
+<1>  You keep emitting the same list, changing it in-place
+
+The downstream stage receives the same object each time, but it's
+supposed to see it in the state as it was sent. In reality, the
+aggregating stage keeps changing the object concurrently while the
+downstream stage tries to observe it. In the best case it will crash
+with a `ConcurrentModificationException`, but it may also observe `null`
+or partially initialized objects in the list and a number of other bugs.
+
+Jet's `AggregateOperation` has a primitive specifically devoted to
+avoiding this problem: the
+{jet-javadoc}/aggregate/AggregateOperation.html#exportFn--[`exportFn`].
+It transforms the accumulator to a new object so the accumulator can be
+safely updated afterwards. By contrast,
+{jet-javadoc}/aggregate/AggregateOperation.html#finishFn--[`finishFn`]
+is allowed to return the accumulator itself and Jet calls it only when
+it knows the whole operation is done and the accumulator won't be
+modified again.
+
+There's another case where a data race can sneak up on you: a
+many-to-many hash-join, where you enrich an item with several items
+matching the same join key. Refer to the <<hash-join, hash-join>>
+section for more details and an example.
+
+
+**2. If you keep using the item you emitted (for reading), don't
+mutate it downstream.**
+
+There's little reason to keep reading an item after emitting it, but if
+you ever have that situation, make sure you don't mutate it in any
+downstream stage.
+
+**3. If you create a fork in the pipeline (send the output of one stage
+to several others), no stage after the fork may mutate the data.**
+
+Here's an example with a stream of `Person` items. We attach two mapping
+stages to it: one reads the name and the other modifies it. The
+resulting Jet pipeline will have a data race and behave erratically,
+sometimes seeing the original name and sometimes the modified one:
+
+[source]
+----
+include::{javasource}/Serialization.java[tag=split-and-mutate]
+----
+
+<1> Get the person's name
+<2> Modify the person's name
+
+
+== Capacity of the Concurrent Queues
+
+By default, Jet runs each internal DAG vertex, roughly equivalent to
+each step of the computation (such as `map` or `aggregate`), at maximum
+parallelism (equal to the number of CPU cores). This means that even a
+single Jet job uses quite a lot of parallel tasks. Since Jet's
+cooperative _tasklets_ are very cheap to switch between, there's almost
+no overhead from this. However, every pair of tasklets that communicate
+uses a dedicated 1-to-1 concurrent queue so the number of queues scales
+with the square of the number of CPU cores. The default queue capacity
+is 1024, which translates to 4-8 kilobytes RAM overhead per tasklet pair
+and potentially a lot of data items in flight before the queues fill up.
+
+If you experience RAM shortage on the Jet cluster, consider lowering the
+queue size. This is how you set the default queue size for the whole Jet
+cluster:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s10]
+----
+
+You can also set queue sizes individually on each Core API DAG edge.
+You must first convert your pipeline to the Core DAG, apply the
+configuration, and then submit the DAG for execution:
+
+[source]
+----
+include::{javasource}/PerformanceConsiderations.java[tag=s11]
+----

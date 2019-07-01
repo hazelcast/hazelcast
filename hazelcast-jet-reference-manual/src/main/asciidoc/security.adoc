@@ -1,0 +1,96 @@
+= Security
+
+It is possible to configure Jet to use TLS for all member to member
+and member to client communications. TLS requires the use of Jet
+Enterprise version.
+
+Once TLS is enabled on a member, all other members in the same cluster
+and all clients connecting to the cluster must also have TLS enabled.
+
+The way TLS is configured is same as how it's done in Hazelcast IMDG
+Enterprise. To configure TLS, you need a server certificate and a
+matching private key and do the necessary configuration on the member side.
+
+The following is an example configuration snippet for `hazelcast.xml`. The
+configuration must be present on all the members.
+
+[source,xml]
+----
+<network>
+    <ssl enabled="true">
+        <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+        <properties>
+            <property name="protocol">TLS</property>
+            <property name="keyStore">/opt/hazelcast.keystore</property>
+            <property name="keyStorePassword">password12345</property>
+            <property name="trustStore">/opt/hazelcast.truststore</property>
+            <property name="trustStorePassword">password12345</property>
+            <property name="keyManagerAlgorithm">SunX509</property>
+            <property name="trustManagerAlgorithm">SunX509</property>
+            <property name="mutualAuthentication">REQUIRED</property>
+        </properties>
+    </ssl>
+</network>
+----
+
+And similarly, a matching snippet must be present on the clients
+inside the `hazelcast-client.xml` file:
+
+[source,xml]
+----
+<network>
+    <ssl enabled="true">
+        <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+        <properties>
+            <property name="protocol">TLS</property>
+
+            <property name="trustStore">/opt/hazelcast-client.truststore</property>
+            <property name="trustStorePassword">secret.123456</property>
+            <property name="trustStoreType">JKS</property>
+
+            <!-- Following properties are only needed when the mutual authentication is used. -->
+            <property name="keyStore">/opt/hazelcast-client.keystore</property>
+            <property name="keyStorePassword">keystorePassword123</property>
+            <property name="keyStoreType">JKS</property>
+            <property name="mutualAuthentication">REQUIRED</property>
+        </properties>
+    </ssl>
+</network>
+----
+
+A detailed list of TLS configuration options can be found in the
+{hz-refman}#tlsssl[Hazelcast IMDG Reference Manual].
+
+== Mutual Authentication
+
+When a client connects to a node, the node can authenticate the client
+by using mutual authentication. In this mode, the client also has to
+present a certificate to the member upon connection. This requires
+some additional configuration. See the
+{hz-refman}#mutual-authentication[Mutual Authentication] section on
+the IMDG Reference Manual for further details.
+
+== OpenSSL Configuration
+
+By default Jet uses the Java implementation of SSL. For better performance,
+it is also possible to use Jet with OpenSSL instead. For configuring OpenSSL
+please refer to the {hz-refman}#integrating-openssl[Hazelcast IMDG Reference Manual].
+
+== TLS Impact on Performance
+
+TLS can have some effect on performance when running jobs, as all
+node to node communications need to be encrypted. During an aggregation
+or another partitioned operation in a job, large amounts of data might
+be transferred from one node to another.
+
+Jet makes use of <<concepts,several techniques>> that reduce the need
+for data to be transferred across the nodes, however this is sometimes unavoidable.
+When using Java SSL, the performance impact can be between 5-30% depending on how
+much network is utilized. When using OpenSSL, we measured the impact to be minimal
+regardless of the amount of network traffic. Detailed benchmarks are available
+upon request.
+
+== Remote Hazelcast Sources and Sinks
+
+Currently it's not possible to connect to remote Hazelcast sources and sinks
+using TLS. This issue will be resolved in a further patch release.

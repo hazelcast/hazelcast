@@ -1,0 +1,711 @@
+= Configuration
+
+This chapter starts with a reference table describing all the options
+to configure Hazelcast Jet.
+Then it provides the ways of configuration, i.e., programmatic, declarative
+and within Spring context.
+
+== Configuration Options
+
+The following tables list and describe all the methods and/or properties
+used to configure Hazelcast Jet, grouped
+by the features they are used for. Some of the listed options below can
+also be configured declaratively. See the
+<<declarative-configuration, Declarative Configuration section>> for an example.
+
+[[jet-instance-configuration]]
+=== Jet Instance
+
+[cols="1,5a"]
+|===
+|Configuration API Method|Description
+
+|`setCooperativeThreadCount`
+|The number of threads Jet creates in its cooperative multithreading pool.
+Its default value is
+`Runtime.getRuntime().availableProcessors()`.
+
+|`setFlowControlPeriodMs`
+|Jet uses a flow control mechanism between
+cluster members to prevent a slower vertex from getting overflowed with
+data from a faster upstream vertex. Each receiver regularly reports to
+each sender how much more data it may send over a given DAG edge. This
+method sets the duration (in milliseconds) of the interval between
+flow-control packets. Its default value is `100` milliseconds.
+
+|`setBackupCount`
+|The number of synchronous backups to configure on the
+IMap that Jet needs internally to store job metadata and snapshots. The
+maximum allowed value is 6. Its default value is `1`.
+
+|`setScaleUpDelayMillis`
+|The delay after which the auto-scaled jobs restart if a new member is added to the
+cluster. It has no effect on jobs with auto scaling disabled. Its default 
+value is `10000` milliseconds.
+
+|`setLosslessRestartEnabled`
+|Specifies whether the lossless job restart feature is enabled. With this feature,
+you can restart the whole cluster without losing the jobs and
+their state. It is implemented on top of Hazelcast IMDG's Hot Restart
+Store feature, which persists the data to disk. You need to have the Hazelcast Jet
+Enterprise edition and configure Hazelcast IMDG's Hot Restart Store to use this feature.
+Its default value is `false`, i.e., disabled.
+|===
+
+[[fault-tolerance-configuration]]
+=== Fault Tolerance
+
+[cols="1,5a"]
+|===
+|Configuration API Method|Description
+
+|`setProcessingGuarantee`
+|Processing guarantee for failures. If a cluster member leaves the cluster during
+a job execution and the job 
+is restarted automatically, it defines the semantics of at which point in the
+stream the job is resumed from.
+Available values are `EXACTLY_ONCE`, `AT_LEAST_ONCE` and `NONE`. If you choose
+one of the first two values, 
+distributed snapshotting is for the job. See the
+{jet-javadoc}/config/ProcessingGuarantee.html[Javadoc] for a detailed
+explanation. Its default value is `NONE`.
+
+|`setSnapshotIntervalMillis`
+|The interval in milliseconds between the completion of the previous snapshot and
+the start of a new one. It must be a 
+positive value and it is only relevant when the processing guarantee is set as either
+`EXACTLY_ONCE` or `AT_LEAST_ONCE`.
+Its default value is set to `10000` milliseconds.
+
+|`setAutoScaling`
+|Specifies whether Jet scales the job up or down when a member is added or removed
+from the cluster. Its default
+value is `true`, i.e., enabled.
+
+|`setSplitBrainProtection`
+|Specifies whether the split-brain protection feature is enabled. When enabled, Jet
+restarts the job after a topology
+change, only if the cluster quorum is satisfied. See the
+<<split-brain-protection, Split-Brain Protection section>>.
+|===
+
+[[performance-configuration]]
+=== Performance
+
+[cols="1,5a"]
+|===
+|Configuration API Method|Description
+
+|`setPacketSizeLimit`
+|For a distributed edge, data is sent to a remote member via Hazelcast network packets.
+Each packet
+is dedicated to the data of a single edge, but may contain any number of data items.
+This setting
+limits the size of the packet in bytes. Packets should be large enough to drown out any
+fixed 
+overheads, but small enough to allow good interleaving with other packets. Its default
+value is `16384`.
+
+|`setQueueSize`
+|The capacity of processor-to-processor concurrent queues. The value is rounded upwards
+to the
+next power of 2. Its default value is `1024`.
+
+|`setReceiveWindowMultiplier`
+|The scaling factor used by the adaptive receive window sizing function.
+Its default value is `3`.
+|===
+
+[[security-configuration]]
+=== Security
+
+[cols="1,5a"]
+|===
+|Configuration Element|Description
+
+|`ssl`
+|Allows you to configure the following properties to configure TLS for all member 
+to member and member to client communications:
+
+* `keyStore`: Path of your keystore file.
+* `keyStorePassword`: Password to access the key from your keystore file.
+* `keyManagerAlgorithm`: Name of the algorithm based on which the authentication 
+keys are provided.
+* `keyStoreType`: Type of the keystore. Its default value is `JKS`. Another commonly 
+used type is the `PKCS12`. Available keystore/truststore types depend on your Operating 
+system and the Java runtime.
+* `trustStore`: Path of your truststore file. The file truststore is a keystore file 
+that contains a collection of certificates trusted by your application.
+* `trustStorePassword`: Password to unlock the truststore file.
+* `trustManagerAlgorithm`: Name of the algorithm based on which the trust managers are 
+provided.
+* `trustStoreType`: Type of the truststore. Its default value is `JKS`. Another commonly 
+used type is the `PKCS12`. Available keystore/truststore types depend on your Operating 
+system and the Java runtime.
+* `mutualAuthentication`: Mutual authentication configuration. It's empty by default 
+which means the client side of connection is not authenticated. See the 
+{hz-refman}#mutual-authentication[Mutual Authentication]
+section in the Hazelcast IMDG Reference Manual for further details.
+* `ciphersuites`: Comma-separated list of cipher suite names allowed to be used. Its 
+default value contains all the supported suites in your Java runtime.
+* `protocol`: Name of the algorithm which is used in your TLS/SSL. Its default value is `TLS`.
+When you use the default value, your application chooses the TLS version according to your
+Java version. So, we recommend you to provide TLS with its version information, e.g., `TLSv1.3`.
+
+You need to have the Hazelcast Jet
+Enterprise edition to use this feature. See the <<security, Security chapter>> for
+more information.
+|===
+
+
+[[monitoring-configuration]]
+=== Monitoring
+
+[cols="1,5a"]
+|===
+|Configuration Method/Property|Description
+
+|`hazelcast.logging.type`
+|The predefined types of built-in logging adapters. Available values are `jdk`, `log4j`,
+`log4j2`, `slf4j` and `none`. See the <<configure-logging, Configure Logging section>>.
+
+|`MetricsConfig`
+| Allows you to provide the following configuration options for metrics collection: 
+
+* `setJmxEnabled`: Specifies whether the metrics are exposed through JMX. Its default value 
+is `true`, i.e., enabled.
+* `setRetentionSeconds`: Duration in seconds for which the metrics are retained on the
+Jet instance. Its default value is `5` seconds.
+* `setCollectionIntervalSeconds`: Metrics collections interval in seconds. Its default value
+is `5` seconds.
+* `setMetricsForDataStructuresEnabled`: Specifies whether the data structure statistics are
+included in the metrics. Its default value is `false`, i.e., disabled.
+
+See {jet-javadoc}/config/MetricsConfig.html[Javadoc] for more information.
+
+2+| You can also use Hazelcast Jet Management Center to monitor your Jet clusters. See the
+{jet-mc-refman}[Hazelcast Jet Management Center Reference Manual] for more information.
+|===
+
+== Ways of Configuration
+
+You can configure Hazelcast Jet either programmatically or
+declaratively (XML or YAML).
+
+=== Programmatic Configuration
+
+Programmatic configuration is the simplest way to configure Jet. You
+instantiate a {jet-javadoc}/config/JetConfig.html[`JetConfig`] and set
+the desired properties. For example, the following will configure Jet to
+use only two threads in its _cooperative multithreading_ pool:
+
+[source]
+----
+include::{javasource}/Configuration.java[tag=s1]
+----
+
+If you want to specify your own configuration file to create `JetConfig`,
+Hazelcast Jet supports several ways including filesystem, classpath,
+InputStream and in-memory string.
+
+Building JetConfig from the XML declarative configuration:
+
+- `JetConfig cfg = JetConfig.loadXmlFromStream(inputStream);`
+
+- `JetConfig cfg = JetConfig.loadFromClasspath(classloader, xmlFileName);`
+
+- `JetConfig cfg = JetConfig.loadFromFile(configFile);`
+
+- `JetConfig cfg = JetConfig.loadXmlFromString(xml);`
+
+Building JetConfig from the YAML declarative JetConfiguration:
+
+- `JetConfig cfg = JetConfig.loadYamlFromStream(inputStream);`
+
+- `JetConfig cfg = JetConfig.loadFromClasspath(classloader, yamlFileName);`
+
+- `JetConfig cfg = JetConfig.loadFromFile(configFile);`
+
+- `JetConfig cfg = JetConfig.loadYamlFromString(yaml);`
+
+
+=== Declarative Configuration
+
+If you don't pass an explicit `JetConfig` object when constructing a Jet
+instance, it will perform the following lookup procedure:
+
+. Read the system property `hazelcast.jet.config`. If it starts with
+`classpath:`, treat it as a classpath resource, otherwise it's a file
+pathname. If it's defined but Jet can't find the file it specifies,
+startup fails.
+. Look for `hazelcast-jet.xml` in the working directory.
+. Look for `hazelcast-jet.xml` in the classpath.
+. Look for `hazelcast-jet.yaml` in the working directory.
+. Look for `hazelcast-jet.yaml` in the classpath.
+. Load the default XML configuration packaged in Jet's JAR.
+
+NOTE: The YAML files need to have a `.yaml` or `.yml` extension if
+they are passed in via `hazelcast.jet.config` property.
+
+An example `hazelcast-jet.xml` is shown below :
+
+[source,xml]
+----
+<hazelcast-jet>
+    <instance>
+       <cooperative-thread-count>8</cooperative-thread-count>
+       <flow-control-period>100</flow-control-period>
+       <temp-dir>/var/tmp/jet</temp-dir>
+       <backup-count>1</backup-count>
+       <scale-up-delay-millis>10000</scale-up-delay-millis>
+    </instance>
+    <properties>
+       <property name="custom.property">custom property</property>
+    </properties>
+    <edge-defaults>
+       <queue-size>1024</queue-size>
+       <packet-size-limit>16384</packet-size-limit>
+       <receive-window-multiplier>3</receive-window-multiplier>
+    </edge-defaults>
+    <metrics>
+       <retention-seconds>5</retention-seconds>
+       <collection-interval-seconds>5</collection-interval-seconds>
+       <metrics-for-data-structures>false</metrics-for-data-structures>
+    </metrics>
+</hazelcast-jet>
+----
+
+The identical part of the configuration extracted from `hazelcast-jet.yaml` 
+is shown as below:
+
+[source,yaml]
+----
+hazelcast-jet:
+  instance:
+    cooperative-thread-count: 8
+    flow-control-period: 100
+    backup-count: 1
+    scale-up-delay-millis: 10000
+    lossless-restart-enabled: false
+  edge-defaults:
+    queue-size: 1024
+    packet-size-limit: 16384
+    receive-window-multiplier: 3
+  metrics:
+    enabled: true
+    jmx-enabled: true
+    collection-interval-seconds: 5
+    retention-seconds: 5
+    metrics-for-data-structures: false
+----
+
+==== Composing Declarative Configuration
+
+Declarative configurations (either XML or YAML) have the support for 
+composing multiple declarative configuration snippets into a single one. 
+
+In order to compose a declarative configuration, you can `import` 
+different declarative configuration files. 
+
+Let’s say you want to compose the declarative configuration for 
+Hazelcast Jet out of two XML configurations: `development-metrics-config.xml`
+and `development-instance-config.xml`. These two configurations are shown
+below.
+
+`development-metrics-config.xml`:
+
+[source,xml]
+----
+<hazelcast-jet>
+    <metrics enabled="true" jmxEnabled="true">
+        <retention-seconds>5</retention-seconds>
+        <collection-interval-seconds>5</collection-interval-seconds>
+        <metrics-for-data-structures>true</metrics-for-data-structures>
+    </metrics>
+</hazelcast-jet>
+----
+
+`development-instance-config.xml`:
+
+[source,xml]
+----
+<hazelcast-jet>
+    <instance>
+        <flow-control-period>100</flow-control-period>
+        <backup-count>1</backup-count>
+        <scale-up-delay-millis>10000</scale-up-delay-millis>
+        <lossless-restart-enabled>false</lossless-restart-enabled>
+    </instance>
+</hazelcast-jet>
+----
+
+To get your example Hazelcast Jet declarative configuration out of the 
+above two, use the `<import/>` element as shown below.
+
+[source,xml]
+----
+<hazelcast-jet>
+    <import resource="development-metrics-config.xml"/>
+    <import resource="development-instance-config.xml"/>
+</hazelcast-jet>
+----
+
+The above example using the YAML configuration files looks like the following:
+
+`development-metrics-config.yaml`:
+
+[source,yaml]
+----
+hazelcast-jet:
+   metrics:
+      enabled: true
+      jmx-enabled: true
+      collection-interval-seconds: 5
+      retention-seconds: 5
+      metrics-for-data-structures: true
+----
+
+`development-instance-config.yaml`:
+
+[source,yaml]
+----
+hazelcast-jet:
+  instance:
+    flow-control-period: 100
+    backup-count: 1
+    scale-up-delay-millis: 10000
+    lossless-restart-enabled: false
+----
+
+Composing the above two YAML configuration files needs them to be imported as shown below.
+
+[source,yaml]
+----
+hazelcast-jet:
+  import:
+    - development-metrics-config.yaml
+    - development-instance-config.yaml
+----
+
+NOTE: Use the `<import/>` element and `import` mapping on top level of 
+the XML and YAML hierarchies.
+
+Hazelcast Jet and Hazelcast IMDG share the same syntax for declarative
+configuration composition. For more examples on importing the resources 
+from the classpath and file system, or resources with variables in their 
+names, refer to the {hz-refman}#composing-declarative-configuration[relevant section] 
+in the Hazelcast IMDG Reference Manual.
+
+=== Using Variables
+In your Hazelcast Jet declarative configuration, you can use variables 
+to set the values of the elements. This is valid when you set a system 
+property programmatically or use the command line interface. You can
+use a variable in the declarative configuration to access the values of
+the system properties you set.
+
+For example, see the following command that sets two system properties.
+
+```
+-Dcooperative.thread.count=16
+```
+
+Let's get the values of these system properties in the declarative 
+configuration of Hazelcast Jet, as shown below.
+
+In the XML configuration:
+
+[source,xml]
+----
+<hazelcast-jet>
+    <instance>
+       <cooperative-thread-count>${cooperative.thread.count}</cooperative-thread-count>
+    </instance>
+</hazelcast-jet>
+----
+
+In the YAML configuration:
+
+[source,yaml]
+----
+hazelcast-jet:
+  instance:
+    cooperative-thread-count: ${cooperative.thread.count}
+----
+
+If you do not want to rely on the system properties, you can use the 
+`XmlJetConfigBuilder` or `YamlJetConfigBuilder` and explicitly set a 
+`Properties` instance, as shown below.
+
+[source,java]
+----
+Properties properties = new Properties();
+
+// fill the properties, e.g., from database/LDAP, etc.
+
+XmlJetConfigBuilder builder = new XmlJetConfigBuilder();
+builder.setProperties(properties);
+JetConfig config = builder.build();
+JetInstance hz = Jet.newJetInstance(config);
+----
+
+=== Variable Replacers
+
+Hazelcast Jet supports variable replacers which are used to replace 
+custom strings during loading the configuration.
+
+Hazelcast Jet and Hazelcast IMDG share the same syntax for variable
+replacers. You can configure your variable replacers in the Hazelcast Jet 
+configuration via XML or YAML. Please see the {hz-refman}#variable-replacers[Variable Replacers section]
+in the Hazelcast IMDG Reference Manual for more information and examples
+on the variable replacers.
+
+== Configure the Underlying Hazelcast Instance
+
+Each Jet member or client has its underlying Hazelcast member or client.
+Please refer to the
+{hz-refman}#understanding-configuration[Hazelcast IMDG Reference Manual]
+for specific configuration options for Hazelcast IMDG.
+
+=== Programmatic
+
+You can configure the underlying Hazelcast IMDG member as follows:
+
+[source]
+----
+include::{javasource}/Configuration.java[tag=s2]
+----
+
+Similarly, you can also configure the underlying Hazelcast client:
+
+[source]
+----
+include::{javasource}/Configuration.java[tag=s3]
+----
+
+=== Declarative
+
+Hazelcast IMDG can also be configured declaratively. Please refer to the
+{hz-refman}#configuring-declaratively[Hazelcast IMDG Reference Manual]
+for information on how to do this.
+
+== Spring Integration
+
+You can configure and start a Hazelcast Jet instance as a component in
+the Spring Application Context. You can use the plain `bean` element
+and define individual properties on a `JetConfig` instance, but Jet
+provides its own schema-based configuration which will make this much
+less verbose.
+
+=== Approach 1: Use the Plain `bean` Element
+
+You can declare Hazelcast Jet objects using the default Spring beans
+namespace. Here is an example for a Hazelcast Jet Instance declaration:
+
+[source, xml]
+----
+<bean id="instance" class="com.hazelcast.jet.Jet" factory-method="newJetInstance">
+    <constructor-arg>
+        <bean class="com.hazelcast.jet.config.JetConfig">
+            <property name="hazelcastConfig">
+                <bean class="com.hazelcast.config.Config">
+                    <!-- ... -->
+                </bean>
+            </property>
+            <property name="instanceConfig">
+                <bean class="com.hazelcast.jet.config.InstanceConfig">
+                    <property name="cooperativeThreadCount" value="2"/>
+                </bean>
+            </property>
+            <property name="defaultEdgeConfig">
+                <bean class="com.hazelcast.jet.config.EdgeConfig">
+                    <property name="queueSize" value="2048"/>
+                </bean>
+            </property>
+            <property name="properties">
+                <props>
+                    <prop key="foo">bar</prop>
+                </props>
+            </property>
+        </bean>
+    </constructor-arg>
+</bean>
+
+<bean id="map" factory-bean="instance" factory-method="getMap">
+    <constructor-arg value="my-map"/>
+</bean>
+----
+
+=== Approach 2: Use `jet:instance`
+
+Hazelcast Jet provides its own Spring config schema. Add the namespace
+declaration `xmlns:jet=“http://www.hazelcast.com/schema/jet-spring”`
+to the `beans` element and then use the *_jet_* namespace prefix.
+Make sure you added `hazelcast-jet-spring.jar` to the classpath.
+
+Here's how your namespace and schema instance declarations may look:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jet="http://www.hazelcast.com/schema/jet-spring"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.10.xsd
+        http://www.hazelcast.com/schema/jet-spring
+        http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-0.6.xsd">
+        <!-- ... -->
+ </beans>
+----
+
+==== Configuring the Hazelcast Jet Instance
+
+[source,xml]
+----
+<jet:instance id="instance">
+    <hz:config>
+        <hz:spring-aware/>
+        <hz:group name="jet"/>
+        <hz:network port="5701" port-auto-increment="false">
+            <hz:join>
+                <hz:multicast enabled="false"/>
+                <hz:tcp-ip enabled="true">
+                    <hz:member>127.0.0.1:5701</hz:member>
+                </hz:tcp-ip>
+            </hz:join>
+        </hz:network>
+        <hz:map name="map" backup-count="3">
+        </hz:map>
+    </hz:config>
+    <jet:instance-config cooperative-thread-Count="2"/>
+    <jet:default-edge-config queue-size="2048"/>
+    <jet:properties>
+        <hz:property name="foo">bar</hz:property>
+    </jet:properties>
+</jet:instance>
+----
+
+==== Configure a Jet Client
+
+[source,xml]
+----
+<jet:client id="jet-client">
+    <jet:group name="jet"/>
+    <jet:network>
+        <hz:member>127.0.0.1:5701</hz:member>
+    </jet:network>
+    <jet:spring-aware/>
+</jet:client>
+----
+
+==== Additional Bean Types Supported by the Jet Namespace
+
+You can obtain the underlying `HazelcastInstance` from the Jet instance
+as a bean and use it to obtain these Hazelcast IMDG beans:
+
+ - map
+ - list
+ - multiMap
+ - replicatedMap
+ - queue
+ - topic
+ - set
+ - executorService
+ - idGenerator
+ - atomicLong
+ - atomicReference
+ - semaphore
+ - countDownLatch
+ - lock
+
+Here are short examples for each of them:
+
+[source,xml]
+----
+<jet:hazelcast jet-instance-ref="jet-instance" id="hazelcast-instance"/>
+
+<jet:map instance-ref="jet-instance" name="my-map" id="my-map-bean"/>
+
+<jet:list instance-ref="jet-client" name="my-list" id="my-list-bean"/>
+
+<hz:multiMap id="multiMap" instance-ref="hazelcast-instance" name="my-multiMap"/>
+
+<hz:replicatedMap id="replicatedMap" instance-ref="hazelcast-instance" name="my-replicatedMap"/>
+
+<hz:queue id="queue" instance-ref="hazelcast-instance" name="my-queue"/>
+
+<hz:topic id="topic" instance-ref="hazelcast-instance" name="my-topic"/>
+
+<hz:set id="set" instance-ref="hazelcast-instance" name="my-set"/>
+
+<hz:executorService id="executorService" instance-ref="hazelcast-instance" name="my-executorService"/>
+
+<hz:idGenerator id="idGenerator" instance-ref="hazelcast-instance" name="my-idGenerator"/>
+
+<hz:atomicLong id="atomicLong" instance-ref="hazelcast-instance" name="my-atomicLong"/>
+
+<hz:atomicReference id="atomicReference" instance-ref="hazelcast-instance" name="my-atomicReference"/>
+
+<hz:semaphore id="semaphore" instance-ref="hazelcast-instance" name="my-semaphore"/>
+
+<hz:countDownLatch id="countDownLatch" instance-ref="hazelcast-instance" name="my-countDownLatch"/>
+
+<hz:lock id="lock" instance-ref="hazelcast-instance" name="my-lock"/>
+----
+
+Hazelcast Jet also supports _lazy-init_, _scope_ and _depends-on_ bean
+attributes.
+
+[source,xml]
+----
+<jet:instance id="instance" lazy-init="true" scope="singleton">
+<!-- ... -->
+</jet:instance>
+<jet:client id="client" scope="prototype" depends-on="instance">
+<!-- ... -->
+</jet:client>
+----
+
+=== Annotation-Based Configuration
+
+Annotation-Based Configuration does not require any XML definition.
+Simply create a configuration class annotated with `@Configuration` and
+provide a `JetInstance` as a bean by annotating the method with `@Bean`.
+
+[source,java]
+----
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public JetInstance instance() {
+        return Jet.newJetInstance();
+    }
+}
+----
+
+=== Enabling SpringAware Objects
+
+Hazelcast IMDG has a special annotation, `@SpringAware`, which
+enables you to initialize the object with spring context.
+
+When a job is submitted to the cluster, processors are created
+by Hazelcast Jet on each member. By marking your processor with
+`@SpringAware`, you make spring context accessible to your
+processor which gives you the ability:
+
+* to apply bean properties
+* to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`
+* to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`
+
+You need to configure Hazelcast Jet with `<hz:spring-aware/>`
+tag or set `SpringManagedContext` programmatically to enable
+spring-aware objects. Code samples for
+{jet-samples}/integration/spring/src/main/java/jet/spring/XmlConfigurationWithSchemaSample.java[declarative]
+and
+{jet-samples}/integration/spring/src/main/java/jet/spring/AnnotationBasedConfigurationSample.java[annotation-based]
+configurations are available at our Code Samples repo.
