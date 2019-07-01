@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.ExceptionUtil;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -32,8 +31,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import static org.junit.Assert.fail;
 
 public abstract class AbstractScheduledExecutorNullTest extends HazelcastTestSupport {
 
@@ -49,9 +46,6 @@ public abstract class AbstractScheduledExecutorNullTest extends HazelcastTestSup
         IScheduledExecutorService e = getDriver().getScheduledExecutorService(randomMapName());
         IScheduledFuture<Object> f = e.getScheduledFuture(new ScheduledTaskHandlerImpl());
         Map<Member, List<IScheduledFuture<Object>>> f2 = e.getAllScheduledFutures();
-
-        System.out.println();
-
 
         assertThrowsNPE(s -> s.schedule((Runnable) null, 1, sampleTimeUnit));
         assertThrowsNPE(s -> s.schedule(sampleRunnable, 1, null));
@@ -110,18 +104,8 @@ public abstract class AbstractScheduledExecutorNullTest extends HazelcastTestSup
     }
 
     private void assertThrowsNPE(ConsumerEx<IScheduledExecutorService> method) {
-        assertThrows(NullPointerException.class, method);
-    }
-
-    private void assertThrows(Class<? extends Exception> expectedExceptionClass,
-                              ConsumerEx<IScheduledExecutorService> method) {
-        try {
-            method.accept(getDriver().getScheduledExecutorService(randomName()));
-            fail("Expected " + expectedExceptionClass
-                    + " but there was no exception!");
-        } catch (Exception e) {
-            Assert.assertSame(expectedExceptionClass, e.getClass());
-        }
+        IScheduledExecutorService executorService = getDriver().getScheduledExecutorService(randomName());
+        assertThrows(NullPointerException.class, () -> method.accept(executorService));
     }
 
     @FunctionalInterface

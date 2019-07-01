@@ -132,8 +132,8 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleAtFixedRate(@Nonnull Runnable command, long initialDelay,
-                                                   long period, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleAtFixedRate(@Nonnull Runnable command, long initialDelay,
+                                                       long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
         initializeManagedContext(command);
@@ -150,14 +150,15 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnMember(@Nonnull Runnable command,
-                                                @Nonnull Member member,
-                                                long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnMember(@Nonnull Runnable command,
+                                                    @Nonnull Member member,
+                                                    long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
         initializeManagedContext(command);
 
-        return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
+        Map<Member, IScheduledFuture<V>> futureMap = scheduleOnMembers(command, Collections.singleton(member), delay, unit);
+        return futureMap.get(member);
     }
 
     @Nonnull
@@ -174,26 +175,28 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnMemberAtFixedRate(@Nonnull Runnable command,
-                                                           @Nonnull Member member,
-                                                           long initialDelay, long period, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnMemberAtFixedRate(@Nonnull Runnable command,
+                                                               @Nonnull Member member,
+                                                               long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
         initializeManagedContext(command);
 
-        return scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit).get(member);
+        Map<Member, IScheduledFuture<V>> futureMap =
+                scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit);
+        return futureMap.get(member);
     }
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwner(@Nonnull Runnable command,
-                                                  @Nonnull Object key,
-                                                  long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnKeyOwner(@Nonnull Runnable command,
+                                                      @Nonnull Object key,
+                                                      long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
         initializeManagedContext(command);
 
-        ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
+        ScheduledRunnableAdapter<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
     }
 
@@ -216,9 +219,9 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(@Nonnull Runnable command,
-                                                             @Nonnull Object key,
-                                                             long initialDelay, long period, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnKeyOwnerAtFixedRate(@Nonnull Runnable command,
+                                                                 @Nonnull Object key,
+                                                                 long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
@@ -326,7 +329,7 @@ public class ScheduledExecutorServiceProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> getScheduledFuture(@Nonnull ScheduledTaskHandler handler) {
+    public <V> IScheduledFuture<V> getScheduledFuture(@Nonnull ScheduledTaskHandler handler) {
         checkNotNull(handler, "Handler is null");
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler, this);
         initializeManagedContext(proxy);

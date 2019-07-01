@@ -100,7 +100,7 @@ public class ClientScheduledExecutorProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
         Callable adapter = createScheduledRunnableAdapter(command);
         return schedule(adapter, delay, unit);
     }
@@ -119,8 +119,8 @@ public class ClientScheduledExecutorProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleAtFixedRate(@Nonnull Runnable command, long initialDelay, long period,
-                                                   @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleAtFixedRate(@Nonnull Runnable command, long initialDelay, long period,
+                                                       @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
 
@@ -135,11 +135,13 @@ public class ClientScheduledExecutorProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnMember(@Nonnull Runnable command,
-                                                @Nonnull Member member,
-                                                long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnMember(@Nonnull Runnable command,
+                                                    @Nonnull Member member,
+                                                    long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
-        return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
+        Map<Member, IScheduledFuture<V>> futureMap =
+                scheduleOnMembers(command, Collections.singleton(member), delay, unit);
+        return futureMap.get(member);
     }
 
     @Nonnull
@@ -153,18 +155,20 @@ public class ClientScheduledExecutorProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnMemberAtFixedRate(@Nonnull Runnable command,
-                                                           @Nonnull Member member,
-                                                           long initialDelay, long period, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnMemberAtFixedRate(@Nonnull Runnable command,
+                                                               @Nonnull Member member,
+                                                               long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
-        return scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit).get(member);
+        Map<Member, IScheduledFuture<V>> futureMap =
+                scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit);
+        return futureMap.get(member);
     }
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwner(@Nonnull Runnable command,
-                                                  @Nonnull Object key,
-                                                  long delay, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnKeyOwner(@Nonnull Runnable command,
+                                                      @Nonnull Object key,
+                                                      long delay, @Nonnull TimeUnit unit) {
         Callable adapter = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(adapter, key, delay, unit);
     }
@@ -187,9 +191,9 @@ public class ClientScheduledExecutorProxy
 
     @Nonnull
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(@Nonnull Runnable command,
-                                                             @Nonnull Object key,
-                                                             long initialDelay, long period, @Nonnull TimeUnit unit) {
+    public <V> IScheduledFuture<V> scheduleOnKeyOwnerAtFixedRate(@Nonnull Runnable command,
+                                                                 @Nonnull Object key,
+                                                                 long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
