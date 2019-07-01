@@ -17,34 +17,24 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.QueryConfig;
-import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
-import com.hazelcast.sql.impl.physical.FragmentPreparePhysicalNodeVisitor;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
-import com.hazelcast.sql.impl.physical.RootPhysicalNode;
-import com.hazelcast.sql.impl.worker.control.ControlThreadPool;
-import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
-import com.hazelcast.sql.impl.worker.data.BatchDataTask;
-import com.hazelcast.sql.impl.worker.data.DataThreadPool;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.worker.control.ControlThreadPool;
+import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
+import com.hazelcast.sql.impl.worker.data.BatchDataTask;
+import com.hazelcast.sql.impl.worker.data.DataThreadPool;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -92,7 +82,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     @Override
     public SqlCursor query(String sql, Object... args) {
         // TODO: Implement plan cache.
-        PhysicalPlan plan = optimizer.prepare(sql);
+        QueryPlan plan = optimizer.prepare(sql);
 
         List<Object> args0;
 
@@ -116,7 +106,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
      * @param args Arguments.
      * @return Result.
      */
-    private QueryHandle execute0(PhysicalPlan plan, List<Object> args) {
+    private QueryHandle execute0(QueryPlan plan, List<Object> args) {
         if (args == null)
             args = Collections.emptyList();
 
@@ -131,13 +121,18 @@ public class SqlServiceImpl implements SqlService, ManagedService {
             // TODO: Adjustable batch size!
             QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
 
-            QueryExecuteOperation op = prepareLocalOperation(queryId, plan, args, consumer);
+            QueryExecuteOperation op = new QueryExecuteOperation(
+                queryId,
+                plan.getPartitionMap(),
+                plan.getFragments(),
+                args,
+                consumer
+            );
 
-            // TODO: Again: race!
+            // TODO: Execute only on partition members (get from plan).
             for (Member member : nodeEngine.getClusterService().getMembers()) {
                 // TODO: Execute local operation directly.
                 // TODO: Execute remote operation without generic pool (PacketDispatcher?)
-
                 nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
             }
 
@@ -146,44 +141,6 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         finally {
             busyLock.readLock().unlock();
         }
-    }
-
-    private QueryExecuteOperation prepareLocalOperation(QueryId queryId, PhysicalPlan plan, List<Object> args,
-        QueryResultConsumer rootConsumer) {
-        Map<String, PartitionIdSet> partitionMap = preparePartitionMapping();
-
-        List<QueryFragment> fragments = new ArrayList<>(plan.getNodes().size()); // TODO: Null safery
-
-        for (PhysicalNode node : plan.getNodes())
-            fragments.add(fragmentFromNode(node));
-
-        return new QueryExecuteOperation(queryId, partitionMap, fragments, args, rootConsumer);
-    }
-
-    // TODO: Move to Calcite module.
-    private QueryFragment fragmentFromNode(PhysicalNode node) {
-        FragmentPreparePhysicalNodeVisitor visitor = new FragmentPreparePhysicalNodeVisitor();
-
-        node.visit(visitor);
-
-        // TODO: Race wrt to partition mapping, and to other fragments. Should be collected only once.
-        Collection<Member> members = node instanceof RootPhysicalNode ?
-            Collections.singletonList(nodeEngine.getLocalMember()) :
-            nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
-
-        TreeSet<String> memberIds = new TreeSet<>();
-
-        for (Member member : members)
-            memberIds.add(member.getUuid());
-
-        // TODO: Support parallelism: https://github.com/hazelcast/hazelcast/issues/15229
-        return new QueryFragment(
-            node,
-            visitor.getOutboundEdge(),
-            visitor.getInboundEdges(),
-            memberIds,
-            1
-        );
     }
 
     public void onQueryExecuteRequest(ExecuteControlTask task) {
@@ -212,31 +169,6 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     public void shutdown(boolean terminate) {
         dataThreadPool.shutdown();
         controlThreadPool.shutdown();
-    }
-
-    /**
-     * Prepare current partition mapping.
-     *
-     * @return Partition mapping.
-     */
-    private Map<String, PartitionIdSet> preparePartitionMapping() {
-        // TODO: There is a race between getting current partition distribution and getting the list of members
-        // TODO: during Node -> Fragment mapping. Need to make it atomic somehow.
-
-        // TODO: Avoid re-calc if there were no migrations in between.
-        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
-
-        int partCnt = parts.size();
-
-        Map<String, PartitionIdSet> res = new HashMap<>();
-
-        for (Partition part : parts) {
-            String ownerId = part.getOwner().getUuid();
-
-            res.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
-        }
-
-        return res;
     }
 
     public NodeEngine getNodeEngine() {

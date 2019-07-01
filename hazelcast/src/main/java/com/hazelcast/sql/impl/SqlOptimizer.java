@@ -26,5 +26,5 @@ public interface SqlOptimizer {
      * @param sql SQL.
      * @return Executable plan.
      */
-    PhysicalPlan prepare(String sql);
+    QueryPlan prepare(String sql);
 }

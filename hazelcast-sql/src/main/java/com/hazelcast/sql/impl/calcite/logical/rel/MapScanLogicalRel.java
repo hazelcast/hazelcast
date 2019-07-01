@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -41,10 +40,5 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
     @Override
     public RelDataType deriveRowType() {
         return rowType;
-    }
-
-    @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        visitor.visitTableScan(this);
     }
 }

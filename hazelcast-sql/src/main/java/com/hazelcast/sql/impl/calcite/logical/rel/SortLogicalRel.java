@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
@@ -25,15 +24,6 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rex.RexNode;
 
 public class SortLogicalRel extends Sort implements LogicalRel {
-    public SortLogicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode child,
-        RelCollation collation
-    ) {
-        super(cluster, traits, child, collation);
-    }
-
     public SortLogicalRel(
         RelOptCluster cluster,
         RelTraitSet traits,
@@ -48,12 +38,5 @@ public class SortLogicalRel extends Sort implements LogicalRel {
     @Override
     public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
         return new SortLogicalRel(getCluster(), traitSet, input, collation, offset, fetch);
-    }
-
-    @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        ((LogicalRel)getInput()).visitForPlan(visitor);
-
-        visitor.visitSort(this);
     }
 }

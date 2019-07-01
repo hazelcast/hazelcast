@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -40,12 +39,5 @@ public class ProjectLogicalRel extends Project implements LogicalRel {
     @Override
     public Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
         return new ProjectLogicalRel(getCluster(), traitSet, input, exps, rowType);
-    }
-
-    @Override
-    public void visitForPlan(SqlCalcitePlanVisitor visitor) {
-        ((LogicalRel)getInput()).visitForPlan(visitor);
-
-        visitor.visitProject(this);
     }
 }

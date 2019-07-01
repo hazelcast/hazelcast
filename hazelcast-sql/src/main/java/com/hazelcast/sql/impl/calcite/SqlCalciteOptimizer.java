@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.sql.impl.PhysicalPlan;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
@@ -103,7 +102,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
     }
 
     @Override
-    public PhysicalPlan prepare(String sql) {
+    public QueryPlan prepare(String sql) {
         // 1. Prepare context.
         // TODO: Cache as much as possible.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
@@ -126,14 +125,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
 
         // 6. Create plan.
-        QueryPlan plan = doCreatePlan(physicalRel);
-
-        // 6. Convert to executable plan.
-        SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
-
-        logicalRel.visitForPlan(planVisitor);
-
-        return planVisitor.getPlan();
+        return doCreatePlan(physicalRel);
     }
 
     private CalciteConnectionConfig prepareConfig() {

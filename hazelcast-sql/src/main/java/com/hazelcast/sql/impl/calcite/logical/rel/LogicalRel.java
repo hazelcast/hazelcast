@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalcitePlanVisitor;
 import com.hazelcast.sql.impl.calcite.SqlCalciteRelNode;
 
 /**
  * Marker interface for logical relations.
  */
 public interface LogicalRel extends SqlCalciteRelNode {
-    void visitForPlan(SqlCalcitePlanVisitor visitor);
+    // No-op.
 }

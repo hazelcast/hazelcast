@@ -21,7 +21,7 @@ package com.hazelcast.sql.impl;
  */
 public class SqlNoopOptimizer implements SqlOptimizer {
     @Override
-    public PhysicalPlan prepare(String sql) {
+    public QueryPlan prepare(String sql) {
         // TODO: Proper exception type and error message.
         throw new UnsupportedOperationException("Cannot execute SQL query because hazelcast-sql module is not " +
             "in the classpath.");
