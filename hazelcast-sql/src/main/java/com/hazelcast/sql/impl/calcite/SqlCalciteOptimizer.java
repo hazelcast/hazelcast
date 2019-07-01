@@ -19,8 +19,11 @@ package com.hazelcast.sql.impl.calcite;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.PhysicalPlan;
+import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
@@ -37,6 +40,7 @@ import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.Person;
+import com.hazelcast.util.collection.PartitionIdSet;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -74,8 +78,14 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Calcite-based SQL optimizer.
@@ -114,6 +124,9 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
 
         // 5. Perform physical cost-based optimization.
         PhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
+
+        // 6. Create plan.
+        QueryPlan plan = doCreatePlan(physicalRel);
 
         // 6. Convert to executable plan.
         SqlCalcitePlanVisitor planVisitor = new SqlCalcitePlanVisitor();
@@ -293,5 +306,39 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         );
 
         return (PhysicalRel)res;
+    }
+
+    /**
+     * Create plan from physical rel.
+     *
+     * @param rel Rel.
+     * @return Plan.
+     */
+    private QueryPlan doCreatePlan(PhysicalRel rel) {
+        // Get partition mapping.
+        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
+
+        int partCnt = parts.size();
+
+        Map<String, PartitionIdSet> partMap = new HashMap<>();
+
+        for (Partition part : parts) {
+            String ownerId = part.getOwner().getUuid();
+
+            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
+        }
+
+        // Prepare list of all nodes and current node.
+        Set<String> partMemberIds = new HashSet<>(partMap.keySet());
+        String localMemberId = nodeEngine.getLocalMember().getUuid();
+
+        // Create the plan.
+        SqlCalcitePlanCreateVisitor visitor = new SqlCalcitePlanCreateVisitor(partMemberIds, localMemberId);
+
+        rel.visit(visitor);
+
+        List<QueryFragment> fragments = visitor.getFragments();
+
+        return new QueryPlan(fragments, partMap);
     }
 }
