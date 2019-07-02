@@ -64,7 +64,6 @@ public class ReceiveSortMergeExec extends AbstractExec {
         stripes = new List[inbox.getStripeCount()];
         stripesDone = new boolean[inbox.getStripeCount()];
 
-        // TODO TODO: Avoid wrapping into SortKey.
         comparator = new SortKeyComparator(ascs);
     }
 

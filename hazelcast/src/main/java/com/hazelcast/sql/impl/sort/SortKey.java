@@ -23,7 +23,6 @@ import java.util.List;
  */
 public class SortKey {
     /** The key */
-    // TODO TODO: Optimize for single-valued and two-valued scenarios.
     private final List<Object> key;
 
     /** Index to make rows unique. */

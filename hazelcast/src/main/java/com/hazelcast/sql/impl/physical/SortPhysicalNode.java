@@ -31,7 +31,6 @@ public class SortPhysicalNode implements PhysicalNode {
     private List<Expression> expressions;
 
     /** Sort orders. */
-    // TODO TODO: Fix collation (nulls first-last).
     private List<Boolean> ascs;
 
     public SortPhysicalNode() {

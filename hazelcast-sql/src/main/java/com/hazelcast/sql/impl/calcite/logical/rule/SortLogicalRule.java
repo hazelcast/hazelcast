@@ -39,7 +39,6 @@ public class SortLogicalRule extends RelOptRule {
 
     @Override
     public boolean matches(RelOptRuleCall call) {
-        // TODO: Sort with LIMIT/OFFSET will require different treatment>
         return super.matches(call);
     }
 
