@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.TestEntryStore;
 
 import java.util.Map;

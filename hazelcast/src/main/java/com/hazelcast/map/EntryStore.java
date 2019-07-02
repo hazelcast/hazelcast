@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 
 /**
  * This is an extension to {@link MapStore}. Implementing classes can
