@@ -262,6 +262,15 @@ blockquote, blockquote p { line-height: 1.5; color: #666666; }
   h2 { font-size: 1.5em; }
   h3, #toctitle, .sidebarblock > .content > .title { font-size: 1.125em; }
   h4 { font-size: 1em; } }
+  
+/********** Extra small devices only **********/
+@media (max-width: 767px) {
+  h1 { font-size: 1.575em; }
+  h2 { font-size: 1.3em; }
+  h3, #toctitle, .sidebarblock > .content > .title { font-size: 1.125em; }
+  h4 { font-size: 1em; } }
+  }
+
 /* Tables */
 table { background: white; margin-bottom: 1.25em; border: solid 1px #dddddd; }
 table thead, table tfoot { background: whitesmoke; font-weight: bold; }
@@ -279,11 +288,11 @@ a:hover, a:focus { text-decoration: underline; }
 .clearfix:before, .clearfix:after, .float-group:before, .float-group:after { content: " "; display: table; }
 .clearfix:after, .float-group:after { clear: both; }
 
-*:not(pre) > code { font-size: 0.9375em; font-style: normal !important; letter-spacing: 0; padding: 1px 5px 1px 5px; background-color: #f7f7f7; border: 1px solid #dddddd; -webkit-border-radius: 3px; border-radius: 3px; line-height: inherit; word-wrap: break-word; }
+*:not(pre) > code { font-size: 0.8375em; font-style: normal !important; letter-spacing: 0; padding: 1px 5px 1px 5px; background-color: #f7f7f7; border: 1px solid #dddddd; -webkit-border-radius: 3px; border-radius: 3px; line-height: inherit; word-wrap: break-word; }
 *:not(pre) > code.nobreak { word-wrap: normal; }
 *:not(pre) > code.nowrap { white-space: nowrap; }
 
-pre, pre > code { line-height: 1.45; color: #333333; font-family: Cousine, Consolas, "Liberation Mono", Courier, monospace; font-size: 0.9375em; font-weight: normal; }
+pre, pre > code { line-height: 1.45; color: #333333; font-family: Cousine, Consolas, "Liberation Mono", Courier, monospace; font-size: 0.8375em; font-weight: normal; }
 
 em em { font-style: normal; }
 
@@ -706,7 +715,7 @@ h2 { color: #325D72; border-bottom: 1px solid #dddddd; }
 
 #content h1 > a.anchor, h2 > a.anchor, h3 > a.anchor, #toctitle > a.anchor, .sidebarblock > .content > .title > a.anchor, h4 > a.anchor, h5 > a.anchor, h6 > a.anchor { color: #333333; }
 
-#header, #content, #footnotes { max-width: 700px; padding-left: 0; padding-right: 0; }
+#header, #content, #footnotes { max-width: 750px; padding-left: 0; padding-right: 0; }
 
 body.toc2.toc-left #toc.toc2 #toctitle { font-size: 0.9375em; }
 
@@ -718,4 +727,4 @@ body.toc2.toc-left #toc.toc2 #toctitle { font-size: 0.9375em; }
 
 .sidebarblock > .content > .title { margin-top: -20px; margin-right: -20px; margin-left: -20px; margin-bottom: 20px; padding: 1em; font-size: 0.75em; background: #eaeaea; }
 
-.literalblock pre, .listingblock pre { background: #f9f9f9; font-size: 0.9375em; }
+.literalblock pre, .listingblock pre { background: #f9f9f9; font-size: 0.8375em; }

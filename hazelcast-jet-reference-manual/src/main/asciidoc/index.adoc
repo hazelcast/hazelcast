@@ -9,6 +9,7 @@ include::attributes.adoc[]
 :source-highlighter: coderay
 :source-indent: 0
 :source-language: java
+:prewrap!:
 :stylesheet: stylesheets/hazelcast.css
 :toc: left
 :toc-title: Hazelcast Jet {jet-version} Reference Manual
