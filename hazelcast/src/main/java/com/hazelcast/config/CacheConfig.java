@@ -518,8 +518,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
-        out.writeBoolean(hotRestartConfig.isEnabled());
-        out.writeBoolean(hotRestartConfig.isFsync());
+        out.writeObject(hotRestartConfig);
 
         out.writeUTF(quorumName);
 
@@ -559,8 +558,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             isStoreByValue = in.readBoolean();
             isManagementEnabled = in.readBoolean();
             isStatisticsEnabled = in.readBoolean();
-            hotRestartConfig.setEnabled(in.readBoolean());
-            hotRestartConfig.setFsync(in.readBoolean());
+            hotRestartConfig = in.readObject();
 
             quorumName = in.readUTF();
 

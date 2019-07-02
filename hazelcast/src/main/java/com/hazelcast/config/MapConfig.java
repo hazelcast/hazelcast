@@ -26,6 +26,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -874,7 +875,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @return hot restart config
      */
-    public HotRestartConfig getHotRestartConfig() {
+    public @Nonnull HotRestartConfig getHotRestartConfig() {
         return hotRestartConfig;
     }
 
@@ -884,8 +885,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
      */
-    public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
-        this.hotRestartConfig = hotRestartConfig;
+    public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig cannot be null");
         return this;
     }
 
@@ -894,7 +895,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @return merkle tree config
      */
-    public MerkleTreeConfig getMerkleTreeConfig() {
+    public @Nonnull MerkleTreeConfig getMerkleTreeConfig() {
         return merkleTreeConfig;
     }
 
@@ -904,8 +905,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * @param merkleTreeConfig merkle tree config
      * @return this {@code MapConfig} instance
      */
-    public MapConfig setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        this.merkleTreeConfig = merkleTreeConfig;
+    public MapConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "MerkleTreeConfig cannot be null");
         return this;
     }
 
@@ -1016,10 +1017,10 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
-        if (merkleTreeConfig != null ? !merkleTreeConfig.equals(that.merkleTreeConfig) : that.merkleTreeConfig != null) {
+        if (!merkleTreeConfig.equals(that.merkleTreeConfig)) {
             return false;
         }
-        return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
+        return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
     @Override
@@ -1048,8 +1049,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
-        result = 31 * result + (merkleTreeConfig != null ? merkleTreeConfig.hashCode() : 0);
-        result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
+        result = 31 * result + merkleTreeConfig.hashCode();
+        result = 31 * result + hotRestartConfig.hashCode();
         return result;
     }
 

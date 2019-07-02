@@ -225,7 +225,7 @@ public class ConfigCompatibilityChecker {
         boolean c1Disabled = c1 == null || !c1.isEnabled();
         boolean c2Disabled = c2 == null || !c2.isEnabled();
         return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                && nullSafeEqual(c1.getDepth(), c2.getDepth()));
+                && c1.getDepth() == c2.getDepth());
     }
 
     private static boolean isCompatible(HotRestartConfig c1, HotRestartConfig c2) {

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.BinaryInterface;
 
+import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -149,7 +150,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+    public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         throw throwReadOnly();
     }
 

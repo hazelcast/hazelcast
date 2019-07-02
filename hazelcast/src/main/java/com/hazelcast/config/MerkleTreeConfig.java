@@ -169,11 +169,11 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MerkleTreeConfig)) {
             return false;
         }
 
@@ -187,7 +187,7 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = (enabled ? 1 : 0);
         result = 31 * result + depth;
         return result;
