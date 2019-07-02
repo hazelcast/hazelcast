@@ -63,8 +63,6 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
     public void shutdown() {
         for (AbstractWorker worker : workers)
             worker.stop();
-
-        // TODO TODO: Should we wait for completion here? Probably yes, otherwise clean instance stop is not possible.
     }
 
     protected int getThreadCount() {

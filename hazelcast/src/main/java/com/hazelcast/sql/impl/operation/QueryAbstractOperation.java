@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 /**
  * Base class for all query operations.
@@ -26,5 +27,12 @@ public abstract class QueryAbstractOperation extends Operation {
     @Override
     public String getServiceName() {
         return SqlService.SERVICE_NAME;
+    }
+
+    /**
+     * @return SQL service implementation.
+     */
+    protected SqlServiceImpl getSqlService() {
+        return (SqlServiceImpl) getNodeEngine().getSqlService();
     }
 }

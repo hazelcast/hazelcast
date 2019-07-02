@@ -69,8 +69,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
 
     @Override
     public void run() throws Exception {
-        // TODO TODO: Avoid "getService" call, use NodeEngine instead.
-        SqlServiceImpl svc = getService();
+        SqlServiceImpl svc = getSqlService();
 
         ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
 
