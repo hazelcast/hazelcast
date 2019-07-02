@@ -54,14 +54,10 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     /** Logger. */
     private final ILogger logger;
 
-    /** Lock to handle concurrent events. */
-    private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
-
-    /** Whether the service is stopped. */
-    // TODO TODO: Implement node stop support.
-    private boolean stopped;
-
+    /** Control thread pool. */
     private ControlThreadPool controlThreadPool;
+
+    /** Data thread pool. */
     private DataThreadPool dataThreadPool;
 
     public SqlServiceImpl(NodeEngine nodeEngine) {
@@ -117,36 +113,26 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         if (args == null)
             args = Collections.emptyList();
 
-        busyLock.readLock().lock();
+        QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
 
-        try {
-            if (stopped)
-                throw new IllegalStateException("Node is being stopped.");
+        // TODO TODO: Adjustable batch size!
+        QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
 
-            QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
+        QueryExecuteOperation op = new QueryExecuteOperation(
+            queryId,
+            plan.getPartitionMap(),
+            plan.getFragments(),
+            args,
+            consumer
+        );
 
-            // TODO TODO: Adjustable batch size!
-            QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
-
-            QueryExecuteOperation op = new QueryExecuteOperation(
-                queryId,
-                plan.getPartitionMap(),
-                plan.getFragments(),
-                args,
-                consumer
-            );
-
-            // TODO TODO: Execute only on partition members (get from plan).
-            for (Member member : nodeEngine.getClusterService().getMembers()) {
-                // TODO TODO: Execute local operation directly.
-                nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
-            }
-
-            return new QueryHandle(queryId, consumer);
+        // TODO TODO: Execute only on partition members (get from plan).
+        for (Member member : nodeEngine.getClusterService().getMembers()) {
+            // TODO TODO: Execute local operation directly.
+            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
         }
-        finally {
-            busyLock.readLock().unlock();
-        }
+
+        return new QueryHandle(queryId, consumer);
     }
 
     public void onQueryExecuteRequest(ExecuteControlTask task) {

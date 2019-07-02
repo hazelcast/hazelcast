@@ -74,7 +74,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
     @Override
     protected void onStop() {
-        // TODO TODO: Handle node stop
+        
     }
 
     private void handleExecute(ExecuteControlTask task) {

@@ -120,7 +120,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
 
     @Override
     protected void onStop() {
-        // TODO TODO: Handle node stop
+
     }
 
     /**
