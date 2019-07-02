@@ -40,8 +40,7 @@ public class SendPhysicalNode implements PhysicalNode {
         // No-op.
     }
 
-    public SendPhysicalNode(int edgeId, PhysicalNode upstream, Expression<Integer> partitionHasher,
-        boolean useDataPartitions) {
+    public SendPhysicalNode(int edgeId, PhysicalNode upstream, Expression<Integer> partitionHasher) {
         this.edgeId = edgeId;
         this.upstream = upstream;
         this.partitionHasher = partitionHasher;
@@ -79,6 +78,4 @@ public class SendPhysicalNode implements PhysicalNode {
         upstream = in.readObject();
         partitionHasher = in.readObject();
     }
-
-
 }

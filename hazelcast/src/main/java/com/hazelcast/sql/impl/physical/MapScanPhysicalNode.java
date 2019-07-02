@@ -37,8 +37,6 @@ public class MapScanPhysicalNode implements PhysicalNode {
     /** Filter. */
     private Predicate filter;
 
-    // TODO TODO: Explicit partition list in case of partition pruning.
-
     public MapScanPhysicalNode() {
         // No-op.
     }

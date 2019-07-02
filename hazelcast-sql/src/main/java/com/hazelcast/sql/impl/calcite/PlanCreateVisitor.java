@@ -151,8 +151,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         SendPhysicalNode sendNode = new SendPhysicalNode(
             edge,                        // Edge
             upstreamNode,                // Underlying node
-            new ConstantExpression<>(1), // Partitioning info: REWORK!
-            false                        // Partitioning info: REWORK!
+            new ConstantExpression<>(1)  // Partitioning info: REWORK!
         );
 
         addFragment(sendNode, partMemberIds);
@@ -182,8 +181,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         SendPhysicalNode sendNode = new SendPhysicalNode(
             edge,                        // Edge
             sortNode,                    // Underlying node
-            new ConstantExpression<>(1), // Partitioning info: REWORK!
-            false                        // Partitioning info: REWORK!
+            new ConstantExpression<>(1)  // Partitioning info: REWORK!
         );
 
         addFragment(sendNode, partMemberIds);
