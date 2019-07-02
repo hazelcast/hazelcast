@@ -31,14 +31,16 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.hazelfast.Client;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -87,11 +89,10 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         return decrementAndGetAsync().join();
     }
 
-    private final static ThreadLocal<Client> threadLocal = new ThreadLocal<Client>();
 
     @Override
     public long get() {
-        Client client = client();
+        Client client = client(partitionId);
 
         try {
             ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
@@ -105,16 +106,20 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         return 0;
     }
 
-    private Client client() {
-        Client client = threadLocal.get();
+    private final static ThreadLocal<Map<Address, Client>> threadLocal = ThreadLocal.withInitial(HashMap::new);
+
+    private Client client(int partitionId) {
+        Map<Address, Client> clients = threadLocal.get();
+        ClientPartitionService partitionService = getClient().partitionService;
+        Address address = partitionService.getPartitionOwner(partitionId);
+
+        Client client = clients.get(address);
         if (client == null) {
-            Set<Member> members = this.getClient().getCluster().getMembers();
-            Member member = members.iterator().next();
-            String hostAddress = member.getSocketAddress().getAddress().getHostAddress();
+            String hostAddress = address.getHost();
             client = new Client(new Client.Context()
                     .hostname(hostAddress));
             client.start();
-            threadLocal.set(client);
+            clients.put(address, client);
         }
         return client;
     }

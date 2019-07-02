@@ -177,7 +177,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final LifecycleServiceImpl lifecycleService;
     private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
-    private final ClientPartitionServiceImpl partitionService;
+    public final ClientPartitionServiceImpl partitionService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final AbstractClientListenerService listenerService;
@@ -258,6 +258,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
     }
+
+
 
     private ClusterConnectorService initClusterConnectorService() {
         ClusterConnectorServiceImpl service = new ClusterConnectorServiceImpl(this, connectionManager,
