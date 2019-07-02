@@ -178,7 +178,7 @@ public class Config {
 
     private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
-    private QueryConfig queryConfig = new QueryConfig();
+    private SqlConfig sqlConfig = new SqlConfig();
 
     public Config() {
     }
@@ -3397,12 +3397,12 @@ public class Config {
         return this;
     }
 
-    public QueryConfig getQueryConfig() {
-        return queryConfig;
+    public SqlConfig getSqlConfig() {
+        return sqlConfig;
     }
 
-    public Config setQueryConfig(QueryConfig queryConfig) {
-        this.queryConfig = queryConfig;
+    public Config setSqlConfig(SqlConfig sqlConfig) {
+        this.sqlConfig = sqlConfig;
         return this;
     }
 
@@ -3434,7 +3434,7 @@ public class Config {
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + ", cpSubsystemConfig=" + cpSubsystemConfig
-                + ", queryConfig=" + queryConfig
+                + ", sqlConfig=" + sqlConfig
                 + '}';
     }
 }

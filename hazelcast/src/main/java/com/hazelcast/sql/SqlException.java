@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql;
 
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.core.HazelcastException;
 
 /**
- * No-op optimizer.
+ * Exception occurred during SQL query execution.
  */
-public class NoopSqlOptimizer implements SqlOptimizer {
-    @Override
-    public QueryPlan prepare(String sql) {
-        throw new SqlException(SqlErrorCode.GENERIC, "Cannot execute SQL query because \"hazelcast-sql\" module " +
-            "is not in the classpath.");
+public class SqlException extends HazelcastException {
+
+    private static final long serialVersionUID = -1153559924521087582L;
+
+    /** Code of the exception. */
+    private int code;
+
+    public SqlException(int code, String message) {
+        super(message);
+
+        this.code = code;
+    }
+
+    /**
+     * @return Code of the exception.
+     */
+    public int getCode() {
+        return code;
     }
 }

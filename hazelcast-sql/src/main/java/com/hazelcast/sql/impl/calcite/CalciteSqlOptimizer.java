@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.QueryFragment;
@@ -93,12 +92,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
-    /** Logger. */
-    private final ILogger logger;
-
-    public CalciteSqlOptimizer(NodeEngine nodeEngine, ILogger logger) {
+    public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = logger;
     }
 
     @Override

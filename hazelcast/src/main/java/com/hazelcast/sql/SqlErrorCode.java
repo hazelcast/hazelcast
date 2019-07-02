@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
-
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+package com.hazelcast.sql;
 
 /**
- * No-op optimizer.
+ * Collection of error codes.
  */
-public class NoopSqlOptimizer implements SqlOptimizer {
-    @Override
-    public QueryPlan prepare(String sql) {
-        throw new SqlException(SqlErrorCode.GENERIC, "Cannot execute SQL query because \"hazelcast-sql\" module " +
-            "is not in the classpath.");
+public class SqlErrorCode {
+    /** Generic error/ */
+    public static final int GENERIC = -1;
+
+    private SqlErrorCode() {
+        // No-op.
     }
 }

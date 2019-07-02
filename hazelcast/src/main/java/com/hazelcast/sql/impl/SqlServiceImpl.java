@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.config.QueryConfig;
+import com.hazelcast.config.SqlConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -43,16 +43,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 // TODO TODO: Handle membership changes! (MembershipAwareService)
 public class SqlServiceImpl implements SqlService, ManagedService {
     /** Calcite optimizer class name. */
-    private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.SqlCalciteOptimizer";
+    private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
-    /** Logger. */
-    private final ILogger logger;
-
     /** Query optimizer. */
     private final SqlOptimizer optimizer;
+
+    /** Logger. */
+    private final ILogger logger;
 
     /** Lock to handle concurrent events. */
     private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
@@ -66,14 +66,22 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
     public SqlServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(SqlServiceImpl.class);
 
-        this.logger = nodeEngine.getLogger(QueueService.class);
+        optimizer = createOptimizer(nodeEngine);
 
-        optimizer = createOptimizer(nodeEngine, logger);
+        SqlConfig cfg = nodeEngine.getConfig().getSqlConfig();
 
-        QueryConfig cfg = nodeEngine.getConfig().getQueryConfig();
+        if (cfg.getControlThreadCount() <= 0) {
+            throw new HazelcastException("SqlConfig.controlThreadCount must be positive: " +
+                cfg.getControlThreadCount());
+        }
 
-        // TODO TODO: Validate config values.
+        if (cfg.getDataThreadCount() <= 0) {
+            throw new HazelcastException("SqlConfig.dataThreadCount must be positive: " +
+                cfg.getControlThreadCount());
+        }
+
         dataThreadPool = new DataThreadPool(cfg.getDataThreadCount());
         controlThreadPool = new ControlThreadPool(this, nodeEngine, cfg.getControlThreadCount(), dataThreadPool);
     }
@@ -177,19 +185,18 @@ public class SqlServiceImpl implements SqlService, ManagedService {
      * Create either normal or no-op optimizer instance.
      *
      * @param nodeEngine Node engine.
-     * @param logger Logger.
      * @return Optimizer.
      */
     @SuppressWarnings("unchecked")
-    private static SqlOptimizer createOptimizer(NodeEngine nodeEngine, ILogger logger) {
+    private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
         SqlOptimizer res;
 
         try {
             Class cls = Class.forName(OPTIMIZER_CLASS);
 
-            Constructor<SqlOptimizer> ctor = cls.getConstructor(NodeEngine.class, ILogger.class);
+            Constructor<SqlOptimizer> ctor = cls.getConstructor(NodeEngine.class);
 
-            res = ctor.newInstance(nodeEngine, logger);
+            res = ctor.newInstance(nodeEngine);
         }
         catch (ReflectiveOperationException e) {
             logger.info(OPTIMIZER_CLASS + " is not in the classpath, fallback to no-op implementation.");
