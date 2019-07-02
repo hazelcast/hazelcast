@@ -22,7 +22,7 @@ package com.hazelcast.sql.impl;
 public class NoopSqlOptimizer implements SqlOptimizer {
     @Override
     public QueryPlan prepare(String sql) {
-        // TODO: Proper exception type and error message.
+        // TODO TODO: Proper exception type and error message.
         throw new UnsupportedOperationException("Cannot execute SQL query because hazelcast-sql module is not " +
             "in the classpath.");
     }

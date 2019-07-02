@@ -40,8 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
-// TODO: Implement cancel.
-// TODO: Handle membership changes! (MembershipAwareService)
+// TODO TODO: Handle membership changes! (MembershipAwareService)
 public class SqlServiceImpl implements SqlService, ManagedService {
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.SqlCalciteOptimizer";
@@ -59,7 +58,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
     private final ReentrantReadWriteLock busyLock = new ReentrantReadWriteLock();
 
     /** Whether the service is stopped. */
-    // TODO: Implement node stop support.
+    // TODO TODO: Implement node stop support.
     private boolean stopped;
 
     private ControlThreadPool controlThreadPool;
@@ -74,14 +73,14 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
         QueryConfig cfg = nodeEngine.getConfig().getQueryConfig();
 
-        // TODO: Validate config values.
+        // TODO TODO: Validate config values.
         dataThreadPool = new DataThreadPool(cfg.getDataThreadCount());
         controlThreadPool = new ControlThreadPool(this, nodeEngine, cfg.getControlThreadCount(), dataThreadPool);
     }
 
     @Override
     public SqlCursor query(String sql, Object... args) {
-        // TODO: Implement plan cache.
+        // TODO TODO: Implement plan cache.
         QueryPlan plan = optimizer.prepare(sql);
 
         List<Object> args0;
@@ -118,7 +117,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
             QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
 
-            // TODO: Adjustable batch size!
+            // TODO TODO: Adjustable batch size!
             QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
 
             QueryExecuteOperation op = new QueryExecuteOperation(
@@ -129,10 +128,9 @@ public class SqlServiceImpl implements SqlService, ManagedService {
                 consumer
             );
 
-            // TODO: Execute only on partition members (get from plan).
+            // TODO TODO: Execute only on partition members (get from plan).
             for (Member member : nodeEngine.getClusterService().getMembers()) {
-                // TODO: Execute local operation directly.
-                // TODO: Execute remote operation without generic pool (PacketDispatcher?)
+                // TODO TODO: Execute local operation directly.
                 nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
             }
 

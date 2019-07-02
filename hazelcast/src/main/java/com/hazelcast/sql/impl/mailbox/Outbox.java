@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Outbox which sends data to a single remote stripe.
  */
-// TODO: Configurable batch size. How and where?
+// TODO TODO: Configurable batch size. How and where?
 public class Outbox extends AbstractMailbox {
     /** Node engine. */
     private final NodeEngine nodeEngine;
@@ -45,7 +45,7 @@ public class Outbox extends AbstractMailbox {
     /** Batch size. */
     private final int batchSize;
 
-    // TODO: Should be resolved when batch ack is received.
+    // TODO TODO: Should be resolved when batch ack is received.
     /** Target thread. */
     private int targetThread = DataWorker.UNMAPPED_STRIPE;
 
@@ -77,7 +77,7 @@ public class Outbox extends AbstractMailbox {
         if (batch.size() >= batchSize)
             send(false);
 
-        // TODO: Implement congestion control: track how many unacked batches were sent.
+        // TODO TODO: Implement congestion control: track how many unacked batches were sent.
         return true;
     }
 
@@ -110,7 +110,7 @@ public class Outbox extends AbstractMailbox {
             new SendBatch(batch0, last)
         );
 
-        // TODO: Catch exception, propagate it upwards with proper message.
+        // TODO TODO: Catch exception, propagate it upwards with proper message.
         nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, targetMember.getAddress());
 
         batch = null;

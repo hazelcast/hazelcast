@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// TODO: Implement metadata!.
+// TODO TODO: Implement metadata!.
 public class SendBatch implements DataSerializable {
     /** Rows being transferred. */
     private List<Row> rows;
@@ -56,7 +56,6 @@ public class SendBatch implements DataSerializable {
         out.writeInt(rows.size());
 
         for (Row row : rows)
-            // TODO: "writeObject" appears to be too heavy. Find a way to avoid that (e.g. factories).
             out.writeObject(row);
 
         out.writeBoolean(last);

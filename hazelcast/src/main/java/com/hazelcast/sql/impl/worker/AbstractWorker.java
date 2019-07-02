@@ -29,7 +29,6 @@ import java.util.concurrent.LinkedBlockingDeque;
  * @param <T> Type of the task.
  */
 public abstract class AbstractWorker<T extends WorkerTask> implements Runnable {
-    // TODO: Use MPSC with proper IdleStrategy.
     /** Task queue. */
     private final LinkedBlockingDeque<WorkerTask> queue = new LinkedBlockingDeque<>();
 
@@ -92,10 +91,10 @@ public abstract class AbstractWorker<T extends WorkerTask> implements Runnable {
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
 
-                // TODO: Handle interrupt. Panic?
+                // TODO TODO: Handle interrupt. Panic?
             }
             catch (Exception e) {
-                // TODO: Handle generic exception?
+                // TODO TODO: Handle generic exception?
             }
         }
     }

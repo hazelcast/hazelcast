@@ -40,10 +40,10 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Object item1 = o1.getKey().get(i);
             Object item2 = o2.getKey().get(i);
 
-            // TODO: ANSI-compliant sort rules.
-            // TODO: Comparable checks.
-            // TODO: Proper NULL handling.
-            // TODO: Proper collation and type comparisons!
+            // TODO TODO: ANSI-compliant sort rules.
+            // TODO TODO: Comparable checks.
+            // TODO TODO: Proper NULL handling.
+            // TODO TODO: Proper collation and type comparisons!
             Comparable item1Comp = (Comparable)item1;
             Comparable item2Comp = (Comparable)item2;
 

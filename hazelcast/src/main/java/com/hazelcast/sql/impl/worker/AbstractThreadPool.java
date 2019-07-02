@@ -21,7 +21,6 @@ package com.hazelcast.sql.impl.worker;
  *
  * @param <T> Type of worker.
  */
-// TODO: Make sure that requests are routed to proper pools immediately.
 public abstract class AbstractThreadPool<T extends AbstractWorker> {
     /** Prefix assigned to newly created threads. */
     private final String threadPrefix;
@@ -65,7 +64,7 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
         for (AbstractWorker worker : workers)
             worker.stop();
 
-        // TODO: Should we wait for completion here? Probably yes, otherwise clean instance stop is not possible.
+        // TODO TODO: Should we wait for completion here? Probably yes, otherwise clean instance stop is not possible.
     }
 
     protected int getThreadCount() {

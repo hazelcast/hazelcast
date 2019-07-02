@@ -38,7 +38,7 @@ import java.util.Map;
 /**
  * Worker responsible for control tasks execution (start query, cancel query, handle membership changes and migrations).
  */
-// TODO: Cleanup on query finish.
+// TODO TODO: Cleanup on query finish.
 public class ControlWorker extends AbstractWorker<ControlTask> {
     /** Service. */
     private final SqlServiceImpl service;
@@ -49,7 +49,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
     /** Data thread pool. */
     private final DataThreadPool dataThreadPool;
 
-    // TODO: Use better algorithm for data worker distribution.
+    // TODO TODO: Use better algorithm for data worker distribution.
     private int lastDataThreadIdx = 0;
 
     /** Active queries. */
@@ -74,7 +74,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
     @Override
     protected void onStop() {
-        // TODO: Handle node stop
+        // TODO TODO: Handle node stop
     }
 
     private void handleExecute(ExecuteControlTask task) {
@@ -160,7 +160,6 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             edgeToStripeMap
         );
 
-        // TODO: Query cancel: "antimatter".
         queries.put(queryId, ctx);
 
         // Start query on executor.
@@ -201,8 +200,6 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             // query is cancelled and we received a stale message. The latter will be cleaned with periodic
             // task.
             pendingBatches.computeIfAbsent(queryId, (k) -> new LinkedList<>()).add(task);
-
-            // TODO: Cleanup timeout.
         }
         else {
             // Received unmapped batch. Resolve stripe and move to data thread.

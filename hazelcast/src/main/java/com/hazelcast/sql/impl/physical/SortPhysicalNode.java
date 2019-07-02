@@ -31,7 +31,7 @@ public class SortPhysicalNode implements PhysicalNode {
     private List<Expression> expressions;
 
     /** Sort orders. */
-    // TODO: Fix collation (nulls first-last).
+    // TODO TODO: Fix collation (nulls first-last).
     private List<Boolean> ascs;
 
     public SortPhysicalNode() {
@@ -65,7 +65,6 @@ public class SortPhysicalNode implements PhysicalNode {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Optimize serde.
         out.writeObject(upstream);
         out.writeObject(expressions);
         out.writeObject(ascs);

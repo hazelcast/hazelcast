@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
-import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
@@ -49,8 +49,6 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Arguments. */
     private List<Object> arguments;
 
-    // TODO: Pass optional hints here! Make it in an extendable way, so that backward compatibility is not broken.
-
     /** Result consumer. */
     private transient QueryResultConsumer rootConsumer;
 
@@ -71,7 +69,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
 
     @Override
     public void run() throws Exception {
-        // TODO: Avoid "getService" call, use NodeEngine instead.
+        // TODO TODO: Avoid "getService" call, use NodeEngine instead.
         SqlServiceImpl svc = getService();
 
         ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
@@ -107,7 +105,6 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         else {
             out.writeInt(arguments.size());
 
-            // TODO: Arguments must be alerady converted to data at this point!
             for (Object argument : arguments)
                 out.writeObject(argument);
         }

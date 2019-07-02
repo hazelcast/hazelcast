@@ -28,7 +28,6 @@ import java.util.NoSuchElementException;
 /**
  * Blocking array-based result consumer.
  */
-// TODO: Ability to close the Root from here (through cancellation routine)
 public class QueryResultConsumerImpl implements QueryResultConsumer {
     /** Maximum size. */
     private final int maxSize;

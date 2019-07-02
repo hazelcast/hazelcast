@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * Worker which process data requests.
  */
-// TODO: Cleanup on query finish.
+// TODO TODO: Cleanup on query finish.
 public class DataWorker extends AbstractWorker<DataTask> {
     /** Stripe not mapped to any thread yet. */
     public static final int UNMAPPED_STRIPE = -1;
@@ -102,7 +102,7 @@ public class DataWorker extends AbstractWorker<DataTask> {
         inbox.onBatch(task.getSourceMemberId(), task.getSourceStripe(), task.getSourceThread(), task.getBatch());
 
         // Continue iteration.
-        // TODO: Handle exception!
+        // TODO TODO: Handle exception!
         inbox.getExec().advance();
     }
 
@@ -114,13 +114,13 @@ public class DataWorker extends AbstractWorker<DataTask> {
     private void handleRootTask(RootDataTask task) {
         RootExec root = task.getRootExec();
 
-        // TODO: Handle exception!
+        // TODO TODO: Handle exception!
         root.advance();
     }
 
     @Override
     protected void onStop() {
-        // TODO: Handle node stop
+        // TODO TODO: Handle node stop
     }
 
     /**

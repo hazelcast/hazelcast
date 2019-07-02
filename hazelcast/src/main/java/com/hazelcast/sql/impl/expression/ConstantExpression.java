@@ -47,8 +47,6 @@ public class ConstantExpression<T> implements Expression<T> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Value should be serialized to data first?
-        // TODO: Optimize for primitive constant expression types?
         out.writeObject(val);
     }
 

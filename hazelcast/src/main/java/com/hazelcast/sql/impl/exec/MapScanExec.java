@@ -51,9 +51,9 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 /**
  * Executor for map scan.
  */
-// TODO: Migration support with remote scans.
-// TODO: Ticket for index scans
-// TODO: Ticket for HD and hot-restart scans
+// TODO TODO: Migration support with remote scans.
+// TODO TODO: Ticket for index scans
+// TODO TODO: Ticket for HD and hot-restart scans
 public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Map name. */
     private final String mapName;
@@ -76,14 +76,14 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Serialization service. */
     private InternalSerializationService serializationService;
 
-    // TODO: To iterator without collection! https://github.com/hazelcast/hazelcast/issues/15228
+    // TODO TODO: To iterator without collection! https://github.com/hazelcast/hazelcast/issues/15228
     /** All rows fetched on first access. */
     private Collection<Row> rows;
 
     /** Iterator over rows. */
     private Iterator<Row> rowsIter;
 
-    // TODO: To batched implementation to minimize number of virtual calls?
+    // TODO TODO: To batched implementation to minimize number of virtual calls?
     /** Current row. */
     private Row currentRow;
 
@@ -99,7 +99,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
 
     @Override
     protected void setup0(QueryContext ctx, DataWorker worker) {
-        // TODO: Check if map exists.
+        // TODO TODO: Check if map exists.
         MapProxyImpl map = (MapProxyImpl)ctx.getNodeEngine().getHazelcastInstance().getMap(mapName);
         MapService mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
 
@@ -126,13 +126,13 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
 
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
 
-                // TODO: Clock should be global?
+                // TODO TODO: Clock should be global?
                 Iterator<Record> iterator = recordStore.loadAwareIterator(Clock.currentTimeMillis(), false);
 
                 while (iterator.hasNext()) {
                     Record record = iterator.next();
 
-                    Data keyData =  record.getKey(); // TODO: Proper conversion for HD (see PartitionScanRunner)
+                    Data keyData =  record.getKey(); // TODO TODO: Proper conversion for HD (see PartitionScanRunner)
                     Object valData = record.getValue();
 
                     Object key = serializationService.toObject(keyData);
@@ -197,7 +197,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
             else
                 target = val;
 
-            // TODO: What to do with metadata here (last argument)?
+            // TODO TODO: What to do with metadata here (last argument)?
             res = extractors.extract(target, path, null);
         }
 

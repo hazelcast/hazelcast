@@ -122,7 +122,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
      * Reschedule execution of this root node to fetch more data to the user.
      */
     public void reschedule() {
-        // TODO: Double-check that it is not re-scheduled too often (e.g. with printout).
+        // TODO TODO: Double-check that it is not re-scheduled too often (e.g. with printout).
         RootDataTask task = new RootDataTask(this);
 
         worker.offer(task);

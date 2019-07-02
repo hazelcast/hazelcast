@@ -39,13 +39,13 @@ public class SortExec extends AbstractUpstreamAwareExec {
     private final TreeMap<SortKey, Row> map;
 
     /** Resulting batch. */
-    // TODO: Avoid the second data structure. How?
+    // TODO TODO: Avoid the second data structure. How?
     private RowBatch res;
 
     /** Index for unique elements. */
     private long idx;
 
-    // TODO: Merge exprs and ascs to a single class, add null-first/last.
+    // TODO TODO: Merge exprs and ascs to a single class, add null-first/last.
     public SortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
         super(upstream);
 

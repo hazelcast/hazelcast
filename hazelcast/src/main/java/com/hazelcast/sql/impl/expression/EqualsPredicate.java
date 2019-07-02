@@ -44,18 +44,14 @@ public class EqualsPredicate implements Predicate {
 
     @Override
     public Boolean eval(QueryContext ctx, Row row) {
-        // TODO: Incorrect type conversions and type inference!
         Object leftObj = left.eval(ctx, row);
         Object rightObj = right.eval(ctx, row);
 
-        // TODO: Investigate SQL NULL comparions semantics (e.g. NULL vs empty string - are they equal?)
-        // TODO: Type system and inference! E.g. Long(1) == Int(1) should be true!
         return leftObj == null ? rightObj == null : leftObj.equals(rightObj);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Optimize predicate serialization.
         out.writeObject(left);
         out.writeObject(right);
     }

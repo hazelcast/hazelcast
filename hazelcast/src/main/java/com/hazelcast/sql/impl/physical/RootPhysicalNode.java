@@ -49,7 +49,6 @@ public class RootPhysicalNode implements PhysicalNode {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Optimize nodes serde.
         out.writeObject(upstream);
     }
 

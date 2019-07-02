@@ -48,7 +48,6 @@ public class ExtractorExpression<T> implements Expression<T> {
 
         KeyValueRow row0 = (KeyValueRow)row;
 
-        // TODO: Type system and inference.
         return (T)row0.extract(path);
     }
 

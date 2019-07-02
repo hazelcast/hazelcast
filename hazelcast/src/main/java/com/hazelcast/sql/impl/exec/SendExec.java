@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public class SendExec extends AbstractUpstreamAwareExec {
     /** Expression to get the hash of the stripe. */
-    // TODO: Something is wrong with this abstraction as it is tightly bound to outbox resolution. Rework.
+    // TODO TODO: Something is wrong with this abstraction as it is tightly bound to outbox resolution. Rework.
     private final Expression<Integer> partitionHasher;
 
     /** Outboxes. */
@@ -101,7 +101,7 @@ public class SendExec extends AbstractUpstreamAwareExec {
             int part = partitionHasher.eval(ctx, row);
             int idx =  part % outboxes.length;
 
-            // TODO: Bad: one slow output will not allow other proceed. How to fix that?
+            // TODO TODO: Bad: one slow output will not allow other proceed. How to fix that?
             if (!outboxes[idx].onRow(row)) {
                 curBatchPos = curBatchPos0;
 

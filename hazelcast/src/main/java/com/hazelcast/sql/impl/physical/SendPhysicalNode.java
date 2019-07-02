@@ -33,7 +33,7 @@ public class SendPhysicalNode implements PhysicalNode {
     private PhysicalNode upstream;
 
     /** Partition hasher (get partition hash from row). */
-    // TODO: Fix! Something is wrong with this concept.
+    // TODO TODO: Fix! Something is wrong with this concept.
     private Expression<Integer> partitionHasher;
 
     public SendPhysicalNode() {

@@ -54,11 +54,6 @@ public class HeapRow implements Row, DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Size should be written only once on the batch level (along with metadata?)
-        // TODO: I.e. metadata of the upper object (SendBatch) should govern how values are written?
-        // TODO: But will it work for offheap rows? We will need a kind of "transferTo" then!
-
-        // TODO: Avoid "writeObject" at all cost!
         out.writeObject(values);
     }
 

@@ -48,7 +48,6 @@ public class AndPredicate implements Predicate {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Optimize expression serialization.
         out.writeObject(left);
         out.writeObject(right);
     }

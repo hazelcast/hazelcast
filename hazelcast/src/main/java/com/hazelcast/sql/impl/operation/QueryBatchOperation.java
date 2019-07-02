@@ -64,7 +64,7 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
     @Override
     public void run() throws Exception {
-        // TODO: Avoid "getService" call, use NodeEngine instead.
+        // TODO TODO: Avoid "getService" call, use NodeEngine instead.
         SqlServiceImpl service = getService();
 
         service.onQueryBatchRequest(new BatchDataTask(queryId, edgeId, sourceMemberId, sourceStripe, sourceThread,

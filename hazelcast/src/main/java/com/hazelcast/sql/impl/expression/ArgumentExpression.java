@@ -43,7 +43,6 @@ public class ArgumentExpression<T> implements Expression<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        // TODO: Type system with inference.
         return (T)ctx.getArgument(idx);
     }
 

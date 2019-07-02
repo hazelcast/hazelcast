@@ -48,7 +48,6 @@ public class OrPredicate implements Predicate {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: Optimize predicate serialization.
         out.writeObject(left);
         out.writeObject(right);
     }

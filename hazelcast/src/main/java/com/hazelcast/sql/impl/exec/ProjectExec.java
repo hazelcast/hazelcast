@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Projection executor.
  */
-// TODO: Not wired up, not tested. Create a ticket.
+// TODO TODO: Not wired up, not tested. Create a ticket.
 public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Projection expressions. */
     private final List<Expression> projections;

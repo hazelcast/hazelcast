@@ -182,7 +182,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int idx = 0;
 
         for (String receiveMemberId : receiveFragment.getMemberIds()) {
-            // TODO: Race! Get all members in advance!
+            // TODO TODO: Race! Get all members in advance!
             Member receiveMember = nodeEngine.getClusterService().getMember(receiveMemberId);
 
             for (int j = 0; j < receiveFragment.getParallelism(); j++) {
@@ -192,7 +192,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
                     queryId,
                     nodeEngine,
                     receiveMember,
-                    1024, // TODO: Configurable batching.
+                    1024, // TODO TODO: Configurable batching.
                     j
                 );
 

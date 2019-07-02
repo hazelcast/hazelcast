@@ -42,7 +42,7 @@ public class QueryHandle {
      * Close the handle.
      */
     public void close() {
-        // TODO: Cancel/close support.
+        throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     public QueryResultConsumer getConsumer() {
