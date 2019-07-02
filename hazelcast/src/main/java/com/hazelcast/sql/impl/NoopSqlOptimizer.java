@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl;
 /**
  * No-op optimizer.
  */
-public class SqlNoopOptimizer implements SqlOptimizer {
+public class NoopSqlOptimizer implements SqlOptimizer {
     @Override
     public QueryPlan prepare(String sql) {
         // TODO: Proper exception type and error message.

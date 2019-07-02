@@ -196,7 +196,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         catch (ReflectiveOperationException e) {
             logger.info(OPTIMIZER_CLASS + " is not in the classpath, fallback to no-op implementation.");
 
-            res = new SqlNoopOptimizer();
+            res = new NoopSqlOptimizer();
         }
 
         return res;
