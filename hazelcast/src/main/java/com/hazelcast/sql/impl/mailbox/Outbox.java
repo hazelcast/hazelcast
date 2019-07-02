@@ -17,12 +17,14 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.HazelcastSqlTransientException;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.worker.data.DataWorker;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.sql.SqlService;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -36,14 +38,17 @@ public class Outbox extends AbstractMailbox {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
-    /** Target member. */
-    private final Member targetMember;
+    /** Target member ID. */
+    private final String targetMemberId;
 
     /** Target stripe. */
     private final int targetStripe;
 
     /** Batch size. */
     private final int batchSize;
+
+    /** Target member. */
+    private Member targetMember;
 
     // TODO TODO: Should be resolved when batch ack is received.
     /** Target thread. */
@@ -52,12 +57,12 @@ public class Outbox extends AbstractMailbox {
     /** Pending rows.. */
     private List<Row> batch;
 
-    public Outbox(int edgeId, int stripe, QueryId queryId, NodeEngine nodeEngine, Member targetMember, int batchSize,
+    public Outbox(int edgeId, int stripe, QueryId queryId, NodeEngine nodeEngine, String targetMemberId, int batchSize,
         int targetStripe) {
         super(queryId, edgeId, stripe);
 
         this.nodeEngine = nodeEngine;
-        this.targetMember = targetMember;
+        this.targetMemberId = targetMemberId;
         this.targetStripe = targetStripe;
         this.batchSize = batchSize;
     }
@@ -110,8 +115,16 @@ public class Outbox extends AbstractMailbox {
             new SendBatch(batch0, last)
         );
 
-        // TODO TODO: Catch exception, propagate it upwards with proper message.
-        nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, targetMember.getAddress());
+        try {
+            if (targetMember == null)
+                targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
+
+            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, targetMember.getAddress());
+        }
+        catch (Exception e) {
+            throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE,
+                "Failed to send data batch to member: " + this);
+        }
 
         batch = null;
     }
@@ -122,7 +135,7 @@ public class Outbox extends AbstractMailbox {
             ", edgeId=" + getEdgeId() +
             ", stripe=" + getStripe() +
             ", thread=" + getThread() +
-            ", targetMemberId=" + targetMember.getUuid() +
+            ", targetMemberId=" + targetMemberId +
             ", targetStripe=" + targetStripe +
             ", targetThread=" + targetThread +
         '}';

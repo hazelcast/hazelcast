@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public class SendExec extends AbstractUpstreamAwareExec {
     /** Expression to get the hash of the stripe. */
-    // TODO TODO: Something is wrong with this abstraction as it is tightly bound to outbox resolution. Rework.
     private final Expression<Integer> partitionHasher;
 
     /** Outboxes. */

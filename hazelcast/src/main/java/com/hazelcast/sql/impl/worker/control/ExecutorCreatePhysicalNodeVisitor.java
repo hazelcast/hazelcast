@@ -16,35 +16,34 @@
 
 package com.hazelcast.sql.impl.worker.control;
 
-import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.EmptyScanExec;
-import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.exec.MapScanExec;
-import com.hazelcast.sql.impl.exec.ReceiveExec;
-import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
-import com.hazelcast.sql.impl.exec.RootExec;
-import com.hazelcast.sql.impl.exec.SendExec;
-import com.hazelcast.sql.impl.exec.SortExec;
-import com.hazelcast.sql.impl.mailbox.AbstractInbox;
-import com.hazelcast.sql.impl.mailbox.Outbox;
-import com.hazelcast.sql.impl.mailbox.SingleInbox;
-import com.hazelcast.sql.impl.mailbox.StripedInbox;
-import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
-import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.sql.impl.physical.RootPhysicalNode;
-import com.hazelcast.sql.impl.physical.SendPhysicalNode;
-import com.hazelcast.sql.impl.physical.SortPhysicalNode;
-import com.hazelcast.util.collection.PartitionIdSet;
+ import com.hazelcast.spi.NodeEngine;
+ import com.hazelcast.sql.impl.QueryFragment;
+ import com.hazelcast.sql.impl.QueryId;
+ import com.hazelcast.sql.impl.exec.EmptyScanExec;
+ import com.hazelcast.sql.impl.exec.Exec;
+ import com.hazelcast.sql.impl.exec.MapScanExec;
+ import com.hazelcast.sql.impl.exec.ReceiveExec;
+ import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
+ import com.hazelcast.sql.impl.exec.RootExec;
+ import com.hazelcast.sql.impl.exec.SendExec;
+ import com.hazelcast.sql.impl.exec.SortExec;
+ import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+ import com.hazelcast.sql.impl.mailbox.Outbox;
+ import com.hazelcast.sql.impl.mailbox.SingleInbox;
+ import com.hazelcast.sql.impl.mailbox.StripedInbox;
+ import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+ import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+ import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
+ import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+ import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+ import com.hazelcast.sql.impl.physical.SendPhysicalNode;
+ import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+ import com.hazelcast.util.collection.PartitionIdSet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.List;
+ import java.util.Map;
 
 /**
  * Visitor which builds an executor for every observed physical node.
@@ -182,16 +181,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int idx = 0;
 
         for (String receiveMemberId : receiveFragment.getMemberIds()) {
-            // TODO TODO: Race! Get all members in advance!
-            Member receiveMember = nodeEngine.getClusterService().getMember(receiveMemberId);
-
             for (int j = 0; j < receiveFragment.getParallelism(); j++) {
                 Outbox outbox = new Outbox(
                     node.getEdgeId(),
                     stripe,
                     queryId,
                     nodeEngine,
-                    receiveMember,
+                    receiveMemberId,
                     1024, // TODO TODO: Configurable batching.
                     j
                 );
