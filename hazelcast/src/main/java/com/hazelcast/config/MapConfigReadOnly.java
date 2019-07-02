@@ -124,9 +124,6 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public MerkleTreeConfig getMerkleTreeConfig() {
         final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
-        if (merkleTreeConfig == null) {
-            return null;
-        }
         return merkleTreeConfig.getAsReadOnly();
     }
 
@@ -139,9 +136,6 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public HotRestartConfig getHotRestartConfig() {
         final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
-        if (hotRestartConfig == null) {
-            return null;
-        }
         return hotRestartConfig.getAsReadOnly();
     }
 
