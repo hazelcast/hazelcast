@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.hazelfast.IOUtil.INT_AS_BYTES;
@@ -60,6 +61,7 @@ public class Server {
     private final boolean optimizeSelector;
     private final boolean directBuffers;
     private final boolean selectorSpin;
+    private final long selectorSpinDurationNs;
     private final CompositeMessageTaskFactory messageTaskFactory;
 
     public Server(Context context) {
@@ -74,6 +76,7 @@ public class Server {
         this.optimizeSelector = context.optimizeSelector;
         this.directBuffers = context.directBuffers;
         this.selectorSpin = context.selectorSpin;
+        this.selectorSpinDurationNs = context.selectorSpinDurationNs;
         this.node = context.node;
     }
 
@@ -182,8 +185,9 @@ public class Server {
         }
 
         private void selectLoop() throws IOException {
+            long spinEndNs = System.nanoTime() + selectorSpinDurationNs;
             for (; ; ) {
-                int selectedKeys = selectorSpin ? selector.selectNow() : selector.select();
+                int selectedKeys = (selectorSpin && spinEndNs > System.nanoTime()) ? selector.selectNow() : selector.select();
                 registerNewChannels();
                 if (selectedKeys == 0) continue;
 
@@ -199,6 +203,9 @@ public class Server {
                         e.printStackTrace();
                         sk.channel().close();
                     }
+                }
+                if (selectorSpin) {
+                    spinEndNs = System.nanoTime() + selectorSpinDurationNs;
                 }
             }
         }
@@ -325,13 +332,12 @@ public class Server {
                         dirty = true;
                         con.readFrames++;
 
-
                         ClientProtocolBuffer buffer = new SafeBuffer(con.receiveFrame.bytes);
                         ClientMessage message = ClientMessage.createForDecode(buffer, 0);
 
-                        AtomicLongGetCodec.RequestParameters x = AtomicLongGetCodec.decodeRequest(message);
+                        AtomicLongGetCodec.RequestParameters requestParameters = AtomicLongGetCodec.decodeRequest(message);
 
-                        GetOperation operation = new GetOperation(x.name);
+                        GetOperation operation = new GetOperation(requestParameters.name);
                         operation.setPartitionId(message.getPartitionId());
                         Long result;
                         try {
@@ -468,7 +474,8 @@ public class Server {
         private boolean objectPoolingEnabled = true;
         private boolean optimizeSelector = true;
         private boolean directBuffers = true;
-        private boolean selectorSpin = false;
+        private boolean selectorSpin = true;
+        private long selectorSpinDurationNs = TimeUnit.SECONDS.toNanos(1);
         private Node node;
 
         public Context selectorSpin(boolean selectorSpin) {
