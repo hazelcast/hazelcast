@@ -17,7 +17,8 @@
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
 import com.hazelcast.map.MapStore;
-import com.hazelcast.map.MetadataAwareValue;
+
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 
 /**
  * Represents a candidate entry to be deleted from {@link MapStore}

@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.MetadataAwareValue;
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;

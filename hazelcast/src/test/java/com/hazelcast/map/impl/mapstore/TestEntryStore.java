@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.map.MetadataAwareValue;
 import com.hazelcast.map.EntryStore;
 
 import java.util.Collection;

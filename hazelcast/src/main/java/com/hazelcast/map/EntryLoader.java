@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.MapLoader;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is an extension to {@link MapLoader}. Entries loaded by EntryLoader
@@ -28,5 +28,65 @@ import com.hazelcast.core.MapLoader;
  * @param <K> type of the EntryLoader key
  * @param <V> type of the EnyryLoader value
  */
-public interface EntryLoader<K, V> extends MapLoader<K, MetadataAwareValue<V>> {
+public interface EntryLoader<K, V> extends MapLoader<K, EntryLoader.MetadataAwareValue<V>> {
+
+    /**
+     * Represents a value with an expiration time attached to it.
+     * Expiration time is optional.
+     * @param <V> the type of the value object
+     */
+    class MetadataAwareValue<V> {
+
+        /**
+         * Represents no expiration time for a particular value
+         */
+        public static final long NO_TIME_SET = Long.MAX_VALUE;
+
+        private final V value;
+
+        private final long expirationTime;
+
+        /**
+         * Creates a value without attaching an expiration time
+         * @param value the value
+         */
+        public MetadataAwareValue(V value) {
+            this.value = isNotNull(value, "value");
+            this.expirationTime = NO_TIME_SET;
+        }
+
+        /**
+         * Creates a value and attaches an expiration time to it.
+         * See {@link #getExpirationTime()} for how expiration time
+         * is defined.
+         *
+         * @param value the value
+         * @param expirationTime expiration time associated with the value
+         */
+        public MetadataAwareValue(V value, long expirationTime) {
+            this.value = isNotNull(value, "value");
+            this.expirationTime = expirationTime;
+        }
+
+        /**
+         * Returns the value
+         * @return
+         */
+        public V getValue() {
+            return value;
+        }
+
+        /**
+         * The expiration date of this entry. The entry is removed from
+         * maps after the specified date. This value overrides any expiration
+         * time calculated by using ttl and idle time configurations, both
+         * per key and per map configurations.
+         *
+         * @return  the difference, measured in milliseconds, between
+         *          the expiration time and midnight, January 1, 1970 UTC.
+         */
+        public long getExpirationTime() {
+            return expirationTime;
+        }
+    }
 }

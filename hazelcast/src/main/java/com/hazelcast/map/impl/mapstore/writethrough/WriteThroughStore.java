@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writethrough;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.MetadataAwareValue;
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;

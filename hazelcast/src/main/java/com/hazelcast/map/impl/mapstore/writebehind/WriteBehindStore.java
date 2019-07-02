@@ -23,7 +23,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.MapLoader;
-import com.hazelcast.map.MetadataAwareValue;
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
