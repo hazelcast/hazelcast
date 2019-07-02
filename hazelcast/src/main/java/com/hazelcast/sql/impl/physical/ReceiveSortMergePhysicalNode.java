@@ -34,7 +34,6 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
     private List<Expression> expressions;
 
     /** Sort directions. */
-    // TODO TODO: Fix collation!
     private List<Boolean> ascs;
 
     public ReceiveSortMergePhysicalNode() {

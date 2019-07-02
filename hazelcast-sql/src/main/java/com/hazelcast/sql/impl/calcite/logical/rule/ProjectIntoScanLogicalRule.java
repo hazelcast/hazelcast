@@ -18,8 +18,10 @@ package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Project;
@@ -46,14 +48,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// TODO: Remove Drill copy-paste.
+// TODO: Review.
 public class ProjectIntoScanLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectIntoScanLogicalRule();
 
     private ProjectIntoScanLogicalRule() {
         super(
-            // TODO: Set NONE convention.
-            RelOptRule.operand(LogicalProject.class, RelOptRule.some(RelOptRule.operand(LogicalTableScan.class, RelOptRule.any()))),
+            RuleUtils.parentChild(LogicalProject.class, LogicalTableScan.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
             "ProjectIntoScanLogicalRule"
         );
@@ -64,7 +65,6 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         Project project = call.rel(0);
         TableScan scan = call.rel(1);
 
-        // TODO: Why?
         if (scan.getRowType().getFieldList().isEmpty())
             return;
 

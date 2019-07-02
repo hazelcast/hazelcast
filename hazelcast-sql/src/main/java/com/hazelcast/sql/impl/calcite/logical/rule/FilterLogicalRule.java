@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -29,8 +31,7 @@ public class FilterLogicalRule extends RelOptRule {
 
     private FilterLogicalRule() {
         super(
-            // TODO: Set NONE convention.
-            RelOptRule.operand(LogicalFilter.class, RelOptRule.any()),
+            RuleUtils.single(LogicalFilter.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
             "FilterLogicalRule"
         );
@@ -41,7 +42,6 @@ public class FilterLogicalRule extends RelOptRule {
         final LogicalFilter filter = call.rel(0);
         final RelNode input = filter.getInput();
 
-        // TODO: What is this?
         final RelNode convertedInput = convert(input, input.getTraitSet().plus(HazelcastConventions.LOGICAL).simplify());
 
         call.transformTo(new FilterLogicalRel(

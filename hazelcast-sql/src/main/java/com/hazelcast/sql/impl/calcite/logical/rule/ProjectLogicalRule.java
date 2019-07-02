@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -31,8 +33,7 @@ public class ProjectLogicalRule extends RelOptRule {
 
     private ProjectLogicalRule() {
         super(
-            // TODO: Set NONE convention.
-            RelOptRule.operand(LogicalProject.class, RelOptRule.any()),
+            RuleUtils.single(LogicalProject.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
             "ProjectLogicalRule"
         );

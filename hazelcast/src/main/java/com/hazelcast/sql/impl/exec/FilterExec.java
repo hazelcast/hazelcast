@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Filter executor.
  */
-// TODO TODO: Not wired up, not tested. Create a ticket.
 public class FilterExec extends AbstractUpstreamAwareExec {
     /** Filter. */
     private final Predicate filter;

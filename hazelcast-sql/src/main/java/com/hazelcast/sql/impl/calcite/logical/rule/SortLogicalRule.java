@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
@@ -31,7 +32,7 @@ public class SortLogicalRule extends RelOptRule {
 
     private SortLogicalRule() {
         super(
-            RelOptRule.operand(LogicalSort.class, Convention.NONE, RelOptRule.any()),
+            RuleUtils.single(LogicalSort.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
             "SortLogicalRule"
         );

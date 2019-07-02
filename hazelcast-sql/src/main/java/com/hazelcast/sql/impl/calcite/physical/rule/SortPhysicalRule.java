@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
@@ -30,10 +31,8 @@ public class SortPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new SortPhysicalRule();
 
     private SortPhysicalRule() {
-        // TODO: Set LOGICAL convention.
         super(
-            RelOptRule.operand(SortLogicalRel.class, RelOptRule.some(RelOptRule.operand(RelNode.class, RelOptRule.any()))),
-            //RelOptRule.operand(SortLogicalRel.class, LogicalRel.LOGICAL, RelOptRule.any()),
+            RuleUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
             "SortPhysicalRule"
         );
     }
@@ -44,7 +43,7 @@ public class SortPhysicalRule extends RelOptRule {
         RelNode input = sort.getInput();
 
         RelTraitSet inputTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastConventions.HAZELCAST_PHYSICAL)
+            .plus(HazelcastConventions.PHYSICAL)
             .plus(PhysicalDistributionTrait.ANY);
 
         // Current implementation doesn't enforce any traits on child data sources.
@@ -52,7 +51,7 @@ public class SortPhysicalRule extends RelOptRule {
         // This way we do not produce addiotional exchanges.
         SortPhysicalRel newSort = new SortPhysicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(HazelcastConventions.HAZELCAST_PHYSICAL).plus(PhysicalDistributionTrait.ANY),
+            sort.getTraitSet().plus(HazelcastConventions.PHYSICAL).plus(PhysicalDistributionTrait.ANY),
             convert(input, inputTraits),
             sort.getCollation(),
             sort.offset,
@@ -60,7 +59,7 @@ public class SortPhysicalRule extends RelOptRule {
         );
 
         RelTraitSet exchangeTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastConventions.HAZELCAST_PHYSICAL)
+            .plus(HazelcastConventions.PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON)
             .plus(sort.getCollation());
 

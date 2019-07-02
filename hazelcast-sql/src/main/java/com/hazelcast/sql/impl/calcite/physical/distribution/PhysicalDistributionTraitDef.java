@@ -51,14 +51,14 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset) )
             return null;
 
-        if (rel.getConvention() != HazelcastConventions.HAZELCAST_PHYSICAL)
+        if (rel.getConvention() != HazelcastConventions.PHYSICAL)
             return null;
 
         switch (targetTrait.getType()){
             case SINGLETON:
                 return new SingletonExchangePhysicalRel(
                     rel.getCluster(),
-                    planner.emptyTraitSet().plus(HazelcastConventions.HAZELCAST_PHYSICAL).plus(targetTrait),
+                    planner.emptyTraitSet().plus(HazelcastConventions.PHYSICAL).plus(targetTrait),
                     rel
                 );
 

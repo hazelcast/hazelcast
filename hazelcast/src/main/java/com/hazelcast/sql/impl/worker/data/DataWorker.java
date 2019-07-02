@@ -102,7 +102,6 @@ public class DataWorker extends AbstractWorker<DataTask> {
         inbox.onBatch(task.getSourceMemberId(), task.getSourceStripe(), task.getSourceThread(), task.getBatch());
 
         // Continue iteration.
-        // TODO TODO: Handle exception!
         inbox.getExec().advance();
     }
 
@@ -114,7 +113,6 @@ public class DataWorker extends AbstractWorker<DataTask> {
     private void handleRootTask(RootDataTask task) {
         RootExec root = task.getRootExec();
 
-        // TODO TODO: Handle exception!
         root.advance();
     }
 

@@ -48,9 +48,6 @@ public class StripeDeployment {
     /** Parent fragment. */
     private FragmentDeployment fragmentDeployment;
 
-    /** Whether stripe execution is finished. */
-    private volatile boolean done;
-
     public StripeDeployment(Exec exec, int stripe, int thread, List<AbstractInbox> inboxes, List<Outbox> outboxes) {
         this.exec = exec;
         this.stripe = stripe;
@@ -82,15 +79,6 @@ public class StripeDeployment {
 
     public List<Outbox> getOutboxes() {
         return outboxes;
-    }
-
-    public boolean isDone() {
-        return done;
-    }
-
-    // TODO TODO: Exception, result, etc.
-    public void onDone() {
-        done = true;
     }
 
     public QueryContext getContext() {

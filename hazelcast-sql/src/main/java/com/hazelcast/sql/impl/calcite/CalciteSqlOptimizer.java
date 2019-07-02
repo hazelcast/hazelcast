@@ -234,13 +234,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private LogicalRel doOptimizeLogical(RelNode rel) {
         // TODO: Rules to merge scan and project/filter
         // TODO: Rule to eliminate sorting if the source is already sorted.
-        // TODO: Cache rules and posslbly the whole planner.
 
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
 
         hepBuilder.addRuleInstance(new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER));
 
-        hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE); // TODO: Remove once both merge routines are ready
+        hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
         hepBuilder.addRuleInstance(ProjectIntoScanLogicalRule.INSTANCE);
 
         hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
@@ -279,7 +278,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
 
         RelTraitSet traits = logicalRel.getTraitSet()
-            .plus(HazelcastConventions.HAZELCAST_PHYSICAL)
+            .plus(HazelcastConventions.PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON);
 
         final Program program = Programs.of(rules);

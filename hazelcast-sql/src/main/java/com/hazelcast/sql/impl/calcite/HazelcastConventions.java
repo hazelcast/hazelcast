@@ -29,7 +29,7 @@ public class HazelcastConventions {
     public static final Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 
     /** Physical convention. */
-    public static final Convention HAZELCAST_PHYSICAL = new Convention.Impl("PHYSICAL", PhysicalRel.class) {
+    public static final Convention PHYSICAL = new Convention.Impl("PHYSICAL", PhysicalRel.class) {
         @Override
         public boolean canConvertConvention(Convention toConvention) {
             return true;

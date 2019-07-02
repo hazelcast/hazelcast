@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -29,8 +31,7 @@ public class LogicalMapScanRule extends RelOptRule {
 
     private LogicalMapScanRule() {
         super(
-            // TODO: Set NONE convention.
-            RelOptRule.operand(LogicalTableScan.class, RelOptRule.any()),
+            RuleUtils.single(LogicalTableScan.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
             "LogicalMapScanRule"
         );
