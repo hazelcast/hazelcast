@@ -277,7 +277,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      *
      * @return event journal config
      */
-    public EventJournalConfig getEventJournalConfig() {
+    public @Nonnull EventJournalConfig getEventJournalConfig() {
         return eventJournalConfig;
     }
 

@@ -61,21 +61,17 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         return wanReplicationRef.getAsReadOnly();
     }
 
+    @Nonnull
     @Override
     public HotRestartConfig getHotRestartConfig() {
         HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
-        if (hotRestartConfig == null) {
-            return null;
-        }
         return hotRestartConfig.getAsReadOnly();
     }
 
+    @Nonnull
     @Override
     public EventJournalConfig getEventJournalConfig() {
         EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
-        if (eventJournalConfig == null) {
-            return null;
-        }
         return eventJournalConfig.getAsReadOnly();
     }
 
