@@ -110,7 +110,7 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
     private Client client(int partitionId) {
         Map<Address, Client> clients = threadLocal.get();
-        ClientPartitionService partitionService = getClient().partitionService;
+        ClientPartitionService partitionService = getClient().getClientPartitionService();
         Address address = partitionService.getPartitionOwner(partitionId);
 
         Client client = clients.get(address);

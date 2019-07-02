@@ -177,7 +177,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final LifecycleServiceImpl lifecycleService;
     private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
-    public final ClientPartitionServiceImpl partitionService;
+    private final ClientPartitionServiceImpl partitionService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final AbstractClientListenerService listenerService;
