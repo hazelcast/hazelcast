@@ -108,7 +108,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
             mapName,    // Scan
             projection, // Project
-            null        // Filter: // TODO: Need to implement FilterExec and merge rule!
+            null        // Filter:
         );
 
         pushUpstream(mapScanNode);

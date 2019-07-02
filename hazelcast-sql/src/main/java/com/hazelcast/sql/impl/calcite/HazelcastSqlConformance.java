@@ -62,7 +62,6 @@ public class HazelcastSqlConformance extends SqlDelegatingConformance {
 
     @Override
     public boolean isFromRequired() {
-        // TODO: This might be useful when joining with some function provided data. Create a ticket.
         return super.isFromRequired();
     }
 
