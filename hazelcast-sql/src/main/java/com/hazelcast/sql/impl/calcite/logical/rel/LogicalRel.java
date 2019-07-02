@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteRelNode;
+import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
 
 /**
  * Marker interface for logical relations.
  */
-public interface LogicalRel extends SqlCalciteRelNode {
+public interface LogicalRel extends HazelcastRelNode {
     // No-op.
 }

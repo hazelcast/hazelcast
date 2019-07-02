@@ -22,11 +22,11 @@ import org.apache.calcite.sql.validate.SqlDelegatingConformance;
 /**
  * Conformance level.
  */
-public class SqlCalciteConformance extends SqlDelegatingConformance {
+public class HazelcastSqlConformance extends SqlDelegatingConformance {
     /** Singleton. */
-    public static SqlCalciteConformance INSTANCE = new SqlCalciteConformance();
+    public static HazelcastSqlConformance INSTANCE = new HazelcastSqlConformance();
 
-    private SqlCalciteConformance() {
+    private HazelcastSqlConformance() {
         super(SqlConformanceEnum.DEFAULT);
     }
 

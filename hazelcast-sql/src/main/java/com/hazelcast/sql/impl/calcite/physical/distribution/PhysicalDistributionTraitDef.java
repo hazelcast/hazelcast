@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.physical.distribution;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
@@ -51,14 +51,14 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset) )
             return null;
 
-        if (rel.getConvention() != SqlCalciteConventions.HAZELCAST_PHYSICAL)
+        if (rel.getConvention() != HazelcastConventions.HAZELCAST_PHYSICAL)
             return null;
 
         switch (targetTrait.getType()){
             case SINGLETON:
                 return new SingletonExchangePhysicalRel(
                     rel.getCluster(),
-                    planner.emptyTraitSet().plus(SqlCalciteConventions.HAZELCAST_PHYSICAL).plus(targetTrait),
+                    planner.emptyTraitSet().plus(HazelcastConventions.HAZELCAST_PHYSICAL).plus(targetTrait),
                     rel
                 );
 

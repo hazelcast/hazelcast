@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -40,7 +40,7 @@ public class LogicalMapScanRule extends RelOptRule {
     public void onMatch(RelOptRuleCall call) {
         LogicalTableScan access = call.rel(0);
 
-        RelTraitSet traits = access.getTraitSet().plus(SqlCalciteConventions.LOGICAL);
+        RelTraitSet traits = access.getTraitSet().plus(HazelcastConventions.LOGICAL);
 
         call.transformTo(new MapScanLogicalRel(access.getCluster(), traits, access.getTable()));
     }

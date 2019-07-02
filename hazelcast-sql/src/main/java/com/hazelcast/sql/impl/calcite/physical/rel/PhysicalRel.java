@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteRelNode;
+import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
 
 /**
  * Marker interface for physical relations.
  */
-public interface PhysicalRel extends SqlCalciteRelNode {
+public interface PhysicalRel extends HazelcastRelNode {
     void visit(PhysicalRelVisitor visitor);
 }

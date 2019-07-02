@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -44,9 +44,9 @@ public class ProjectLogicalRule extends RelOptRule {
 
         RelNode input = project.getInput();
 
-        RelTraitSet traits = project.getTraitSet().plus(SqlCalciteConventions.LOGICAL);
+        RelTraitSet traits = project.getTraitSet().plus(HazelcastConventions.LOGICAL);
 
-        RelNode convertedInput = convert(input, input.getTraitSet().plus(SqlCalciteConventions.LOGICAL).simplify());
+        RelNode convertedInput = convert(input, input.getTraitSet().plus(HazelcastConventions.LOGICAL).simplify());
 
         call.transformTo(new ProjectLogicalRel(
             project.getCluster(),

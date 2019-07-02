@@ -89,14 +89,14 @@ import java.util.Set;
 /**
  * Calcite-based SQL optimizer.
  */
-public class SqlCalciteOptimizer implements SqlOptimizer {
+public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
     /** Logger. */
     private final ILogger logger;
 
-    public SqlCalciteOptimizer(NodeEngine nodeEngine, ILogger logger) {
+    public CalciteSqlOptimizer(NodeEngine nodeEngine, ILogger logger) {
         this.nodeEngine = nodeEngine;
         this.logger = logger;
     }
@@ -162,11 +162,11 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(), catalogReader);
 
         // TODO: Need our own validator, investigate interface
-        return new SqlCalciteValidator(
+        return new HazelcastSqlValidator(
             opTab,
             catalogReader,
             typeFactory,
-            SqlCalciteConformance.INSTANCE
+            HazelcastSqlConformance.INSTANCE
         );
     }
 
@@ -214,7 +214,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
             parserConfig.setUnquotedCasing(Casing.UNCHANGED);
-            parserConfig.setConformance(SqlCalciteConformance.INSTANCE);
+            parserConfig.setConformance(HazelcastSqlConformance.INSTANCE);
 
             // TODO: Can we cache it?
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
@@ -284,7 +284,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         );
 
         RelTraitSet traits = logicalRel.getTraitSet()
-            .plus(SqlCalciteConventions.HAZELCAST_PHYSICAL)
+            .plus(HazelcastConventions.HAZELCAST_PHYSICAL)
             .plus(PhysicalDistributionTrait.SINGLETON);
 
         final Program program = Programs.of(rules);
@@ -325,7 +325,7 @@ public class SqlCalciteOptimizer implements SqlOptimizer {
         String localMemberId = nodeEngine.getLocalMember().getUuid();
 
         // Create the plan.
-        SqlCalcitePlanCreateVisitor visitor = new SqlCalcitePlanCreateVisitor(partMemberIds, localMemberId);
+        PlanCreateVisitor visitor = new PlanCreateVisitor(partMemberIds, localMemberId);
 
         rel.visit(visitor);
 

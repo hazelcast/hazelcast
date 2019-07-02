@@ -46,7 +46,7 @@ import java.util.Set;
 /**
  * Visitor which produces query plan.
  */
-public class SqlCalcitePlanCreateVisitor implements PhysicalRelVisitor {
+public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Members with partitions. */
     private final Set<String> partMemberIds;
 
@@ -68,7 +68,7 @@ public class SqlCalcitePlanCreateVisitor implements PhysicalRelVisitor {
     /** Current inbound edges. */
     private List<Integer> currentInboundEdges;
 
-    public SqlCalcitePlanCreateVisitor(Set<String> partMemberIds, String localMemberId) {
+    public PlanCreateVisitor(Set<String> partMemberIds, String localMemberId) {
         this.partMemberIds = partMemberIds;
         this.localMemberId = localMemberId;
     }

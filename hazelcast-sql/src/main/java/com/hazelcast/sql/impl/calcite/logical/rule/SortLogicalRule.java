@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.SqlCalciteConventions;
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
@@ -49,11 +49,11 @@ public class SortLogicalRule extends RelOptRule {
 
         final RelNode input = sort.getInput();
 
-        RelNode convertedInput = convert(input, input.getTraitSet().plus(SqlCalciteConventions.LOGICAL).simplify());
+        RelNode convertedInput = convert(input, input.getTraitSet().plus(HazelcastConventions.LOGICAL).simplify());
 
         call.transformTo(new SortLogicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(SqlCalciteConventions.LOGICAL),
+            sort.getTraitSet().plus(HazelcastConventions.LOGICAL),
             convertedInput,
             sort.getCollation(),
             sort.offset,

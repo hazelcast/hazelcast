@@ -16,11 +16,19 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
+import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
-/**
- * Marker interface for Hazelcast rel node.
- */
-public interface SqlCalciteRelNode extends RelNode {
-    // No-op.
+public class HazelcastSqlValidator extends SqlValidatorImpl {
+    public HazelcastSqlValidator(
+        SqlOperatorTable opTab,
+        SqlValidatorCatalogReader catalogReader,
+        RelDataTypeFactory typeFactory,
+        SqlConformance conformance
+    ) {
+        super(opTab, catalogReader, typeFactory, conformance);
+    }
 }

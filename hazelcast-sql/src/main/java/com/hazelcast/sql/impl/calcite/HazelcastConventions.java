@@ -24,7 +24,7 @@ import org.apache.calcite.plan.RelTraitSet;
 /**
  * Hazelcast conventions.
  */
-public class SqlCalciteConventions {
+public class HazelcastConventions {
     /** Logical convention. */
     public static final Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 
@@ -41,7 +41,7 @@ public class SqlCalciteConventions {
         }
     };
 
-    private SqlCalciteConventions() {
+    private HazelcastConventions() {
         // No-op.
     }
 }

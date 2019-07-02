@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.query.Predicate;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
