@@ -67,6 +67,8 @@ public class AddMapConfigMessageTask
             config.setEntryListenerConfigs(
                     (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
+        // TODO add merkle tree config
+        // config.setMerkleTreeConfig(parameters.merkleTreeConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setMapAttributeConfigs(parameters.mapAttributeConfigs);

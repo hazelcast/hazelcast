@@ -247,16 +247,6 @@ hazelcast:
         capacity: 10000
         time-to-live-seconds: 0
 
-  # Configuration for a merkle tree.
-  # The merkle tree is a data structure used for efficient comparison of the
-  # difference in the contents of large data structures. The precision of
-  # such a comparison mechanism is defined by the depth of the merkle tree.
-  merkle-tree:
-    map:
-      mapName:
-        enabled: false
-        depth: 10
-
   multimap:
     default:
       backup-count: 1

@@ -1022,6 +1022,21 @@
         * <read-backup-data>:
         Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
         at least 1 sync or async backup.
+        * <merkle-tree>:
+        It has the following attributes and sub-elements:
+        - enabled:
+            Specifies whether the merkle tree is enabled.
+        - <depth>:
+            The depth of the merkle tree.
+             A larger depth means that a data synchronization mechanism will be able
+             to pinpoint a smaller subset of the data structure contents in which a
+             change occurred. This causes the synchronization mechanism to be more
+             efficient. On the other hand, a larger tree depth means the merkle tree
+             will consume more memory.
+             A smaller depth means the data synchronization mechanism will have to
+             transfer larger chunks of the data structure in which a possible change
+             happened. On the other hand, a shallower tree consumes less memory.
+             The depth must be between 2 and 27 (exclusive). The default depth is 10.
         * <hot-restart>:
         Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
         Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
@@ -1188,6 +1203,9 @@
         <min-eviction-check-millis>100</min-eviction-check-millis>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <read-backup-data>false</read-backup-data>
+        <merkle-tree enabled="false">
+            <depth>10</depth>
+        </merkle-tree>
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>
@@ -1586,38 +1604,6 @@
         <capacity>10000</capacity>
         <time-to-live-seconds>0</time-to-live-seconds>
     </event-journal>
-
-    <!--
-    ===== HAZELCAST MERKLE TREE CONFIGURATION =====
-
-    Configuration element's name is <merkle-tree>.
-    It has the following attributes and sub-elements:
-    * enabled:
-    	Specifies whether the merkle tree is enabled.
-    * <mapName>:
-    	Map name to which this configuration applies. This attribute's default value is "default".
-    	Configuration for the merkle tree with name "default" applies to all maps without
-    	configuration for a specific named map. In another words, if you specify the default
-    	merkle tree config as enabled then all maps which don't have specific merkle tree
-    	will be also enabled.
-    * <depth>:
-    	The depth of the merkle tree.
-    	 A larger depth means that a data synchronization mechanism will be able
-    	 to pinpoint a smaller subset of the data structure contents in which a
-    	 change occurred. This causes the synchronization mechanism to be more
-    	 efficient. On the other hand, a larger tree depth means the merkle tree
-    	 will consume more memory.
-    	 A smaller depth means the data synchronization mechanism will have to
-    	 transfer larger chunks of the data structure in which a possible change
-    	 happened. On the other hand, a shallower tree consumes less memory.
-    	 The depth must be between 2 and 27 (exclusive). The default depth is 10.
-
-     -->
-
-    <merkle-tree enabled="false">
-        <mapName>default</mapName>
-        <depth>10</depth>
-    </merkle-tree>
 
     <!--
         ===== HAZELCAST LIST CONFIGURATION =====

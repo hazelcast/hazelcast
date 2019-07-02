@@ -72,11 +72,11 @@ import static org.junit.Assert.fail;
  * YAML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests
  * <p>
- *
+ * <p>
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
  * <p>
- *
+ * <p>
  * NOTE2: Test cases specific to YAML should be added to {@link YamlOnlyConfigBuilderTest}
  *
  * @see AbstractConfigBuilderTest
@@ -1592,32 +1592,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapMerkleTreeConfig() {
-        String mapName = "mapName";
-        String map2Name = "map2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  merkle-tree:\n"
-                + "    map:\n"
-                + "      " + mapName + ":\n"
-                + "        enabled: true\n"
-                + "        depth: 20\n"
-                + "      " + map2Name + ":\n"
-                + "        enabled: false\n"
-                + "        depth: 20\n";
-
-        Config config = buildConfig(yaml);
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig(mapName);
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(20, treeConfig.getDepth());
-
-        MerkleTreeConfig tree2Config = config.getMapMerkleTreeConfig(map2Name);
-        assertFalse(tree2Config.isEnabled());
-    }
-
-    @Override
-    @Test
     public void testCacheEventJournalConfig() {
         String journalName = "cacheName";
         String journal2Name = "cache2Name";
@@ -2492,6 +2466,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      eviction-percentage: 25\n"
                 + "      min-eviction-check-millis: 256\n"
                 + "      read-backup-data: true\n"
+                + "      merkle-tree:\n"
+                + "        enabled: true\n"
+                + "        depth: 20\n"
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
@@ -2568,6 +2545,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isLocal());
         assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertTrue(mapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
 

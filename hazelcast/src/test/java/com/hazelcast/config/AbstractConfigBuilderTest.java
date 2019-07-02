@@ -244,9 +244,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapEventJournalConfig();
 
     @Test
-    public abstract void testMapMerkleTreeConfig();
-
-    @Test
     public abstract void testCacheEventJournalConfig();
 
     @Test

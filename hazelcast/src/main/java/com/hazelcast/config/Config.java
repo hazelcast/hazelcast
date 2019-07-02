@@ -131,8 +131,6 @@ public class Config {
 
     private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
-    private final Map<String, MerkleTreeConfig> mapMerkleTreeConfigs = new ConcurrentHashMap<String, MerkleTreeConfig>();
-
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -365,6 +363,7 @@ public class Config {
     }
 
     // TODO (TK) : Inspect usages of NetworkConfig to replace where needed with {@link Config#getActiveMemberNetworkConfig()}
+
     /**
      * Returns the network configuration for this hazelcast instance. The
      * network configuration defines how a member will interact with other
@@ -2809,92 +2808,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only map {@link MerkleTreeConfig} for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the map merkle tree config
-     * @return the map merkle tree configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
-        name = getBaseName(name);
-        final MerkleTreeConfig config = lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getMapMerkleTreeConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the map merkle tree config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the merkle tree by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addMerkleTreeConfig(MerkleTreeConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the map merkle tree config
-     * @return the map merkle tree configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapMerkleTreeConfigs, name, MerkleTreeConfig.class,
-                new BiConsumer<MerkleTreeConfig, String>() {
-                    @Override
-                    public void accept(MerkleTreeConfig merkleTreeConfig, String name) {
-                        merkleTreeConfig.setMapName(name);
-                        if ("default".equals(name)) {
-                            merkleTreeConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Adds the merkle tree configuration.
-     * The returned {@link MerkleTreeConfig#getMapName()} may be a
-     * pattern with which the configuration will be obtained in the future.
-     *
-     * @param merkleTreeConfig the merkle tree configuration
-     * @return this config instance
-     * @throws IllegalArgumentException if the {@link MerkleTreeConfig#getMapName()}
-     *                                  is empty
-     */
-    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        final String mapName = merkleTreeConfig.getMapName();
-        if (StringUtil.isNullOrEmpty(mapName)) {
-            throw new IllegalArgumentException("Merkle tree config must define a map name");
-        }
-        mapMerkleTreeConfigs.put(mapName, merkleTreeConfig);
-        return this;
-    }
-
-    /**
      * Returns the map of {@link FlakeIdGenerator} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
@@ -3048,34 +2961,6 @@ public class Config {
         this.cacheEventJournalConfigs.putAll(eventJournalConfigs);
         for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
             entry.getValue().setCacheName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns the map of map merkle tree configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the map merkle tree configurations mapped by config name
-     */
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        return mapMerkleTreeConfigs;
-    }
-
-    /**
-     * Sets the map of map merkle configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param merkleTreeConfigs the map merkle tree configuration map to set
-     * @return this config instance
-     */
-    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
-        this.mapMerkleTreeConfigs.clear();
-        this.mapMerkleTreeConfigs.putAll(merkleTreeConfigs);
-        for (Entry<String, MerkleTreeConfig> entry : merkleTreeConfigs.entrySet()) {
-            entry.getValue().setMapName(entry.getKey());
         }
         return this;
     }
@@ -3298,7 +3183,7 @@ public class Config {
      *
      * @return the license key
      * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
-     *         {@link HazelcastRuntimePermission}
+     *                           {@link HazelcastRuntimePermission}
      */
     public String getLicenseKey() {
         SecurityManager sm = System.getSecurityManager();

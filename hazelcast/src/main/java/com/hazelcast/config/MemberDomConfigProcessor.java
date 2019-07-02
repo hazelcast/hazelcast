@@ -71,7 +71,6 @@ import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
-import static com.hazelcast.config.ConfigSections.MERKLE_TREE;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.config.ConfigSections.NETWORK;
@@ -169,8 +168,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleScheduledExecutor(node);
         } else if (EVENT_JOURNAL.isEqual(nodeName)) {
             handleEventJournal(node);
-        } else if (MERKLE_TREE.isEqual(nodeName)) {
-            handleMerkleTree(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -1305,7 +1302,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-        protected void handleLock(Node node) {
+    protected void handleLock(Node node) {
         String name = getAttribute(node, "name");
         LockConfig lockConfig = new LockConfig();
         lockConfig.setName(name);
@@ -1550,14 +1547,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     @SuppressWarnings("deprecation")
-    protected void handleMap(Node parentNode) {
+    protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
         handleMapNode(parentNode, mapConfig);
     }
 
-    void handleMapNode(Node parentNode, final MapConfig mapConfig) {
+    void handleMapNode(Node parentNode, final MapConfig mapConfig) throws Exception {
         for (Node node : childElements(parentNode)) {
             String nodeName = cleanNodeName(node);
             String value = getTextContent(node).trim();
@@ -1593,6 +1590,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
                 mapConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("merkle-tree".equals(nodeName)) {
+                MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+                handleViaReflection(node, mapConfig, merkleTreeConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
@@ -2264,7 +2264,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         endpointConfig.setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
-        protected void handleTopic(Node node) {
+    protected void handleTopic(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         TopicConfig tConfig = new TopicConfig();
@@ -2364,12 +2364,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         EventJournalConfig journalConfig = new EventJournalConfig();
         handleViaReflection(node, config, journalConfig);
         config.addEventJournalConfig(journalConfig);
-    }
-
-    protected void handleMerkleTree(Node node) throws Exception {
-        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-        handleViaReflection(node, config, merkleTreeConfig);
-        config.addMerkleTreeConfig(merkleTreeConfig);
     }
 
     protected void handleRingbuffer(Node node) {

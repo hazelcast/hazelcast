@@ -28,7 +28,6 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
@@ -172,17 +171,7 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public MerkleTreeConfig findMapMerkleTreeConfig(String baseName) {
-        return null;
-    }
-
-    @Override
     public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
         return emptyMap();
     }
 

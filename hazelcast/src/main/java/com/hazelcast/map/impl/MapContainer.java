@@ -239,8 +239,9 @@ public class MapContainer {
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();
+
         Config config = nodeEngine.getConfig();
-        if (!config.findMapMerkleTreeConfig(name).isEnabled()
+        if (!mapConfig.getMerkleTreeConfig().isEnabled()
                 && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
             throw new InvalidConfigurationException(
                     "Map " + name + " has disabled merkle trees but the WAN replication scheme "

@@ -75,11 +75,11 @@ import static org.junit.Assert.assertTrue;
  * XML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests.
  * <p>
- *
+ * <p>
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
  * <p>
- *
+ * <p>
  * NOTE2: Test cases specific to XML should be added to {@link XmlOnlyConfigBuilderTest}
  *
  * @see AbstractConfigBuilderTest
@@ -1444,7 +1444,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testWanReplicationConfig() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-publisher group-name=\"nyc\" publisher-id=\"publisherId\">\n"
@@ -1501,7 +1501,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testDefaultOfPersistWanReplicatedDataIsFalse() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-consumer>\n"
@@ -1518,7 +1518,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testWanReplicationSyncConfig() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-publisher group-name=\"nyc\">\n"
@@ -1561,24 +1561,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Override
-    @Test
-    public void testMapMerkleTreeConfig() {
-        String mapName = "mapName";
-        String xml = HAZELCAST_START_TAG
-                + "<merkle-tree enabled=\"true\">\n"
-                + "    <mapName>" + mapName + "</mapName>\n"
-                + "    <depth>20</depth>\n"
-                + "</merkle-tree>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig(mapName);
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(20, treeConfig.getDepth());
     }
 
     @Override
@@ -2397,6 +2379,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction-percentage>25</eviction-percentage>"
                 + "        <min-eviction-check-millis>256</min-eviction-check-millis>"
                 + "        <read-backup-data>true</read-backup-data>"
+                + "        <merkle-tree enabled=\"true\">\n"
+                + "            <depth>20</depth>\n"
+                + "          </merkle-tree>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2474,6 +2459,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isLocal());
         assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertTrue(mapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
 

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -119,8 +120,27 @@ public class MapConfigReadOnly extends MapConfig {
         return Collections.unmodifiableList(readOnlyOnes);
     }
 
+    @Nonnull
     @Override
-    public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        return merkleTreeConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        throw throwReadOnly();
+    }
+
+    @Nonnull
+    @Override
+    public HotRestartConfig getHotRestartConfig() {
+        final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        return hotRestartConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         throw throwReadOnly();
     }
 
