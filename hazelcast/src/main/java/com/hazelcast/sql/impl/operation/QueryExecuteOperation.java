@@ -71,9 +71,11 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     public void run() throws Exception {
         SqlServiceImpl svc = getSqlService();
 
-        ExecuteControlTask task = new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
+        svc.onQueryExecuteRequest(getTask());
+    }
 
-        svc.onQueryExecuteRequest(task);
+    public ExecuteControlTask getTask() {
+        return new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
     }
 
     @Override

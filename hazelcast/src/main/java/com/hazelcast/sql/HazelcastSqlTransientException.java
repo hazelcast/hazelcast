@@ -16,28 +16,13 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.core.HazelcastException;
-
 /**
- * Exception occurred during SQL query execution.
+ * SQL exception throw in situation when query attempt might be retried immediately without any corrective actions.
  */
-public class SqlException extends HazelcastException {
+public class HazelcastSqlTransientException extends HazelcastSqlException {
+    private static final long serialVersionUID = -2789247171606457719L;
 
-    private static final long serialVersionUID = -1153559924521087582L;
-
-    /** Code of the exception. */
-    private int code;
-
-    public SqlException(int code, String message) {
-        super(message);
-
-        this.code = code;
-    }
-
-    /**
-     * @return Code of the exception.
-     */
-    public int getCode() {
-        return code;
+    public HazelcastSqlTransientException(int code, String message) {
+        super(code, message);
     }
 }

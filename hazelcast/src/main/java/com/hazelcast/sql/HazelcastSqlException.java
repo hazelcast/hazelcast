@@ -16,17 +16,28 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
- * Collection of error codes.
+ * Exception occurred during SQL query execution.
  */
-public class SqlErrorCode {
-    /** Generic error/ */
-    public static final int GENERIC = -1;
+public class HazelcastSqlException extends HazelcastException {
 
-    /** Member has left the topology. */
-    public static final int MEMBER_LEAVE = 1;
+    private static final long serialVersionUID = -1153559924521087582L;
 
-    private SqlErrorCode() {
-        // No-op.
+    /** Code of the exception. */
+    private int code;
+
+    public HazelcastSqlException(int code, String message) {
+        super(message);
+
+        this.code = code;
+    }
+
+    /**
+     * @return Code of the exception.
+     */
+    public int getCode() {
+        return code;
     }
 }

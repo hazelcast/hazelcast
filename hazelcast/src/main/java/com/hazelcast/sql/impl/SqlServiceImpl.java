@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.cluster.Member;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.SqlCursor;
@@ -35,12 +35,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
-// TODO TODO: Handle membership changes! (MembershipAwareService)
 public class SqlServiceImpl implements SqlService, ManagedService {
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
@@ -84,7 +82,6 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
     @Override
     public SqlCursor query(String sql, Object... args) {
-        // TODO TODO: Implement plan cache.
         QueryPlan plan = optimizer.prepare(sql);
 
         List<Object> args0;
@@ -115,8 +112,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
         QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
 
-        // TODO TODO: Adjustable batch size!
-        QueryResultConsumer consumer = new QueryResultConsumerImpl(1024);
+        QueryResultConsumer consumer = new QueryResultConsumerImpl();
 
         QueryExecuteOperation op = new QueryExecuteOperation(
             queryId,
@@ -126,11 +122,12 @@ public class SqlServiceImpl implements SqlService, ManagedService {
             consumer
         );
 
-        // TODO TODO: Execute only on partition members (get from plan).
-        for (Member member : nodeEngine.getClusterService().getMembers()) {
-            // TODO TODO: Execute local operation directly.
-            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, member.getAddress());
-        }
+        // Start execution on local member.
+        controlThreadPool.submit(op.getTask());
+
+        // Start execution on remote members.
+        for (Address remoteAddress : plan.getRemoteAddresses())
+            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, remoteAddress);
 
         return new QueryHandle(queryId, consumer);
     }

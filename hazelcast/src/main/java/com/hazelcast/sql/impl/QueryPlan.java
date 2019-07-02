@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.List;
@@ -31,9 +32,17 @@ public class QueryPlan {
     /** Partition mapping. */
     private final Map<String, PartitionIdSet> partMap;
 
-    public QueryPlan(List<QueryFragment> fragments, Map<String, PartitionIdSet> partMap) {
+    /** Remote addresses. */
+    private final List<Address> remoteAddresses;
+
+    public QueryPlan(
+        List<QueryFragment> fragments,
+        Map<String, PartitionIdSet> partMap,
+        List<Address> remoteAddresses
+    ) {
         this.fragments = fragments;
         this.partMap = partMap;
+        this.remoteAddresses = remoteAddresses;
     }
 
     public List<QueryFragment> getFragments() {
@@ -42,5 +51,9 @@ public class QueryPlan {
 
     public Map<String, PartitionIdSet> getPartitionMap() {
         return partMap;
+    }
+
+    public List<Address> getRemoteAddresses() {
+        return remoteAddresses;
     }
 }

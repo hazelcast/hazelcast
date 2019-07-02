@@ -17,9 +17,13 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.HazelcastSqlTransientException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
@@ -76,6 +80,7 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -318,6 +323,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         Set<String> partMemberIds = new HashSet<>(partMap.keySet());
         String localMemberId = nodeEngine.getLocalMember().getUuid();
 
+        // Collect remote addresses.
+        List<Address> remoteAddresses = new ArrayList<>(partMemberIds.size() - 1);
+
+        for (String partMemberId : partMemberIds) {
+            MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
+
+            if (member == null)
+                throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has " +
+                    "left the topology: " + partMemberId);
+
+            if (!member.localMember())
+                remoteAddresses.add(member.getAddress());
+        }
+
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(partMemberIds, localMemberId);
 
@@ -325,6 +344,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         List<QueryFragment> fragments = visitor.getFragments();
 
-        return new QueryPlan(fragments, partMap);
+        return new QueryPlan(fragments, partMap, remoteAddresses);
     }
 }

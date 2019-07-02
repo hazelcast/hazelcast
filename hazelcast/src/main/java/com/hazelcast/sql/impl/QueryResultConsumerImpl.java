@@ -29,6 +29,9 @@ import java.util.NoSuchElementException;
  * Blocking array-based result consumer.
  */
 public class QueryResultConsumerImpl implements QueryResultConsumer {
+    /** Default batch size. */
+    private static final int DFLT_BATCH_SIZE = 1024;
+
     /** Maximum size. */
     private final int maxSize;
 
@@ -49,6 +52,10 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
     /** Iterator. */
     private InternalIterator iter;
+
+    public QueryResultConsumerImpl() {
+        this(DFLT_BATCH_SIZE);
+    }
 
     public QueryResultConsumerImpl(int maxSize) {
         this.maxSize = maxSize;
