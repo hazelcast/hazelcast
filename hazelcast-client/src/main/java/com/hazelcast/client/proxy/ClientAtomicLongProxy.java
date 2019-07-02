@@ -31,12 +31,14 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.hazelfast.Client;
 import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.io.IOException;
+import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -94,11 +96,6 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         try {
             ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
             request.setPartitionId(partitionId);
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
             client.write(request.buffer().byteArray());
             client.flush();
             client.readResponse();
@@ -111,8 +108,11 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
     private Client client() {
         Client client = threadLocal.get();
         if (client == null) {
+            Set<Member> members = this.getClient().getCluster().getMembers();
+            Member member = members.iterator().next();
+            String hostAddress = member.getSocketAddress().getAddress().getHostAddress();
             client = new Client(new Client.Context()
-                    .hostname("10.212.40.101"));
+                    .hostname(hostAddress));
             client.start();
             threadLocal.set(client);
         }

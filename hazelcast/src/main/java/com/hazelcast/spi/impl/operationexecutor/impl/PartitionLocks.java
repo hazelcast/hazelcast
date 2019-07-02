@@ -29,7 +29,7 @@ final class PartitionLocks {
 
     PartitionLocks(int partitionCount) {
         //todo: first item could end up with false sharing.
-        this.locks = new AtomicReferenceArray<Thread>(partitionCount * CACHE_LINE_LENGTH);
+        this.locks = new AtomicReferenceArray<>(partitionCount * CACHE_LINE_LENGTH);
     }
 
     public void unlock(int partitionId) {
