@@ -219,7 +219,7 @@ public class EvictionTest extends HazelcastTestSupport {
             String cityName = i % 2 == 0 ? "cityname" : null;
 
             Employee emp = new Employee(i, "name" + i, cityName, 0, true, i);
-            map.put(i, emp, 0L, SECONDS, 2L, SECONDS);
+            map.put(i, emp, 0L, SECONDS, 14L, SECONDS);
         }
 
         EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
@@ -233,7 +233,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
             Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
             assertEquals(3, valuesNotNullCity.size());
-        }, 5);
+        }, 30);
     }
 
     /**
