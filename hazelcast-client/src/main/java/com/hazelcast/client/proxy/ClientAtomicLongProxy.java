@@ -89,7 +89,6 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         return decrementAndGetAsync().join();
     }
 
-
     @Override
     public long get() {
         Client client = client(partitionId);
@@ -115,9 +114,8 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
         Client client = clients.get(address);
         if (client == null) {
-            String hostAddress = address.getHost();
             client = new Client(new Client.Context()
-                    .hostname(hostAddress));
+                    .hostname(address.getHost()));
             client.start();
             clients.put(address, client);
         }
