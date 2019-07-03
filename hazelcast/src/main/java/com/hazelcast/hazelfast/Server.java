@@ -465,7 +465,7 @@ public class Server {
     }
 
     public static class Context {
-        private int serverThreadCount = 10;//Runtime.getRuntime().availableProcessors();//Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
+        private int serverThreadCount = Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
 
         private String bindAddress = "0.0.0.0";
         private int startPort = 1111;
