@@ -130,9 +130,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private CalciteConnectionConfig prepareConfig() {
         Properties properties = new Properties();
 
+        properties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         properties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         properties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        properties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
 
         return new CalciteConnectionConfigImpl(properties);
     }
@@ -209,7 +209,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         try {
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
+            parserConfig.setCaseSensitive(true);
             parserConfig.setUnquotedCasing(Casing.UNCHANGED);
+            parserConfig.setQuotedCasing(Casing.UNCHANGED);
             parserConfig.setConformance(HazelcastSqlConformance.INSTANCE);
 
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
