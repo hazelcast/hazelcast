@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.MutableInteger;
@@ -46,8 +48,8 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      * Maps: key --> number of keys.
      * <p>
      * Used to determine whether a key is loadable from store. Because there is a possibility that a key
-     * is in {@link WriteBehindQueue} but it is not in {@link com.hazelcast.core.IMap} due to the eviction.
-     * At that point if one tries to get that evicted key, {@link com.hazelcast.core.MapLoader} will
+     * is in {@link WriteBehindQueue} but it is not in {@link IMap} due to the eviction.
+     * At that point if one tries to get that evicted key, {@link MapLoader} will
      * try to load it from store and that may cause data inconsistencies.
      *
      * @see WriteBehindStore#loadable(com.hazelcast.nio.serialization.Data)

@@ -20,7 +20,6 @@ import com.hazelcast.aggregation.impl.CountAggregator;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.projection.Projections;

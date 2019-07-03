@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -91,7 +92,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * <p>
      * This task is used to load the values on a thread different than the partition thread.
      *
-     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     * @see MapLoader#loadAll(Collection)
      */
     private final class GivenKeysLoaderTask implements Callable<Object> {
 
@@ -209,7 +210,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      *
      * @param keys the keys for which values are loaded
      * @return the list of loaded key-values
-     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     * @see MapLoader#loadAll(Collection)
      */
     private List<Data> loadAndGet(List<Data> keys) {
         try {

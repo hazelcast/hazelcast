@@ -1537,7 +1537,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, publishers.size());
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
-                                                                           .getConsistencyCheckStrategy());
+                .getConsistencyCheckStrategy());
     }
 
     @Override

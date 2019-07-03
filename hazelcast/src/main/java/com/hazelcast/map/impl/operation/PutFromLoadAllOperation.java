@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,7 +37,7 @@ import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
+ * Puts records to map which are loaded from map store by {@link IMap#loadAll}
  */
 public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
         BackupAwareOperation {

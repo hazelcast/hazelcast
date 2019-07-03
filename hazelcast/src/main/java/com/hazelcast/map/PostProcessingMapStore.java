@@ -14,34 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
-
-import com.hazelcast.cluster.Member;
+package com.hazelcast.map;
 
 /**
- * Map events common contract.
+ * Implement this interface if you modify the value in MapStore.store(K key, V value) method.
+ * Otherwise already serialized form will be used to put into hazelcast map and
+ * modifications made inside store() method will be discarded. Applying changes done in store()
+ * is only possible with write-through configured map store.
  */
-public interface IMapEvent {
-
-    /**
-     * Returns the member that fired this event.
-     *
-     * @return the member that fired this event.
-     */
-    Member getMember();
-
-    /**
-     * Return the event type
-     *
-     * @return event type
-     */
-    EntryEventType getEventType();
-
-    /**
-     * Returns the name of the map for this event.
-     *
-     * @return name of the map for this event.
-     */
-    String getName();
-
+public interface PostProcessingMapStore {
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
 
 import java.util.Collection;
 import java.util.Map;
@@ -26,7 +26,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @param <K> key of the map entry
  * @param <V> value of the map entry.
- * @see com.hazelcast.core.MapStore
+ * @see MapStore
  */
 public class MapStoreAdapter<K, V> implements MapStore<K, V> {
 

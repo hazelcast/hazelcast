@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 
 /**
  * Allows notifying Hazelcast that the processing unit implementing this interface will not do any modifications.

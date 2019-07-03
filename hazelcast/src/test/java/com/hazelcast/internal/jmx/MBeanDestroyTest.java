@@ -22,7 +22,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;

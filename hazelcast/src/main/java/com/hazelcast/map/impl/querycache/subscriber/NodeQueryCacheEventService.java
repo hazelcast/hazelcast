@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -243,7 +244,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     /**
      * Listener for a {@link com.hazelcast.map.QueryCache QueryCache}.
      *
-     * @see com.hazelcast.core.IMap#getQueryCache(String, MapListener, com.hazelcast.query.Predicate, boolean)
+     * @see IMap#getQueryCache(String, MapListener, com.hazelcast.query.Predicate, boolean)
      */
     private static class SimpleQueryCacheListenerAdapter implements QueryCacheListenerAdapter<IMapEvent> {
 

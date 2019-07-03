@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionalMap;
 

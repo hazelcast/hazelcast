@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
 import com.hazelcast.monitor.LocalMapStats;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Management bean for {@link com.hazelcast.core.IMap}
+ * Management bean for {@link IMap}
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 @ManagedDescription("IMap")

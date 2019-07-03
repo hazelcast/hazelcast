@@ -25,8 +25,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import java.util.function.BiFunction;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
+
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;

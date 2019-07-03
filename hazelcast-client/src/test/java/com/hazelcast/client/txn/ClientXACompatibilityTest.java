@@ -19,7 +19,7 @@ package com.hazelcast.client.txn;
 import com.atomikos.datasource.xa.XID;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.EntryEventType;
 
 import java.util.EventObject;
 
 /**
- * The abstract class for a map event {@link com.hazelcast.core.IMapEvent}.
+ * The abstract class for a map event {@link IMapEvent}.
  */
 public abstract class AbstractIMapEvent extends EventObject implements IMapEvent {
 

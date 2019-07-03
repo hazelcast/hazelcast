@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicates;

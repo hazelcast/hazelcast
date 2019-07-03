@@ -19,7 +19,7 @@ package com.hazelcast.internal.usercodedeployment.impl.filter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.properties.GroupProperty;

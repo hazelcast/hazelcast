@@ -21,10 +21,10 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -629,7 +629,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         // Used to make sure both futures (on the same handler) get the event.
         // Catching possible equal/hashcode issues in the Map
         final IScheduledFuture futureCopyInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
-                                                                                              .values().toArray()[0]).get(0);
+                .values().toArray()[0]).get(0);
 
         ScheduledTaskHandler handler = future.getHandler();
 

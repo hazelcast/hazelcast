@@ -18,7 +18,7 @@ package com.hazelcast.quorum.map;
 
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;

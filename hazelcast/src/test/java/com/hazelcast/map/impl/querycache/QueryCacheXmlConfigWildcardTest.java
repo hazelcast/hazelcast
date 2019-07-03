@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

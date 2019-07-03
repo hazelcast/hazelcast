@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.ExceptionUtil;
 

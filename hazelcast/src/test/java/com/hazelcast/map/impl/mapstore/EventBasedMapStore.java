@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapLoaderLifecycleSupport;
+import com.hazelcast.map.MapStore;
 
 import java.util.Collection;
 import java.util.HashMap;

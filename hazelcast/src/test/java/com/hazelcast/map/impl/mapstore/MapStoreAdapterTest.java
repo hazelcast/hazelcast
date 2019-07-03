@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

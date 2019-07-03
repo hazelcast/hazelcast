@@ -18,10 +18,11 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -63,13 +64,13 @@ public interface RecordStore<R extends Record> {
 
     /**
      * @return oldValue only if it exists in memory, otherwise just returns
-     * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
+     * null and doesn't try to load it from {@link MapLoader}
      */
     Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
      * @return oldValue if it exists in memory otherwise tries to load oldValue
-     * by using {@link com.hazelcast.core.MapLoader}
+     * by using {@link MapLoader}
      */
     Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
@@ -286,7 +287,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Iterates over record store entries but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
-     * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * {@link IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
      *
      * @param now    current time in millis
@@ -441,7 +442,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Starts the map loader if there is a configured and enabled
-     * {@link com.hazelcast.core.MapLoader} and the key loading has not already
+     * {@link MapLoader} and the key loading has not already
      * been started.
      * The loading may start again if there was a migration and the record store
      * on the migration source has started but not completed the loading.
@@ -495,7 +496,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Triggers loading values for the given {@code keys} from the
-     * defined {@link com.hazelcast.core.MapLoader}.
+     * defined {@link MapLoader}.
      * The values will be loaded asynchronously and this method will
      * return as soon as the value loading task has been offloaded
      * to a different thread.

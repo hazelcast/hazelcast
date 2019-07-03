@@ -28,7 +28,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;

@@ -17,6 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
 
 /**
  * The IdGenerator is responsible for creating unique {@code long} IDs in a cluster, under normal operating scenarios.

@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -46,13 +49,13 @@ public interface MapDataStore<K, V> {
     V load(K key);
 
     /**
-     * Loads values for the provided keys if a {@link com.hazelcast.core.MapLoader} is
+     * Loads values for the provided keys if a {@link MapLoader} is
      * configured for this map. This method never returns {@code null}.
      * The returned map will contain deserialised keys and values.
      *
      * @param keys the keys for which values are loaded
      * @return the map from deserialised key to deserialised value
-     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     * @see MapLoader#loadAll(Collection)
      */
     Map loadAll(Collection keys);
 
@@ -65,7 +68,7 @@ public interface MapDataStore<K, V> {
     void removeAll(Collection keys);
 
     /**
-     * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+     * Used in {@link IMap#loadAll} calls.
      * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
      * These are:
      * - calling evict/evictAll,

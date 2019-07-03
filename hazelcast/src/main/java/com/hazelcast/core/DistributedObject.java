@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.transaction.TransactionalMap;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 
 import javax.annotation.Nonnull;
@@ -24,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IMap} (read-only).
+ * Contains the configuration for an {@link IMap} (read-only).
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
