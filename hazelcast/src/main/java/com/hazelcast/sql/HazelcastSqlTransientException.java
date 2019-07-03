@@ -25,4 +25,8 @@ public class HazelcastSqlTransientException extends HazelcastSqlException {
     public HazelcastSqlTransientException(int code, String message) {
         super(code, message);
     }
+
+    public HazelcastSqlTransientException(int code, String message, Throwable cause) {
+        super(code, message, cause);
+    }
 }

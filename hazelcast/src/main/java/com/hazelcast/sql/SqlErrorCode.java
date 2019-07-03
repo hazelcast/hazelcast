@@ -26,6 +26,9 @@ public class SqlErrorCode {
     /** Member has left the topology. */
     public static final int MEMBER_LEAVE = 1;
 
+    /** Generic parsing error. */
+    public static final int PARSING = 2;
+
     private SqlErrorCode() {
         // No-op.
     }

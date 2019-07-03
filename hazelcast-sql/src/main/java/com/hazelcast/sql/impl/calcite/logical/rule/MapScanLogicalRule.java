@@ -26,14 +26,14 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 
-public class LogicalMapScanRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new LogicalMapScanRule();
+public class MapScanLogicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new MapScanLogicalRule();
 
-    private LogicalMapScanRule() {
+    private MapScanLogicalRule() {
         super(
             RuleUtils.single(LogicalTableScan.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
-            "LogicalMapScanRule"
+            "MapScanLogicalRule"
         );
     }
 

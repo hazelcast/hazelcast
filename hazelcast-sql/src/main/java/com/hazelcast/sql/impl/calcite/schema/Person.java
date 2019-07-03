@@ -18,17 +18,14 @@ package com.hazelcast.sql.impl.calcite.schema;
 
 import java.io.Serializable;
 
-// TODO: To be removed.
 public class Person implements Serializable {
 
+    private static final long serialVersionUID = -6246062753552398281L;
+
     public final int __key;
-
     public final String name;
-
     public final int age;
-
     public final double height;
-
     public final boolean active;
 
     public Person(int key) {

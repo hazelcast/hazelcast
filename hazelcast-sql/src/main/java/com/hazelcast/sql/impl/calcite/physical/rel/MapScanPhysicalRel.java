@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
-import com.hazelcast.core.IMap;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -29,7 +28,6 @@ import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.List;
 
-// TODO: getDigest - should we implement it?
 public class MapScanPhysicalRel extends TableScan implements PhysicalRel {
 
     private final RelDataType rowType;

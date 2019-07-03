@@ -16,14 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
-import com.hazelcast.query.Predicate;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
-// TODO: getDigest - should we implement it?
 public class MapScanLogicalRel extends TableScan implements LogicalRel {
 
     private final RelDataType rowType;

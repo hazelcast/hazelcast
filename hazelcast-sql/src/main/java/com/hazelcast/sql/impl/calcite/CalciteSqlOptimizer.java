@@ -18,10 +18,10 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryFragment;
@@ -30,7 +30,7 @@ import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.LogicalMapScanRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
@@ -104,7 +104,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public QueryPlan prepare(String sql) {
         // 1. Prepare context.
-        // TODO: Cache as much as possible.
         JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
         CalciteConnectionConfig config = prepareConfig();
         Prepare.CatalogReader catalogReader = prepareCatalogReader(typeFactory, config);
@@ -129,7 +128,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private CalciteConnectionConfig prepareConfig() {
-        // TODO: Cache
         // TODO: Can we avoid using CalciteConnectionCalciteConnectionConfigImpl?
         Properties properties = new Properties();
 
@@ -210,24 +208,23 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlNode doParse(String sql, SqlValidator validator) {
+        SqlNode node;
+
         try {
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
             parserConfig.setUnquotedCasing(Casing.UNCHANGED);
             parserConfig.setConformance(HazelcastSqlConformance.INSTANCE);
 
-            // TODO: Can we cache it?
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
 
-            SqlNode node = parser.parseStmt();
-
-            // TODO: Use SqlShuttle to look for unsupported query parts. See Drill's UnsupportedOperatorsVisitor.
-            return validator.validate(node);
+            node = parser.parseStmt();
         }
         catch (Exception e) {
-            // TODO: Throw proper parse exception.
-            throw new HazelcastException("Failed to parse SQL: " + sql, e);
+            throw new HazelcastSqlException(SqlErrorCode.PARSING, e.getMessage(), e);
         }
+
+        return validator.validate(node);
     }
 
     private RelNode doConvertToRel(SqlNode node, SqlToRelConverter sqlToRelConverter) {
@@ -237,18 +234,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private LogicalRel doOptimizeLogical(RelNode rel) {
-        // TODO: Rules to merge scan and project/filter
-        // TODO: Rule to eliminate sorting if the source is already sorted.
-
         HepProgramBuilder hepBuilder = new HepProgramBuilder();
-
-        hepBuilder.addRuleInstance(new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER));
 
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
         hepBuilder.addRuleInstance(ProjectIntoScanLogicalRule.INSTANCE);
 
         hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
-        hepBuilder.addRuleInstance(LogicalMapScanRule.INSTANCE);
+        hepBuilder.addRuleInstance(MapScanLogicalRule.INSTANCE);
         hepBuilder.addRuleInstance(FilterLogicalRule.INSTANCE);
         hepBuilder.addRuleInstance(ProjectLogicalRule.INSTANCE);
 
@@ -274,7 +266,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Optimized physical node.
      */
     private PhysicalRel doOptimizePhysical(VolcanoPlanner planner, LogicalRel logicalRel) {
-        // TODO: Cache rules
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,

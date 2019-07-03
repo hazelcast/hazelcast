@@ -29,7 +29,11 @@ public class HazelcastSqlException extends HazelcastException {
     private int code;
 
     public HazelcastSqlException(int code, String message) {
-        super(message);
+        this(code, message, null);
+    }
+
+    public HazelcastSqlException(int code, String message, Throwable cause) {
+        super(message, cause);
 
         this.code = code;
     }
