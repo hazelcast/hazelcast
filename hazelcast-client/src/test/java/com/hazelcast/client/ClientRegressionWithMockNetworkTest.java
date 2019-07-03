@@ -157,8 +157,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
-        clientConfig.setSmartRouting(false);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        clientConfig.getNetworkConfig().setSmartRouting(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {

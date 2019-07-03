@@ -19,6 +19,8 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
@@ -194,17 +197,17 @@ public final class ClientConfigXmlGenerator {
 
     private static void group(XmlGenerator gen, GroupConfig group) {
         gen.open("group")
-           .node("name", group.getName())
-           .node("password", group.getPassword())
-           .close();
+                .node("name", group.getName())
+                .node("password", group.getPassword())
+                .close();
     }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")
-           .node("smart-routing", network.isSmartRouting())
-           .node("redo-operation", network.isRedoOperation())
-           .node("connection-timeout", network.getConnectionTimeout())
-           .node("connection-attempt-period", network.getConnectionAttemptPeriod());
+                .node("smart-routing", network.isSmartRouting())
+                .node("redo-operation", network.isRedoOperation())
+                .node("connection-timeout", network.getConnectionTimeout())
+                .node("connection-attempt-period", network.getConnectionAttemptPeriod());
 
         if (network.getConnectionAttemptLimit() >= 0) {
             gen.node("connection-attempt-limit", network.getConnectionAttemptLimit());
@@ -214,7 +217,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
-        aws(gen, network.getAwsConfig());
+        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         discovery(gen, network.getDiscoveryConfig());
         outboundPort(gen, network.getOutboundPortDefinitions());
         icmp(gen, network.getClientIcmpPingConfig());
@@ -229,8 +232,8 @@ public final class ClientConfigXmlGenerator {
             return;
         }
         gen.open("security")
-           .node("credentials", classNameOrImplClass(credentialsClassname, credentials))
-           .close();
+                .node("credentials", classNameOrImplClass(credentialsClassname, credentials))
+                .close();
     }
 
     private static void listener(XmlGenerator gen, List<ListenerConfig> listeners) {
@@ -246,13 +249,13 @@ public final class ClientConfigXmlGenerator {
 
     private static void serialization(XmlGenerator gen, SerializationConfig serialization) {
         gen.open("serialization")
-           .node("portable-version", serialization.getPortableVersion())
-           .node("use-native-byte-order", serialization.isUseNativeByteOrder())
-           .node("byte-order", serialization.getByteOrder())
-           .node("enable-compression", serialization.isEnableCompression())
-           .node("enable-shared-object", serialization.isEnableSharedObject())
-           .node("allow-unsafe", serialization.isAllowUnsafe())
-           .node("check-class-def-errors", serialization.isCheckClassDefErrors());
+                .node("portable-version", serialization.getPortableVersion())
+                .node("use-native-byte-order", serialization.isUseNativeByteOrder())
+                .node("byte-order", serialization.getByteOrder())
+                .node("enable-compression", serialization.isEnableCompression())
+                .node("enable-shared-object", serialization.isEnableSharedObject())
+                .node("allow-unsafe", serialization.isAllowUnsafe())
+                .node("check-class-def-errors", serialization.isCheckClassDefErrors());
 
 
         Map<Integer, String> dsfClasses = serialization.getDataSerializableFactoryClasses();
@@ -311,12 +314,12 @@ public final class ClientConfigXmlGenerator {
     private static void nativeMemory(XmlGenerator gen, NativeMemoryConfig nativeMemory) {
         gen.open("native-memory", "enabled", nativeMemory.isEnabled(),
                 "allocator-type", nativeMemory.getAllocatorType())
-           .node("size", null, "value", nativeMemory.getSize().getValue(),
-                   "unit", nativeMemory.getSize().getUnit())
-           .node("min-block-size", nativeMemory.getMinBlockSize())
-           .node("page-size", nativeMemory.getPageSize())
-           .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage())
-           .close();
+                .node("size", null, "value", nativeMemory.getSize().getValue(),
+                        "unit", nativeMemory.getSize().getUnit())
+                .node("min-block-size", nativeMemory.getMinBlockSize())
+                .node("page-size", nativeMemory.getPageSize())
+                .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage())
+                .close();
     }
 
     private static void proxyFactory(XmlGenerator gen, List<ProxyFactoryConfig> proxyFactories) {
@@ -366,17 +369,17 @@ public final class ClientConfigXmlGenerator {
             Map<String, QueryCacheConfig> queryCachesPerMap = entry.getValue();
             for (QueryCacheConfig queryCache : queryCachesPerMap.values()) {
                 gen.open("query-cache", "mapName", mapName, "name", queryCache.getName())
-                   .node("include-value", queryCache.isIncludeValue())
-                   .node("in-memory-format", queryCache.getInMemoryFormat())
-                   .node("populate", queryCache.isPopulate())
-                   .node("coalesce", queryCache.isCoalesce())
-                   .node("delay-seconds", queryCache.getDelaySeconds())
-                   .node("batch-size", queryCache.getBatchSize())
-                   .node("buffer-size", queryCache.getBufferSize())
-                   .node("eviction", null, "size", queryCache.getEvictionConfig().getSize(),
-                           "max-size-policy", queryCache.getEvictionConfig().getMaximumSizePolicy(),
-                           "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy(),
-                           "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
+                        .node("include-value", queryCache.isIncludeValue())
+                        .node("in-memory-format", queryCache.getInMemoryFormat())
+                        .node("populate", queryCache.isPopulate())
+                        .node("coalesce", queryCache.isCoalesce())
+                        .node("delay-seconds", queryCache.getDelaySeconds())
+                        .node("batch-size", queryCache.getBatchSize())
+                        .node("buffer-size", queryCache.getBufferSize())
+                        .node("eviction", null, "size", queryCache.getEvictionConfig().getSize(),
+                                "max-size-policy", queryCache.getEvictionConfig().getMaximumSizePolicy(),
+                                "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy(),
+                                "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
                 indexes(gen, queryCache.getIndexConfigs());
@@ -417,9 +420,9 @@ public final class ClientConfigXmlGenerator {
         for (Map.Entry<String, ClientFlakeIdGeneratorConfig> entry : flakeIdGenerators.entrySet()) {
             ClientFlakeIdGeneratorConfig flakeIdGenerator = entry.getValue();
             gen.open("flake-id-generator", "name", entry.getKey())
-               .node("prefetch-count", flakeIdGenerator.getPrefetchCount())
-               .node("prefetch-validity-millis", flakeIdGenerator.getPrefetchValidityMillis())
-               .close();
+                    .node("prefetch-count", flakeIdGenerator.getPrefetchCount())
+                    .node("prefetch-validity-millis", flakeIdGenerator.getPrefetchValidityMillis())
+                    .close();
         }
     }
 
@@ -467,12 +470,12 @@ public final class ClientConfigXmlGenerator {
 
     private static void socketOptions(XmlGenerator gen, SocketOptions socketOptions) {
         gen.open("socket-options")
-           .node("tcp-no-delay", socketOptions.isTcpNoDelay())
-           .node("keep-alive", socketOptions.isKeepAlive())
-           .node("reuse-address", socketOptions.isReuseAddress())
-           .node("linger-seconds", socketOptions.getLingerSeconds())
-           .node("buffer-size", socketOptions.getBufferSize())
-           .close();
+                .node("tcp-no-delay", socketOptions.isTcpNoDelay())
+                .node("keep-alive", socketOptions.isKeepAlive())
+                .node("reuse-address", socketOptions.isReuseAddress())
+                .node("linger-seconds", socketOptions.getLingerSeconds())
+                .node("buffer-size", socketOptions.getBufferSize())
+                .close();
     }
 
     private static void socketInterceptor(XmlGenerator gen, SocketInterceptorConfig socketInterceptor) {
@@ -480,10 +483,10 @@ public final class ClientConfigXmlGenerator {
             return;
         }
         gen.open("socket-interceptor", "enabled", socketInterceptor.isEnabled())
-           .node("class-name", classNameOrImplClass(socketInterceptor.getClassName(),
-                   socketInterceptor.getImplementation()))
-           .appendProperties(socketInterceptor.getProperties())
-           .close();
+                .node("class-name", classNameOrImplClass(socketInterceptor.getClassName(),
+                        socketInterceptor.getImplementation()))
+                .appendProperties(socketInterceptor.getProperties())
+                .close();
     }
 
     private static void ssl(XmlGenerator gen, SSLConfig ssl) {
@@ -491,28 +494,26 @@ public final class ClientConfigXmlGenerator {
             return;
         }
         gen.open("ssl", "enabled", ssl.isEnabled())
-           .node("factory-class-name", classNameOrImplClass(ssl.getFactoryClassName(),
-                   ssl.getFactoryImplementation()))
-           .appendProperties(ssl.getProperties())
-           .close();
+                .node("factory-class-name", classNameOrImplClass(ssl.getFactoryClassName(),
+                        ssl.getFactoryImplementation()))
+                .appendProperties(ssl.getProperties())
+                .close();
     }
 
-    private static void aws(XmlGenerator gen, ClientAwsConfig aws) {
-        if (aws == null) {
+    private static void aliasedDiscoveryConfigsGenerator(XmlGenerator gen, List<AliasedDiscoveryConfig<?>> configs) {
+        if (configs == null) {
             return;
         }
-        gen.open("aws", "enabled", aws.isEnabled(),
-                "connection-timeout-seconds", aws.getConnectionTimeoutSeconds())
-           .node("inside-aws", aws.isInsideAws())
-           .node("access-key", aws.getAccessKey())
-           .node("secret-key", aws.getSecretKey())
-           .node("iam-role", aws.getIamRole())
-           .node("region", aws.getRegion())
-           .node("host-header", aws.getHostHeader())
-           .node("security-group-name", aws.getSecurityGroupName())
-           .node("tag-key", aws.getTagKey())
-           .node("tag-value", aws.getTagValue())
-           .close();
+        for (AliasedDiscoveryConfig<?> c : configs) {
+            gen.open(AliasedDiscoveryConfigUtils.tagFor(c), "enabled", c.isEnabled());
+            if (c.isUsePublicIp()) {
+                gen.node("use-public-ip", "true");
+            }
+            for (String key : c.getProperties().keySet()) {
+                gen.node(key, c.getProperties().get(key));
+            }
+            gen.close();
+        }
     }
 
     private static void discovery(XmlGenerator gen, DiscoveryConfig discovery) {
@@ -521,12 +522,12 @@ public final class ClientConfigXmlGenerator {
             return;
         }
         gen.open("discovery-strategies")
-           .node("node-filter", null, "class",
-                   classNameOrImplClass(discovery.getNodeFilterClass(), discovery.getNodeFilter()));
+                .node("node-filter", null, "class",
+                        classNameOrImplClass(discovery.getNodeFilterClass(), discovery.getNodeFilter()));
         for (DiscoveryStrategyConfig strategy : discovery.getDiscoveryStrategyConfigs()) {
             gen.open("discovery-strategy", "class", strategy.getClassName(), "enabled", true)
-               .appendProperties(strategy.getProperties())
-               .close();
+                    .appendProperties(strategy.getProperties())
+                    .close();
         }
         gen.close();
     }
@@ -543,32 +544,33 @@ public final class ClientConfigXmlGenerator {
 
     private static void icmp(XmlGenerator gen, ClientIcmpPingConfig icmp) {
         gen.open("icmp-ping", "enabled", icmp.isEnabled())
-           .node("timeout-milliseconds", icmp.getTimeoutMilliseconds())
-           .node("interval-milliseconds", icmp.getIntervalMilliseconds())
-           .node("ttl", icmp.getTtl())
-           .node("max-attempts", icmp.getMaxAttempts())
-           .node("echo-fail-fast-on-startup", icmp.isEchoFailFastOnStartup())
-           .close();
+                .node("timeout-milliseconds", icmp.getTimeoutMilliseconds())
+                .node("interval-milliseconds", icmp.getIntervalMilliseconds())
+                .node("ttl", icmp.getTtl())
+                .node("max-attempts", icmp.getMaxAttempts())
+                .node("echo-fail-fast-on-startup", icmp.isEchoFailFastOnStartup())
+                .close();
     }
 
     private static void nearCache(XmlGenerator gen, String name, NearCacheConfig nearCache) {
         EvictionConfig eviction = nearCache.getEvictionConfig();
         NearCachePreloaderConfig preloader = nearCache.getPreloaderConfig();
         gen.open("near-cache", "name", name)
-           .node("in-memory-format", nearCache.getInMemoryFormat())
-           .node("serialize-keys", nearCache.isSerializeKeys())
-           .node("invalidate-on-change", nearCache.isInvalidateOnChange())
-           .node("cache-local-entries", nearCache.isCacheLocalEntries())
-           .node("time-to-live-seconds", nearCache.getTimeToLiveSeconds())
-           .node("max-idle-seconds", nearCache.getMaxIdleSeconds())
-           .node("local-update-policy", nearCache.getLocalUpdatePolicy())
-           .node("eviction", null, "size", eviction.getSize(),
-                   "max-size-policy", eviction.getMaximumSizePolicy(),
-                   "eviction-policy", eviction.getEvictionPolicy(), "comparator-class-name", eviction.getComparatorClassName())
-           .node("preloader", null, "enabled", preloader.isEnabled(),
-                   "directory", preloader.getDirectory(),
-                   "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),
-                   "store-interval-seconds", preloader.getStoreIntervalSeconds());
+                .node("in-memory-format", nearCache.getInMemoryFormat())
+                .node("serialize-keys", nearCache.isSerializeKeys())
+                .node("invalidate-on-change", nearCache.isInvalidateOnChange())
+                .node("cache-local-entries", nearCache.isCacheLocalEntries())
+                .node("time-to-live-seconds", nearCache.getTimeToLiveSeconds())
+                .node("max-idle-seconds", nearCache.getMaxIdleSeconds())
+                .node("local-update-policy", nearCache.getLocalUpdatePolicy())
+                .node("eviction", null, "size", eviction.getSize(),
+                        "max-size-policy", eviction.getMaximumSizePolicy(),
+                        "eviction-policy", eviction.getEvictionPolicy(),
+                        "comparator-class-name", eviction.getComparatorClassName())
+                .node("preloader", null, "enabled", preloader.isEnabled(),
+                        "directory", preloader.getDirectory(),
+                        "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),
+                        "store-interval-seconds", preloader.getStoreIntervalSeconds());
         //close near-cache
         gen.close();
     }

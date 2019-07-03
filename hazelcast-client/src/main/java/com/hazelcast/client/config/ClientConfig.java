@@ -26,7 +26,6 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -105,7 +104,6 @@ public class ClientConfig {
     private final List<ProxyFactoryConfig> proxyFactoryConfigs;
     private ManagedContext managedContext;
     private ClassLoader classLoader;
-    private String licenseKey;
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
@@ -164,7 +162,6 @@ public class ClientConfig {
         }
         managedContext = config.managedContext;
         classLoader = config.classLoader;
-        licenseKey = config.licenseKey;
         connectionStrategyConfig = new ClientConnectionStrategyConfig(config.connectionStrategyConfig);
         userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig(config.userCodeDeploymentConfig);
         flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
@@ -314,19 +311,6 @@ public class ClientConfig {
                         clientReliableTopicConfig.setName(name);
                     }
                 });
-    }
-
-    /**
-     * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
-     *
-     * @param name            name of the IMap / ICache that Near Cache config will be applied to
-     * @param nearCacheConfig nearCacheConfig
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     */
-    @Deprecated
-    public ClientConfig addNearCacheConfig(String name, NearCacheConfig nearCacheConfig) {
-        nearCacheConfig.setName(name);
-        return addNearCacheConfig(nearCacheConfig);
     }
 
     /**
@@ -544,91 +528,6 @@ public class ClientConfig {
     }
 
     /**
-     * Use {@link ClientNetworkConfig#isSmartRouting} instead
-     */
-    @Deprecated
-    public boolean isSmartRouting() {
-        return networkConfig.isSmartRouting();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSmartRouting} instead
-     */
-    @Deprecated
-    public ClientConfig setSmartRouting(boolean smartRouting) {
-        networkConfig.setSmartRouting(smartRouting);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getSocketInterceptorConfig} instead
-     */
-    @Deprecated
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return networkConfig.getSocketInterceptorConfig();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSocketInterceptorConfig} instead
-     */
-    @Deprecated
-    public ClientConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
-        networkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionAttemptPeriod} instead
-     */
-    @Deprecated
-    public int getConnectionAttemptPeriod() {
-        return networkConfig.getConnectionAttemptPeriod();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionAttemptPeriod} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
-        networkConfig.setConnectionAttemptPeriod(connectionAttemptPeriod);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionAttemptLimit} instead
-     */
-    @Deprecated
-    public int getConnectionAttemptLimit() {
-        return networkConfig.getConnectionAttemptLimit();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionAttemptLimit} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
-        networkConfig.setConnectionAttemptLimit(connectionAttemptLimit);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionTimeout} instead
-     */
-    @Deprecated
-    public int getConnectionTimeout() {
-        return networkConfig.getConnectionTimeout();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionTimeout} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionTimeout(int connectionTimeout) {
-        networkConfig.setConnectionTimeout(connectionTimeout);
-        return this;
-    }
-
-    /**
      * Gets {@link com.hazelcast.security.Credentials}
      *
      * @return {@link com.hazelcast.security.Credentials}
@@ -647,32 +546,6 @@ public class ClientConfig {
     public ClientConfig setCredentials(Credentials credentials) {
         securityConfig.setCredentials(credentials);
         return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#addAddress} instead
-     */
-    @Deprecated
-    public ClientConfig addAddress(String... addresses) {
-        networkConfig.addAddress(addresses);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setAddresses} instead
-     */
-    @Deprecated
-    public ClientConfig setAddresses(List<String> addresses) {
-        networkConfig.setAddresses(addresses);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getAddresses} instead
-     */
-    @Deprecated
-    public List<String> getAddresses() {
-        return networkConfig.getAddresses();
     }
 
     /**
@@ -740,40 +613,6 @@ public class ClientConfig {
      */
     public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#isRedoOperation} instead
-     */
-    @Deprecated
-    public boolean isRedoOperation() {
-        return networkConfig.isRedoOperation();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setRedoOperation} instead
-     */
-    @Deprecated
-    public ClientConfig setRedoOperation(boolean redoOperation) {
-        networkConfig.setRedoOperation(redoOperation);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getSocketOptions} instead
-     */
-    @Deprecated
-    public SocketOptions getSocketOptions() {
-        return networkConfig.getSocketOptions();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSocketOptions} instead
-     */
-    @Deprecated
-    public ClientConfig setSocketOptions(SocketOptions socketOptions) {
-        networkConfig.setSocketOptions(socketOptions);
         return this;
     }
 
@@ -892,18 +731,6 @@ public class ClientConfig {
     public ClientConfig setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
         Preconditions.isNotNull(nativeMemoryConfig, "nativeMemoryConfig");
         this.nativeMemoryConfig = nativeMemoryConfig;
-        return this;
-    }
-
-    public String getLicenseKey() {
-        return licenseKey;
-    }
-
-    /**
-     * @deprecated As of Hazelcast 3.10.3, enterprise license keys are required only for members, and not for clients
-     */
-    public ClientConfig setLicenseKey(final String licenseKey) {
-        this.licenseKey = licenseKey;
         return this;
     }
 
@@ -1125,9 +952,6 @@ public class ClientConfig {
         if (classLoader != null ? !classLoader.equals(that.classLoader) : that.classLoader != null) {
             return false;
         }
-        if (licenseKey != null ? !licenseKey.equals(that.licenseKey) : that.licenseKey != null) {
-            return false;
-        }
         if (!connectionStrategyConfig.equals(that.connectionStrategyConfig)) {
             return false;
         }
@@ -1163,7 +987,6 @@ public class ClientConfig {
         result = 31 * result + proxyFactoryConfigs.hashCode();
         result = 31 * result + (managedContext != null ? managedContext.hashCode() : 0);
         result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
-        result = 31 * result + (licenseKey != null ? licenseKey.hashCode() : 0);
         result = 31 * result + connectionStrategyConfig.hashCode();
         result = 31 * result + userCodeDeploymentConfig.hashCode();
         result = 31 * result + flakeIdGeneratorConfigMap.hashCode();
