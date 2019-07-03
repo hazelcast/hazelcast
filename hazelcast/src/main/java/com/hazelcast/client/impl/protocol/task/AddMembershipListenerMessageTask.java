@@ -143,13 +143,12 @@ public class AddMembershipListenerMessageTask
                 return;
             }
 
-            MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
-            String uuid = member.getUuid();
             MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
             String key = memberAttributeEvent.getKey();
             String value = memberAttributeEvent.getValue() == null ? null : memberAttributeEvent.getValue().toString();
-            ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberAttributeChangeEvent(uuid, key, op.getId(), value);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec
+                    .encodeMemberAttributeChangeEvent(memberAttributeEvent.getMember(), memberAttributeEvent.getMembers(), key,
+                            op.getId(), value);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
