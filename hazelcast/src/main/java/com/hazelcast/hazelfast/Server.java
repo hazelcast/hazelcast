@@ -21,13 +21,13 @@ import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.hazelfast.IOUtil.INT_AS_BYTES;
 import static com.hazelcast.hazelfast.IOUtil.allocateByteBuffer;
 import static com.hazelcast.hazelfast.IOUtil.compactOrClear;
 import static com.hazelcast.hazelfast.IOUtil.setSendBufferSize;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Ways to connect:
@@ -475,7 +475,7 @@ public class Server {
         private boolean optimizeSelector = true;
         private boolean directBuffers = true;
         private boolean selectorSpin = true;
-        private long selectorSpinDurationNs = TimeUnit.SECONDS.toNanos(1);
+        private long selectorSpinDurationNs = MILLISECONDS.toNanos(10);
         private Node node;
 
         public Context selectorSpin(boolean selectorSpin) {

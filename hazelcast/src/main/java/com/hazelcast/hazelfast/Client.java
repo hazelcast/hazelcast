@@ -19,6 +19,7 @@ public class Client {
     protected ByteBuffer sendBuf;
     private ByteBuffer receiveBuf;
     private final String hostname;
+    private final int port;
     private final int receiveBufferSize;
     private final int sendBufferSize;
     private final boolean tcpNoDelay;
@@ -26,13 +27,15 @@ public class Client {
     private final ByteArrayPool byteArrayPool;
 
     public Client(Context context) {
-        hostname = context.hostname;
-        receiveBufferSize = context.receiveBufferSize;
-        sendBufferSize = context.sendBufferSize;
-        tcpNoDelay = context.tcpNoDelay;
-        directBuffers = context.directBuffers;
+        this.hostname = context.hostname;
+        this.port = context.port;
+        this.receiveBufferSize = context.receiveBufferSize;
+        this.sendBufferSize = context.sendBufferSize;
+        this.tcpNoDelay = context.tcpNoDelay;
+        this.directBuffers = context.directBuffers;
         this.byteArrayPool = new ByteArrayPool(context.objectPoolingEnabled);
         this.framePool = new FramePool(context.objectPoolingEnabled);
+
     }
 
     public String hostname() {
@@ -65,7 +68,7 @@ public class Client {
 
     public void start()  {
        try {
-           this.address = new InetSocketAddress(hostname, 1111);
+           this.address = new InetSocketAddress(hostname, port);
            log("Connecting to Server "+address);
 
            sendBuf = allocateByteBuffer(directBuffers, receiveBufferSize);
@@ -188,11 +191,17 @@ public class Client {
 
     public static class Context {
         private String hostname = "localhost";
+        private int port = 1111;
         private int receiveBufferSize = 256 * 1024;
         private int sendBufferSize = 256 * 1024;
         private boolean tcpNoDelay = true;
         private boolean directBuffers = true;
         private boolean objectPoolingEnabled = true;
+
+        public Context port(int port) {
+            this.port = port;
+            return this;
+        }
 
         public Context hostname(String hostname) {
             this.hostname = hostname;

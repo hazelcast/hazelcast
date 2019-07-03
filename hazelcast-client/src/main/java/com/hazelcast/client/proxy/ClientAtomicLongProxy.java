@@ -115,7 +115,8 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         Client client = clients.get(address);
         if (client == null) {
             client = new Client(new Client.Context()
-                    .hostname(address.getHost()));
+                    .hostname(address.getHost())
+                    .port(address.getPort() + 10000));
             client.start();
             clients.put(address, client);
         }

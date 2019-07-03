@@ -41,6 +41,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.hazelfast.Server;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -93,7 +94,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-import com.hazelcast.hazelfast.Server;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -253,7 +253,10 @@ public class Node {
             metricsRegistry.collectMetrics(nodeExtension);
 
             networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
-            server = new Server(new Server.Context().node(this).objectPoolingEnabled(false));
+            server = new Server(new Server.Context()
+                    .node(this)
+                    .objectPoolingEnabled(false)
+                    .startPort(address.getPort() + 10000));
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -862,14 +865,14 @@ public class Node {
             return (Joiner) constructor.newInstance(this);
         } catch (ClassNotFoundException e) {
             String message = "Your Hazelcast network configuration has AWS discovery "
-                     + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
-                     + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
-                     + "<dependency>" + LINE_SEPARATOR
-                     + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
-                     + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
-                     + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
-                     + "</dependency>" + LINE_SEPARATOR
-                     + " See https://github.com/hazelcast/hazelcast-aws for additional details";
+                    + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
+                    + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
+                    + "<dependency>" + LINE_SEPARATOR
+                    + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
+                    + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
+                    + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
+                    + "</dependency>" + LINE_SEPARATOR
+                    + " See https://github.com/hazelcast/hazelcast-aws for additional details";
             throw new InvalidConfigurationException(message, e);
         } catch (Exception e) {
             throw rethrow(e);
