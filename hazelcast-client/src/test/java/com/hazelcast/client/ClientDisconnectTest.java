@@ -23,7 +23,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.topic.Message;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.LockAware;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Offloadable;
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;

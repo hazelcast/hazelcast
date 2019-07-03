@@ -17,6 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.map.AbstractIMapEvent;
+import com.hazelcast.map.IMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -26,7 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * @param <V> value of the map entry
  * @see com.hazelcast.core.EntryListener
  * @see com.hazelcast.map.listener.MapListener
- * @see com.hazelcast.core.IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
+ * @see IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
 public class EntryEvent<K, V> extends AbstractIMapEvent {

@@ -16,6 +16,8 @@
 
 package classloading.domain;
 
+import com.hazelcast.map.MapLoader;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,7 +25,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class IntMapLoader implements com.hazelcast.core.MapLoader<Integer, Integer>, Serializable {
+// used in DynamicConfigAdvancedTest
+public class IntMapLoader implements MapLoader<Integer, Integer>, Serializable {
     @Override
     public Integer load(Integer integer) {
         return integer;

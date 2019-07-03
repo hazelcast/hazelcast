@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,7 +41,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IMap}.
+ * Contains the configuration for an {@link IMap}.
  */
 public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
@@ -227,18 +228,18 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Returns the name of this {@link com.hazelcast.core.IMap}
+     * Returns the name of this {@link IMap}
      *
-     * @return the name of the {@link com.hazelcast.core.IMap}
+     * @return the name of the {@link IMap}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the name of the {@link com.hazelcast.core.IMap}
+     * Sets the name of the {@link IMap}
      *
-     * @param name the name to set for this {@link com.hazelcast.core.IMap}
+     * @param name the name to set for this {@link IMap}
      */
     public MapConfig setName(String name) {
         this.name = name;
@@ -263,7 +264,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * <li>NATIVE: values will be stored in non-heap region of JVM</li>
      * </ul>
      *
-     * @param inMemoryFormat the record type to set for this {@link com.hazelcast.core.IMap}
+     * @param inMemoryFormat the record type to set for this {@link IMap}
      * @throws IllegalArgumentException if inMemoryFormat is {@code null}
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
@@ -272,9 +273,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Returns the backupCount for this {@link com.hazelcast.core.IMap}
+     * Returns the backupCount for this {@link IMap}
      *
-     * @return the backupCount for this {@link com.hazelcast.core.IMap}
+     * @return the backupCount for this {@link IMap}
      * @see #getAsyncBackupCount()
      */
     public int getBackupCount() {
@@ -286,7 +287,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * then all entries of the map will be copied to another JVM for fail-safety.
      * 0 means no sync backup.
      *
-     * @param backupCount the number of synchronous backups to set for this {@link com.hazelcast.core.IMap}
+     * @param backupCount the number of synchronous backups to set for this {@link IMap}
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -295,7 +296,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Returns the asynchronous backup count for this {@link com.hazelcast.core.IMap}.
+     * Returns the asynchronous backup count for this {@link IMap}.
      *
      * @return the asynchronous backup count
      * @see #setBackupCount(int)

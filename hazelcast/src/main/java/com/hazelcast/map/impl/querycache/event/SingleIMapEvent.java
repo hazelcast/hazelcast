@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.event;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.cluster.Member;
 
 /**

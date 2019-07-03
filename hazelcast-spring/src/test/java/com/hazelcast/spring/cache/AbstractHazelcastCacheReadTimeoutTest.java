@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.test.HazelcastTestSupport;

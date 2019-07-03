@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.AbstractEventJournalBounceTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;

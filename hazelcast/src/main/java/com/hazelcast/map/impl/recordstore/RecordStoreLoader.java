@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
@@ -34,7 +35,7 @@ interface RecordStoreLoader {
 
     /**
      * Triggers loading values for the given {@code keys} from the
-     * defined {@link com.hazelcast.core.MapLoader}.
+     * defined {@link MapLoader}.
      * The values will be loaded asynchronously and this method will
      * return as soon as the value loading task has been offloaded
      * to a different thread.

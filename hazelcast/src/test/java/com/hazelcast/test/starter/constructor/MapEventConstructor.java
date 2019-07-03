@@ -23,7 +23,7 @@ import java.lang.reflect.Constructor;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.core.MapEvent"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.map.MapEvent"})
 public class MapEventConstructor extends AbstractStarterObjectConstructor {
 
     public MapEventConstructor(Class<?> targetClass) {

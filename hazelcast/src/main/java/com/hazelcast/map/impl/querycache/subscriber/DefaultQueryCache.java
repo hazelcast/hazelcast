@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;

@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalIndexStatsTest;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;

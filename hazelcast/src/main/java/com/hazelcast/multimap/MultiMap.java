@@ -17,7 +17,7 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 import java.util.Collection;

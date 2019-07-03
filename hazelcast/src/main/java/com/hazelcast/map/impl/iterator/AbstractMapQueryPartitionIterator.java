@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;

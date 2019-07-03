@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.AbstractIMapEvent;
 import com.hazelcast.cluster.Member;
 
 /**

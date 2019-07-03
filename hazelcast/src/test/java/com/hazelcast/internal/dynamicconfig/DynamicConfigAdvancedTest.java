@@ -19,7 +19,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,18 +74,18 @@ public class DynamicConfigAdvancedTest {
     private MapConfig mapConfigWithMapLoader() {
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.getMapStoreConfig()
-                 .setEnabled(true)
-                 .setClassName("classloading.domain.IntMapLoader");
+                .setEnabled(true)
+                .setClassName("classloading.domain.IntMapLoader");
         return mapConfig;
     }
 
     private Config newConfigWithUserCodeDeployment() {
         Config config = new Config();
         config.getUserCodeDeploymentConfig()
-              .setEnabled(true)
-              .setClassCacheMode(ETERNAL)
-              .setProviderMode(LOCAL_AND_CACHED_CLASSES)
-              .setWhitelistedPrefixes("classloading");
+                .setEnabled(true)
+                .setClassCacheMode(ETERNAL)
+                .setProviderMode(LOCAL_AND_CACHED_CLASSES)
+                .setWhitelistedPrefixes("classloading");
         return config;
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;

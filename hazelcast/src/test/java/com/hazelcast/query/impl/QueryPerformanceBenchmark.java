@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.TestPortableFactory;
 import com.hazelcast.query.Predicates;

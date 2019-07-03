@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -88,7 +88,7 @@ import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static java.util.Collections.emptyMap;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
+ * Proxy implementation of {@link IMap} interface.
  *
  * @param <K> the key type of map.
  * @param <V> the value type of map.

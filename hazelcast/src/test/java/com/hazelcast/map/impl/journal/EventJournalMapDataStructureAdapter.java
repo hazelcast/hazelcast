@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;

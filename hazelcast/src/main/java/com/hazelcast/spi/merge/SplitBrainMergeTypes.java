@@ -20,6 +20,7 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
@@ -44,7 +45,7 @@ import java.util.Collection;
 public class SplitBrainMergeTypes {
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IMap}.
+     * Provided merge types of {@link IMap}.
      *
      * @since 3.10
      */

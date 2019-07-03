@@ -30,6 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -389,7 +390,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IMap} configuration for
+     * Returns a read-only {@link IMap} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -479,7 +480,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IMap} configurations,
+     * Returns the map of {@link IMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -490,7 +491,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IMap} configurations,
+     * Sets the map of {@link IMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *

@@ -43,7 +43,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;

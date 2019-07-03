@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import com.hazelcast.map.MapStore;
+
 /**
- * General contract for an entry to be stored into {@link com.hazelcast.core.MapStore}
+ * General contract for an entry to be stored into {@link MapStore}
  * when {@link com.hazelcast.config.MapStoreConfig#writeDelaySeconds} is greater than 0.
  *
  * @param <K> the key type.

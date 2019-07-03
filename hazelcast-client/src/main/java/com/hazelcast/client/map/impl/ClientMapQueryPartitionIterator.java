@@ -23,7 +23,7 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;

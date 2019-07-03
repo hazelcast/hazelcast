@@ -17,8 +17,10 @@
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
 
+import com.hazelcast.map.MapStore;
+
 /**
- * Represents a candidate entry to be deleted from {@link com.hazelcast.core.MapStore}
+ * Represents a candidate entry to be deleted from {@link MapStore}
  *
  * @param <K> the key type.
  * @param <V> the value type.

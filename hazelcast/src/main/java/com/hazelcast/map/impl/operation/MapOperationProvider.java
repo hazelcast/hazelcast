@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -33,7 +34,7 @@ import java.util.Set;
 
 /**
  * Provides {@link com.hazelcast.config.InMemoryFormat InMemoryFormat} specific
- * operations for {@link com.hazelcast.core.IMap IMap}.
+ * operations for {@link IMap IMap}.
  */
 public interface MapOperationProvider {
 

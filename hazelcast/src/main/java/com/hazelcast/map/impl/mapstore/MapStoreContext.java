@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapLoader;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;

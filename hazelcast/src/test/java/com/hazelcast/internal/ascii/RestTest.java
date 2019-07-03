@@ -23,7 +23,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.json.Json;

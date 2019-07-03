@@ -18,8 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.listener.EntryAddedListener;

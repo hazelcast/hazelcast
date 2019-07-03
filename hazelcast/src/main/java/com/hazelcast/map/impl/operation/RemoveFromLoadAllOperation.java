@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,7 +38,7 @@ import java.util.List;
  * This operation is expected to be invoked locally as the key collection is mutated
  * when running the operation and the operation does not have a response object.
  *
- * @see com.hazelcast.core.IMap#loadAll(java.util.Set, boolean)
+ * @see IMap#loadAll(java.util.Set, boolean)
  */
 public class RemoveFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 

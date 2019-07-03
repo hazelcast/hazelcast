@@ -79,7 +79,6 @@
 
     <!-- Core -->
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]core[\\/]HazelcastInstance"/>
-    <suppress checks="MethodCount|FileLength" files="com[\\/]hazelcast[\\/]core[\\/]IMap"/>
 
     <!-- Config -->
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
@@ -257,6 +256,7 @@
     <suppress checks="VisibilityModifier" files="com[\\/]hazelcast[\\/]internal[\\/]management[\\/]dto[\\/]\w*"/>
 
     <!-- Map -->
+    <suppress checks="MethodCount|FileLength" files="com[\\/]hazelcast[\\/]map[\\/]IMap"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]RecordStore"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]AbstractEvictableRecordStore"/>
@@ -268,6 +268,10 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapContainer"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]NearCachedMapProxyImpl"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]NearCachedClientMapProxy"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContext"/>
+    <suppress checks="MethodCount|ClassDataAbstractionCoupling"
+              files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContextImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxySupport"/>
     <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContextImpl"/>
     <suppress checks="ClassFanOutComplexity"
@@ -275,17 +279,13 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxySupport"/>
     <suppress checks="ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]operation[\\/]DefaultMapOperationProvider"/>
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]tx[\\/]TransactionalMapProxySupport"/>
     <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]client[\\/]AbstractTxnMapRequest"/>
     <suppress checks="CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]LazyEntryViewFromRecord"/>
-    <suppress checks="MethodCount|ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContextImpl"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContext"/>
-    <suppress checks="ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]tx[\\/]TransactionalMapProxySupport"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
 
     <!-- PhoneHome -->
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>

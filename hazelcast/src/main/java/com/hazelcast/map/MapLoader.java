@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -26,7 +29,7 @@ import java.util.Map;
  * it can be backed by any type of data store such as RDBMS, OODBMS, or simply
  * a file based data store.
  * <p>
- * {@link com.hazelcast.core.IMap#get(Object)} normally returns the value that
+ * {@link IMap#get(Object)} normally returns the value that
  * is available in-memory. If the entry doesn't exist in-memory, Hazelcast
  * returns {@code null}. If a Loader implementation is provided then, instead
  * of returning {@code null}, Hazelcast will attempt to load the unknown entry
@@ -57,7 +60,7 @@ import java.util.Map;
  * <p>
  * If a blocked partition thread is called from a Hazelcast Client the caller
  * will also block indefinitely, for example
- * {@link com.hazelcast.core.IMap#get(Object)}. If the same call is made from
+ * {@link IMap#get(Object)}. If the same call is made from
  * another cluster member the operation will eventually timeout with a
  * {@link OperationTimeoutException}.
  *

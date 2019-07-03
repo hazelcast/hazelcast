@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map;
 
 import java.util.Collection;
 import java.util.Map;

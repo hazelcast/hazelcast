@@ -19,8 +19,9 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.EnumMap;
@@ -35,8 +36,8 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 
 /**
- * Used to support deprecated {@link com.hazelcast.core.IMap IMap} listener related methods
- * such as {@link com.hazelcast.core.IMap#addLocalEntryListener(EntryListener)}.
+ * Used to support deprecated {@link IMap IMap} listener related methods
+ * such as {@link IMap#addLocalEntryListener(EntryListener)}.
  * <p>
  * This is a static factory class which creates various
  * {@link com.hazelcast.map.impl.ListenerAdapter} implementations.

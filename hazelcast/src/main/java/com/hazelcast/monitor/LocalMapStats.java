@@ -16,16 +16,18 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.map.IMap;
+
 import java.util.Map;
 
 /**
  * Local map statistics to be used by {@link MemberState} implementations.
  * <p>
- * As {@link com.hazelcast.core.IMap} is a partitioned data structure in
+ * As {@link IMap} is a partitioned data structure in
  * Hazelcast, each member owns a fraction of the total number of entries of a
  * distributed map.
  * <p>
- * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each
+ * Depending on the {@link IMap}'s configuration, each
  * member may also hold backup entries of other members. LocalMapStats
  * provides the count of owned and backup entries besides their size in memory.
  */

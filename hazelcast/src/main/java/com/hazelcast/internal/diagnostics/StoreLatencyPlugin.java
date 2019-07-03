@@ -17,6 +17,8 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -37,7 +39,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * A {@link DiagnosticsPlugin} that helps to detect if there are any performance issues with Stores/Loaders like e.g.
- * {@link com.hazelcast.core.MapStore}.
+ * {@link MapStore}.
  * <p>
  * This is done by instrumenting these Stores/Loaders with latency tracking probes, so that per Store/Loader all kinds
  * of statistics like count, avg, mag, latency distribution etc is available.
@@ -193,7 +195,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     /**
-     * Contains all probes for a given instance, e.g. for an {@link com.hazelcast.core.IMap} instance {@code employees}.
+     * Contains all probes for a given instance, e.g. for an {@link IMap} instance {@code employees}.
      */
     private static final class InstanceProbes {
 

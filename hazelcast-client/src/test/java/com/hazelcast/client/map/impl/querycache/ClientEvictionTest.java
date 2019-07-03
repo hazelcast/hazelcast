@@ -23,7 +23,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.query.Predicates;

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.util.ConcurrencyUtil;

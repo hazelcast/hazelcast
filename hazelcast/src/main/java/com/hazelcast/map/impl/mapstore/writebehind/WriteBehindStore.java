@@ -20,8 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -57,7 +58,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     /**
      * Represents a transient {@link DelayedEntry}.
-     * A transient entry can be added via {@link com.hazelcast.core.IMap#putTransient}.
+     * A transient entry can be added via {@link IMap#putTransient}.
      */
     private static final DelayedEntry TRANSIENT = DelayedEntries.emptyDelayedEntry();
 
@@ -217,7 +218,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * The keys which don't have staged entries to be persisted will
      * be loaded from the underlying store.
      *
-     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     * @see MapLoader#loadAll(Collection)
      */
     @Override
     public Map loadAll(Collection keys) {

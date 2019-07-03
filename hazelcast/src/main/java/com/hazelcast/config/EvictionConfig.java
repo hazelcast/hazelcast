@@ -20,6 +20,7 @@ import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -39,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link EvictionConfig.MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP} as maximum size for on-heap {@link com.hazelcast.core.IMap}</li>
+ * <li>{@value DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP} as maximum size for on-heap {@link IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size for all other data structures and configurations</li>
  * </ul>
  */

@@ -23,7 +23,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.AbstractEntryEventTypesTest.Person;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;

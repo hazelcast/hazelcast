@@ -22,7 +22,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.replicatedmap.ReplicatedMap;
