@@ -128,7 +128,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private CalciteConnectionConfig prepareConfig() {
-        // TODO: Can we avoid using CalciteConnectionCalciteConnectionConfigImpl?
         Properties properties = new Properties();
 
         properties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
@@ -156,10 +155,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlValidator prepareValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
-        // TODO: Operator table which support only functions supported by Hazelcast.
         final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(), catalogReader);
 
-        // TODO: Need our own validator, investigate interface
         return new HazelcastSqlValidator(
             opTab,
             catalogReader,
@@ -169,7 +166,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
-        // TODO: Drill's SqlConverter.toRel - see how VolcanoPlanner is instantiated.
         final VolcanoPlanner planner = new VolcanoPlanner(
             null, // TODO: DrillCostBase.DrillCostFactory
             Contexts.of(config)

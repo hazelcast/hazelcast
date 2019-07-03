@@ -48,7 +48,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// TODO: Review.
 public class ProjectIntoScanLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectIntoScanLogicalRule();
 
