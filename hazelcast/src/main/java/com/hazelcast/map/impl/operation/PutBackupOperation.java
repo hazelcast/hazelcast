@@ -27,19 +27,14 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation {
-
-    // todo unlockKey is a logic just used in transactional put operations.
-    // todo It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
-    private boolean unlockKey;
-    private RecordInfo recordInfo;
-    private boolean putTransient;
+public class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+    protected boolean putTransient;
+    protected RecordInfo recordInfo;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue,
-                              RecordInfo recordInfo, boolean unlockKey, boolean putTransient,
+                              RecordInfo recordInfo, boolean putTransient,
                               boolean disableWanReplicationEvent) {
         super(name, dataKey, dataValue);
-        this.unlockKey = unlockKey;
         this.recordInfo = recordInfo;
         this.putTransient = putTransient;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
@@ -57,10 +52,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);
-        }
-
-        if (unlockKey) {
-            recordStore.forceUnlock(dataKey);
         }
     }
 
@@ -87,7 +78,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(unlockKey);
         if (recordInfo != null) {
             out.writeBoolean(true);
             recordInfo.writeData(out);
@@ -101,7 +91,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        unlockKey = in.readBoolean();
         boolean hasRecordInfo = in.readBoolean();
         if (hasRecordInfo) {
             recordInfo = new RecordInfo();
