@@ -52,6 +52,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -230,8 +231,9 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         invokeOnPartition(request);
     }
 
+    @Nonnull
     @Override
-    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         isNotNull(listener, "listener");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -262,7 +264,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean removeItemListener(String registrationId) {
+    public boolean removeItemListener(@Nonnull String registrationId) {
         return deregisterListener(registrationId);
     }
 

@@ -121,7 +121,7 @@ public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
         instance.getSet("test").addItemListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testQueueAddItemListener() {
         instance.getQueue("test").addItemListener(null, true);
     }

@@ -43,6 +43,7 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -95,6 +96,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
 
     protected abstract CollectionConfig getConfig(NodeEngine nodeEngine);
 
+    @Nonnull
     @Override
     public String getName() {
         return name;
@@ -217,14 +219,14 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return new UnmodifiableLazyList<E>(collection, serializationService);
     }
 
-    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public @Nonnull String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         return registration.getId();
     }
 
-    public boolean removeItemListener(String registrationId) {
+    public boolean removeItemListener(@Nonnull String registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         return eventService.deregisterListener(getServiceName(), name, registrationId);
     }

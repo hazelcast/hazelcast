@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
@@ -53,8 +54,10 @@ public interface EventService {
      * @param topic       topic name
      * @param listener    listener instance
      * @return event registration
+     * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName, String topic, Object listener);
+    EventRegistration registerLocalListener(String serviceName, String topic,
+                                            @Nonnull Object listener);
 
     /**
      * Registers a local only listener with an event filter.
@@ -64,8 +67,11 @@ public interface EventService {
      * @param filter      event filter
      * @param listener    listener instance
      * @return event registration
+     * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener);
+    EventRegistration registerLocalListener(String serviceName, String topic,
+                                            @Nonnull EventFilter filter,
+                                            @Nonnull Object listener);
 
     /**
      * Registers a listener on all cluster nodes.
@@ -74,8 +80,10 @@ public interface EventService {
      * @param topic       topic name
      * @param listener    listener instance
      * @return event registration
+     * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerListener(String serviceName, String topic, Object listener);
+    EventRegistration registerListener(String serviceName, String topic,
+                                       @Nonnull Object listener);
 
     /**
      * Registers a listener on all cluster nodes with an event filter.
@@ -85,8 +93,11 @@ public interface EventService {
      * @param filter      event filter
      * @param listener    listener instance
      * @return event registration
+     * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
-    EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
+    EventRegistration registerListener(String serviceName, String topic,
+                                       @Nonnull EventFilter filter,
+                                       @Nonnull Object listener);
 
     /**
      * Deregisters a listener with the given registration ID.
@@ -99,7 +110,9 @@ public interface EventService {
      * @see #registerListener(String, String, Object)
      * @see #registerLocalListener(String, String, Object)
      */
-    boolean deregisterListener(String serviceName, String topic, Object id);
+    boolean deregisterListener(@Nonnull String serviceName,
+                               @Nonnull String topic,
+                               @Nonnull Object id);
 
     /**
      * Deregisters all listeners belonging to the given service and topic.

@@ -19,6 +19,7 @@ package com.hazelcast.transaction;
 import com.hazelcast.collection.BaseQueue;
 import com.hazelcast.collection.IQueue;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,17 +35,18 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
      * {@inheritDoc}
      */
     @Override
-    boolean offer(E e);
+    boolean offer(@Nonnull E e);
 
     /**
      * {@inheritDoc}
      */
     @Override
-    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
+    boolean offer(@Nonnull E e, long timeout, @Nonnull TimeUnit unit) throws InterruptedException;
 
     /**
      * {@inheritDoc}
      */
+    @Nonnull
     @Override
     E take() throws InterruptedException;
 
@@ -58,7 +60,7 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
      * {@inheritDoc}
      */
     @Override
-    E poll(long timeout, TimeUnit unit) throws InterruptedException;
+    E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException;
 
     /**
      * {@inheritDoc}

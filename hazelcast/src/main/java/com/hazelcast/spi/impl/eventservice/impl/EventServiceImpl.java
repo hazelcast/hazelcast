@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -33,17 +33,18 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 
+import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -67,6 +68,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILL
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -160,7 +162,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Probe(name = "syncDeliveryFailureCount")
     private final MwCounter syncDeliveryFailureCount = newMwCounter();
 
-    private  final int sendEventSyncTimeoutMillis;
+    private final int sendEventSyncTimeoutMillis;
 
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
@@ -240,22 +242,27 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
+    public EventRegistration registerLocalListener(String serviceName, String topic,
+                                                   @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
     }
 
     @Override
-    public EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener) {
+    public EventRegistration registerLocalListener(String serviceName, String topic,
+                                                   @Nonnull EventFilter filter,
+                                                   @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, true);
     }
 
     @Override
-    public EventRegistration registerListener(String serviceName, String topic, Object listener) {
+    public EventRegistration registerListener(String serviceName, String topic, @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
     }
 
     @Override
-    public EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener) {
+    public EventRegistration registerListener(String serviceName, String topic,
+                                              @Nonnull EventFilter filter,
+                                              @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
 
@@ -273,13 +280,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return the event registration
      * @throws IllegalArgumentException if the listener or filter is null
      */
-    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter, Object listener,
+    private EventRegistration registerListenerInternal(String serviceName,
+                                                       String topic,
+                                                       @Nonnull EventFilter filter,
+                                                       @Nonnull Object listener,
                                                        boolean localOnly) {
         if (listener == null) {
-            throw new IllegalArgumentException("Listener required!");
+            throw new IllegalArgumentException("Null listener is not allowed!");
         }
         if (filter == null) {
-            throw new IllegalArgumentException("EventFilter required!");
+            throw new IllegalArgumentException("Null filter is not allowed!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
         String id = UuidUtil.newUnsecureUuidString();
@@ -304,7 +314,13 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public boolean deregisterListener(String serviceName, String topic, Object id) {
+    public boolean deregisterListener(@Nonnull String serviceName,
+                                      @Nonnull String topic,
+                                      @Nonnull Object id) {
+        checkNotNull(serviceName, "Null serviceName is not allowed!");
+        checkNotNull(topic, "Null topic is not allowed!");
+        checkNotNull(id, "Null id is not allowed!");
+
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
             return false;

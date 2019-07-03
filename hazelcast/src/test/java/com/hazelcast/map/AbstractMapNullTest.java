@@ -33,6 +33,8 @@ import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.junit.Assert.fail;
+
 public abstract class AbstractMapNullTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "map";
@@ -56,7 +58,6 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.remove("", null));
         assertThrowsNPE(m -> m.removeAll(null));
         assertThrowsNPE(m -> m.delete(null));
-        assertThrowsNPE(m -> m.getAll(null));
         assertThrowsNPE(m -> m.loadAll(null, true));
         assertThrowsNPE(m -> m.getAsync(null));
 
@@ -128,14 +129,10 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
 
         assertThrowsNPE(m -> m.lock(null));
         assertThrowsNPE(m -> m.lock(null, -1, sampleTimeUnit));
-        assertThrowsNPE(m -> m.lock("", 1, null));
 
         assertThrowsNPE(m -> m.tryLock(null));
         assertThrowsNPE(m -> m.tryLock(null, -1, sampleTimeUnit));
-        assertThrowsNPE(m -> m.tryLock("", -1, null));
         assertThrowsNPE(m -> m.tryLock(null, -1, sampleTimeUnit, -1, sampleTimeUnit));
-        assertThrowsNPE(m -> m.tryLock("", -1, null, -1, sampleTimeUnit));
-        assertThrowsNPE(m -> m.tryLock("", -1, sampleTimeUnit, -1, null));
 
         assertThrowsNPE(m -> m.unlock(null));
         assertThrowsNPE(m -> m.forceUnlock(null));
@@ -145,13 +142,11 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleEntryListener, null, true));
             assertThrowsNPE(m -> m.addLocalEntryListener((EntryListener) null, samplePredicate, "", true));
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleEntryListener, null, "", true));
-            assertThrowsNPE(m -> m.addLocalEntryListener(sampleEntryListener, samplePredicate, null, true));
             assertThrowsNPE(m -> m.addLocalEntryListener((MapListener) null));
             assertThrowsNPE(m -> m.addLocalEntryListener((MapListener) null, samplePredicate, true));
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleMapListener, null, true));
             assertThrowsNPE(m -> m.addLocalEntryListener(null, samplePredicate, "", true));
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleMapListener, null, "", true));
-            assertThrowsNPE(m -> m.addLocalEntryListener(sampleMapListener, samplePredicate, null, true));
             assertThrowsNPE(m -> m.localKeySet(null));
         }
 
@@ -163,14 +158,12 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, true));
         assertThrowsNPE(m -> m.addEntryListener((EntryListener) null, samplePredicate, "", true));
         assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, "", true));
-        assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, samplePredicate, null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, "", true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, (Object) null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, samplePredicate, true));
         assertThrowsNPE(m -> m.addEntryListener(sampleMapListener, null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, samplePredicate, "", true));
         assertThrowsNPE(m -> m.addEntryListener(sampleMapListener, null, "", true));
-        assertThrowsNPE(m -> m.addEntryListener(sampleMapListener, samplePredicate, null, true));
         assertThrowsNPE(m -> m.removeEntryListener(null));
         assertThrowsNPE(m -> m.addPartitionLostListener(null));
         assertThrowsNPE(m -> m.removePartitionLostListener(null));
@@ -199,11 +192,14 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrows(NullPointerException.class, method);
     }
 
-    private void assertThrows(Class<? extends Exception> exceptionClass, ConsumerEx<IMap<Object, Object>> method) {
+    private void assertThrows(Class<? extends Exception> expectedExceptionClass,
+                              ConsumerEx<IMap<Object, Object>> method) {
         try {
             method.accept(getDriver().getMap(MAP_NAME));
+            fail("Expected " + expectedExceptionClass
+                    + " but there was no exception!");
         } catch (Exception e) {
-            Assert.assertSame(e.getClass(), exceptionClass);
+            Assert.assertSame(expectedExceptionClass, e.getClass());
         }
     }
 
