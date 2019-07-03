@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.hazelfast.IOUtil.INT_AS_BYTES;
@@ -474,9 +475,14 @@ public class Server {
         private boolean objectPoolingEnabled = true;
         private boolean optimizeSelector = true;
         private boolean directBuffers = true;
-        private boolean selectorSpin = true;
+        private boolean selectorSpin = false;
         private long selectorSpinDurationNs = MILLISECONDS.toNanos(10);
         private Node node;
+
+        public Context selectorSpinDuration(long duration, TimeUnit unit) {
+            this.selectorSpinDurationNs = unit.toNanos(duration);
+            return this;
+        }
 
         public Context selectorSpin(boolean selectorSpin) {
             this.selectorSpin = selectorSpin;
