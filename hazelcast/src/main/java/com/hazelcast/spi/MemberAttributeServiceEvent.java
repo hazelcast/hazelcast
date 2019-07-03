@@ -16,11 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+
+import java.util.Set;
 
 import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
@@ -33,9 +36,9 @@ public class MemberAttributeServiceEvent extends MemberAttributeEvent {
     public MemberAttributeServiceEvent() {
     }
 
-    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
-                                       String key, Object value) {
-        super(cluster, member, operationType, key, value);
+    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, Set<Member> members,
+                                       MemberAttributeOperationType operationType, String key, Object value) {
+        super(cluster, member, members, operationType, key, value);
     }
 
 }

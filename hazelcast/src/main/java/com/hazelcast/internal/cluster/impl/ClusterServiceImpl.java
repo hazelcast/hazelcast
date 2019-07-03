@@ -69,6 +69,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -493,11 +494,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, String value) {
         lock.lock();
         try {
-            MemberImpl member = membershipManager.getMember(uuid);
+            MemberMap memberMap = membershipManager.getMemberMap();
+            MemberImpl member = memberMap.getMember(uuid);
             if (!member.equals(getLocalMember())) {
                 member.updateAttribute(operationType, key, value);
             }
-            sendMemberAttributeEvent(member, operationType, key, value);
+            sendMemberAttributeEvent(member, memberMap, operationType, key, value);
         } finally {
             lock.unlock();
         }
@@ -553,11 +555,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.shrinkMissingMembers(memberUuidsToRemove);
     }
 
-    private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
-                                          Object value) {
+    private void sendMemberAttributeEvent(MemberImpl member, MemberMap memberMap, MemberAttributeOperationType operationType,
+                                          String key, Object value) {
+        Set<Member> members = new HashSet<>(memberMap.getMembers());
         final MemberAttributeServiceEvent event
-                = new MemberAttributeServiceEvent(this, member, operationType, key, value);
-        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, operationType, key, value);
+                = new MemberAttributeServiceEvent(this, member, members, operationType, key, value);
+        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, members, operationType,
+                key, value);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {
