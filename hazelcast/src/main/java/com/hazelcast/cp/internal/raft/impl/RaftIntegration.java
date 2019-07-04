@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
@@ -61,7 +61,7 @@ public interface RaftIntegration {
      * @param endpoint endpoint
      * @return true if endpoint is reachable, false otherwise
      */
-    boolean isReachable(Endpoint endpoint);
+    boolean isReachable(RaftEndpoint endpoint);
 
     /**
      * Sends the {@link PreVoteRequest} to target endpoint to be handled by
@@ -70,7 +70,7 @@ public interface RaftIntegration {
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(PreVoteRequest request, Endpoint target);
+    boolean send(PreVoteRequest request, RaftEndpoint target);
 
     /**
      * Sends the {@link PreVoteResponse} to target endpoint to be handled by
@@ -79,7 +79,7 @@ public interface RaftIntegration {
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(PreVoteResponse response, Endpoint target);
+    boolean send(PreVoteResponse response, RaftEndpoint target);
 
     /**
      * Sends the {@link VoteRequest} to target endpoint to be handled by
@@ -88,7 +88,7 @@ public interface RaftIntegration {
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(VoteRequest request, Endpoint target);
+    boolean send(VoteRequest request, RaftEndpoint target);
 
     /**
      * Sends the {@link VoteResponse} to target endpoint to be handled by
@@ -97,7 +97,7 @@ public interface RaftIntegration {
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(VoteResponse response, Endpoint target);
+    boolean send(VoteResponse response, RaftEndpoint target);
 
     /**
      * Sends the {@link AppendRequest} to target endpoint to be handled by
@@ -106,7 +106,7 @@ public interface RaftIntegration {
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(AppendRequest request, Endpoint target);
+    boolean send(AppendRequest request, RaftEndpoint target);
 
     /**
      * Sends the {@link AppendSuccessResponse} to target endpoint to be handled
@@ -115,7 +115,7 @@ public interface RaftIntegration {
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(AppendSuccessResponse response, Endpoint target);
+    boolean send(AppendSuccessResponse response, RaftEndpoint target);
 
     /**
      * Sends the {@link AppendFailureResponse} to target endpoint to be handled
@@ -124,7 +124,7 @@ public interface RaftIntegration {
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(AppendFailureResponse response, Endpoint target);
+    boolean send(AppendFailureResponse response, RaftEndpoint target);
 
     /**
      * Sends the {@link InstallSnapshot} to target endpoint to be handled by
@@ -133,7 +133,7 @@ public interface RaftIntegration {
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
      */
-    boolean send(InstallSnapshot request, Endpoint target);
+    boolean send(InstallSnapshot request, RaftEndpoint target);
 
     /**
      * Executes the operation on underlying operation execution mechanism
@@ -201,6 +201,11 @@ public interface RaftIntegration {
      * the linearizable read optimization.
      */
     boolean isLinearizableReadOptimizationEnabled();
+
+    /**
+     * TODO
+     */
+    CPMember getCpMember(RaftEndpoint target);
 
     /**
      * Called when RaftNode status changes.

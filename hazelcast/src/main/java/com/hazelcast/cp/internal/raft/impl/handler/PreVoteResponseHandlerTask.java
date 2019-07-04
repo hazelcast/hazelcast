@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.state.CandidateState;
@@ -75,7 +75,7 @@ public class PreVoteResponseHandlerTask extends AbstractResponseHandlerTask {
     }
 
     @Override
-    protected Endpoint sender() {
+    protected RaftEndpoint sender() {
         return resp.voter();
     }
 }

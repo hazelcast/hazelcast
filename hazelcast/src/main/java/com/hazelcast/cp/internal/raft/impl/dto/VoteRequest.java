@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +35,7 @@ import java.io.IOException;
  */
 public class VoteRequest implements IdentifiedDataSerializable {
 
-    private Endpoint candidate;
+    private RaftEndpoint candidate;
     private int term;
     private int lastLogTerm;
     private long lastLogIndex;
@@ -43,14 +43,14 @@ public class VoteRequest implements IdentifiedDataSerializable {
     public VoteRequest() {
     }
 
-    public VoteRequest(Endpoint candidate, int term, int lastLogTerm, long lastLogIndex) {
+    public VoteRequest(RaftEndpoint candidate, int term, int lastLogTerm, long lastLogIndex) {
         this.term = term;
         this.candidate = candidate;
         this.lastLogTerm = lastLogTerm;
         this.lastLogIndex = lastLogIndex;
     }
 
-    public Endpoint candidate() {
+    public RaftEndpoint candidate() {
         return candidate;
     }
 

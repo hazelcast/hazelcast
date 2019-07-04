@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -55,6 +56,7 @@ import java.util.concurrent.Executor;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Performs invocations to create &amp; destroy Raft groups,
@@ -78,7 +80,8 @@ public class RaftInvocationManager {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
-        this.raftInvocationContext = new RaftInvocationContext(logger, raftService);
+        this.raftInvocationContext = new RaftInvocationContext(logger, raftService.getConfig()
+                                                                                  .isFailOnIndeterminateOperationState());
         this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
         this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
         this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
@@ -132,7 +135,13 @@ public class RaftInvocationManager {
                 shuffle(members);
                 members.sort(new CPMemberReachabilityComparator());
                 members = members.subList(0, groupSize);
-                invokeCreateRaftGroup(groupName, groupSize, members, resultFuture);
+
+                List<RaftEndpoint> groupEndpoints = new ArrayList<RaftEndpoint>();
+                for (CPMemberInfo member : members) {
+                    groupEndpoints.add(member.toRaftEndpoint());
+
+                }
+                invokeCreateRaftGroup(groupName, groupSize, groupEndpoints, resultFuture);
             }
 
             @Override
@@ -142,7 +151,7 @@ public class RaftInvocationManager {
         });
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, List<CPMemberInfo> members,
+    private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpointImpl> members,
                                        SimpleCompletableFuture<RaftGroupId> resultFuture) {
         ICompletableFuture<RaftGroupId> f = invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
 
@@ -167,7 +176,7 @@ public class RaftInvocationManager {
     }
 
     <T> InternalCompletableFuture<T> changeMembership(CPGroupId groupId, long membersCommitIndex,
-                                                      CPMemberInfo member, MembershipChangeMode membershipChangeMode) {
+                                                      RaftEndpoint member, MembershipChangeMode membershipChangeMode) {
         InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
         if (completedFuture != null) {
             return completedFuture;
@@ -228,6 +237,10 @@ public class RaftInvocationManager {
 
     public RaftInvocationContext getRaftInvocationContext() {
         return raftInvocationContext;
+    }
+
+    public CPMemberInfo getCPMember(RaftEndpoint endpoint) {
+        return endpoint != null ? raftInvocationContext.getCPMember(endpoint.getUuid()) : null;
     }
 
     private class CPMemberReachabilityComparator implements Comparator<CPMemberInfo> {

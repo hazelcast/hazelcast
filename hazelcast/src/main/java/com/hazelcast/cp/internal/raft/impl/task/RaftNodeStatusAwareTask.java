@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 
 /**
@@ -50,7 +50,7 @@ public abstract class RaftNodeStatusAwareTask implements Runnable {
         }
     }
 
-    protected final Endpoint localMember() {
+    protected final RaftEndpoint localMember() {
         return raftNode.getLocalMember();
     }
 

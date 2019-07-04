@@ -16,12 +16,13 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.internal.util.Clock;
 
@@ -30,7 +31,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 /**
  * Handles {@link VoteRequest} sent by a candidate. Responds with
  * a {@link VoteResponse} to the sender. Leader election is initiated by
- * {@link com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask}.
+ * {@link LeaderElectionTask}.
  * <p>
  * See <i>5.2 Leader election</i> section of
  * <i>In Search of an Understandable Consensus Algorithm</i>
@@ -38,7 +39,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
  *
  * @see VoteRequest
  * @see VoteResponse
- * @see com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask
+ * @see LeaderElectionTask
  */
 public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements Runnable {
     private final VoteRequest req;
@@ -53,19 +54,19 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
     // Justification: It is easier to follow the RequestVoteRPC logic in a single method
     protected void innerRun() {
         RaftState state = raftNode.state();
-        Endpoint localMember = localMember();
+        RaftEndpoint localEndpoint = raftNode.getLocalMember();
 
         // Reply false if last AppendEntries call was received less than election timeout ago (leader stickiness)
         if (raftNode.lastAppendEntriesTimestamp() > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {
             logger.info("Rejecting " + req + " since received append entries recently.");
-            raftNode.send(new VoteResponse(localMember, state.term(), false), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;
         }
 
         // Reply false if term < currentTerm (§5.1)
         if (state.term() > req.term()) {
             logger.info("Rejecting " + req + " since current term: " + state.term() + " is bigger");
-            raftNode.send(new VoteResponse(localMember, state.term(), false), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;
         }
 
@@ -82,37 +83,37 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
 
         if (state.leader() != null && !req.candidate().equals(state.leader())) {
             logger.warning("Rejecting " + req + " since we have a leader: " + state.leader());
-            raftNode.send(new VoteResponse(localMember, req.term(), false), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, req.term(), false), req.candidate());
             return;
         }
 
-        if (state.lastVoteTerm() == req.term() && state.votedFor() != null) {
+        if (state.votedFor() != null) {
             boolean granted = (req.candidate().equals(state.votedFor()));
             if (granted) {
                 logger.info("Vote granted for duplicate" + req);
             } else {
                 logger.info("Duplicate " + req + ". currently voted-for: " + state.votedFor());
             }
-            raftNode.send(new VoteResponse(localMember, req.term(), granted), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, req.term(), granted), req.candidate());
             return;
         }
 
         RaftLog raftLog = state.log();
         if (raftLog.lastLogOrSnapshotTerm() > req.lastLogTerm()) {
             logger.info("Rejecting " + req + " since our last log term: " + raftLog.lastLogOrSnapshotTerm() + " is greater");
-            raftNode.send(new VoteResponse(localMember, req.term(), false), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, req.term(), false), req.candidate());
             return;
         }
 
         if (raftLog.lastLogOrSnapshotTerm() == req.lastLogTerm() && raftLog.lastLogOrSnapshotIndex() > req.lastLogIndex()) {
             logger.info("Rejecting " + req + " since our last log index: " + raftLog.lastLogOrSnapshotIndex() + " is greater");
-            raftNode.send(new VoteResponse(localMember, req.term(), false), req.candidate());
+            raftNode.send(new VoteResponse(localEndpoint, req.term(), false), req.candidate());
             return;
         }
 
         logger.info("Granted vote for " + req);
         state.persistVote(req.term(), req.candidate());
 
-        raftNode.send(new VoteResponse(localMember, req.term(), true), req.candidate());
+        raftNode.send(new VoteResponse(localEndpoint, req.term(), true), req.candidate());
     }
 }

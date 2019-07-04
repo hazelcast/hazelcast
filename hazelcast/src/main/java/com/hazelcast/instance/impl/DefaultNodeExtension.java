@@ -25,6 +25,12 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
+import com.hazelcast.cp.internal.persistence.NopCPMemberMetadataStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
+import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
@@ -99,6 +105,7 @@ import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -498,6 +505,16 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public boolean isClientFailoverSupported() {
         return false;
+    }
+
+    @Override
+    public CPMemberMetadataStore getCPMemberMetadataStore() {
+        return NopCPMemberMetadataStore.INSTANCE;
+    }
+
+    @Override
+    public RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, LogFileStructure logFileStructure) {
+        return NopRaftStateStore.INSTANCE;
     }
 
     protected void createAndSetPhoneHome() {

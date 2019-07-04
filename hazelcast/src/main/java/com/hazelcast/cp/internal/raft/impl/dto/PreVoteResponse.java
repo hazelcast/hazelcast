@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,20 +35,20 @@ import java.io.IOException;
  */
 public class PreVoteResponse implements IdentifiedDataSerializable {
 
-    private Endpoint voter;
+    private RaftEndpoint voter;
     private int term;
     private boolean granted;
 
     public PreVoteResponse() {
     }
 
-    public PreVoteResponse(Endpoint voter, int term, boolean granted) {
+    public PreVoteResponse(RaftEndpoint voter, int term, boolean granted) {
         this.voter = voter;
         this.term = term;
         this.granted = granted;
     }
 
-    public Endpoint voter() {
+    public RaftEndpoint voter() {
         return voter;
     }
 

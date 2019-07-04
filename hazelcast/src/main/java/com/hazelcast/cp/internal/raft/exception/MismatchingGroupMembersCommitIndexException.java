@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.exception;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 import java.util.Collection;
 
@@ -33,9 +33,9 @@ public class MismatchingGroupMembersCommitIndexException extends CPSubsystemExce
 
     private final long commitIndex;
 
-    private final Collection<Endpoint> members;
+    private final Collection<RaftEndpoint> members;
 
-    public MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<Endpoint> members) {
+    public MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<RaftEndpoint> members) {
         super("commit index: " + commitIndex + " members: " + members, null);
         this.commitIndex = commitIndex;
         this.members = members;
@@ -45,7 +45,7 @@ public class MismatchingGroupMembersCommitIndexException extends CPSubsystemExce
         return commitIndex;
     }
 
-    public Collection<Endpoint> getMembers() {
+    public Collection<RaftEndpoint> getMembers() {
         return members;
     }
 }

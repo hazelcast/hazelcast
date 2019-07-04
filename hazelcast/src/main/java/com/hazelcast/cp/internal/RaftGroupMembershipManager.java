@@ -18,12 +18,14 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
@@ -52,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -70,20 +73,20 @@ class RaftGroupMembershipManager {
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
     private final ILogger logger;
-    private volatile RaftInvocationManager invocationManager;
+    private final RaftInvocationManager invocationManager;
+    private final AtomicBoolean initialized = new AtomicBoolean();
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
+        this.invocationManager = raftService.getInvocationManager();
     }
 
     void init() {
-        if (raftService.getLocalCPMember() == null) {
+        if (raftService.getLocalCPMember() == null || !initialized.compareAndSet(false, true)) {
             return;
         }
-
-        this.invocationManager = raftService.getInvocationManager();
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         // scheduleWithRepetition skips subsequent execution if one is already running.
@@ -116,11 +119,10 @@ class RaftGroupMembershipManager {
                     continue;
                 }
 
-                ICompletableFuture<CPGroupInfo> f = queryMetadata(new GetRaftGroupOp(groupId));
-
-                f.andThen(new ExecutionCallback<CPGroupInfo>() {
+                ICompletableFuture<CPGroup> f = queryMetadata(new GetRaftGroupOp(groupId));
+                f.andThen(new ExecutionCallback<CPGroup>() {
                     @Override
-                    public void onResponse(CPGroupInfo group) {
+                    public void onResponse(CPGroup group) {
                         if (group == null) {
                             logger.severe("Could not find CP group for local raft node of " + groupId);
                         } else if (group.status() == CPGroupStatus.DESTROYED) {
@@ -323,7 +325,7 @@ class RaftGroupMembershipManager {
 
         private void checkMemberAddCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups, CPGroupMembershipChange change,
                                                Throwable t) {
-            CPMemberInfo memberToAdd = change.getMemberToAdd();
+            RaftEndpoint memberToAdd = change.getMemberToAdd();
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
                 MismatchingGroupMembersCommitIndexException m = (MismatchingGroupMembersCommitIndexException) t;
                 String msg = "MEMBER ADD commit of " + change + " failed. Actual group members: " + m.getMembers()
@@ -356,7 +358,7 @@ class RaftGroupMembershipManager {
                     return;
                 }
 
-                for (CPMemberInfo member : change.getMembers()) {
+                for (RaftEndpoint member : change.getMembers()) {
                     if (!member.equals(change.getMemberToRemove()) && !m.getMembers().contains(member)) {
                         logger.severe(msg);
                         return;
@@ -374,7 +376,7 @@ class RaftGroupMembershipManager {
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private long checkMemberRemoveCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
                                                   CPGroupMembershipChange change, Throwable t) {
-            CPMemberInfo removedMember = change.getMemberToRemove();
+            RaftEndpoint removedMember = change.getMemberToRemove();
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
                 MismatchingGroupMembersCommitIndexException m = (MismatchingGroupMembersCommitIndexException) t;
                 String msg = "MEMBER REMOVE commit of " + change + " failed. Actual group members: " + m.getMembers()
@@ -394,7 +396,7 @@ class RaftGroupMembershipManager {
                         return NA_MEMBERS_COMMIT_INDEX;
                     }
 
-                    for (CPMemberInfo member : change.getMembers()) {
+                    for (RaftEndpoint member : change.getMembers()) {
                         // Other group members except the removed one must be still present...
                         if (!member.equals(removedMember) && !m.getMembers().contains(member)) {
                             logger.severe(msg);
@@ -412,7 +414,7 @@ class RaftGroupMembershipManager {
                     return NA_MEMBERS_COMMIT_INDEX;
                 }
 
-                for (CPMemberInfo member : change.getMembers()) {
+                for (RaftEndpoint member : change.getMembers()) {
                     // Other group members except the removed one must be still present...
                     if (!member.equals(removedMember) && !m.getMembers().contains(member)) {
                         logger.severe(msg);

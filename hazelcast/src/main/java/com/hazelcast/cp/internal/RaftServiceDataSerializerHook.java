@@ -113,6 +113,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int UNSAFE_RAFT_QUERY_OP = 43;
     public static final int UNSAFE_RAFT_BACKUP_OP = 44;
     public static final int UNSAFE_SNAPSHOT_REPLICATE_OP = 45;
+    public static final int CP_ENDPOINT = 46;
+    public static final int CP_GROUP_SUMMARY = 47;
 
     @Override
     public int getFactoryId() {
@@ -213,6 +215,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new UnsafeRaftBackupOp();
                 case UNSAFE_SNAPSHOT_REPLICATE_OP:
                     return new UnsafeSnapshotReplicationOp();
+                case CP_ENDPOINT:
+                    return new RaftEndpointImpl();
+                case CP_GROUP_SUMMARY:
+                    return new CPGroupSummary();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

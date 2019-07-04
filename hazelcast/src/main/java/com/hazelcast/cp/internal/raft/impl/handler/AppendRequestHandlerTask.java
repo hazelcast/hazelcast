@@ -147,7 +147,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                 // If an existing entry conflicts with a new one (same index but different terms),
                 // delete the existing entry and all that follow it (§5.3)
                 if (reqEntry.term() != localEntry.term()) {
-                    List<LogEntry> truncatedEntries = raftLog.truncateEntriesFrom(reqEntry.index());
+                    List<LogEntry> truncatedEntries = raftLog.deleteEntriesFrom(reqEntry.index());
                     if (logger.isFineEnabled()) {
                         logger.warning("Truncated " + truncatedEntries.size() + " entries from entry index: "
                                 + reqEntry.index() + " => " + truncatedEntries);
@@ -159,6 +159,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                     raftNode.invalidateFuturesFrom(reqEntry.index());
                     revertPreAppliedRaftGroupCmd(truncatedEntries);
                     newEntries = Arrays.copyOfRange(req.entries(), i, req.entryCount());
+                    raftLog.flush();
                     break;
                 }
             }
@@ -180,6 +181,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                 }
 
                 raftLog.appendEntries(newEntries);
+                raftLog.flush();
             }
         }
 

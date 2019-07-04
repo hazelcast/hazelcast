@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.exception;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 
@@ -25,33 +24,33 @@ import com.hazelcast.cp.CPGroup;
  * <p>
  * This exception can include the known leader of a {@link CPGroup}
  * when it's thrown.
- * Leader endpoint can be accessed by {@link #getLeader()}, if available.
+ * Leader endpoint can be accessed by {@link #getLeaderUuid()}, if available.
  */
 public class CPSubsystemException extends HazelcastException {
 
     private static final long serialVersionUID = 3165333502175586105L;
 
-    private final Endpoint leader;
+    private final String leaderUuid;
 
-    public CPSubsystemException(Endpoint leader) {
-        this.leader = leader;
+    public CPSubsystemException(String leaderUuid) {
+        this.leaderUuid = leaderUuid;
     }
 
-    public CPSubsystemException(String message, Endpoint leader) {
+    public CPSubsystemException(String message, String leaderUuid) {
         super(message);
-        this.leader = leader;
+        this.leaderUuid = leaderUuid;
     }
 
-    public CPSubsystemException(String message, Endpoint leader, Throwable cause) {
+    public CPSubsystemException(String message, Throwable cause, String leaderUuid) {
         super(message, cause);
-        this.leader = leader;
+        this.leaderUuid = leaderUuid;
     }
 
     /**
      * Returns the leader endpoint of related CP group, if known/available
      * by the time this exception is thrown.
      */
-    public Endpoint getLeader() {
-        return leader;
+    public String getLeaderUuid() {
+        return leaderUuid;
     }
 }

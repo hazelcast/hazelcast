@@ -18,7 +18,6 @@ package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.nio.Address;
 
 import java.util.UUID;
@@ -35,7 +34,7 @@ import java.util.UUID;
  * @see CPSubsystemConfig
  * @see CPSubsystemManagementService
  */
-public interface CPMember extends Endpoint {
+public interface CPMember {
 
     /**
      * Returns the UUID of this CP member. The CP member UUID does not have to

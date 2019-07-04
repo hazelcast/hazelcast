@@ -71,12 +71,12 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
             service.stepDownRaftNode(groupId);
-            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             return;
         }
 

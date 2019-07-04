@@ -64,12 +64,12 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
             service.stepDownRaftNode(groupId);
-            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             return;
         }
 

@@ -17,6 +17,10 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -43,6 +47,8 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -335,4 +341,8 @@ public interface NodeExtension {
      * @return not-{@code null} {@link AuditlogService} instance
      */
     AuditlogService getAuditlogService();
+
+    CPMemberMetadataStore getCPMemberMetadataStore();
+
+    RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure);
 }

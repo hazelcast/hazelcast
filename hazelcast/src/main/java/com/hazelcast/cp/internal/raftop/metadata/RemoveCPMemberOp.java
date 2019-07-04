@@ -55,6 +55,10 @@ public class RemoveCPMemberOp extends MetadataRaftGroupOp implements Indetermina
         return PostponedResponse.INSTANCE;
     }
 
+    public CPMemberInfo getMember() {
+        return member;
+    }
+
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
