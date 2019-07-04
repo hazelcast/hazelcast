@@ -17,10 +17,9 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
@@ -155,7 +154,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (RaftNodeImpl raftNode : followers) {
-                    Endpoint leaderEndpoint = getLeaderMember(raftNode);
+                    RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
                     assertNotNull(leaderEndpoint);
                     assertNotEquals(leader.getLocalMember(), leaderEndpoint);
                 }

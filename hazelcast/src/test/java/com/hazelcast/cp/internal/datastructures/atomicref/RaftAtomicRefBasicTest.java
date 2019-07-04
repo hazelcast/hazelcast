@@ -273,7 +273,7 @@ public class RaftAtomicRefBasicTest extends HazelcastRaftTestSupport {
 
         private String suffix;
 
-        public AppendStringFunction(String suffix) {
+        AppendStringFunction(String suffix) {
             this.suffix = suffix;
         }
 

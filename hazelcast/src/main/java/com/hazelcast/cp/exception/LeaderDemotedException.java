@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.exception;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 /**
  * A {@code CPSubsystemException} which is thrown when
@@ -26,8 +26,8 @@ public class LeaderDemotedException extends CPSubsystemException {
 
     private static final long serialVersionUID = 4284556927980596355L;
 
-    public LeaderDemotedException(Endpoint local, Endpoint leader) {
+    public LeaderDemotedException(RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER anymore. Known leader is: "
-                + (leader != null ? leader : "N/A") , leader);
+                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
     }
 }

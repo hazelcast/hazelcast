@@ -17,11 +17,13 @@
 package com.hazelcast.cp.internal.raft.impl.handler;
 
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.util.Clock;
 
@@ -30,7 +32,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 /**
  * Handles {@link VoteRequest} sent by a candidate. Responds with
  * a {@link VoteResponse} to the sender. Leader election is initiated by
- * {@link com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask}.
+ * {@link LeaderElectionTask}.
  * <p>
  * See <i>5.2 Leader election</i> section of
  * <i>In Search of an Understandable Consensus Algorithm</i>
@@ -38,7 +40,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
  *
  * @see VoteRequest
  * @see VoteResponse
- * @see com.hazelcast.cp.internal.raft.impl.task.LeaderElectionTask
+ * @see LeaderElectionTask
  */
 public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements Runnable {
     private final VoteRequest req;
@@ -53,7 +55,7 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
     // Justification: It is easier to follow the RequestVoteRPC logic in a single method
     protected void innerRun() {
         RaftState state = raftNode.state();
-        Endpoint localEndpoint = raftNode.getLocalMember();
+        RaftEndpoint localEndpoint = raftNode.getLocalMember();
 
         // Reply false if last AppendEntries call was received less than election timeout ago (leader stickiness)
         if (raftNode.lastAppendEntriesTimestamp() > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,10 +30,10 @@ import java.util.Map;
  */
 public class LeaderState {
 
-    private final Map<Endpoint, FollowerState> followerStates = new HashMap<Endpoint, FollowerState>();
+    private final Map<RaftEndpoint, FollowerState> followerStates = new HashMap<RaftEndpoint, FollowerState>();
 
-    LeaderState(Collection<Endpoint> remoteMembers, long lastLogIndex) {
-        for (Endpoint follower : remoteMembers) {
+    LeaderState(Collection<RaftEndpoint> remoteMembers, long lastLogIndex) {
+        for (RaftEndpoint follower : remoteMembers) {
             followerStates.put(follower, new FollowerState(0L, lastLogIndex + 1));
         }
     }
@@ -43,7 +43,7 @@ public class LeaderState {
      * Follower's {@code nextIndex} will be set to {@code lastLogIndex + 1}
      * and {@code matchIndex} to 0.
      */
-    public void add(Endpoint follower, long lastLogIndex) {
+    public void add(RaftEndpoint follower, long lastLogIndex) {
         assert !followerStates.containsKey(follower) : "Already known follower " + follower;
         followerStates.put(follower, new FollowerState(0L, lastLogIndex + 1));
     }
@@ -51,7 +51,7 @@ public class LeaderState {
     /**
      * Removes a follower from leader maintained state.
      */
-    public void remove(Endpoint follower) {
+    public void remove(RaftEndpoint follower) {
         FollowerState removed = followerStates.remove(follower);
         assert removed != null : "Unknown follower " + follower;
     }
@@ -71,13 +71,13 @@ public class LeaderState {
         return indices;
     }
 
-    public FollowerState getFollowerState(Endpoint follower) {
+    public FollowerState getFollowerState(RaftEndpoint follower) {
         FollowerState followerState = followerStates.get(follower);
         assert followerState != null : "Unknown follower " + follower;
         return followerState;
     }
 
-    public Map<Endpoint, FollowerState> getFollowerStates() {
+    public Map<RaftEndpoint, FollowerState> getFollowerStates() {
         return followerStates;
     }
 }

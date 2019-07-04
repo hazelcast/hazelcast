@@ -16,9 +16,12 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftLogStore;
 import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,12 +53,36 @@ public class RaftLog {
     private final Ringbuffer<LogEntry> logs;
 
     /**
+     * TODO
+     */
+    private final RaftLogStore logStore;
+
+    /**
      * Latest snapshot entry. Initially snapshot is empty.
      */
     private SnapshotEntry snapshot = new SnapshotEntry();
 
+    private boolean flushNeeded;
+
     public RaftLog(int capacity) {
-        logs = new ArrayRingbuffer<LogEntry>(capacity);
+        this(capacity, null, null, null);
+    }
+
+    public RaftLog(int capacity, LogEntry[] entries, SnapshotEntry snapshot, RaftLogStore logStore) {
+        this.logs = new ArrayRingbuffer<LogEntry>(capacity);
+        this.logStore = logStore;
+
+        if (snapshot != null) {
+            this.snapshot = snapshot;
+            logs.setHeadSequence(toSequence(snapshot.index()) + 1);
+            logs.setTailSequence(logs.headSequence() - 1);
+        }
+
+        if (entries != null) {
+            for (LogEntry entry : entries) {
+                logs.add(entry);
+            }
+        }
     }
 
     /**
@@ -142,6 +169,16 @@ public class RaftLog {
             truncated.add(logs.read(ix));
         }
         logs.setTailSequence(startSequence - 1);
+        if (truncated.size() > 0) {
+            flushNeeded = true;
+            if (logStore != null) {
+                try {
+                    logStore.truncateEntriesFrom(entryIndex);
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+            }
+        }
 
         return truncated;
     }
@@ -188,9 +225,18 @@ public class RaftLog {
                         + " since its index is bigger than (lastLogIndex + 1): " + (lastIndex + 1));
             }
             logs.add(entry);
+            if (logStore != null) {
+                try {
+                    logStore.appendEntry(entry);
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+            }
             lastIndex++;
             lastTerm = Math.max(lastTerm, entry.term());
         }
+
+        flushNeeded |= newEntries.length > 0;
     }
 
     /**
@@ -264,7 +310,31 @@ public class RaftLog {
         logs.setTailSequence(newTailSeq);
 
         this.snapshot = snapshot;
+
+        flushNeeded = true;
+
+        if (logStore != null) {
+            try {
+                logStore.writeSnapshot(snapshot);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+        }
         return (int) (prevSize - logs.size());
+    }
+
+    /**
+     * TODO [basri] I think it is better to have explicit flush() calls
+     */
+    public void flush() {
+        if (flushNeeded && logStore != null) {
+            try {
+                logStore.flush();
+                flushNeeded = false;
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+        }
     }
 
     /**

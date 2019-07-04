@@ -21,6 +21,7 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -92,6 +93,7 @@ import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.MANAGEMENT_TASK_PERIOD_IN_MILLIS;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
@@ -519,14 +521,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return Collections.unmodifiableSet(missingMembers.keySet());
     }
 
-    public Collection<CPGroupId> getCPGroupIdsLocally() {
-        return metadataGroupManager.getGroupIds();
-    }
-
-    public CPGroupInfo getCPGroupLocally(CPGroupId groupId) {
-        return metadataGroupManager.getGroup(groupId);
-    }
-
     public MetadataRaftGroupManager getMetadataGroupManager() {
         return metadataGroupManager;
     }
@@ -535,21 +529,21 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return invocationManager;
     }
 
-    public void handlePreVoteRequest(CPGroupId groupId, PreVoteRequest request, CPMember target) {
+    public void handlePreVoteRequest(CPGroupId groupId, PreVoteRequest request, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
         if (node != null) {
             node.handlePreVoteRequest(request);
         }
     }
 
-    public void handlePreVoteResponse(CPGroupId groupId, PreVoteResponse response, CPMember target) {
+    public void handlePreVoteResponse(CPGroupId groupId, PreVoteResponse response, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, response, target);
         if (node != null) {
             node.handlePreVoteResponse(response);
         }
     }
 
-    public void handleVoteRequest(CPGroupId groupId, VoteRequest request, CPMember target) {
+    public void handleVoteRequest(CPGroupId groupId, VoteRequest request, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
         if (node != null) {
             node.handleVoteRequest(request);
@@ -557,7 +551,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     }
 
-    public void handleVoteResponse(CPGroupId groupId, VoteResponse response, CPMember target) {
+    public void handleVoteResponse(CPGroupId groupId, VoteResponse response, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, response, target);
         if (node != null) {
             node.handleVoteResponse(response);
@@ -565,28 +559,28 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     }
 
-    public void handleAppendEntries(CPGroupId groupId, AppendRequest request, CPMember target) {
+    public void handleAppendEntries(CPGroupId groupId, AppendRequest request, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
         if (node != null) {
             node.handleAppendRequest(request);
         }
     }
 
-    public void handleAppendResponse(CPGroupId groupId, AppendSuccessResponse response, CPMember target) {
+    public void handleAppendResponse(CPGroupId groupId, AppendSuccessResponse response, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, response, target);
         if (node != null) {
             node.handleAppendResponse(response);
         }
     }
 
-    public void handleAppendResponse(CPGroupId groupId, AppendFailureResponse response, CPMember target) {
+    public void handleAppendResponse(CPGroupId groupId, AppendFailureResponse response, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, response, target);
         if (node != null) {
             node.handleAppendResponse(response);
         }
     }
 
-    public void handleSnapshot(CPGroupId groupId, InstallSnapshot request, CPMember target) {
+    public void handleSnapshot(CPGroupId groupId, InstallSnapshot request, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
         if (node != null) {
             node.handleInstallSnapshot(request);
@@ -610,7 +604,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return node;
     }
 
-    private RaftNode getOrInitRaftNodeIfTargetLocalCPMember(CPGroupId groupId, Object message, CPMember target) {
+    private RaftNode getOrInitRaftNodeIfTargetLocalCPMember(CPGroupId groupId, Object message, RaftEndpoint target) {
         RaftNode node = getOrInitRaftNode(groupId);
         if (node == null) {
             if (logger.isFineEnabled()) {
@@ -642,11 +636,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return metadataGroupManager.getLocalCPMember();
     }
 
-    public void createRaftNode(CPGroupId groupId, Collection<CPMemberInfo> members) {
-        createRaftNode(groupId, members, getLocalCPMember());
+    public RaftEndpoint getLocalCPEndpoint() {
+        CPMemberInfo localCPMember = getLocalCPMember();
+        return localCPMember != null ? localCPMember.toRaftEndpoint() : null;
     }
 
-    void createRaftNode(CPGroupId groupId, Collection<CPMemberInfo> members, CPMember localCPMember) {
+    public void createRaftNode(CPGroupId groupId, Collection<RaftEndpoint> members) {
+        createRaftNode(groupId, members, getLocalCPEndpoint());
+    }
+
+    void createRaftNode(CPGroupId groupId, Collection<RaftEndpoint> members, RaftEndpoint localCPMember) {
         if (nodes.containsKey(groupId)) {
             return;
         }
@@ -665,7 +664,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftNodeImpl node = new RaftNodeImpl(groupId, localCPMember, (Collection) members, raftAlgorithmConfig, integration);
+        RaftNodeImpl node = new RaftNodeImpl(groupId, localCPMember, members, null, raftAlgorithmConfig,
+                integration);
 
         if (nodes.putIfAbsent(groupId, node) == null) {
             if (destroyedGroupIds.contains(groupId)) {
@@ -701,9 +701,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public RaftGroupId createRaftGroupForProxy(String name) {
         String groupName = getGroupNameForProxy(name);
         try {
-            CPGroupInfo groupInfo = getGroupInfoForProxy(groupName).join();
-            if (groupInfo != null) {
-                return groupInfo.id();
+            CPGroupSummary group = getGroupSummaryForProxy(groupName).join();
+            if (group != null) {
+                return (RaftGroupId) group.id();
             }
             return invocationManager.createRaftGroup(groupName).get();
         } catch (InterruptedException e) {
@@ -718,24 +718,25 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         final String groupName = getGroupNameForProxy(name);
         final SimpleCompletableFuture<RaftGroupId> future = newCompletableFuture();
 
-        InternalCompletableFuture<CPGroupInfo> groupIdFuture = getGroupInfoForProxy(groupName);
-        groupIdFuture.andThen(new ExecutionCallback<CPGroupInfo>() {
+        InternalCompletableFuture<CPGroupSummary> groupIdFuture = getGroupSummaryForProxy(groupName);
+        groupIdFuture.andThen(new ExecutionCallback<CPGroupSummary>() {
             @Override
-            public void onResponse(CPGroupInfo response) {
+            public void onResponse(CPGroupSummary response) {
                 if (response != null) {
                     future.setResult(response.id());
                 } else {
-                    invocationManager.createRaftGroup(groupName).andThen(new ExecutionCallback<RaftGroupId>() {
-                        @Override
-                        public void onResponse(RaftGroupId response) {
-                            future.setResult(response);
-                        }
+                    invocationManager.createRaftGroup(groupName)
+                                     .andThen(new ExecutionCallback<RaftGroupId>() {
+                                         @Override
+                                         public void onResponse(RaftGroupId response) {
+                                             future.setResult(response);
+                                         }
 
-                        @Override
-                        public void onFailure(Throwable t) {
-                            complete(future, t);
-                        }
-                    });
+                                         @Override
+                                         public void onFailure(Throwable t) {
+                                             complete(future, t);
+                                         }
+                                     });
                 }
             }
 
@@ -747,9 +748,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return future;
     }
 
-    private InternalCompletableFuture<CPGroupInfo> getGroupInfoForProxy(String groupName) {
-        RaftOp op = new GetActiveRaftGroupByNameOp(groupName);
-        return invocationManager.invoke(getMetadataGroupId(), op);
+    private InternalCompletableFuture<CPGroupSummary> getGroupSummaryForProxy(String groupName) {
+        return invocationManager.query(getMetadataGroupId(), new GetActiveRaftGroupByNameOp(groupName), LINEARIZABLE);
     }
 
     private ICompletableFuture<Void> invokeTriggerRemoveMember(CPMemberInfo member) {
@@ -889,16 +889,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             queryInitialMembersFromMetadataRaftGroup();
         }
 
-        @SuppressWarnings("unchecked")
         private void queryInitialMembersFromMetadataRaftGroup() {
             RaftOp op = new GetRaftGroupOp(groupId);
-            ICompletableFuture<CPGroupInfo> f = invocationManager.query(getMetadataGroupId(), op, LEADER_LOCAL);
-            f.andThen(new ExecutionCallback<CPGroupInfo>() {
+            ICompletableFuture<CPGroupSummary> f = invocationManager.query(getMetadataGroupId(), op, LEADER_LOCAL);
+            f.andThen(new ExecutionCallback<CPGroupSummary>() {
                 @Override
-                public void onResponse(CPGroupInfo group) {
+                public void onResponse(CPGroupSummary group) {
                     if (group != null) {
-                        if (group.memberImpls().contains(getLocalCPMember())) {
-                            createRaftNode(groupId, (Collection) group.initialMembers());
+                        if (group.members().contains(getLocalCPMember())) {
+                            createRaftNode(groupId, group.initialMembers());
                         } else {
                             // I can be the member that is just added to the raft group...
                             queryInitialMembersFromTargetRaftGroup();
@@ -923,16 +922,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         void queryInitialMembersFromTargetRaftGroup() {
-            CPMemberInfo localMember = getLocalCPMember();
-            if (localMember == null) {
+            RaftEndpoint localEndpoint = getLocalCPEndpoint();
+            if (localEndpoint == null) {
                 return;
             }
 
-            RaftOp op = new GetInitialRaftGroupMembersIfCurrentGroupMemberOp(localMember);
-            ICompletableFuture<Collection<CPMemberInfo>> f = invocationManager.query(groupId, op, LEADER_LOCAL);
-            f.andThen(new ExecutionCallback<Collection<CPMemberInfo>>() {
+            RaftOp op = new GetInitialRaftGroupMembersIfCurrentGroupMemberOp(localEndpoint);
+            ICompletableFuture<Collection<RaftEndpoint>> f = invocationManager.query(groupId, op, LEADER_LOCAL);
+            f.andThen(new ExecutionCallback<Collection<RaftEndpoint>>() {
                 @Override
-                public void onResponse(Collection<CPMemberInfo> initialMembers) {
+                public void onResponse(Collection<RaftEndpoint> initialMembers) {
                     createRaftNode(groupId, initialMembers);
                 }
 

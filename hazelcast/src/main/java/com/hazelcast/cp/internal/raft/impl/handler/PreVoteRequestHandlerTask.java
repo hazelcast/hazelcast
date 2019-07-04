@@ -16,19 +16,20 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.task.PreVoteTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.util.Clock;
 
 /**
  * Handles {@link PreVoteRequest} and responds to the sender
  * with a {@link PreVoteResponse}. Pre-voting is initiated by
- * {@link com.hazelcast.cp.internal.raft.impl.task.PreVoteTask}.
+ * {@link PreVoteTask}.
  * <p>
  * Grants vote or rejects the request as if responding to
  * a {@link com.hazelcast.cp.internal.raft.impl.dto.VoteRequest}
@@ -37,7 +38,7 @@ import com.hazelcast.util.Clock;
  *
  * @see PreVoteRequest
  * @see PreVoteResponse
- * @see com.hazelcast.cp.internal.raft.impl.task.PreVoteTask
+ * @see PreVoteTask
  */
 public class PreVoteRequestHandlerTask extends RaftNodeStatusAwareTask implements Runnable {
     private final PreVoteRequest req;
@@ -50,7 +51,7 @@ public class PreVoteRequestHandlerTask extends RaftNodeStatusAwareTask implement
     @Override
     protected void innerRun() {
         RaftState state = raftNode.state();
-        Endpoint localEndpoint = raftNode.getLocalMember();
+        RaftEndpoint localEndpoint = localMember();
 
         // Reply false if term < currentTerm (§5.1)
         if (state.term() > req.nextTerm()) {

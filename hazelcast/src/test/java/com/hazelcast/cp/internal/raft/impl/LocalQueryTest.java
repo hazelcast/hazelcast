@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
@@ -213,7 +212,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Endpoint leaderEndpoint = getLeaderMember(followerNode);
+                RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
                 assertNotNull(leaderEndpoint);
                 assertNotEquals(leader.getLocalMember(), leaderEndpoint);
             }
@@ -256,7 +255,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Endpoint leaderEndpoint = getLeaderMember(followerNode);
+                RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
                 assertNotNull(leaderEndpoint);
                 assertNotEquals(leader.getLocalMember(), leaderEndpoint);
             }

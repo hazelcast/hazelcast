@@ -16,8 +16,10 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
@@ -42,9 +44,9 @@ import static java.util.Arrays.sort;
  * <i>In Search of an Understandable Consensus Algorithm</i>
  * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
  *
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendRequest
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse
+ * @see AppendRequest
+ * @see AppendSuccessResponse
+ * @see AppendFailureResponse
  */
 public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTask {
     private final AppendSuccessResponse resp;
@@ -94,7 +96,9 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     private boolean updateFollowerIndices(RaftState state) {
-        Endpoint follower = resp.follower();
+        // If successful: update nextIndex and matchIndex for follower (§5.3)
+
+        RaftEndpoint follower = resp.follower();
         LeaderState leaderState = state.leaderState();
         FollowerState followerState = leaderState.getFollowerState(follower);
 
@@ -164,7 +168,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     @Override
-    protected Endpoint sender() {
+    protected RaftEndpoint sender() {
         return resp.follower();
     }
 }

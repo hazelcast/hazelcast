@@ -17,13 +17,12 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.cp.internal.raft.impl.testing.TestRaftMember;
+import com.hazelcast.cp.internal.raft.impl.testing.TestRaftEndpoint;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.ExceptionUtil;
@@ -51,10 +50,10 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static <T extends Endpoint> T getLeaderMember(final RaftNodeImpl node) {
-        Callable<Endpoint> task = new Callable<Endpoint>() {
+    public static <T extends RaftEndpoint> T getLeaderMember(final RaftNodeImpl node) {
+        Callable<RaftEndpoint> task = new Callable<RaftEndpoint>() {
             @Override
-            public Endpoint call() {
+            public RaftEndpoint call() {
                 return node.state().leader();
             }
         };
@@ -105,7 +104,7 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static long getMatchIndex(final RaftNodeImpl leader, final Endpoint follower) {
+    public static long getMatchIndex(final RaftNodeImpl leader, final RaftEndpoint follower) {
         Callable<Long> task = new Callable<Long>() {
             @Override
             public Long call() {
@@ -169,8 +168,8 @@ public class RaftUtil {
         }
     }
 
-    public static TestRaftMember newRaftMember(int port) {
-        return new TestRaftMember(randomString(), port);
+    public static TestRaftEndpoint newRaftMember(int port) {
+        return new TestRaftEndpoint(randomString(), port);
     }
 
     public static Address newAddress(int port) {

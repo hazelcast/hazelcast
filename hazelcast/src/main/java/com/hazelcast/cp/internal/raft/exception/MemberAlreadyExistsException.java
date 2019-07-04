@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.exception;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 /**
  * A {@code CPSubsystemException} which is thrown when a member, which is
@@ -28,7 +28,7 @@ public class MemberAlreadyExistsException extends CPSubsystemException {
 
     private static final long serialVersionUID = -4895279676261366826L;
 
-    public MemberAlreadyExistsException(Endpoint member) {
+    public MemberAlreadyExistsException(RaftEndpoint member) {
         super("Member already exists: " + member, null);
     }
 }

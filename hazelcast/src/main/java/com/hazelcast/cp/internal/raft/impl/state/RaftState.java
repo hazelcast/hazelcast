@@ -16,12 +16,16 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftRole;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
@@ -37,7 +41,7 @@ public class RaftState {
     /**
      * Endpoint of this node
      */
-    private final Endpoint localEndpoint;
+    private final RaftEndpoint localEndpoint;
 
     /**
      * Group id
@@ -47,7 +51,12 @@ public class RaftState {
     /**
      * Initial members of the group
      */
-    private final Collection<Endpoint> initialMembers;
+    private final Collection<RaftEndpoint> initialMembers;
+
+    /**
+     * TODO
+     */
+    private final RaftStateStore stateStore;
 
     /**
      * Latest committed group members.
@@ -66,16 +75,20 @@ public class RaftState {
 
     /**
      * Latest term this node has seen (initialized to 0 on first boot, increases monotonically)
+     *
+     * TODO: persist
      */
     private int term;
 
     /**
      * Latest known leader endpoint (or null if not known).
      */
-    private volatile Endpoint leader;
+    private volatile RaftEndpoint leader;
 
     /**
      * Index of highest log entry known to be committed (initialized to 0, increases monotonically)
+     *
+     * TODO: NOT-persistent, because we can calculate commitIndex after restoring logs due to majority
      */
     private long commitIndex;
 
@@ -83,17 +96,24 @@ public class RaftState {
      * Index of highest log entry applied to state machine (initialized to 0, increases monotonically)
      * <p>
      * {@code lastApplied <= commitIndex} condition holds true always.
+     *
+     * TODO: NOT-persistent, because we can apply logs and calculate lastApplied
      */
     private long lastApplied;
 
     /**
      * Endpoint that received vote in {@link #lastVoteTerm} (or null if none)
+     *
+     * TODO: persist
      */
-    private Endpoint votedFor;
+    private RaftEndpoint votedFor;
 
     /**
      * Term that granted vote for {@link #votedFor}
+     *
+     * TODO: persist
      */
+    // TODO [basri] can we get rid of this and use the "term" field only?
     private int lastVoteTerm;
 
     /**
@@ -120,14 +140,27 @@ public class RaftState {
      */
     private CandidateState candidateState;
 
-    public RaftState(CPGroupId groupId, Endpoint localEndpoint, Collection<Endpoint> endpoints, int logCapacity) {
+    public RaftState(CPGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints, int logCapacity) {
+        this(groupId, RestoredRaftState.initialState(localEndpoint, endpoints), null, logCapacity);
+    }
+
+    public RaftState(CPGroupId groupId, RestoredRaftState restoredState, RaftStateStore stateStore, int logCapacity) {
         this.groupId = groupId;
-        this.localEndpoint = localEndpoint;
-        this.initialMembers = unmodifiableSet(new LinkedHashSet<Endpoint>(endpoints));
-        RaftGroupMembers groupMembers = new RaftGroupMembers(0, endpoints, localEndpoint);
+        this.localEndpoint = restoredState.getLocalEndpoint();
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(restoredState.getInitialMembers()));
+        RaftGroupMembers groupMembers = new RaftGroupMembers(0, restoredState.getInitialMembers(), localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
-        this.log = new RaftLog(logCapacity);
+        this.term = restoredState.getTerm();
+        this.lastVoteTerm = restoredState.getLastVoteTerm();
+        this.votedFor = restoredState.getVotedFor();
+        this.stateStore = stateStore;
+        this.log = new RaftLog(logCapacity, restoredState.getEntries(), restoredState.getSnapshot(),
+                stateStore != null ? stateStore.getRaftLogStore() : null);
+
+        if (restoredState.isInitial()) {
+            persistInitialMembers();
+        }
     }
 
     public String name() {
@@ -138,21 +171,25 @@ public class RaftState {
         return groupId;
     }
 
-    public Collection<Endpoint> initialMembers() {
+    public RaftEndpoint localEndpoint() {
+        return localEndpoint;
+    }
+
+    public Collection<RaftEndpoint> initialMembers() {
         return initialMembers;
     }
 
     /**
      * Returns all members in the last applied group members
      */
-    public Collection<Endpoint> members() {
+    public Collection<RaftEndpoint> members() {
         return lastGroupMembers.members();
     }
 
     /**
      * Returns remote members in the last applied group members
      */
-    public Collection<Endpoint> remoteMembers() {
+    public Collection<RaftEndpoint> remoteMembers() {
         return lastGroupMembers.remoteMembers();
     }
 
@@ -209,13 +246,17 @@ public class RaftState {
      * Increment term by 1
      */
     int incrementTerm() {
-        return ++term;
+        try {
+            return ++term;
+        } finally {
+            persistTerm();
+        }
     }
 
     /**
      * Returns the known leader
      */
-    public Endpoint leader() {
+    public RaftEndpoint leader() {
         return leader;
     }
 
@@ -231,14 +272,14 @@ public class RaftState {
      * Returns the endpoint this note voted for
      * @see #votedFor
      */
-    public Endpoint votedFor() {
+    public RaftEndpoint votedFor() {
         return votedFor;
     }
 
     /**
      * Updates the known leader
      */
-    public void leader(Endpoint endpoint) {
+    public void leader(RaftEndpoint endpoint) {
         leader = endpoint;
     }
 
@@ -300,9 +341,10 @@ public class RaftState {
     /**
      * Persist a vote for the endpoint in current term during leader election.
      */
-    public void persistVote(int term, Endpoint endpoint) {
+    public void persistVote(int term, RaftEndpoint endpoint) {
         this.lastVoteTerm = term;
         this.votedFor = endpoint;
+        persistTerm();
     }
 
     /**
@@ -317,6 +359,7 @@ public class RaftState {
         leaderState = null;
         candidateState = null;
         this.term = term;
+        persistTerm();
     }
 
     /**
@@ -351,7 +394,7 @@ public class RaftState {
     /**
      * Returns true if the endpoint is a member of the last applied group, false otherwise.
      */
-    public boolean isKnownMember(Endpoint endpoint) {
+    public boolean isKnownMember(RaftEndpoint endpoint) {
         return lastGroupMembers.isKnownMember(endpoint);
     }
 
@@ -381,7 +424,7 @@ public class RaftState {
      * @param logIndex log index of membership change
      * @param members latest applied members
      */
-    public void updateGroupMembers(long logIndex, Collection<Endpoint> members) {
+    public void updateGroupMembers(long logIndex, Collection<RaftEndpoint> members) {
         assert committedGroupMembers == lastGroupMembers
                 : "Cannot update group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " is different than committed group members: " + committedGroupMembers;
@@ -394,18 +437,20 @@ public class RaftState {
         lastGroupMembers = newGroupMembers;
 
         if (leaderState != null) {
-            for (Endpoint endpoint : members) {
+            for (RaftEndpoint endpoint : members) {
                 if (!committedGroupMembers.isKnownMember(endpoint)) {
                     leaderState.add(endpoint, log.lastLogOrSnapshotIndex());
                 }
             }
 
-            for (Endpoint endpoint : committedGroupMembers.remoteMembers()) {
+            for (RaftEndpoint endpoint : committedGroupMembers.remoteMembers()) {
                 if (!members.contains(endpoint)) {
                     leaderState.remove(endpoint);
                 }
             }
         }
+
+        persistGroupMembers();
     }
 
     /**
@@ -417,6 +462,8 @@ public class RaftState {
                 : "Cannot commit last group members: " + lastGroupMembers + " because it is same with committed group members";
 
         committedGroupMembers = lastGroupMembers;
+
+        persistGroupMembers();
     }
 
     /**
@@ -428,13 +475,15 @@ public class RaftState {
 
         this.lastGroupMembers = this.committedGroupMembers;
         // there is no leader state to clean up
+
+        persistGroupMembers();
     }
 
     /**
      * Restores group members from the snapshot. Both {@link #committedGroupMembers}
      * and {@link #lastGroupMembers} are overwritten and they become the same.
      */
-    public void restoreGroupMembers(long logIndex, Collection<Endpoint> members) {
+    public void restoreGroupMembers(long logIndex, Collection<RaftEndpoint> members) {
         assert lastGroupMembers.index() <= logIndex
                 : "Cannot restore group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " has a bigger log index.";
@@ -444,5 +493,38 @@ public class RaftState {
         RaftGroupMembers groupMembers = new RaftGroupMembers(logIndex, members, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
+
+        persistGroupMembers();
+    }
+
+    private void persistTerm() {
+        if (stateStore != null) {
+            try {
+                stateStore.writeTermAndVote(term, votedFor, lastVoteTerm);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+        }
+    }
+
+    private void persistInitialMembers() {
+        if (stateStore != null) {
+            try {
+                stateStore.writeInitialMembers(localEndpoint, initialMembers);
+                stateStore.writeGroupMembers(localEndpoint, committedGroupMembers, lastGroupMembers);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+        }
+    }
+
+    private void persistGroupMembers() {
+        if (stateStore != null) {
+            try {
+                stateStore.writeGroupMembers(localEndpoint, committedGroupMembers, lastGroupMembers);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+        }
     }
 }

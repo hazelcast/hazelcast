@@ -16,11 +16,11 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;
 import com.hazelcast.cp.internal.raft.exception.MemberDoesNotExistException;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
@@ -56,17 +56,17 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 public class MembershipChangeTask implements Runnable {
     private final RaftNodeImpl raftNode;
     private final Long groupMembersCommitIndex;
-    private final Endpoint member;
+    private final RaftEndpoint member;
     private final MembershipChangeMode membershipChangeMode;
     private final SimpleCompletableFuture resultFuture;
     private final ILogger logger;
 
-    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, Endpoint member,
+    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftEndpoint member,
                                 MembershipChangeMode membershipChangeMode) {
         this(raftNode, resultFuture, member, membershipChangeMode, null);
     }
 
-    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, Endpoint member,
+    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftEndpoint member,
                                 MembershipChangeMode membershipChangeMode, Long groupMembersCommitIndex) {
         if (membershipChangeMode == null) {
             throw new IllegalArgumentException("Null membership change type");
@@ -96,7 +96,7 @@ public class MembershipChangeTask implements Runnable {
                 return;
             }
 
-            Collection<Endpoint> members = new LinkedHashSet<Endpoint>(state.members());
+            Collection<RaftEndpoint> members = new LinkedHashSet<RaftEndpoint>(state.members());
             boolean memberExists = members.contains(member);
 
             switch (membershipChangeMode) {
@@ -125,7 +125,8 @@ public class MembershipChangeTask implements Runnable {
             new ReplicateTask(raftNode, new UpdateRaftGroupMembersCmd(members, member, membershipChangeMode), resultFuture).run();
         } catch (Throwable t) {
             logger.severe(this + " failed", t);
-            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
+            RaftEndpoint leader = raftNode.getLeader();
+            resultFuture.setResult(new CPSubsystemException("Internal failure", t, leader != null ? leader.getUuid() : null));
         }
     }
 

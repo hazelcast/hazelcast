@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,7 +39,7 @@ import java.util.Arrays;
  */
 public class AppendRequest implements IdentifiedDataSerializable {
 
-    private Endpoint leader;
+    private RaftEndpoint leader;
     private int term;
     private int prevLogTerm;
     private long prevLogIndex;
@@ -50,7 +50,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public AppendRequest(Endpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
+    public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
             LogEntry[] entries) {
         this.term = term;
         this.leader = leader;
@@ -60,7 +60,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
         this.entries = entries;
     }
 
-    public Endpoint leader() {
+    public RaftEndpoint leader() {
         return leader;
     }
 

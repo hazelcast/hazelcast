@@ -19,10 +19,11 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -163,10 +164,11 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
 
         RaftNodeImpl raftNode = raftNodeRef[0];
         waitUntilLeaderElected(raftNode);
-        CPMemberInfo leaderEndpoint = getLeaderMember(raftNode);
+        RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
 
         for (HazelcastInstance instance : instances) {
-            if (getAddress(instance).equals(leaderEndpoint.getAddress())) {
+            CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
+            if (cpMember != null && leaderEndpoint.getUuid().equals(cpMember.getUuid())) {
                 return instance;
             }
         }
@@ -192,10 +194,11 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
 
         RaftNodeImpl raftNode = raftNodeRef[0];
         waitUntilLeaderElected(raftNode);
-        CPMemberInfo leaderEndpoint = getLeaderMember(raftNode);
+        RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
 
         for (HazelcastInstance instance : instances) {
-            if (!getAddress(instance).equals(leaderEndpoint.getAddress())) {
+            CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
+            if (cpMember != null && !cpMember.getUuid().equals(leaderEndpoint.getUuid())) {
                 return instance;
             }
         }
@@ -203,9 +206,18 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         throw new AssertionError();
     }
 
+    protected HazelcastInstance getInstance(RaftEndpoint endpoint) {
+        return factory.getAllHazelcastInstances()
+                      .stream()
+                      .filter(instance -> {
+                          CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
+                          return cpMember != null && cpMember.getUuid().equals(endpoint.getUuid());
+                      }).findFirst()
+                      .orElse(null);
+    }
+
     protected RaftInvocationManager getRaftInvocationManager(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
+        RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
         return service.getInvocationManager();
     }
 
@@ -217,11 +229,11 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         return (RaftNodeImpl) getRaftService(instance).getRaftNode(groupId);
     }
 
-    public static CPGroupInfo getRaftGroupLocally(HazelcastInstance instance, CPGroupId groupId) {
+    public static CPGroupSummary getRaftGroupLocally(HazelcastInstance instance, CPGroupId groupId) {
         return getRaftService(instance).getMetadataGroupManager().getGroup(groupId);
     }
 
-    public static CPGroupId getMetadataGroupId(HazelcastInstance instance) {
+    public static RaftGroupId getMetadataGroupId(HazelcastInstance instance) {
         return getRaftService(instance).getMetadataGroupId();
     }
 }

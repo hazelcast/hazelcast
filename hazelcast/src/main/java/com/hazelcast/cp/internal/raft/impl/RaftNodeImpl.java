@@ -17,10 +17,10 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.LeaderDemotedException;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
@@ -46,6 +46,8 @@ import com.hazelcast.cp.internal.raft.impl.handler.VoteResponseHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
@@ -94,7 +96,6 @@ public class RaftNodeImpl implements RaftNode {
     private final ILogger logger;
     private final RaftState state;
     private final RaftIntegration raftIntegration;
-    private final Endpoint localMember;
     private final Long2ObjectHashMap<SimpleCompletableFuture> futures = new Long2ObjectHashMap<SimpleCompletableFuture>();
 
     private final long heartbeatPeriodInMillis;
@@ -111,14 +112,17 @@ public class RaftNodeImpl implements RaftNode {
     private boolean appendRequestBackoffResetTaskScheduled;
     private volatile RaftNodeStatus status = ACTIVE;
 
-    public RaftNodeImpl(CPGroupId groupId, Endpoint localMember, Collection<Endpoint> members,
+    public RaftNodeImpl(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members, RaftStateStore stateStore,
                         RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
+        this(groupId, RestoredRaftState.initialState(checkNotNull(localMember), checkNotNull(members)),
+                stateStore, raftAlgorithmConfig, raftIntegration);
+    }
+
+    public RaftNodeImpl(CPGroupId groupId, RestoredRaftState restoredState, RaftStateStore stateStore,
+            RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
         checkNotNull(groupId);
-        checkNotNull(localMember);
-        checkNotNull(members);
         this.groupId = groupId;
         this.raftIntegration = raftIntegration;
-        this.localMember = localMember;
         this.maxUncommittedEntryCount = raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends();
         this.appendRequestMaxEntryCount = raftAlgorithmConfig.getAppendRequestMaxEntryCount();
         this.commitIndexAdvanceCountToSnapshot = raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot();
@@ -128,9 +132,14 @@ public class RaftNodeImpl implements RaftNode {
         this.maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * RATIO_TO_KEEP_LOGS_AFTER_SNAPSHOT);
         this.appendRequestBackoffTimeoutInMillis = raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis();
         int logCapacity = commitIndexAdvanceCountToSnapshot + maxUncommittedEntryCount + maxNumberOfLogsToKeepAfterSnapshot;
-        this.state = new RaftState(groupId, localMember, members, logCapacity);
+        this.state = new RaftState(groupId, restoredState, stateStore, logCapacity);
         this.logger = getLogger(RaftNode.class);
         this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
+
+        if (!restoredState.isInitial()) {
+            SnapshotEntry snapshot = state.log().snapshot();
+            restoreSnapshot(snapshot);
+        }
     }
 
     public ILogger getLogger(Class clazz) {
@@ -144,13 +153,13 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public Endpoint getLocalMember() {
-        return localMember;
+    public RaftEndpoint getLocalMember() {
+        return state.localEndpoint();
     }
 
     // It reads the most recent write to the volatile leader field, however leader might be already changed.
     @Override
-    public Endpoint getLeader() {
+    public RaftEndpoint getLeader() {
         return state.leader();
     }
 
@@ -161,17 +170,17 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public Collection<Endpoint> getInitialMembers() {
+    public Collection<RaftEndpoint> getInitialMembers() {
         return state.initialMembers();
     }
 
     @Override
-    public Collection<Endpoint> getCommittedMembers() {
+    public Collection<RaftEndpoint> getCommittedMembers() {
         return state.committedGroupMembers().members();
     }
 
     @Override
-    public Collection<Endpoint> getAppliedMembers() {
+    public Collection<RaftEndpoint> getAppliedMembers() {
         return state.lastGroupMembers().members();
     }
 
@@ -182,7 +191,8 @@ public class RaftNodeImpl implements RaftNode {
             public void run() {
                 if (!isTerminatedOrSteppedDown()) {
                     setStatus(TERMINATED);
-                    if (localMember.equals(state.leader())) {
+                    // TODO [basri] do we need this if check?
+                    if (state.localEndpoint().equals(state.leader())) {
                         invalidateFuturesFrom(state.commitIndex() + 1);
                     }
                 }
@@ -205,7 +215,7 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Starting raft node: " + localMember + " for " + groupId
+            logger.fine("Starting raft node: " + state.localEndpoint() + " for " + groupId
                     + " with " + state.memberCount() + " members: " + state.members());
         }
         raftIntegration.execute(new PreVoteTask(this, 0));
@@ -261,14 +271,14 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeMode mode) {
+    public ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new MembershipChangeTask(this, resultFuture, member, mode));
         return resultFuture;
     }
 
     @Override
-    public ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeMode mode,
+    public ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode,
                                                         long groupMembersCommitIndex) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new MembershipChangeTask(this, resultFuture, member, mode, groupMembersCommitIndex));
@@ -384,31 +394,31 @@ public class RaftNodeImpl implements RaftNode {
         schedule(new HeartbeatTask(), heartbeatPeriodInMillis);
     }
 
-    public void send(PreVoteRequest request, Endpoint target) {
+    public void send(PreVoteRequest request, RaftEndpoint target) {
         raftIntegration.send(request, target);
     }
 
-    public void send(PreVoteResponse response, Endpoint target) {
+    public void send(PreVoteResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
     }
 
-    public void send(VoteRequest request, Endpoint target) {
+    public void send(VoteRequest request, RaftEndpoint target) {
         raftIntegration.send(request, target);
     }
 
-    public void send(VoteResponse response, Endpoint target) {
+    public void send(VoteResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
     }
 
-    public void send(AppendRequest request, Endpoint target) {
+    public void send(AppendRequest request, RaftEndpoint target) {
         raftIntegration.send(request, target);
     }
 
-    public void send(AppendSuccessResponse response, Endpoint target) {
+    public void send(AppendSuccessResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
     }
 
-    public void send(AppendFailureResponse response, Endpoint target) {
+    public void send(AppendFailureResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
     }
 
@@ -416,7 +426,7 @@ public class RaftNodeImpl implements RaftNode {
      * Broadcasts append-entries request to all group members according to their nextIndex parameters.
      */
     public void broadcastAppendRequest() {
-        for (Endpoint follower : state.remoteMembers()) {
+        for (RaftEndpoint follower : state.remoteMembers()) {
             sendAppendRequest(follower);
         }
         updateLastAppendEntriesTimestamp();
@@ -437,7 +447,7 @@ public class RaftNodeImpl implements RaftNode {
      * membership change in single append-entries request.
      */
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
-    public void sendAppendRequest(Endpoint follower) {
+    public void sendAppendRequest(RaftEndpoint follower) {
         if (!raftIntegration.isReachable(follower)) {
             return;
         }
@@ -458,7 +468,7 @@ public class RaftNodeImpl implements RaftNode {
         // if we still keep that log entry and its previous entry, we don't need to send a snapshot
         if (nextIndex <= raftLog.snapshotIndex()
                 && (!raftLog.containsLogEntry(nextIndex) || (nextIndex > 1 && !raftLog.containsLogEntry(nextIndex - 1)))) {
-            InstallSnapshot installSnapshot = new InstallSnapshot(localMember, state.term(), raftLog.snapshot());
+            InstallSnapshot installSnapshot = new InstallSnapshot(state.localEndpoint(), state.term(), raftLog.snapshot());
             if (logger.isFineEnabled()) {
                 logger.fine("Sending " + installSnapshot + " to " + follower + " since next index: " + nextIndex
                         + " <= snapshot index: " + raftLog.snapshotIndex());
@@ -593,7 +603,7 @@ public class RaftNodeImpl implements RaftNode {
 
                 state.commitGroupMembers();
                 UpdateRaftGroupMembersCmd cmd = (UpdateRaftGroupMembersCmd) operation;
-                if (cmd.getMember().equals(localMember) && cmd.getMode() == MembershipChangeMode.REMOVE) {
+                if (cmd.getMember().equals(state.localEndpoint()) && cmd.getMode() == MembershipChangeMode.REMOVE) {
                     setStatus(STEPPED_DOWN);
                     // If I am the leader, I may have some waiting futures whose operations are already committed
                     // but responses are not decided yet. When I leave the cluster after my shutdown, invocations
@@ -601,7 +611,7 @@ public class RaftNodeImpl implements RaftNode {
                     // during the shutdown process, its future will not complete unless I notify it here.
                     // Although LeaderDemotedException is designed for another case, we use it here since
                     // invocations internally retry when they receive LeaderDemotedException.
-                    invalidateFuturesUntil(entry.index() - 1, new LeaderDemotedException(localMember, null));
+                    invalidateFuturesUntil(entry.index() - 1, new LeaderDemotedException(state.localEndpoint(), null));
                 } else {
                     setStatus(ACTIVE);
                 }
@@ -688,7 +698,7 @@ public class RaftNodeImpl implements RaftNode {
             Entry<Long, SimpleCompletableFuture> entry = iterator.next();
             long index = entry.getKey();
             if (index >= entryIndex) {
-                entry.getValue().setResult(new LeaderDemotedException(localMember, state.leader()));
+                entry.getValue().setResult(new LeaderDemotedException(state.localEndpoint(), state.leader()));
                 iterator.remove();
                 count++;
             }
@@ -725,7 +735,7 @@ public class RaftNodeImpl implements RaftNode {
      * Takes a snapshot if {@code commitIndex} advanced equal to or more than
      * {@link RaftAlgorithmConfig#getCommitIndexAdvanceCountToSnapshot()}.
      * <p>
-     * Snapshot is not created if there's an ongoing membership change or Raft group is being destroyed.
+     * Snapshot is not created if the Raft group is being destroyed.
      */
     private void takeSnapshotIfCommitIndexAdvanced() {
         long commitIndex = state.commitIndex();
@@ -734,7 +744,7 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         if (isTerminatedOrSteppedDown()) {
-            // If the status is UPDATING_MEMBER_LIST or TERMINATING, it means the status is normally ACTIVE
+            // If the status is TERMINATING, it means the status is normally ACTIVE
             // and there is an appended but not committed RaftGroupCmd.
             // If the status is TERMINATED or STEPPED_DOWN, then there will not be any new appends.
             return;
@@ -806,7 +816,10 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         state.commitIndex(snapshot.index());
-        int truncated = state.log().setSnapshot(snapshot);
+        RaftLog raftLog = state.log();
+        int truncated = raftLog.setSnapshot(snapshot);
+        raftLog.flush();
+
         if (truncated > 0) {
             logger.info(truncated + " entries are truncated to install " + snapshot);
         }
@@ -829,6 +842,35 @@ public class RaftNodeImpl implements RaftNode {
         return true;
     }
 
+    // TODO: naive & hacky snapshot restore !
+    private boolean restoreSnapshot(SnapshotEntry snapshot) {
+        if (snapshot.index() == 0) {
+            return false;
+        }
+        long commitIndex = state.commitIndex();
+        if (commitIndex > snapshot.index()) {
+            logger.info("Ignored stale " + snapshot + ", commit index at: " + commitIndex);
+            return false;
+        } else if (commitIndex == snapshot.index()) {
+            logger.info("Ignored " + snapshot + " since commit index is same.");
+            return true;
+        }
+
+        state.commitIndex(snapshot.index());
+
+        raftIntegration.restoreSnapshot(snapshot.operation(), snapshot.index());
+
+        // TODO: do we need to restore group members?
+        state.restoreGroupMembers(snapshot.groupMembersLogIndex(), snapshot.groupMembers());
+        printMemberState();
+
+        state.lastApplied(snapshot.index());
+        invalidateFuturesUntil(snapshot.index(), new StaleAppendRequestException(state.leader()));
+        logger.info(snapshot + " is restored.");
+
+        return true;
+    }
+
     public void printMemberState() {
         CPGroupId groupId = state.groupId();
         StringBuilder sb = new StringBuilder("\n\nCP Group Members {")
@@ -838,9 +880,9 @@ public class RaftNodeImpl implements RaftNode {
                 .append(", logIndex:").append(state.membersLogIndex())
                 .append("} [");
 
-        for (Endpoint member : state.members()) {
+        for (RaftEndpoint member : state.members()) {
             sb.append("\n\t").append(member);
-            if (localMember.equals(member)) {
+            if (state.localEndpoint().equals(member)) {
                 sb.append(" - ").append(state.role()).append(" this");
             } else if (member.equals(state.leader())) {
                 sb.append(" - ").append(LEADER);
@@ -855,7 +897,7 @@ public class RaftNodeImpl implements RaftNode {
      *
      * @see RaftState#updateGroupMembers(long, Collection)
      */
-    public void updateGroupMembers(long logIndex, Collection<Endpoint> members) {
+    public void updateGroupMembers(long logIndex, Collection<RaftEndpoint> members) {
         state.updateGroupMembers(logIndex, members);
         printMemberState();
     }
@@ -883,6 +925,57 @@ public class RaftNodeImpl implements RaftNode {
 
         appendRequestBackoffResetTaskScheduled = true;
         schedule(appendRequestBackoffResetTask, appendRequestBackoffTimeoutInMillis);
+    }
+
+    /**
+     * Switches this node to follower role by clearing leader and
+     * (pre) candidate states, and updating the term. If this node was
+     * the leader before switching to the follower state, it can have some
+     * queries waiting to be executed. Those queries are also failed with
+     * {@link NotLeaderException}. After the switch, current member list is
+     * also printed.
+     *
+     * @param term current term
+     */
+    public void toFollower(int term) {
+        state.toFollower(term);
+        printMemberState();
+    }
+
+    /**
+     * Updates the known leader and prints the current member list.
+     *
+     * @param endpoint discovered leader endpoint
+     */
+    public void leader(RaftEndpoint endpoint) {
+        state.leader(endpoint);
+        printMemberState();
+    }
+
+    /**
+     * Switches this node to leader role by performing the following steps:
+     * <ul>
+     * <li>Setting local endpoint as current leader.</li>
+     * <li>Clearing (pre)candidate states.</li>
+     * <li>Initializing leader state for current members.</li>
+     * <li>Appending an operation to the log if enabled.</li>
+     * <li>Scheduling the heartbeat task.</li>
+     * <li>Printing the member state.</li>
+     * </ul>
+     */
+    public void toLeader() {
+        state.toLeader();
+        appendEntryAfterLeaderElection();
+        printMemberState();
+        scheduleHeartbeat();
+    }
+
+    private void appendEntryAfterLeaderElection() {
+        Object entry = raftIntegration.getAppendedEntryOnLeaderElection();
+        if (entry != null) {
+            RaftLog log = state.log();
+            log.appendEntries(new LogEntry(state.term(), log.lastLogOrSnapshotIndex() + 1, entry));
+        }
     }
 
     /**
@@ -919,7 +1012,7 @@ public class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             try {
-                Endpoint leader = state.leader();
+                RaftEndpoint leader = state.leader();
                 if (leader == null) {
                     if (state.role() == FOLLOWER) {
                         logger.warning("We are FOLLOWER and there is no current leader. Will start new election round...");
@@ -975,8 +1068,8 @@ public class RaftNodeImpl implements RaftNode {
             LeaderState leaderState = state.leaderState();
 
             if (leaderState != null) {
-                Map<Endpoint, FollowerState> followerStates = leaderState.getFollowerStates();
-                for (Entry<Endpoint, FollowerState> entry : followerStates.entrySet()) {
+                Map<RaftEndpoint, FollowerState> followerStates = leaderState.getFollowerStates();
+                for (Entry<RaftEndpoint, FollowerState> entry : followerStates.entrySet()) {
                     FollowerState followerState = entry.getValue();
                     if (!followerState.isAppendRequestBackoffSet()) {
                         continue;

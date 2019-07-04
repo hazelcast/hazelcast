@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,7 +52,7 @@ public class CandidateStateTest {
 
     @Test
     public void test_grantVote_withoutMajority() {
-        Endpoint endpoint = newRaftMember(1000);
+        RaftEndpoint endpoint = newRaftMember(1000);
 
         assertTrue(state.grantVote(endpoint));
         assertFalse(state.grantVote(endpoint));
@@ -64,7 +64,7 @@ public class CandidateStateTest {
     @Test
     public void test_grantVote_withMajority() {
         for (int i = 0; i < majority; i++) {
-            Endpoint endpoint = newRaftMember(1000 + i);
+            RaftEndpoint endpoint = newRaftMember(1000 + i);
             assertTrue(state.grantVote(endpoint));
 
         }

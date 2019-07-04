@@ -19,48 +19,51 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPSubsystemException;
-import com.hazelcast.cp.internal.CPGroupInfo;
 import com.hazelcast.cp.internal.CPMemberInfo;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.cp.internal.MetadataRaftGroupManager.INITIAL_METADATA_GROUP_ID;
 
 /**
  *  Contains all static dependencies for a {@link RaftInvocation} along with the CP node list.
  */
 public class RaftInvocationContext {
 
+    private static final CPMembersContainer INITIAL_VALUE = new CPMembersContainer(
+            new CPMembersVersion(INITIAL_METADATA_GROUP_ID.seed(), -1), new CPMemberInfo[0]);
+
+
     private final ILogger logger;
-    private final RaftService raftService;
-    private final ConcurrentMap<CPGroupId, CPMember> knownLeaders =
-            new ConcurrentHashMap<CPGroupId, CPMember>();
+    private final ConcurrentMap<CPGroupId, CPMember> knownLeaders = new ConcurrentHashMap<CPGroupId, CPMember>();
     private final boolean failOnIndeterminateOperationState;
 
-    private AtomicReference<ActiveCPMembersContainer> membersContainer = new AtomicReference<ActiveCPMembersContainer>(null);
+    private AtomicReference<CPMembersContainer> membersContainer = new AtomicReference<CPMembersContainer>(INITIAL_VALUE);
 
-    public RaftInvocationContext(ILogger logger, RaftService raftService) {
+    public RaftInvocationContext(ILogger logger, boolean failOnIndeterminateOperationState) {
         this.logger = logger;
-        this.raftService = raftService;
-        this.failOnIndeterminateOperationState = raftService.getConfig().isFailOnIndeterminateOperationState();
+        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
     }
 
     public void reset() {
-        membersContainer.set(null);
+        membersContainer.set(INITIAL_VALUE);
         knownLeaders.clear();
     }
 
     public void setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
-        ActiveCPMembersVersion version = new ActiveCPMembersVersion(groupIdSeed, membersCommitIndex);
-        ActiveCPMembersContainer newContainer =  new ActiveCPMembersContainer(version, members.toArray(new CPMemberInfo[0]));
+        CPMembersVersion version = new CPMembersVersion(groupIdSeed, membersCommitIndex);
+        CPMembersContainer newContainer =  new CPMembersContainer(version, members.toArray(new CPMemberInfo[0]));
         while (true) {
-            ActiveCPMembersContainer currentContainer = membersContainer.get();
-            if (currentContainer == null || newContainer.version.compareTo(currentContainer.version) > 0) {
+            CPMembersContainer currentContainer = membersContainer.get();
+            if (newContainer.version.compareTo(currentContainer.version) > 0) {
                 if (membersContainer.compareAndSet(currentContainer, newContainer)) {
                     return;
                 }
@@ -68,6 +71,10 @@ public class RaftInvocationContext {
                 return;
             }
         }
+    }
+
+    public CPMemberInfo getCPMember(String leaderUuid) {
+        return membersContainer.get().membersMap.get(leaderUuid);
     }
 
     CPMember getKnownLeader(CPGroupId groupId) {
@@ -87,8 +94,7 @@ public class RaftInvocationContext {
     void updateKnownLeaderOnFailure(CPGroupId groupId, Throwable cause) {
         if (cause instanceof CPSubsystemException) {
             CPSubsystemException e = (CPSubsystemException) cause;
-            CPMember leader = (CPMember) e.getLeader();
-            if (!setKnownLeader(groupId, leader)) {
+            if (!setKnownLeader(groupId, getCPMember(e.getLeaderUuid()))) {
                 resetKnownLeader(groupId);
             }
         } else {
@@ -105,15 +111,8 @@ public class RaftInvocationContext {
         knownLeaders.remove(groupId);
     }
 
-    MemberCursor newMemberCursor(CPGroupId groupId) {
-        CPGroupInfo group = raftService.getCPGroupLocally(groupId);
-        if (group != null) {
-            return new MemberCursor(group.membersArray());
-        }
-
-        ActiveCPMembersContainer container = membersContainer.get();
-        CPMember[] members = container != null ? container.members : new CPMember[0];
-        return new MemberCursor(members);
+    MemberCursor newMemberCursor() {
+        return new MemberCursor(membersContainer.get().members);
     }
 
     /**
@@ -136,29 +135,34 @@ public class RaftInvocationContext {
         }
     }
 
-    private static class ActiveCPMembersContainer {
-        final ActiveCPMembersVersion version;
+    private static class CPMembersContainer {
+        final CPMembersVersion version;
         final CPMemberInfo[] members;
+        final Map<String, CPMemberInfo> membersMap;
 
-        ActiveCPMembersContainer(ActiveCPMembersVersion version, CPMemberInfo[] members) {
+        CPMembersContainer(CPMembersVersion version, CPMemberInfo[] members) {
             this.version = version;
             this.members = members;
+            membersMap = new HashMap<String, CPMemberInfo>();
+            for (CPMemberInfo member : members) {
+                membersMap.put(member.getUuid(), member);
+            }
         }
     }
 
     @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
-    private static class ActiveCPMembersVersion implements Comparable<ActiveCPMembersVersion> {
+    private static class CPMembersVersion implements Comparable<CPMembersVersion> {
 
         private final long groupIdSeed;
         private final long version;
 
-        ActiveCPMembersVersion(long groupIdSeed, long version) {
+        CPMembersVersion(long groupIdSeed, long version) {
             this.groupIdSeed = groupIdSeed;
             this.version = version;
         }
 
         @Override
-        public int compareTo(@Nonnull ActiveCPMembersVersion other) {
+        public int compareTo(@Nonnull CPMembersVersion other) {
             if (groupIdSeed < other.groupIdSeed) {
                 return -1;
             } else if (groupIdSeed > other.groupIdSeed) {

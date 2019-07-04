@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -76,7 +77,8 @@ public class QueryTask implements Runnable {
             }
         } catch (Throwable t) {
             logger.severe(queryPolicy + " query failed", t);
-            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
+            RaftEndpoint leader = raftNode.getLeader();
+            resultFuture.setResult(new CPSubsystemException("Internal failure", t, leader != null ? leader.getUuid() : null));
         }
     }
 

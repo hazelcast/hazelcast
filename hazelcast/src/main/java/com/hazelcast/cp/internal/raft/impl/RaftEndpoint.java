@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.exception;
-
-import com.hazelcast.core.IndeterminateOperationState;
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+package com.hazelcast.cp.internal.raft.impl;
 
 /**
- * A {@code CPSubsystemException} which is thrown when an installed snapshot
- * causes an appended entry to be truncated from the Raft log before its commit
- * status is discovered.
+ * Represents an endpoint that runs the Raft consensus algorithm as a member of
+ * a Raft group.
+ * <p>
+ * From the Raft consensus algorithm's point of view, the only important
+ * property of a Raft endpoint is its identity. All other properties are
+ * implementation details of a Raft endpoint and can be handled inside the
+ * {@link RaftIntegration} abstraction.
  */
-public class StaleAppendRequestException extends CPSubsystemException implements IndeterminateOperationState {
+public interface RaftEndpoint {
 
-    private static final long serialVersionUID = -736303015926722821L;
+    /**
+     * Returns the UUID of this Raft endpoint
+     *
+     * @return the UUID of this Raft endpoint
+     */
+    String getUuid();
 
-    public StaleAppendRequestException(RaftEndpoint leader) {
-        super(leader != null ? leader.getUuid() : null);
-    }
 }

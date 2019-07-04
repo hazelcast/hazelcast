@@ -16,13 +16,13 @@
 
 package com.hazelcast.cp.internal.raftop;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftNodeAware;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,15 +50,15 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
                                                                                         IndeterminateOperationStateAware,
                                                                                         IdentifiedDataSerializable {
 
-    private Endpoint cpMember;
+    private RaftEndpoint endpoint;
 
     private RaftNode raftNode;
 
     public GetInitialRaftGroupMembersIfCurrentGroupMemberOp() {
     }
 
-    public GetInitialRaftGroupMembersIfCurrentGroupMemberOp(Endpoint cpMember) {
-        this.cpMember = cpMember;
+    public GetInitialRaftGroupMembersIfCurrentGroupMemberOp(RaftEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
     @Override
@@ -69,10 +69,10 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         checkState(raftNode != null, "RaftNode is not injected in " + groupId);
-        Collection<Endpoint> members = raftNode.getAppliedMembers();
-        checkState(members.contains(cpMember), cpMember
+        Collection<RaftEndpoint> members = raftNode.getAppliedMembers();
+        checkState(members.contains(endpoint), endpoint
                 + " is not in the current committed member list: " + members + " of " + groupId);
-        return new ArrayList<Endpoint>(raftNode.getInitialMembers());
+        return new ArrayList<RaftEndpoint>(raftNode.getInitialMembers());
     }
 
     @Override
@@ -97,11 +97,11 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(cpMember);
+        out.writeObject(endpoint);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        cpMember = in.readObject();
+        endpoint = in.readObject();
     }
 }

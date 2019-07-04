@@ -14,79 +14,80 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.raft.impl.dto;
+package com.hazelcast.cp.internal;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
- * Struct for response to PreVoteRequest RPC.
- * <p>
- * See <i>Four modifications for the Raft consensus algorithm</i>
- * by Henrik Ingo.
- *
- * @see PreVoteRequest
- * @see VoteResponse
+ * Represents an endpoint that runs the Raft consensus algorithm as a member of
+ * a Raft group.
  */
-public class PreVoteResponse implements IdentifiedDataSerializable {
+public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializable, Serializable {
 
-    private RaftEndpoint voter;
-    private int term;
-    private boolean granted;
+    private static final long serialVersionUID = -5184348267183410904L;
 
-    public PreVoteResponse() {
+
+    private String uuid;
+
+    public RaftEndpointImpl() {
     }
 
-    public PreVoteResponse(RaftEndpoint voter, int term, boolean granted) {
-        this.voter = voter;
-        this.term = term;
-        this.granted = granted;
+    public RaftEndpointImpl(String uuid) {
+        this.uuid = uuid;
     }
 
-    public RaftEndpoint voter() {
-        return voter;
+    @Override
+    public String getUuid() {
+        return uuid;
     }
 
-    public int term() {
-        return term;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RaftEndpointImpl that = (RaftEndpointImpl) o;
+
+        return uuid.equals(that.uuid);
     }
 
-    public boolean granted() {
-        return granted;
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
     }
 
     @Override
     public int getFactoryId() {
-        return RaftDataSerializerHook.F_ID;
+        return RaftServiceDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        return RaftDataSerializerHook.PRE_VOTE_RESPONSE;
+        return RaftServiceDataSerializerHook.CP_ENDPOINT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(term);
-        out.writeBoolean(granted);
-        out.writeObject(voter);
+        out.writeUTF(uuid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        term = in.readInt();
-        granted = in.readBoolean();
-        voter = in.readObject();
+        uuid = in.readUTF();
     }
 
     @Override
     public String toString() {
-        return "PreVoteResponse{" + "voter=" + voter + ", term=" + term + ", granted=" + granted + '}';
+        return "RaftEndpoint{" + "uuid='" + uuid + '\'' + '}';
     }
-
 }

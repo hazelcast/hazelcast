@@ -481,7 +481,7 @@ public class SnapshotTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (RaftNodeImpl raftNode : followers) {
-                    Endpoint leaderEndpoint = getLeaderMember(raftNode);
+                    RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
                     assertNotNull(leaderEndpoint);
                     assertNotEquals(leader.getLocalMember(), leaderEndpoint);
                 }

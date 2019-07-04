@@ -106,6 +106,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int RAFT_PRE_JOIN_OP = 39;
     public static final int RESTART_CP_MEMBER_OP = 40;
     public static final int GROUP_MEMBERSHIP_CHANGE = 41;
+    public static final int CP_ENDPOINT = 42;
+    public static final int CP_GROUP_SUMMARY = 43;
 
     @Override
     public int getFactoryId() {
@@ -200,6 +202,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                         return new RestartCPMemberOp();
                     case GROUP_MEMBERSHIP_CHANGE:
                         return new CPGroupMembershipChange();
+                    case CP_ENDPOINT:
+                        return new RaftEndpointImpl();
+                    case CP_GROUP_SUMMARY:
+                        return new CPGroupSummary();
                     default:
                         throw new IllegalArgumentException("Undefined type: " + typeId);
                 }

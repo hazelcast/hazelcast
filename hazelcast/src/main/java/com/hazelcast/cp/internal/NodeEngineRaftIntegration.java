@@ -16,9 +16,8 @@
 
 package com.hazelcast.cp.internal;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.cp.internal.operation.integration.AppendRequestOp;
 import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
@@ -44,6 +43,7 @@ import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.cp.internal.util.PartitionSpecificRunnableAdaptor;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -72,18 +72,22 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     private final NodeEngineImpl nodeEngine;
     private final CPGroupId groupId;
-    private final CPMember localCPMember;
-    private final InternalOperationService operationService;
+    private final RaftEndpoint localCPMember;
+    private final Address localAddress;
+    private final OperationServiceImpl operationService;
+    private final RaftInvocationManager invocationManager;
     private final TaskScheduler taskScheduler;
     private final int partitionId;
     private final int threadId;
 
-    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, CPMember localCPMember) {
+    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, RaftEndpoint localCPMember) {
         this.nodeEngine = nodeEngine;
         this.groupId = groupId;
         this.localCPMember = localCPMember;
+        this.localAddress = nodeEngine.getThisAddress();
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.operationService = operationService;
+        this.invocationManager = ((RaftService) nodeEngine.getService(RaftService.SERVICE_NAME)).getInvocationManager();
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) operationService.getOperationExecutor();
         this.threadId = operationExecutor.toPartitionThreadIndex(partitionId);
@@ -133,47 +137,48 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean isReachable(Endpoint member) {
-        return nodeEngine.getClusterService().getMember(((CPMember) member).getAddress()) != null;
+    public boolean isReachable(RaftEndpoint target) {
+        CPMemberInfo targetMember = invocationManager.getCPMember(target);
+        return targetMember != null && nodeEngine.getClusterService().getMember(targetMember.getAddress()) != null;
     }
 
     @Override
-    public boolean send(PreVoteRequest request, Endpoint target) {
+    public boolean send(PreVoteRequest request, RaftEndpoint target) {
         return send(new PreVoteRequestOp(groupId, request), target);
     }
 
     @Override
-    public boolean send(PreVoteResponse response, Endpoint target) {
+    public boolean send(PreVoteResponse response, RaftEndpoint target) {
         return send(new PreVoteResponseOp(groupId, response), target);
     }
 
     @Override
-    public boolean send(VoteRequest request, Endpoint target) {
+    public boolean send(VoteRequest request, RaftEndpoint target) {
         return send(new VoteRequestOp(groupId, request), target);
     }
 
     @Override
-    public boolean send(VoteResponse response, Endpoint target) {
+    public boolean send(VoteResponse response, RaftEndpoint target) {
         return send(new VoteResponseOp(groupId, response), target);
     }
 
     @Override
-    public boolean send(AppendRequest request, Endpoint target) {
+    public boolean send(AppendRequest request, RaftEndpoint target) {
         return send(new AppendRequestOp(groupId, request), target);
     }
 
     @Override
-    public boolean send(AppendSuccessResponse response, Endpoint target) {
+    public boolean send(AppendSuccessResponse response, RaftEndpoint target) {
         return send(new AppendSuccessResponseOp(groupId, response), target);
     }
 
     @Override
-    public boolean send(AppendFailureResponse response, Endpoint target) {
+    public boolean send(AppendFailureResponse response, RaftEndpoint target) {
         return send(new AppendFailureResponseOp(groupId, response), target);
     }
 
     @Override
-    public boolean send(InstallSnapshot request, Endpoint target) {
+    public boolean send(InstallSnapshot request, RaftEndpoint target) {
         return send(new InstallSnapshotOp(groupId, request), target);
     }
 
@@ -218,17 +223,18 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         }
     }
 
-    private boolean send(AsyncRaftOp operation, Endpoint target) {
-        CPMember targetMember = (CPMember) target;
-        if (localCPMember.getAddress().equals(targetMember.getAddress())) {
+    private boolean send(AsyncRaftOp operation, RaftEndpoint target) {
+        CPMemberInfo targetMember = invocationManager.getCPMember(target);
+        if (targetMember == null || localAddress.equals(targetMember.getAddress())) {
             if (localCPMember.getUuid().equals(target.getUuid())) {
                 throw new IllegalStateException("Cannot send " + operation + " to "
                         + target + " because it's same with the local CP member!");
             }
+
             return false;
         }
 
-        operation.setTargetMember(targetMember).setPartitionId(partitionId);
+        operation.setTargetEndpoint(target).setPartitionId(partitionId);
         return operationService.send(operation, targetMember.getAddress());
     }
 

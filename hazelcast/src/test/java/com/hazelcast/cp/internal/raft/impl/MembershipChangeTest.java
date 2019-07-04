@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;
@@ -494,7 +493,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (RaftNodeImpl follower : followers) {
-                    Endpoint newLeaderEndpoint = getLeaderMember(follower);
+                    RaftEndpoint newLeaderEndpoint = getLeaderMember(follower);
                     assertNotNull(newLeaderEndpoint);
                     assertNotEquals(leader.getLocalMember(), newLeaderEndpoint);
                 }

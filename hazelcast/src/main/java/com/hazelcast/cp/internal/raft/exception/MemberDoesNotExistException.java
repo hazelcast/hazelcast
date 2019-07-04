@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.exception;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 /**
  * A {@code CPSubsystemException} which is thrown when a member, which is
@@ -29,7 +29,7 @@ public class MemberDoesNotExistException extends CPSubsystemException {
 
     private static final long serialVersionUID = -6536728347770526039L;
 
-    public MemberDoesNotExistException(Endpoint member) {
+    public MemberDoesNotExistException(RaftEndpoint member) {
         super("Member does not exist: " + member, null);
     }
 }

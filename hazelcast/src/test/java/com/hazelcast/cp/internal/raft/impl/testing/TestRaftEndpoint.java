@@ -16,18 +16,20 @@
 
 package com.hazelcast.cp.internal.raft.impl.testing;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-
-public class TestRaftMember implements Endpoint {
+/**
+ * Represents an endpoint that runs the Raft consensus algorithm as a member of
+ * a Raft group.
+ */
+public class TestRaftEndpoint implements RaftEndpoint {
 
     private String uuid;
 
+    // We have port here for logging
     private int port;
 
-    public TestRaftMember(String uuid, int port) {
+    public TestRaftEndpoint(String uuid, int port) {
         this.uuid = uuid;
         this.port = port;
     }
@@ -35,11 +37,6 @@ public class TestRaftMember implements Endpoint {
     @Override
     public String getUuid() {
         return uuid;
-    }
-
-    @Override
-    public SocketAddress getSocketAddress() {
-        return new InetSocketAddress(port);
     }
 
     public int getPort() {
@@ -55,7 +52,7 @@ public class TestRaftMember implements Endpoint {
             return false;
         }
 
-        TestRaftMember that = (TestRaftMember) o;
+        TestRaftEndpoint that = (TestRaftEndpoint) o;
 
         if (port != that.port) {
             return false;
@@ -72,7 +69,7 @@ public class TestRaftMember implements Endpoint {
 
     @Override
     public String toString() {
-        return "TestRaftMember{" + "uuid='" + uuid + '\'' + ", port=" + port + '}';
+        return "CPEndpoint{" + "uuid='" + uuid + '\'' + ", port=" + port + '}';
     }
 
 }
