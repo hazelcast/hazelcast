@@ -56,7 +56,8 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName, String topic,
+    EventRegistration registerLocalListener(String serviceName,
+                                            @Nonnull String topic,
                                             @Nonnull Object listener);
 
     /**
@@ -69,7 +70,8 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName, String topic,
+    EventRegistration registerLocalListener(String serviceName,
+                                            @Nonnull String topic,
                                             @Nonnull EventFilter filter,
                                             @Nonnull Object listener);
 
@@ -82,7 +84,8 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerListener(String serviceName, String topic,
+    EventRegistration registerListener(String serviceName,
+                                       @Nonnull String topic,
                                        @Nonnull Object listener);
 
     /**
@@ -129,7 +132,7 @@ public interface EventService {
      * @param topic       topic name
      * @return registrations
      */
-    Collection<EventRegistration> getRegistrations(String serviceName, String topic);
+    Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic);
 
     /**
      * Returns all registrations belonging to the given service and topic as an array.
@@ -138,7 +141,7 @@ public interface EventService {
      * @param topic       topic name
      * @return registrations array
      */
-    EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);
+    EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic);
 
     /**
      * Returns true if a listener is registered with the specified service name and topic.

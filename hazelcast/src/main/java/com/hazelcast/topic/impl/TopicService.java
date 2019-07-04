@@ -174,7 +174,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public @Nonnull
-    String addMessageListener(String name,
+    String addMessageListener(@Nonnull String name,
                               @Nonnull MessageListener listener,
                               boolean localOnly) {
         EventRegistration eventRegistration;
