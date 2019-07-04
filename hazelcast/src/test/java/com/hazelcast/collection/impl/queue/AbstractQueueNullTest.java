@@ -46,7 +46,7 @@ public abstract class AbstractQueueNullTest extends HazelcastTestSupport {
         assertThrowsNPE(q -> q.contains(null));
         assertThrowsNPE(q -> q.drainTo(null));
         assertThrowsNPE(q -> q.drainTo(null, 1));
-        assertThrowsNPE(q -> q.toArray(null));
+        assertThrowsNPE(q -> q.toArray((Object[]) null));
         assertThrowsNPE(q -> q.containsAll(null));
         assertThrowsNPE(q -> q.addAll(null));
         assertThrowsNPE(q -> q.removeAll(null));
