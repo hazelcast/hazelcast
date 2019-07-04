@@ -163,7 +163,7 @@ public class Server {
         return serverThreads[next];
     }
 
-    private class ServerThread extends Thread {
+    public class ServerThread extends Thread {
         private final Selector selector;
         private final ConcurrentLinkedQueue<SocketChannel> newChannels = new ConcurrentLinkedQueue<>();
 
@@ -465,7 +465,7 @@ public class Server {
     }
 
     public static class Context {
-        private int serverThreadCount = Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
+        private int serverThreadCount = 20;//Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
 
         private String bindAddress = "0.0.0.0";
         private int startPort = 1111;

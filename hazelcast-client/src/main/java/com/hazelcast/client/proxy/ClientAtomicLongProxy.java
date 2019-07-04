@@ -105,9 +105,28 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         return 0;
     }
 
+    public long pipelinedGet(int pipelineDepth) {
+        Client client = client(partitionId);
+
+        try {
+            for(int k=0;k<pipelineDepth;k++) {
+                ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+                request.setPartitionId(partitionId);
+                client.write(request.buffer().byteArray());
+            }
+            client.flush();
+            for(int k=0;k<pipelineDepth;k++) {
+                client.readResponse();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
     private final static ThreadLocal<Map<Address, Client>> threadLocal = ThreadLocal.withInitial(HashMap::new);
 
-    private Client client(int partitionId) {
+    public Client client(int partitionId) {
         Map<Address, Client> clients = threadLocal.get();
         ClientPartitionService partitionService = getClient().getClientPartitionService();
         Address address = partitionService.getPartitionOwner(partitionId);
