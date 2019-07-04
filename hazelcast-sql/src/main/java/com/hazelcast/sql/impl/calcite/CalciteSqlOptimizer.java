@@ -138,14 +138,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private Prepare.CatalogReader prepareCatalogReader(JavaTypeFactory typeFactory, CalciteConnectionConfig config) {
-        // TODO: Dynamic schema! See DynamicSchema and DynamicRootSchema in Drill
         CalciteSchema schema = CalciteSchema.createRootSchema(true);
 
         schema.add("persons", new HazelcastTable(typeFactory.createStructType(Person.class)));
 
         CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
 
-        // TODO: Our own implemenation of catalog reader! (see DrillCalciteCatalogReader)
         return new CalciteCatalogReader(
             rootSchema,
             Collections.emptyList(), // Default schema path.
@@ -167,7 +165,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
         final VolcanoPlanner planner = new VolcanoPlanner(
-            null, // TODO: DrillCostBase.DrillCostFactory
+            null,
             Contexts.of(config)
         );
 
@@ -185,7 +183,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         SqlValidator validator,
         VolcanoPlanner planner
     ) {
-        // TODO: See SqlConverter.SqlToRelConverterConfig
         final SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder =
             SqlToRelConverter.configBuilder()
                 .withTrimUnusedFields(true)
@@ -194,10 +191,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 .withConvertTableAccess(false);
 
         return new SqlToRelConverter(
-            null, // TODO: ViewExpander, see CalcitePrepareImpl which implements this interface
+            null,
             validator,
             catalogReader,
-            RelOptCluster.create(planner, new RexBuilder(typeFactory)), // TODO: See DrillRexBuilder
+            RelOptCluster.create(planner, new RexBuilder(typeFactory)),
             StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );

@@ -94,10 +94,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        // TODO: Handle schemas (in future)!
         String mapName = rel.getTable().getQualifiedName().get(0);
 
-        // TODO: Support expressions (use REX visitor)
         List<String> fieldNames = rel.getRowType().getFieldNames();
 
         List<Expression> projection = new ArrayList<>();
@@ -124,11 +122,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Boolean> ascs = new ArrayList<>(collations.size());
 
         for (RelFieldCollation collation : collations) {
-            // TODO: Proper direction handling (see all enum values).
             RelFieldCollation.Direction direction = collation.getDirection();
             int idx = collation.getFieldIndex();
 
-            // TODO: Use fieldExps here.
             expressions.add(new ColumnExpression(idx));
             ascs.add(!direction.isDescending());
         }
