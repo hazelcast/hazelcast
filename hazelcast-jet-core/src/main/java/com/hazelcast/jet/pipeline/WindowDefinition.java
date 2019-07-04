@@ -32,6 +32,8 @@ public abstract class WindowDefinition {
      * Returns the {@linkplain #setEarlyResultsPeriod early results period} for
      * this window definition. A return value of zero means that the stage
      * won't emit early window results.
+     *
+     * @since 3.1
      */
     public long earlyResultsPeriod() {
         return earlyResultPeriod;
@@ -61,6 +63,8 @@ public abstract class WindowDefinition {
      * @param earlyResultPeriod the period in milliseconds from one start of the emission of early
      *                          results to the next one
      * @return {@code this}
+     *
+     * @since 3.1
      */
     public WindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
         this.earlyResultPeriod = earlyResultPeriod;

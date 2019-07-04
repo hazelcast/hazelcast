@@ -41,7 +41,7 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface KeyedWindowResultFunction<K, R, OUT> extends Serializable {
 
-    /***
+    /**
      * Applies the function to the given arguments
      *
      * @param winStart the inclusive lower timestamp of the window

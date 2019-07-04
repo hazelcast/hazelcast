@@ -24,17 +24,23 @@ import javax.annotation.Nonnull;
 public class SinkImpl<T> implements Sink<T> {
 
     private final String name;
-    private ProcessorMetaSupplier metaSupplier;
+    private final ProcessorMetaSupplier metaSupplier;
+    private final boolean isTotalParallelismOne;
     private boolean isAssignedToStage;
 
-    public SinkImpl(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
+    public SinkImpl(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier, boolean isTotalParallelismOne) {
         this.name = name;
         this.metaSupplier = metaSupplier;
+        this.isTotalParallelismOne = isTotalParallelismOne;
     }
 
     @Nonnull
     public ProcessorMetaSupplier metaSupplier() {
         return metaSupplier;
+    }
+
+    public boolean isTotalParallelismOne() {
+        return isTotalParallelismOne;
     }
 
     @Override

@@ -14,23 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline;
-
 /**
- * A data sink in a Jet pipeline. It accepts the data the pipeline
- * processed and exports it to an external system.
+ * This package contains various mock sources to help with pipeline testing
+ * and development.
  *
- * @see Sinks sink factory methods
- *
- * @param <T> the type of the data the sink will receive
- *
- * @since 3.0
+ * @since 3.2
  */
-public interface Sink<T> {
+@Beta
+package com.hazelcast.jet.pipeline.test;
 
-    /**
-     * Returns a descriptive name for this sink.
-     */
-    String name();
-
-}
+import com.hazelcast.spi.annotation.Beta;

@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline;
+package com.hazelcast.jet.pipeline.test;
+
+import com.hazelcast.spi.annotation.Beta;
+
+import java.io.Serializable;
 
 /**
- * A data sink in a Jet pipeline. It accepts the data the pipeline
- * processed and exports it to an external system.
+ * A function which takes a timestamp and a sequence number as the input.
  *
- * @see Sinks sink factory methods
+ * @param <R> the type of the result of the function
  *
- * @param <T> the type of the data the sink will receive
- *
- * @since 3.0
+ * @since 3.2
  */
-public interface Sink<T> {
+@FunctionalInterface
+@Beta
+public interface GeneratorFunction<R> extends Serializable {
 
     /**
-     * Returns a descriptive name for this sink.
+     * Applies the function to the given timestamp and sequence.
+     *
+     * @param timestamp the current timestamp
+     * @param sequence the current sequence
+     * @return the function result
      */
-    String name();
-
+    R generate(long timestamp, long sequence) throws Exception;
 }

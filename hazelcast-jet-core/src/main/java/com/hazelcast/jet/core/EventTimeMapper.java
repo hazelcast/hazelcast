@@ -160,7 +160,7 @@ public class EventTimeMapper<T> {
      *
      * @param eventTimePolicy event time policy as passed in {@link
      *                        Sources#streamFromProcessorWithWatermarks}
-     **/
+     */
     public EventTimeMapper(EventTimePolicy<? super T> eventTimePolicy) {
         this.idleTimeoutNanos = MILLISECONDS.toNanos(eventTimePolicy.idleTimeoutMillis());
         this.timestampFn = eventTimePolicy.timestampFn();

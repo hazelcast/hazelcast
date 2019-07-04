@@ -791,7 +791,6 @@ after a new record-breaking trade.
 include::{javasource}/BuildComputation.java[tag=s19]
 ----
 
-
 = Apply a User-Defined Transformation
 
 Once you move past the basics, you'll notice it isn't always
@@ -824,3 +823,106 @@ the `apply` transform:
 ----
 include::{javasource}/BuildComputation.java[tag=apply3]
 ----
+
+
+[[developing-and-testing]]
+= Developing and testing your pipeline
+
+When developing your pipeline, it can be useful to work with some mock
+data sources to avoid integrating with a real data source. Similarly
+with sinks, for testing you may want to assert the output of a pipeline
+in a convenient way. Jet's Pipeline API offers some tools to help
+testing a pipeline without having to integrate with a real data source
+or sink.
+
+NOTE: These APIs are currently marked as `@Beta` and are not covered
+by the <<appendix, backward-compatibility guarantees>>.
+
+== Test Sources
+
+Jet provides some {jet-javadoc}/pipeline/test/TestSources.html[test and development sources]
+which can be used both for batch and streaming jobs.
+
+=== Batch
+
+Jet provides test batch sources which emit the supplied items and
+then complete:
+
+[source]
+----
+include::{javasource}/Testing.java[tag=items]
+----
+
+It's also possible to use this source with a collection:
+[source]
+----
+include::{javasource}/Testing.java[tag=items-collection]
+----
+
+
+These sources are non-distributed and do not participate in fault
+tolerance protocol.
+
+=== Streaming
+
+For streaming sources a mock source which generates infinite data is
+available. The source is by default throttled to emit at the specified
+rate of events per second. It also generates a sequence number and
+a timestamp with each event which can be used to create mock data:
+
+[source]
+----
+include::{javasource}/Testing.java[tag=items-stream-trade]
+----
+
+Similar to batch sources, these sources are non-distributed and do not
+support fault tolerance: after a job restart the source sequence will
+be reset to 0. The timestamp is current system time.
+
+== Assertions
+
+Jet also provides {jet-javadoc}/pipeline/test/Assertions.html[assertions]
+which can be used for asserting the intermediate or final output of a
+pipeline. Assertions are implemented as sinks which collect incoming
+items and then run the desired assertion on the collected items.
+
+=== Batch
+
+Assertions in batch jobs are typically run only after all the items
+have been received.
+
+An example is given below:
+
+[source]
+----
+include::{javasource}/Testing.java[tag=assert-collected]
+----
+
+In the given example, the assertion will be run after the source
+has finished emitting all the items. If the assertion fails, the job
+will also fail with an `AssertionError`. It's possible to have the
+assertion inline inside the pipeline and do further computations. This
+creates a fork in the pipeline where the assertion acts as an intermediary
+sink.
+
+=== Streaming
+
+For streaming assertions, we can't rely that the source will at some
+point finish emitting items. Instead, we can rely on a timeout
+that a given assertion will eventually be reached.
+
+Example:
+
+[source]
+----
+include::{javasource}/Testing.java[tag=assert-collected-eventually]
+----
+
+Contrary to the batch example above, this assertion will be run
+periodically until it passes. Once the assertion is proved to be
+correct, the job will be cancelled immediately with an
+`AssertionCompletedException`. If the assertion is still failing
+after the given timeout (10 seconds in the example above) the job
+will fail with an `AssertionError` instead. Due to this if eventual
+assertion is used in the job, no other assertions should be used in it
+or the job may be cancelled before other assertions pass.

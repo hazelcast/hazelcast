@@ -116,7 +116,7 @@ public class ImdgConnectors {
     static void s7() {
         //tag::s7[]
         ClientConfig cfg = new ClientConfig();
-        cfg.getGroupConfig().setName("myGroup").setPassword("pAssw0rd");
+        cfg.getGroupConfig().setName("myGroup");
         cfg.getNetworkConfig().addAddress("node1.mydomain.com", "node2.mydomain.com");
 
         Pipeline p = Pipeline.create();
@@ -219,7 +219,7 @@ public class ImdgConnectors {
         //tag::s15[]
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig()
-                    .setName("myGroup").setPassword("pAssw0rd");
+                    .setName("myGroup");
         clientConfig.getNetworkConfig()
                     .addAddress("node1.mydomain.com", "node2.mydomain.com");
 

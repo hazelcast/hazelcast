@@ -87,7 +87,7 @@ public final class Sinks {
             @Nonnull String sinkName,
             @Nonnull ProcessorMetaSupplier metaSupplier
     ) {
-        return new SinkImpl<>(sinkName, metaSupplier);
+        return new SinkImpl<>(sinkName, metaSupplier, false);
     }
 
     /**

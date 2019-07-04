@@ -490,7 +490,7 @@ public final class AggregateOperations {
      *         .filter(word -> word.matches("\\p{Lu}.*"))
      *         .aggregate(concatenating("['", "', '", "']"));
      * }</pre>
-     **/
+     */
     public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating(
             CharSequence delimiter, CharSequence prefix, CharSequence suffix
     ) {

@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
-import com.hazelcast.jet.impl.pipeline.SinkImpl;
 
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
@@ -196,7 +195,7 @@ public final class JmsSinkBuilder<T> {
         FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
         SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
         SupplierEx<Connection> newConnectionFn = () -> connectionFnLocal.apply(factorySupplierLocal.get());
-        return new SinkImpl<>(sinkName(),
+        return Sinks.fromProcessor(sinkName(),
                 WriteJmsP.supplier(newConnectionFn, sessionFn, messageFn, sendFn, flushFn, destinationName, isTopic));
     }
 

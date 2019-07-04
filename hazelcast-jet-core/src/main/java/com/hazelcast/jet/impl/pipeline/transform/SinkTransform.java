@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
@@ -30,27 +29,31 @@ import static com.hazelcast.jet.impl.pipeline.FunctionAdapter.adaptingMetaSuppli
 public class SinkTransform<T> extends AbstractTransform {
     private static final int[] EMPTY_ORDINALS = new int[0];
 
-    @Nonnull
-    private ProcessorMetaSupplier metaSupplier;
-    @Nonnull
+    private final SinkImpl sink;
     private final int[] ordinalsToAdapt;
 
     public SinkTransform(@Nonnull SinkImpl sink, @Nonnull List<Transform> upstream, @Nonnull int[] ordinalsToAdapt) {
         super(sink.name(), upstream);
-        this.metaSupplier = sink.metaSupplier();
+        this.sink = sink;
         this.ordinalsToAdapt = ordinalsToAdapt;
     }
 
     public SinkTransform(@Nonnull SinkImpl sink, @Nonnull Transform upstream, boolean adaptToJetEvents) {
         super(sink.name(), upstream);
-        this.metaSupplier = sink.metaSupplier();
+        this.sink = sink;
         this.ordinalsToAdapt = adaptToJetEvents ? new int[] {0} : EMPTY_ORDINALS;
     }
 
     @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
-                adaptingMetaSupplier(metaSupplier, ordinalsToAdapt));
-        p.addEdges(this, pv.v);
+                adaptingMetaSupplier(sink.metaSupplier(), ordinalsToAdapt));
+        p.addEdges(this, pv.v, e -> {
+            // note: have to use an all-to-one edge for the assertion sink.
+            // all the items will be routed to the member with the partition key
+            if (sink.isTotalParallelismOne()) {
+                e.allToOne(sink.name()).distributed();
+            }
+        });
     }
 }

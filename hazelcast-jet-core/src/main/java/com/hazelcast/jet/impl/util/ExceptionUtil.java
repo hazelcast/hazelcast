@@ -32,6 +32,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
+import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -40,6 +41,8 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -49,16 +52,13 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class ExceptionUtil {
 
-    private static final Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>[] EXCEPTIONS = new Tuple3[] {
-            tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class,
-                    (ExceptionFactory) JetException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class,
-                    (ExceptionFactory) TopologyChangedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class,
-                    (ExceptionFactory) JobNotFoundException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class,
-                    (ExceptionFactory) JobAlreadyExistsException::new),
-    };
+    private static final List<Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>> EXCEPTIONS = Arrays.asList(
+            tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new)
+        );
 
     private ExceptionUtil() { }
 

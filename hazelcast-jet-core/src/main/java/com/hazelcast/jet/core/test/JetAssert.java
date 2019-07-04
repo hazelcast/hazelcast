@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -23,33 +24,58 @@ import java.util.Objects;
  *
  * @since 3.0
  */
-final class JetAssert {
+public final class JetAssert {
 
     private JetAssert() {
     }
 
-    static void assertTrue(String message, boolean condition) {
+    /**
+     * Asserts that the given condition is {@code true}. If not, an
+     * {@link AssertionError} is thrown with the given message.
+     */
+    public static void assertTrue(@Nullable String message, boolean condition) {
         if (!condition) {
             throw new AssertionError(message);
         }
     }
 
-    static void assertFalse(String message, boolean condition) {
+    /**
+     * Asserts that the given condition is {@code false}. If not, an
+     * {@link AssertionError} is thrown with the given message.
+     */
+    public static void assertFalse(@Nullable String message, boolean condition) {
         assertTrue(message, !condition);
     }
 
-    static void assertSame(String message, Object expected, Object actual) {
+    /**
+     * Asserts that the two given objects are the same, when compared using
+     * the {@code ==} operator and if not, an {@link AssertionError} is thrown
+     * with the given message.
+     */
+    public static void assertSame(@Nullable String message, @Nullable Object expected, @Nullable Object actual) {
         if (expected == actual) {
             return;
         }
         throwNotEqual(message, expected, actual);
     }
 
-    static void assertEquals(String message, Object expected, Object actual) {
+    /**
+     * Asserts that the two given objects are equal, when compared using
+     * {@link Object#equals(Object)}. If they are not equal, an
+     * {@link AssertionError} is thrown with the given message.
+     */
+    public static void assertEquals(@Nullable String message, @Nullable Object expected, @Nullable Object actual) {
         if (Objects.equals(expected, actual)) {
             return;
         }
         throwNotEqual(message, expected, actual);
+    }
+
+    /**
+     * Throws an {@link AssertionError} with the given message.
+     */
+    public static void fail(@Nullable String message) {
+        throw new AssertionError(message);
     }
 
     private static void throwNotEqual(String message, Object expected, Object actual) {
@@ -59,11 +85,11 @@ final class JetAssert {
         String expectedString = String.valueOf(expected);
         String actualString = String.valueOf(actual);
         if (expectedString.equals(actualString)) {
-            message = message + "expected: "
+            message = message + ", expected: "
                     + formatClassAndValue(expected, expectedString)
                     + " but was: " + formatClassAndValue(actual, actualString);
         } else {
-            message = message + "expected:<" + expectedString + "> but was:<"
+            message = message + ", expected:<" + expectedString + "> but was:<"
                     + actualString + ">";
         }
         throw new AssertionError(message);

@@ -293,8 +293,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                             protected boolean tryProcess(int ordinal, @Nonnull Object item) {
                                 throw new IllegalStateException(
                                         "This vertex has a total parallelism of one and as such only"
-                                                + " expects input on one node. Edge configuration must be adjusted to"
-                                                + " make sure that only the expected node receives any input."
+                                                + " expects input on a specific node. Edge configuration must be adjusted"
+                                                + " to make sure that only the expected node receives any input."
                                                 + " Unexpected input received from ordinal " + ordinal + ": " + item
                                 );
                             }

@@ -23,6 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
@@ -38,10 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -84,11 +87,23 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         jet().newJob(p).join();
     }
 
+    protected void executeAndPeel() throws Throwable {
+        try {
+            execute();
+        } catch (CompletionException e) {
+            Throwable t = peel(e);
+            if (t instanceof JetException && t.getCause() != null) {
+                t = t.getCause();
+            }
+            throw t;
+        }
+    }
+
     protected Job start() {
         return jet().newJob(p);
     }
 
-    BatchStage<Integer> batchStageFromList(List<Integer> input) {
+    protected BatchStage<Integer> batchStageFromList(List<Integer> input) {
         BatchSource<Integer> source = SourceBuilder
                 .batch("sequence", x -> null)
                 .<Integer>fillBufferFn((x, buf) -> {
@@ -99,7 +114,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return p.drawFrom(source);
     }
 
-    static String journaledMapName() {
+    protected static String journaledMapName() {
         return randomMapName(JOURNALED_MAP_PREFIX);
     }
 
@@ -107,39 +122,39 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         srcList.addAll(data);
     }
 
-    void putToBatchSrcMap(Collection<Integer> data) {
+    protected void putToBatchSrcMap(Collection<Integer> data) {
         putToMap(srcMap, data);
     }
 
-    void putToBatchSrcCache(Collection<Integer> data) {
+    protected void putToBatchSrcCache(Collection<Integer> data) {
         putToCache(srcCache, data);
     }
 
-    static void putToMap(Map<String, Integer> dest, Collection<Integer> data) {
+    protected static void putToMap(Map<String, Integer> dest, Collection<Integer> data) {
         int[] key = {0};
         data.forEach(i -> dest.put(String.valueOf(key[0]++), i));
     }
 
-    static void putToCache(Cache<String, Integer> dest, Collection<Integer> data) {
+    protected static void putToCache(Cache<String, Integer> dest, Collection<Integer> data) {
         int[] key = {0};
         data.forEach(i -> dest.put(String.valueOf(key[0]++), i));
     }
 
-    <T> Sink<T> sinkList() {
+    protected <T> Sink<T> sinkList() {
         return Sinks.list(sinkName);
     }
 
-    <T> Stream<T> sinkStreamOf(Class<T> type) {
+    protected <T> Stream<T> sinkStreamOf(Class<T> type) {
         return sinkList.stream().map(type::cast);
     }
 
     @SuppressWarnings("unchecked")
-    <K, V> Stream<Entry<K, V>> sinkStreamOfEntry() {
+    protected <K, V> Stream<Entry<K, V>> sinkStreamOfEntry() {
         return sinkList.stream().map(Entry.class::cast);
     }
 
     @SuppressWarnings("unchecked")
-    <T> Map<T, Integer> sinkToBag() {
+    protected <T> Map<T, Integer> sinkToBag() {
         return toBag((List<T>) this.sinkList);
     }
 
@@ -152,7 +167,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
      * stream. Keeping the last duplicate item is the way to de-duplicate a
      * stream of early window results.
      */
-    static <T, K> String streamToString(
+    protected static <T, K> String streamToString(
             @Nonnull Stream<? extends T> stream,
             @Nonnull Function<? super T, ? extends String> formatFn,
             @Nullable Function<? super T, ? extends K> distinctKeyFn
@@ -170,14 +185,14 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
      * Uses {@code formatFn} to stringify each item of the given stream, sorts
      * the strings, then outputs them line by line.
      */
-    static <T> String streamToString(
+    protected static <T> String streamToString(
             @Nonnull Stream<? extends T> stream,
             @Nonnull Function<? super T, ? extends String> formatFn
     ) {
         return streamToString(stream, formatFn, null);
     }
 
-    static <T> Map<T, Integer> toBag(Collection<T> coll) {
+    protected static <T> Map<T, Integer> toBag(Collection<T> coll) {
         Map<T, Integer> bag = new HashMap<>();
         for (T t : coll) {
             bag.merge(t, 1, (count, x) -> count + 1);
@@ -189,15 +204,15 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return IntStream.range(0, itemCount).boxed().collect(toList());
     }
 
-    static long roundDown(long value, long unit) {
+    protected static long roundDown(long value, long unit) {
         return value - value % unit;
     }
 
-    static long roundUp(long value, long unit) {
+    protected static long roundUp(long value, long unit) {
         return roundDown(value + unit - 1, unit);
     }
 
-    static List<HazelcastInstance> createRemoteCluster(Config config, int size) {
+    protected static List<HazelcastInstance> createRemoteCluster(Config config, int size) {
         ArrayList<HazelcastInstance> instances = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             instances.add(Hazelcast.newHazelcastInstance(config));
@@ -205,7 +220,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return instances;
     }
 
-    static ClientConfig getClientConfigForRemoteCluster(HazelcastInstance instance) {
+    protected static ClientConfig getClientConfigForRemoteCluster(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = instance.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());

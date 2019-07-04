@@ -28,7 +28,7 @@ import java.io.Serializable;
  * @param <R> the type of the result of the function
  *
  * @since 3.0
- **/
+ */
 @FunctionalInterface
 public interface ObjLongBiFunction<T, R> extends Serializable {
 

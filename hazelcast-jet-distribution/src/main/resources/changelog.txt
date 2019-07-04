@@ -14,7 +14,7 @@
 
 * 3.0 is the first major release of Hazelcast Jet past 0.x, and is versioned at 3.x to align
 it better with IMDG 3.x versions that it is based on
-* Starting with 3.0, main Job API and the pipeline API will be backwards compatible in further minor
+* Starting with 3.0, main Job API and the pipeline API will be backward-compatible in further minor
 versions. Core API will only be compatible between patch versions.
   - Several APIs have been streamlined in preparation for this change. Please see the breaking changes
   section of the release notes for a list of specific changes.

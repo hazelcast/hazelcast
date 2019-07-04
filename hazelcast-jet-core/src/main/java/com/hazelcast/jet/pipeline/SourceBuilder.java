@@ -33,6 +33,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientTimestampedSourceP;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
@@ -114,6 +115,7 @@ public final class SourceBuilder<C> {
             @Nonnull String name,
             @Nonnull FunctionEx<? super Context, ? extends C> createFn
     ) {
+        checkSerializable(createFn, "createFn");
         this.name = name;
         this.createFn = createFn;
     }
@@ -182,7 +184,8 @@ public final class SourceBuilder<C> {
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Batch<Void> batch(
-            @Nonnull String name, @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
+            @Nonnull String name,
+            @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
     ) {
         return new SourceBuilder<C>(name, createFn).new Batch<Void>();
     }
@@ -245,7 +248,8 @@ public final class SourceBuilder<C> {
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Stream<Void> stream(
-            @Nonnull String name, @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
+            @Nonnull String name,
+            @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
     ) {
         return new SourceBuilder<C>(name, createFn).new Stream<Void>();
     }
@@ -345,6 +349,7 @@ public final class SourceBuilder<C> {
          */
         @Nonnull
         public Base<T> destroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {
+            checkSerializable(destroyFn, "destroyFn");
             SourceBuilder.this.destroyFn = destroyFn;
             return this;
         }
@@ -441,6 +446,7 @@ public final class SourceBuilder<C> {
         public <T_NEW> BaseNoTimestamps<T_NEW> fillBufferFn(
                 @Nonnull BiConsumerEx<? super C, ? super SourceBuffer<T_NEW>> fillBufferFn
         ) {
+            checkSerializable(fillBufferFn, "fillBufferFn");
             BaseNoTimestamps<T_NEW> newThis = (BaseNoTimestamps<T_NEW>) this;
             newThis.fillBufferFn = fillBufferFn;
             return newThis;
@@ -638,6 +644,7 @@ public final class SourceBuilder<C> {
 
         @SuppressWarnings("unchecked")
         private FaultTolerant(B parentBuilder, FunctionEx<? super C, ? extends S> createSnapshotFn) {
+            checkSerializable(createSnapshotFn, "createSnapshotFn");
             this.parentBuilder = parentBuilder;
             SourceBuilder.this.createSnapshotFn = (FunctionEx<? super C, Object>) createSnapshotFn;
         }
@@ -667,6 +674,7 @@ public final class SourceBuilder<C> {
         @SuppressWarnings("unchecked")
         @Nonnull
         public B restoreSnapshotFn(@Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn) {
+            checkSerializable(restoreSnapshotFn, "restoreSnapshotFn");
             SourceBuilder.this.restoreSnapshotFn = (BiConsumerEx<? super C, ? super List<Object>>) restoreSnapshotFn;
             return parentBuilder;
         }

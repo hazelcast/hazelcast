@@ -24,7 +24,6 @@ import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
-import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -184,6 +183,6 @@ public final class SinkBuilder<W, T> {
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
         SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
-        return new SinkImpl<>(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
     }
 }
