@@ -1043,6 +1043,25 @@
         sub-element.
         - <fsync>:
             Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <event-journal>:
+        It has the following attributes and sub-elements:
+        - enabled:
+            Specifies whether the event journal is enabled.
+        - <capacity>:
+            The capacity of the event journal. The capacity is the total number of items that the event journal
+            can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+            The capacity is shared equally between all partitions.
+            This is done by assigning each partition {@code getCapacity() / partitionCount}
+            available slots in the event journal. Because of this, the effective total
+            capacity may be somewhat lower and you must take into account that the
+            configured capacity is at least greater than the partition count.
+        - <time-to-live-seconds>:
+            Sets the time to live in seconds.
+            Time to live is the time the event journal retains items before removing them from the journal.
+            The events are removed on journal read and write actions, not while the journal is idle.
+            Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+            events never expire but they can be overwritten when the capacity of the journal is exceeed.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
         * <map-store>:
         Configuration options when you want to load/store the map entries from/to a persistent data store such as a
         relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader
@@ -1209,6 +1228,10 @@
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>
+        <event-journal enabled="false">
+            <capacity>10000</capacity>
+            <time-to-live-seconds>0</time-to-live-seconds>
+        </event-journal>
         <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
             <write-delay-seconds>60</write-delay-seconds>
@@ -1510,6 +1533,25 @@
         sub-element.
         - <fsync>:
             Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <event-journal>:
+        It has the following attributes and sub-elements:
+        - enabled:
+            Specifies whether the event journal is enabled.
+        - <capacity>:
+            The capacity of the event journal. The capacity is the total number of items that the event journal
+            can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+            The capacity is shared equally between all partitions.
+            This is done by assigning each partition {@code getCapacity() / partitionCount}
+            available slots in the event journal. Because of this, the effective total
+            capacity may be somewhat lower and you must take into account that the
+            configured capacity is at least greater than the partition count.
+        - <time-to-live-seconds>:
+            Sets the time to live in seconds.
+            Time to live is the time the event journal retains items before removing them from the journal.
+            The events are removed on journal read and write actions, not while the journal is idle.
+            Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+            events never expire but they can be overwritten when the capacity of the journal is exceeed.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
         * <disable-per-entry-invalidation-events>:
         Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
         Full-flush invalidation means the invalidation of events for all entries when clear is called.
@@ -1555,55 +1597,13 @@
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>
+        <event-journal enabled="false">
+            <capacity>10000</capacity>
+            <time-to-live-seconds>0</time-to-live-seconds>
+        </event-journal>
         <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
     </cache>
-    <!--
-    ===== HAZELCAST EVENT JOURNAL CONFIGURATION =====
 
-    Configuration element's name is <event-journal>.
-    It has the following attributes and sub-elements:
-    * enabled:
-    	Specifies whether the event journal is enabled.
-    * <mapName>:
-    	Map name to which this configuration applies. This attribute's default value is "default".
-    	Configuration for the event journal with name "default" applies to all maps without
-    	configuration for a specific named map. In another words, if you specify the default
-    	event journal config as enabled then all maps which don't have specific event journal
-    	will be also enabled.
-    * <cacheName>:
-    	Cache name to which this configuration applies. This attribute's default value is "default".
-    	Configuration for the event journal with name "default" applies to all caches without
-    	configuration for a specific named cache. In another words, if you specify the default
-    	event journal config as enabled then all caches which don't have specific event journal
-    	will be also enabled.
-    * <capacity>:
-    	The capacity of the event journal. The capacity is the total number of items that the event journal
-    	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
-    	The capacity is shared equally between all partitions.
-    	This is done by assigning each partition {@code getCapacity() / partitionCount}
-    	available slots in the event journal. Because of this, the effective total
-    	capacity may be somewhat lower and you must take into account that the
-    	configured capacity is at least greater than the partition count.
-    * <time-to-live-seconds>:
-    	Sets the time to live in seconds.
-    	Time to live is the time the event journal retains items before removing them from the journal.
-    	The events are removed on journal read and write actions, not while the journal is idle.
-    	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
-    	events never expire but they can be overwritten when the capacity of the journal is exceeed.
-    	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
--->
-
-    <event-journal enabled="false">
-        <mapName>default</mapName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
-
-    <event-journal enabled="false">
-        <cacheName>default</cacheName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
 
     <!--
         ===== HAZELCAST LIST CONFIGURATION =====

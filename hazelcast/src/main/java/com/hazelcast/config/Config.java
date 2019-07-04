@@ -27,7 +27,6 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -36,7 +35,6 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -127,10 +125,6 @@ public class Config {
 
     private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
-
-    private final Map<String, EventJournalConfig> mapEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
-
-    private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
@@ -2640,175 +2634,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only map {@link EventJournal}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the map event journal config
-     * @return the map event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        name = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getMapEventJournalConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns a read-only cache {@link EventJournal}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the cache event journal config
-     * @return the cache event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        name = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getCacheEventJournalConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the map event journal config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the event journal by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addEventJournalConfig(EventJournalConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the map event journal config
-     * @return the map event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public EventJournalConfig getMapEventJournalConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapEventJournalConfigs, name, EventJournalConfig.class,
-                new BiConsumer<EventJournalConfig, String>() {
-                    @Override
-                    public void accept(EventJournalConfig eventJournalConfig, String name) {
-                        eventJournalConfig.setMapName(name);
-                        if ("default".equals(name)) {
-                            eventJournalConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Returns the cache event journal config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the event journal by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addEventJournalConfig(EventJournalConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the cache event journal config
-     * @return the cache event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public EventJournalConfig getCacheEventJournalConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, cacheEventJournalConfigs, name, EventJournalConfig.class,
-                new BiConsumer<EventJournalConfig, String>() {
-                    @Override
-                    public void accept(EventJournalConfig eventJournalConfig, String name) {
-                        eventJournalConfig.setCacheName(name);
-                        if ("default".equals(name)) {
-                            eventJournalConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Adds the event journal configuration. The configuration may apply to a map
-     * and/or cache. A non-empty value for {@link EventJournalConfig#getMapName()}
-     * means the configuration applies to maps and a non-empty value for
-     * {@link EventJournalConfig#getCacheName()} means the configuration
-     * applies to caches.
-     * The returned name may be a pattern with which the configuration
-     * will be obtained in the future.
-     *
-     * @param eventJournalConfig the event journal configuration
-     * @return this config instance
-     * @throws IllegalArgumentException if the
-     *                                  {@link EventJournalConfig#getMapName()} and
-     *                                  {@link EventJournalConfig#getCacheName()}
-     *                                  are both empty
-     */
-    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
-        final String mapName = eventJournalConfig.getMapName();
-        final String cacheName = eventJournalConfig.getCacheName();
-        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
-            throw new IllegalArgumentException("Event journal config should have either map name or cache name non-empty");
-        }
-        if (!StringUtil.isNullOrEmpty(mapName)) {
-            mapEventJournalConfigs.put(mapName, eventJournalConfig);
-        }
-        if (!StringUtil.isNullOrEmpty(cacheName)) {
-            cacheEventJournalConfigs.put(cacheName, eventJournalConfig);
-        }
-        return this;
-    }
-
-    /**
      * Returns the map of {@link FlakeIdGenerator} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
@@ -2906,62 +2731,6 @@ public class Config {
         flakeIdGeneratorConfigMap.putAll(map);
         for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns the map of map event journal configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the map event journal configurations mapped by config name
-     */
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        return mapEventJournalConfigs;
-    }
-
-    /**
-     * Returns the map of cache event journal configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the cache event journal configurations mapped by config name
-     */
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        return cacheEventJournalConfigs;
-    }
-
-    /**
-     * Sets the map of map event journal configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param eventJournalConfigs the map event journal configuration map to set
-     * @return this config instance
-     */
-    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        this.mapEventJournalConfigs.clear();
-        this.mapEventJournalConfigs.putAll(eventJournalConfigs);
-        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
-            entry.getValue().setMapName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Sets the map of cache event journal configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param eventJournalConfigs the cache event journal configuration map to set
-     * @return this config instance
-     */
-    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        this.cacheEventJournalConfigs.clear();
-        this.cacheEventJournalConfigs.putAll(eventJournalConfigs);
-        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
-            entry.getValue().setCacheName(entry.getKey());
         }
         return this;
     }
@@ -3300,8 +3069,6 @@ public class Config {
                 + ", atomicReferenceConfigs=" + atomicReferenceConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
-                + ", mapEventJournalConfigs=" + mapEventJournalConfigs
-                + ", cacheEventJournalConfigs=" + cacheEventJournalConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig
                 + ", managementCenterConfig=" + managementCenterConfig
                 + ", securityConfig=" + securityConfig

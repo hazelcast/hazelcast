@@ -29,7 +29,6 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -538,25 +537,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEventJournalConfig() {
-        EventJournalConfig cacheJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setCacheName(randomName())
-                .setCapacity(39)
-                .setTimeToLiveSeconds(98);
-        EventJournalConfig mapJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setMapName(randomName())
-                .setCapacity(42)
-                .setTimeToLiveSeconds(52);
-
-        driver.getConfig().addEventJournalConfig(cacheJournalConfig);
-        driver.getConfig().addEventJournalConfig(mapJournalConfig);
-
-        assertConfigurationsEqualsOnAllMembers(mapJournalConfig, cacheJournalConfig);
-    }
-
-    @Test
     public void testFlakeIdGeneratorConfig() {
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(randomName())
                 .setPrefetchCount(123)
@@ -774,18 +754,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(EventJournalConfig mapEventJournalConfig,
-                                                        EventJournalConfig cacheEventJournalConfig) {
-        String cacheName = cacheEventJournalConfig.getCacheName();
-        String mapName = mapEventJournalConfig.getMapName();
-        for (HazelcastInstance instance : members) {
-            EventJournalConfig registeredConfig = instance.getConfig().getCacheEventJournalConfig(cacheName);
-            assertEquals(cacheEventJournalConfig, registeredConfig);
-            registeredConfig = instance.getConfig().getMapEventJournalConfig(mapName);
-            assertEquals(mapEventJournalConfig, registeredConfig);
-        }
-    }
-
     private void assertConfigurationsEqualsOnAllMembers(FlakeIdGeneratorConfig config) {
         for (HazelcastInstance instance : members) {
             FlakeIdGeneratorConfig registeredConfig = instance.getConfig().getFlakeIdGeneratorConfig(config.getName());
@@ -824,6 +792,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         entryListenerConfig.setOldValueRequired(true);
         entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
 
+        // TODO add journal config when client protocol for map codec is updated
         CacheSimpleConfig config = new CacheSimpleConfig()
                 .setName(name)
                 .setQuorumName("quorum")
@@ -837,7 +806,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setValueType("valueType")
                 .setReadThrough(true)
                 .setWriteThrough(true)
-                .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
+                .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
+//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+//                                                               .setCapacity(42)
+//                                                               .setTimeToLiveSeconds(52))
+                ;
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -873,8 +846,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
-                // TODO add merkle tree config when client protocol for map codec is updated
+                // TODO add merkle tree and journal config when client protocol for map codec is updated
                 //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
+//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+//                                                               .setCapacity(42)
+//                                                               .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

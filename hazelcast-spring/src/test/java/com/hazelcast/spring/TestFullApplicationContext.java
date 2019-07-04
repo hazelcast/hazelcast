@@ -300,6 +300,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
         assertTrue(cacheConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
@@ -325,6 +329,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
         assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
         assertTrue(testMapConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = testMapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertTrue(testMapConfig.isReadBackupData());
@@ -1365,24 +1373,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
 
         assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Test
-    public void testMapEventJournalConfigIsWellParsed() {
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(123, journalConfig.getCapacity());
-        assertEquals(321, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Test
-    public void testCacheEventJournalConfigIsWellParsed() {
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(123, journalConfig.getCapacity());
-        assertEquals(321, journalConfig.getTimeToLiveSeconds());
     }
 
     @Test

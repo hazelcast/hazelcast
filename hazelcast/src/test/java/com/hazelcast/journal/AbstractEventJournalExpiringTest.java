@@ -56,15 +56,15 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
     @Override
     protected Config getConfig() {
         int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        Config config = smallInstanceConfig();
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setMapName("default")
-                .setCacheName("default")
                 .setTimeToLiveSeconds(1)
                 .setCapacity(500 * defaultPartitionCount);
 
-        return smallInstanceConfig()
-                .addEventJournalConfig(eventJournalConfig);
+        config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
+        config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
+        return config;
     }
 
     @Test

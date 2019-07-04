@@ -117,7 +117,7 @@ public class MapContainer {
     public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = config.findMapConfig(name);
-        this.eventJournalConfig = config.findMapEventJournalConfig(name);
+        this.eventJournalConfig = mapConfig.getEventJournalConfig();
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();

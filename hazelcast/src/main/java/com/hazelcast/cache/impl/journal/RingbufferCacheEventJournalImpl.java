@@ -33,9 +33,9 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import static com.hazelcast.cache.CacheEventType.CREATED;
 import static com.hazelcast.cache.CacheEventType.EVICTED;
@@ -173,8 +173,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
             throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        String cacheSimpleName = cacheConfig.getName();
-        EventJournalConfig config = nodeEngine.getConfig().findCacheEventJournalConfig(cacheSimpleName);
+        EventJournalConfig config = cacheConfig.getEventJournalConfig();
         if (config == null || !config.isEnabled()) {
             return null;
         }

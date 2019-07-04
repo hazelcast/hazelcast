@@ -107,6 +107,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new EvictionConfig(config.evictionConfig);
@@ -155,6 +156,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
 
@@ -519,6 +521,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
         out.writeObject(hotRestartConfig);
+        out.writeObject(eventJournalConfig);
 
         out.writeUTF(quorumName);
 
@@ -559,6 +562,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             isManagementEnabled = in.readBoolean();
             isStatisticsEnabled = in.readBoolean();
             hotRestartConfig = in.readObject();
+            eventJournalConfig = in.readObject();
 
             quorumName = in.readUTF();
 
@@ -690,6 +694,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
         target.setEvictionConfig(getEvictionConfig());
         target.setHotRestartConfig(getHotRestartConfig());
+        target.setEventJournalConfig(getEventJournalConfig());
         target.setInMemoryFormat(getInMemoryFormat());
         if (resolved) {
             target.setKeyType(getKeyType());

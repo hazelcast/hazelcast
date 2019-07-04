@@ -1562,60 +1562,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapEventJournalConfig() {
-        String journalName = "mapName";
-        String journal2Name = "map2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  event-journal:\n"
-                + "    map:\n"
-                + "      " + journalName + ":\n"
-                + "        enabled: false\n"
-                + "        capacity: 120\n"
-                + "        time-to-live-seconds: 20\n"
-                + "      " + journal2Name + ":\n"
-                + "        enabled: true\n";
-
-        Config config = buildConfig(yaml);
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
-
-        assertFalse(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-
-        EventJournalConfig journal2Config = config.getMapEventJournalConfig(journal2Name);
-        assertTrue(journal2Config.isEnabled());
-    }
-
-    @Override
-    @Test
-    public void testCacheEventJournalConfig() {
-        String journalName = "cacheName";
-        String journal2Name = "cache2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  event-journal:\n"
-                + "    cache:\n"
-                + "      " + journalName + ":\n"
-                + "        enabled: true\n"
-                + "        capacity: 120\n"
-                + "        time-to-live-seconds: 20\n"
-                + "      " + journal2Name + ":\n"
-                + "        enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-
-        EventJournalConfig journal2Config = config.getCacheEventJournalConfig(journal2Name);
-        assertFalse(journal2Config.isEnabled());
-    }
-
-    @Override
-    @Test
     public void testFlakeIdGeneratorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2098,6 +2044,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
+                + "      event-journal:\n"
+                + "        enabled: true\n"
+                + "        capacity: 120\n"
+                + "        time-to-live-seconds: 20\n"
                 + "      partition-lost-listeners:\n"
                 + "        - com.your-package.YourPartitionLostListener\n"
                 + "      cache-entry-listeners:\n"
@@ -2133,6 +2083,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+
         assertEquals(1, cacheConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener",
                 cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
@@ -2439,6 +2395,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      merkle-tree:\n"
                 + "        enabled: true\n"
                 + "        depth: 20\n"
+                + "      event-journal:\n"
+                + "        enabled: true\n"
+                + "        capacity: 120\n"
+                + "        time-to-live-seconds: 20\n"
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
@@ -2519,6 +2479,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
 
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         assertNotNull(mapStoreConfig);

@@ -26,7 +26,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
@@ -64,7 +63,6 @@ import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.StringUtil;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -99,44 +97,6 @@ public class DynamicConfigurationAwareConfig extends Config {
             return staticConfig.getMapConfigs();
         }
     };
-
-    private final ConfigSupplier<EventJournalConfig> mapEventJournalConfigSupplier =
-            new ConfigSupplier<EventJournalConfig>() {
-                @Override
-                public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                           @Nonnull String name) {
-                    return configurationService.findMapEventJournalConfig(name);
-                }
-
-                @Override
-                public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                    return staticConfig.getMapEventJournalConfig(name);
-                }
-
-                @Override
-                public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                    return staticConfig.getMapEventJournalConfigs();
-                }
-            };
-
-    private final ConfigSupplier<EventJournalConfig> cacheEventJournalConfigSupplier = new
-            ConfigSupplier<EventJournalConfig>() {
-                @Override
-                public EventJournalConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                           @Nonnull String name) {
-                    return configurationService.findCacheEventJournalConfig(name);
-                }
-
-                @Override
-                public EventJournalConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                    return staticConfig.getCacheEventJournalConfig(name);
-                }
-
-                @Override
-                public Map<String, EventJournalConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                    return staticConfig.getCacheEventJournalConfigs();
-                }
-            };
 
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
@@ -1026,83 +986,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        return getCacheEventJournalConfigInternal(name, "default");
-    }
-
-    @Override
-    public EventJournalConfig getCacheEventJournalConfig(String name) {
-        return getCacheEventJournalConfigInternal(name, name);
-    }
-
-    private EventJournalConfig getCacheEventJournalConfigInternal(String name, String fallbackName) {
-        return (EventJournalConfig) configSearcher.getConfig(name, fallbackName, cacheEventJournalConfigSupplier);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        Map<String, EventJournalConfig> staticConfigs = staticConfig.getCacheEventJournalConfigs();
-        Map<String, EventJournalConfig> dynamicConfigs = configurationService.getCacheEventJournalConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        return getMapEventJournalConfigInternal(name, "default");
-    }
-
-    @Override
-    public EventJournalConfig getMapEventJournalConfig(String name) {
-        return getMapEventJournalConfigInternal(name, name);
-    }
-
-    private EventJournalConfig getMapEventJournalConfigInternal(String name, String fallbackName) {
-        return (EventJournalConfig) configSearcher.getConfig(name, fallbackName, mapEventJournalConfigSupplier);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        Map<String, EventJournalConfig> staticConfigs = staticConfig.getMapEventJournalConfigs();
-        Map<String, EventJournalConfig> dynamicConfigs = configurationService.getMapEventJournalConfigs();
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
-        final String mapName = eventJournalConfig.getMapName();
-        final String cacheName = eventJournalConfig.getCacheName();
-        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
-            throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
-        }
-
-        boolean staticConfigDoesNotExist = false;
-        if (!StringUtil.isNullOrEmpty(mapName)) {
-            Map<String, EventJournalConfig> staticConfigs = staticConfig.getMapEventJournalConfigs();
-            staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfigs, mapName, eventJournalConfig);
-        }
-        if (!StringUtil.isNullOrEmpty(cacheName)) {
-            Map<String, EventJournalConfig> staticConfigs = staticConfig.getCacheEventJournalConfigs();
-            staticConfigDoesNotExist = staticConfigDoesNotExist
-                    | checkStaticConfigDoesNotExist(staticConfigs, cacheName, eventJournalConfig);
-        }
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(eventJournalConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

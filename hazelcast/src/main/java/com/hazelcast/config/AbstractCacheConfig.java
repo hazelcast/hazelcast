@@ -91,6 +91,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    protected EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
     /**
      * The ClassLoader to be used to resolve key &amp; value types, if set
      */
@@ -267,6 +269,26 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      */
     public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig can't be null");
+        return this;
+    }
+
+    /**
+     * Gets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @return event journal config
+     */
+    public @Nonnull EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
+    }
+
+    /**
+     * Sets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @param eventJournalConfig event journal config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
         return this;
     }
 
@@ -456,6 +478,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         result = 31 * result + (isStoreByValue ? 1 : 0);
         result = 31 * result + (isManagementEnabled ? 1 : 0);
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + eventJournalConfig.hashCode();
         return result;
     }
 
@@ -508,6 +531,9 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         Set<CacheEntryListenerConfiguration<K, V>> thisListenerConfigs = this.getListenerConfigurations();
         Set<CacheEntryListenerConfiguration<K, V>> thatListenerConfigs = that.getListenerConfigurations();
         if (!thisListenerConfigs.equals(thatListenerConfigs)) {
+            return false;
+        }
+        if (!eventJournalConfig.equals(that.eventJournalConfig)) {
             return false;
         }
         if (!hotRestartConfig.equals(that.hotRestartConfig)) {

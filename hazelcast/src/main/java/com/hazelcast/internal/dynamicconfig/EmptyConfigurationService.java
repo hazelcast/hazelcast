@@ -22,7 +22,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
@@ -152,26 +151,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, CacheSimpleConfig> getCacheSimpleConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public EventJournalConfig findCacheEventJournalConfig(String baseName) {
-        return null;
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public EventJournalConfig findMapEventJournalConfig(String baseName) {
-        return null;
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
         return emptyMap();
     }
 

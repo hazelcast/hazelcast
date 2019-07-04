@@ -211,8 +211,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> executorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> durableExecutorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> scheduledExecutorManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> mapEventJournalManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> cacheEventJournalManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
@@ -244,8 +242,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.executorManagedMap = createManagedMap("executorConfigs");
             this.durableExecutorManagedMap = createManagedMap("durableExecutorConfigs");
             this.scheduledExecutorManagedMap = createManagedMap("scheduledExecutorConfigs");
-            this.mapEventJournalManagedMap = createManagedMap("mapEventJournalConfigs");
-            this.cacheEventJournalManagedMap = createManagedMap("cacheEventJournalConfigs");
             this.cardinalityEstimatorManagedMap = createManagedMap("cardinalityEstimatorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
@@ -285,8 +281,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDurableExecutor(node);
                     } else if ("scheduled-executor-service".equals(nodeName)) {
                         handleScheduledExecutor(node);
-                    } else if ("event-journal".equals(nodeName)) {
-                        handleEventJournal(node);
                     } else if ("cardinality-estimator".equals(nodeName)) {
                         handleCardinalityEstimator(node);
                     } else if ("queue".equals(nodeName)) {
@@ -1091,19 +1085,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             lockManagedMap.put(getAttribute(node, "name"), lockConfigBuilder.getBeanDefinition());
         }
 
-        public void handleEventJournal(Node node) {
-            BeanDefinitionBuilder eventJournalBuilder = createBeanBuilder(EventJournalConfig.class);
-            fillAttributeValues(node, eventJournalBuilder);
-            String mapName = getAttribute(node, "map-name");
-            String cacheName = getAttribute(node, "cache-name");
-            if (!isNullOrEmpty(mapName)) {
-                mapEventJournalManagedMap.put(mapName, eventJournalBuilder.getBeanDefinition());
-            }
-            if (!isNullOrEmpty(cacheName)) {
-                cacheEventJournalManagedMap.put(cacheName, eventJournalBuilder.getBeanDefinition());
-            }
-        }
-
         public void handleRingbuffer(Node node) {
             BeanDefinitionBuilder ringbufferConfigBuilder = createBeanBuilder(RingbufferConfig.class);
             fillAttributeValues(node, ringbufferConfigBuilder);
@@ -1335,6 +1316,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMerkleTreeConfig(mapConfigBuilder, childNode);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(mapConfigBuilder, childNode);
+                } else if ("event-journal".equals(nodeName)) {
+                    handleEventJournalConfig(mapConfigBuilder, childNode);
                 } else if ("map-eviction-policy".equals(nodeName)) {
                     handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
                 } else if ("partition-strategy".equals(nodeName)) {
@@ -1380,6 +1363,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
             configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleEventJournalConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder eventJournalBuilder = createBeanBuilder(EventJournalConfig.class);
+            fillAttributeValues(node, eventJournalBuilder);
+            configBuilder.addPropertyValue("eventJournalConfig", eventJournalBuilder.getBeanDefinition());
         }
 
         private ManagedList getQueryCaches(Node childNode) {
@@ -1492,6 +1481,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     cacheConfigBuilder.addPropertyValue("mergePolicy", getTextContent(childNode));
                 } else if ("hot-restart".equals(cleanNodeName(childNode))) {
                     handleHotRestartConfig(cacheConfigBuilder, childNode);
+                } else if ("event-journal".equals(cleanNodeName(childNode))) {
+                    handleEventJournalConfig(cacheConfigBuilder, childNode);
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());

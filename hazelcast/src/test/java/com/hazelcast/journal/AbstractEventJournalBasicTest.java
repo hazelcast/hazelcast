@@ -86,12 +86,12 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setMapName("default")
-                .setCacheName("default")
                 .setCapacity(500 * defaultPartitionCount);
+        Config config = super.getConfig();
+        config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
+        config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
 
-        return super.getConfig()
-                .addEventJournalConfig(eventJournalConfig);
+        return config;
     }
 
     /**

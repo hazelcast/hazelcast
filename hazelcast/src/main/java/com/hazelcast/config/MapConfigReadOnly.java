@@ -135,6 +135,18 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Nonnull
     @Override
+    public EventJournalConfig getEventJournalConfig() {
+        final EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
+        return eventJournalConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        throw throwReadOnly();
+    }
+
+    @Nonnull
+    @Override
     public HotRestartConfig getHotRestartConfig() {
         final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
         return hotRestartConfig.getAsReadOnly();

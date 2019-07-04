@@ -56,7 +56,6 @@ import static com.hazelcast.config.ConfigSections.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
-import static com.hazelcast.config.ConfigSections.EVENT_JOURNAL;
 import static com.hazelcast.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.config.ConfigSections.GROUP;
@@ -166,8 +165,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
-        } else if (EVENT_JOURNAL.isEqual(nodeName)) {
-            handleEventJournal(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -1593,6 +1590,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merkle-tree".equals(nodeName)) {
                 MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
                 handleViaReflection(node, mapConfig, merkleTreeConfig);
+            } else if ("event-journal".equals(nodeName)) {
+                EventJournalConfig eventJournalConfig = new EventJournalConfig();
+                handleViaReflection(node, mapConfig, eventJournalConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
@@ -1706,14 +1706,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return hotRestartConfig;
     }
 
-    protected void handleCache(Node node) {
+    protected void handleCache(Node node) throws Exception {
         String name = getAttribute(node, "name");
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(name);
         handleCacheNode(node, cacheConfig);
     }
 
-    void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) {
+    void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1757,6 +1757,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
                 cacheConfig.setMergePolicy(value);
+            } else if ("event-journal".equals(nodeName)) {
+                EventJournalConfig eventJournalConfig = new EventJournalConfig();
+                handleViaReflection(n, cacheConfig, eventJournalConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
             } else if ("disable-per-entry-invalidation-events".equals(nodeName)) {
@@ -2358,12 +2361,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addSemaphoreConfig(sConfig);
-    }
-
-    protected void handleEventJournal(Node node) throws Exception {
-        EventJournalConfig journalConfig = new EventJournalConfig();
-        handleViaReflection(node, config, journalConfig);
-        config.addEventJournalConfig(journalConfig);
     }
 
     protected void handleRingbuffer(Node node) {
