@@ -33,7 +33,6 @@ import java.util.List;
 /**
  * Outbox which sends data to a single remote stripe.
  */
-// TODO TODO: Configurable batch size. How and where?
 public class Outbox extends AbstractMailbox {
     /** Node engine. */
     private final NodeEngine nodeEngine;
@@ -50,7 +49,6 @@ public class Outbox extends AbstractMailbox {
     /** Target member. */
     private Member targetMember;
 
-    // TODO TODO: Should be resolved when batch ack is received.
     /** Target thread. */
     private int targetThread = DataWorker.UNMAPPED_STRIPE;
 
@@ -82,7 +80,6 @@ public class Outbox extends AbstractMailbox {
         if (batch.size() >= batchSize)
             send(false);
 
-        // TODO TODO: Implement congestion control: track how many unacked batches were sent.
         return true;
     }
 

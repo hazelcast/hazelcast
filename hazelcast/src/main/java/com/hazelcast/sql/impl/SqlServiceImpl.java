@@ -76,7 +76,7 @@ public class SqlServiceImpl implements SqlService, ManagedService {
                 cfg.getControlThreadCount());
         }
 
-        dataThreadPool = new DataThreadPool(cfg.getDataThreadCount());
+        dataThreadPool = new DataThreadPool(nodeEngine, cfg.getDataThreadCount());
         controlThreadPool = new ControlThreadPool(this, nodeEngine, cfg.getControlThreadCount(), dataThreadPool);
     }
 

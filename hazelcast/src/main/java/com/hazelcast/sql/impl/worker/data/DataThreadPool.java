@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.data;
 
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.worker.AbstractThreadPool;
 
 /**
@@ -28,13 +29,13 @@ public class DataThreadPool extends AbstractThreadPool<DataWorker> {
     /** Broadcast stripe marker. */
     private static final int BROADCAST_STRIPE = -1;
 
-    public DataThreadPool(int threadCnt) {
-        super(THREAD_PREFIX, threadCnt);
+    public DataThreadPool(NodeEngine nodeEngine, int threadCnt) {
+        super(nodeEngine, THREAD_PREFIX, threadCnt);
     }
 
     @Override
-    protected DataWorker createWorker(int idx) {
-        return new DataWorker(idx);
+    protected DataWorker createWorker(NodeEngine nodeEngine, int idx) {
+        return new DataWorker(nodeEngine, idx);
     }
 
     /**

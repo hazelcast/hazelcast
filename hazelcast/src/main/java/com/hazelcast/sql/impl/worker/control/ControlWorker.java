@@ -38,18 +38,13 @@ import java.util.Map;
 /**
  * Worker responsible for control tasks execution (start query, cancel query, handle membership changes and migrations).
  */
-// TODO TODO: Cleanup on query finish.
 public class ControlWorker extends AbstractWorker<ControlTask> {
     /** Service. */
     private final SqlServiceImpl service;
 
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
-
     /** Data thread pool. */
     private final DataThreadPool dataThreadPool;
 
-    // TODO TODO: Use better algorithm for data worker distribution.
     private int lastDataThreadIdx = 0;
 
     /** Active queries. */
@@ -59,8 +54,9 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
     private final HashMap<QueryId, LinkedList<BatchDataTask>> pendingBatches = new HashMap<>();
 
     public ControlWorker(SqlServiceImpl service, NodeEngine nodeEngine, DataThreadPool dataThreadPool) {
+        super(nodeEngine);
+
         this.service = service;
-        this.nodeEngine = nodeEngine;
         this.dataThreadPool = dataThreadPool;
     }
 
@@ -99,7 +95,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
         // Fragment deployments.
         List<FragmentDeployment> fragmentDeployments = new ArrayList<>(2); // Root + non-root
 
-        // This data structure maps edge stipes to real threads.
+        // This data structure maps edge stripes to real threads.
         Map<Integer, int[]> edgeToStripeMap = new HashMap<>();
 
         for (QueryFragment fragment : task.getFragments()) {

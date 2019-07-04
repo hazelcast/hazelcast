@@ -33,23 +33,19 @@ public class ControlThreadPool extends AbstractThreadPool<ControlWorker> {
     /** Query service. */
     private final SqlServiceImpl service;
 
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
-
     /** Data pool. */
     private final DataThreadPool dataPool;
 
     public ControlThreadPool(SqlServiceImpl service, NodeEngine nodeEngine, int threadCnt,
         DataThreadPool dataPool) {
-        super(THREAD_PREFIX, threadCnt);
+        super(nodeEngine, THREAD_PREFIX, threadCnt);
 
         this.service = service;
-        this.nodeEngine = nodeEngine;
         this.dataPool = dataPool;
     }
 
     @Override
-    protected ControlWorker createWorker(int idx) {
+    protected ControlWorker createWorker(NodeEngine nodeEngine, int idx) {
         return new ControlWorker(service, nodeEngine, dataPool);
     }
 

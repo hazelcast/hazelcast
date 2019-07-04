@@ -188,7 +188,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
                     queryId,
                     nodeEngine,
                     receiveMemberId,
-                    1024, // TODO TODO: Configurable batching.
+                    1024,
                     j
                 );
 

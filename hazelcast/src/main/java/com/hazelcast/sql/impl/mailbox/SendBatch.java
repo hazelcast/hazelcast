@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// TODO TODO: Implement metadata!.
 public class SendBatch implements DataSerializable {
     /** Rows being transferred. */
     private List<Row> rows;

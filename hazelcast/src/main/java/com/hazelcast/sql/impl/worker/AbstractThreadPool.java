@@ -16,12 +16,17 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.spi.NodeEngine;
+
 /**
  * Abstract striped thread pool.
  *
  * @param <T> Type of worker.
  */
 public abstract class AbstractThreadPool<T extends AbstractWorker> {
+    /** Node engine. */
+    private final NodeEngine nodeEngine;
+
     /** Prefix assigned to newly created threads. */
     private final String threadPrefix;
 
@@ -31,7 +36,8 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
     /** Workers. */
     protected final AbstractWorker[] workers;
 
-    public AbstractThreadPool(String threadPrefix, int threadCnt) {
+    public AbstractThreadPool(NodeEngine nodeEngine, String threadPrefix, int threadCnt) {
+        this.nodeEngine = nodeEngine;
         this.threadPrefix = threadPrefix;
         this.threadCnt = threadCnt;
 
@@ -43,7 +49,7 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
      */
     public void start() {
         for (int i = 0; i < threadCnt; i++) {
-            T worker = createWorker(i);
+            T worker = createWorker(nodeEngine, i);
 
             Thread thread = new Thread(worker);
 
@@ -77,8 +83,9 @@ public abstract class AbstractThreadPool<T extends AbstractWorker> {
     /**
      * Create a worker.
      *
+     * @param nodeEngine Node engine.
      * @param idx Stripe index.
      * @return Worker.
      */
-    protected abstract T createWorker(int idx);
+    protected abstract T createWorker(NodeEngine nodeEngine, int idx);
 }

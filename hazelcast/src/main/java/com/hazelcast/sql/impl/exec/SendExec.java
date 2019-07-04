@@ -100,7 +100,6 @@ public class SendExec extends AbstractUpstreamAwareExec {
             int part = partitionHasher.eval(ctx, row);
             int idx =  part % outboxes.length;
 
-            // TODO TODO: Bad: one slow output will not allow other proceed. How to fix that?
             if (!outboxes[idx].onRow(row)) {
                 curBatchPos = curBatchPos0;
 

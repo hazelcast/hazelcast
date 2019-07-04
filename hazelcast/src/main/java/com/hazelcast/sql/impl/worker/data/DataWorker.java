@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.data;
 
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.RootExec;
@@ -31,7 +32,6 @@ import java.util.Map;
 /**
  * Worker which process data requests.
  */
-// TODO TODO: Cleanup on query finish.
 public class DataWorker extends AbstractWorker<DataTask> {
     /** Stripe not mapped to any thread yet. */
     public static final int UNMAPPED_STRIPE = -1;
@@ -42,7 +42,9 @@ public class DataWorker extends AbstractWorker<DataTask> {
     /** Thread index. */
     private final int thread;
 
-    public DataWorker(int thread) {
+    public DataWorker(NodeEngine nodeEngine, int thread) {
+        super(nodeEngine);
+
         this.thread = thread;
     }
 

@@ -17,8 +17,9 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.impl.worker.StopWorkerTask;
-import com.hazelcast.sql.impl.worker.WorkerTask;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -35,8 +36,20 @@ public abstract class AbstractWorker<T extends WorkerTask> implements Runnable {
     /** Start latch. */
     private final CountDownLatch startLatch = new CountDownLatch(1);
 
+    /** Node engine. */
+    protected final NodeEngine nodeEngine;
+
+    /** Logger. */
+    protected final ILogger logger;
+
     /** Stop flag. */
     private boolean stop;
+
+    protected AbstractWorker(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+
+        logger = nodeEngine.getLogger(this.getClass());
+    }
 
     /**
      * Await worker start.
@@ -89,12 +102,12 @@ public abstract class AbstractWorker<T extends WorkerTask> implements Runnable {
                     executeTask((T)nextTask);
             }
             catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-
-                // TODO TODO: Handle interrupt. Panic?
+                EmptyStatement.ignore(e);
             }
             catch (Exception e) {
-                // TODO TODO: Handle generic exception?
+                // Should never happen except of bugs. Write to log in case we missed some case (bug).
+                logger.warning("Unexpected exception in SQL worker [threadName=" +
+                    Thread.currentThread().getName() + ']', e);
             }
         }
     }
