@@ -556,7 +556,6 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return null;
         }
 
-        checkAvailable(pos, numberOfBytes);
         String result = new String(data, pos, numberOfBytes, UTF_8);
         pos += numberOfBytes;
         return result;
