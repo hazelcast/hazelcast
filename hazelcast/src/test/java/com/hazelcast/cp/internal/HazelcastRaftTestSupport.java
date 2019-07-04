@@ -207,13 +207,13 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     }
 
     protected HazelcastInstance getInstance(RaftEndpoint endpoint) {
-        return factory.getAllHazelcastInstances()
-                      .stream()
-                      .filter(instance -> {
-                          CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
-                          return cpMember != null && cpMember.getUuid().equals(endpoint.getUuid());
-                      }).findFirst()
-                      .orElse(null);
+        for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+            CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
+            if (cpMember != null && cpMember.getUuid().equals(endpoint.getUuid())) {
+                return instance;
+            }
+        }
+        return null;
     }
 
     protected RaftInvocationManager getRaftInvocationManager(HazelcastInstance instance) {

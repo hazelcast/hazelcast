@@ -96,7 +96,7 @@ public class PublishActiveCPMembersOp extends Operation implements IdentifiedDat
         metadataGroupId = in.readObject();
         membersCommitIndex = in.readLong();
         int len = in.readInt();
-        members = new ArrayList<>(len);
+        members = new ArrayList<CPMemberInfo>(len);
         for (int i = 0; i < len; i++) {
             CPMemberInfo member = in.readObject();
             members.add(member);

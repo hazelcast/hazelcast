@@ -95,7 +95,7 @@ public class CreateRaftNodeOp extends Operation implements IdentifiedDataSeriali
         super.readInternal(in);
         groupId = in.readObject();
         int count = in.readInt();
-        initialMembers = new ArrayList<>(count);
+        initialMembers = new ArrayList<RaftEndpoint>(count);
         for (int i = 0; i < count; i++) {
             RaftEndpoint member = in.readObject();
             initialMembers.add(member);
