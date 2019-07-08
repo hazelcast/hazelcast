@@ -17,9 +17,7 @@
 package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractXmlConfigBuilder;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
@@ -36,6 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetMemberConfig;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -80,7 +79,7 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
 
     /**
      * Sets properties to be used in variable resolution.
-     *
+     * <p>
      * If null properties supplied, System.properties will be used.
      *
      * @param properties the properties to be used to resolve ${variable}
@@ -103,7 +102,7 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
             stream = locator.getIn();
         }
         JetConfig cfg = new XmlJetConfigBuilder(stream).setProperties(properties).build();
-        cfg.setHazelcastConfig(getMemberConfig(properties));
+        cfg.setHazelcastConfig(locateAndGetMemberConfig(properties));
         return cfg;
     }
 
@@ -155,7 +154,7 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
         } finally {
             IOUtil.closeResource(in);
         }
-        config.setHazelcastConfig(getMemberConfig(getProperties()));
+        config.setHazelcastConfig(locateAndGetMemberConfig(getProperties()));
         return config;
     }
 
@@ -170,12 +169,6 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
         process(root);
         schemaValidation(root.getOwnerDocument());
         new JetDomConfigProcessor(domLevel3, config).buildConfig(root);
-    }
-
-    private static Config getMemberConfig(Properties properties) {
-        XmlJetMemberConfigLocator locator = new XmlJetMemberConfigLocator();
-        locator.locateEverywhere();
-        return new XmlConfigBuilder(locator.getIn()).setProperties(properties).build();
     }
 
 

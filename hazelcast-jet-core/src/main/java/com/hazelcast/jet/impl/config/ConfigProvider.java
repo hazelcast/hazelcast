@@ -19,6 +19,9 @@ package com.hazelcast.jet.impl.config;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
@@ -98,6 +101,37 @@ public final class ConfigProvider {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
             config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
+        }
+        return config;
+    }
+
+
+    @Nonnull
+    public static Config locateAndGetMemberConfig(@Nullable Properties properties) {
+        Config config;
+        XmlJetMemberConfigLocator xmlConfigLocator = new XmlJetMemberConfigLocator();
+        YamlJetMemberConfigLocator yamlConfigLocator = new YamlJetMemberConfigLocator();
+
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading config if provided in system property and it is an YAML file
+            config = new YamlConfigBuilder(yamlConfigLocator.getIn()).setProperties(properties).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading config if provided in system property and it is an XML file
+            config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
+
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
+
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            config = new YamlConfigBuilder(yamlConfigLocator.getIn()).setProperties(properties).build();
+
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
         }
         return config;
     }

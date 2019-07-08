@@ -17,9 +17,7 @@
 package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractYamlConfigBuilder;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
@@ -33,6 +31,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetMemberConfig;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
@@ -71,7 +70,7 @@ public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        config.setHazelcastConfig(getMemberConfig(getProperties()));
+        config.setHazelcastConfig(locateAndGetMemberConfig(getProperties()));
         return config;
     }
 
@@ -106,12 +105,5 @@ public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
         setPropertiesInternal(properties);
         return this;
     }
-
-    private static Config getMemberConfig(Properties properties) {
-        YamlJetMemberConfigLocator locator = new YamlJetMemberConfigLocator();
-        locator.locateEverywhere();
-        return new YamlConfigBuilder(locator.getIn()).setProperties(properties).build();
-    }
-
 
 }

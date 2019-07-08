@@ -30,7 +30,7 @@ public final class YamlJetMemberConfigLocator extends AbstractConfigLocator {
     private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_YAML = "hazelcast-jet-enterprise-member-default.yaml";
 
     public YamlJetMemberConfigLocator() {
-        super(true);
+        super(false);
     }
 
     @Override
