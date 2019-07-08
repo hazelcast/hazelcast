@@ -27,10 +27,12 @@ import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 import com.hazelcast.cp.internal.raft.impl.testing.InMemoryRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Function;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,9 +41,9 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 
 import static com.hazelcast.cp.internal.raft.MembershipChangeMode.REMOVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
@@ -54,7 +56,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getRestoredState;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,17 +63,19 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class PersistenceTest extends HazelcastTestSupport {
 
-    private static final Function<RaftAlgorithmConfig, RaftStateStore> RAFT_STATE_STORE_FACTORY = config -> {
-        int maxUncommittedEntryCount = config.getUncommittedEntryCountToRejectNewAppends();
-        int commitIndexAdvanceCountToSnapshot = config.getCommitIndexAdvanceCountToSnapshot();
-        int maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * 0.5);
-        int logCapacity = commitIndexAdvanceCountToSnapshot + maxUncommittedEntryCount + maxNumberOfLogsToKeepAfterSnapshot;
-        return new InMemoryRaftStateStore(logCapacity);
+    private static final Function<RaftAlgorithmConfig, RaftStateStore> RAFT_STATE_STORE_FACTORY = new Function<RaftAlgorithmConfig, RaftStateStore>() {
+        @Override
+        public RaftStateStore apply(RaftAlgorithmConfig config) {
+            int maxUncommittedEntryCount = config.getUncommittedEntryCountToRejectNewAppends();
+            int commitIndexAdvanceCountToSnapshot = config.getCommitIndexAdvanceCountToSnapshot();
+            int maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * 0.5);
+            int logCapacity = commitIndexAdvanceCountToSnapshot + maxUncommittedEntryCount + maxNumberOfLogsToKeepAfterSnapshot;
+            return new InMemoryRaftStateStore(logCapacity);
+        }
     };
-
 
     private LocalRaftGroup group;
 
@@ -92,41 +95,52 @@ public class PersistenceTest extends HazelcastTestSupport {
         group = new LocalRaftGroupBuilder(3).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY).build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
-        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        Set<RaftEndpoint> endpoints = Arrays.stream(group.getNodes())
-                                            .map(RaftNodeImpl::getLocalMember)
-                                            .collect(toSet());
-        int term1 = getTerm(leader);
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : group.getNodes()) {
-                RestoredRaftState restoredState = getRestoredState(node);
-                assertEquals(node.getLocalMember(), restoredState.localEndpoint());
-                assertEquals(term1, restoredState.term());
-                assertEquals(endpoints, restoredState.initialMembers());
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        final Set<RaftEndpoint> endpoints = new HashSet<RaftEndpoint>();
+        for (RaftNodeImpl node : group.getNodes()) {
+            endpoints.add(node.getLocalMember());
+        }
 
+        final int term1 = getTerm(leader);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : group.getNodes()) {
+                    RestoredRaftState restoredState = getRestoredState(node);
+                    assertEquals(node.getLocalMember(), restoredState.localEndpoint());
+                    assertEquals(term1, restoredState.term());
+                    assertEquals(endpoints, restoredState.initialMembers());
+
+                }
             }
         });
 
         group.terminateNode(leader.getLocalMember());
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : followers) {
-                RaftEndpoint l = node.getLeader();
-                assertNotNull(l);
-                assertNotEquals(leader.getLeader(), l);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : followers) {
+                    RaftEndpoint l = node.getLeader();
+                    assertNotNull(l);
+                    assertNotEquals(leader.getLeader(), l);
+                }
             }
         });
 
-        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
-        int term2 = getTerm(newLeader);
+        final RaftNodeImpl newLeader = group.waitUntilLeaderElected();
+        final int term2 = getTerm(newLeader);
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : followers) {
-                RestoredRaftState restoredState = getRestoredState(node);
-                assertEquals(term2, restoredState.term());
-                assertEquals(term2, restoredState.lastVoteTerm());
-                assertEquals(newLeader.getLocalMember(), restoredState.votedFor());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : followers) {
+                    RestoredRaftState restoredState = getRestoredState(node);
+                    assertEquals(term2, restoredState.term());
+                    assertEquals(term2, restoredState.lastVoteTerm());
+                    assertEquals(newLeader.getLocalMember(), restoredState.votedFor());
+                }
             }
         });
     }
@@ -137,20 +151,23 @@ public class PersistenceTest extends HazelcastTestSupport {
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
-        int count = 10;
+        final int count = 10;
         for (int i = 0; i < count; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : group.getNodes()) {
-                RestoredRaftState restoredState = getRestoredState(node);
-                LogEntry[] entries = restoredState.entries();
-                assertEquals(count, entries.length);
-                for (int i = 0; i < count; i++) {
-                    LogEntry entry = entries[i];
-                    assertEquals(i + 1, entry.index());
-                    assertEquals("val" + i, ((ApplyRaftRunnable) entry.operation()).getVal());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : group.getNodes()) {
+                    RestoredRaftState restoredState = getRestoredState(node);
+                    LogEntry[] entries = restoredState.entries();
+                    assertEquals(count, entries.length);
+                    for (int i = 0; i < count; i++) {
+                        LogEntry entry = entries[i];
+                        assertEquals(i + 1, entry.index());
+                        assertEquals("val" + i, ((ApplyRaftRunnable) entry.operation()).getVal());
+                    }
                 }
             }
         });
@@ -161,28 +178,31 @@ public class PersistenceTest extends HazelcastTestSupport {
         group = new LocalRaftGroupBuilder(3).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY).build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        RaftNodeImpl responsiveFollower = followers[0];
+        final RaftNodeImpl responsiveFollower = followers[0];
 
         for (int i = 1; i < followers.length; i++) {
             group.dropMessagesToMember(leader.getLocalMember(), followers[i].getLocalMember(), AppendRequest.class);
         }
 
-        int count = 10;
+        final int count = 10;
         for (int i = 0; i < count; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i));
         }
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : Arrays.asList(leader, responsiveFollower)) {
-                RestoredRaftState restoredState = getRestoredState(node);
-                LogEntry[] entries = restoredState.entries();
-                assertEquals(count, entries.length);
-                for (int i = 0; i < count; i++) {
-                    LogEntry entry = entries[i];
-                    assertEquals(i + 1, entry.index());
-                    assertEquals("val" + i, ((ApplyRaftRunnable) entry.operation()).getVal());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : Arrays.asList(leader, responsiveFollower)) {
+                    RestoredRaftState restoredState = getRestoredState(node);
+                    LogEntry[] entries = restoredState.entries();
+                    assertEquals(count, entries.length);
+                    for (int i = 0; i < count; i++) {
+                        LogEntry entry = entries[i];
+                        assertEquals(i + 1, entry.index());
+                        assertEquals("val" + i, ((ApplyRaftRunnable) entry.operation()).getVal());
+                    }
                 }
             }
         });
@@ -190,24 +210,27 @@ public class PersistenceTest extends HazelcastTestSupport {
 
     @Test
     public void testSnapshotIsPersisted() throws ExecutionException, InterruptedException {
-        int committedEntryCountToSnapshot = 50;
+        final int committedEntryCountToSnapshot = 50;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot);
         group = new LocalRaftGroupBuilder(3, config).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY).build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
         for (int i = 0; i < committedEntryCountToSnapshot; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(() -> {
-            assertEquals(committedEntryCountToSnapshot, getSnapshotEntry(leader).index());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(committedEntryCountToSnapshot, getSnapshotEntry(leader).index());
 
-            for (RaftNodeImpl node : group.getNodes()) {
-                RestoredRaftState restoredState = getRestoredState(node);
-                SnapshotEntry snapshot = restoredState.snapshot();
-                assertNotNull(snapshot);
-                assertEquals(committedEntryCountToSnapshot, snapshot.index());
+                for (RaftNodeImpl node : group.getNodes()) {
+                    RestoredRaftState restoredState = getRestoredState(node);
+                    SnapshotEntry snapshot = restoredState.snapshot();
+                    assertNotNull(snapshot);
+                    assertEquals(committedEntryCountToSnapshot, snapshot.index());
+                }
             }
         });
     }
@@ -217,24 +240,30 @@ public class PersistenceTest extends HazelcastTestSupport {
         group = new LocalRaftGroupBuilder(3).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY).build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         leader.replicate(new ApplyRaftRunnable("val1")).get();
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl raftNode : group.getNodes()) {
-                assertEquals(1, getCommitIndex(raftNode));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
+                    assertEquals(1, getCommitIndex(raftNode));
+                }
             }
         });
 
-        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl raftNode : followers) {
-                RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
-                assertNotNull(leaderEndpoint);
-                assertNotEquals(leader.getLocalMember(), leaderEndpoint);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl raftNode : followers) {
+                    RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
+                    assertNotNull(leaderEndpoint);
+                    assertNotEquals(leader.getLocalMember(), leaderEndpoint);
+                }
             }
         });
 
@@ -242,13 +271,16 @@ public class PersistenceTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("isolated" + i));
         }
 
-        assertTrueEventually(() -> {
-            RestoredRaftState restoredState = getRestoredState(leader);
-            LogEntry[] entries = restoredState.entries();
-            assertEquals(11, entries.length);
-            assertEquals("val1", ((ApplyRaftRunnable) entries[0].operation()).getVal());
-            for (int i = 1; i < 11; i++) {
-                assertEquals("isolated" + (i - 1), ((ApplyRaftRunnable) entries[i].operation()).getVal());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                RestoredRaftState restoredState = getRestoredState(leader);
+                LogEntry[] entries = restoredState.entries();
+                assertEquals(11, entries.length);
+                assertEquals("val1", ((ApplyRaftRunnable) entries[0].operation()).getVal());
+                for (int i = 1; i < 11; i++) {
+                    assertEquals("isolated" + (i - 1), ((ApplyRaftRunnable) entries[i].operation()).getVal());
+                }
             }
         });
 
@@ -257,9 +289,12 @@ public class PersistenceTest extends HazelcastTestSupport {
             newLeader.replicate(new ApplyRaftRunnable("valNew" + i)).get();
         }
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl raftNode : followers) {
-                assertEquals(11, getCommitIndex(raftNode));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl raftNode : followers) {
+                    assertEquals(11, getCommitIndex(raftNode));
+                }
             }
         });
 
@@ -269,13 +304,16 @@ public class PersistenceTest extends HazelcastTestSupport {
 
         assertNotEquals(leader.getLocalMember(), finalLeader.getLocalMember());
 
-        assertTrueEventually(() -> {
-            RestoredRaftState state = getRestoredState(leader);
-            LogEntry[] entries = state.entries();
-            assertEquals(11, entries.length);
-            assertEquals("val1", ((ApplyRaftRunnable) entries[0].operation()).getVal());
-            for (int i = 1; i < 11; i++) {
-                assertEquals("valNew" + (i - 1), ((ApplyRaftRunnable) entries[i].operation()).getVal());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                RestoredRaftState state = getRestoredState(leader);
+                LogEntry[] entries = state.entries();
+                assertEquals(11, entries.length);
+                assertEquals("val1", ((ApplyRaftRunnable) entries[0].operation()).getVal());
+                for (int i = 1; i < 11; i++) {
+                    assertEquals("valNew" + (i - 1), ((ApplyRaftRunnable) entries[i].operation()).getVal());
+                }
             }
         });
     }
@@ -287,7 +325,7 @@ public class PersistenceTest extends HazelcastTestSupport {
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
-        int count = 10;
+        final int count = 10;
         for (int i = 0; i < count; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
@@ -297,22 +335,25 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl newLeader = group.waitUntilLeaderElected();
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertEquals(new ArrayList<>(getCommittedGroupMembers(newLeader).members()),
-                new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-        assertEquals(new ArrayList<>(getLastGroupMembers(newLeader).members()),
-                new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(newLeader).members()),
+                new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(newLeader).members()),
+                new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
 
-        assertTrueEventually(() -> {
-            assertEquals(newLeader.getLocalMember(), restartedNode.getLeader());
-            assertEquals(getTerm(newLeader), getTerm(restartedNode));
-            assertEquals(getCommitIndex(newLeader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(newLeader), getLastApplied(restartedNode));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i < count; i++) {
-                assertEquals("val" + i, service.get(i + 2));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(newLeader.getLocalMember(), restartedNode.getLeader());
+                assertEquals(getTerm(newLeader), getTerm(restartedNode));
+                assertEquals(getCommitIndex(newLeader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(newLeader), getLastApplied(restartedNode));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i < count; i++) {
+                    assertEquals("val" + i, service.get(i + 2));
+                }
             }
         });
     }
@@ -326,30 +367,33 @@ public class PersistenceTest extends HazelcastTestSupport {
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
-        int count = 10;
+        final int count = 10;
         for (int i = 0; i < count; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        int term = getTerm(leader);
-        long commitIndex = getCommitIndex(leader);
+        final int term = getTerm(leader);
+        final long commitIndex = getCommitIndex(leader);
 
         RaftEndpoint terminatedEndpoint = leader.getLocalMember();
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(newLeader, restartedNode);
 
-        assertTrueEventually(() -> {
-            assertTrue(getTerm(restartedNode) > term);
-            assertEquals(commitIndex + 1, getCommitIndex(restartedNode));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i < count; i++) {
-                assertEquals("val" + i, service.get(i + 2));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(getTerm(restartedNode) > term);
+                assertEquals(commitIndex + 1, getCommitIndex(restartedNode));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i < count; i++) {
+                    assertEquals("val" + i, service.get(i + 2));
+                }
             }
         }, 30);
     }
@@ -359,9 +403,9 @@ public class PersistenceTest extends HazelcastTestSupport {
         group = new LocalRaftGroupBuilder(3).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY).build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl terminatedFollower = group.getAnyFollowerNode();
-        int count = 10;
+        final int count = 10;
         for (int i = 0; i < count; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
@@ -375,28 +419,31 @@ public class PersistenceTest extends HazelcastTestSupport {
         group.terminateNode(terminatedEndpoint);
         leader.replicate(new ApplyRaftRunnable("val" + count)).get();
 
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertEquals(new ArrayList<>(getCommittedGroupMembers(leader).members()),
-                new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-        assertEquals(new ArrayList<>(getLastGroupMembers(leader).members()),
-                new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(leader).members()),
+                new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(leader).members()),
+                new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
 
-        assertTrueEventually(() -> {
-            assertEquals(leader.getLocalMember(), restartedNode.getLeader());
-            assertEquals(getTerm(leader), getTerm(restartedNode));
-            assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i <= count; i++) {
-                assertEquals("val" + i, service.get(i + 1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(leader.getLocalMember(), restartedNode.getLeader());
+                assertEquals(getTerm(leader), getTerm(restartedNode));
+                assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i <= count; i++) {
+                    assertEquals("val" + i, service.get(i + 1));
+                }
             }
         });
     }
 
     @Test
     public void when_leaderIsRestarted_then_itBecomesFollowerAndRestoresItsRaftStateWithSnapshot() throws ExecutionException, InterruptedException {
-        int committedEntryCountToSnapshot = 50;
+        final int committedEntryCountToSnapshot = 50;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot);
         group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
                                                     .setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
@@ -416,44 +463,50 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl newLeader = group.waitUntilLeaderElected();
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertEquals(new ArrayList<>(getCommittedGroupMembers(newLeader).members()),
-                new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-        assertEquals(new ArrayList<>(getLastGroupMembers(newLeader).members()),
-                new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(newLeader).members()),
+                new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(newLeader).members()),
+                new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
 
-        assertTrueEventually(() -> {
-            assertEquals(newLeader.getLocalMember(), restartedNode.getLeader());
-            assertEquals(getTerm(newLeader), getTerm(restartedNode));
-            assertEquals(getCommitIndex(newLeader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(newLeader), getLastApplied(restartedNode));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
-                assertEquals("val" + i, service.get(i + 2));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(newLeader.getLocalMember(), restartedNode.getLeader());
+                assertEquals(getTerm(newLeader), getTerm(restartedNode));
+                assertEquals(getCommitIndex(newLeader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(newLeader), getLastApplied(restartedNode));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
+                    assertEquals("val" + i, service.get(i + 2));
+                }
             }
         });
     }
 
     @Test
     public void when_followerIsRestarted_then_itRestoresItsRaftStateWithSnapshot() throws ExecutionException, InterruptedException {
-        int committedEntryCountToSnapshot = 50;
+        final int committedEntryCountToSnapshot = 50;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot);
         group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
                                                     .setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
                                                     .build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(() -> {
-            for (RaftNodeImpl node : group.getNodes()) {
-                assertTrue(getSnapshotEntry(node).index() > 0);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl node : group.getNodes()) {
+                    assertTrue(getSnapshotEntry(node).index() > 0);
+                }
             }
         });
 
@@ -466,28 +519,31 @@ public class PersistenceTest extends HazelcastTestSupport {
 
         leader.replicate(new ApplyRaftRunnable("val" + (committedEntryCountToSnapshot + 1))).get();
 
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertEquals(new ArrayList<>(getCommittedGroupMembers(leader).members()),
-                new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-        assertEquals(new ArrayList<>(getLastGroupMembers(leader).members()),
-                new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(leader).members()),
+                new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+        assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(leader).members()),
+                new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
 
-        assertTrueEventually(() -> {
-            assertEquals(leader.getLocalMember(), restartedNode.getLeader());
-            assertEquals(getTerm(leader), getTerm(restartedNode));
-            assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i <= committedEntryCountToSnapshot + 1; i++) {
-                assertEquals("val" + i, service.get(i + 2));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(leader.getLocalMember(), restartedNode.getLeader());
+                assertEquals(getTerm(leader), getTerm(restartedNode));
+                assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i <= committedEntryCountToSnapshot + 1; i++) {
+                    assertEquals("val" + i, service.get(i + 2));
+                }
             }
         });
     }
 
     @Test
     public void when_leaderIsRestarted_then_itRestoresItsRaftStateWithSnapshotAndBecomesLeader() throws ExecutionException, InterruptedException {
-        int committedEntryCountToSnapshot = 50;
+        final int committedEntryCountToSnapshot = 50;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot)
                                                               .setLeaderHeartbeatPeriodInMillis(SECONDS.toMillis(30));
         group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
@@ -502,25 +558,28 @@ public class PersistenceTest extends HazelcastTestSupport {
         }
 
         assertTrue(getSnapshotEntry(leader).index() > 0);
-        int term = getTerm(leader);
-        long commitIndex = getCommitIndex(leader);
+        final int term = getTerm(leader);
+        final long commitIndex = getCommitIndex(leader);
 
         RaftEndpoint terminatedEndpoint = leader.getLocalMember();
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
+        final RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);
 
-        assertTrueEventually(() -> {
-            assertTrue(getTerm(newLeader) > term);
-            assertEquals(commitIndex + 1, getCommitIndex(newLeader));
-            RaftDataService service = group.getService(restartedNode);
-            for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
-                assertEquals("val" + i, service.get(i + 2));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(getTerm(newLeader) > term);
+                assertEquals(commitIndex + 1, getCommitIndex(newLeader));
+                RaftDataService service = group.getService(restartedNode);
+                for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
+                    assertEquals("val" + i, service.get(i + 2));
+                }
             }
         });
     }
@@ -536,7 +595,7 @@ public class PersistenceTest extends HazelcastTestSupport {
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl removedFollower = followers[0];
-        RaftNodeImpl runningFollower = followers[1];
+        final RaftNodeImpl runningFollower = followers[1];
 
         group.terminateNode(removedFollower.getLocalMember());
         leader.replicate(new ApplyRaftRunnable("val")).get();
@@ -547,17 +606,20 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);
 
-        assertTrueEventually(() -> {
-            assertEquals(getCommitIndex(runningFollower), getCommitIndex(restartedNode));
-            assertEquals(new ArrayList<>(getCommittedGroupMembers(runningFollower).members()),
-                    new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-            assertEquals(new ArrayList<>(getLastGroupMembers(runningFollower).members()),
-                    new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(getCommitIndex(runningFollower), getCommitIndex(restartedNode));
+                assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(runningFollower).members()),
+                        new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+                assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(runningFollower).members()),
+                        new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
+            }
         });
     }
 
@@ -569,7 +631,7 @@ public class PersistenceTest extends HazelcastTestSupport {
                                                     .build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl removedFollower = followers[0];
         RaftNodeImpl terminatedFollower = followers[1];
@@ -583,15 +645,18 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertTrueEventually(() -> {
-            assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
-            assertEquals(new ArrayList<>(getCommittedGroupMembers(leader).members()),
-                    new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-            assertEquals(new ArrayList<>(getLastGroupMembers(leader).members()),
-                    new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
+                assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(leader).members()),
+                        new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+                assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(leader).members()),
+                        new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
+            }
         });
     }
 
@@ -608,7 +673,7 @@ public class PersistenceTest extends HazelcastTestSupport {
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl removedFollower = followers[0];
-        RaftNodeImpl runningFollower = followers[1];
+        final RaftNodeImpl runningFollower = followers[1];
 
         group.terminateNode(removedFollower.getLocalMember());
         leader.replicate(new ApplyRaftRunnable("val")).get();
@@ -623,17 +688,20 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);
 
-        assertTrueEventually(() -> {
-            assertEquals(getCommitIndex(runningFollower), getCommitIndex(restartedNode));
-            assertEquals(new ArrayList<>(getCommittedGroupMembers(runningFollower).members()),
-                    new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-            assertEquals(new ArrayList<>(getLastGroupMembers(runningFollower).members()),
-                    new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(getCommitIndex(runningFollower), getCommitIndex(restartedNode));
+                assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(runningFollower).members()),
+                        new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+                assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(runningFollower).members()),
+                        new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
+            }
         });
     }
 
@@ -647,7 +715,7 @@ public class PersistenceTest extends HazelcastTestSupport {
                                                     .build();
         group.start();
 
-        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl removedFollower = followers[0];
         RaftNodeImpl terminatedFollower = followers[1];
@@ -665,15 +733,18 @@ public class PersistenceTest extends HazelcastTestSupport {
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
         group.terminateNode(terminatedEndpoint);
-        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
-        assertTrueEventually(() -> {
-            assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
-            assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
-            assertEquals(new ArrayList<>(getCommittedGroupMembers(leader).members()),
-                    new ArrayList<>(getCommittedGroupMembers(restartedNode).members()));
-            assertEquals(new ArrayList<>(getLastGroupMembers(leader).members()),
-                    new ArrayList<>(getLastGroupMembers(restartedNode).members()));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(getCommitIndex(leader), getCommitIndex(restartedNode));
+                assertEquals(getLastApplied(leader), getLastApplied(restartedNode));
+                assertEquals(new ArrayList<RaftEndpoint>(getCommittedGroupMembers(leader).members()),
+                        new ArrayList<RaftEndpoint>(getCommittedGroupMembers(restartedNode).members()));
+                assertEquals(new ArrayList<RaftEndpoint>(getLastGroupMembers(leader).members()),
+                        new ArrayList<RaftEndpoint>(getLastGroupMembers(restartedNode).members()));
+            }
         });
     }
 
