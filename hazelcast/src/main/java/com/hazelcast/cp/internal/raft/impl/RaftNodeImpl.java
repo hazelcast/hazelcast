@@ -46,6 +46,7 @@ import com.hazelcast.cp.internal.raft.impl.handler.VoteResponseHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
+import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
@@ -77,6 +78,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATING;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
+import static com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry.isNonInitial;
+import static com.hazelcast.cp.internal.raft.impl.state.RaftState.newRaftState;
+import static com.hazelcast.cp.internal.raft.impl.state.RaftState.restoreRaftState;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,9 +88,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link RaftNode}.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity",
-                   "checkstyle:npathcomplexity"})
-public class RaftNodeImpl implements RaftNode {
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
+public final class RaftNodeImpl implements RaftNode {
 
     private static final int LEADER_ELECTION_TIMEOUT_RANGE = 1000;
     private static final long RAFT_NODE_INIT_DELAY_MILLIS = 500;
@@ -112,15 +115,14 @@ public class RaftNodeImpl implements RaftNode {
     private boolean appendRequestBackoffResetTaskScheduled;
     private volatile RaftNodeStatus status = ACTIVE;
 
-    public RaftNodeImpl(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members, RaftStateStore stateStore,
-                        RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
-        this(groupId, RestoredRaftState.initialState(checkNotNull(localMember), checkNotNull(members)),
-                stateStore, raftAlgorithmConfig, raftIntegration);
-    }
-
-    public RaftNodeImpl(CPGroupId groupId, RestoredRaftState restoredState, RaftStateStore stateStore,
-            RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
+    private RaftNodeImpl(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members, RaftStateStore stateStore,
+                         RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
         checkNotNull(groupId);
+        checkNotNull(localMember);
+        checkNotNull(members);
+        checkNotNull(stateStore);
+        checkNotNull(raftAlgorithmConfig);
+        checkNotNull(raftIntegration);
         this.groupId = groupId;
         this.raftIntegration = raftIntegration;
         this.maxUncommittedEntryCount = raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends();
@@ -132,14 +134,55 @@ public class RaftNodeImpl implements RaftNode {
         this.maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * RATIO_TO_KEEP_LOGS_AFTER_SNAPSHOT);
         this.appendRequestBackoffTimeoutInMillis = raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis();
         int logCapacity = commitIndexAdvanceCountToSnapshot + maxUncommittedEntryCount + maxNumberOfLogsToKeepAfterSnapshot;
-        this.state = new RaftState(groupId, restoredState, stateStore, logCapacity);
+        this.state = newRaftState(groupId, localMember, members, logCapacity, stateStore);
         this.logger = getLogger(RaftNode.class);
         this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
+    }
 
-        if (!restoredState.isInitial()) {
-            SnapshotEntry snapshot = state.log().snapshot();
-            restoreSnapshot(snapshot);
-        }
+    private RaftNodeImpl(CPGroupId groupId, RestoredRaftState restoredState, RaftStateStore stateStore,
+                         RaftAlgorithmConfig config, RaftIntegration raftIntegration) {
+        checkNotNull(groupId);
+        checkNotNull(stateStore);
+        checkNotNull(raftIntegration);
+        checkNotNull(groupId);
+        this.groupId = groupId;
+        this.raftIntegration = raftIntegration;
+        this.maxUncommittedEntryCount = config.getUncommittedEntryCountToRejectNewAppends();
+        this.appendRequestMaxEntryCount = config.getAppendRequestMaxEntryCount();
+        this.commitIndexAdvanceCountToSnapshot = config.getCommitIndexAdvanceCountToSnapshot();
+        this.leaderElectionTimeout = (int) config.getLeaderElectionTimeoutInMillis();
+        this.heartbeatPeriodInMillis = config.getLeaderHeartbeatPeriodInMillis();
+        this.maxMissedLeaderHeartbeatCount = config.getMaxMissedLeaderHeartbeatCount();
+        this.maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * RATIO_TO_KEEP_LOGS_AFTER_SNAPSHOT);
+        this.appendRequestBackoffTimeoutInMillis = config.getAppendRequestBackoffTimeoutInMillis();
+        int logCapacity = commitIndexAdvanceCountToSnapshot + maxUncommittedEntryCount + maxNumberOfLogsToKeepAfterSnapshot;
+        this.state = restoreRaftState(groupId, restoredState, logCapacity, stateStore);
+        this.logger = getLogger(RaftNode.class);
+        this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
+        restoreStateMachine(restoredState.snapshot());
+    }
+
+    public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
+                                           RaftAlgorithmConfig config, RaftIntegration integration) {
+        return new RaftNodeImpl(groupId, checkNotNull(localMember), checkNotNull(members), NopRaftStateStore.INSTANCE, config,
+                integration);
+    }
+
+    public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
+                                           RaftAlgorithmConfig config, RaftIntegration integration,
+                                           RaftStateStore raftStateStore) {
+        return new RaftNodeImpl(groupId, checkNotNull(localMember), checkNotNull(members), raftStateStore, config,
+                integration);
+    }
+
+    public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
+                                               RaftIntegration integration) {
+        return new RaftNodeImpl(groupId, restoredState, NopRaftStateStore.INSTANCE, config, integration);
+    }
+
+    public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
+                                               RaftIntegration integration, RaftStateStore raftStateStore) {
+        return new RaftNodeImpl(groupId, restoredState, raftStateStore, config, integration);
     }
 
     public ILogger getLogger(Class clazz) {
@@ -842,33 +885,16 @@ public class RaftNodeImpl implements RaftNode {
         return true;
     }
 
-    // TODO: naive & hacky snapshot restore !
-    private boolean restoreSnapshot(SnapshotEntry snapshot) {
-        if (snapshot.index() == 0) {
-            return false;
+    private void restoreStateMachine(SnapshotEntry snapshot) {
+        if (isNonInitial(snapshot)) {
+            printMemberState();
+            raftIntegration.restoreSnapshot(snapshot.operation(), snapshot.index());
+            if (logger.isFineEnabled()) {
+                logger.info(snapshot + " is restored.");
+            } else {
+                logger.info("Snapshot is restored at commitIndex=" + snapshot.index());
+            }
         }
-        long commitIndex = state.commitIndex();
-        if (commitIndex > snapshot.index()) {
-            logger.info("Ignored stale " + snapshot + ", commit index at: " + commitIndex);
-            return false;
-        } else if (commitIndex == snapshot.index()) {
-            logger.info("Ignored " + snapshot + " since commit index is same.");
-            return true;
-        }
-
-        state.commitIndex(snapshot.index());
-
-        raftIntegration.restoreSnapshot(snapshot.operation(), snapshot.index());
-
-        // TODO: do we need to restore group members?
-        state.restoreGroupMembers(snapshot.groupMembersLogIndex(), snapshot.groupMembers());
-        printMemberState();
-
-        state.lastApplied(snapshot.index());
-        invalidateFuturesUntil(snapshot.index(), new StaleAppendRequestException(state.leader()));
-        logger.info(snapshot + " is restored.");
-
-        return true;
     }
 
     public void printMemberState() {

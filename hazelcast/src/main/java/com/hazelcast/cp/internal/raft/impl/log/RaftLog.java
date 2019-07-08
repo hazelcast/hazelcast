@@ -25,6 +25,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry.isNonInitial;
+import static com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore.NOP_LOG_STORE;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * {@code RaftLog} keeps and maintains Raft log entries and snapshot. Entries
  * appended in leader's RaftLog are replicated to all followers in the same
@@ -43,7 +47,7 @@ import java.util.List;
  * @see LogEntry
  * @see SnapshotEntry
  */
-public class RaftLog {
+public final class RaftLog {
 
     /**
      * Array of log entries stored in the Raft log.
@@ -53,36 +57,62 @@ public class RaftLog {
     private final Ringbuffer<LogEntry> logs;
 
     /**
-     * TODO
-     */
-    private final RaftLogStore logStore;
-
-    /**
      * Latest snapshot entry. Initially snapshot is empty.
      */
     private SnapshotEntry snapshot = new SnapshotEntry();
 
-    private boolean flushNeeded;
+    /**
+     * Indicates if there is a change after the last {@link #flush()} call.
+     */
+    private boolean dirty;
 
-    public RaftLog(int capacity) {
-        this(capacity, null, null, null);
-    }
+    /**
+     * Used for reflecting log changes to persistent storage.
+     */
+    private final RaftLogStore logStore;
 
-    public RaftLog(int capacity, LogEntry[] entries, SnapshotEntry snapshot, RaftLogStore logStore) {
+    private RaftLog(int capacity, RaftLogStore logStore) {
+        checkNotNull(logStore);
         this.logs = new ArrayRingbuffer<LogEntry>(capacity);
         this.logStore = logStore;
+    }
 
-        if (snapshot != null) {
+    private RaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftLogStore logStore) {
+        checkNotNull(logStore);
+        this.logs = new ArrayRingbuffer<LogEntry>(capacity);
+        long snapshotIndex;
+        if (isNonInitial(snapshot)) {
             this.snapshot = snapshot;
             logs.setHeadSequence(toSequence(snapshot.index()) + 1);
             logs.setTailSequence(logs.headSequence() - 1);
+            snapshotIndex = snapshot.index();
+        } else {
+            snapshotIndex = 0;
         }
 
-        if (entries != null) {
-            for (LogEntry entry : entries) {
+        for (LogEntry entry : entries) {
+            if (entry.index() > snapshotIndex) {
                 logs.add(entry);
             }
         }
+
+        this.logStore = logStore;
+    }
+
+    public static RaftLog newRaftLog(int capacity) {
+        return newRaftLog(capacity, NOP_LOG_STORE);
+    }
+
+    public static RaftLog newRaftLog(int capacity, RaftLogStore logStore) {
+        return new RaftLog(capacity, logStore);
+    }
+
+    public static RaftLog restoreRaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries) {
+        return restoreRaftLog(capacity, snapshot, entries, NOP_LOG_STORE);
+    }
+
+    public static RaftLog restoreRaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftLogStore logStore) {
+        return new RaftLog(capacity, snapshot, entries, logStore);
     }
 
     /**
@@ -170,13 +200,11 @@ public class RaftLog {
         }
         logs.setTailSequence(startSequence - 1);
         if (truncated.size() > 0) {
-            flushNeeded = true;
-            if (logStore != null) {
-                try {
-                    logStore.truncateEntriesFrom(entryIndex);
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                }
+            dirty = true;
+            try {
+                logStore.truncateEntriesFrom(entryIndex);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
             }
         }
 
@@ -225,18 +253,16 @@ public class RaftLog {
                         + " since its index is bigger than (lastLogIndex + 1): " + (lastIndex + 1));
             }
             logs.add(entry);
-            if (logStore != null) {
-                try {
-                    logStore.appendEntry(entry);
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                }
+            try {
+                logStore.appendEntry(entry);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
             }
             lastIndex++;
             lastTerm = Math.max(lastTerm, entry.term());
         }
 
-        flushNeeded |= newEntries.length > 0;
+        dirty |= newEntries.length > 0;
     }
 
     /**
@@ -311,26 +337,26 @@ public class RaftLog {
 
         this.snapshot = snapshot;
 
-        flushNeeded = true;
+        dirty = true;
 
-        if (logStore != null) {
-            try {
-                logStore.writeSnapshot(snapshot);
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            }
+        try {
+            // TODO: async snapshot?
+            logStore.writeSnapshot(snapshot);
+        } catch (IOException e) {
+            throw new HazelcastException(e);
         }
+
         return (int) (prevSize - logs.size());
     }
 
     /**
-     * TODO [basri] I think it is better to have explicit flush() calls
+     * Flushes changes to persistent storage.
      */
     public void flush() {
-        if (flushNeeded && logStore != null) {
+        if (dirty) {
             try {
                 logStore.flush();
-                flushNeeded = false;
+                dirty = false;
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }

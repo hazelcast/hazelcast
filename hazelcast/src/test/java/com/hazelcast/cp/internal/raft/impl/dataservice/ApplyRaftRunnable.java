@@ -31,6 +31,10 @@ public class ApplyRaftRunnable implements RaftRunnable {
         return ((RaftDataService) service).apply(commitIndex, val);
     }
 
+    public Object getVal() {
+        return val;
+    }
+
     @Override
     public String toString() {
         return "ApplyRaftRunnable{" + "val=" + val + '}';

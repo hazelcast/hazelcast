@@ -51,7 +51,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLastLogOrSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
+import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -89,7 +89,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testLeaderElection(int nodeCount) {
-        group = new LocalRaftGroup(nodeCount, new RaftAlgorithmConfig());
+        group = newGroup(nodeCount);
         group.start();
         group.waitUntilLeaderElected();
 
@@ -123,7 +123,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testSingleCommitEntry(final int nodeCount) throws Exception {
-        group = newGroupWithService(nodeCount, new RaftAlgorithmConfig());
+        group = newGroup(nodeCount);
         group.start();
         group.waitUntilLeaderElected();
 
@@ -149,7 +149,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test(expected = NotLeaderException.class)
     public void when_followerAttemptsToReplicate_then_itFails() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
@@ -172,9 +172,8 @@ public class LocalRaftTest extends HazelcastTestSupport {
         testNoCommitWhenOnlyLeaderAppends(3);
     }
 
-    private void testNoCommitWhenOnlyLeaderAppends(int nodeCount)
-            throws InterruptedException, ExecutionException {
-        group = newGroupWithService(nodeCount, new RaftAlgorithmConfig());
+    private void testNoCommitWhenOnlyLeaderAppends(int nodeCount) throws InterruptedException, ExecutionException {
+        group = newGroup(nodeCount);
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
 
@@ -195,7 +194,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderAppendsToMinority_then_itCannotCommit() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(5, new RaftAlgorithmConfig());
+        group = newGroup(5);
         group.start();
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
         final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
@@ -240,7 +239,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     private void testReplicateEntriesSequentially(int nodeCount) throws ExecutionException, InterruptedException {
         final int entryCount = 100;
-        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting(entryCount));
+        group = newGroup(nodeCount, newRaftConfigWithNoSnapshotting(entryCount));
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
 
@@ -278,7 +277,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     private void testReplicateEntriesConcurrently(int nodeCount) throws ExecutionException, InterruptedException {
         final int entryCount = 100;
-        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting(entryCount));
+        group = newGroup(nodeCount, newRaftConfigWithNoSnapshotting(entryCount));
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
 
@@ -322,7 +321,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     private void testReplicateEntriesInParallel(int nodeCount) throws InterruptedException {
         int threadCount = 10;
         final int opsPerThread = 10;
-        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting(threadCount * opsPerThread));
+        group = newGroup(nodeCount, newRaftConfigWithNoSnapshotting(threadCount * opsPerThread));
         group.start();
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
@@ -379,7 +378,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     @Test
     public void when_followerSlowsDown_then_itCatchesLeaderEventually() throws ExecutionException, InterruptedException {
         final int entryCount = 100;
-        group = newGroupWithService(3, newRaftConfigWithNoSnapshotting(entryCount));
+        group = newGroup(3, newRaftConfigWithNoSnapshotting(entryCount));
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl slowFollower = group.getAnyFollowerNode();
@@ -415,7 +414,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     @Test
     public void when_disruptiveFollowerStartsElection_then_itCannotTakeOverLeadershipFromLegitimateLeader()
             throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         final int leaderTerm = getTerm(leader);
@@ -448,7 +447,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerTerminatesInMinority_then_clusterRemainsAvailable() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
         RaftNodeImpl leaderNode = group.waitUntilLeaderElected();
 
@@ -467,7 +466,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderTerminatesInMinority_then_clusterRemainsAvailable() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         final RaftNodeImpl leaderNode = group.waitUntilLeaderElected();
@@ -546,7 +545,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderCrashes_then_theFollowerWithLongestLogBecomesLeader() throws Exception {
-        group = newGroupWithService(4, new RaftAlgorithmConfig());
+        group = newGroup(4);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -616,7 +615,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerBecomesLeaderWithUncommittedEntries_then_thoseEntriesAreCommittedWithANewEntryOfCurrentTerm() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -688,7 +687,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderCrashes_then_theFollowerWithLongestLogMayNotBecomeLeaderIfItsLogIsNotMajority() throws Exception {
-        group = newGroupWithService(5, new RaftAlgorithmConfig());
+        group = newGroup(5);
         group.start();
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -779,7 +778,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderStaysInMinorityDuringSplit_then_itCannotCommitNewEntries() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, newRaftConfigWithNoSnapshotting(100));
+        group = newGroup(3, newRaftConfigWithNoSnapshotting(100));
         group.start();
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -859,8 +858,8 @@ public class LocalRaftTest extends HazelcastTestSupport {
     @Test
     public void when_thereAreTooManyInflightAppendedEntries_then_newAppendsAreRejected() throws ExecutionException, InterruptedException {
         int uncommittedEntryCount = 10;
-        RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
-        group = newGroupWithService(2, raftAlgorithmConfig);
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
+        group = newGroup(2, config);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();

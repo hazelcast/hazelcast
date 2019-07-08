@@ -79,7 +79,8 @@ public class RaftInvocationManager {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
-        this.raftInvocationContext = new RaftInvocationContext(logger, raftService.getConfig().isFailOnIndeterminateOperationState());
+        this.raftInvocationContext = new RaftInvocationContext(logger, raftService.getConfig()
+                                                                                  .isFailOnIndeterminateOperationState());
         this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
         this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
         this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);

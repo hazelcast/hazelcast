@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.cp.internal.raft.impl.log.RaftLog.newRaftLog;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,7 +51,7 @@ public class RaftLogTest {
 
     @Before
     public void setUp() throws Exception {
-        log = new RaftLog(100);
+        log = newRaftLog(100);
     }
 
     @Test

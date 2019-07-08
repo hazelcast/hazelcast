@@ -21,8 +21,8 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftRole;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
-import com.hazelcast.cp.internal.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.cp.internal.raft.impl.testing.TestRaftEndpoint;
+import com.hazelcast.cp.internal.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +37,7 @@ import java.util.HashSet;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
+import static com.hazelcast.cp.internal.raft.impl.state.RaftState.newRaftState;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
@@ -66,7 +67,7 @@ public class RaftStateTest {
                 newRaftMember(5003),
                 newRaftMember(5004)));
 
-        state = new RaftState(groupId, localMember, members, 100);
+        state = newRaftState(groupId, localMember, members, 100);
     }
 
     @Test
@@ -239,7 +240,7 @@ public class RaftStateTest {
             members.add(newRaftMember(1000 + i));
         }
 
-        state = new RaftState(groupId, localMember, members, 100);
+        state = newRaftState(groupId, localMember, members, 100);
 
         assertEquals(majority(count), state.majority());
     }

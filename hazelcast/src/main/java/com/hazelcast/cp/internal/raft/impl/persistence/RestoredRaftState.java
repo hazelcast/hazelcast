@@ -1,43 +1,46 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
 import java.util.Collection;
 
-/*
-    TODO [basri] we can use a single file to persist both persisted raft state fields and raft log.
-    TODO [basri] localEndpoint, initialMembers, term, voteFor can be persisted to the file with custom keys.
-    TODO [basri] currently there is no point in restoring raft state concurrently while it is being loaded from disk
-    TODO [basri] because the fields other than the snapshot is already quite small and their restore procedure is basically
-    TODO [basri] initializing some fields in Raft-related classes. Most likely the biggest state will be in the snapshot
-    TODO [basri] and we already load it from disk first, then provide it to Raft.
+/**
+ * Contains persisted and restored state of a {@link RaftNode}.
  */
 public class RestoredRaftState {
 
-    public static RestoredRaftState initialState(RaftEndpoint localEndpoint, Collection<RaftEndpoint> initialMembers) {
-        return new RestoredRaftState(localEndpoint, initialMembers, 0, null, 0, null, null, true);
-    }
-
     private RaftEndpoint localEndpoint;
-
     private Collection<RaftEndpoint> initialMembers;
-
     private int term;
-
     private RaftEndpoint votedFor;
-
     private int lastVoteTerm;
-
     private SnapshotEntry snapshot;
-
     private LogEntry[] entries;
 
-    private boolean initial;
+    public RestoredRaftState() {
+    }
 
     public RestoredRaftState(RaftEndpoint localEndpoint, Collection<RaftEndpoint> initialMembers, int term, RaftEndpoint votedFor,
-            int lastVoteTerm, SnapshotEntry snapshot, LogEntry[] entries, boolean initial) {
+                             int lastVoteTerm, SnapshotEntry snapshot, LogEntry[] entries) {
         this.localEndpoint = localEndpoint;
         this.initialMembers = initialMembers;
         this.term = term;
@@ -45,73 +48,34 @@ public class RestoredRaftState {
         this.lastVoteTerm = lastVoteTerm;
         this.snapshot = snapshot;
         this.entries = entries;
-        this.initial = initial;
     }
 
-    public RaftEndpoint getLocalEndpoint() {
+    public RaftEndpoint localEndpoint() {
         return localEndpoint;
     }
 
-    public RestoredRaftState setLocalEndpoint(RaftEndpoint localEndpoint) {
-        this.localEndpoint = localEndpoint;
-        return this;
-    }
-
-    public Collection<RaftEndpoint> getInitialMembers() {
+    public Collection<RaftEndpoint> initialMembers() {
         return initialMembers;
     }
 
-    public RestoredRaftState setInitialMembers(Collection<RaftEndpoint> initialMembers) {
-        this.initialMembers = initialMembers;
-        return this;
-    }
-
-    public int getTerm() {
+    public int term() {
         return term;
     }
 
-    public RestoredRaftState setTerm(int term) {
-        this.term = term;
-        return this;
-    }
-
-    public RaftEndpoint getVotedFor() {
+    public RaftEndpoint votedFor() {
         return votedFor;
     }
 
-    public RestoredRaftState setVotedFor(RaftEndpoint votedFor) {
-        this.votedFor = votedFor;
-        return this;
-    }
-
-    public int getLastVoteTerm() {
+    public int lastVoteTerm() {
         return lastVoteTerm;
     }
 
-    public RestoredRaftState setLastVoteTerm(int lastVoteTerm) {
-        this.lastVoteTerm = lastVoteTerm;
-        return this;
-    }
-
-    public SnapshotEntry getSnapshot() {
+    public SnapshotEntry snapshot() {
         return snapshot;
     }
 
-    public RestoredRaftState setSnapshot(SnapshotEntry snapshot) {
-        this.snapshot = snapshot;
-        return this;
-    }
-
-    public LogEntry[] getEntries() {
+    public LogEntry[] entries() {
         return entries;
     }
 
-    public RestoredRaftState setEntries(LogEntry[] entries) {
-        this.entries = entries;
-        return this;
-    }
-
-    public boolean isInitial() {
-        return initial;
-    }
 }

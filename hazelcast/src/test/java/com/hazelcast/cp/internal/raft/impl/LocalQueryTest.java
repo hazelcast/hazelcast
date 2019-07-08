@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
@@ -36,7 +35,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
+import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -64,7 +63,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromLeader_withoutAnyCommit_thenReturnDefaultValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -75,7 +74,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromFollower_withoutAnyCommit_thenReturnDefaultValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         group.waitUntilLeaderElected();
@@ -87,7 +86,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromLeader_onStableCluster_thenReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -103,7 +102,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test(expected = NotLeaderException.class)
     public void when_queryFromFollower_withLeaderLocalPolicy_thenFail() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -116,7 +115,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromFollower_onStableCluster_thenReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -136,7 +135,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSlowFollower_thenReadStaleValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -163,7 +162,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSlowFollower_thenEventuallyReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -188,7 +187,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSplitLeader_thenReadStaleValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -231,7 +230,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSplitLeader_thenEventuallyReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
