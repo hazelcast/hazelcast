@@ -27,6 +27,10 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.ReachedMaxSizeException;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -407,10 +411,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = client.getMap(mapNameWithStoreAndSize + "1");
         map.put(1, 1);
 
-        MapStoreConfig mapStoreConfig = hz.getConfig()
-                .getMapConfig(mapNameWithStoreAndSize + "1")
-                .getMapStoreConfig();
-        final AMapStore store = (AMapStore) (mapStoreConfig.getImplementation());
+        final AMapStore store = getMapStoreInstance(hz, mapNameWithStoreAndSize + "1");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -424,5 +425,15 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
+    }
+
+    // given a member-side HazelcastInstance and a mapName, return the MapStore instance
+    // or null if none configured
+    private <T extends MapStore> T getMapStoreInstance(HazelcastInstance hz, String mapName) {
+        MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
+        MapService service = (MapService) map.getService();
+        MapServiceContext context = service.getMapServiceContext();
+        MapContainer container = context.getMapContainer(mapName);
+        return (T) container.getMapStoreContext().getMapStoreWrapper().getMapStore();
     }
 }
