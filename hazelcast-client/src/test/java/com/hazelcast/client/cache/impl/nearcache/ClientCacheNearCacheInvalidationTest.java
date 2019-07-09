@@ -467,8 +467,9 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
     private void assertNoFurtherInvalidationThan(final int expectedInvalidationCount) {
         AssertTask assertTask = () -> {
             long invalidationCount = invalidationListener.getInvalidationCount();
-            assertTrue(format("Expected no further Near Cache invalidation events than %d, but received %d (%s)",
-                    expectedInvalidationCount, invalidationCount, testContext.stats),
+            assertTrue(format("Expected no further Near Cache invalidation events than %d, but received %d (%s)\n"
+                            + "(%s)", expectedInvalidationCount, invalidationCount, testContext.stats,
+                    String.join("\n", invalidationListener.getSingleInvalidationEventsLog())),
                     invalidationCount <= expectedInvalidationCount);
         };
 
