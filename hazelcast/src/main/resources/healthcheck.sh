@@ -7,7 +7,7 @@ print_help() {
     echo "  -p, --port        : Defines which port hazelcast node is running on. Default value is '5701'."
     echo "  -d, --debug       : Prints curl error output."
     echo "HTTPs related (TLS enabled):"
-    echo "      --https       : Uses HTTPs protocol for REST calls.(no parameter value expected)"
+    echo "      --https       : Uses HTTPs protocol for REST calls. (no parameter value expected)"
     echo "      --cacert      : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
     echo "      --cert        : Defines PEM-encoded client certificate file path. Only needed when client certificate authentication is used."
     echo "      --key         : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
