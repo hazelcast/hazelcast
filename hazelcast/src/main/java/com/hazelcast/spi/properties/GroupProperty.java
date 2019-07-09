@@ -63,7 +63,7 @@ public final class GroupProperty {
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT
-            = new HazelcastProperty("hazelcast.partition.count", 271);
+            = new HazelcastProperty("hazelcast.partition.count", 5003);
 
     /**
      * The number of partition operation handler threads per member.
@@ -75,6 +75,10 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.thread.count", -1);
+
+    public static final HazelcastProperty OPERATION_CALLER_RUNS
+            = new HazelcastProperty("hazelcast.operation.callerruns", true);
+
 
     /**
      * The number of generic operation handler threads per member.
@@ -204,7 +208,7 @@ public final class GroupProperty {
      * The default is 3 (i.e. 6 threads).
      */
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count", 3);
+            = new HazelcastProperty("hazelcast.io.thread.count", Math.min(3, Runtime.getRuntime().availableProcessors()/4));
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.

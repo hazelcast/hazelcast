@@ -31,9 +31,16 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.hazelfast.Client;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -84,7 +91,55 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
     @Override
     public long get() {
-        return getAsync().join();
+        Client client = client(partitionId);
+
+        try {
+            ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+            request.setPartitionId(partitionId);
+            client.write(request.buffer().byteArray());
+            client.flush();
+            client.readResponse();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public long pipelinedGet(int pipelineDepth) {
+        Client client = client(partitionId);
+
+        try {
+            for(int k=0;k<pipelineDepth;k++) {
+                ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+                request.setPartitionId(partitionId);
+                client.write(request.buffer().byteArray());
+            }
+            client.flush();
+            for(int k=0;k<pipelineDepth;k++) {
+                client.readResponse();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    private final static ThreadLocal<Map<Address, Client>> threadLocal = ThreadLocal.withInitial(HashMap::new);
+
+    public Client client(int partitionId) {
+        Map<Address, Client> clients = threadLocal.get();
+        ClientPartitionService partitionService = getClient().getClientPartitionService();
+        Address address = partitionService.getPartitionOwner(partitionId);
+
+        Client client = clients.get(address);
+        if (client == null) {
+            client = new Client(new Client.Context()
+                    .hostname(address.getHost())
+                    .port(address.getPort() + 10000));
+            client.start();
+            clients.put(address, client);
+        }
+        return client;
     }
 
     @Override

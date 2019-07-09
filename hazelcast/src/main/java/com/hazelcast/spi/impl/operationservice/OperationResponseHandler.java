@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.spi.impl.operationservice.OperationService;
+
 /**
  * A handler for the {@link OperationService} when it has calculated a response. This way you can hook
  * into the Operation execution and decide what to do with it: for example, send it to the right machine.
