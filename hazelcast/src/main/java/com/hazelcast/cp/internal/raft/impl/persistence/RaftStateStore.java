@@ -28,7 +28,7 @@ import java.util.Collection;
  */
 public interface RaftStateStore extends Closeable {
 
-    void writeTermAndVote(int currentTerm, RaftEndpoint votedFor, int voteTerm) throws IOException;
+    void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) throws IOException;
 
     void writeInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException;
 

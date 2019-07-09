@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -743,7 +742,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (RaftNodeImpl raftNode : followers) {
-                    Endpoint newLeader = getLeaderMember(raftNode);
+                    RaftEndpoint newLeader = getLeaderMember(raftNode);
                     assertNotEquals(leader.getLocalMember(), newLeader);
                     assertNotEquals(followerWithLongestLog.getLocalMember(), newLeader);
                 }
@@ -801,7 +800,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (RaftNodeImpl raftNode : followers) {
-                    Endpoint leaderEndpoint = getLeaderMember(raftNode);
+                    RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
                     assertNotNull(leaderEndpoint);
                     assertNotEquals(leader.getLocalMember(), leaderEndpoint);
                 }

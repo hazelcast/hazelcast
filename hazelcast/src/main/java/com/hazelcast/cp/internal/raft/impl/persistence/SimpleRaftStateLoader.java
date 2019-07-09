@@ -20,7 +20,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.util.Tuple2;
-import com.hazelcast.cp.internal.util.Tuple3;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
@@ -51,29 +50,28 @@ public class SimpleRaftStateLoader implements RaftStateLoader {
 
     @Override
     public RestoredRaftState load() throws IOException {
-        Tuple3<Integer, RaftEndpoint, Integer> termAndVote = readVoteAndTerm();
+        Tuple2<Integer, RaftEndpoint> termAndVote = readVoteAndTerm();
         Tuple2<RaftEndpoint, Collection<RaftEndpoint>> members = readMembers();
         SnapshotEntry snapshot = readSnapshot();
         LogEntry[] entries = readLogs(snapshot.index());
 
-        return new RestoredRaftState(members.element1, members.element2, termAndVote.element1, termAndVote.element2,
-                termAndVote.element3, snapshot, entries);
+        return new RestoredRaftState(members.element1, members.element2, termAndVote.element1, termAndVote.element2, snapshot,
+                entries);
     }
 
-    private Tuple3<Integer, RaftEndpoint, Integer> readVoteAndTerm() throws IOException {
+    private Tuple2<Integer, RaftEndpoint> readVoteAndTerm() throws IOException {
         File path = new File(baseDir, "term");
         if (path.exists()) {
             ObjectDataInputStream in = getDataInputStream(path);
             try {
                 int term = in.readInt();
                 RaftEndpoint votedFor = in.readObject();
-                int voteTerm = in.readInt();
-                return Tuple3.of(term, votedFor, voteTerm);
+                return Tuple2.of(term, votedFor);
             } finally {
                 IOUtil.closeResource(in);
             }
         }
-        return Tuple3.of(0, null, 0);
+        return Tuple2.of(0, null);
     }
 
     private Tuple2<RaftEndpoint, Collection<RaftEndpoint>> readMembers() throws IOException {

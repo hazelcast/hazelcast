@@ -89,20 +89,12 @@ public class RaftStateTest {
         assertEquals(0, state.lastApplied());
         assertEquals(3, state.majority());
         assertNull(state.votedFor());
-        assertEquals(0, state.lastVoteTerm());
         assertNull(state.leaderState());
         assertNull(state.candidateState());
 
         RaftLog log = state.log();
         assertEquals(0, log.lastLogOrSnapshotIndex());
         assertEquals(0, log.lastLogOrSnapshotTerm());
-    }
-
-    @Test
-    public void incrementTerm() {
-        int term = state.incrementTerm();
-        assertEquals(1, term);
-        assertEquals(term, state.term());
     }
 
     @Test
@@ -128,9 +120,10 @@ public class RaftStateTest {
     @Test
     public void persistVote() {
         int term = 13;
+        state.toFollower(term);
         state.persistVote(term, localMember);
 
-        assertEquals(term, state.lastVoteTerm());
+        assertEquals(term, state.term());
         assertEquals(localMember, state.votedFor());
     }
 
@@ -170,7 +163,7 @@ public class RaftStateTest {
         state.toCandidate();
         assertEquals(RaftRole.CANDIDATE, state.role());
         assertNull(state.leaderState());
-        assertEquals(term + 1, state.lastVoteTerm());
+        assertEquals(term + 1, state.term());
         assertEquals(localMember, state.votedFor());
 
         CandidateState candidateState = state.candidateState();

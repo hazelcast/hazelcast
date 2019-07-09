@@ -34,7 +34,6 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     private Collection<RaftEndpoint> initialMembers;
     private int term;
     private RaftEndpoint votedFor;
-    private int voteTerm;
     private InMemoryRaftLogStore raftLogStore;
 
     public InMemoryRaftStateStore(int capacity) {
@@ -42,10 +41,9 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor, int voteTerm) {
+    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) {
         this.term = currentTerm;
         this.votedFor = votedFor;
-        this.voteTerm = voteTerm;
     }
 
     @Override
@@ -72,7 +70,7 @@ public class InMemoryRaftStateStore implements RaftStateStore {
             entries = new LogEntry[0];
         }
 
-        return new RestoredRaftState(localEndpoint, initialMembers, term, votedFor, voteTerm, raftLog.snapshot(), entries);
+        return new RestoredRaftState(localEndpoint, initialMembers, term, votedFor, raftLog.snapshot(), entries);
     }
 
     public class InMemoryRaftLogStore implements RaftLogStore {

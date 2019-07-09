@@ -62,7 +62,7 @@ public final class NopRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor, int voteTerm) {
+    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) {
     }
 
     @Override

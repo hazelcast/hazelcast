@@ -110,19 +110,11 @@ public final class RaftState {
     private long lastApplied;
 
     /**
-     * Endpoint that received vote in {@link #lastVoteTerm} (or null if none)
+     * Endpoint that received vote in the current term, or null if none
      * <p>
      * [PERSISTENT]
      */
     private RaftEndpoint votedFor;
-
-    /**
-     * Term that granted vote for {@link #votedFor}
-     * <p>
-     * [PERSISTENT]
-     */
-    // TODO [basri] can we get rid of this and use the "term" field only?
-    private int lastVoteTerm;
 
     /**
      * Raft log entries; each entry contains command for state machine,
@@ -172,7 +164,6 @@ public final class RaftState {
         this.lastGroupMembers = this.committedGroupMembers;
         this.term = restoredState.term();
         this.votedFor = restoredState.votedFor();
-        this.lastVoteTerm = restoredState.lastVoteTerm();
 
         SnapshotEntry snapshot = restoredState.snapshot();
         if (isNonInitial(snapshot)) {
@@ -291,29 +282,10 @@ public final class RaftState {
     }
 
     /**
-     * Increment term by 1
-     */
-    int incrementTerm() {
-        try {
-            return ++term;
-        } finally {
-            persistTerm();
-        }
-    }
-
-    /**
      * Returns the known leader
      */
     public RaftEndpoint leader() {
         return leader;
-    }
-
-    /**
-     * Returns the term when this note voted for endpoint {@link #votedFor}
-     * @see #lastVoteTerm
-     */
-    public int lastVoteTerm() {
-        return lastVoteTerm;
     }
 
     /**
@@ -390,7 +362,8 @@ public final class RaftState {
      * Persist a vote for the endpoint in current term during leader election.
      */
     public void persistVote(int term, RaftEndpoint endpoint) {
-        this.lastVoteTerm = term;
+        assert this.term == term;
+        assert this.votedFor == null;
         this.votedFor = endpoint;
         persistTerm();
     }
@@ -406,7 +379,7 @@ public final class RaftState {
         preCandidateState = null;
         leaderState = null;
         candidateState = null;
-        this.term = term;
+        setTerm(term);
         persistTerm();
     }
 
@@ -422,9 +395,17 @@ public final class RaftState {
         leaderState = null;
         candidateState = new CandidateState(majority());
         candidateState.grantVote(localEndpoint);
-        persistVote(incrementTerm(), localEndpoint);
+        setTerm(term + 1);
+        persistVote(term, localEndpoint);
+        // no need to call persistTerm() since it is called in persistVote()
 
         return new VoteRequest(localEndpoint, term, log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex());
+    }
+
+    private void setTerm(int newTerm) {
+        assert newTerm > term;
+        term = newTerm;
+        votedFor = null;
     }
 
     /**
@@ -539,7 +520,7 @@ public final class RaftState {
 
     private void persistTerm() {
         try {
-            stateStore.writeTermAndVote(term, votedFor, lastVoteTerm);
+            stateStore.writeTermAndVote(term, votedFor);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
