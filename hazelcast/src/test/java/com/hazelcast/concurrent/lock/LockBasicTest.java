@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -53,6 +54,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     public void setup() {
         instances = newInstances();
         lock = newInstance();
+        waitAllForSafeState(instances);
     }
 
     protected ILock newInstance() {
@@ -60,6 +62,11 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
         return local.getLock(name);
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected abstract HazelcastInstance[] newInstances();
@@ -557,7 +564,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLockCount() throws Exception {
+    public void testLockCount() {
         lock.lock();
         assertEquals(1, lock.getLockCount());
         assertTrue(lock.tryLock());
