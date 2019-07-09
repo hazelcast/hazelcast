@@ -9,10 +9,10 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  -g, --groupname  : Defines groupname of the cluster. Default value is 'dev'."
     echo "  -P, --password   : Defines password of the cluster. Default value is 'dev-pass'."
     echo "  -v, --version    : Defines the cluster version to change to. To be used in conjunction with '-o change-cluster-version'."
-    echo "  -d, --debug      : Prints curl error output."
+    echo "  -d, --debug      : Prints error output."
     echo
     echo "HTTPs related (when TLS is enabled):"
-    echo "      --https      : Uses HTTPs protocol for REST calls.(no parameter value expected)"
+    echo "      --https      : Uses HTTPs protocol for REST calls. (no parameter value expected)"
     echo "      --cacert     : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
     echo "      --cert       : Defines PEM-encoded client certificate file path. Only needed when client certificate authentication is used."
     echo "      --key        : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
@@ -79,8 +79,8 @@ shift # past argument or value
 done
 
 if [ -z "$OPERATION" ]; then
-  echo "No operation is defined, running script with default operation: 'get-state'."
-  OPERATION="get-state"
+    echo "No operation is defined, running script with default operation: 'get-state'."
+    OPERATION="get-state"
 fi
 
 if [ -z "$PORT" ]; then
@@ -110,12 +110,12 @@ fi
 
 if [ "$OPERATION" = "get-state" ]; then
     echo "Getting cluster state on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/state");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/state")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "success" ];then
-        CURRSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+        CURRSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//')
         echo "Cluster is in ${CURRSTATE} state."
         exit 0
     fi
@@ -133,12 +133,12 @@ elif [ "$OPERATION" = "change-state" ]; then
     fi
 
     echo "Changing cluster state to ${STATE} on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${STATE}" "${URL_BASE}/changeState");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${STATE}" "${URL_BASE}/changeState")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "fail" ];then
-       NEWSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+       NEWSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//')
        if [ "$NEWSTATE" != "null" ]; then
            echo "Cluster is already in ${STATE} state}"
        else
@@ -148,7 +148,7 @@ elif [ "$OPERATION" = "change-state" ]; then
     fi
 
     if [ "$STATUS" = "success" ];then
-        NEWSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+        NEWSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//')
         echo "State of the cluster changed to ${NEWSTATE} state"
         exit 0
     fi
@@ -158,9 +158,9 @@ elif [ "$OPERATION" = "force-start" ]; then
     echo "Force-start makes cluster operational if cluster start is blocked by problematic members."
     echo "Starting cluster from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/forceStart");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/forceStart")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "success" ];then
         echo "Cluster force-start completed!"
@@ -172,9 +172,9 @@ elif [ "$OPERATION" = "partial-start" ]; then
     echo "Partial-start makes cluster operational by starting only a portion of available members if cluster start is blocked by problematic members."
     echo "Starting cluster from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/partialStart");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/partialStart")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "success" ];then
         echo "Cluster partial-start completed!"
@@ -186,9 +186,9 @@ elif [ "$OPERATION" = "shutdown" ]; then
     echo "You are shutting down the cluster."
     echo "Shutting down from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/clusterShutdown");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/clusterShutdown")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "success" ];then
         echo "Cluster shutdown completed!"
@@ -198,12 +198,12 @@ elif [ "$OPERATION" = "shutdown" ]; then
 elif [ "$OPERATION" = "get-cluster-version" ]; then
 
     echo "Getting cluster version on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} "${URL_BASE}/version");
+    response=$(${CURL_CMD} "${URL_BASE}/version")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "success" ];then
-        CURRVERSION=$(echo "${response}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+        CURRVERSION=$(echo "${response}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//')
         echo "Cluster operates in version ${CURRVERSION}."
         exit 0
     fi
@@ -216,12 +216,12 @@ elif [ "$OPERATION" = "change-cluster-version" ]; then
     fi
 
     echo "Changing cluster version to ${CLUSTER_VERSION} on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${CLUSTER_VERSION}" "${URL_BASE}/version");
+    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${CLUSTER_VERSION}" "${URL_BASE}/version")
     CURL_EXIT_CODE=$?
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
+    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
     if [ "$STATUS" = "fail" ]; then
-       MESSAGE=$(echo "${response}" | sed -e 's/^.*"message"[ ]*:[ ]*"//' -e 's/".*//');
+       MESSAGE=$(echo "${response}" | sed -e 's/^.*"message"[ ]*:[ ]*"//' -e 's/".*//')
        # when there is no "message" element in response, above sed process returns "{"
        if [ "$MESSAGE" != "{" ]; then
            echo "Cluster version change failed: ${MESSAGE}"
@@ -232,7 +232,7 @@ elif [ "$OPERATION" = "change-cluster-version" ]; then
     fi
 
     if [ "$STATUS" = "success" ]; then
-        NEWVERSION=$(echo "${response}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+        NEWVERSION=$(echo "${response}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//')
         echo "Cluster version changed to ${NEWVERSION}."
         exit 0
     fi
