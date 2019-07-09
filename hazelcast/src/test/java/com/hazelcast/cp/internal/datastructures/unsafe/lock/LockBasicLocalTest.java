@@ -28,6 +28,6 @@ import org.junit.runner.RunWith;
 public class LockBasicLocalTest extends LockBasicTest {
     @Override
     protected HazelcastInstance[] newInstances() {
-        return createHazelcastInstanceFactory(1).newInstances();
+        return createHazelcastInstanceFactory(1).newInstances(getConfig());
     }
 }
