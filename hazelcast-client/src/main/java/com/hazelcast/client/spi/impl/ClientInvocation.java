@@ -72,6 +72,7 @@ public class ClientInvocation implements Runnable {
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final String objectName;
+    private final boolean sync = false;
     private volatile ClientConnection sendConnection;
     private EventHandler handler;
     private volatile long invokeCount;
@@ -112,7 +113,7 @@ public class ClientInvocation implements Runnable {
      * Create an invocation that will be executed on owner of {@code partitionId}.
      */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
-                            int partitionId) {
+                            int partitionId, boolean sync) {
         this(client, clientMessage, objectName, partitionId, null, null);
     }
 

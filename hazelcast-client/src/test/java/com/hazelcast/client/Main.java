@@ -13,5 +13,6 @@ public class Main {
 
         IAtomicLong l = client.getAtomicLong("foo");
         System.out.println(l.get());
+        System.exit(0);
     }
 }

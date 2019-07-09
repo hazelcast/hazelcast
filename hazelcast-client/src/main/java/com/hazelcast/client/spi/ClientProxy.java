@@ -22,12 +22,16 @@ import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.hazelfast.Client;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -44,7 +48,7 @@ public abstract class ClientProxy implements DistributedObject {
     private final String serviceName;
     private final ClientContext context;
     private final SerializationService serializationService;
-
+    private final static ThreadLocal<Map<Address, Client>> threadLocal = ThreadLocal.withInitial(HashMap::new);
     protected ClientProxy(String serviceName, String name, ClientContext context) {
         this.serviceName = serviceName;
         this.name = name;
@@ -184,13 +188,33 @@ public abstract class ClientProxy implements DistributedObject {
         return invokeOnPartition(clientMessage, partitionId);
     }
 
-    protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
+    protected <T> T invokeOnPartition(ClientMessage request, int partitionId) {
+        Client client = client(partitionId);
+
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-            return (T) future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
+            request.setPartitionId(partitionId);
+            client.write(request.buffer().byteArray());
+            client.flush();
+            return (T) client.readResponse();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private Client client(int partitionId) {
+        Map<Address, Client> clients = threadLocal.get();
+        ClientPartitionService partitionService = getClient().getClientPartitionService();
+        Address address = partitionService.getPartitionOwner(partitionId);
+
+        Client client = clients.get(address);
+        if (client == null) {
+            client = new Client(new Client.Context()
+                    .hostname(address.getHost())
+                    .port(address.getPort() + 10000));
+            client.start();
+            clients.put(address, client);
+        }
+        return client;
     }
 
     protected <T> T invokeOnAddress(ClientMessage clientMessage, Address address) {
@@ -204,7 +228,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, int partitionId) throws InterruptedException {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, true).invoke();
             return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);

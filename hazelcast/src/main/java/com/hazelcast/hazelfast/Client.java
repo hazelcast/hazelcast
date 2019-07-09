@@ -1,5 +1,9 @@
 package com.hazelcast.hazelfast;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
+import com.hazelcast.client.impl.protocol.util.SafeBuffer;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -133,7 +137,7 @@ public class Client {
         sendBuf.put(message);
     }
 
-    public void readResponse() throws IOException {
+    public ClientMessage readResponse() throws IOException {
         Frame frame = null;
         int offset = 0;
 
@@ -173,9 +177,12 @@ public class Client {
 
                 receiveBuf.get(frame.bytes, offset, length);
                 if (complete) {
+                    ClientProtocolBuffer buffer = new SafeBuffer(frame.bytes);
+                    ClientMessage message = ClientMessage.createForDecode(buffer, 0);
+
                     byteArrayPool.returnToPool(frame.bytes);
                     framePool.returnToPool(frame);
-                    return;
+                    return message;
                 } else {
                     offset += length;
                 }

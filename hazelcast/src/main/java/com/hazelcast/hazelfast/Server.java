@@ -3,12 +3,11 @@ package com.hazelcast.hazelfast;
 
 import com.hazelcast.client.impl.CompositeMessageTaskFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.GetOperation;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -190,7 +189,9 @@ public class Server {
             for (; ; ) {
                 int selectedKeys = (selectorSpin && spinEndNs > System.nanoTime()) ? selector.selectNow() : selector.select();
                 registerNewChannels();
-                if (selectedKeys == 0) continue;
+                if (selectedKeys == 0) {
+                    continue;
+                }
 
                 Iterator<SelectionKey> it = selector.selectedKeys().iterator();
                 while (it.hasNext()) {
@@ -198,8 +199,12 @@ public class Server {
                     it.remove();
 
                     try {
-                        if (sk.isReadable()) onRead(sk);
-                        if (sk.isWritable()) onWrite(sk);
+                        if (sk.isReadable()) {
+                            onRead(sk);
+                        }
+                        if (sk.isWritable()) {
+                            onWrite(sk);
+                        }
                     } catch (Throwable e) {
                         e.printStackTrace();
                         sk.channel().close();
@@ -214,7 +219,9 @@ public class Server {
         private void registerNewChannels() throws IOException {
             for (; ; ) {
                 SocketChannel channel = newChannels.poll();
-                if (channel == null) break;
+                if (channel == null) {
+                    break;
+                }
 
                 channel.configureBlocking(false);
                 channel.socket().setTcpNoDelay(tcpNoDelay);
@@ -238,10 +245,14 @@ public class Server {
             for (; ; ) {
                 if (con.sendFrame == null) {
                     // check if there is enough space to writeAndFlush the length
-                    if (con.sendBuf.remaining() < INT_AS_BYTES) break;
+                    if (con.sendBuf.remaining() < INT_AS_BYTES) {
+                        break;
+                    }
 
                     con.sendFrame = con.pending.poll();
-                    if (con.sendFrame == null) break;
+                    if (con.sendFrame == null) {
+                        break;
+                    }
 
                     //System.out.println("onWrite:" + con.sendFrame);
 
@@ -303,8 +314,9 @@ public class Server {
             con.onReadEvents++;
 
             int bytesRead = channel.read(con.receiveBuf);
-            if (bytesRead == -1)
+            if (bytesRead == -1) {
                 throw new IOException("Channel " + channel.socket().getInetAddress() + " closed on the other side");
+            }
             con.bytesRead += bytesRead;
 
             con.receiveBuf.flip();
@@ -313,12 +325,15 @@ public class Server {
                 while (con.receiveBuf.remaining() > 0) {
                     if (con.receiveFrame == null) {
                         // not enough bytes available for the frame size; we are done.
-                        if (con.receiveBuf.remaining() < INT_AS_BYTES) break;
+                        if (con.receiveBuf.remaining() < INT_AS_BYTES) {
+                            break;
+                        }
 
                         con.receiveFrame = con.framePool.takeFromPool();
                         con.receiveFrame.length = con.receiveBuf.getInt();
-                        if (con.receiveFrame.length < 0)
+                        if (con.receiveFrame.length < 0) {
                             throw new IOException("Frame length can't be negative. Found:" + con.receiveFrame.length);
+                        }
 
                         con.receiveFrame.bytes = con.byteArrayPool.takeFromPool(con.receiveFrame.length);
                     }
@@ -336,22 +351,13 @@ public class Server {
                         ClientProtocolBuffer buffer = new SafeBuffer(con.receiveFrame.bytes);
                         ClientMessage message = ClientMessage.createForDecode(buffer, 0);
 
-                        AtomicLongGetCodec.RequestParameters requestParameters = AtomicLongGetCodec.decodeRequest(message);
-
-                        GetOperation operation = new GetOperation(requestParameters.name);
-                        operation.setPartitionId(message.getPartitionId());
-                        Long result;
-                        try {
-                            InternalCompletableFuture<Long> f = node.nodeEngine.getOperationService().invokeOnPartition(operation, true);
-                            result = f.get();
-                            if (result == null) {
-                                throw new NullPointerException("result can't be null");
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                        MessageTask messageTask = messageTaskFactory.create(message, null);
+                        if (!(messageTask instanceof AbstractPartitionMessageTask)) {
+                            throw new RuntimeException("Only partition based message tasks are supported via support connections ");
                         }
-
-                        ClientMessage response = AtomicLongGetCodec.encodeResponse(result);
+                        AbstractPartitionMessageTask task = (AbstractPartitionMessageTask) messageTask;
+                        System.out.println("FATAL Running message " + message.getMessageType());
+                        ClientMessage response = task.runBlocking();
                         byte[] bytes = response.buffer().byteArray();
                         Frame responseFrame = new Frame();
                         responseFrame.bytes = bytes;
@@ -365,7 +371,9 @@ public class Server {
                 compactOrClear(con.receiveBuf);
             }
 
-            if (dirty) onWrite(sk);
+            if (dirty) {
+                onWrite(sk);
+            }
         }
 
         private void shutdown() {
@@ -442,7 +450,9 @@ public class Server {
                     SelectionKey sk = iterator.next();
                     iterator.remove();
 
-                    if (sk.isAcceptable()) onAccept();
+                    if (sk.isAcceptable()) {
+                        onAccept();
+                    }
                 }
             }
         }

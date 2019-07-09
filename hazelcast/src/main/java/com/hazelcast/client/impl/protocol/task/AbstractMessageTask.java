@@ -158,7 +158,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         sendClientMessage(throwable);
     }
 
-    private void interceptBefore(Credentials credentials) {
+    protected void interceptBefore(Credentials credentials) {
         final SecurityContext securityContext = clientEngine.getSecurityContext();
         final String methodName = getMethodName();
         if (securityContext != null && methodName != null) {
@@ -168,7 +168,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         }
     }
 
-    private void interceptAfter(Credentials credentials) {
+    protected void interceptAfter(Credentials credentials) {
         final SecurityContext securityContext = clientEngine.getSecurityContext();
         final String methodName = getMethodName();
         if (securityContext != null && methodName != null) {
@@ -178,7 +178,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         }
     }
 
-    private void checkPermissions(ClientEndpoint endpoint) {
+    protected void checkPermissions(ClientEndpoint endpoint) {
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
             Permission permission = getRequiredPermission();
@@ -217,9 +217,13 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     protected void sendClientMessage(Throwable throwable) {
-        ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
-        ClientMessage exception = exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
+        ClientMessage exception = convertToMessage(throwable);
         sendClientMessage(exception);
+    }
+
+    protected ClientMessage convertToMessage(Throwable throwable) {
+        ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
+        return exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
     }
 
     public abstract String getServiceName();
