@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN_ARRAY;
@@ -42,7 +43,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING_ARRAY;
-
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_UUID;
 
 public final class ConstantSerializers {
 
@@ -388,6 +389,25 @@ public final class ConstantSerializers {
         @Override
         public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
             out.writeUTFArray(obj);
+        }
+    }
+
+    public static final class UuidSerializer extends SingletonSerializer<UUID> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_UUID;
+        }
+
+        @Override
+        public UUID read(final ObjectDataInput in) throws IOException {
+            return new UUID(in.readLong(), in.readLong());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final UUID uuid) throws IOException {
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
         }
     }
 
