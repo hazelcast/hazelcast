@@ -24,8 +24,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -111,7 +113,15 @@ public class SimpleRaftStateLoader implements RaftStateLoader {
             try {
                 while (in.available() > 0) {
                     LogEntry entry = new LogEntry();
-                    entry.readData(in);
+                    try {
+                        entry.readData(in);
+                    } catch (HazelcastSerializationException e) {
+                        if (e.getCause() instanceof EOFException) {
+                            // partially written entry
+                            break;
+                        }
+                        throw e;
+                    }
                     if (entry.index() > snapshotIndex) {
                         entries.add(entry);
                     }
