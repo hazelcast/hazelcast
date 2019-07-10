@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -32,6 +32,7 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
@@ -44,6 +45,9 @@ import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
+import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
+import com.hazelcast.cp.internal.raft.impl.persistence.SimpleRaftStateLoader;
+import com.hazelcast.cp.internal.raft.impl.persistence.SimpleRaftStateStore;
 import com.hazelcast.cp.internal.raftop.GetInitialRaftGroupMembersIfCurrentGroupMemberOp;
 import com.hazelcast.cp.internal.raftop.metadata.AddCPMemberOp;
 import com.hazelcast.cp.internal.raftop.metadata.ForceDestroyRaftGroupOp;
@@ -59,6 +63,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
@@ -76,6 +82,9 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,6 +103,7 @@ import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.MANAGEMENT_TASK_PERIOD_IN_MILLIS;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
@@ -128,6 +138,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
     private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<CPMemberInfo, Long>();
+    private File cpDir;
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -148,6 +159,35 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         if (config.getMissingCPMemberAutoRemovalSeconds() > 0) {
             nodeEngine.getExecutionService().scheduleWithRepetition(new AutoRemoveMissingCPMemberTask(),
                     REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS, REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS, SECONDS);
+        }
+
+        Address address = nodeEngine.getClusterService().getLocalMember().getAddress();
+        cpDir = new File("CP", IOUtil.toFileName(address.getHost() + "-" + address.getPort()));
+        if (!cpDir.exists()) {
+            cpDir.mkdirs();
+            return;
+        }
+
+        File[] groupDirs = cpDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File path) {
+                return path.isDirectory()
+                        && new File(path, "members").exists()
+                        && new File(path, "term").exists();
+            }
+        });
+
+        if (groupDirs == null) {
+            return;
+        }
+
+        for (final File groupDir : groupDirs) {
+            nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, new Runnable() {
+                @Override
+                public void run() {
+                    restoreRaftNode(groupDir);
+                }
+            });
         }
     }
 
@@ -664,7 +704,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftNodeImpl node = RaftNodeImpl.newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration);
+
+        RaftGroupId raftGroupId = (RaftGroupId) groupId;
+        SimpleRaftStateStore stateStore;
+        try {
+            File dir = new File(cpDir, groupId.name() + "@" + raftGroupId.seed() + "@" + raftGroupId.id());
+            stateStore = new SimpleRaftStateStore(dir);
+        } catch (IOException e) {
+            throw new HazelcastException(e);
+        }
+        RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
 
         if (nodes.putIfAbsent(groupId, node) == null) {
             if (destroyedGroupIds.contains(groupId)) {
@@ -675,6 +724,28 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
             node.start();
             logger.info("RaftNode[" + groupId + "] is created with " + members);
+        }
+    }
+
+    private void restoreRaftNode(File dir) {
+        String[] split = dir.getName().split("@");
+        assert split.length == 3;
+
+        CPGroupId groupId = new RaftGroupId(split[0], Long.parseLong(split[1]), Long.parseLong(split[2]));
+
+        try {
+            RestoredRaftState restoredRaftState = new SimpleRaftStateLoader(dir).load();
+
+            RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, restoredRaftState.localEndpoint());
+            RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
+            RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(groupId, restoredRaftState, raftAlgorithmConfig,
+                    integration, new SimpleRaftStateStore(dir));
+
+            nodes.put(groupId, node);
+            node.start();
+            logger.info("RaftNode[" + groupId + "] is restored.");
+        } catch (IOException e) {
+            throw new HazelcastException(e);
         }
     }
 

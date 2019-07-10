@@ -28,6 +28,8 @@ import java.io.IOException;
  */
 public interface RaftLogStore extends Closeable {
 
+    void open() throws IOException;
+
     void appendEntry(LogEntry entry) throws IOException;
 
     void flush() throws IOException;

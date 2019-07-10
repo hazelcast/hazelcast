@@ -150,7 +150,6 @@ public final class RaftState {
         this.lastGroupMembers = groupMembers;
         this.stateStore = stateStore;
         this.log = newRaftLog(logCapacity, stateStore.getRaftLogStore());
-        persistInitialMembers();
     }
 
     private RaftState(CPGroupId groupId, RestoredRaftState restoredState, int logCapacity, RaftStateStore stateStore) {
@@ -403,7 +402,7 @@ public final class RaftState {
     }
 
     private void setTerm(int newTerm) {
-        assert newTerm > term;
+        assert newTerm >= term : "New term: " + newTerm + ", current term: " + term;
         term = newTerm;
         votedFor = null;
     }
@@ -532,5 +531,10 @@ public final class RaftState {
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
+    }
+
+    public void initPersistence() throws IOException {
+        persistInitialMembers();
+        stateStore.getRaftLogStore().open();
     }
 }

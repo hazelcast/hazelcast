@@ -45,6 +45,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
 
     private transient UUID uuid;
+    // TODO: Can we get rid of RaftEndpoint completely?
     private transient RaftEndpointImpl endpoint;
     private transient Address address;
 

@@ -65,6 +65,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -262,6 +263,18 @@ public final class RaftNodeImpl implements RaftNode {
             logger.fine("Starting raft node: " + state.localEndpoint() + " for " + groupId
                     + " with " + state.memberCount() + " members: " + state.members());
         }
+
+        raftIntegration.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    state.initPersistence();
+                } catch (IOException e) {
+                    logger.severe(e);
+                }
+            }
+        });
+
         raftIntegration.execute(new PreVoteTask(this, 0));
 
         scheduleLeaderFailureDetection();
@@ -905,7 +918,9 @@ public final class RaftNodeImpl implements RaftNode {
         LogEntry committedEntry = null;
         LogEntry lastAppliedEntry = null;
 
-        for (LogEntry entry : log.getEntriesBetween(snapshot != null ? snapshot.index() : 0, log.lastLogOrSnapshotIndex())) {
+        for (long i = snapshot != null ? snapshot.index() + 1 : 1; i <= log.lastLogOrSnapshotIndex(); i++) {
+            LogEntry entry = log.getLogEntry(i);
+            assert entry != null : "index: " + i;
             if (entry.operation() instanceof RaftGroupCmd) {
                 committedEntry = lastAppliedEntry;
                 lastAppliedEntry = entry;

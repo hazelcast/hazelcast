@@ -82,6 +82,10 @@ public class InMemoryRaftStateStore implements RaftStateStore {
         }
 
         @Override
+        public void open() {
+        }
+
+        @Override
         public void appendEntry(LogEntry entry) {
             raftLog.appendEntries(entry);
         }

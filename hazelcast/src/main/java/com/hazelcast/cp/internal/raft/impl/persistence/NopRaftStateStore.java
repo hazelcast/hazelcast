@@ -38,6 +38,10 @@ public final class NopRaftStateStore implements RaftStateStore {
      */
     public static final RaftLogStore NOP_LOG_STORE = new RaftLogStore() {
         @Override
+        public void open() {
+        }
+
+        @Override
         public void appendEntry(LogEntry entry) {
         }
 

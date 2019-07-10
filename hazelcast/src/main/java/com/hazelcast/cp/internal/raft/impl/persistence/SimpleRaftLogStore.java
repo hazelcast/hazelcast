@@ -28,6 +28,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -44,11 +45,14 @@ public class SimpleRaftLogStore implements RaftLogStore {
     private FileOutputStream logChannel;
     private ObjectDataOutputStream logDataOut;
 
-    public SimpleRaftLogStore(File dir) throws IOException {
+    public SimpleRaftLogStore(File dir) {
         baseDir = dir;
         baseDir.mkdirs();
+    }
 
-        File activeLogPath = new File(dir, "logs");
+    @Override
+    public void open() throws FileNotFoundException {
+        File activeLogPath = new File(baseDir, "logs");
         logChannel = new FileOutputStream(activeLogPath, true);
         logDataOut = newDataOutputStream(logChannel);
     }
