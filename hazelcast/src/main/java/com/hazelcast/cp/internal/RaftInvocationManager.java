@@ -54,8 +54,6 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static java.util.Collections.shuffle;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Performs invocations to create & destroy Raft groups,

@@ -159,7 +159,8 @@ public final class RaftNodeImpl implements RaftNode {
         this.state = restoreRaftState(groupId, restoredState, logCapacity, stateStore);
         this.logger = getLogger(RaftNode.class);
         this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
-        restoreStateMachine(restoredState.snapshot());
+        restoreStateMachine();
+        replayLogEntries();
     }
 
     public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
@@ -885,7 +886,8 @@ public final class RaftNodeImpl implements RaftNode {
         return true;
     }
 
-    private void restoreStateMachine(SnapshotEntry snapshot) {
+    private void restoreStateMachine() {
+        SnapshotEntry snapshot = state.log().snapshot();
         if (isNonInitial(snapshot)) {
             printMemberState();
             raftIntegration.restoreSnapshot(snapshot.operation(), snapshot.index());
@@ -893,6 +895,37 @@ public final class RaftNodeImpl implements RaftNode {
                 logger.info(snapshot + " is restored.");
             } else {
                 logger.info("Snapshot is restored at commitIndex=" + snapshot.index());
+            }
+        }
+    }
+
+    private void replayLogEntries() {
+        RaftLog log = state.log();
+        SnapshotEntry snapshot = log.snapshot();
+        LogEntry committedEntry = null;
+        LogEntry lastAppliedEntry = null;
+
+        for (LogEntry entry : log.getEntriesBetween(snapshot != null ? snapshot.index() : 0, log.lastLogOrSnapshotIndex())) {
+            if (entry.operation() instanceof RaftGroupCmd) {
+                committedEntry = lastAppliedEntry;
+                lastAppliedEntry = entry;
+            }
+        }
+
+        if (committedEntry != null) {
+            state.commitIndex(committedEntry.index());
+            applyLogEntries();
+        }
+
+        if (lastAppliedEntry != null) {
+            if (lastAppliedEntry.operation() instanceof UpdateRaftGroupMembersCmd) {
+                setStatus(UPDATING_GROUP_MEMBER_LIST);
+                Collection<RaftEndpoint> members = ((UpdateRaftGroupMembersCmd) lastAppliedEntry.operation()).getMembers();
+                updateGroupMembers(lastAppliedEntry.index(), members);
+            } else if (lastAppliedEntry.operation() instanceof DestroyRaftGroupCmd) {
+                setStatus(TERMINATING);
+            } else {
+                throw new IllegalStateException("Invalid group command for restore: " + lastAppliedEntry);
             }
         }
     }
