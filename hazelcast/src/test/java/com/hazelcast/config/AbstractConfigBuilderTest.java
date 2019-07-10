@@ -163,12 +163,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapStoreInitialModeLazy();
 
     @Test
-    public abstract void testMapConfig_minEvictionCheckMillis();
-
-    @Test
-    public abstract void testMapConfig_minEvictionCheckMillis_defaultValue();
-
-    @Test
     public abstract void testMapConfig_metadataPolicy();
 
     @Test

@@ -191,16 +191,6 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setEvictionPercentageOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setEvictionPercentage(65);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setMinEvictionCheckMillisOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMinEvictionCheckMillis(23);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setTimeToLiveSecondsOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setTimeToLiveSeconds(42);
     }

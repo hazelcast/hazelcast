@@ -178,16 +178,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setEvictionPercentage(int evictionPercentage) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMinEvictionCheckMillis(long checkIfEvictableAfterMillis) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         throw throwReadOnly();
     }

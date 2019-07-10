@@ -796,8 +796,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && (nullSafeEqual(maxSize1, maxSize2)
                     || (Math.min(maxSize1, maxSize2) == 0 && Math.max(maxSize1, maxSize2) == Integer.MAX_VALUE))
-                    && nullSafeEqual(c1.getEvictionPercentage(), c2.getEvictionPercentage())
-                    && nullSafeEqual(c1.getMinEvictionCheckMillis(), c2.getMinEvictionCheckMillis())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isReadBackupData(), c2.isReadBackupData())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMerkleTreeConfig(), c2.getMerkleTreeConfig())

@@ -78,31 +78,6 @@ public class MapConfigTest {
     }
 
     @Test
-    public void testGetEvictionPercentage() {
-        assertEquals(MapConfig.DEFAULT_EVICTION_PERCENTAGE, new MapConfig().getEvictionPercentage());
-    }
-
-    @Test
-    public void testMinEvictionCheckMillis() {
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
-    }
-
-    @Test
-    public void testSetEvictionPercentage() {
-        assertEquals(50, new MapConfig().setEvictionPercentage(50).getEvictionPercentage());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageLowerLimit() {
-        new MapConfig().setEvictionPercentage(MapConfig.MIN_EVICTION_PERCENTAGE - 1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageUpperLimit() {
-        new MapConfig().setEvictionPercentage(MapConfig.MAX_EVICTION_PERCENTAGE + 1);
-    }
-
-    @Test
     public void testGetTimeToLiveSeconds() {
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, new MapConfig().getTimeToLiveSeconds());
     }

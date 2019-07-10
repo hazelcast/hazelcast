@@ -323,7 +323,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, testMapConfig.getBackupCount());
         assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
-        assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
@@ -334,7 +333,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(123, journalConfig.getCapacity());
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
-        assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
@@ -417,7 +415,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, simpleMapConfig.getAsyncBackupCount());
         assertEquals(EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
-        assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
 
         // test that the simpleMapConfig does NOT have a nearCacheConfig

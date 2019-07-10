@@ -69,8 +69,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * XML specific implementation of the tests that should be maintained in
- * both XML and YAML configuration builder tests.
+ * XML specific implementation of the tests that should be
+ * maintained in both XML and YAML configuration builder tests.
  * <p>
  * <p>
  * NOTE: This test class must not define test cases, it is meant only to
@@ -847,7 +847,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <max-idle-seconds>0</max-idle-seconds>    "
                 + "    <eviction-policy>NONE</eviction-policy>  "
                 + "    <max-size policy=\"per_partition\">0</max-size>"
-                + "    <eviction-percentage>25</eviction-percentage>"
                 + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -996,35 +995,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis() {
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"mymap\">"
-                + "<min-eviction-check-millis>123456789</min-eviction-check-millis>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(123456789L, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis_defaultValue() {
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"mymap\">"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, mapConfig.getMinEvictionCheckMillis());
     }
 
     @Override
@@ -2289,8 +2259,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <max-idle-seconds>42</max-idle-seconds>"
                 + "        <eviction-policy>RANDOM</eviction-policy>"
                 + "        <max-size policy=\"PER_NODE\">42</max-size>"
-                + "        <eviction-percentage>25</eviction-percentage>"
-                + "        <min-eviction-check-millis>256</min-eviction-check-millis>"
                 + "        <read-backup-data>true</read-backup-data>"
                 + "        <merkle-tree enabled=\"true\">\n"
                 + "            <depth>20</depth>\n"
@@ -2360,8 +2328,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
-        assertEquals(25, mapConfig.getEvictionPercentage());
-        assertEquals(256, mapConfig.getMinEvictionCheckMillis());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());

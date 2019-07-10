@@ -105,8 +105,6 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         mapConfig.setTimeToLiveSeconds(100);
         mapConfig.setMaxIdleSeconds(22);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setEvictionPercentage(35);
-        mapConfig.setMinEvictionCheckMillis(199);
         mapConfig.setReadBackupData(false);
         mapConfig.setBackupCount(3);
         mapConfig.setAsyncBackupCount(2);

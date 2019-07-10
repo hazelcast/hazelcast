@@ -274,20 +274,6 @@
         -->
 
         <max-size policy="PER_NODE">20</max-size>
-        <!--
-            `eviction-percentage` property is deprecated.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <eviction-percentage>25</eviction-percentage>
-        <!--
-            `min-eviction-check-millis` property is deprecated.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <min-eviction-check-millis>200</min-eviction-check-millis>
 
         <!--
             While recovering from split-brain (network partitioning), data structure entries in the small cluster

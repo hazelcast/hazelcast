@@ -852,8 +852,6 @@ public class ConfigXmlGenerator {
                .node("max-idle-seconds", m.getMaxIdleSeconds())
                .node("eviction-policy", m.getEvictionPolicy())
                .node("max-size", m.getMaxSizeConfig().getSize(), "policy", m.getMaxSizeConfig().getMaxSizePolicy())
-               .node("eviction-percentage", m.getEvictionPercentage())
-               .node("min-eviction-check-millis", m.getMinEvictionCheckMillis())
                .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                .node("quorum-ref", m.getQuorumName())
                .node("read-backup-data", m.isReadBackupData())

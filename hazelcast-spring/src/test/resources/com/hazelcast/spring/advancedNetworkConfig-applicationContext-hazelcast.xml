@@ -246,7 +246,6 @@
                     async-backup-count="1"
                     time-to-live-seconds="1"
                     max-size="10"
-                    eviction-percentage="50"
                     eviction-policy="LRU"/>
 
             <hz:member-attributes>

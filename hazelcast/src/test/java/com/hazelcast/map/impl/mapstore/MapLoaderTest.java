@@ -675,8 +675,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         config.getMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(50)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig)
                 .setMapStoreConfig(storeConfig);
 

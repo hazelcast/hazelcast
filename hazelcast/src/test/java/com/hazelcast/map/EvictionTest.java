@@ -436,7 +436,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(25)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -490,7 +489,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(25)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -542,8 +540,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(50)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -574,7 +570,6 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = newMapConfig(mapName)
                 .setStatisticsEnabled(false)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(10)
                 .setMaxSizeConfig(max);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -624,7 +619,6 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = newMapConfig(mapName)
                 .setStatisticsEnabled(disableStats)
                 .setEvictionPolicy(LFU)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -651,7 +645,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LFU)
-                .setEvictionPercentage(90)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -1343,8 +1336,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         MapConfig mapConfig = newMapConfig(mapName + "*")
                 .setMaxSizeConfig(maxSizeConfig)
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setMinEvictionCheckMillis(0);
+                .setEvictionPolicy(EvictionPolicy.LRU);
 
         return getConfig()
                 .addMapConfig(mapConfig);

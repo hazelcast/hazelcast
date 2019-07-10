@@ -166,7 +166,6 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
             MaxSizeConfig maxSizeConfig = new MaxSizeConfig(MAX_SIZE_PER_NODE, MaxSizeConfig.MaxSizePolicy.PER_NODE);
             mapConfig.setMaxSizeConfig(maxSizeConfig);
             mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-            mapConfig.setMinEvictionCheckMillis(0);
         }
 
         return cfg;

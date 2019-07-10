@@ -424,11 +424,11 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
         quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                                          .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                          .withSuspicionThreshold(threshold)
-                                          .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                          .withMinStdDeviationMillis(minStdDeviation)
-                                          .withMaxSampleSize(maxSampleSize);
+                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                .withSuspicionThreshold(threshold)
+                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                .withMinStdDeviationMillis(minStdDeviation)
+                .withMaxSampleSize(maxSampleSize);
         return quorumConfigBuilder;
     }
 
@@ -1567,12 +1567,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 handleMaxSizeConfig(mapConfig, node, value);
-            } else if ("eviction-percentage".equals(nodeName)) {
-                mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value
-                ));
-            } else if ("min-eviction-check-millis".equals(nodeName)) {
-                mapConfig.setMinEvictionCheckMillis(getLongValue("min-eviction-check-millis", value
-                ));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value
                 ));
