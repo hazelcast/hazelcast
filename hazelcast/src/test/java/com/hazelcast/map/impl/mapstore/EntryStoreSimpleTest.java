@@ -77,7 +77,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(testEntryStore);
         config.getMapConfig("default")
@@ -95,27 +95,27 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPut_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testPut_withMaxIdle() {
         map.put("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testOverrideValueWithTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         map.put("key", "value2", 5, TimeUnit.DAYS);
-        assertEntryStore("key", "value2", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value2", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testOverrideValueWithMaxIdle() {
         map.put("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS);
         map.put("key", "value2", 10, TimeUnit.DAYS, 1, TimeUnit.DAYS);
-        assertEntryStore("key", "value2", 1, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value2", 1, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -139,13 +139,13 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPutAsync_withTtl() throws ExecutionException, InterruptedException {
         map.putAsync("key", "value", 10, TimeUnit.DAYS).get();
-        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testPutAsync_withMaxIdle() throws ExecutionException, InterruptedException {
         map.putAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).get();
-        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -157,13 +157,13 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPutIfAbsent_withTtl() {
         map.putIfAbsent("key", "value", 10, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testPutIfAbsent_withMaxIdle() {
         map.putIfAbsent("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -210,7 +210,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testReplace_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         map.replace("key", "replaced");
-        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -224,7 +224,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testReplaceIfSame_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         map.replace("key", "value", "replaced");
-        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "replaced", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -236,13 +236,13 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testSet_withTtl() {
         map.set("key", "value", 10, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testSet_withMaxIdle() {
         map.set("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
@@ -254,20 +254,20 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testSetAsync_withTtl() throws ExecutionException, InterruptedException {
         map.setAsync("key", "value", 10, TimeUnit.DAYS).get();
-        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testSetAsync_withMaxIdle() throws ExecutionException, InterruptedException {
         map.setAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).get();
-        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testSetTtl() {
         map.set("key", "value");
         map.setTtl("key", 1, TimeUnit.DAYS);
-        assertEntryStore("key", "value", 1, TimeUnit.DAYS, 5000);
+        assertEntryStore("key", "value", 1, TimeUnit.DAYS, 10000);
     }
 
     @Test
