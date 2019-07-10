@@ -63,7 +63,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated() throws Exception {
+    public void testHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -74,7 +74,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAndHitsGenerated() throws Exception {
+    public void testPutAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -86,7 +86,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutIfAbsentAndHitsGenerated() throws Exception {
+    public void testPutIfAbsentAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.putIfAbsent(i, i);
@@ -98,7 +98,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAsync() throws Exception {
+    public void testPutAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.putAsync(i, i);
@@ -114,7 +114,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAndHitsGenerated() throws Exception {
+    public void testGetAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -126,7 +126,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAllGenerated() throws Exception {
+    public void testPutAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
@@ -139,7 +139,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllGenerated() throws Exception {
+    public void testGetAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 200; i++) {
             map.put(i, i);
@@ -174,7 +174,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDelete() throws Exception {
+    public void testDelete() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -307,7 +307,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -318,7 +318,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveAsync() throws Exception {
+    public void testRemoveAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -335,7 +335,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_updatedConcurrently() throws Exception {
+    public void testHitsGenerated_updatedConcurrently() {
         final IMap<Integer, Integer> map = getMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
@@ -385,7 +385,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+    public void testLastAccessTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
         final IMap<String, String> map = getMap();
 
@@ -416,7 +416,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictAll() throws Exception {
+    public void testEvictAll() {
         IMap<String, String> map = getMap();
         map.put("key", "value");
         map.evictAll();
@@ -547,5 +547,27 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
         LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testLockedEntryCount_emptyMap() {
+        IMap<String, String> map = getMap();
+
+        map.lock("non-existent-key");
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(1, stats.getLockedEntryCount());
+    }
+
+    @Test
+    public void testLockedEntryCount_mapWithOneEntry() {
+        IMap<String, String> map = getMap();
+
+        map.put("key", "value");
+        map.lock("key");
+        map.lock("non-existent-key");
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(2, stats.getLockedEntryCount());
     }
 }
