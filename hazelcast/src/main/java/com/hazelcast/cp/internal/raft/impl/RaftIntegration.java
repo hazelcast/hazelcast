@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
@@ -192,6 +193,11 @@ public interface RaftIntegration {
      * <i>Bug in single-server membership changes</i></a> post by Diego Ongaro for more info.
      */
     Object getAppendedEntryOnLeaderElection();
+
+    /**
+     * TODO
+     */
+    CPMember getCpMember(RaftEndpoint target);
 
     /**
      * Called when RaftNode status changes.

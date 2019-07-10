@@ -40,7 +40,7 @@ public class SimpleRaftStateStore implements RaftStateStore {
     private final File termPath;
     private final RaftLogStore logStore;
 
-    public SimpleRaftStateStore(File dir) throws IOException {
+    public SimpleRaftStateStore(File dir) {
         baseDir = dir;
         baseDir.mkdirs();
         termTmpPath = new File(dir, "term.tmp");

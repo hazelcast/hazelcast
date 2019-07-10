@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
@@ -314,6 +315,11 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public void restoreSnapshot(Object operation, long commitIndex) {
         runOperation(operation, commitIndex);
+    }
+
+    @Override
+    public CPMember getCpMember(RaftEndpoint target) {
+        return null;
     }
 
     void dropMessagesToEndpoint(RaftEndpoint endpoint, Class messageType) {

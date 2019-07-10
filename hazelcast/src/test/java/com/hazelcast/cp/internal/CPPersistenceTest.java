@@ -18,7 +18,9 @@ public class CPPersistenceTest extends HazelcastRaftTestSupport {
 
         IAtomicLong atomicLong = instances[0].getCPSubsystem().getAtomicLong("test");
         System.err.println(">>>>>>>>>>>>>>>> atomicLong = " + atomicLong.get());
-
         atomicLong.incrementAndGet();
+
+        IAtomicLong atomicLong2 = instances[0].getCPSubsystem().getAtomicLong("test@group2");
+        System.err.println("================= atomicLong2 = " + atomicLong2.incrementAndGet());
     }
 }

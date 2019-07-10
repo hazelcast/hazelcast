@@ -27,7 +27,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.BufferedInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -116,7 +115,7 @@ public class SimpleRaftStateLoader implements RaftStateLoader {
                     try {
                         entry.readData(in);
                     } catch (HazelcastSerializationException e) {
-                        if (e.getCause() instanceof EOFException) {
+                        if (e.getCause() instanceof IOException) {
                             // partially written entry
                             break;
                         }
