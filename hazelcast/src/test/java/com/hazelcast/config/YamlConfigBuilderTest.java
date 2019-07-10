@@ -1108,31 +1108,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_optimizeQueries() {
-        String yaml1 = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap1:\n"
-                + "      optimize-queries: true\n";
-
-        Config config1 = buildConfig(yaml1);
-        MapConfig mapConfig1 = config1.getMapConfig("mymap1");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig1.getCacheDeserializedValues());
-
-        String yaml2 = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap2:\n"
-                + "      optimize-queries: false\n";
-
-        Config config2 = buildConfig(yaml2);
-        MapConfig mapConfig2 = config2.getMapConfig("mymap2");
-
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig2.getCacheDeserializedValues());
-    }
-
-    @Override
-    @Test
     public void testMapConfig_cacheValueConfig_defaultValue() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2379,7 +2354,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      quorum-ref: customQuorumRule\n"
                 + "      in-memory-format: BINARY\n"
                 + "      statistics-enabled: true\n"
-                + "      optimize-queries: false\n"
                 + "      cache-deserialized-values: INDEX-ONLY\n"
                 + "      backup-count: 2\n"
                 + "      async-backup-count: 1\n"
@@ -2449,7 +2423,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customQuorumRule", mapConfig.getQuorumName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
-        assertFalse(mapConfig.isOptimizeQueries());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
         assertEquals(2, mapConfig.getBackupCount());
         assertEquals(1, mapConfig.getAsyncBackupCount());

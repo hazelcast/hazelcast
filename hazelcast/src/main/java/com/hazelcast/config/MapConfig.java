@@ -171,11 +171,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     private transient MapConfigReadOnly readOnly;
 
-    // we use these 2 flags to detect a conflict between (deprecated) #setOptimizeQueries()
-    // and #setCacheDeserializedValues()
-    private transient boolean optimizeQueryExplicitlyInvoked;
-    private transient boolean setCacheDeserializedValuesExplicitlyInvoked;
-
     public MapConfig() {
     }
 
@@ -796,49 +791,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Checks if queries are optimized.
-     *
-     * @return {@code true} if queries are optimized, {@code false} otherwise
-     * @deprecated use {@link #getQueryCacheConfigs()} instead
-     */
-    public boolean isOptimizeQueries() {
-        return cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
-    }
-
-    /**
-     * Enable de-serialized value caching when evaluating predicates. It has no effect when {@link InMemoryFormat}
-     * is {@link InMemoryFormat#OBJECT} or when {@link com.hazelcast.nio.serialization.Portable} serialization is used.
-     *
-     * @param optimizeQueries {@code true} if queries should be optimized, {@code false} otherwise
-     * @return this {@code MapConfig} instance
-     * @see CacheDeserializedValues
-     * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
-     */
-    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
-        validateSetOptimizeQueriesOption(optimizeQueries);
-        if (optimizeQueries) {
-            this.cacheDeserializedValues = CacheDeserializedValues.ALWAYS;
-        }
-        //this is used to remember the method has been called explicitly
-        this.optimizeQueryExplicitlyInvoked = true;
-        return this;
-    }
-
-    private void validateSetOptimizeQueriesOption(boolean optimizeQueries) {
-        if (setCacheDeserializedValuesExplicitlyInvoked) {
-            if (optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to true, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            } else if (!optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.ALWAYS) {
-                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to false, "
-                        + "but 'cacheDeserializedValues' is set to ALWAYS. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            }
-        }
-    }
-
-    /**
      * Configure de-serialized value caching.
      * Default: {@link CacheDeserializedValues#INDEX_ONLY}
      *
@@ -847,31 +799,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * @since 3.6
      */
     public MapConfig setCacheDeserializedValues(CacheDeserializedValues cacheDeserializedValues) {
-        validateCacheDeserializedValuesOption(cacheDeserializedValues);
         this.cacheDeserializedValues = cacheDeserializedValues;
-        this.setCacheDeserializedValuesExplicitlyInvoked = true;
         return this;
-    }
-
-    private void validateCacheDeserializedValuesOption(CacheDeserializedValues validatedCacheDeserializedValues) {
-        if (optimizeQueryExplicitlyInvoked) {
-            // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
-            // we need to be strict with validation to detect conflicts
-            boolean optimizeQuerySet = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
-            if (optimizeQuerySet && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
-
-            if (cacheDeserializedValues != validatedCacheDeserializedValues) {
-                boolean optimizeQueriesFlagState = cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
-                throw new InvalidConfigurationException("Deprecated option 'optimize-queries' is set to "
-                        + optimizeQueriesFlagState + " but 'cacheDeserializedValues' is set to "
-                        + validatedCacheDeserializedValues + ". These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
-        }
     }
 
     /**
@@ -879,7 +808,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @return hot restart config
      */
-    public @Nonnull HotRestartConfig getHotRestartConfig() {
+    public @Nonnull
+    HotRestartConfig getHotRestartConfig() {
         return hotRestartConfig;
     }
 
@@ -899,7 +829,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @return merkle tree config
      */
-    public @Nonnull MerkleTreeConfig getMerkleTreeConfig() {
+    public @Nonnull
+    MerkleTreeConfig getMerkleTreeConfig() {
         return merkleTreeConfig;
     }
 
@@ -919,7 +850,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @return event journal config
      */
-    public @Nonnull EventJournalConfig getEventJournalConfig() {
+    public @Nonnull
+    EventJournalConfig getEventJournalConfig() {
         return eventJournalConfig;
     }
 

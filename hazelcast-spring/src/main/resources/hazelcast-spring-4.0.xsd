@@ -761,22 +761,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="optimize-queries" use="optional" type="parameterized-boolean">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This parameter is deprecated as of Hazelcast 3.6
-                                            Use cache-deserialized-values attribute instead.
-
-                                            When both optimize-query and cache-deserialized-values are used at the same time
-                                            Hazelcast will do its best to detect possible conflicts. Conflict detection
-                                            is done on best-effort basis and you should not rely on it.
-
-                                            This parameter is used to increase the speed of query processes in the map.
-                                            It only works when `in-memory-format` is set as `BINARY` and performs
-                                            a pre-caching on the entries queried.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                                 <xs:attribute name="cache-deserialized-values" use="optional"
                                               type="parameterized-cache-deserialized">
                                     <xs:annotation>

@@ -281,11 +281,6 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setOptimizeQueriesOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setOptimizeQueries(true);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setPartitionLostListenerConfigsOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setPartitionLostListenerConfigs(singletonList(new MapPartitionLostListenerConfig()));
     }

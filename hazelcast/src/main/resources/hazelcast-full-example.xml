@@ -918,13 +918,6 @@
         * <statistics-enabled>:
             When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
             number of hits, key, value, etc. Its default value is true.
-        * <optimize-queries>:
-        It is deprecated as of Hazelcast 3.6. Use the <cache-deserialized-values> element instead. When
-        <optimize-queries> and <cache-deserialized-values> are used at the same time, Hazelcast will do its
-        best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not
-        rely on it. If true, it increases the speed of query processes in the map. It only works when
-        <in-memory-format> is set to BINARY and performs a pre-caching on the entries queried. Its default
-        value is false.
         * <metadata-policy>
         Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
         create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -1210,7 +1203,6 @@
         <in-memory-format>BINARY</in-memory-format>
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
         <statistics-enabled>true</statistics-enabled>
-        <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>

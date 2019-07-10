@@ -273,11 +273,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setPartitionLostListenerConfigs(List<MapPartitionLostListenerConfig> listenerConfigs) {
         throw throwReadOnly();
     }

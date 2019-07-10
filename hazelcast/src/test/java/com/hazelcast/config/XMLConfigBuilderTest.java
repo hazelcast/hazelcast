@@ -1085,31 +1085,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_optimizeQueries() {
-        String xml1 = HAZELCAST_START_TAG
-                + "<map name=\"mymap1\">"
-                + "<optimize-queries>true</optimize-queries>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config1 = buildConfig(xml1);
-        MapConfig mapConfig1 = config1.getMapConfig("mymap1");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig1.getCacheDeserializedValues());
-
-        String xml2 = HAZELCAST_START_TAG
-                + "<map name=\"mymap2\">"
-                + "<optimize-queries>false</optimize-queries>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config2 = buildConfig(xml2);
-        MapConfig mapConfig2 = config2.getMapConfig("mymap2");
-
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig2.getCacheDeserializedValues());
-    }
-
-    @Override
-    @Test
     public void testMapConfig_cacheValueConfig_defaultValue() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -2307,7 +2282,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "        <in-memory-format>BINARY</in-memory-format>"
                 + "        <statistics-enabled>true</statistics-enabled>"
-                + "        <optimize-queries>false</optimize-queries>"
                 + "        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>"
                 + "        <backup-count>2</backup-count>"
                 + "        <async-backup-count>1</async-backup-count>"
@@ -2377,7 +2351,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customQuorumRule", mapConfig.getQuorumName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
-        assertFalse(mapConfig.isOptimizeQueries());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
         assertEquals(2, mapConfig.getBackupCount());
         assertEquals(1, mapConfig.getAsyncBackupCount());
