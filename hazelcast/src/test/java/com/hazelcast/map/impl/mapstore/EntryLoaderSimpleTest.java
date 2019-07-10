@@ -90,7 +90,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(testEntryLoader);
         config.getMapConfig("default")
@@ -101,9 +101,9 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryWithExpirationTime_expires() {
-        testEntryLoader.putExternally("key", "val", System.currentTimeMillis() + 2500);
+        testEntryLoader.putExternally("key", "val", System.currentTimeMillis() + 10000);
         assertEquals("val", map.get("key"));
-        sleepAtLeastMillis(2500);
+        sleepAtLeastMillis(10000);
         assertNull(map.get("key"));
     }
 
@@ -123,7 +123,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     public void testLoadAllWithExpirationTimes() {
         final int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
-            testEntryLoader.putExternally("key" + i, "val" + i, System.currentTimeMillis() + 5000);
+            testEntryLoader.putExternally("key" + i, "val" + i, System.currentTimeMillis() + 10000);
         }
         map.loadAll(false);
 
@@ -164,7 +164,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testGetAllLoadsEntriesWithExpiration() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -173,7 +173,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertEquals("val" + i, entries.get("key" + i));
         }
-        sleepAtLeastSeconds(6);
+        sleepAtLeastSeconds(10);
         for (int i = 0; i < 50; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }
@@ -279,7 +279,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testValues() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Collection<String> entries = map.values();
         for (int i = 0; i < entryCount; i++) {
             assertContains(entries, "val" + i);
@@ -290,7 +290,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testValues_withPredicate() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Collection<String> entries = map.values(Predicates.greaterEqual("this", "val90"));
         for (int i = 90; i < entryCount; i++) {
             assertContains(entries, "val" + i);
@@ -301,7 +301,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testEntrySet() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<Map.Entry<String, String>> entries = map.entrySet();
         for (int i = 0; i < entryCount; i++) {
             assertContains(entries, new AbstractMap.SimpleEntry<>("key" + i, "val" + i));
@@ -312,7 +312,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testEntrySet_withPredicate() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<Map.Entry<String, String>> entries = map.entrySet(Predicates.greaterEqual("__key", "key90"));
         for (int i = 90; i < entryCount; i++) {
             assertContains(entries, new AbstractMap.SimpleEntry<>("key" + i, "val" + i));
