@@ -234,7 +234,6 @@
         -->
         <statistics-enabled>false</statistics-enabled>
 
-        <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--
             Number of backups. If 1 is set as the backup-count for example,

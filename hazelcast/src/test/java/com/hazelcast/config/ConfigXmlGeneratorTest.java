@@ -1010,7 +1010,6 @@ public class ConfigXmlGeneratorTest {
                 .setAsyncBackupCount(3)
                 .setEvictionPercentage(80)
                 .setMinEvictionCheckMillis(1000)
-                .setOptimizeQueries(true)
                 .setMapStoreConfig(mapStoreConfig)
                 .setMaxSizeConfig(maxSizeConfig)
                 .setWanReplicationRef(wanReplicationRef())

@@ -178,9 +178,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapConfig_evictions();
 
     @Test
-    public abstract void testMapConfig_optimizeQueries();
-
-    @Test
     public abstract void testMapConfig_cacheValueConfig_defaultValue();
 
     @Test

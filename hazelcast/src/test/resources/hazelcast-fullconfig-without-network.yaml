@@ -230,7 +230,6 @@ hazelcast:
       # You can disable if you do not plan to use eviction on your entries.
       statistics-enabled: false
 
-      optimize-queries: true
       cache-deserialized-values: ALWAYS
 
       # Number of backups. If 1 is set as the backup-count for example,

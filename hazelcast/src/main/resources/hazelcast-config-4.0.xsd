@@ -144,21 +144,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="optimize-queries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        This parameter is deprecated as of Hazelcast 3.6
-                        Use cache-deserialized-values attribute instead.
-
-                        When both optimize-query and cache-deserialized-values are used at the same time
-                        Hazelcast will do its best to detect possible conflicts. Conflict detection
-                        is done on best-effort basis and you should not rely on it.
-
-                        If true, increases the speed of query processes in the map. It only works when in-memory-format
-                        is set as BINARY and performs a pre-caching on the entries queried. Default value is false.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="cache-deserialized-values" type="cache-deserialized-values" minOccurs="0" maxOccurs="1"
                         default="INDEX-ONLY">
                 <xs:annotation>

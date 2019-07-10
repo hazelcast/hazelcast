@@ -315,7 +315,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(27, config.getMapConfigs().size());
+        assertEquals(25, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -431,20 +431,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
 
-        MapConfig mapWithOptimizedQueriesConfig = config.getMapConfig("mapWithOptimizedQueries");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapWithOptimizedQueriesConfig.getCacheDeserializedValues());
-
         MapConfig mapWithValueCachingSetToNever = config.getMapConfig("mapWithValueCachingSetToNever");
         assertEquals(CacheDeserializedValues.NEVER, mapWithValueCachingSetToNever.getCacheDeserializedValues());
 
         MapConfig mapWithValueCachingSetToAlways = config.getMapConfig("mapWithValueCachingSetToAlways");
         assertEquals(CacheDeserializedValues.ALWAYS, mapWithValueCachingSetToAlways.getCacheDeserializedValues());
 
-        MapConfig mapWithNotOptimizedQueriesConfig = config.getMapConfig("mapWithNotOptimizedQueries");
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithNotOptimizedQueriesConfig.getCacheDeserializedValues());
-
-        MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultOptimizedQueriesConfig.getCacheDeserializedValues());
+        MapConfig mapWithDefaultValueCaching = config.getMapConfig("mapWithDefaultValueCaching");
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultValueCaching.getCacheDeserializedValues());
 
         MapConfig testMapWithPartitionLostListenerConfig = config.getMapConfig("mapWithPartitionLostListener");
         List<MapPartitionLostListenerConfig> partitionLostListenerConfigs

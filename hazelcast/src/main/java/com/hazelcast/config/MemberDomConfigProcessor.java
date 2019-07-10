@@ -1599,8 +1599,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setReadBackupData(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(getBooleanValue(value));
-            } else if ("optimize-queries".equals(nodeName)) {
-                mapConfig.setOptimizeQueries(getBooleanValue(value));
             } else if ("cache-deserialized-values".equals(nodeName)) {
                 CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues.parseString(value);
                 mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
