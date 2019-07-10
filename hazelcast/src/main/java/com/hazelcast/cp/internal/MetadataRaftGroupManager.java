@@ -371,9 +371,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             logger.fine("METADATA " + metadataGroup + " initialization is completed with: " + initializedCPMembers);
 
             initializationStatus = MetadataRaftGroupInitStatus.SUCCESSFUL;
-            completeFutures(getMetadataGroupId(), initializationCommitIndices, null);
+            Collection<Long> completed = new ArrayList<Long>(initializationCommitIndices);
             initializedCPMembers.clear();
             initializationCommitIndices.clear();
+            updateInvocationManagerMembers(groupIdSeed, commitIndex, activeMembers);
+            completeFutures(getMetadataGroupId(), completed, null);
+
             return true;
         }
 
