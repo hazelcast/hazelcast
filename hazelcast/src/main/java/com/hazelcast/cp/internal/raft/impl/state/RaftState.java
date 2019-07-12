@@ -276,6 +276,9 @@ public final class RaftState {
         return term;
     }
 
+    /**
+     * TODO: javadoc
+     */
     public RaftStateStore stateStore() {
         return store;
     }

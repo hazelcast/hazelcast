@@ -239,6 +239,7 @@ public final class RaftNodeImpl implements RaftNode {
                     if (state.localEndpoint().equals(state.leader())) {
                         invalidateFuturesFrom(state.commitIndex() + 1);
                     }
+                    closeStateStore();
                 }
             }
         });
@@ -278,6 +279,14 @@ public final class RaftNodeImpl implements RaftNode {
         });
 
         scheduleLeaderFailureDetection();
+    }
+
+    private void closeStateStore() {
+        try {
+            state.stateStore().close();
+        } catch (IOException e) {
+            logger.severe(e);
+        }
     }
 
     @Override
@@ -648,6 +657,7 @@ public final class RaftNodeImpl implements RaftNode {
         if (operation instanceof RaftGroupCmd) {
             if (operation instanceof DestroyRaftGroupCmd) {
                 setStatus(TERMINATED);
+                closeStateStore();
             } else if (operation instanceof UpdateRaftGroupMembersCmd) {
                 if (state.lastGroupMembers().index() < entry.index()) {
                     setStatus(UPDATING_GROUP_MEMBER_LIST);
@@ -669,6 +679,7 @@ public final class RaftNodeImpl implements RaftNode {
                     // Although LeaderDemotedException is designed for another case, we use it here since
                     // invocations internally retry when they receive LeaderDemotedException.
                     invalidateFuturesUntil(entry.index() - 1, new LeaderDemotedException(state.localEndpoint(), null));
+                    closeStateStore();
                 } else {
                     setStatus(ACTIVE);
                 }
