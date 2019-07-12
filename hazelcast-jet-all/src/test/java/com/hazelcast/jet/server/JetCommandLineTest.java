@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.server;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.IListJet;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.After;
@@ -45,7 +47,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
@@ -63,6 +67,8 @@ public class JetCommandLineTest extends JetTestSupport {
     private static final int ITEM_COUNT = 1000;
 
     private static Path testJobJarFile;
+    private static Path xmlConfiguration;
+    private static Path yamlConfiguration;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -81,6 +87,8 @@ public class JetCommandLineTest extends JetTestSupport {
     public static void beforeClass() throws IOException {
         testJobJarFile = Files.createTempFile("testjob-", ".jar");
         IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob.jar"), testJobJarFile.toFile());
+        xmlConfiguration = Paths.get(JetCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
+        yamlConfiguration = Paths.get(JetCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
     }
 
     @AfterClass
@@ -92,10 +100,17 @@ public class JetCommandLineTest extends JetTestSupport {
     public void before() {
         JetConfig cfg = new JetConfig();
         cfg.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig().setMapName(SOURCE_NAME));
+        String groupName = randomName();
+        cfg.getHazelcastConfig().getGroupConfig().setName(groupName);
         jet = createJetMember(cfg);
-        client = createJetClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setName(groupName);
+        client = createJetClient(clientConfig);
         resetOut();
 
+        Address address = jet.getCluster().getLocalMember().getAddress();
+        System.setProperty("member", address.getHost() + ":" + address.getPort());
+        System.setProperty("group", groupName);
         sourceMap = jet.getMap(SOURCE_NAME);
         IntStream.range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, i));
         sinkList = jet.getList(SINK_NAME);
@@ -425,6 +440,24 @@ public class JetCommandLineTest extends JetTestSupport {
         assertTrueEventually(() -> assertContains(captureOut(), " with arguments [--jobOption, fooValue]"));
     }
 
+    @Test
+    public void test_yaml_configuration() {
+        test_custom_configuration(yamlConfiguration.toString());
+    }
+
+    @Test
+    public void test_xml_configuration() {
+        test_custom_configuration(xmlConfiguration.toString());
+    }
+
+    private void test_custom_configuration(String configFile) {
+        run(this::createJetClient, "-f", configFile, "cluster");
+
+        String actual = captureOut();
+        assertContains(actual, jet.getCluster().getLocalMember().getUuid());
+        assertContains(actual, "ACTIVE");
+    }
+
     private void testVerbosity(String... args) {
         System.out.println("Testing verbosity with parameters " + Arrays.toString(args));
         try {
@@ -438,8 +471,8 @@ public class JetCommandLineTest extends JetTestSupport {
     private Job newJob() {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
-                .withoutTimestamps()
-                .drainTo(Sinks.list(SINK_NAME));
+         .withoutTimestamps()
+         .drainTo(Sinks.list(SINK_NAME));
         Job job = jet.newJob(p, new JobConfig().setName("job-infinite-pipeline"));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;
@@ -447,6 +480,10 @@ public class JetCommandLineTest extends JetTestSupport {
 
     private void run(String... args) {
         runCommandLine(cfg -> client, out, err, false, args);
+    }
+
+    private void run(Function<ClientConfig, JetInstance> clientFn, String... args) {
+        runCommandLine(clientFn, out, err, false, args);
     }
 
     private void resetOut() {

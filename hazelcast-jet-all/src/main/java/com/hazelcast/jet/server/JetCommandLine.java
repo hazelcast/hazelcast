@@ -18,6 +18,7 @@ package com.hazelcast.jet.server;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.jet.Jet;
@@ -90,12 +91,12 @@ public class JetCommandLine implements Runnable {
     private final PrintStream err;
 
     @Option(names = {"-f", "--config"},
-            description = "Optional path to a client config XML file. " +
+            description = "Optional path to a client config XML/YAML file. " +
                     "By default config/hazelcast-client.xml is used." +
                     "If this option is specified then the addresses and group name options are ignored.",
             order = 0
     )
-    private File configXml;
+    private File config;
 
     @Option(names = {"-a", "--addresses"},
             split = ",",
@@ -358,14 +359,14 @@ public class JetCommandLine implements Runnable {
             String format = "%-24s %-19s %-18s %-23s%n";
             printf(format, "NAME", "ID", "STATUS", "SUBMISSION TIME");
             summaries.stream()
-                    .filter(job -> listAll || isActive(job.getStatus()))
-                    .forEach(job -> {
-                        String idString = idToString(job.getJobId());
-                        String name = job.getName().equals(idString) ? "N/A" : shorten(job.getName(), MAX_STR_LENGTH);
-                        printf(format,
-                                name, idString, job.getStatus(), toLocalDateTime(job.getSubmissionTime())
-                        );
-                    });
+                     .filter(job -> listAll || isActive(job.getStatus()))
+                     .forEach(job -> {
+                         String idString = idToString(job.getJobId());
+                         String name = job.getName().equals(idString) ? "N/A" : shorten(job.getName(), MAX_STR_LENGTH);
+                         printf(format,
+                                 name, idString, job.getStatus(), toLocalDateTime(job.getSubmissionTime())
+                         );
+                     });
         });
     }
 
@@ -428,8 +429,11 @@ public class JetCommandLine implements Runnable {
     }
 
     private ClientConfig getClientConfig() throws IOException {
-        if (configXml != null) {
-            return new XmlClientConfigBuilder(configXml).build();
+        if (isYaml()) {
+            return new YamlClientConfigBuilder(config).build();
+        }
+        if (isConfigNotNull()) {
+            return new XmlClientConfigBuilder(config).build();
         }
         if (addresses != null) {
             ClientConfig config = new ClientConfig();
@@ -438,6 +442,15 @@ public class JetCommandLine implements Runnable {
             return config;
         }
         return ConfigProvider.locateAndGetClientConfig();
+    }
+
+    private boolean isYaml() {
+        return isConfigNotNull() &&
+                (config.getPath().endsWith(".yaml") || config.getPath().endsWith(".yml"));
+    }
+
+    private boolean isConfigNotNull() {
+        return config != null;
     }
 
     private void configureLogging() throws IOException {
@@ -506,7 +519,7 @@ public class JetCommandLine implements Runnable {
         @Override
         public String[] getVersion() {
             JetBuildInfo jetBuildInfo = getBuildInfo().getJetBuildInfo();
-            return new String[]{
+            return new String[] {
                     "Hazelcast Jet " + jetBuildInfo.getVersion(),
                     "Revision " + jetBuildInfo.getRevision(),
                     "Build " + jetBuildInfo.getBuild()
