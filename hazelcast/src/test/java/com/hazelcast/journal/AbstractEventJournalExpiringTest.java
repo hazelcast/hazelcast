@@ -44,8 +44,8 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
     protected HazelcastInstance[] instances;
 
     private int partitionId;
-    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<EJ_TYPE>();
+    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<>();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     private void init() {
         instances = createInstances();
@@ -74,7 +74,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
         String key = randomPartitionKey();
-        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
 
         readFromJournal(context, exception, 0);
 
