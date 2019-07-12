@@ -529,7 +529,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         final HazelcastInstance leaderInstance = getLeaderInstance(instances, INITIAL_METADATA_GROUP_ID);
         final RaftService raftService = getRaftService(leaderInstance);
-        Collection<CPMemberInfo> allEndpoints = raftService.getMetadataGroupManager().getActiveMembers();
+        Collection<CPMemberInfo> allMembers = raftService.getMetadataGroupManager().getActiveMembers();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -539,16 +539,16 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         });
         CPGroup metadataGroup = raftService.getMetadataGroupManager().getGroup(getMetadataGroupId(leaderInstance));
 
-        final Collection<CPMemberInfo> endpoints = new HashSet<CPMemberInfo>(otherRaftGroupSize);
-        for (CPMemberInfo endpoint : allEndpoints) {
-            if (!metadataGroup.members().contains(endpoint)) {
-                endpoints.add(endpoint);
+        final Collection<CPMemberInfo> members = new HashSet<CPMemberInfo>(otherRaftGroupSize);
+        for (CPMemberInfo member : allMembers) {
+            if (!metadataGroup.members().contains(member)) {
+                members.add(member);
             }
         }
-        assertEquals(otherRaftGroupSize, endpoints.size());
+        assertEquals(otherRaftGroupSize, members.size());
 
-        List<RaftEndpointImpl> groupEndpoints = new ArrayList<RaftEndpointImpl>();
-        for (CPMemberInfo member : endpoints) {
+        List<RaftEndpoint> groupEndpoints = new ArrayList<RaftEndpoint>();
+        for (CPMemberInfo member : members) {
             groupEndpoints.add(member.toRaftEndpoint());
         }
 
@@ -559,7 +559,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         final CPGroupId groupId = f.get();
 
         for (final HazelcastInstance instance : instances) {
-            if (endpoints.contains(instance.getCPSubsystem().getLocalCPMember())) {
+            if (members.contains(instance.getCPSubsystem().getLocalCPMember())) {
                 assertTrueEventually(new AssertTask() {
                     @Override
                     public void run() {

@@ -337,7 +337,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             failMetadataRaftGroupInitializationIfNotCompletedAndThrow(msg);
         }
 
-        List<RaftEndpointImpl> discoveredMetadataEndpoints = new ArrayList<RaftEndpointImpl>();
+        List<RaftEndpoint> discoveredMetadataEndpoints = new ArrayList<RaftEndpoint>();
         for (CPMemberInfo member : discoveredCPMembers) {
             if (discoveredMetadataEndpoints.size() == config.getGroupSize()) {
                 break;
@@ -418,7 +418,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         throw exception;
     }
 
-    public CPGroupId createRaftGroup(String groupName, Collection<RaftEndpointImpl> groupEndpoints, long commitIndex) {
+    public CPGroupId createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long commitIndex) {
         checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), groupName + " is reserved for internal usage!");
         checkMetadataGroupInitSuccessful();
 
@@ -441,7 +441,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
 
         CPMemberInfo leavingMember = membershipChangeSchedule != null ? membershipChangeSchedule.getLeavingMember() : null;
-        for (RaftEndpointImpl groupEndpoint : groupEndpoints) {
+        for (RaftEndpoint groupEndpoint : groupEndpoints) {
             if ((leavingMember != null && groupEndpoint.getUuid().equals(leavingMember.getUuid()))
                     || !activeMembersMap.containsKey(groupEndpoint.getUuid())) {
                 String msg = "Cannot create CP group: " + groupName + " since " + groupEndpoint + " is not active";
@@ -474,7 +474,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             // Broadcast group-info to non-metadata group members
             OperationService operationService = nodeEngine.getOperationService();
             CPGroupInfo metadataGroup = groups.get(getMetadataGroupId());
-            for (RaftEndpointImpl member : group.memberImpls()) {
+            for (RaftEndpoint member : group.memberImpls()) {
                 if (!metadataGroup.containsMember(member)) {
                     Operation op = new CreateRaftNodeOp(group.id(), group.initialMembers());
                     operationService.send(op, activeMembersMap.get(member.getUuid()).getAddress());
@@ -600,7 +600,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private void sendDestroyRaftNodeOps(CPGroupInfo group) {
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
-        RaftEndpointImpl localEndpoint = getLocalCPMember().toRaftEndpoint();
+        RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
         Operation op = new DestroyRaftNodesOp(Collections.<CPGroupId>singleton(group.id()));
         for (RaftEndpoint endpoint : group.members())  {
@@ -774,8 +774,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private boolean applyMembershipChange(CPGroupMembershipChange change, CPGroupInfo group,
                                           long expectedMembersCommitIndex, long newMembersCommitIndex) {
-        RaftEndpointImpl addedMember = change.getMemberToAdd();
-        RaftEndpointImpl removedMember = change.getMemberToRemove();
+        RaftEndpoint addedMember = change.getMemberToAdd();
+        RaftEndpoint removedMember = change.getMemberToRemove();
 
         if (group.applyMembershipChange(removedMember, addedMember, expectedMembersCommitIndex, newMembersCommitIndex)) {
             if (logger.isFineEnabled()) {
@@ -809,7 +809,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             return false;
         }
 
-        RaftEndpointImpl leavingEndpoint = leavingMember.toRaftEndpoint();
+        RaftEndpoint leavingEndpoint = leavingMember.toRaftEndpoint();
         for (CPGroupInfo group : groups.values()) {
             if (group.containsMember(leavingEndpoint)) {
                 if (group.status() != DESTROYED) {

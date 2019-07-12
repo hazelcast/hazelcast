@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -114,17 +115,17 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
 
         private long membersCommitIndex;
 
-        private Collection<RaftEndpointImpl> members;
+        private Collection<RaftEndpoint> members;
 
-        private RaftEndpointImpl memberToAdd;
+        private RaftEndpoint memberToAdd;
 
-        private RaftEndpointImpl memberToRemove;
+        private RaftEndpoint memberToRemove;
 
         CPGroupMembershipChange() {
         }
 
-        CPGroupMembershipChange(CPGroupId groupId, long membersCommitIndex, Collection<RaftEndpointImpl> members,
-                                RaftEndpointImpl memberToAdd, RaftEndpointImpl memberToRemove) {
+        CPGroupMembershipChange(CPGroupId groupId, long membersCommitIndex, Collection<RaftEndpoint> members,
+                                RaftEndpoint memberToAdd, RaftEndpoint memberToRemove) {
             this.groupId = groupId;
             this.membersCommitIndex = membersCommitIndex;
             this.members = members;
@@ -140,15 +141,15 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             return membersCommitIndex;
         }
 
-        Collection<RaftEndpointImpl> getMembers() {
+        Collection<RaftEndpoint> getMembers() {
             return members;
         }
 
-        RaftEndpointImpl getMemberToAdd() {
+        RaftEndpoint getMemberToAdd() {
             return memberToAdd;
         }
 
-        RaftEndpointImpl getMemberToRemove() {
+        RaftEndpoint getMemberToRemove() {
             return memberToRemove;
         }
 
@@ -156,7 +157,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(membersCommitIndex);
             out.writeInt(members.size());
-            for (RaftEndpointImpl member : members) {
+            for (RaftEndpoint member : members) {
                 out.writeObject(member);
             }
             out.writeObject(memberToAdd);
@@ -167,9 +168,9 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
         public void readData(ObjectDataInput in) throws IOException {
             membersCommitIndex = in.readLong();
             int len = in.readInt();
-            members = new HashSet<RaftEndpointImpl>(len);
+            members = new HashSet<RaftEndpoint>(len);
             for (int i = 0; i < len; i++) {
-                RaftEndpointImpl member = in.readObject();
+                RaftEndpoint member = in.readObject();
                 members.add(member);
             }
             memberToAdd = in.readObject();

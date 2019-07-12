@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -70,7 +71,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         return address;
     }
 
-    public RaftEndpointImpl toRaftEndpoint() {
+    public RaftEndpoint toRaftEndpoint() {
         return endpoint;
     }
 

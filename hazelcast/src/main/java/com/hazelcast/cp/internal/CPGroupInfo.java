@@ -46,8 +46,8 @@ import static java.util.Collections.unmodifiableSet;
 public final class CPGroupInfo implements IdentifiedDataSerializable {
 
     private RaftGroupId id;
-    private Set<RaftEndpointImpl> initialMembers;
-    private Set<RaftEndpointImpl> members;
+    private Set<RaftEndpoint> initialMembers;
+    private Set<RaftEndpoint> members;
     private long membersCommitIndex;
 
     // read outside of Raft
@@ -56,11 +56,11 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     public CPGroupInfo() {
     }
 
-    public CPGroupInfo(RaftGroupId id, Collection<RaftEndpointImpl> members) {
+    public CPGroupInfo(RaftGroupId id, Collection<RaftEndpoint> members) {
         this.id = id;
         this.status = ACTIVE;
-        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpointImpl>(members));
-        this.members = unmodifiableSet(new LinkedHashSet<RaftEndpointImpl>(members));
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(members));
+        this.members = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(members));
     }
 
     public RaftGroupId id() {
@@ -84,17 +84,17 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         return members.size();
     }
 
-    public boolean containsMember(RaftEndpointImpl member) {
+    public boolean containsMember(RaftEndpoint member) {
         return members.contains(member);
     }
 
-    public Collection<RaftEndpointImpl> memberImpls() {
+    public Collection<RaftEndpoint> memberImpls() {
         return members;
     }
 
     @SuppressWarnings("unchecked")
     public Collection<RaftEndpoint> initialMembers() {
-        return (Collection) initialMembers;
+        return initialMembers;
     }
 
     public CPGroupStatus status() {
@@ -128,7 +128,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         return membersCommitIndex;
     }
 
-    boolean applyMembershipChange(RaftEndpointImpl leaving, RaftEndpointImpl joining, long expectedMembersCommitIndex,
+    boolean applyMembershipChange(RaftEndpoint leaving, RaftEndpoint joining, long expectedMembersCommitIndex,
                                   long newMembersCommitIndex) {
         checkState(status == ACTIVE, "Cannot apply membership change of Leave: " + leaving
                 + " and Join: " + joining + " since status is: " + status);
@@ -136,7 +136,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
             return false;
         }
 
-        Set<RaftEndpointImpl> m = new LinkedHashSet<RaftEndpointImpl>(members);
+        Set<RaftEndpoint> m = new LinkedHashSet<RaftEndpoint>(members);
         if (leaving != null) {
             boolean removed = m.remove(leaving);
             assert removed : leaving + " is not member of " + toString();
@@ -159,7 +159,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         }
         // we should preserve the member ordering so we iterate over group members instead of all cp members
         List<CPMember> groupEndpoints = new ArrayList<CPMember>();
-        for (RaftEndpointImpl endpoint : members) {
+        for (RaftEndpoint endpoint : members) {
             CPMemberInfo memberInfo = cpMembersMap.get(endpoint.getUuid());
             if (memberInfo == null) {
                 continue;
@@ -171,19 +171,19 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
             throw new IllegalStateException("Missing CP member in active CP members: " + cpMembers + " for " + this);
         }
 
-        return new CPGroupSummary(id,  status, (Set) initialMembers, groupEndpoints);
+        return new CPGroupSummary(id,  status, initialMembers, groupEndpoints);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(id);
         out.writeInt(initialMembers.size());
-        for (RaftEndpointImpl member : initialMembers) {
+        for (RaftEndpoint member : initialMembers) {
             out.writeObject(member);
         }
         out.writeLong(membersCommitIndex);
         out.writeInt(members.size());
-        for (RaftEndpointImpl member : members) {
+        for (RaftEndpoint member : members) {
             out.writeObject(member);
         }
         out.writeUTF(status.toString());
@@ -193,17 +193,17 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readObject();
         int initialMemberCount = in.readInt();
-        Set<RaftEndpointImpl> initialMembers = new LinkedHashSet<RaftEndpointImpl>();
+        Set<RaftEndpoint> initialMembers = new LinkedHashSet<RaftEndpoint>();
         for (int i = 0; i < initialMemberCount; i++) {
-            RaftEndpointImpl member = in.readObject();
+            RaftEndpoint member = in.readObject();
             initialMembers.add(member);
         }
         this.initialMembers = unmodifiableSet(initialMembers);
         membersCommitIndex = in.readLong();
         int memberCount = in.readInt();
-        members = new LinkedHashSet<RaftEndpointImpl>(memberCount);
+        members = new LinkedHashSet<RaftEndpoint>(memberCount);
         for (int i = 0; i < memberCount; i++) {
-            RaftEndpointImpl member = in.readObject();
+            RaftEndpoint member = in.readObject();
             members.add(member);
         }
         members = unmodifiableSet(members);
