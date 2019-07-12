@@ -15,6 +15,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+
 /**
  * Persists and restores CP member identity of the local member.
  */
@@ -56,7 +59,7 @@ public class CPMemberMetadataStore {
         FileOutputStream fileOutputStream = new FileOutputStream(tmp);
         DataOutputStream out = new DataOutputStream(new BufferedOutputStream(fileOutputStream));
         try {
-            out.writeUTF(member.getUuid());
+            writeUUID(out, member.getUuid());
             out.flush();
             fileOutputStream.getFD().sync();
         } finally {
@@ -78,8 +81,8 @@ public class CPMemberMetadataStore {
         }
         DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
         try {
-            String uuid = in.readUTF();
-            return new CPMemberInfo(UUID.fromString(uuid), address);
+            UUID uuid = readUUID(in);
+            return new CPMemberInfo(uuid, address);
         } finally {
             IOUtil.closeResource(in);
         }

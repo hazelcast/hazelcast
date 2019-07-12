@@ -29,6 +29,6 @@ public class StaleAppendRequestException extends CPSubsystemException implements
     private static final long serialVersionUID = -736303015926722821L;
 
     public StaleAppendRequestException(RaftEndpoint leader) {
-        super(leader != null ? leader.getUuid() : null);
+        super(leader != null ? leader.getUuid().toString() : null);
     }
 }

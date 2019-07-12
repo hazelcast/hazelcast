@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.testing.TestRaftEndpoint;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -33,7 +34,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -177,7 +177,7 @@ public class RaftUtil {
     }
 
     public static TestRaftEndpoint newRaftMember(int port) {
-        return new TestRaftEndpoint(randomString(), port);
+        return new TestRaftEndpoint(UuidUtil.newUnsecureUUID(), port);
     }
 
     public static Address newAddress(int port) {

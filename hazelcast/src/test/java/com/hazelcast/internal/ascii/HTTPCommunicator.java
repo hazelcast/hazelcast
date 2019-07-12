@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
@@ -329,7 +330,7 @@ public class HTTPCommunicator {
         return doPost(url, groupName, groupPassword);
     }
 
-    public ConnectionResponse removeCPMember(String cpMemberUid, String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse removeCPMember(UUID cpMemberUid, String groupName, String groupPassword) throws IOException {
         String url = address + "cp-subsystem/members/" + cpMemberUid + "/remove";
         return doPost(url, groupName, groupPassword);
     }

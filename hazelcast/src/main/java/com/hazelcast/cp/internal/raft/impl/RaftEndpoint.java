@@ -16,6 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
+import java.util.UUID;
+
 /**
  * Represents an endpoint that runs the Raft consensus algorithm as a member of
  * a Raft group.
@@ -32,6 +34,6 @@ public interface RaftEndpoint {
      *
      * @return the UUID of this Raft endpoint
      */
-    String getUuid();
+    UUID getUuid();
 
 }

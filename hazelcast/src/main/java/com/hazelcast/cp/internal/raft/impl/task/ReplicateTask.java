@@ -99,7 +99,8 @@ public class ReplicateTask implements Runnable {
         } catch (Throwable t) {
             logger.severe(operation + " could not be replicated to leader: " + raftNode.getLocalMember(), t);
             RaftEndpoint leader = raftNode.getLeader();
-            resultFuture.setResult(new CPSubsystemException("Internal failure", t, leader != null ? leader.getUuid() : null));
+            String leaderUuid = leader != null ? leader.getUuid().toString() : null;
+            resultFuture.setResult(new CPSubsystemException("Internal failure", t, leaderUuid));
         }
     }
 

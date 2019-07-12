@@ -28,6 +28,6 @@ public class NotLeaderException extends CPSubsystemException {
 
     public NotLeaderException(CPGroupId groupId, RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER of " + groupId + ". Known leader is: "
-                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
+                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid().toString() : null);
     }
 }

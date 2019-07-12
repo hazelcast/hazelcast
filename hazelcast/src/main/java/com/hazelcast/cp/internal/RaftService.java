@@ -95,6 +95,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -377,7 +378,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public ICompletableFuture<Void> removeCPMember(final String cpMemberUuid) {
+    public ICompletableFuture<Void> removeCPMember(final String cpMemberUuidString) {
+        final UUID cpMemberUuid = UUID.fromString(cpMemberUuidString);
         final ClusterService clusterService = nodeEngine.getClusterService();
         final SimpleCompletableFuture<Void> future = newCompletableFuture();
 
@@ -409,7 +411,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                     }
                 }
                 if (cpMemberToRemove == null) {
-                    complete(future, new IllegalArgumentException("No CPMember found with uuid: " + cpMemberUuid));
+                    complete(future, new IllegalArgumentException("No CPMember found with uuid: " + cpMemberUuidString));
                     return;
                 } else {
                     Member member = clusterService.getMember(cpMemberToRemove.getAddress());
@@ -1056,7 +1058,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                         logger.warning("Removing " + missingMember + " since it is absent for " + missingTimeSeconds
                                 + " seconds.");
 
-                        removeCPMember(missingMember.getUuid()).get();
+                        removeCPMember(missingMember.getUuid().toString()).get();
 
                         logger.info("Auto-removal of " + missingMember + " is successful.");
 

@@ -321,7 +321,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private JsonObject toJson(CPMember cpMember) {
         Address address = cpMember.getAddress();
         return new JsonObject()
-                .add("uuid", cpMember.getUuid())
+                .add("uuid", cpMember.getUuid().toString())
                 .add("address", "[" + address.getHost() + "]:" + address.getPort());
     }
 

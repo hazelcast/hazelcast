@@ -18,24 +18,26 @@ package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.util.UUID;
+
 /**
  * Represents an endpoint that runs the Raft consensus algorithm as a member of
  * a Raft group.
  */
 public class TestRaftEndpoint implements RaftEndpoint {
 
-    private String uuid;
+    private UUID uuid;
 
     // We have port here for logging
     private int port;
 
-    public TestRaftEndpoint(String uuid, int port) {
+    public TestRaftEndpoint(UUID uuid, int port) {
         this.uuid = uuid;
         this.port = port;
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 

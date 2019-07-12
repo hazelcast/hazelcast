@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,6 +75,10 @@ public class RaftInvocationContext {
     }
 
     public CPMemberInfo getCPMember(String leaderUuid) {
+        return getCPMember(UUID.fromString(leaderUuid));
+    }
+
+    public CPMemberInfo getCPMember(UUID leaderUuid) {
         return membersContainer.get().membersMap.get(leaderUuid);
     }
 
@@ -138,12 +143,12 @@ public class RaftInvocationContext {
     private static class CPMembersContainer {
         final CPMembersVersion version;
         final CPMemberInfo[] members;
-        final Map<String, CPMemberInfo> membersMap;
+        final Map<UUID, CPMemberInfo> membersMap;
 
         CPMembersContainer(CPMembersVersion version, CPMemberInfo[] members) {
             this.version = version;
             this.members = members;
-            membersMap = new HashMap<String, CPMemberInfo>();
+            membersMap = new HashMap<UUID, CPMemberInfo>();
             for (CPMemberInfo member : members) {
                 membersMap.put(member.getUuid(), member);
             }

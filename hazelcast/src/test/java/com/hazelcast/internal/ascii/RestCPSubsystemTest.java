@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
+import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -415,7 +416,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember("invalid_uid", groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(newUnsecureUUID(), groupName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }

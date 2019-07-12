@@ -28,6 +28,6 @@ public class LeaderDemotedException extends CPSubsystemException {
 
     public LeaderDemotedException(RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER anymore. Known leader is: "
-                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
+                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid().toString() : null);
     }
 }

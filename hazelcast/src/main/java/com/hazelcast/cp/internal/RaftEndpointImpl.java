@@ -22,7 +22,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.UUID;
+
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Represents an endpoint that runs the Raft consensus algorithm as a member of
@@ -32,18 +38,17 @@ public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializabl
 
     private static final long serialVersionUID = -5184348267183410904L;
 
-
-    private String uuid;
+    private UUID uuid;
 
     public RaftEndpointImpl() {
     }
 
-    public RaftEndpointImpl(String uuid) {
+    public RaftEndpointImpl(UUID uuid) {
         this.uuid = uuid;
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -78,12 +83,22 @@ public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializabl
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        writeUUID(out, uuid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = readUUID(in);
+    }
+
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        writeUUID(out, uuid);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        uuid = readUUID(in);
     }
 
     @Override

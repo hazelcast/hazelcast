@@ -123,7 +123,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         assertClusterSizeEventually(2, instances[1]);
 
         final CPMemberInfo removedEndpoint = new CPMemberInfo(member);
-        instances[1].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(removedEndpoint.getUuid()).get();
+        instances[1].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(removedEndpoint.getUuid().toString()).get();
 
         CPGroup metadataGroup = instances[1].getCPSubsystem()
                                             .getCPSubsystemManagementService()
@@ -159,7 +159,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         CPSubsystemManagementService cpSubsystemManagementService = runningInstance.getCPSubsystem()
                                                                                          .getCPSubsystemManagementService();
         cpSubsystemManagementService.forceDestroyCPGroup(groupId.name()).get();
-        cpSubsystemManagementService.removeCPMember(crashedMember.getUuid()).get();
+        cpSubsystemManagementService.removeCPMember(crashedMember.getUuid().toString()).get();
 
         Collection<CPMember> activeMembers = cpSubsystemManagementService.getCPMembers().get();
         assertFalse(activeMembers.contains(crashedMember));
@@ -193,7 +193,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         // we triggered removal of the crashed member but we won't be able to commit to the "test" group
         ICompletableFuture<Void> f = runningInstance.getCPSubsystem()
                                                     .getCPSubsystemManagementService()
-                                                    .removeCPMember(crashedMember.getUuid());
+                                                    .removeCPMember(crashedMember.getUuid().toString());
 
         // wait until RaftCleanupHandler kicks in and appends ApplyRaftGroupMembersCmd to the leader of the "test" group
         assertTrueEventually(new AssertTask() {
@@ -225,7 +225,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         CPMember promotedMember = promoted.getCPSubsystem().getLocalCPMember();
         promoted.getLifecycleService().terminate();
 
-        master.getCPSubsystem().getCPSubsystemManagementService().removeCPMember(promotedMember.getUuid()).get();
+        master.getCPSubsystem().getCPSubsystemManagementService().removeCPMember(promotedMember.getUuid().toString()).get();
 
         MembershipChangeSchedule schedule = getRaftInvocationManager(master).<MembershipChangeSchedule>query(getMetadataGroupId(master),
                 new GetMembershipChangeScheduleOp(), LEADER_LOCAL).get();
@@ -635,7 +635,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertClusterSizeEventually(2, instances[1]);
 
-        instances[1].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(localCpMember.getUuid()).get();
+        instances[1].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(localCpMember.getUuid().toString()).get();
 
         instances[0] = newHazelcastInstance(initOrCreateConfig(createConfig(3, 3)), randomString(),
                 new StaticMemberNodeContext(factory, localMember));
@@ -992,7 +992,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         CPMember cpMember3 = instances[2].getCPSubsystem().getLocalCPMember();
         instances[2].getLifecycleService().terminate();
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid());
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid().toString());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -1016,7 +1016,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         final CPMember cpMember3 = instances[2].getCPSubsystem().getLocalCPMember();
         instances[2].getLifecycleService().terminate();
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid());
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid().toString());
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
 import static com.hazelcast.cp.internal.raft.impl.state.RaftState.newRaftState;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -211,7 +211,7 @@ public class RaftStateTest {
         }
 
         assertFalse(state.isKnownMember(newRaftMember(1234)));
-        assertFalse(state.isKnownMember(new TestRaftEndpoint(randomString(), localMember.getPort())));
+        assertFalse(state.isKnownMember(new TestRaftEndpoint(UuidUtil.newUnsecureUUID(), localMember.getPort())));
         assertFalse(state.isKnownMember(new TestRaftEndpoint(localMember.getUuid(), 1234)));
     }
 

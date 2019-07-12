@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.UUID;
 
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
@@ -43,11 +41,9 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     private static final long serialVersionUID = 5628148969327743953L;
 
-
-    private transient UUID uuid;
-    // TODO: Can we get rid of RaftEndpoint completely?
+    private UUID uuid;
+    private Address address;
     private transient RaftEndpointImpl endpoint;
-    private transient Address address;
 
     public CPMemberInfo() {
     }
@@ -56,7 +52,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         checkNotNull(uuid);
         checkNotNull(address);
         this.uuid = uuid;
-        this.endpoint = new RaftEndpointImpl(uuid.toString());
+        this.endpoint = new RaftEndpointImpl(uuid);
         this.address = address;
     }
 
@@ -64,17 +60,9 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         this(UUID.fromString(member.getUuid()), member.getAddress());
     }
 
-    public String getUuid() {
-        return endpoint.getUuid();
-    }
-
     @Override
-    public SocketAddress getSocketAddress() {
-        try {
-            return address.getInetSocketAddress();
-        } catch (UnknownHostException e) {
-            return null;
-        }
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
@@ -96,7 +84,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         uuid = readUUID(in);
-        endpoint = new RaftEndpointImpl(uuid.toString());
+        endpoint = new RaftEndpointImpl(uuid);
         String host = in.readUTF();
         int port = in.readInt();
         address = new Address(host, port);
@@ -111,7 +99,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         uuid = readUUID(in);
-        endpoint = new RaftEndpointImpl(uuid.toString());
+        endpoint = new RaftEndpointImpl(uuid);
         address = in.readObject();
     }
 

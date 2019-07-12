@@ -37,6 +37,6 @@ public class CannotReplicateException extends CPSubsystemException implements Re
     private static final long serialVersionUID = 4407025930140337716L;
 
     public CannotReplicateException(RaftEndpoint leader) {
-        super("Cannot replicate new operations for now", leader != null ? leader.getUuid() : null);
+        super("Cannot replicate new operations for now", leader != null ? leader.getUuid().toString() : null);
     }
 }

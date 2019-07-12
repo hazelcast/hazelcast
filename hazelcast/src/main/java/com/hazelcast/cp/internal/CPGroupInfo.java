@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
@@ -152,7 +153,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     }
 
     CPGroupSummary toSummary(Collection<CPMemberInfo> cpMembers) {
-        Map<String, CPMemberInfo> cpMembersMap = new HashMap<String, CPMemberInfo>();
+        Map<UUID, CPMemberInfo> cpMembersMap = new HashMap<UUID, CPMemberInfo>();
         for (CPMemberInfo cpMember : cpMembers) {
             cpMembersMap.put(cpMember.getUuid(), cpMember);
         }

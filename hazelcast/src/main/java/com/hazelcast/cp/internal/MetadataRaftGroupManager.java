@@ -60,6 +60,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -437,7 +438,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             throw new IllegalStateException(msg);
         }
 
-        Map<String, CPMemberInfo> activeMembersMap = getActiveMembersMap();
+        Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
 
         CPMemberInfo leavingMember = membershipChangeSchedule != null ? membershipChangeSchedule.getLeavingMember() : null;
         for (RaftEndpointImpl groupEndpoint : groupEndpoints) {
@@ -458,7 +459,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private CPGroupId createRaftGroup(CPGroupInfo group) {
         addRaftGroup(group);
 
-        Map<String, CPMemberInfo> activeMembersMap = getActiveMembersMap();
+        Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
 
         List<CPMemberInfo> members = new ArrayList<CPMemberInfo>();
         for (RaftEndpoint member : group.members()) {
@@ -484,8 +485,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return groupId;
     }
 
-    private Map<String, CPMemberInfo> getActiveMembersMap() {
-        Map<String, CPMemberInfo> map = new HashMap<String, CPMemberInfo>();
+    private Map<UUID, CPMemberInfo> getActiveMembersMap() {
+        Map<UUID, CPMemberInfo> map = new HashMap<UUID, CPMemberInfo>();
         for (CPMemberInfo member : activeMembers) {
             map.put(member.getUuid(), member);
         }
@@ -598,7 +599,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void sendDestroyRaftNodeOps(CPGroupInfo group) {
-        Map<String, CPMemberInfo> activeMembersMap = getActiveMembersMap();
+        Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
         RaftEndpointImpl localEndpoint = getLocalCPMember().toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
         Operation op = new DestroyRaftNodesOp(Collections.<CPGroupId>singleton(group.id()));
