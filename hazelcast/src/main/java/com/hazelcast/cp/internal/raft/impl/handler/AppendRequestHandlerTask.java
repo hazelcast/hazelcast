@@ -85,8 +85,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
             logger.info("Demoting to FOLLOWER from current role: " + state.role() + ", term: " + state.term()
                     + " to new term: " + req.term() + " and leader: " + req.leader());
-            state.toFollower(req.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(req.term());
         }
 
         if (!req.leader().equals(state.leader())) {

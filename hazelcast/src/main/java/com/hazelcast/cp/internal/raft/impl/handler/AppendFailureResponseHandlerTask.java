@@ -63,8 +63,7 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
         if (resp.term() > state.term()) {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
             logger.info("Demoting to FOLLOWER after " + resp + " from current term: " + state.term());
-            state.toFollower(resp.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(resp.term());
             return;
         }
 

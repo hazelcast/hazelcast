@@ -76,8 +76,7 @@ public class InstallSnapshotHandlerTask extends RaftNodeStatusAwareTask implemen
             logger.info("Demoting to FOLLOWER from current role: " + state.role() + ", term: " + state.term()
                     + " to new term: " + req.term() + " and leader: " + req.leader());
 
-            state.toFollower(req.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(req.term());
         }
 
         if (!req.leader().equals(state.leader())) {

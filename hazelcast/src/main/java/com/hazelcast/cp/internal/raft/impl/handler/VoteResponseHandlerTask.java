@@ -65,8 +65,7 @@ public class VoteResponseHandlerTask extends AbstractResponseHandlerTask {
         if (resp.term() > state.term()) {
             logger.info("Demoting to FOLLOWER from current term: " + state.term() + " to new term: " + resp.term()
                     + " after " + resp);
-            state.toFollower(resp.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(resp.term());
             return;
         }
 

@@ -78,8 +78,7 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
                 logger.info("Moving to new term: " + req.term() + " from current term: " + state.term() + " after " + req);
             }
 
-            state.toFollower(req.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(req.term());
         }
 
         if (state.leader() != null && !req.candidate().equals(state.leader())) {
