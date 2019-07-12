@@ -533,7 +533,7 @@ public final class RaftState {
         }
     }
 
-    public void initPersistence() throws IOException {
+    public void init() throws IOException {
         persistInitialMembers();
         stateStore.getRaftLogStore().open();
     }

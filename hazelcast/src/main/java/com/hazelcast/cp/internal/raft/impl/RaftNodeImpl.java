@@ -259,23 +259,23 @@ public final class RaftNodeImpl implements RaftNode {
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine("Starting raft node: " + state.localEndpoint() + " for " + groupId
-                    + " with " + state.memberCount() + " members: " + state.members());
+            logger.fine("Starting Raft node: " + state.localEndpoint() + " for " + groupId + " with " + state.memberCount()
+                    + " members: " + state.members());
         }
 
         raftIntegration.execute(new Runnable() {
             @Override
             public void run() {
-                restoreStateMachine();
+                initRestoredState();
                 try {
-                    state.initPersistence();
+                    state.init();
                 } catch (IOException e) {
                     logger.severe(e);
                 }
+
+                new PreVoteTask(RaftNodeImpl.this, 0).run();
             }
         });
-
-        raftIntegration.execute(new PreVoteTask(this, 0));
 
         scheduleLeaderFailureDetection();
     }
@@ -899,7 +899,7 @@ public final class RaftNodeImpl implements RaftNode {
         return true;
     }
 
-    private void restoreStateMachine() {
+    private void initRestoredState() {
         SnapshotEntry snapshot = state.log().snapshot();
         if (isNonInitial(snapshot)) {
             printMemberState();
@@ -910,6 +910,15 @@ public final class RaftNodeImpl implements RaftNode {
                 logger.info("Snapshot is restored at commitIndex=" + snapshot.index());
             }
         }
+
+        // If there is a single Raft group command after the last snapshot,
+        // here we cannot know if the that command is committed or not so we
+        // just "pre-apply" that command without committing it.
+        // If there are multiple Raft group commands, it is definitely known
+        // that all the command up to the last command are committed,
+        // but the last command may not be committed.
+        // This conclusion boils down to the fact that once you append a Raft
+        // group command, you cannot append a new one before committing it.
 
         RaftLog log = state.log();
         LogEntry committedEntry = null;

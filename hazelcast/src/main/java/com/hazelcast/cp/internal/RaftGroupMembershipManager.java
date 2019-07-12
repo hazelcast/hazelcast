@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.util.ExceptionUtil.peel;
@@ -71,20 +72,20 @@ class RaftGroupMembershipManager {
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
     private final ILogger logger;
-    private volatile RaftInvocationManager invocationManager;
+    private final RaftInvocationManager invocationManager;
+    private final AtomicBoolean initialized = new AtomicBoolean();
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
+        this.invocationManager = raftService.getInvocationManager();
     }
 
     void init() {
-        if (raftService.getLocalCPMember() == null) {
+        if (raftService.getLocalCPMember() == null || !initialized.compareAndSet(false, true)) {
             return;
         }
-
-        this.invocationManager = raftService.getInvocationManager();
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         // scheduleWithRepetition skips subsequent execution if one is already running.
