@@ -17,7 +17,8 @@
 package com.hazelcast.cp.internal.raft.impl.log;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.cp.internal.raft.impl.persistence.RaftLogStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
 
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry.isNonInitial;
-import static com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore.NOP_LOG_STORE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -69,16 +69,16 @@ public final class RaftLog {
     /**
      * Used for reflecting log changes to persistent storage.
      */
-    private final RaftLogStore logStore;
+    private final RaftStateStore store;
 
-    private RaftLog(int capacity, RaftLogStore logStore) {
-        checkNotNull(logStore);
+    private RaftLog(int capacity, RaftStateStore store) {
+        checkNotNull(store);
         this.logs = new ArrayRingbuffer<LogEntry>(capacity);
-        this.logStore = logStore;
+        this.store = store;
     }
 
-    private RaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftLogStore logStore) {
-        checkNotNull(logStore);
+    private RaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftStateStore store) {
+        checkNotNull(store);
         this.logs = new ArrayRingbuffer<LogEntry>(capacity);
         long snapshotIndex;
         if (isNonInitial(snapshot)) {
@@ -96,23 +96,23 @@ public final class RaftLog {
             }
         }
 
-        this.logStore = logStore;
+        this.store = store;
     }
 
     public static RaftLog newRaftLog(int capacity) {
-        return newRaftLog(capacity, NOP_LOG_STORE);
+        return newRaftLog(capacity, NopRaftStateStore.INSTANCE);
     }
 
-    public static RaftLog newRaftLog(int capacity, RaftLogStore logStore) {
-        return new RaftLog(capacity, logStore);
+    public static RaftLog newRaftLog(int capacity, RaftStateStore store) {
+        return new RaftLog(capacity, store);
     }
 
     public static RaftLog restoreRaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries) {
-        return restoreRaftLog(capacity, snapshot, entries, NOP_LOG_STORE);
+        return restoreRaftLog(capacity, snapshot, entries, NopRaftStateStore.INSTANCE);
     }
 
-    public static RaftLog restoreRaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftLogStore logStore) {
-        return new RaftLog(capacity, snapshot, entries, logStore);
+    public static RaftLog restoreRaftLog(int capacity, SnapshotEntry snapshot, LogEntry[] entries, RaftStateStore store) {
+        return new RaftLog(capacity, snapshot, entries, store);
     }
 
     /**
@@ -202,7 +202,7 @@ public final class RaftLog {
         if (truncated.size() > 0) {
             dirty = true;
             try {
-                logStore.truncateEntriesFrom(entryIndex);
+                store.truncateEntriesFrom(entryIndex);
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
@@ -254,7 +254,7 @@ public final class RaftLog {
             }
             logs.add(entry);
             try {
-                logStore.appendEntry(entry);
+                store.persistEntry(entry);
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
@@ -340,8 +340,7 @@ public final class RaftLog {
         dirty = true;
 
         try {
-            // TODO: async snapshot?
-            logStore.writeSnapshot(snapshot);
+            store.persistSnapshot(snapshot);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -355,7 +354,7 @@ public final class RaftLog {
     public void flush() {
         if (dirty) {
             try {
-                logStore.flush();
+                store.flushLogs();
                 dirty = false;
             } catch (IOException e) {
                 throw new HazelcastException(e);

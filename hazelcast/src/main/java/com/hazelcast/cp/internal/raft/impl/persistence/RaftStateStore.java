@@ -17,6 +17,8 @@
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -28,9 +30,63 @@ import java.util.Collection;
  */
 public interface RaftStateStore extends Closeable {
 
-    void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) throws IOException;
+    /**
+     * Initializes the store before starting to persist Raft state.
+     * This method is called before any other method in this interface.
+     * The state store must be ready to persist Raft state once this method
+     * returns.
+     *
+     * @throws IOException
+     */
+    void open() throws IOException;
 
-    void writeInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException;
+    /**
+     * Persists the given local Raft endpoint and initial Raft group members.
+     * This method returns after the given arguments are written to disk.
+     *
+     * @param localMember
+     * @param initialMembers
+     * @throws IOException
+     */
+    void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException;
 
-    RaftLogStore getRaftLogStore();
+    /**
+     * Persists the term and the Raft endpoint that is voted in the given term.
+     * This method returns after the given arguments are written to disk.
+     *
+     * @param term
+     * @param votedFor
+     * @throws IOException
+     */
+    void persistTerm(int term, RaftEndpoint votedFor) throws IOException;
+
+    /**
+     *
+     * @param entry
+     * @throws IOException
+     */
+    void persistEntry(LogEntry entry) throws IOException;
+
+    // uncommittedEntryCountToRejectNewAppends
+    /**
+     *
+     * @param entry
+     * @throws IOException
+     */
+    void persistSnapshot(SnapshotEntry entry) throws IOException;
+
+    // uncommittedEntryCountToRejectNewAppends
+    /**
+     *
+     * @param indexInclusive
+     * @throws IOException
+     */
+    void truncateEntriesFrom(long indexInclusive) throws IOException;
+
+    /**
+     * Forces all buffered (in any layer) Raft log changes to be written
+     * to the storage layer. Returns after those changes are written.
+     */
+    void flushLogs() throws IOException;
+
 }

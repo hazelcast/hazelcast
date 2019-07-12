@@ -20,7 +20,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -33,52 +32,38 @@ public final class NopRaftStateStore implements RaftStateStore {
      */
     public static final RaftStateStore INSTANCE = new NopRaftStateStore();
 
-    /**
-     * Non-persisting {@link RaftLogStore} instance
-     */
-    public static final RaftLogStore NOP_LOG_STORE = new RaftLogStore() {
-        @Override
-        public void open() {
-        }
-
-        @Override
-        public void appendEntry(LogEntry entry) {
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void writeSnapshot(SnapshotEntry entry) {
-        }
-
-        @Override
-        public void truncateEntriesFrom(long indexInclusive) {
-        }
-
-        @Override
-        public void close() {
-        }
-    };
-
     private NopRaftStateStore() {
     }
 
     @Override
-    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) {
+    public void open() {
     }
 
     @Override
-    public void writeInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
+    public void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
     }
 
     @Override
-    public RaftLogStore getRaftLogStore() {
-        return NOP_LOG_STORE;
+    public void persistTerm(int term, RaftEndpoint votedFor) {
     }
 
     @Override
-    public void close() throws IOException {
+    public void persistEntry(LogEntry entry) {
+    }
+
+    @Override
+    public void persistSnapshot(SnapshotEntry entry) {
+    }
+
+    @Override
+    public void truncateEntriesFrom(long indexInclusive) {
+    }
+
+    @Override
+    public void flushLogs() {
+    }
+
+    @Override
+    public void close() {
     }
 }

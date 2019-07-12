@@ -20,7 +20,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
-import com.hazelcast.cp.internal.raft.impl.persistence.RaftLogStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 
@@ -34,27 +33,45 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     private Collection<RaftEndpoint> initialMembers;
     private int term;
     private RaftEndpoint votedFor;
-    private InMemoryRaftLogStore raftLogStore;
+    private RaftLog raftLog;
 
     public InMemoryRaftStateStore(int capacity) {
-        raftLogStore = new InMemoryRaftLogStore(capacity);
+        this.raftLog = newRaftLog(capacity);
     }
 
     @Override
-    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) {
-        this.term = currentTerm;
-        this.votedFor = votedFor;
+    public void open() {
     }
 
     @Override
-    public void writeInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
+    public void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
         this.localEndpoint = localMember;
         this.initialMembers = initialMembers;
     }
 
     @Override
-    public RaftLogStore getRaftLogStore() {
-        return raftLogStore;
+    public void persistTerm(int term, RaftEndpoint votedFor) {
+        this.term = term;
+        this.votedFor = votedFor;
+    }
+
+    @Override
+    public void persistEntry(LogEntry entry) {
+        raftLog.appendEntries(entry);
+    }
+
+    @Override
+    public void persistSnapshot(SnapshotEntry entry) {
+        raftLog.setSnapshot(entry);
+    }
+
+    @Override
+    public void truncateEntriesFrom(long indexInclusive) {
+        raftLog.truncateEntriesFrom(indexInclusive);
+    }
+
+    @Override
+    public void flushLogs() {
     }
 
     @Override
@@ -62,7 +79,6 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     public RestoredRaftState toRestoredRaftState() {
-        RaftLog raftLog = raftLogStore.raftLog;
         LogEntry[] entries;
         if (raftLog.snapshotIndex() < raftLog.lastLogOrSnapshotIndex()) {
             entries = raftLog.getEntriesBetween(raftLog.snapshotIndex() + 1, raftLog.lastLogOrSnapshotIndex());
@@ -73,39 +89,4 @@ public class InMemoryRaftStateStore implements RaftStateStore {
         return new RestoredRaftState(localEndpoint, initialMembers, term, votedFor, raftLog.snapshot(), entries);
     }
 
-    public class InMemoryRaftLogStore implements RaftLogStore {
-
-        private RaftLog raftLog;
-
-        InMemoryRaftLogStore(int capacity) {
-            this.raftLog = newRaftLog(capacity);
-        }
-
-        @Override
-        public void open() {
-        }
-
-        @Override
-        public void appendEntry(LogEntry entry) {
-            raftLog.appendEntries(entry);
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void writeSnapshot(SnapshotEntry entry) {
-            raftLog.setSnapshot(entry);
-        }
-
-        @Override
-        public void truncateEntriesFrom(long indexInclusive) {
-            raftLog.truncateEntriesFrom(indexInclusive);
-        }
-
-        @Override
-        public void close() {
-        }
-    }
 }

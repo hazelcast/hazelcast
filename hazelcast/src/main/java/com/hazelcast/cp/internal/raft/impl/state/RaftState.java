@@ -64,7 +64,7 @@ public final class RaftState {
     /**
      * Used for reflecting persistent-state changes to persistent storage.
      */
-    private final RaftStateStore stateStore;
+    private final RaftStateStore store;
 
     /**
      * Latest committed group members.
@@ -141,21 +141,21 @@ public final class RaftState {
     private CandidateState candidateState;
 
     private RaftState(CPGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints, int logCapacity,
-                      RaftStateStore stateStore) {
+                      RaftStateStore store) {
         this.groupId = groupId;
         this.localEndpoint = localEndpoint;
         this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(endpoints));
         RaftGroupMembers groupMembers = new RaftGroupMembers(0, endpoints, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
-        this.stateStore = stateStore;
-        this.log = newRaftLog(logCapacity, stateStore.getRaftLogStore());
+        this.store = store;
+        this.log = newRaftLog(logCapacity, store);
     }
 
-    private RaftState(CPGroupId groupId, RestoredRaftState restoredState, int logCapacity, RaftStateStore stateStore) {
+    private RaftState(CPGroupId groupId, RestoredRaftState restoredState, int logCapacity, RaftStateStore store) {
         checkNotNull(groupId);
         checkNotNull(restoredState);
-        checkNotNull(stateStore);
+        checkNotNull(store);
         this.groupId = groupId;
         this.localEndpoint = restoredState.localEndpoint();
         this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(restoredState.initialMembers()));
@@ -174,8 +174,8 @@ public final class RaftState {
             this.lastApplied = snapshot.index();
         }
 
-        this.log = restoreRaftLog(logCapacity, snapshot, restoredState.entries(), stateStore.getRaftLogStore());
-        this.stateStore = stateStore;
+        this.log = restoreRaftLog(logCapacity, snapshot, restoredState.entries(), store);
+        this.store = store;
     }
 
     public static RaftState newRaftState(CPGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints,
@@ -277,7 +277,7 @@ public final class RaftState {
     }
 
     public RaftStateStore stateStore() {
-        return stateStore;
+        return store;
     }
 
     /**
@@ -519,7 +519,7 @@ public final class RaftState {
 
     private void persistTerm() {
         try {
-            stateStore.writeTermAndVote(term, votedFor);
+            store.persistTerm(term, votedFor);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -527,7 +527,7 @@ public final class RaftState {
 
     private void persistInitialMembers() {
         try {
-            stateStore.writeInitialMembers(localEndpoint, initialMembers);
+            store.persistInitialMembers(localEndpoint, initialMembers);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -535,6 +535,6 @@ public final class RaftState {
 
     public void init() throws IOException {
         persistInitialMembers();
-        stateStore.getRaftLogStore().open();
+        store.open();
     }
 }

@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.cp.internal.raft.impl.persistence.SimpleRaftLogStore.BUFFER_CAP;
+import static com.hazelcast.cp.internal.raft.impl.persistence.SimpleRaftStateStore.BUFFER_CAP;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 
 /**

@@ -17,6 +17,8 @@
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.nio.IOUtil;
@@ -35,37 +37,30 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
  */
 public class SimpleRaftStateStore implements RaftStateStore {
 
+    static final int BUFFER_CAP = 1 << 10;
+
     private final File baseDir;
     private final File termTmpPath;
     private final File termPath;
-    private final RaftLogStore logStore;
+    private FileOutputStream logChannel;
+    private ObjectDataOutputStream logDataOut;
 
     public SimpleRaftStateStore(File dir) {
         baseDir = dir;
         baseDir.mkdirs();
         termTmpPath = new File(dir, "term.tmp");
         termPath = new File(dir, "term");
-        logStore = new SimpleRaftLogStore(dir);
     }
 
     @Override
-    public void writeTermAndVote(int currentTerm, RaftEndpoint votedFor) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(termTmpPath);
-        ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
-        try {
-            out.writeInt(currentTerm);
-            out.writeObject(votedFor);
-            out.flush();
-            fileOutputStream.getFD().sync();
-        } finally {
-            IOUtil.closeResource(fileOutputStream);
-            IOUtil.closeResource(out);
-        }
-        IOUtil.rename(termTmpPath, termPath);
+    public void open() throws IOException {
+        File activeLogPath = new File(baseDir, "logs");
+        logChannel = new FileOutputStream(activeLogPath, true);
+        logDataOut = newDataOutputStream(logChannel);
     }
 
     @Override
-    public void writeInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException {
+    public void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException {
         File membersTmpPath = new File(baseDir, "members.tmp");
         FileOutputStream fileOutputStream = new FileOutputStream(membersTmpPath);
         ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
@@ -83,19 +78,66 @@ public class SimpleRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public RaftLogStore getRaftLogStore() {
-        return logStore;
+    public void persistTerm(int term, RaftEndpoint votedFor) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(termTmpPath);
+        ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
+        try {
+            out.writeInt(term);
+            out.writeObject(votedFor);
+            out.flush();
+            fileOutputStream.getFD().sync();
+        } finally {
+            IOUtil.closeResource(fileOutputStream);
+            IOUtil.closeResource(out);
+        }
+        IOUtil.rename(termTmpPath, termPath);
+    }
+
+    @Override
+    public void persistEntry(LogEntry entry) throws IOException {
+        entry.writeData(logDataOut);
+    }
+
+    @Override
+    public void persistSnapshot(SnapshotEntry entry) throws IOException {
+        File snapshotTmpPath = new File(baseDir, "snapshot.tmp");
+
+        FileOutputStream fileOutputStream = new FileOutputStream(snapshotTmpPath);
+        ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
+
+        try {
+            out.writeObject(entry);
+            out.flush();
+            fileOutputStream.getFD().sync();
+        } finally {
+            IOUtil.closeResource(fileOutputStream);
+            IOUtil.closeResource(out);
+        }
+        File snapshotPath = new File(baseDir, "snapshot");
+        IOUtil.rename(snapshotTmpPath, snapshotPath);
+    }
+
+    @Override
+    public void truncateEntriesFrom(long indexInclusive) throws IOException {
+    }
+
+    @Override
+    public void flushLogs() throws IOException {
+        logDataOut.flush();
+        logChannel.getFD().sync();
+    }
+
+    @Override
+    public void close() throws IOException {
+        flushLogs();
+        logDataOut.close();
+        logChannel.close();
     }
 
     private ObjectDataOutputStream newDataOutputStream(FileOutputStream fileOutputStream) {
         return new ObjectDataOutputStream(new BufferedOutputStream(fileOutputStream),
                 // TODO: get serialization service from Hazelcast node
                 new DefaultSerializationServiceBuilder().build());
-    }
-
-    @Override
-    public void close() throws IOException {
-        logStore.close();
     }
 
 }
