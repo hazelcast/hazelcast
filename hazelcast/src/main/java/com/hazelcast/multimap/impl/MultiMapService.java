@@ -202,7 +202,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     public Set<Data> localKeySet(String name) {
-        Set<Data> keySet = new HashSet<Data>();
+        Set<Data> keySet = new HashSet<>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
@@ -447,7 +447,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
+        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
             for (String name : partitionContainer.containerMap.keySet()) {
                 if (!multiMapStats.containsKey(name)) {
@@ -524,7 +524,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
-                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<>(batchSize);
                     for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
                         Data key = multiMapValueEntry.getKey();
                         MultiMapValue multiMapValue = multiMapValueEntry.getValue();
@@ -537,7 +537,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
                         if (mergeContainers.size() == batchSize) {
                             sendBatch(partitionId, name, mergePolicy, mergeContainers);
-                            mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                            mergeContainers = new ArrayList<>(batchSize);
                         }
                     }
                     if (mergeContainers.size() > 0) {

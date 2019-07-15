@@ -124,24 +124,15 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = getMultiMapStats();
         final long initialHits = localMapStats.getHits();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < actionCount; i++) {
-                    map.get(i);
-                }
-                getMultiMapStats(); // causes the local stats object to update
+        new Thread(() -> {
+            for (int i = 0; i < actionCount; i++) {
+                map.get(i);
             }
+            getMultiMapStats(); // causes the local stats object to update
         }).start();
 
         assertEquals(actionCount, initialHits);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(actionCount * 2, localMapStats.getHits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(actionCount * 2, localMapStats.getHits()));
     }
 
     @Test
@@ -175,23 +166,14 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = getMultiMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sleepAtLeastMillis(1);
-                map.put(key, "value2");
-                getMultiMapStats(); // causes the local stats object to update
-            }
+        new Thread(() -> {
+            sleepAtLeastMillis(1);
+            map.put(key, "value2");
+            getMultiMapStats(); // causes the local stats object to update
         }).start();
 
         assertTrue(lastUpdateTime >= startTime);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime));
     }
 
     @Test
