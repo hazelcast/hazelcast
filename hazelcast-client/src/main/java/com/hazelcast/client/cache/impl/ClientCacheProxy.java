@@ -391,7 +391,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(fut, getSerializationService(),
                 eventJournalSubscribeResponseDecoder);
     }
@@ -412,7 +412,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         final SerializationService ss = getSerializationService();
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
                 nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(fut, ss, eventJournalReadResponseDecoder);
     }
 

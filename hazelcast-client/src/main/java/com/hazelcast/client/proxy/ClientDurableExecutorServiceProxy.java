@@ -75,7 +75,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(),
                 message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
     }
@@ -93,7 +93,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(),
                 message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
     }
@@ -210,7 +210,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             return new ClientDurableExecutorServiceCompletedFuture<T>(t, getUserExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, false).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
         return new ClientDurableExecutorServiceDelegatingFuture<T>(future, getSerializationService(),
                 message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response,

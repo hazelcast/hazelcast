@@ -517,6 +517,13 @@ public abstract class HazelcastTestSupport {
         return sb.toString();
     }
 
+    public static byte[] randomByteArray(int length){
+        byte[] bytes = new byte[length];
+        Random random = new Random();
+        random.nextBytes(bytes);
+        return bytes;
+    }
+
     public static String randomString() {
         return UuidUtil.newUnsecureUuidString();
     }

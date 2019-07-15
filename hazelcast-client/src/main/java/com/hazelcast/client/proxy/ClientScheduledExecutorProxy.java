@@ -397,7 +397,7 @@ public class ClientScheduledExecutorProxy
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
         try {
-            new ClientInvocation(getClient(), request, getName(), partitionId).invoke().get();
+            new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke().get();
         } catch (Exception e) {
             throw rethrow(e);
         }

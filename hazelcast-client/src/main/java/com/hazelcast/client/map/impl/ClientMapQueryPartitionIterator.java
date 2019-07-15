@@ -61,7 +61,7 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
         final ClientMessage request = MapFetchWithQueryCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize,
                 getSerializationService().toData(query.getProjection()),
                 getSerializationService().toData(query.getPredicate()));
-        final ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
+        final ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId, false);
         try {
             final ClientInvocationFuture f = clientInvocation.invoke();
             final MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());

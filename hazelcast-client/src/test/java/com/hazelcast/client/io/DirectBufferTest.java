@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_BUFFER_DIRECT;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
@@ -109,11 +108,5 @@ public class DirectBufferTest extends HazelcastTestSupport {
             byte[] expected = values.get(k);
             assertArrayEquals(expected, map.get(k));
         }
-    }
-
-    private static byte[] randomByteArray(int length) {
-        byte[] bytes = new byte[length];
-        new Random().nextBytes(bytes);
-        return bytes;
     }
 }

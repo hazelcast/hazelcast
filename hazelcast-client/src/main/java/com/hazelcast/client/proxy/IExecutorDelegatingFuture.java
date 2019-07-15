@@ -97,7 +97,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
         if (partitionId > -1) {
             ClientMessage request =
                     ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, mayInterruptIfRunning);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId, false);
             ClientInvocationFuture f = clientInvocation.invoke();
             return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
         } else {

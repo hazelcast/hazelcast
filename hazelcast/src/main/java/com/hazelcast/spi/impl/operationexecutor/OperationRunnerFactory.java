@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 /**
@@ -56,7 +55,7 @@ public interface OperationRunnerFactory {
      * problems.
      *
      * @return the created ad hoc OperationRunner.
-     * @see OperationService#run(Operation)
+     * @see OperationService#run(com.hazelcast.spi.Operation)
      */
     OperationRunner createAdHocRunner();
 }
