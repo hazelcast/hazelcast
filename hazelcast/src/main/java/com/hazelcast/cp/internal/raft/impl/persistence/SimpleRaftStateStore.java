@@ -19,12 +19,16 @@ package com.hazelcast.cp.internal.raft.impl.persistence;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.nio.IOUtil;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -119,6 +123,39 @@ public class SimpleRaftStateStore implements RaftStateStore {
 
     @Override
     public void truncateEntriesFrom(long startIndexInclusive) throws IOException {
+        close();
+
+        File activeLogPath = new File(baseDir, "logs");
+        File activeLogTmpPath = new File(baseDir, "logs.tmp");
+
+        LogEntry entry = new LogEntry();
+
+        ObjectDataInputStream in =
+                new ObjectDataInputStream(new BufferedInputStream(
+                        new FileInputStream(activeLogPath), BUFFER_CAP), getSerializationService());
+        FileOutputStream fileOutputStream = new FileOutputStream(activeLogTmpPath);
+        ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
+
+        try {
+            for (;;) {
+                entry.readData(in);
+                if (entry.index() >= startIndexInclusive) {
+                    break;
+                }
+                entry.writeData(out);
+            }
+            out.flush();
+            fileOutputStream.getFD().sync();
+        } finally {
+            IOUtil.closeResource(fileOutputStream);
+            IOUtil.closeResource(out);
+        }
+
+        IOUtil.rename(activeLogTmpPath, activeLogPath);
+
+        logChannel = new FileOutputStream(activeLogPath, true);
+        logDataOut = newDataOutputStream(logChannel);
+
     }
 
     @Override
@@ -135,9 +172,12 @@ public class SimpleRaftStateStore implements RaftStateStore {
     }
 
     private ObjectDataOutputStream newDataOutputStream(FileOutputStream fileOutputStream) {
-        return new ObjectDataOutputStream(new BufferedOutputStream(fileOutputStream),
-                // TODO: get serialization service from Hazelcast node
-                new DefaultSerializationServiceBuilder().build());
+        // TODO: get serialization service from Hazelcast node
+        return new ObjectDataOutputStream(new BufferedOutputStream(fileOutputStream), getSerializationService());
+    }
+
+    private InternalSerializationService getSerializationService() {
+        return new DefaultSerializationServiceBuilder().build();
     }
 
 }
