@@ -56,7 +56,7 @@ public final class NopRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void truncateEntriesFrom(long indexInclusive) {
+    public void truncateEntriesFrom(long startIndexInclusive) {
     }
 
     @Override

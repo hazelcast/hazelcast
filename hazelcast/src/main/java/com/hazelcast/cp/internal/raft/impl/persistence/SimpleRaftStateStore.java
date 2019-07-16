@@ -118,7 +118,7 @@ public class SimpleRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void truncateEntriesFrom(long indexInclusive) throws IOException {
+    public void truncateEntriesFrom(long startIndexInclusive) throws IOException {
     }
 
     @Override
