@@ -58,6 +58,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
+import com.hazelcast.cp.internal.raftop.metadata.PublishRestoredCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.instance.MemberImpl;
@@ -78,7 +79,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -747,16 +747,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                     new SimpleRaftStateStore(dir));
 
             nodes.put(groupId, node);
-            extractInitiallyDiscoveredCPMembers(groupId, restoredState);
-
             node.start();
             logger.info("RaftNode[" + groupId + "] is restored.");
+
+            restoreInitiallyDiscoveredCPMembers(groupId, node, restoredState);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
     }
 
-    private void extractInitiallyDiscoveredCPMembers(RaftGroupId groupId, RestoredRaftState restoredState) {
+    private void restoreInitiallyDiscoveredCPMembers(RaftGroupId groupId, RaftNodeImpl node, RestoredRaftState restoredState) {
         if (!groupId.name().equals(METADATA_CP_GROUP_NAME)) {
             return;
         }
@@ -765,16 +765,47 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             if (entry.operation() instanceof InitMetadataRaftGroupOp) {
                 List<CPMemberInfo> discoveredCPMembers = ((InitMetadataRaftGroupOp) entry.operation()).getDiscoveredCPMembers();
                 updateInvocationManagerMembers(groupId.seed(), entry.index(), discoveredCPMembers);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Restored seed: " + groupId.seed() + ", members commit index: " + entry.index()
+                            + ", CP member list: " + discoveredCPMembers);
+                }
+
+                // Suppose that we have CP members: [A, B, C].
+                // Each CP member will commit InitMetadataRaftGroupOp<A, B, C>
+                // Say that we commit these operations on A and B. C is a slow one and hasn't learnt these commits yet.
+                // If we shutdown and recover only A and C, C won't be able to restore the CP member list for its invocation
+                // manager, and A and C won't be able to elect a leader. Because of this, if a node restores the CP member list,
+                // it broadcasts its list to others until the Metadata CP group elects its leader.
+
+                Operation op = new PublishRestoredCPMembersOp(groupId, entry.index(), discoveredCPMembers);
+                while (node.getLeader() == null) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Broadcasting restored CP members list...");
+                    }
+
+                    for (Member member : nodeEngine.getClusterService().getMembers(NON_LOCAL_MEMBER_SELECTOR)) {
+                        nodeEngine.getOperationService().send(op, member.getAddress());
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+
                 return;
             }
         }
 
-        throw new IllegalStateException("No initially discovered CP members found!");
+        if (logger.isFineEnabled()) {
+            logger.warning("No CP member list restored...");
+        }
     }
 
-    void updateInvocationManagerMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
-        RaftInvocationContext context = invocationManager.getRaftInvocationContext();
-        context.setMembers(groupIdSeed, membersCommitIndex, members);
+    public boolean updateInvocationManagerMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
+        return invocationManager.getRaftInvocationContext().setMembers(groupIdSeed, membersCommitIndex, members);
     }
 
     public void destroyRaftNode(CPGroupId groupId) {
@@ -929,7 +960,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        invocationManager.getRaftInvocationContext().setMembers(latestMetadataGroupId.seed(), membersCommitIndex, members);
+        updateInvocationManagerMembers(latestMetadataGroupId.seed(), membersCommitIndex, members);
 
         CPMemberInfo localMember = getLocalCPMember();
         if (localMember != null && !members.contains(localMember) && nodeEngine.getNode().isRunning()) {

@@ -59,17 +59,17 @@ public class RaftInvocationContext {
         knownLeaders.clear();
     }
 
-    public void setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
+    public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
         CPMembersVersion version = new CPMembersVersion(groupIdSeed, membersCommitIndex);
         CPMembersContainer newContainer =  new CPMembersContainer(version, members.toArray(new CPMemberInfo[0]));
         while (true) {
             CPMembersContainer currentContainer = membersContainer.get();
             if (newContainer.version.compareTo(currentContainer.version) > 0) {
                 if (membersContainer.compareAndSet(currentContainer, newContainer)) {
-                    return;
+                    return true;
                 }
             } else {
-                return;
+                return false;
             }
         }
     }
