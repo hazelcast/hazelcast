@@ -87,6 +87,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             // because of the Log Matching Property.
             LogEntry entry = raftLog.getLogEntry(quorumMatchIndex);
             if (entry.term() == state.term()) {
+                raftLog.flush();
                 commitEntries(state, quorumMatchIndex);
                 break;
             } else if (logger.isFineEnabled()) {
