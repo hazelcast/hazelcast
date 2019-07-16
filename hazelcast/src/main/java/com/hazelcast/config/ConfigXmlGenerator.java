@@ -56,7 +56,6 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
 
 /**
@@ -648,8 +647,11 @@ public class ConfigXmlGenerator {
     private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
-            for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
-                wanReplicationPublisherXmlGenerator(gen, p);
+            for (WanBatchReplicationPublisherConfig p : wan.getBatchPublisherConfigs()) {
+                wanBatchReplicationPublisherXmlGenerator(gen, p);
+            }
+            for (CustomWanPublisherConfig p : wan.getCustomPublisherConfigs()) {
+                wanCustomPublisherXmlGenerator(gen, p);
             }
 
             WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
@@ -661,7 +663,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanReplicationConsumerGenerator(XmlGenerator gen, WanConsumerConfig consumerConfig) {
-        gen.open("wan-consumer");
+        gen.open("consumer");
         String consumerClassName = classNameOrImplClass(
                 consumerConfig.getClassName(), consumerConfig.getImplementation());
         if (consumerClassName != null) {
@@ -672,21 +674,42 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void wanReplicationPublisherXmlGenerator(XmlGenerator gen, WanPublisherConfig p) {
-        String publisherId = !isNullOrEmptyAfterTrim(p.getPublisherId())
-                ? p.getPublisherId() : "";
-        gen.open("wan-publisher", "group-name", p.getGroupName(), "publisher-id", publisherId)
-                .node("class-name", p.getClassName())
-                .node("queue-full-behavior", p.getQueueFullBehavior())
-                .node("initial-publisher-state", p.getInitialPublisherState())
-                .node("queue-capacity", p.getQueueCapacity())
-                .appendProperties(p.getProperties());
-        if (p.getEndpoint() != null) {
-            gen.node("endpoint", p.getEndpoint());
+    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
+        gen.open("batch-publisher",
+                "group-name", c.getGroupName(),
+                "publisher-id", c.getPublisherId(),
+                "batch-size", c.getBatchSize(),
+                "batch-max-delay-millis", c.getBatchMaxDelayMillis(),
+                "response-timeout-millis", c.getResponseTimeoutMillis(),
+                "acknowledge-type", c.getAcknowledgeType(),
+                "initial-publisher-state", c.getInitialPublisherState(),
+                "snapshot-enabled", c.isSnapshotEnabled(),
+                "idle-max-park-ns", c.getIdleMaxParkNs(),
+                "idle-min-park-ns", c.getIdleMinParkNs(),
+                "max-concurrent-invocations", c.getMaxConcurrentInvocations(),
+                "discovery-period-seconds", c.getDiscoveryPeriodSeconds(),
+                "use-endpoint-private-address", c.isUseEndpointPrivateAddress(),
+                "queue-full-behavior", c.getQueueFullBehavior(),
+                "max-target-endpoints", c.getMaxTargetEndpoints(),
+                "queue-capacity", c.getQueueCapacity())
+           .appendProperties(c.getProperties());
+        if (c.getTargetEndpoints() != null) {
+            gen.node("target-endpoints", c.getTargetEndpoints());
         }
-        wanReplicationSyncGenerator(gen, p.getWanSyncConfig());
-        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(p));
-        discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
+        if (c.getEndpoint() != null) {
+            gen.node("endpoint", c.getEndpoint());
+        }
+        wanReplicationSyncGenerator(gen, c.getWanSyncConfig());
+        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(c));
+        discoveryStrategyConfigXmlGenerator(gen, c.getDiscoveryConfig());
+        gen.close();
+    }
+
+    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
+        gen.open("custom-publisher",
+                "class-name", c.getClassName(),
+                "publisher-id", c.getPublisherId())
+           .appendProperties(c.getProperties());
         gen.close();
     }
 
@@ -722,7 +745,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
-        aliasedDiscoveryConfigsGenerator(gen, AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
+        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
 
@@ -749,7 +772,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
-        aliasedDiscoveryConfigsGenerator(gen, AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
+        aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
 

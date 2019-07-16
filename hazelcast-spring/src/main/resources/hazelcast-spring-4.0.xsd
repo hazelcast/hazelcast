@@ -2581,127 +2581,14 @@
 
     <xs:complexType name="wan-replication">
         <xs:sequence>
-            <xs:element name="wan-publisher" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="queue-capacity" type="parameterized-positive-integer" default="10000" minOccurs="0"
-                                    maxOccurs="1"/>
-                        <xs:element name="initial-publisher-state" type="initial-publisher-state" minOccurs="0" maxOccurs="1"
-                                    default="REPLICATING">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Defines the initial state in which a WAN publisher is started.
-                                    - REPLICATING (default):
-                                    State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
-                                    and WAN sync is enabled.
-                                    - PAUSED:
-                                    State where new events are enqueued but they are not dequeued. Some events which have been dequeued before
-                                    the state was switched may still be replicated to the target cluster but further events will not be
-                                    replicated. WAN sync is enabled.
-                                    - STOPPED:
-                                    State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
-                                    still be replicated after the publisher has switched to this state. WAN sync is enabled.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="wan-sync" type="wan-sync" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Configuration for the WAN sync mechanism.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="endpoint" type="xs:string" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Reference to the name of a WAN endpoint config or WAN server socket endpoint config.
-                                    The network settings from the referenced endpoint configuration will setup the network
-                                    configuration of connections to the target WAN cluster members.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="class-or-bean-name"/>
-                    <xs:attribute name="group-name" use="required">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Sets the group name used as an endpoint group name for authentication
-                                on the target endpoint.
-                                If there is no separate publisher ID property defined, this group name
-                                will also be used as a WAN publisher ID. This ID is then used for
-                                identifying the publisher in a WanReplicationConfig.
-                            </xs:documentation>
-                        </xs:annotation>
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string"/>
-                        </xs:simpleType>
-                    </xs:attribute>
-                    <xs:attribute name="publisher-id">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Sets the publisher ID used for identifying the publisher in a
-                                WanReplicationConfig.
-                                If there is no publisher ID defined (it is empty), the group name will
-                                be used as a publisher ID.
-                            </xs:documentation>
-                        </xs:annotation>
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string"/>
-                        </xs:simpleType>
-                    </xs:attribute>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="wan-consumer" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Config for processing WAN events received from a target cluster.
-                        You can configure certain behaviour when processing incoming WAN events
-                        or even configure your own implementation for a WAN consumer. A custom
-                        WAN consumer allows you to define custom processing logic and is usually
-                        used in combination with a custom WAN publisher.
-                        A custom consumer is optional and you may simply omit defining it which
-                        will cause the default processing logic to be used.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="properties" type="properties" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Properties for the custom WAN consumer. These properties are
-                                    accessible when initalizing the WAN consumer.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="class-or-bean-name">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Defines a custom WAN consumer (WanReplicationConsumer).
-                                If you don't define a class name or implementation, the default processing
-                                logic for incoming WAN events will be used.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attributeGroup>
-                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
-                        <xs:annotation>
-                            <xs:documentation>
-                                When true, an incoming event over WAN replication can be persisted to a
-                                database for example, otherwise it will not be persisted. Default value
-                                is false.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="batch-publisher"
+                        type="wan-batch-publisher"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element name="custom-publisher"
+                        type="wan-custom-publisher"
+                        minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="consumer" type="wan-consumer" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -2709,6 +2596,284 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="wan-batch-publisher" mixed="true">
+        <xs:all>
+            <xs:element name="target-endpoints" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Comma separated list of target cluster members,
+                        e.g. 127.0.0.1:5701, 127.0.0.1:5702.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
+            <xs:element name="endpoint" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Reference to the name of a WAN endpoint config or WAN server socket endpoint config.
+                        The network settings from the referenced endpoint configuration will setup the network
+                        configuration of connections to the target WAN cluster members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="group-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the group name used as an endpoint group name for authentication
+                    on the target endpoint.
+                    If there is no separate publisher ID property defined, this group name
+                    will also be used as a WAN publisher ID. This ID is then used for
+                    identifying the publisher in a WanReplicationConfig.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="snapshot-enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets if key-based coalescing is configured for this WAN publisher.
+                    When enabled, only the latest WanReplicationEvent
+                    of a key is sent to target.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="initial-publisher-state" type="initial-publisher-state" default="REPLICATING">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines the initial state in which a WAN publisher is started.
+                    - REPLICATING (default):
+                    State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+                    and WAN sync is enabled.
+                    - PAUSED:
+                    State where new events are enqueued but they are not dequeued. Some events which have been dequeued before
+                    the state was switched may still be replicated to the target cluster but further events will not be
+                    replicated. WAN sync is enabled.
+                    - STOPPED:
+                    State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+                    still be replicated after the publisher has switched to this state. WAN sync is enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="queue-capacity" type="parameterized-positive-integer" default="10000">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the capacity of the primary and backup queue for WAN replication events.
+                    One hazelcast instance can have up to 2*queueCapacity events since
+                    we keep up to queueCapacity primary events (events with keys for
+                    which the instance is the owner) and queueCapacity backup events
+                    (events with keys for which the instance is the backup).
+                    Events for IMap and ICache count against this limit collectively.
+                    When the queue capacity is reached, backup events are dropped while normal
+                    replication events behave as determined by the queue-full-behavior.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="batch-size" type="parameterized-positive-integer" default="500">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the maximum batch size that can be sent to target cluster.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="batch-max-delay-millis" type="parameterized-positive-integer" default="1000">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the maximum amount of time in milliseconds to wait before sending a
+                    batch of events to target cluster, if batch-size of events
+                    have not arrived within this duration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="response-timeout-millis" type="parameterized-positive-integer" default="60000">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the duration in milliseconds for the waiting time before retrying to
+                    send the events to target cluster again in case of acknowledgement
+                    is not arrived.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="queue-full-behavior"
+                      type="wan-queue-full-behavior"
+                      default="DISCARD_AFTER_MUTATION">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the configured behaviour of this WAN publisher when the WAN queue is
+                    full.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="acknowledge-type"
+                      type="wan-acknowledge-type"
+                      default="ACK_ON_OPERATION_COMPLETE">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the strategy for when the target cluster should acknowledge that
+                    a WAN event batch has been processed.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="discovery-period-seconds"
+                      type="parameterized-positive-integer"
+                      default="10">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the period in seconds in which WAN tries to discover new target
+                    endpoints and reestablish connections to failed endpoints.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-target-endpoints"
+                      type="parameterized-positive-integer"
+                      default="2147483647">
+            <xs:annotation>
+                <xs:documentation>
+                    Returns the maximum number of endpoints that WAN will connect to when
+                    using a discovery mechanism to define endpoints.
+                    This property has no effect when static endpoint addresses are defined
+                    using target-endpoints.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-concurrent-invocations"
+                      type="xs:int"
+                      default="-1">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the maximum number of WAN event batches being sent to the target
+                    cluster concurrently.
+                    Setting this property to anything less than 2 will only allow a
+                    single batch of events to be sent to each target endpoint and will
+                    maintain causality of events for a single partition.
+                    Setting this property to 2 or higher will allow multiple batches
+                    of WAN events to be sent to each target endpoint. Since this allows
+                    reordering or batches due to network conditions, causality and ordering
+                    of events for a single partition is lost and batches for a single
+                    partition are now sent randomly to any available target endpoint.
+                    This, however, does present faster WAN replication for certain scenarios
+                    such as replicating immutable, independent map entries which are only
+                    added once and where ordering of when these entries are added is not
+                    necessary.
+                    Keep in mind that if you set this property to a value which is less than
+                    the target endpoint count, you will lose performance as not all target
+                    endpoints will be used at any point in time to process WAN event batches.
+                    So, for instance, if you have a target cluster with 3 members (target
+                    endpoints) and you want to use this property, it makes sense to set it
+                    to a value higher than 3. Otherwise, you can simply disable it
+                    by setting it to less than 2 in which case WAN will use the
+                    default replication strategy and adapt to the target endpoint count
+                    while maintaining causality.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="use-endpoint-private-address"
+                      type="parameterized-boolean"
+                      default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets whether the WAN connection manager should connect to the
+                    endpoint on the private address returned by the discovery SPI.
+                    By default this property is false which means the WAN connection
+                    manager will always use the public address.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="idle-min-park-ns"
+                      type="parameterized-unsigned-long"
+                      default="10000000">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the minimum duration in nanoseconds that the WAN replication thread
+                    will be parked if there are no events to replicate.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="idle-max-park-ns"
+                      type="parameterized-unsigned-long"
+                      default="250000000">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the maximum duration in nanoseconds that the WAN replication thread
+                    will be parked if there are no events to replicate.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="publisher-id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the publisher ID used for identifying the publisher in a
+                    WanReplicationConfig.
+                    If there is no publisher ID defined (it is empty), the group name will
+                    be used as a publisher ID.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="wan-custom-publisher" mixed="true">
+        <xs:all>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="publisher-id" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the publisher ID used for identifying the publisher in a
+                    WanReplicationConfig.
+                    If there is no publisher ID defined (it is empty), the group name will
+                    be used as a publisher ID.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attributeGroup ref="class-or-bean-name">
+            <xs:annotation>
+                <xs:documentation>
+                    Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+    </xs:complexType>
+
+
+    <xs:complexType name="wan-consumer">
+        <xs:all>
+            <xs:element name="properties" type="properties" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Properties for the custom WAN consumer. These properties are
+                        accessible when initalizing the WAN consumer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attributeGroup ref="class-or-bean-name">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a custom WAN consumer (WanReplicationConsumer).
+                    If you don't define a class name or implementation, the default processing
+                    logic for incoming WAN events will be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+        <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, an incoming event over WAN replication can be persisted to a
+                    database for example, otherwise it will not be persisted. Default value
+                    is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+
+
 
     <xs:complexType name="memcache-protocol">
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
@@ -3934,6 +4099,13 @@
 
     <xs:simpleType name="wan-queue-full-behavior">
         <xs:union memberTypes="wan-queue-full-behavior-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-acknowledge-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+            <xs:enumeration value="ACK_ON_RECEIPT"/>
+        </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="initial-publisher-state">

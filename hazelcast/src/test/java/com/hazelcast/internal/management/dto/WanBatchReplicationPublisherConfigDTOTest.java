@@ -18,13 +18,14 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
-import com.hazelcast.config.ConfigCompatibilityChecker.WanPublisherConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.WanBatchReplicationPublisherConfigChecker;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
@@ -42,51 +43,64 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WanPublisherConfigDTOTest {
+public class WanBatchReplicationPublisherConfigDTOTest {
 
-    private static final WanPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER = new WanPublisherConfigChecker();
+    private static final WanBatchReplicationPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER
+            = new WanBatchReplicationPublisherConfigChecker();
 
     @Test
     public void testSerialization() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("key1", "value1");
         properties.put("key2", "value2");
 
-        WanPublisherConfig expected = new WanPublisherConfig()
+        WanBatchReplicationPublisherConfig expected = new WanBatchReplicationPublisherConfig()
                 .setGroupName("myGroupName")
                 .setPublisherId("myPublisherId")
-                .setQueueCapacity(23)
-                .setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION)
+                .setSnapshotEnabled(true)
                 .setInitialPublisherState(WanPublisherState.STOPPED)
-                .setProperties(properties)
-                .setClassName("myClassName")
+                .setQueueCapacity(23)
+                .setBatchSize(500)
+                .setBatchMaxDelayMillis(1000)
+                .setResponseTimeoutMillis(60000)
+                .setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION)
+                .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
+                .setDiscoveryPeriodSeconds(20)
+                .setMaxTargetEndpoints(100)
+                .setMaxConcurrentInvocations(500)
+                .setUseEndpointPrivateAddress(true)
+                .setIdleMinParkNs(100)
+                .setIdleMaxParkNs(1000)
+                .setTargetEndpoints("a,b,c,d")
+                .setDiscoveryConfig(new DiscoveryConfig())
+                .setWanSyncConfig(new WanSyncConfig())
                 .setAwsConfig(new AwsConfig().setEnabled(true).setConnectionTimeoutSeconds(20))
                 .setGcpConfig(new GcpConfig().setEnabled(true).setProperty("gcp", "gcp-val"))
                 .setAzureConfig(new AzureConfig().setEnabled(true).setProperty("azure", "azure-val"))
                 .setKubernetesConfig(new KubernetesConfig().setEnabled(true).setProperty("kubernetes", "kubernetes-val"))
                 .setEurekaConfig(new EurekaConfig().setEnabled(true).setProperty("eureka", "eureka-val"))
-                .setDiscoveryConfig(new DiscoveryConfig())
-                .setWanSyncConfig(new WanSyncConfig());
+                .setEndpoint("WAN")
+                .setProperties(properties);
 
-        WanPublisherConfig actual = cloneThroughJson(expected);
+        WanBatchReplicationPublisherConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
                 WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual));
     }
 
     @Test
     public void testDefault() {
-        WanPublisherConfig expected = new WanPublisherConfig();
+        WanBatchReplicationPublisherConfig expected = new WanBatchReplicationPublisherConfig();
 
-        WanPublisherConfig actual = cloneThroughJson(expected);
+        WanBatchReplicationPublisherConfig actual = cloneThroughJson(expected);
         assertTrue("Expected: " + expected + ", got:" + actual,
                 WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual));
     }
 
-    private WanPublisherConfig cloneThroughJson(WanPublisherConfig expected) {
-        WanPublisherConfigDTO dto = new WanPublisherConfigDTO(expected);
+    private WanBatchReplicationPublisherConfig cloneThroughJson(WanBatchReplicationPublisherConfig expected) {
+        WanBatchReplicationPublisherConfigDTO dto = new WanBatchReplicationPublisherConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        WanPublisherConfigDTO deserialized = new WanPublisherConfigDTO(null);
+        WanBatchReplicationPublisherConfigDTO deserialized = new WanBatchReplicationPublisherConfigDTO(null);
         deserialized.fromJson(json);
 
         return deserialized.getConfig();

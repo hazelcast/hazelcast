@@ -108,8 +108,9 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
@@ -1493,52 +1494,71 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getAttribute(node, "name");
             replicationConfigBuilder.addPropertyValue("name", name);
 
-            ManagedList<AbstractBeanDefinition> wanPublishers = new ManagedList<AbstractBeanDefinition>();
+            ManagedList<AbstractBeanDefinition> batchPublishers = new ManagedList<>();
+            ManagedList<AbstractBeanDefinition> customPublishers = new ManagedList<>();
+
             for (Node n : childElements(node)) {
                 String nName = cleanNodeName(n);
-                if ("wan-publisher".equals(nName)) {
-                    wanPublishers.add(handleWanPublisher(n));
-                } else if ("wan-consumer".equals(nName)) {
+                if ("batch-publisher".equals(nName)) {
+                    batchPublishers.add(handleBatchPublisher(n));
+                }
+                if ("custom-publisher".equals(nName)) {
+                    customPublishers.add(handleCustomPublisher(n));
+                } else if ("consumer".equals(nName)) {
                     replicationConfigBuilder.addPropertyValue("wanConsumerConfig", handleWanConsumer(n));
                 }
             }
-            replicationConfigBuilder.addPropertyValue("wanPublisherConfigs", wanPublishers);
+            replicationConfigBuilder.addPropertyValue("batchPublisherConfigs", batchPublishers);
+            replicationConfigBuilder.addPropertyValue("customPublisherConfigs", customPublishers);
             wanReplicationManagedMap.put(name, replicationConfigBuilder.getBeanDefinition());
         }
 
-        private AbstractBeanDefinition handleWanPublisher(Node n) {
-            BeanDefinitionBuilder publisherBuilder = createBeanBuilder(WanPublisherConfig.class);
-            AbstractBeanDefinition childBeanDefinition = publisherBuilder.getBeanDefinition();
-            fillAttributeValues(n, publisherBuilder, Collections.<String>emptyList());
+        private AbstractBeanDefinition handleBatchPublisher(Node n) {
+            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchReplicationPublisherConfig.class);
+            AbstractBeanDefinition definition = builder.getBeanDefinition();
+            fillAttributeValues(n, builder, Collections.emptyList());
 
-            String className = getAttribute(n, "class-name");
-            String implementation = getAttribute(n, "implementation");
-
-            publisherBuilder.addPropertyValue("className", className);
-            if (implementation != null) {
-                publisherBuilder.addPropertyReference("implementation", implementation);
-            }
-            isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
-                    + " attributes is required to create WanPublisherConfig!");
             for (Node child : childElements(n)) {
 
                 String nodeName = cleanNodeName(child);
                 if ("properties".equals(nodeName)) {
-                    handleProperties(child, publisherBuilder);
-                } else if ("queue-full-behavior".equals(nodeName)
-                        || "initial-publisher-state".equals(nodeName)
-                        || "queue-capacity".equals(nodeName)
+                    handleProperties(child, builder);
+                } else if ("target-endpoints".equals(nodeName)
                         || "endpoint".equals(nodeName)) {
-                    publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                    builder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                 } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
-                    handleAliasedDiscoveryStrategy(child, publisherBuilder, nodeName);
+                    handleAliasedDiscoveryStrategy(child, builder, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
-                    handleDiscoveryStrategies(child, publisherBuilder);
+                    handleDiscoveryStrategies(child, builder);
                 } else if ("wan-sync".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSyncConfig", publisherBuilder);
+                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSyncConfig", builder);
                 }
             }
-            return childBeanDefinition;
+            return definition;
+        }
+
+        private AbstractBeanDefinition handleCustomPublisher(Node n) {
+            BeanDefinitionBuilder builder = createBeanBuilder(CustomWanPublisherConfig.class);
+            AbstractBeanDefinition definition = builder.getBeanDefinition();
+            fillAttributeValues(n, builder, Collections.emptyList());
+
+            String className = getAttribute(n, "class-name");
+            String implementation = getAttribute(n, "implementation");
+
+            builder.addPropertyValue("className", className);
+            if (implementation != null) {
+                builder.addPropertyReference("implementation", implementation);
+            }
+            isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
+                    + " attributes is required to create CustomWanPublisherConfig!");
+            for (Node child : childElements(n)) {
+
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, builder);
+                }
+            }
+            return definition;
         }
 
         private AbstractBeanDefinition handleWanConsumer(Node n) {

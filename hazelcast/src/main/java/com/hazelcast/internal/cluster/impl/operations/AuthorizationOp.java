@@ -24,25 +24,20 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 public class AuthorizationOp extends AbstractJoinOperation {
-
     private String groupName;
-    private String groupPassword;
     private Boolean response = Boolean.TRUE;
 
     public AuthorizationOp() {
     }
 
-    public AuthorizationOp(String groupName, String groupPassword) {
+    public AuthorizationOp(String groupName) {
         this.groupName = groupName;
-        this.groupPassword = groupPassword;
     }
 
     @Override
     public void run() {
         GroupConfig groupConfig = getNodeEngine().getConfig().getGroupConfig();
         if (!groupName.equals(groupConfig.getName())) {
-            response = Boolean.FALSE;
-        } else if (!groupPassword.equals(groupConfig.getPassword())) {
             response = Boolean.FALSE;
         }
     }
@@ -55,13 +50,11 @@ public class AuthorizationOp extends AbstractJoinOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
-        groupPassword = in.readUTF();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
-        out.writeUTF(groupPassword);
     }
 
     @Override

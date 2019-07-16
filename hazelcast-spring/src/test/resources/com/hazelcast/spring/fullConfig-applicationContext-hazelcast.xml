@@ -58,27 +58,23 @@
                 <hz:property name="hazelcast.partition.count">277</hz:property>
             </hz:properties>
             <hz:wan-replication name="testWan">
-                <hz:wan-publisher group-name="tokyo"
-                                  publisher-id="tokyoPublisherId"
-                                  class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
-                    <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
-                    <hz:queue-capacity>1000</hz:queue-capacity>
-                    <hz:initial-publisher-state>STOPPED</hz:initial-publisher-state>
-                    <hz:properties>
-                        <hz:property name="batch.size">50</hz:property>
-                        <hz:property name="batch.max.delay.millis">3000</hz:property>
-                        <hz:property name="snapshot.enabled">false</hz:property>
-                        <hz:property name="response.timeout.millis">5000</hz:property>
-                        <hz:property name="ack.type">ACK_ON_OPERATION_COMPLETE</hz:property>
-                        <hz:property name="endpoints">10.3.5.1:5701, 10.3.5.2:5701</hz:property>
-                        <hz:property name="snapshot.enabled">false</hz:property>
-                        <hz:property name="group.password">pass</hz:property>
-                    </hz:properties>
-                </hz:wan-publisher>
-                <hz:wan-publisher group-name="istanbul"
-                                  publisher-id="istanbulPublisherId"
-                                  class-name="com.hazelcast.wan.custom.CustomPublisher">
-                    <hz:queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</hz:queue-full-behavior>
+                <hz:batch-publisher group-name="tokyo"
+                                    publisher-id="tokyoPublisherId"
+                                    queue-full-behavior="THROW_EXCEPTION"
+                                    queue-capacity="1000"
+                                    initial-publisher-state="STOPPED"
+                                    batch-size="50"
+                                    batch-max-delay-millis="3000"
+                                    snapshot-enabled="true"
+                                    response-timeout-millis="5000"
+                                    acknowledge-type="ACK_ON_RECEIPT"
+                                    max-target-endpoints="5"
+                                    discovery-period-seconds="5"
+                                    use-endpoint-private-address="true"
+                                    idle-min-park-ns="5"
+                                    idle-max-park-ns="5"
+                                    max-concurrent-invocations="5">
+                    <hz:target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</hz:target-endpoints>
                     <hz:aws enabled="false"
                             access-key="sample-access-key"
                             secret-key="sample-secret-key"
@@ -121,32 +117,33 @@
                         </hz:discovery-strategy>
                         <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
                     </hz:discovery-strategies>
+                </hz:batch-publisher>
+                <hz:batch-publisher group-name="ankara"
+                                    queue-capacity="${wan.queue.capacity}">
+                </hz:batch-publisher>
+                <hz:custom-publisher publisher-id="istanbulPublisherId"
+                                  class-name="com.hazelcast.wan.custom.CustomPublisher">
                     <hz:properties>
                         <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
-                        <hz:property name="discovery.period">5</hz:property>
-                        <hz:property name="maxEndpoints">2</hz:property>
                     </hz:properties>
-                </hz:wan-publisher>
-                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
-                    <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
-                </hz:wan-publisher>
-                <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer"
+                </hz:custom-publisher>
+                <hz:consumer class-name="com.hazelcast.wan.custom.WanConsumer"
                                  persist-wan-replicated-data="true">
                     <hz:properties>
                         <hz:property name="custom.prop.consumer">prop.consumer</hz:property>
                     </hz:properties>
-                </hz:wan-consumer>
+                </hz:consumer>
             </hz:wan-replication>
             <hz:wan-replication name="testWan2">
-                <hz:wan-publisher group-name="tokyo" class-name="PublisherClassName">
+                <hz:batch-publisher group-name="tokyo">
                     <hz:wan-sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
                     </hz:wan-sync>
-                </hz:wan-publisher>
-                <hz:wan-consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
+                </hz:batch-publisher>
+                <hz:consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
             </hz:wan-replication>
             <hz:wan-replication name="testWan3">
-                <hz:wan-consumer persist-wan-replicated-data="false"/>
+                <hz:consumer persist-wan-replicated-data="false"/>
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false" port-count="42">
                 <hz:outbound-ports>

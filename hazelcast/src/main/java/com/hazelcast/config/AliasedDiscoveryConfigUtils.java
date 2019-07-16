@@ -27,7 +27,7 @@ import static java.util.Arrays.asList;
  * Utility class for Aliased Discovery Configs.
  */
 public final class AliasedDiscoveryConfigUtils {
-    private static final Map<String, String> ALIAS_MAPPINGS = new HashMap<String, String>();
+    private static final Map<String, String> ALIAS_MAPPINGS = new HashMap<>();
 
     private AliasedDiscoveryConfigUtils() {
     }
@@ -64,7 +64,7 @@ public final class AliasedDiscoveryConfigUtils {
     /**
      * Extracts aliased discovery configs from {@code config} and creates a list of {@link DiscoveryStrategyConfig} out of them.
      */
-    public static List<DiscoveryStrategyConfig> createDiscoveryStrategyConfigs(WanPublisherConfig config) {
+    public static List<DiscoveryStrategyConfig> createDiscoveryStrategyConfigs(WanBatchReplicationPublisherConfig config) {
         return map(aliasedDiscoveryConfigsFrom(config));
     }
 
@@ -72,7 +72,7 @@ public final class AliasedDiscoveryConfigUtils {
      * Maps aliased discovery strategy configs into discovery strategy configs.
      */
     public static List<DiscoveryStrategyConfig> map(List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigs) {
-        List<DiscoveryStrategyConfig> result = new ArrayList<DiscoveryStrategyConfig>();
+        List<DiscoveryStrategyConfig> result = new ArrayList<>();
         for (AliasedDiscoveryConfig config : aliasedDiscoveryConfigs) {
             if (config.isEnabled()) {
                 result.add(createDiscoveryStrategyConfig(config));
@@ -85,7 +85,7 @@ public final class AliasedDiscoveryConfigUtils {
         validateConfig(config);
 
         String className = discoveryStrategyFrom(config);
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         for (String key : config.getProperties().keySet()) {
             putIfKeyNotNull(properties, key, config.getProperties().get(key));
         }
@@ -131,7 +131,7 @@ public final class AliasedDiscoveryConfigUtils {
     /**
      * Gets the {@link AliasedDiscoveryConfig} from {@code config} by {@code tag}.
      */
-    public static AliasedDiscoveryConfig getConfigByTag(WanPublisherConfig config, String tag) {
+    public static AliasedDiscoveryConfig getConfigByTag(WanBatchReplicationPublisherConfig config, String tag) {
         if ("aws".equals(tag)) {
             return config.getAwsConfig();
         } else if ("gcp".equals(tag)) {
@@ -158,7 +158,7 @@ public final class AliasedDiscoveryConfigUtils {
     /**
      * Gets a list of all aliased discovery configs from {@code config}.
      */
-    public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(WanPublisherConfig config) {
+    public static List<AliasedDiscoveryConfig<?>> aliasedDiscoveryConfigsFrom(WanBatchReplicationPublisherConfig config) {
         return asList(config.getAwsConfig(), config.getGcpConfig(), config.getAzureConfig(), config.getKubernetesConfig(),
                 config.getEurekaConfig());
     }

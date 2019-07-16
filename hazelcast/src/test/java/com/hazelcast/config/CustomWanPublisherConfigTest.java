@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.ConfigCompatibilityChecker.WanCustomPublisherConfigChecker;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -33,38 +34,34 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WanPublisherConfigTest {
+public class CustomWanPublisherConfigTest {
 
-    private WanPublisherConfig config = new WanPublisherConfig();
+    private CustomWanPublisherConfig config = new CustomWanPublisherConfig();
+    private static final WanCustomPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER
+            = new WanCustomPublisherConfigChecker();
 
     @Test
     public void testSerialization() {
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("key", "value");
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("key1", "value1");
+        properties.put("key2", "value2");
 
-        config.setGroupName("groupName");
-        config.setPublisherId("publisherId");
-        config.setQueueCapacity(500);
-        config.setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION);
-        config.setProperties(properties);
-        config.setClassName("className");
-        config.setImplementation("implementation");
+        CustomWanPublisherConfig config = new CustomWanPublisherConfig()
+                .setPublisherId("myPublisherId")
+                .setClassName("className")
+                .setProperties(properties)
+                .setImplementation("implementation");
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);
-        WanPublisherConfig deserialized = serializationService.toObject(serialized);
+        CustomWanPublisherConfig deserialized = serializationService.toObject(serialized);
 
         assertWanPublisherConfig(config, deserialized);
     }
 
-    static void assertWanPublisherConfig(WanPublisherConfig expected, WanPublisherConfig actual) {
-        assertEquals(expected.getGroupName(), actual.getGroupName());
-        assertEquals(expected.getPublisherId(), actual.getPublisherId());
-        assertEquals(expected.getQueueCapacity(), actual.getQueueCapacity());
-        assertEquals(expected.getQueueFullBehavior(), actual.getQueueFullBehavior());
-        assertEquals(expected.getProperties(), actual.getProperties());
-        assertEquals(expected.getClassName(), actual.getClassName());
-        assertEquals(expected.getImplementation(), actual.getImplementation());
+    private static void assertWanPublisherConfig(CustomWanPublisherConfig expected,
+                                                 CustomWanPublisherConfig actual) {
+        WAN_PUBLISHER_CONFIG_CHECKER.check(expected, actual);
         assertEquals(expected.toString(), actual.toString());
     }
 }

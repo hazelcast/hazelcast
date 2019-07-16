@@ -179,9 +179,9 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
-        if ("wan-publisher".equals(nodeName)) {
+        if ("batch-publisher".equals(nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
-                WanPublisherConfig publisherConfig = new WanPublisherConfig();
+                WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig();
                 String groupNameOrPublisherId = publisherNode.getNodeName();
                 Node groupNameAttr = publisherNode.getAttributes().getNamedItem("group-name");
 
@@ -192,9 +192,15 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 publisherConfig.setPublisherId(publisherId);
                 publisherConfig.setGroupName(groupName);
 
-                handleWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
+                handleBatchWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
-        } else if ("wan-consumer".equals(nodeName)) {
+        } else if ("custom-publisher".equals(nodeName)) {
+            for (Node publisherNode : childElements(nodeTarget)) {
+                CustomWanPublisherConfig publisherConfig = new CustomWanPublisherConfig();
+                publisherConfig.setPublisherId(publisherNode.getNodeName());
+                handleCustomWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
+            }
+        } else if ("consumer".equals(nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
         }
     }

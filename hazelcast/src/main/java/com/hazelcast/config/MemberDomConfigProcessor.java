@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
@@ -503,22 +504,90 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
-        if ("wan-publisher".equals(nodeName)) {
-            WanPublisherConfig publisherConfig = new WanPublisherConfig();
-            publisherConfig.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
-            publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
-            handleWanPublisherNode(wanReplicationConfig, nodeTarget, publisherConfig);
-        } else if ("wan-consumer".equals(nodeName)) {
+    protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig,
+                                             Node nodeTarget,
+                                             String nodeName) {
+        if ("batch-publisher".equals(nodeName)) {
+            WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+            config.setGroupName(getAttribute(nodeTarget, "group-name"));
+            setAttributeIfExistant(nodeTarget, "publisher-id", config::setPublisherId);
+            handleBatchWanPublisherNode(wanReplicationConfig, nodeTarget, config);
+        } else if ("custom-publisher".equals(nodeName)) {
+            CustomWanPublisherConfig config = new CustomWanPublisherConfig();
+            config.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
+            handleCustomWanPublisherNode(wanReplicationConfig, nodeTarget, config);
+        } else if ("consumer".equals(nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
         }
     }
 
-    void handleWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget, WanPublisherConfig publisherConfig) {
+    void handleCustomWanPublisherNode(WanReplicationConfig wanReplicationConfig,
+                                      Node nodeTarget,
+                                      CustomWanPublisherConfig config) {
+        config.setClassName(getAttribute(nodeTarget, "class-name"));
+
         for (Node targetChild : childElements(nodeTarget)) {
-            handleWanPublisherConfig(publisherConfig, targetChild);
+            String targetChildName = cleanNodeName(targetChild);
+            if ("properties".equals(targetChildName)) {
+                fillProperties(targetChild, config.getProperties());
+            }
         }
-        wanReplicationConfig.addWanPublisherConfig(publisherConfig);
+        wanReplicationConfig.addCustomPublisherConfig(config);
+    }
+
+    void handleBatchWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget,
+                                     WanBatchReplicationPublisherConfig config) {
+        setAttributeIfExistant(nodeTarget, "snapshot-enabled", val -> config.setSnapshotEnabled(getBooleanValue(val)));
+        setAttributeIfExistant(nodeTarget, "initial-publisher-state",
+                val -> config.setInitialPublisherState(WanPublisherState.valueOf(upperCaseInternal(val))));
+        setAttributeIfExistant(nodeTarget, "queue-capacity",
+                val -> config.setQueueCapacity(getIntegerValue("queue-capacity", val)));
+        setAttributeIfExistant(nodeTarget, "batch-size", val -> config.setBatchSize(getIntegerValue("batch-size", val)));
+        setAttributeIfExistant(nodeTarget, "batch-max-delay-millis",
+                val -> config.setBatchMaxDelayMillis(getIntegerValue("batch-max-delay-millis", val)));
+        setAttributeIfExistant(nodeTarget, "response-timeout-millis",
+                val -> config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", val)));
+        setAttributeIfExistant(nodeTarget, "queue-full-behavior",
+                val -> config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(val))));
+        setAttributeIfExistant(nodeTarget, "acknowledge-type",
+                val -> config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(val))));
+        setAttributeIfExistant(nodeTarget, "discovery-period-seconds",
+                val -> config.setDiscoveryPeriodSeconds(getIntegerValue("discovery-period-seconds", val)));
+        setAttributeIfExistant(nodeTarget, "max-target-endpoints",
+                val -> config.setMaxTargetEndpoints(getIntegerValue("max-target-endpoints", val)));
+        setAttributeIfExistant(nodeTarget, "max-concurrent-invocations",
+                val -> config.setMaxConcurrentInvocations(getIntegerValue("max-concurrent-invocations", val)));
+        setAttributeIfExistant(nodeTarget, "use-endpoint-private-address",
+                val -> config.setUseEndpointPrivateAddress(getBooleanValue(val)));
+        setAttributeIfExistant(nodeTarget, "idle-min-park-ns",
+                val -> config.setIdleMinParkNs(getIntegerValue("idle-min-park-ns", val)));
+        setAttributeIfExistant(nodeTarget, "idle-max-park-ns",
+                val -> config.setIdleMaxParkNs(getIntegerValue("idle-max-park-ns", val)));
+
+        for (Node targetChild : childElements(nodeTarget)) {
+            String targetChildName = cleanNodeName(targetChild);
+            if ("target-endpoints".equals(targetChildName)) {
+                config.setTargetEndpoints(getTextContent(targetChild));
+            } else if ("properties".equals(targetChildName)) {
+                fillProperties(targetChild, config.getProperties());
+            } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
+                handleAliasedDiscoveryStrategy(config, targetChild, targetChildName);
+            } else if ("discovery-strategies".equals(targetChildName)) {
+                handleDiscoveryStrategies(config.getDiscoveryConfig(), targetChild);
+            } else if ("wan-sync".equals(targetChildName)) {
+                handleWanSync(config.getWanSyncConfig(), targetChild);
+            } else if ("endpoint".equals(targetChildName)) {
+                config.setEndpoint(getTextContent(targetChild));
+            }
+        }
+        wanReplicationConfig.addWanBatchReplicationPublisherConfig(config);
+    }
+
+    private void setAttributeIfExistant(Node nodeTarget, String attributeName, Consumer<String> attributeValueConsumer) {
+        String value = getAttribute(nodeTarget, attributeName);
+        if (value != null) {
+            attributeValueConsumer.accept(value);
+        }
     }
 
     void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {
@@ -527,33 +596,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleWanConsumerConfig(consumerConfig, targetChild);
         }
         wanReplicationConfig.setWanConsumerConfig(consumerConfig);
-    }
-
-    void handleWanPublisherConfig(WanPublisherConfig publisherConfig, Node targetChild) {
-        String targetChildName = cleanNodeName(targetChild);
-        if ("class-name".equals(targetChildName)) {
-            publisherConfig.setClassName(getTextContent(targetChild));
-        } else if ("queue-full-behavior".equals(targetChildName)) {
-            String queueFullBehavior = getTextContent(targetChild);
-            publisherConfig.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(queueFullBehavior)));
-        } else if ("initial-publisher-state".equals(targetChildName)) {
-            String initialPublisherState = getTextContent(targetChild);
-            publisherConfig.setInitialPublisherState(
-                    WanPublisherState.valueOf(upperCaseInternal(initialPublisherState)));
-        } else if ("queue-capacity".equals(targetChildName)) {
-            int queueCapacity = getIntegerValue("queue-capacity", getTextContent(targetChild));
-            publisherConfig.setQueueCapacity(queueCapacity);
-        } else if ("properties".equals(targetChildName)) {
-            fillProperties(targetChild, publisherConfig.getProperties());
-        } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
-            handleAliasedDiscoveryStrategy(publisherConfig, targetChild, targetChildName);
-        } else if ("discovery-strategies".equals(targetChildName)) {
-            handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
-        } else if ("wan-sync".equals(targetChildName)) {
-            handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
-        } else if ("endpoint".equals(targetChildName)) {
-            publisherConfig.setEndpoint(getTextContent(targetChild));
-        }
     }
 
     private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
@@ -1124,11 +1166,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {
-        AliasedDiscoveryConfig aliasedDiscoveryConfig = AliasedDiscoveryConfigUtils.getConfigByTag(joinConfig, tag);
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(joinConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }
 
-    private void handleAliasedDiscoveryStrategy(WanPublisherConfig publisherConfig, Node node, String tag) {
+    private void handleAliasedDiscoveryStrategy(WanBatchReplicationPublisherConfig publisherConfig,
+                                                Node node,
+                                                String tag) {
         AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }

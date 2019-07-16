@@ -17,7 +17,6 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.config.WANQueueFullBehavior;
-import com.hazelcast.config.WanPublisherConfig;
 
 /**
  * This interface offers the implementation of different kinds of replication techniques like
@@ -54,8 +53,9 @@ public interface WanReplicationPublisher {
      * exception if it has been reached or crossed.
      *
      * @throws WANReplicationQueueFullException if queue capacity has been reached and
-     *                                          {@link WanPublisherConfig#getQueueFullBehavior()} is
-     *                                          set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
+     *                                          {@link
+     *                                          com.hazelcast.config.WanBatchReplicationPublisherConfig#getQueueFullBehavior()}
+     *                                          is set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
      */
     void checkWanReplicationQueues();
 
