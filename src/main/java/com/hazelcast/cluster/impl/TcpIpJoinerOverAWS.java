@@ -18,7 +18,7 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.aws.AWSClient;
 import com.hazelcast.aws.AwsConfig;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
 
