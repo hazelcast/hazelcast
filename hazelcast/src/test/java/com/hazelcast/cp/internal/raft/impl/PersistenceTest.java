@@ -138,7 +138,7 @@ public class PersistenceTest extends HazelcastTestSupport {
                 for (RaftNodeImpl node : followers) {
                     RestoredRaftState restoredState = getRestoredState(node);
                     assertEquals(term2, restoredState.term());
-                    assertEquals(newLeader.getLocalMember(), restoredState.votedFor());
+                    assertEquals(newLeader.getLocalMember(), restoredState.electedEndpoint());
                 }
             }
         });

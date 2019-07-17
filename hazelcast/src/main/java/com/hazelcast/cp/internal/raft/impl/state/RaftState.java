@@ -162,7 +162,7 @@ public final class RaftState {
         this.committedGroupMembers = new RaftGroupMembers(0, this.initialMembers, this.localEndpoint);
         this.lastGroupMembers = this.committedGroupMembers;
         this.term = restoredState.term();
-        this.votedFor = restoredState.votedFor();
+        this.votedFor = restoredState.electedEndpoint();
 
         SnapshotEntry snapshot = restoredState.snapshot();
         if (isNonInitial(snapshot)) {

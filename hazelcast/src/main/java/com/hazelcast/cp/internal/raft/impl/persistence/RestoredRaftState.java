@@ -31,19 +31,25 @@ public class RestoredRaftState {
     private RaftEndpoint localEndpoint;
     private Collection<RaftEndpoint> initialMembers;
     private int term;
-    private RaftEndpoint votedFor;
+    private RaftEndpoint electedEndpoint;
     private SnapshotEntry snapshot;
     private LogEntry[] entries;
 
     public RestoredRaftState() {
     }
 
-    public RestoredRaftState(RaftEndpoint localEndpoint, Collection<RaftEndpoint> initialMembers, int term, RaftEndpoint votedFor,
-                             SnapshotEntry snapshot, LogEntry[] entries) {
+    public RestoredRaftState(
+            RaftEndpoint localEndpoint,
+            Collection<RaftEndpoint> initialMembers,
+            int term,
+            RaftEndpoint electedEndpoint,
+            SnapshotEntry snapshot,
+            LogEntry[] entries
+    ) {
         this.localEndpoint = localEndpoint;
         this.initialMembers = initialMembers;
         this.term = term;
-        this.votedFor = votedFor;
+        this.electedEndpoint = electedEndpoint;
         this.snapshot = snapshot;
         this.entries = entries;
     }
@@ -60,8 +66,8 @@ public class RestoredRaftState {
         return term;
     }
 
-    public RaftEndpoint votedFor() {
-        return votedFor;
+    public RaftEndpoint electedEndpoint() {
+        return electedEndpoint;
     }
 
     public SnapshotEntry snapshot() {
