@@ -36,11 +36,10 @@ public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpir
 
     @Override
     protected Config getConfig() {
-        final MapConfig nonExpiringMapConfig = new MapConfig(MAP_NAME)
-                .setInMemoryFormat(getInMemoryFormat());
-
-        return super.getConfig()
-                    .addMapConfig(nonExpiringMapConfig);
+        Config defConfig = super.getConfig();
+        defConfig.getMapConfig(MAP_NAME)
+                 .setInMemoryFormat(getInMemoryFormat());
+        return defConfig;
     }
 
     protected InMemoryFormat getInMemoryFormat() {
@@ -49,10 +48,10 @@ public class MapEventJournalExpiringTest<K, V> extends AbstractEventJournalExpir
 
     @Override
     protected EventJournalTestContext<K, V, EventJournalMapEvent<K, V>> createContext() {
-        return new EventJournalTestContext<K, V, EventJournalMapEvent<K, V>>(
-                new EventJournalMapDataStructureAdapter<K, V>(getRandomInstance().<K, V>getMap(MAP_NAME)),
+        return new EventJournalTestContext<>(
+                new EventJournalMapDataStructureAdapter<>(getRandomInstance().getMap(MAP_NAME)),
                 null,
-                new EventJournalMapEventAdapter<K, V>()
+                new EventJournalMapEventAdapter<>()
         );
     }
 }
