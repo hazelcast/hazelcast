@@ -75,7 +75,7 @@ public interface RaftStateStore extends Closeable {
      *
      * @see #flushLogs()
      * @see #persistSnapshot(SnapshotEntry)
-     * @see #truncateEntriesFrom(long)
+     * @see #deleteEntriesFrom(long)
      * @see RaftAlgorithmConfig
      */
     void persistEntry(LogEntry entry) throws IOException;
@@ -134,7 +134,7 @@ public interface RaftStateStore extends Closeable {
      * @see #persistEntry(LogEntry)
      * @see RaftAlgorithmConfig
      */
-    void truncateEntriesFrom(long startIndexInclusive) throws IOException;
+    void deleteEntriesFrom(long startIndexInclusive) throws IOException;
 
     /**
      * Forces all buffered (in any layer) Raft log changes to be written
@@ -142,7 +142,7 @@ public interface RaftStateStore extends Closeable {
      *
      * @see #persistEntry(LogEntry)
      * @see #persistSnapshot(SnapshotEntry)
-     * @see #truncateEntriesFrom(long)
+     * @see #deleteEntriesFrom(long)
      */
     void flushLogs() throws IOException;
 

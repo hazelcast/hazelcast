@@ -66,7 +66,7 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void truncateEntriesFrom(long startIndexInclusive) {
+    public void deleteEntriesFrom(long startIndexInclusive) {
         raftLog.truncateEntriesFrom(startIndexInclusive);
     }
 

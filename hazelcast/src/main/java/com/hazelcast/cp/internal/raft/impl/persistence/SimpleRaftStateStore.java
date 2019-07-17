@@ -122,7 +122,7 @@ public class SimpleRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void truncateEntriesFrom(long startIndexInclusive) throws IOException {
+    public void deleteEntriesFrom(long startIndexInclusive) throws IOException {
         close();
 
         File activeLogPath = new File(baseDir, "logs");
@@ -155,7 +155,6 @@ public class SimpleRaftStateStore implements RaftStateStore {
 
         logChannel = new FileOutputStream(activeLogPath, true);
         logDataOut = newDataOutputStream(logChannel);
-
     }
 
     @Override

@@ -202,7 +202,7 @@ public final class RaftLog {
         if (truncated.size() > 0) {
             dirty = true;
             try {
-                store.truncateEntriesFrom(entryIndex);
+                store.deleteEntriesFrom(entryIndex);
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
