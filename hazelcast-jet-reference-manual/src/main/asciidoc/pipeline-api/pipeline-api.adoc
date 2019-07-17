@@ -836,7 +836,7 @@ testing a pipeline without having to integrate with a real data source
 or sink.
 
 NOTE: These APIs are currently marked as `@Beta` and are not covered
-by the <<appendix, backward-compatibility guarantees>>.
+by the <<jet-version-compatibility, backward-compatibility guarantees>>.
 
 == Test Sources
 
