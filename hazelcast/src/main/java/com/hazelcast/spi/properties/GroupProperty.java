@@ -17,12 +17,13 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
@@ -31,13 +32,16 @@ import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.util.function.Function;
+
+import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@SuppressWarnings("checkstyle:javadocvariable")
+@SuppressWarnings({"checkstyle:javadocvariable", "checkstyle:magicnumber"})
 public final class GroupProperty {
 
     /**
@@ -66,23 +70,84 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.partition.count", 271);
 
     /**
+     * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
+     *
+     * If this property is set to false, Hazelcast will default to 3.x style operation thread configuration
+     * whereby the sum of the number of partition threads and IO threads exceeds the number of cores.
+     *
+     * If this property is set to true (default) Hazelcast will subtract the number of IO threads from the number
+     * of available processors and that will be the number of partition threads.
+     *
+     * If explicit number of partition threads is configured, this property is irrelevant.
+     *
+     * This property favors the typical get/set type of application. Application that are number crunching or query
+     * heavy, will get a performance hit because not all cores will be busy with processing operations since there
+     * are less operation threads than processors. So for such applications it is best to explicitly disable this
+     * property.
+     */
+    public static final HazelcastProperty PARTITION_OPERATION_THREAD_ISOLATED
+            = new HazelcastProperty("hazelcast.operation.thread.isolated", new Function<HazelcastProperties, Boolean>() {
+        @Override
+        public Boolean apply(HazelcastProperties properties) {
+            int availableProcessors = RuntimeAvailableProcessors.get();
+            if (availableProcessors < 20) {
+                return false;
+            }
+
+            int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
+            if (ioThreads > 8) {
+                return false;
+            }
+
+            return true;
+        }
+    });
+
+    /**
      * The number of partition operation handler threads per member.
      * <p>
      * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
-     * <p>
-     * The default is -1, which means that the value is determined dynamically.
+     *
+     * If the JVM detects 20 or more cores, and 'hazelcast.operation.thread.isolated' is set to true,
+     * it will prevent creating more threads than available cores by
+     * determining the number of operation threads as corecount-iothreadcount.
+     * This will prevent that IO threads and partition threads will contend for cores and this leads to
+     * increases throughput and less jitter.
+     *
+     * If explicit number of partition threads is configured, than the magic where we try to determine optimal
+     * number of partition threads is bypassed.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.thread.count", -1);
+            = new HazelcastProperty("hazelcast.operation.thread.count", new Function<HazelcastProperties, Integer>() {
+        @Override
+        public Integer apply(HazelcastProperties properties) {
+            int availableProcessors = RuntimeAvailableProcessors.get();
+            boolean isolated = properties.getBoolean(PARTITION_OPERATION_THREAD_ISOLATED);
+
+            if (isolated) {
+                int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
+                int partitionThreadCount = availableProcessors - ioThreads;
+                return checkPositive(partitionThreadCount, "partitionThreadCount must be positive,"
+                        + " but was " + partitionThreadCount);
+            } else {
+                return Math.max(2, availableProcessors);
+            }
+        }
+    });
 
     /**
      * The number of generic operation handler threads per member.
      * <p>
-     * The default is -1, which means that the value is determined dynamically.
+     * The default is max(2, processors/2);
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);
+            = new HazelcastProperty("hazelcast.operation.generic.thread.count",
+            (Function<HazelcastProperties, Integer>) o -> {
+                // default generic operation thread count
+                int processors = RuntimeAvailableProcessors.get();
+                return Math.max(2, processors / 2);
+            });
 
     /**
      * The number of priority generic operation handler threads per member.
@@ -201,10 +266,16 @@ public final class GroupProperty {
      * E.g., if 3 is configured, then you get 3 threads doing input and 3 doing output. For individual control,
      * check {@link #IO_INPUT_THREAD_COUNT} and {@link #IO_OUTPUT_THREAD_COUNT}.
      * <p>
-     * The default is 3 (i.e. 6 threads).
+     * The default is depends on the number of available processors. If the available processors count is
+     * smaller than 20, there will be 3+3 io threads, otherwise 4+4.
      */
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count", 3);
+            = new HazelcastProperty("hazelcast.io.thread.count", new Function<HazelcastProperties, Integer>() {
+        @Override
+        public Integer apply(HazelcastProperties properties) {
+            return Runtime.getRuntime().availableProcessors() >= 20 ? 4 : 3;
+        }
+    });
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.
