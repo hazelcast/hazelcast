@@ -263,18 +263,6 @@ hazelcast:
         policy: PER_NODE
         max-size: 20
 
-      # `eviction-percentage` property is deprecated.
-      #
-      # As of version 3.7, eviction mechanism changed.
-      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-      eviction-percentage: 25
-
-      # `min-eviction-check-millis` property is deprecated.
-      #
-      # As of version 3.7, eviction mechanism changed.
-      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-      min-eviction-check-millis: 200
-
       # While recovering from split-brain (network partitioning), data structure entries in the small cluster
       # merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
       # an entry with the same key (or value) might already exist in the cluster.

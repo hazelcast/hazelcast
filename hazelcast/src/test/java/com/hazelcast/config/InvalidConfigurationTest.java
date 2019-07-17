@@ -132,12 +132,6 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenInvalid_MapEvictionPercentage() {
-        expectInvalid();
-        buildConfig("map-eviction-percentage", "101");
-    }
-
-    @Test
     public void testWhenInvalid_MultiMapBackupCount() {
         expectInvalid();
         buildConfig("multimap-backup-count", getInvalidBackupCount());
@@ -407,7 +401,6 @@ public class InvalidConfigurationTest {
         properties.setProperty("map-time-to-live-seconds", "0");
         properties.setProperty("map-max-idle-seconds", "0");
         properties.setProperty("map-eviction-policy", "NONE");
-        properties.setProperty("map-eviction-percentage", "25");
 
         properties.setProperty("cache-in-memory-format", "BINARY");
         properties.setProperty("cache-backup-count", "0");
@@ -470,7 +463,6 @@ public class InvalidConfigurationTest {
                 + "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n"
                 + "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n"
                 + "<eviction-policy>${map-eviction-policy}</eviction-policy>\n"
-                + "<eviction-percentage>${map-eviction-percentage}</eviction-percentage>\n"
                 + "</map>\n"
 
                 + "<cache name=\"default\">\n"

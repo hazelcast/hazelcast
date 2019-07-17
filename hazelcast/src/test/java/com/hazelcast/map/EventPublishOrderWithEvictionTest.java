@@ -107,7 +107,6 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(maxSize);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
-        mapConfig.setMinEvictionCheckMillis(0);
 
         return createHazelcastInstance(config).getMap(mapName);
     }

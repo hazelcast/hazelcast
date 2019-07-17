@@ -263,39 +263,6 @@
                     </xs:simpleContent>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="eviction-percentage" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for
-                        further details.)
-
-                        When the map reaches maximum size, this specified percentage of the map will be evicted. Set to any
-                        integer between 0 and 100.
-                        For example, if 25 is set, 25% of the entries are evicted.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:byte">
-                        <xs:minInclusive value="0"/>
-                        <xs:maxInclusive value="100"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:element>
-            <xs:element name="min-eviction-check-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1"
-                        default="100">
-                <xs:annotation>
-                    <xs:documentation>
-                        This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                        (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for
-                        further details.)
-
-                        Minimum time in milliseconds which should pass before checking
-                        if a partition of this map is evictable or not.
-                        Default value is 100 millis.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>

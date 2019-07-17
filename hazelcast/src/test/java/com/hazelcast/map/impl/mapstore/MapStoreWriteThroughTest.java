@@ -92,7 +92,6 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
-        mapConfig.setMinEvictionCheckMillis(0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);

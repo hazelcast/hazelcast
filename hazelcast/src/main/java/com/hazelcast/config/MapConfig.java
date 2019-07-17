@@ -59,25 +59,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
-     * The number of minimum eviction percentage
-     */
-    public static final int MIN_EVICTION_PERCENTAGE = 0;
-    /**
-     * The number of default eviction percentage
-     */
-    public static final int DEFAULT_EVICTION_PERCENTAGE = 25;
-    /**
-     * The number of maximum eviction percentage
-     */
-    public static final int MAX_EVICTION_PERCENTAGE = 100;
-
-    /**
-     * Minimum time in milliseconds which should pass before asking
-     * if a partition of this map is evictable or not.
-     */
-    public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
-
-    /**
      * The number of default Time to Live in seconds.
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
@@ -116,10 +97,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
-
-    private transient int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
-
-    private transient long minEvictionCheckMillis = DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -182,8 +159,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.name = config.name;
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
-        this.evictionPercentage = config.evictionPercentage;
-        this.minEvictionCheckMillis = config.minEvictionCheckMillis;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.metadataPolicy = config.metadataPolicy;
@@ -326,77 +301,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
-    }
-
-    /**
-     * Returns the evictionPercentage: specified percentage of the map to be evicted.
-     *
-     * @return the evictionPercentage: specified percentage of the map to be evicted
-     * @deprecated As of version 3.7, eviction mechanism changed.
-     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
-     */
-    @Deprecated
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    /**
-     * When maximum size is reached, the specified percentage of the map will be evicted.
-     * Any integer between 0 and 100 is allowed.
-     * For example, if 25 is set, 25% of the entries will be evicted.
-     * <p>
-     * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
-     * based on sampling. Please see documentation for further details) and this parameter has no effect.
-     *
-     * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
-     * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range
-     * @deprecated As of version 3.7, eviction mechanism changed.
-     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-     */
-    public MapConfig setEvictionPercentage(final int evictionPercentage) {
-        if (evictionPercentage < MIN_EVICTION_PERCENTAGE) {
-            throw new IllegalArgumentException("Eviction percentage must be greater than or equal to 0");
-        }
-        if (evictionPercentage > MAX_EVICTION_PERCENTAGE) {
-            throw new IllegalArgumentException("Eviction percentage must be smaller than or equal to 100");
-        }
-        this.evictionPercentage = evictionPercentage;
-        return this;
-    }
-
-    /**
-     * Returns the minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
-     * <p>
-     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
-     *
-     * @return number of milliseconds that should pass before asking for the next eviction
-     * @since 3.3
-     * @deprecated As of version 3.7, eviction mechanism changed.
-     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
-     */
-    public long getMinEvictionCheckMillis() {
-        return minEvictionCheckMillis;
-    }
-
-    /**
-     * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
-     * <p>
-     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
-     * <p>
-     * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
-     * based on sampling. Please see documentation for further details) and this parameter has no effect.
-     *
-     * @param minEvictionCheckMillis time in milliseconds that should pass before asking for the next eviction
-     * @since 3.3
-     * @deprecated As of version 3.7, eviction mechanism changed.
-     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
-     */
-    public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
-        if (minEvictionCheckMillis < 0) {
-            throw new IllegalArgumentException("Parameter minEvictionCheckMillis can not get a negative value");
-        }
-        this.minEvictionCheckMillis = minEvictionCheckMillis;
-        return this;
     }
 
     /**
@@ -1026,8 +930,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", maxIdleSeconds=" + maxIdleSeconds
                 + ", evictionPolicy='" + evictionPolicy + '\''
                 + ", mapEvictionPolicy='" + mapEvictionPolicy + '\''
-                + ", evictionPercentage=" + evictionPercentage
-                + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
                 + ", merkleTree=" + merkleTreeConfig

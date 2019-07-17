@@ -20,9 +20,9 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -31,7 +31,6 @@ import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -54,8 +53,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         root.add("memoryFormat", config.getInMemoryFormat().toString());
         root.add("backupCount", config.getBackupCount());
         root.add("asyncBackupCount", config.getAsyncBackupCount());
-        root.add("evictionPercentage", config.getEvictionPercentage());
-        root.add("minEvictionCheckMillis", config.getMinEvictionCheckMillis());
         root.add("ttl", config.getTimeToLiveSeconds());
         root.add("maxIdle", config.getMaxIdleSeconds());
         root.add("maxSize", config.getMaxSizeConfig().getSize());
@@ -73,8 +70,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         config.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
         config.setBackupCount(getInt(json, "backupCount"));
         config.setAsyncBackupCount(getInt(json, "asyncBackupCount"));
-        config.setEvictionPercentage(getInt(json, "evictionPercentage"));
-        config.setMinEvictionCheckMillis(getLong(json, "minEvictionCheckMillis"));
         config.setTimeToLiveSeconds(getInt(json, "ttl"));
         config.setMaxIdleSeconds(getInt(json, "maxIdle"));
         config.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
@@ -91,8 +86,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         config.setInMemoryFormat(InMemoryFormat.valueOf(in.readUTF()));
         config.setBackupCount(in.readInt());
         config.setAsyncBackupCount(in.readInt());
-        config.setEvictionPercentage(in.readInt());
-        config.setMinEvictionCheckMillis(in.readLong());
         config.setTimeToLiveSeconds(in.readInt());
         config.setMaxIdleSeconds(in.readInt());
         config.setMaxSizeConfig(
@@ -110,8 +103,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         out.writeUTF(config.getInMemoryFormat().toString());
         out.writeInt(config.getBackupCount());
         out.writeInt(config.getAsyncBackupCount());
-        out.writeInt(config.getEvictionPercentage());
-        out.writeLong(config.getMinEvictionCheckMillis());
         out.writeInt(config.getTimeToLiveSeconds());
         out.writeInt(config.getMaxIdleSeconds());
         out.writeInt(config.getMaxSizeConfig().getSize());

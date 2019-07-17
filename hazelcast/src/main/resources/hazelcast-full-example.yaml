@@ -981,13 +981,6 @@ hazelcast:
   # - FREE_NATIVE_MEMORY_PERCENTAGE:
   #     Minimum free native memory size percentage for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # * "eviction-percentage":
-  # When "max-size" is reached, the specified percentage of the map will be evicted. For example, if set to 25,
-  # 25% of the entries will be evicted. Valid values are integers between 0 and 100. Its default value is 25.
-  # * "min-eviction-check-millis":
-  # Specifies the frequency of the eviction process, i.e. minimum time in milliseconds which should elapse before
-  # checking whether a partition of the map is evictable or not. Its default value is 100. Setting it to 0 (zero)
-  # makes the eviction process run for every put operation.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
   # split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
@@ -1201,8 +1194,6 @@ hazelcast:
       max-size:
         policy: PER_NODE
         max-size: 0
-      eviction-percentage: 25
-      min-eviction-check-millis: 100
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy

@@ -392,7 +392,6 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 + "        <max-idle-seconds>0</max-idle-seconds>\n"
                 + "        <eviction-policy>LRU</eviction-policy>\n"
                 + "        <max-size policy=\"PER_NODE\">10</max-size>\n"
-                + "        <eviction-percentage>50</eviction-percentage>\n"
                 + "\n"
                 + "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
                 + "\n"

@@ -870,7 +870,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      max-size:\n"
                 + "        policy: per_partition\n"
                 + "        max-size: 0\n"
-                + "      eviction-percentage: 25\n"
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 2342\n";
@@ -1020,35 +1019,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap:\n"
-                + "      min-eviction-check-millis: 123456789\n";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(123456789L, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis_defaultValue() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap: {}\n";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, mapConfig.getMinEvictionCheckMillis());
     }
 
     @Override
@@ -2363,8 +2333,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      max-size:\n"
                 + "        policy: PER_NODE\n"
                 + "        max-size: 42\n"
-                + "      eviction-percentage: 25\n"
-                + "      min-eviction-check-millis: 256\n"
                 + "      read-backup-data: true\n"
                 + "      merkle-tree:\n"
                 + "        enabled: true\n"
@@ -2432,8 +2400,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
-        assertEquals(25, mapConfig.getEvictionPercentage());
-        assertEquals(256, mapConfig.getMinEvictionCheckMillis());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
