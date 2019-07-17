@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.Assertions;
 import com.hazelcast.jet.pipeline.test.TestSources;
 
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -80,6 +83,27 @@ public class Testing {
                 )
                 .drainTo(Sinks.logger());
         //end::assert-collected-eventually[]
+
+
+        JetInstance jet = null;
+        //tag::assertion-completed-exception[]
+        try {
+            jet.newJob(pipeline).join();
+            fail("Job should have completed with an AssertionCompletedException," +
+                " but instead completed normally"
+            );
+        } catch (CompletionException e) {
+            Throwable jetException = e.getCause();
+            assertInstanceOf(AssertionCompletedException.class, jetException.getCause());
+        }
+        //end::assertion-completed-exception[]
+    }
+
+    private static void fail(String s) {
+
+    }
+
+    private static void assertInstanceOf(Class c, Object o) {
     }
 
     private static class Trade {

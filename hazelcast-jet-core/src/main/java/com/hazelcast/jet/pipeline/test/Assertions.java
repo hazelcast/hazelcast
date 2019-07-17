@@ -222,6 +222,19 @@ public final class Assertions {
      *  .withoutTimestamps()
      *  .apply(assertCollectedEventually(5, c -> assertTrue("did not receive at least 20 items", c.size() > 20)));
      * }</pre>
+     * To use this assertion in a test, you need to catch the thrown exception and validate
+     * that it's of the expected type as follows:
+     * <pre>{@code
+     * try {
+     *     jet.newJob(pipeline).join();
+     *     fail("Job should have completed with an AssertionCompletedException, " +
+     *         "but instead completed normally"
+     *     );
+     * } catch (CompletionException e) {
+     *     Throwable jetException = e.getCause();
+     *     assertInstanceOf(AssertionCompletedException.class, jetException.getCause());
+     * }
+     * }</pre>
      *
      * <b>Note:</b> This assertions requires that there are no other assertions in the
      * job as this one can complete the job before the other ones succeeded.

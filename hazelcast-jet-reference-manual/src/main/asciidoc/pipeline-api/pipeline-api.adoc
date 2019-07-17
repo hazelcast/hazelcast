@@ -926,3 +926,10 @@ after the given timeout (10 seconds in the example above) the job
 will fail with an `AssertionError` instead. Due to this if eventual
 assertion is used in the job, no other assertions should be used in it
 or the job may be cancelled before other assertions pass.
+
+You can see a sample of how a pipeline containing this assertion
+can be submitted and asserted below:
+[source]
+----
+include::{javasource}/Testing.java[tag=assertion-completed-exception]
+----

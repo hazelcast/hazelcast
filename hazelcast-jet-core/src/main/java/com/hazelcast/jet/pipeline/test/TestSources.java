@@ -79,6 +79,11 @@ public final class TestSources {
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
      * timestamp is the current system time at the moment they are
      * generated.
+     * <p>
+     * <b>Note:</b>
+     * There is no absolute guarantee that the actual number of emitted
+     * items will match the supplied value. It is done on a best-effort
+     * basis.
      *
      * @param itemsPerSecond how many items should be emitted each second
      *
@@ -98,11 +103,15 @@ public final class TestSources {
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
      * timestamp is the current system time at the moment they are
      * generated.
+     * <p>
+     * <b>Note:</b>
+     * There is no absolute guarantee that the actual number of emitted
+     * items will match the supplied value. It is done on a best-effort
+     * basis.
      *
      * @param itemsPerSecond how many items should be emitted each second
      * @param generatorFn a function which takes the timestamp and the sequence of the generated
      *                    item and maps it to the desired type
-     *
      *
      * @since 3.2
      */
