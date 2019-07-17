@@ -50,9 +50,9 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint votedFor) {
+    public void persistTerm(int term, RaftEndpoint electedEndpoint) {
         this.term = term;
-        this.votedFor = votedFor;
+        this.votedFor = electedEndpoint;
     }
 
     @Override

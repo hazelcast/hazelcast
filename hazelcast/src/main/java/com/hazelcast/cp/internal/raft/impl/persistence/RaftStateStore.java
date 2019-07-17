@@ -50,7 +50,7 @@ public interface RaftStateStore extends Closeable {
      * given term. When this method returns, all the provided data has become
      * durable.
      */
-    void persistTerm(int term, RaftEndpoint votedFor) throws IOException;
+    void persistTerm(int term, RaftEndpoint electedEndpoint) throws IOException;
 
     /**
      * Persists the given log entry.
