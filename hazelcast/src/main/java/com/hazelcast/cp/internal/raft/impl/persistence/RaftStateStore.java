@@ -46,11 +46,11 @@ public interface RaftStateStore extends Closeable {
     void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException;
 
     /**
-     * Persists the term and the Raft endpoint that has been elected for the
-     * given term. When this method returns, all the provided data has become
+     * Persists the term and the Raft endpoint that the local node voted for in
+     * the given term. When this method returns, all the provided data has become
      * durable.
      */
-    void persistTerm(int term, RaftEndpoint electedEndpoint) throws IOException;
+    void persistTerm(int term, RaftEndpoint votedFor) throws IOException;
 
     /**
      * Persists the given log entry.

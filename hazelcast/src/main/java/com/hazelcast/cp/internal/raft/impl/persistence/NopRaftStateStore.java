@@ -44,7 +44,7 @@ public final class NopRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint electedEndpoint) {
+    public void persistTerm(int term, RaftEndpoint votedFor) {
     }
 
     @Override

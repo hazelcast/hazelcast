@@ -82,12 +82,12 @@ public class SimpleRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint electedEndpoint) throws IOException {
+    public void persistTerm(int term, RaftEndpoint votedFor) throws IOException {
         FileOutputStream fileOutputStream = new FileOutputStream(termTmpPath);
         ObjectDataOutputStream out = newDataOutputStream(fileOutputStream);
         try {
             out.writeInt(term);
-            out.writeObject(electedEndpoint);
+            out.writeObject(votedFor);
             out.flush();
             fileOutputStream.getFD().sync();
         } finally {
