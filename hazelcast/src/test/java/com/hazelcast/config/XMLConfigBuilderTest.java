@@ -1781,7 +1781,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getGroupName());
-        assertNull(pc2.getPublisherId());
+        assertEquals("", pc2.getPublisherId());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 

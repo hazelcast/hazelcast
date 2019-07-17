@@ -56,6 +56,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
 
 /**
@@ -675,9 +676,10 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
+        String publisherId = c.getPublisherId();
         gen.open("batch-publisher",
                 "group-name", c.getGroupName(),
-                "publisher-id", c.getPublisherId(),
+                "publisher-id", isNullOrEmptyAfterTrim(publisherId) ? null : publisherId,
                 "batch-size", c.getBatchSize(),
                 "batch-max-delay-millis", c.getBatchMaxDelayMillis(),
                 "response-timeout-millis", c.getResponseTimeoutMillis(),
@@ -706,9 +708,10 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
+        String publisherId = c.getPublisherId();
         gen.open("custom-publisher",
                 "class-name", c.getClassName(),
-                "publisher-id", c.getPublisherId())
+                "publisher-id", isNullOrEmptyAfterTrim(publisherId) ? null : publisherId)
            .appendProperties(c.getProperties());
         gen.close();
     }
