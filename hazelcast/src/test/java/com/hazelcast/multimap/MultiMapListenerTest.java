@@ -50,13 +50,13 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapListenerTest extends HazelcastTestSupport {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListener_whenNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addLocalEntryListener(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddListener_whenListenerNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addEntryListener(null, true);
