@@ -2446,9 +2446,10 @@ hazelcast:
           type: PKCS12
           password: password
           entries:
-            entry:
-              name: entry
+            - name: entry
               password: entry-password
+            - name: entry2
+              password: entry2-password
   #     vault:
   #       address: http://localhost:1234
   #       secret-path: secret/path
