@@ -341,7 +341,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<V> getAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return new ClientDelegatingFuture<V>(getAsyncInternal(key),
+        return new ClientDelegatingFuture<>(getAsyncInternal(key),
                 getSerializationService(), clientMessage -> MapGetCodec.decodeResponse(clientMessage).response);
     }
 
@@ -405,7 +405,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
-            return new ClientDelegatingFuture<V>(future, ss, message -> MapPutCodec.decodeResponse(message).response);
+            return new ClientDelegatingFuture<>(future, ss, message -> MapPutCodec.decodeResponse(message).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -452,7 +452,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<Void>(future, getSerializationService(), clientMessage -> null);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -470,7 +470,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
-            return new ClientDelegatingFuture<V>(future, ss, message -> MapRemoveCodec.decodeResponse(message).response);
+            return new ClientDelegatingFuture<>(future, ss, message -> MapRemoveCodec.decodeResponse(message).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -786,7 +786,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener) {
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
@@ -798,7 +798,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener,
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
@@ -813,7 +813,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener,
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         @Nullable K key,
                                         boolean includeValue) {
@@ -847,7 +847,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
@@ -935,7 +936,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, @Nonnull K key, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                                   @Nonnull K key,
+                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
@@ -988,7 +991,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener,
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key,
                                    boolean includeValue) {
@@ -1050,7 +1053,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener,
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -1059,7 +1062,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, Predicate<K, V> predicate,
+    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor,
+                                            Predicate<K, V> predicate,
                                             boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data predicateData = toData(predicate);
@@ -1282,7 +1286,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public Set<K> keySet(@Nonnull Predicate predicate) {
+    public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (containsPagingPredicate(predicate)) {
             return keySetWithPagingPredicate(predicate);
@@ -1447,14 +1451,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public <R> R executeOnKey(@Nonnull K key,
-                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                              @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(entryProcessor, NULL_ENTRY_PROCESSOR_IS_NOT_ALLOWED);
         return executeOnKeyInternal(key, entryProcessor);
     }
 
     public <R> R executeOnKeyInternal(Object key,
-                                      EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                      EntryProcessor<K, V, R> entryProcessor) {
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
         Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1465,7 +1469,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public <R> void submitToKey(@Nonnull K key,
-                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                @Nonnull EntryProcessor<K, V, R> entryProcessor,
                                 ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         submitToKeyInternal(key, entryProcessor, callback);
@@ -1473,7 +1477,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     public <R> void submitToKeyInternal(Object key,
-                                        EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                        EntryProcessor<K, V, R> entryProcessor,
                                         ExecutionCallback<? super R> callback) {
         try {
             Data keyData = toData(key);
@@ -1489,13 +1493,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
-                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return submitToKeyInternal(key, entryProcessor);
     }
 
     public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
-                                                         EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                                         EntryProcessor<K, V, R> entryProcessor) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1508,7 +1512,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
         MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
@@ -1529,7 +1533,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1539,7 +1543,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator) {
+    public <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
 
         ClientMessage request = MapAggregateCodec.encodeRequest(name, toData(aggregator));
@@ -1550,7 +1554,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator, @Nonnull Predicate<K, V> predicate) {
+    public <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator,
+                           @Nonnull Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "aggregate");
@@ -1564,7 +1569,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Collection<R> project(@Nonnull Projection<Entry<K, V>, R> projection) {
+    public <R> Collection<R> project(@Nonnull Projection<? super Entry<K, V>, R> projection) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         ClientMessage request = MapProjectCodec.encodeRequest(name, toData(projection));
         ClientMessage response = invoke(request);
@@ -1576,7 +1581,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Collection<R> project(@Nonnull Projection<Entry<K, V>, R> projection,
+    public <R> Collection<R> project(@Nonnull Projection<? super Entry<K, V>, R> projection,
                                      @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
@@ -1599,7 +1604,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public QueryCache<K, V> getQueryCache(@Nonnull String name, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public QueryCache<K, V> getQueryCache(@Nonnull String name,
+                                          @Nonnull Predicate<K, V> predicate,
+                                          boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
@@ -1610,7 +1617,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public QueryCache<K, V> getQueryCache(@Nonnull String name,
                                           @Nonnull MapListener listener,
-                                          @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+                                          @Nonnull Predicate<K, V> predicate,
+                                          boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
@@ -1642,7 +1650,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
-                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                       @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -1653,8 +1661,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public <R> ICompletableFuture<Map<K, R>> submitToKeys(Set<K> keys,
-                                                          EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
+                                                          @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return new SimpleCompletedFuture<>(Collections.emptyMap());
@@ -1796,7 +1804,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
-    public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
+    public <R> Iterator<R> iterator(int fetchSize, int partitionId,
+                                    Projection<? super Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);

@@ -47,7 +47,8 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
     private final MapProxyImpl<K, V> mapProxy;
 
     public MapQueryPartitionIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionId,
-                                     Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+                                     Predicate<K, V> predicate,
+                                     Projection<? super Entry<K, V>, R> projection) {
         super(mapProxy, fetchSize, partitionId, predicate, projection);
         this.mapProxy = mapProxy;
         advance();

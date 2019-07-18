@@ -115,7 +115,9 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param predicate the predicate for filtering entries
      * @param key       the key to listen to
      */
-    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
+    String addEntryListener(EntryListener<K, V> listener,
+                            Predicate<K, V> predicate,
+                            K key);
 
     /**
      * Returns a lazy {@link Collection} view of the values contained in this map.<br>

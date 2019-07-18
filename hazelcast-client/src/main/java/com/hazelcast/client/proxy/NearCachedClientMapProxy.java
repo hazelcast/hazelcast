@@ -487,7 +487,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public <R> R executeOnKeyInternal(Object key,
-                                      EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                      EntryProcessor<K, V, R> entryProcessor) {
         key = toNearCacheKey(key);
         R response;
         try {
@@ -500,7 +500,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
-                                                         EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                                         EntryProcessor<K, V, R> entryProcessor) {
         key = toNearCacheKey(key);
         ICompletableFuture future;
         try {
@@ -513,7 +513,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public <R> void submitToKeyInternal(Object key,
-                                    EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                    EntryProcessor<K, V, R> entryProcessor,
                                     ExecutionCallback<? super R> callback) {
         key = toNearCacheKey(key);
         try {

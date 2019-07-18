@@ -404,9 +404,9 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
 
         map.addIndex("id", true);
 
-        Predicate<Integer, Employee> pred = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
+        Predicate<Integer, BaseEmployee> pred = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
 
-        PagingPredicate<Integer, Employee> predicate = Predicates.<Integer, Employee>pagingPredicate(pred, PAGE_SIZE);
+        PagingPredicate<Integer, BaseEmployee> predicate = Predicates.pagingPredicate(pred, PAGE_SIZE);
         Collection<BaseEmployee> values;
 
         for (values = map.values(predicate); !values.isEmpty() && values != null;

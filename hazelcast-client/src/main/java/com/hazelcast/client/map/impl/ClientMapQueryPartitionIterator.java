@@ -48,8 +48,12 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
     private final ClientMapProxy<K, V> mapProxy;
     private final ClientContext context;
 
-    public ClientMapQueryPartitionIterator(ClientMapProxy<K, V> mapProxy, ClientContext context, int fetchSize,
-                                           int partitionId, Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+    public ClientMapQueryPartitionIterator(ClientMapProxy<K, V> mapProxy,
+                                           ClientContext context,
+                                           int fetchSize,
+                                           int partitionId,
+                                           Predicate<K, V> predicate,
+                                           Projection<? super Entry<K, V>, R> projection) {
         super(mapProxy, fetchSize, partitionId, predicate, projection);
         this.mapProxy = mapProxy;
         this.context = context;

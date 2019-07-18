@@ -129,15 +129,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
             map.put(new Employee(i), new Employee(i));
         }
 
-        Predicate predicate = Predicates.lessThan("id", count);
+        Predicate<Employee, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
         }
     }
@@ -151,15 +151,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
             map.put(new Employee(i), new Employee(i));
         }
 
-        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        Predicate<Employee, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
         }
     }
@@ -190,15 +190,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         populateMap(map, count);
 
-        Predicate predicate = Predicates.lessThan("id", count);
+        Predicate<Integer, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
         }
     }
@@ -210,15 +210,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         populateMap(map, count);
 
-        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        Predicate<Integer, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+        for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
         }
     }
@@ -285,15 +285,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         populateMap(map, count);
 
-        Predicate predicate = Predicates.lessThan("id", count);
+        Predicate<Integer, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Employee employee: cache.values(predicate)) {
+        for (Employee employee : cache.values(predicate)) {
             employee.setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Employee employee: cache.values(predicate)) {
+        for (Employee employee : cache.values(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
         }
     }
@@ -305,15 +305,15 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         populateMap(map, count);
 
-        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        Predicate<Integer, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
-        for (Employee employee: cache.values(predicate)) {
+        for (Employee employee : cache.values(predicate)) {
             employee.setAge(Employee.MAX_AGE + 1);
         }
 
-        for (Employee employee: cache.values(predicate)) {
+        for (Employee employee : cache.values(predicate)) {
             assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
         }
     }

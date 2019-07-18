@@ -65,8 +65,11 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
 
     protected List<Data> segment;
 
-    public AbstractMapQueryPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId,
-                                             Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+    public AbstractMapQueryPartitionIterator(IMap<K, V> map,
+                                             int fetchSize,
+                                             int partitionId,
+                                             Predicate<K, V> predicate,
+                                             Projection<? super Entry<K, V>, R> projection) {
         this.map = map;
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;
