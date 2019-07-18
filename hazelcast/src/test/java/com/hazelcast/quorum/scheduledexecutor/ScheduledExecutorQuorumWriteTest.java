@@ -17,7 +17,6 @@
 package com.hazelcast.quorum.scheduledexecutor;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.Config;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
