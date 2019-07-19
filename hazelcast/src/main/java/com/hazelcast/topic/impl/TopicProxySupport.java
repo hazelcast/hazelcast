@@ -30,8 +30,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
