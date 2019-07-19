@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.cluster.Joiner;
-import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
