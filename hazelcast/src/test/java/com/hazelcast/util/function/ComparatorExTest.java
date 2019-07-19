@@ -17,7 +17,10 @@
 package com.hazelcast.util.function;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
@@ -28,6 +31,7 @@ import static com.hazelcast.util.function.ComparatorsEx.REVERSE_ORDER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
 public class ComparatorExTest {
 
