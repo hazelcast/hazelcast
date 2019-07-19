@@ -16,19 +16,18 @@
 
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
-import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 
 import static java.lang.Math.min;
 
@@ -51,8 +50,8 @@ public class BufferedRaf implements Closeable {
         this.fileLength = raf.length();
     }
 
-    public FileOutputStream asOutputStream() throws IOException {
-        return new BufRafOutputStream();
+    public ObjectDataOutputStream asObjectDataOutputStream(InternalSerializationService serde) {
+        return new BufRafObjectDataOut(new BufRafOutputStream(), serde);
     }
 
     public long length() {
@@ -167,6 +166,11 @@ public class BufferedRaf implements Closeable {
         return auxBuf.getLong(0);
     }
 
+    public void writeByte(int b) throws IOException {
+        auxBuf.put(0, (byte) b);
+        write(auxBuf.array(), 0, Byte.BYTES);
+    }
+
     public void writeInt(int value) throws IOException {
         auxBuf.putInt(0, value);
         write(auxBuf.array(), 0, Integer.BYTES);
@@ -210,27 +214,46 @@ public class BufferedRaf implements Closeable {
         bufBaseFileOffset = filePointer;
     }
 
-    private class BufRafOutputStream extends FileOutputStream {
-        BufRafOutputStream() throws IOException {
-            super(raf.getFD());
-        }
+    private class BufRafOutputStream extends OutputStream {
+        private final CRC32 crc32 = new CRC32();
 
         @Override
         public void write(int b) throws IOException {
-            super.write(b);
-            filePointer = raf.getFilePointer();
+            BufferedRaf.this.writeByte(b);
+            crc32.update(b);
         }
 
         @Override
-        public void write(byte[] b) throws IOException {
-            super.write(b);
-            filePointer = raf.getFilePointer();
+        public void write(@Nonnull byte[] b) throws IOException {
+            BufferedRaf.this.write(b, 0, b.length);
+            crc32.update(b);
         }
 
         @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            super.write(b, off, len);
-            filePointer = raf.getFilePointer();
+        public void write(@Nonnull byte[] b, int off, int len) throws IOException {
+            BufferedRaf.this.write(b, off, len);
+            crc32.update(b, off, len);
+        }
+
+        void writeCrc32() throws IOException {
+            BufferedRaf.this.writeInt((int) crc32.getValue());
+            crc32.reset();
+        }
+    }
+
+    private class BufRafObjectDataOut extends ObjectDataOutputStream {
+
+        private final BufRafOutputStream outputStream;
+
+        BufRafObjectDataOut(BufRafOutputStream outputStream, InternalSerializationService serializationService) {
+            super(outputStream, serializationService);
+            this.outputStream = outputStream;
+        }
+
+        @Override
+        public void writeObject(Object object) throws IOException {
+            super.writeObject(object);
+            outputStream.writeCrc32();
         }
     }
 }

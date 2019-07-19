@@ -2,8 +2,11 @@ package com.hazelcast.cp.internal.raft.impl.persistence;
 
 public class LogEntryRingBuffer {
     private final long[] offsets;
-    private int bufLen;
+    // A fixed formula determines for a given entry index its slot in offsets[].
+    // bottomEntryIndex together with bufLen tells the range of entry indices
+    // that are currently stored in offsets[]: [bottomEntryIndex .. bottomEntryIndex + bufLen - 1]
     private long bottomEntryIndex;
+    private int bufLen;
 
     public LogEntryRingBuffer(int size, long topExistingIndex) {
         this.offsets = new long[size];
@@ -60,5 +63,9 @@ public class LogEntryRingBuffer {
             offsets[i] += offsetDelta;
         }
         bottomEntryIndex += indexDelta;
+    }
+
+    public long deleteEntriesFrom(long startIndex) {
+        throw new UnsupportedOperationException("TODO");
     }
 }
