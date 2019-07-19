@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
@@ -425,11 +424,11 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
         quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                .withSuspicionThreshold(threshold)
-                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                .withMinStdDeviationMillis(minStdDeviation)
-                .withMaxSampleSize(maxSampleSize);
+                                          .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                          .withSuspicionThreshold(threshold)
+                                          .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                          .withMinStdDeviationMillis(minStdDeviation)
+                                          .withMaxSampleSize(maxSampleSize);
         return quorumConfigBuilder;
     }
 
@@ -509,12 +508,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                                              String nodeName) {
         if ("batch-publisher".equals(nodeName)) {
             WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
-            config.setGroupName(getAttribute(nodeTarget, "group-name"));
-            setAttributeIfExistant(nodeTarget, "publisher-id", config::setPublisherId);
             handleBatchWanPublisherNode(wanReplicationConfig, nodeTarget, config);
         } else if ("custom-publisher".equals(nodeName)) {
             CustomWanPublisherConfig config = new CustomWanPublisherConfig();
-            config.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
             handleCustomWanPublisherNode(wanReplicationConfig, nodeTarget, config);
         } else if ("consumer".equals(nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
@@ -524,12 +520,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleCustomWanPublisherNode(WanReplicationConfig wanReplicationConfig,
                                       Node nodeTarget,
                                       CustomWanPublisherConfig config) {
-        config.setClassName(getAttribute(nodeTarget, "class-name"));
-
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
             if ("properties".equals(targetChildName)) {
                 fillProperties(targetChild, config.getProperties());
+            } else if ("publisher-id".equals(targetChildName)) {
+                config.setPublisherId(getTextContent(targetChild));
+            } else if ("class-name".equals(targetChildName)) {
+                config.setClassName(getTextContent(targetChild));
             }
         }
         wanReplicationConfig.addCustomPublisherConfig(config);
@@ -537,37 +535,42 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleBatchWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget,
                                      WanBatchReplicationPublisherConfig config) {
-        setAttributeIfExistant(nodeTarget, "snapshot-enabled", val -> config.setSnapshotEnabled(getBooleanValue(val)));
-        setAttributeIfExistant(nodeTarget, "initial-publisher-state",
-                val -> config.setInitialPublisherState(WanPublisherState.valueOf(upperCaseInternal(val))));
-        setAttributeIfExistant(nodeTarget, "queue-capacity",
-                val -> config.setQueueCapacity(getIntegerValue("queue-capacity", val)));
-        setAttributeIfExistant(nodeTarget, "batch-size", val -> config.setBatchSize(getIntegerValue("batch-size", val)));
-        setAttributeIfExistant(nodeTarget, "batch-max-delay-millis",
-                val -> config.setBatchMaxDelayMillis(getIntegerValue("batch-max-delay-millis", val)));
-        setAttributeIfExistant(nodeTarget, "response-timeout-millis",
-                val -> config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", val)));
-        setAttributeIfExistant(nodeTarget, "queue-full-behavior",
-                val -> config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(val))));
-        setAttributeIfExistant(nodeTarget, "acknowledge-type",
-                val -> config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(val))));
-        setAttributeIfExistant(nodeTarget, "discovery-period-seconds",
-                val -> config.setDiscoveryPeriodSeconds(getIntegerValue("discovery-period-seconds", val)));
-        setAttributeIfExistant(nodeTarget, "max-target-endpoints",
-                val -> config.setMaxTargetEndpoints(getIntegerValue("max-target-endpoints", val)));
-        setAttributeIfExistant(nodeTarget, "max-concurrent-invocations",
-                val -> config.setMaxConcurrentInvocations(getIntegerValue("max-concurrent-invocations", val)));
-        setAttributeIfExistant(nodeTarget, "use-endpoint-private-address",
-                val -> config.setUseEndpointPrivateAddress(getBooleanValue(val)));
-        setAttributeIfExistant(nodeTarget, "idle-min-park-ns",
-                val -> config.setIdleMinParkNs(getIntegerValue("idle-min-park-ns", val)));
-        setAttributeIfExistant(nodeTarget, "idle-max-park-ns",
-                val -> config.setIdleMaxParkNs(getIntegerValue("idle-max-park-ns", val)));
-
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
-            if ("target-endpoints".equals(targetChildName)) {
+            if ("group-name".equals(targetChildName)) {
+                config.setGroupName(getTextContent(targetChild));
+            } else if ("publisher-id".equals(targetChildName)) {
+                config.setPublisherId(getTextContent(targetChild));
+            } else if ("target-endpoints".equals(targetChildName)) {
                 config.setTargetEndpoints(getTextContent(targetChild));
+            } else if ("snapshot-enabled".equals(targetChildName)) {
+                config.setSnapshotEnabled(getBooleanValue(getTextContent(targetChild)));
+            } else if ("initial-publisher-state".equals(targetChildName)) {
+                config.setInitialPublisherState(WanPublisherState.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("queue-capacity".equals(targetChildName)) {
+                config.setQueueCapacity(getIntegerValue("queue-capacity", getTextContent(targetChild)));
+            } else if ("batch-size".equals(targetChildName)) {
+                config.setBatchSize(getIntegerValue("batch-size", getTextContent(targetChild)));
+            } else if ("batch-max-delay-millis".equals(targetChildName)) {
+                config.setBatchMaxDelayMillis(getIntegerValue("batch-max-delay-millis", getTextContent(targetChild)));
+            } else if ("response-timeout-millis".equals(targetChildName)) {
+                config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", getTextContent(targetChild)));
+            } else if ("queue-full-behavior".equals(targetChildName)) {
+                config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("acknowledge-type".equals(targetChildName)) {
+                config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("discovery-period-seconds".equals(targetChildName)) {
+                config.setDiscoveryPeriodSeconds(getIntegerValue("discovery-period-seconds", getTextContent(targetChild)));
+            } else if ("max-target-endpoints".equals(targetChildName)) {
+                config.setMaxTargetEndpoints(getIntegerValue("max-target-endpoints", getTextContent(targetChild)));
+            } else if ("max-concurrent-invocations".equals(targetChildName)) {
+                config.setMaxConcurrentInvocations(getIntegerValue("max-concurrent-invocations", getTextContent(targetChild)));
+            } else if ("use-endpoint-private-address".equals(targetChildName)) {
+                config.setUseEndpointPrivateAddress(getBooleanValue(getTextContent(targetChild)));
+            } else if ("idle-min-park-ns".equals(targetChildName)) {
+                config.setIdleMinParkNs(getIntegerValue("idle-min-park-ns", getTextContent(targetChild)));
+            } else if ("idle-max-park-ns".equals(targetChildName)) {
+                config.setIdleMaxParkNs(getIntegerValue("idle-max-park-ns", getTextContent(targetChild)));
             } else if ("properties".equals(targetChildName)) {
                 fillProperties(targetChild, config.getProperties());
             } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
@@ -581,13 +584,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         wanReplicationConfig.addWanBatchReplicationPublisherConfig(config);
-    }
-
-    private void setAttributeIfExistant(Node nodeTarget, String attributeName, Consumer<String> attributeValueConsumer) {
-        String value = getAttribute(nodeTarget, attributeName);
-        if (value != null) {
-            attributeValueConsumer.accept(value);
-        }
     }
 
     void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {

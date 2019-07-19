@@ -61,27 +61,29 @@
         <property name="foo">bar</property>
     </properties>
     <wan-replication name="my-wan-cluster">
-        <batch-publisher group-name="tokyo"
-                         publisher-id="tokyoPublisherId"
-                         queue-capacity="1000"
-                         queue-full-behavior="THROW_EXCEPTION"
-                         initial-publisher-state="STOPPED"
-                         batch-size="50"
-                         batch-max-delay-millis="3000"
-                         snapshot-enabled="true"
-                         response-timeout-millis="5000"
-                         acknowledge-type="ACK_ON_RECEIPT">
+        <batch-publisher>
+            <group-name>tokyo</group-name>
+            <publisher-id>tokyoPublisherId</publisher-id>
+            <queue-capacity>1000</queue-capacity>
+            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <batch-size>50</batch-size>
+            <batch-max-delay-millis>3000</batch-max-delay-millis>
+            <snapshot-enabled>true</snapshot-enabled>
+            <response-timeout-millis>5000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
             <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
             <wan-sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
             </wan-sync>
         </batch-publisher>
-        <batch-publisher group-name="istanbul"
-                         queue-full-behavior="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"
-                         initial-publisher-state="STOPPED"
-                         queue-capacity="12345"
-                         discovery-period-seconds="5"
-                         max-target-endpoints="2">
+        <batch-publisher>
+            <group-name>istanbul</group-name>
+            <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <queue-capacity>12345</queue-capacity>
+            <discovery-period-seconds>5</discovery-period-seconds>
+            <max-target-endpoints>2</max-target-endpoints>
             <aws enabled="false" connection-timeout-seconds="10">
                 <access-key>sample-access-key</access-key>
                 <secret-key>sample-secret-key</secret-key>

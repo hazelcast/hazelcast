@@ -125,11 +125,6 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     }
 
     @Override
-    public int getFactoryId() {
-        return ConfigDataSerializerHook.F_ID;
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         int size = properties.size();
         out.writeInt(size);

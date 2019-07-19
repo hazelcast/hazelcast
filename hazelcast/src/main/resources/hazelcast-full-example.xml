@@ -349,23 +349,68 @@
                 database for example, otherwise it will not be persisted. Default value
                 is true.
     -->
+
+        <wan-replication name="test">
+            <batch-publisher>
+                <group-name>nyc</group-name>
+                <publisher-id>publisherId</publisher-id>
+                <batch-size>100</batch-size>
+                <batch-max-delay-millis>200</batch-max-delay-millis>
+                <response-timeout-millis>300</response-timeout-millis>
+                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+                <initial-publisher-state>STOPPED</initial-publisher-state>
+                <snapshot-enabled>true</snapshot-enabled>
+                <idle-min-park-ns>400</idle-min-park-ns>
+                <idle-max-park-ns>500</idle-max-park-ns>
+                <max-concurrent-invocations>600</max-concurrent-invocations>
+                <discovery-period-seconds>700</discovery-period-seconds>
+                <use-endpoint-private-address>true</use-endpoint-private-address>
+                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+                <max-target-endpoints>800</max-target-endpoints>
+                <queue-capacity>21</queue-capacity>
+                <target-endpoints>a,b,c,d</target-endpoints>            <wan-sync>
+                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
+            </wan-sync>
+                <properties>
+                    <property name="propName1">propValue1</property>
+                </properties>
+                <endpoint>nyc-endpoint</endpoint>
+            </batch-publisher>
+            <custom-publisher>
+                <class-name>PublisherClassName</class-name>
+                <publisher-id>customPublisherId</publisher-id>
+            <properties>
+                <property name="propName1">propValue1</property>
+            </properties>
+        </custom-publisher>
+            <consumer>
+                <class-name>ConsumerClassName</class-name>
+                <properties>
+                    <property name="propName1">propValue1</property>
+                </properties>
+            </consumer>
+        </wan-replication>
+
+
+
     <wan-replication name="my-wan-cluster-batch">
-        <batch-publisher group-name="nyc"
-                         publisher-id="nycPublisherId"
-                         batch-size="1000"
-                         batch-max-delay-millis="2000"
-                         response-timeout-millis="60000"
-                         acknowledge-type="ACK_ON_OPERATION_COMPLETE"
-                         initial-publisher-state="REPLICATING"
-                         snapshot-enabled="false"
-                         idle-max-park-ns="250000000"
-                         idle-min-park-ns="10000000"
-                         max-concurrent-invocations="-1"
-                         discovery-period-seconds="10"
-                         use-endpoint-private-address="false"
-                         queue-full-behavior="DISCARD_AFTER_MUTATION"
-                         max-target-endpoints="2147483647"
-                         queue-capacity="10000">
+        <batch-publisher>
+            <group-name>nyc</group-name>
+            <publisher-id>nycPublisherId</publisher-id>
+            <batch-size>1000</batch-size>
+            <batch-max-delay-millis>2000</batch-max-delay-millis>
+            <response-timeout-millis>60000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
+            <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <snapshot-enabled>false</snapshot-enabled>
+            <idle-max-park-ns>250000000</idle-max-park-ns>
+            <idle-min-park-ns>10000000</idle-min-park-ns>
+            <max-concurrent-invocations>-1</max-concurrent-invocations>
+            <discovery-period-seconds>10</discovery-period-seconds>
+            <use-endpoint-private-address>false</use-endpoint-private-address>
+            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <max-target-endpoints>2147483647</max-target-endpoints>
+            <queue-capacity>10000</queue-capacity>
             <target-endpoints>10.3.5.1:5701,10.3.5.2:5701</target-endpoints>
             <wan-sync>
                 <consistency-check-strategy>NONE</consistency-check-strategy>

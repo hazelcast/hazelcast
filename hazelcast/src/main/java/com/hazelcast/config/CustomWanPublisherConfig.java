@@ -22,17 +22,12 @@ import java.util.Map;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Configuration object for a custom WAN publisher. A single publisher defines how
- * WAN events are sent to a specific endpoint.
- * The endpoint can be some other external system which is
- * not a Hazelcast cluster (e.g. JMS queue.
+ * Configuration object for a custom WAN publisher. A single publisher defines
+ * how WAN events are sent to a specific endpoint.
+ * The endpoint can be some other external system which is not a Hazelcast
+ * cluster (e.g. JMS queue).
  */
 public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {
-
-    @Override
-    public int getClassId() {
-        return ConfigDataSerializerHook.WAN_CUSTOM_PUBLISHER_CONFIG;
-    }
 
     @Override
     public String toString() {
@@ -72,5 +67,15 @@ public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {
     public CustomWanPublisherConfig setImplementation(Object implementation) {
         super.setImplementation(implementation);
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.WAN_CUSTOM_PUBLISHER_CONFIG;
     }
 }

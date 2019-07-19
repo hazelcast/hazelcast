@@ -768,6 +768,11 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
     public int getClassId() {
         return ConfigDataSerializerHook.WAN_BATCH_PUBLISHER_CONFIG;
     }

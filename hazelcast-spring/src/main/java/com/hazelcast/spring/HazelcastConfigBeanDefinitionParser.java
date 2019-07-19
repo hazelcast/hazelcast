@@ -33,6 +33,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -110,7 +111,6 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
@@ -138,8 +138,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -1516,16 +1516,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private AbstractBeanDefinition handleBatchPublisher(Node n) {
             BeanDefinitionBuilder builder = createBeanBuilder(WanBatchReplicationPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
-            fillAttributeValues(n, builder, Collections.emptyList());
+
+            ArrayList<String> excluded = new ArrayList<>(AliasedDiscoveryConfigUtils.getTags());
+            excluded.add("properties");
+            excluded.add("discoveryStrategies");
+            excluded.add("wanSync");
+
+            fillValues(n, builder, excluded.toArray(new String[0]));
 
             for (Node child : childElements(n)) {
 
                 String nodeName = cleanNodeName(child);
                 if ("properties".equals(nodeName)) {
                     handleProperties(child, builder);
-                } else if ("target-endpoints".equals(nodeName)
-                        || "endpoint".equals(nodeName)) {
-                    builder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                 } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
                     handleAliasedDiscoveryStrategy(child, builder, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
@@ -1540,7 +1543,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private AbstractBeanDefinition handleCustomPublisher(Node n) {
             BeanDefinitionBuilder builder = createBeanBuilder(CustomWanPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
-            fillAttributeValues(n, builder, Collections.emptyList());
+            fillValues(n, builder, "properties");
 
             String className = getAttribute(n, "class-name");
             String implementation = getAttribute(n, "implementation");

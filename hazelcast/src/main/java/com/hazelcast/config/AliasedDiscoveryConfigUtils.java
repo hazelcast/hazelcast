@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,13 @@ public final class AliasedDiscoveryConfigUtils {
         ALIAS_MAPPINGS.put("azure", "com.hazelcast.azure.AzureDiscoveryStrategy");
         ALIAS_MAPPINGS.put("kubernetes", "com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy");
         ALIAS_MAPPINGS.put("eureka", "com.hazelcast.eureka.one.EurekaOneDiscoveryStrategy");
+    }
+
+    /**
+     * Returns the collection of supported tags.
+     */
+    public static Collection<String> getTags() {
+        return ALIAS_MAPPINGS.keySet();
     }
 
     /**
