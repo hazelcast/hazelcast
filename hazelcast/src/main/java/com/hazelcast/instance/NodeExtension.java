@@ -17,6 +17,9 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -331,4 +334,8 @@ public interface NodeExtension {
      * @return true if client failover feature is supported
      */
     boolean isClientFailoverSupported();
+
+    CPMemberMetadataStore getCPMemberMetadataStore();
+
+    RaftStateStore createRaftStateStore(RaftGroupId groupId);
 }
