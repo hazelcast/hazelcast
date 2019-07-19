@@ -30,7 +30,6 @@ public abstract class AbstractTopicNullTest extends HazelcastTestSupport {
 
     @Test
     public void testNullability() {
-        assertThrowsNPE(t -> t.publish(null));
         assertThrowsNPE(t -> t.addMessageListener(null));
         assertThrowsNPE(t -> t.removeMessageListener(null));
     }

@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -48,8 +49,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     }
 
     @Override
-    public void publish(@Nonnull E message) {
-        checkNotNull(message, "Null message is not allowed!");
+    public void publish(@Nullable E message) {
         Data data = toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
         invokeOnPartition(request);

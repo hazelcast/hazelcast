@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalTopicStats;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are
@@ -61,7 +62,7 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    void publish(@Nonnull E message);
+    void publish(@Nullable E message);
 
     /**
      * Subscribes to this topic. When a message is published, the

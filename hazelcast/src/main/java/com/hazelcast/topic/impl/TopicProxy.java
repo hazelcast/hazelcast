@@ -22,6 +22,7 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.spi.NodeEngine;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -40,7 +41,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public void publish(@Nonnull E message) {
+    public void publish(@Nullable E message) {
         publishInternal(message);
     }
 

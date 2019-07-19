@@ -38,6 +38,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -153,8 +154,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public void publish(@Nonnull E payload) {
-        checkNotNull(payload, "Null message is not allowed!");
+    public void publish(@Nullable E payload) {
         try {
             Data data = nodeEngine.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, thisAddress);
