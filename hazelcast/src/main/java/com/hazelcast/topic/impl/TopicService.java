@@ -16,11 +16,8 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.config.TopicConfig;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
@@ -33,10 +30,14 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
@@ -172,7 +173,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
-    public String addMessageListener(String name, MessageListener listener, boolean localOnly) {
+    public @Nonnull
+    String addMessageListener(@Nonnull String name,
+                              @Nonnull MessageListener listener,
+                              boolean localOnly) {
         EventRegistration eventRegistration;
         if (localOnly) {
             eventRegistration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
@@ -183,7 +187,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return eventRegistration.getId();
     }
 
-    public boolean removeMessageListener(String name, String registrationId) {
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull String registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 

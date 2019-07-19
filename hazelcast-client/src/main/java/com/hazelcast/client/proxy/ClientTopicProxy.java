@@ -31,6 +31,9 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -46,21 +49,22 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     }
 
     @Override
-    public void publish(E message) {
+    public void publish(@Nullable E message) {
         Data data = toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
         invokeOnPartition(request);
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(final MessageListener<E> listener) {
+    public String addMessageListener(@Nonnull final MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
         return registerListener(new Codec(), handler);
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull String registrationId) {
         return deregisterListener(registrationId);
     }
 

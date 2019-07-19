@@ -19,14 +19,16 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.annotation.Nonnull;
 
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
@@ -97,11 +99,12 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         topicService.publishMessage(name, message, multithreaded);
     }
 
-    public String addMessageListenerInternal(MessageListener listener) {
+    public @Nonnull
+    String addMessageListenerInternal(@Nonnull MessageListener listener) {
         return topicService.addMessageListener(name, listener, false);
     }
 
-    public boolean removeMessageListenerInternal(final String registrationId) {
+    public boolean removeMessageListenerInternal(@Nonnull String registrationId) {
         return topicService.removeMessageListener(name, registrationId);
     }
 

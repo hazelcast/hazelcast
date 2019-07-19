@@ -61,6 +61,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -234,7 +235,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
-    public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
+    public String addListener(String name,
+                              @Nonnull EventListener listener,
+                              Data key,
+                              boolean includeValue,
+                              boolean local) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);

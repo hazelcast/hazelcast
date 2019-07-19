@@ -71,12 +71,12 @@ public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
         instance.getMap("test").addEntryListener(mock(EntryListener.class), null, "key", true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testMultiMapAddEntryListener() {
         instance.getMultiMap("test").addEntryListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testMultiMapAddEntryListenerKey() {
         instance.getMultiMap("test").addEntryListener(null, "key", true);
     }
@@ -111,12 +111,12 @@ public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
         instance.getReplicatedMap("test").addEntryListener(mock(EntryListener.class), null, "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testListAddItemListener() {
         instance.getList("test").addItemListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testSetAddItemListener() {
         instance.getSet("test").addItemListener(null, true);
     }
