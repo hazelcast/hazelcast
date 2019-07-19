@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
-import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.internal.nio.Connection;
-
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -26,19 +23,15 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Keeps the information related to to an event registration made by clients.
  */
-public class ClientEventRegistration {
+public class ClientConnectionRegistration {
 
-    private Connection subscriber;
     private final UUID serverRegistrationId;
     private final long callId;
-    private final ListenerMessageCodec codec;
 
-    public ClientEventRegistration(UUID serverRegistrationId, long callId, Connection subscriber, ListenerMessageCodec codec) {
+    ClientConnectionRegistration(UUID serverRegistrationId, long callId) {
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
-        this.subscriber = subscriber;
-        this.codec = codec;
     }
 
     /**
@@ -55,43 +48,12 @@ public class ClientEventRegistration {
 
 
     /**
-     * This is used when removing the listener.
-     * Note: Listeners need to be removed from the member that they are first subscribed.
-     *
-     * @return subscriber
-     */
-    public Connection getSubscriber() {
-        return subscriber;
-    }
-
-    /**
      * Call ID of first event registration request
      *
      * @return call ID
      */
-    public long getCallId() {
+    long getCallId() {
         return callId;
     }
 
-    public ListenerMessageCodec getCodec() {
-        return codec;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ClientEventRegistration that = (ClientEventRegistration) o;
-        return serverRegistrationId.equals(that.serverRegistrationId);
-    }
-
-    @Override
-    public int hashCode() {
-        return serverRegistrationId.hashCode();
-    }
 }

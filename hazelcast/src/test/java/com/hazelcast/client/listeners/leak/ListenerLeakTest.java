@@ -22,27 +22,27 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
-import com.hazelcast.client.impl.spi.impl.listener.ClientEventRegistration;
+import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.MessageListener;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -83,7 +83,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
     }
 
     private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, UUID id
-            , Collection<ClientEventRegistration> registrations) {
+            , Collection<ClientConnectionRegistration> registrations) {
         for (Node node : nodes) {
             assertNoLeftOverOnNode(node, registrations);
         }
@@ -100,19 +100,19 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         return nodes;
     }
 
-    private void assertNoLeftOverOnNode(Node node, Collection<ClientEventRegistration> registrations) {
+    private void assertNoLeftOverOnNode(Node node, Collection<ClientConnectionRegistration> registrations) {
         Collection<ClientEndpoint> endpoints = node.clientEngine.getEndpointManager().getEndpoints();
         for (ClientEndpoint endpoint : endpoints) {
-            for (ClientEventRegistration registration : registrations) {
+            for (ClientConnectionRegistration registration : registrations) {
                 assertFalse(endpoint.removeDestroyAction(registration.getServerRegistrationId()));
             }
         }
     }
 
-    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
+    private Collection<ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
-        return listenerService.getActiveRegistrations(id);
+        return listenerService.getActiveRegistrations(id).values();
     }
 
     private HazelcastInstance newHazelcastClient() {
@@ -128,7 +128,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         IMap map = client.getMap(randomString());
         UUID id = map.addEntryListener(mock(MapListener.class), false);
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(map.removeEntryListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -141,7 +141,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         IMap map = client.getMap(randomString());
         UUID id = map.addPartitionLostListener(mock(MapPartitionLostListener.class));
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(map.removePartitionLostListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -154,7 +154,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         MultiMap multiMap = client.getMultiMap(randomString());
         UUID id = multiMap.addEntryListener(mock(EntryListener.class), false);
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(multiMap.removeEntryListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -167,7 +167,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         IList<Object> list = client.getList(randomString());
         UUID id = list.addItemListener(mock(ItemListener.class), false);
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(list.removeItemListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -180,7 +180,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         ISet<Object> set = client.getSet(randomString());
         UUID id = set.addItemListener(mock(ItemListener.class), false);
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(set.removeItemListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -193,7 +193,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         IQueue<Object> queue = client.getQueue(randomString());
         UUID id = queue.addItemListener(mock(ItemListener.class), false);
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(queue.removeItemListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -206,7 +206,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         ReplicatedMap<Object, Object> replicatedMap = client.getReplicatedMap(randomString());
         UUID id = replicatedMap.addEntryListener(mock(EntryListener.class));
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(replicatedMap.removeEntryListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -218,7 +218,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         HazelcastInstance client = newHazelcastClient();
         UUID id = client.addDistributedObjectListener(mock(DistributedObjectListener.class));
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(client.removeDistributedObjectListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
@@ -231,7 +231,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         ITopic<Object> topic = client.getTopic(randomString());
         UUID id = topic.addMessageListener(mock(MessageListener.class));
 
-        Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client, id);
+        Collection<ClientConnectionRegistration> registrations = getClientEventRegistrations(client, id);
 
         assertTrue(topic.removeMessageListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
