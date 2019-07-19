@@ -49,10 +49,8 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -70,8 +68,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     protected final SerializationService serializationService;
     protected final long invocationTimeoutMillis;
     protected final long invocationRetryPauseMillis;
-    protected final Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
-            = new ConcurrentHashMap<ClientRegistrationKey, Map<Connection, ClientEventRegistration>>();
+    protected final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
 
     final ScheduledExecutorService registrationExecutor;
     final ClientConnectionManager clientConnectionManager;
@@ -108,27 +105,25 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<UUID> future = registrationExecutor.submit(new Callable<UUID>() {
-            @Override
-            public UUID call() {
-                UUID userRegistrationId = UuidUtil.newUnsecureUUID();
 
-                ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
-                registrations.put(registrationKey, new ConcurrentHashMap<Connection, ClientEventRegistration>());
-                Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
-                for (ClientConnection connection : connections) {
-                    try {
-                        invoke(registrationKey, connection);
-                    } catch (Exception e) {
-                        if (connection.isAlive()) {
-                            deregisterListenerInternal(userRegistrationId);
-                            throw new HazelcastException("Listener can not be added ", e);
-                        }
+        Future<UUID> future = registrationExecutor.submit(() -> {
+            UUID userRegistrationId = UuidUtil.newUnsecureUUID();
 
+            ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
+            registrations.put(userRegistrationId, registration);
+            Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
+            for (ClientConnection connection : connections) {
+                try {
+                    invoke(registration, connection);
+                } catch (Exception e) {
+                    if (connection.isAlive()) {
+                        deregisterListenerInternal(userRegistrationId);
+                        throw new HazelcastException("Listener can not be added ", e);
                     }
+
                 }
-                return userRegistrationId;
             }
+            return userRegistrationId;
         });
         try {
             return future.get();
@@ -144,8 +139,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         checkNotNull(userRegistrationId, "Null userRegistrationId is not allowed!");
 
         try {
-            Future<Boolean> future = registrationExecutor.submit(
-                    () -> deregisterListenerInternal(userRegistrationId));
+            Future<Boolean> future = registrationExecutor.submit(() -> deregisterListenerInternal(userRegistrationId));
 
             try {
                 return future.get();
@@ -199,18 +193,17 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandler.handle(clientMessage);
     }
 
-    protected void invoke(ClientRegistrationKey registrationKey, Connection connection) throws Exception {
+    protected void invoke(ClientListenerRegistration listenerRegistration, Connection connection) throws Exception {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
-        Map<Connection, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
-        if (registrationMap.containsKey(connection)) {
+        if (listenerRegistration.getConnectionRegistrations().containsKey(connection)) {
             return;
         }
 
-        ListenerMessageCodec codec = registrationKey.getCodec();
+        ListenerMessageCodec codec = listenerRegistration.getCodec();
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
-        EventHandler handler = registrationKey.getHandler();
+        EventHandler handler = listenerRegistration.getHandler();
         handler.beforeListenerRegister();
 
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
@@ -227,10 +220,10 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
         handler.onListenerRegister();
         long correlationId = request.getCorrelationId();
-        ClientEventRegistration registration
-                = new ClientEventRegistration(serverRegistrationId, correlationId, connection, codec);
+        ClientConnectionRegistration registration
+                = new ClientConnectionRegistration(serverRegistrationId, correlationId);
 
-        registrationMap.put(connection, registration);
+        listenerRegistration.getConnectionRegistrations().put(connection, registration);
     }
 
     @Override
@@ -238,12 +231,9 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                    invokeFromInternalThread(registrationKey, connection);
-                }
+        registrationExecutor.submit(() -> {
+            for (ClientListenerRegistration listenerRegistration : registrations.values()) {
+                invokeFromInternalThread(listenerRegistration, connection);
             }
         });
     }
@@ -262,14 +252,11 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                for (Map<Connection, ClientEventRegistration> registrationMap : registrations.values()) {
-                    ClientEventRegistration registration = registrationMap.remove(connection);
-                    if (registration != null) {
-                        removeEventHandler(registration.getCallId());
-                    }
+        registrationExecutor.submit(() -> {
+            for (ClientListenerRegistration registry : registrations.values()) {
+                ClientConnectionRegistration registration = registry.getConnectionRegistrations().remove(connection);
+                if (registration != null) {
+                    removeEventHandler(registration.getCallId());
                 }
             }
         });
@@ -281,26 +268,17 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     //For Testing
-    public Collection<ClientEventRegistration> getActiveRegistrations(final UUID uuid) {
+    public Map<Connection, ClientConnectionRegistration> getActiveRegistrations(final UUID uuid) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
-                new Callable<Collection<ClientEventRegistration>>() {
-                    @Override
-                    public Collection<ClientEventRegistration> call() {
-                        ClientRegistrationKey key = new ClientRegistrationKey(uuid);
-                        Map<Connection, ClientEventRegistration> registrationMap = registrations.get(key);
-                        if (registrationMap == null) {
-                            return Collections.EMPTY_LIST;
-                        }
-                        LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
-                        for (ClientEventRegistration registration : registrationMap.values()) {
-                            activeRegistrations.add(registration);
-                        }
-                        return activeRegistrations;
-                    }
-                });
+        Future<Map<Connection, ClientConnectionRegistration>> future = registrationExecutor.submit(() -> {
+            ClientListenerRegistration listenerRegistration = registrations.get(uuid);
+            if (listenerRegistration == null) {
+                return Collections.emptyMap();
+            }
+            return listenerRegistration.getConnectionRegistrations();
+        });
         try {
             return future.get();
         } catch (Exception e) {
@@ -309,7 +287,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     // used in tests
-    public Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> getRegistrations() {
+    public Map<UUID, ClientListenerRegistration> getRegistrations() {
         return Collections.unmodifiableMap(registrations);
     }
 
@@ -318,7 +296,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         return Collections.unmodifiableMap(eventHandlerMap);
     }
 
-    private void invokeFromInternalThread(ClientRegistrationKey registrationKey, Connection connection) {
+    private void invokeFromInternalThread(ClientListenerRegistration registrationKey, Connection connection) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -340,18 +318,20 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
-        ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-        Map<Connection, ClientEventRegistration> registrationMap = registrations.get(key);
-        if (registrationMap == null) {
+        ClientListenerRegistration listenerRegistration = registrations.get(userRegistrationId);
+        if (listenerRegistration == null) {
             return false;
         }
         boolean successful = true;
 
-        for (Iterator<ClientEventRegistration> iterator = registrationMap.values().iterator(); iterator.hasNext(); ) {
-            ClientEventRegistration registration = iterator.next();
-            Connection subscriber = registration.getSubscriber();
+        Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
+        Iterator<Map.Entry<Connection, ClientConnectionRegistration>> iterator = registrations.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Connection, ClientConnectionRegistration> entry = iterator.next();
+            ClientConnectionRegistration registration = entry.getValue();
+            Connection subscriber = entry.getKey();
             try {
-                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
                 UUID serverRegistrationId = registration.getServerRegistrationId();
                 ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
                 new ClientInvocation(client, request, null, subscriber).invoke().get();
@@ -366,7 +346,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
             }
         }
         if (successful) {
-            registrations.remove(key);
+            this.registrations.remove(userRegistrationId);
         }
         return successful;
     }
