@@ -1,5 +1,8 @@
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class LogEntryRingBuffer {
     private final long[] offsets;
     // A fixed formula determines for a given entry index its slot in offsets[].
@@ -38,6 +41,16 @@ public class LogEntryRingBuffer {
         return offsets[retrievalPoint];
     }
 
+    /**
+     * Called when receiving a snapshot and starting a new file with it. The
+     * store puts the snapshot at the start of the new file and then copies all
+     * the entries beyond the snapshot from the previous to the new file. This
+     * method adjusts the file offsets of the copied entries and discards the
+     * entries up to the snapshot.
+     *
+     * @param newStartOffset the start offset of the first entry to keep (snapshotIndex + 1)
+     * @param snapshotIndex the snapshot's entry index
+     */
     public void adjustToNewFile(long newStartOffset, long snapshotIndex) {
         if (bufLen == 0) {
             return;
@@ -56,16 +69,30 @@ public class LogEntryRingBuffer {
             bottomEntryIndex = snapshotIndex;
             return;
         }
-        long oldStartOffset = offsets[(int) (bottomEntryIndex % offsets.length)];
-        long offsetDelta = newStartOffset - oldStartOffset;
-        // We don't always have to update all entries, but this code is simpler at insignificant cost.
-        for (int i = 0; i < offsets.length; i++) {
-            offsets[i] += offsetDelta;
-        }
         bottomEntryIndex += indexDelta;
+        adjustOffsets(newStartOffset);
     }
 
-    public long deleteEntriesFrom(long startIndex) {
-        throw new UnsupportedOperationException("TODO");
+    private void adjustOffsets(long newStartOffset) {
+        long startIndexLong = bottomEntryIndex % offsets.length;
+        long limitIndexLong = (startIndexLong + bufLen) % offsets.length;
+        int startIndex = (int) startIndexLong;
+        int limitIndex = (int) limitIndexLong;
+        long offsetDelta = newStartOffset - offsets[startIndex];
+        for (int i = startIndex; i != limitIndex; i++) {
+            if (i == offsets.length) {
+                i = 0;
+            }
+            offsets[i] += offsetDelta;
+        }
+    }
+
+    public long deleteEntriesFrom(long deletionStartIndex) {
+        try {
+            return getEntryOffset(deletionStartIndex);
+        } finally {
+            long newBufLen = deletionStartIndex - bottomEntryIndex;
+            bufLen = (int) (max(0, min(bufLen, newBufLen)));
+        }
     }
 }

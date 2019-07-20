@@ -24,6 +24,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     private File currentFile;
     private File danglingFile;
     private long nextEntryIndex;
+    private InternalSerializationService serializationService;
 
     public OnDiskRaftStateStore(int maxUncommittedEntries) {
         this.nextEntryIndex = 1;
@@ -32,6 +33,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
 
     @Override
     public void open() throws IOException {
+        serializationService = getSerializationService();
         currentFile = fileWithIndex(nextEntryIndex);
         logRaf = createFile(currentFile);
         logDataOut = newObjectDataOutput(logRaf);
@@ -66,9 +68,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         logDataOut = newDataOut;
         logEntryRingBuffer.adjustToNewFile(copyToOffset, snapshot.index());
         if (flushCalledOnCurrFile) {
-            if (danglingFile != null) {
-                IOUtil.delete(danglingFile);
-            }
+            deleteDanglingFile();
             danglingFile = currentFile;
         }
         currentFile = newFile;
@@ -97,17 +97,17 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     public void flushLogs() throws IOException {
         flushCalledOnCurrFile = true;
         logRaf.force();
-
     }
 
     @Override
     public void close() throws IOException {
-
+        logRaf.close();
     }
 
-    @Nonnull
-    private static File fileWithIndex(long entryIndex) {
-        return new File(String.format("raft-log-%016x.bin", entryIndex));
+    private void deleteDanglingFile() {
+        if (danglingFile != null) {
+            IOUtil.delete(danglingFile);
+        }
     }
 
     @Nonnull
@@ -115,12 +115,17 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         return new BufferedRaf(new RandomAccessFile(file, "rw"));
     }
 
-    private ObjectDataOutputStream newObjectDataOutput(BufferedRaf bufRaf) throws IOException {
-        return bufRaf.asObjectDataOutputStream(getSerializationService());
+    private ObjectDataOutputStream newObjectDataOutput(BufferedRaf bufRaf) {
+        return bufRaf.asObjectDataOutputStream(serializationService);
+    }
+
+    @Nonnull
+    private static File fileWithIndex(long entryIndex) {
+        return new File(String.format("raft-log-%016x.bin", entryIndex));
     }
 
     // TODO: get serialization service from Hazelcast node
-    private InternalSerializationService getSerializationService() {
+    private static InternalSerializationService getSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
     }
 }
