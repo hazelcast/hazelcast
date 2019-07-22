@@ -32,6 +32,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -41,7 +42,6 @@ import scala.Option;
 import scala.collection.Seq;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
@@ -104,13 +104,12 @@ public class KafkaTestSupport extends JetTestSupport {
         String zkConnect = ZK_HOST + ':' + zkServer.port();
         ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
         zkUtils = ZkUtils.apply(zkClient, false);
-        brokerPort = getRandomPort();
 
         Properties brokerProps = new Properties();
         brokerProps.setProperty("zookeeper.connect", zkConnect);
         brokerProps.setProperty("broker.id", "0");
         brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
-        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ':' + brokerPort);
+        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":0");
         brokerProps.setProperty("offsets.topic.replication.factor", "1");
         brokerProps.setProperty("offsets.topic.num.partitions", "1");
         // we need this due to avoid OOME while running tests, see https://issues.apache.org/jira/browse/KAFKA-3872
@@ -118,6 +117,7 @@ public class KafkaTestSupport extends JetTestSupport {
         KafkaConfig config = new KafkaConfig(brokerProps);
         Time mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);
+        brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
 
         return BROKER_HOST + ':' + brokerPort;
     }
@@ -180,17 +180,5 @@ public class KafkaTestSupport extends JetTestSupport {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Arrays.asList(topicIds));
         return consumer;
-    }
-
-    private static int getRandomPort() throws IOException {
-        ServerSocket server = null;
-        try {
-            server = new ServerSocket(0);
-            return server.getLocalPort();
-        } finally {
-            if (server != null) {
-                server.close();
-            }
-        }
     }
 }
