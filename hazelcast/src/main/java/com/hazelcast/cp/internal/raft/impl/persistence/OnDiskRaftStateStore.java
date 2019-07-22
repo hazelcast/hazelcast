@@ -70,6 +70,8 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         logEntryRingBuffer.adjustToNewFile(newStartOffset, snapshot.index());
         if (flushCalledOnCurrFile) {
             danglingFile = currentFile;
+        } else {
+            IOUtil.delete(currentFile);
         }
         currentFile = newFile;
     }
@@ -97,19 +99,15 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     public void flushLogs() throws IOException {
         logRaf.force();
         flushCalledOnCurrFile = true;
-        deleteDanglingFile();
+        if (danglingFile != null) {
+            IOUtil.delete(danglingFile);
+            danglingFile = null;
+        }
     }
 
     @Override
     public void close() throws IOException {
         logRaf.close();
-    }
-
-    private void deleteDanglingFile() {
-        if (danglingFile != null) {
-            IOUtil.delete(danglingFile);
-            danglingFile = null;
-        }
     }
 
     private ObjectDataOutputStream newObjectDataOutput(BufferedRaf bufRaf) {
@@ -127,7 +125,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     }
 
     // TODO: get serialization service from Hazelcast node
-    private static InternalSerializationService getSerializationService() {
+    static InternalSerializationService getSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
     }
 }

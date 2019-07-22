@@ -28,15 +28,12 @@ import java.util.Collection;
  */
 public class RestoredRaftState {
 
-    private RaftEndpoint localEndpoint;
-    private Collection<RaftEndpoint> initialMembers;
-    private int term;
-    private RaftEndpoint votedFor;
-    private SnapshotEntry snapshot;
-    private LogEntry[] entries;
-
-    public RestoredRaftState() {
-    }
+    private final RaftEndpoint localEndpoint;
+    private final Collection<RaftEndpoint> initialMembers;
+    private final int term;
+    private final RaftEndpoint votedFor;
+    private final SnapshotEntry snapshot;
+    private final LogEntry[] entries;
 
     public RestoredRaftState(
             RaftEndpoint localEndpoint,

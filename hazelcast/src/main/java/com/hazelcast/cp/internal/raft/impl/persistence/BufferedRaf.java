@@ -16,7 +16,9 @@
 
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
+import com.hazelcast.cp.internal.raft.exception.LogValidationException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.util.Preconditions;
 
@@ -24,11 +26,15 @@ import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static java.lang.Math.min;
 
 public class BufferedRaf implements Closeable {
@@ -38,7 +44,7 @@ public class BufferedRaf implements Closeable {
 
     private final RandomAccessFile raf;
     private final byte[] buf = new byte[BUFFER_SIZE];
-    private final ByteBuffer auxBuf = ByteBuffer.wrap(new byte[Long.BYTES]);
+    private final ByteBuffer auxBuf = ByteBuffer.wrap(new byte[LONG_SIZE_IN_BYTES]);
     private Mode mode;
     private long fileLength;
     private long bufBaseFileOffset;
@@ -52,6 +58,10 @@ public class BufferedRaf implements Closeable {
 
     public ObjectDataOutputStream asObjectDataOutputStream(InternalSerializationService serde) {
         return new BufRafObjectDataOut(new BufRafOutputStream(), serde);
+    }
+
+    public ObjectDataInputStream asObjectDataInputStream(InternalSerializationService serde) {
+        return new BufRafObjectDataIn(new BufRafInputStream(), serde);
     }
 
     public long length() {
@@ -95,6 +105,9 @@ public class BufferedRaf implements Closeable {
     }
 
     public void read(byte[] buffer, int start, int count) throws IOException {
+        if (start + count > buffer.length) {
+            throw new IllegalArgumentException("Requested to read more than fits into the buffer");
+        }
         ensure(Mode.READING);
         if (filePointer + count > fileLength) {
             throw new IllegalArgumentException("Requested to read beyond the end of file");
@@ -156,29 +169,34 @@ public class BufferedRaf implements Closeable {
         filePointer += count;
     }
 
+    public int readByte() throws IOException {
+        read(auxBuf.array(), 0, BYTE_SIZE_IN_BYTES);
+        return auxBuf.get(0);
+    }
+
     public int readInt() throws IOException {
-        read(auxBuf.array(), 0, Integer.BYTES);
+        read(auxBuf.array(), 0, INT_SIZE_IN_BYTES);
         return auxBuf.getInt(0);
     }
 
     public long readLong() throws IOException {
-        read(auxBuf.array(), 0, Long.BYTES);
+        read(auxBuf.array(), 0, LONG_SIZE_IN_BYTES);
         return auxBuf.getLong(0);
     }
 
     public void writeByte(int b) throws IOException {
         auxBuf.put(0, (byte) b);
-        write(auxBuf.array(), 0, Byte.BYTES);
+        write(auxBuf.array(), 0, BYTE_SIZE_IN_BYTES);
     }
 
     public void writeInt(int value) throws IOException {
         auxBuf.putInt(0, value);
-        write(auxBuf.array(), 0, Integer.BYTES);
+        write(auxBuf.array(), 0, INT_SIZE_IN_BYTES);
     }
 
     public void writeLong(long value) throws IOException {
         auxBuf.putLong(0, value);
-        write(auxBuf.array(), 0, Long.BYTES);
+        write(auxBuf.array(), 0, LONG_SIZE_IN_BYTES);
     }
 
     private void ensure(Mode requestedMode) throws IOException {
@@ -214,6 +232,37 @@ public class BufferedRaf implements Closeable {
         bufBaseFileOffset = filePointer;
     }
 
+    private class BufRafInputStream extends InputStream {
+        private final CRC32 crc32 = new CRC32();
+
+        @Override
+        public int read() throws IOException {
+            int b = BufferedRaf.this.readByte();
+            crc32.update(b);
+            return b;
+        }
+
+        @Override
+        public int read(@Nonnull byte[] b) throws IOException {
+            return read(b, 0, b.length);
+        }
+
+        @Override
+        public int read(@Nonnull byte[] b, int off, int len) throws IOException {
+            int readCount = (int) Math.min(len, fileLength - filePointer);
+            BufferedRaf.this.read(b, off, len);
+            crc32.update(b, off, len);
+            return readCount;
+        }
+
+        void checkCrc32() throws IOException {
+            if ((int) crc32.getValue() != BufferedRaf.this.readInt()) {
+                throw new LogValidationException("CRC failure");
+            }
+            crc32.reset();
+        }
+    }
+
     private class BufRafOutputStream extends OutputStream {
         private final CRC32 crc32 = new CRC32();
 
@@ -238,6 +287,23 @@ public class BufferedRaf implements Closeable {
         void writeCrc32() throws IOException {
             BufferedRaf.this.writeInt((int) crc32.getValue());
             crc32.reset();
+        }
+    }
+
+    private class BufRafObjectDataIn extends ObjectDataInputStream {
+
+        private final BufRafInputStream inputStream;
+
+        BufRafObjectDataIn(BufRafInputStream inputStream, InternalSerializationService serializationService) {
+            super(inputStream, serializationService);
+            this.inputStream = inputStream;
+        }
+
+        @Override
+        public <T> T readObject() throws IOException {
+            T object = super.readObject();
+            inputStream.checkCrc32();
+            return object;
         }
     }
 
