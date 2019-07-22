@@ -301,6 +301,14 @@ public abstract class HazelcastTestSupport {
         return getClusterService(hz).getThisAddress();
     }
 
+    public static Address[] getAddresses(HazelcastInstance[] instances) {
+        Address[] addresses = new Address[instances.length];
+        for (int i = 0; i < addresses.length; i++) {
+            addresses[i] = getAddress(instances[i]);
+        }
+        return addresses;
+    }
+
     public static Address getAddress(HazelcastInstance hz, EndpointQualifier qualifier) {
         return new Address(getClusterService(hz).getLocalMember().getSocketAddress(qualifier));
     }
