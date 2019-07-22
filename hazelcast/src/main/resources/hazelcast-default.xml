@@ -211,20 +211,6 @@
         -->
         <max-size policy="PER_NODE">0</max-size>
         <!--
-            `eviction-percentage` property is deprecated and will be ignored when it is set.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <eviction-percentage>25</eviction-percentage>
-        <!--
-            `min-eviction-check-millis` property is deprecated  and will be ignored when it is set.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <min-eviction-check-millis>100</min-eviction-check-millis>
-        <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster
             based on the policy set here. When an entry merge into the
@@ -251,34 +237,6 @@
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
     </map>
-
-    <!--
-           Configuration for an event journal. The event journal keeps events related
-           to a specific partition and data structure. For instance, it could keep
-           map add, update, remove, merge events along with the key, old value, new value and so on.
-        -->
-    <event-journal enabled="false">
-        <mapName>mapName</mapName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
-
-    <event-journal enabled="false">
-        <cacheName>cacheName</cacheName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
-
-    <!--
-       Configuration for a merkle tree.
-       The merkle tree is a data structure used for efficient comparison of the
-       difference in the contents of large data structures. The precision of
-       such a comparison mechanism is defined by the depth of the merkle tree.
-    -->
-    <merkle-tree enabled="false">
-        <mapName>mapName</mapName>
-        <depth>10</depth>
-    </merkle-tree>
 
     <multimap name="default">
         <backup-count>1</backup-count>

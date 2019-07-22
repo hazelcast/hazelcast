@@ -34,7 +34,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;

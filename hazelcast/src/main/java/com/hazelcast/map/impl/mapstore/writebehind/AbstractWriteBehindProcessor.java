@@ -17,8 +17,9 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -38,7 +39,7 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
 
     protected final ILogger logger;
 
-    protected final MapStore mapStore;
+    protected final MapStoreWrapper mapStore;
 
     private final SerializationService serializationService;
 

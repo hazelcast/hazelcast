@@ -33,9 +33,9 @@ import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -138,33 +138,21 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     /**
-     * Creates a plain transaction object, without wrapping it
-     * inside a TransactionContext.
+     * Creates a plain transaction object which can be used
+     * while cluster state is {@link ClusterState#PASSIVE},
+     * without wrapping it inside a TransactionContext.
      * <p>
      * A Transaction is a lower level API than TransactionContext.
      * It's not possible to create/access transactional
      * data structures without TransactionContext.
      * <p>
-     * A Transaction object
-     * only allows starting/committing/rolling back transaction,
-     * accessing state of the transaction
+     * A Transaction object only allows starting/committing/rolling
+     * back transaction, accessing state of the transaction
      * and adding TransactionLogRecord to the transaction.
      *
      * @param options transaction options
-     * @return a new transaction
-     */
-    public Transaction newTransaction(TransactionOptions options) {
-        return new TransactionImpl(this, nodeEngine, options, null);
-    }
-
-    /**
-     * Creates a plain transaction object which can be used while cluster state is {@link ClusterState#PASSIVE},
-     * without wrapping it inside a TransactionContext.
-     * <p>
-     * Also see {@link TransactionManagerServiceImpl#newTransaction(TransactionOptions)} for more details
-     *
-     * @param options transaction options
-     * @return a new transaction which can be used while cluster state is {@link ClusterState#PASSIVE}
+     * @return a new transaction which can be used while
+     * cluster state is {@link ClusterState#PASSIVE}
      */
     public Transaction newAllowedDuringPassiveStateTransaction(TransactionOptions options) {
         return new AllowedDuringPassiveStateTransactionImpl(this, nodeEngine, options, null);

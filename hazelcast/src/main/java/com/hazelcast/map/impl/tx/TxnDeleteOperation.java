@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,7 +31,8 @@ import java.io.IOException;
 /**
  * Transactional delete operation
  */
-public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
+public class TxnDeleteOperation
+        extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
     private boolean successful;
@@ -82,10 +82,12 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         sendResponse(false);
     }
 
+    @Override
     public long getVersion() {
         return version;
     }
 
+    @Override
     public void setVersion(long version) {
         this.version = version;
     }
@@ -95,12 +97,14 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         return Boolean.TRUE;
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey, true);
+        return new TxnDeleteBackupOperation(name, dataKey, disableWanReplicationEvent);
     }
 
     @Override

@@ -40,6 +40,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -237,27 +238,27 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
+            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener) {
+            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, String topic, Object listener) {
+            public EventRegistration registerListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener) {
+            public EventRegistration registerListener(String serviceName, String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public boolean deregisterListener(String serviceName, String topic, Object id) {
+            public boolean deregisterListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull Object id) {
                 return false;
             }
 
@@ -266,12 +267,12 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
+            public Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic) {
                 return null;
             }
 
             @Override
-            public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
+            public EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic) {
                 return new EventRegistration[0];
             }
 

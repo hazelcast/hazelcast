@@ -17,9 +17,11 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -65,7 +67,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if size of the multimap is increased,
      * {@code false} if the multimap already contains the key-value pair
      */
-    boolean put(K key, V value);
+    boolean put(@Nonnull K key, @Nonnull V value);
 
     /**
      * Returns the collection of values associated with the key.
@@ -81,7 +83,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key the key whose associated values are to be returned
      * @return the collection of the values associated with the key
      */
-    Collection<V> get(K key);
+    Collection<V> get(@Nonnull K key);
 
     /**
      * Removes the given key value pair from the multimap.
@@ -95,7 +97,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the size of the multimap changed after the remove operation,
      * {@code false} otherwise
      */
-    boolean remove(Object key, Object value);
+    boolean remove(@Nonnull Object key, @Nonnull Object value);
 
     /**
      * Removes all the entries with the given key.
@@ -112,7 +114,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the collection of removed values associated with the given key.
      * The returned collection might be modifiable but it has no effect on the multimap.
      */
-    Collection<V> remove(Object key);
+    Collection<V> remove(@Nonnull Object key);
 
     /**
      * Deletes all the entries with the given key.
@@ -123,8 +125,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @param key the key of the entry to remove
      */
-
-    void delete(Object key);
+    void delete(@Nonnull Object key);
 
     /**
      * Returns the locally owned set of keys.
@@ -190,7 +191,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the multimap contains an entry with the key,
      * {@code false} otherwise
      */
-    boolean containsKey(K key);
+    boolean containsKey(@Nonnull K key);
 
     /**
      * Returns whether the multimap contains an entry with the value.
@@ -199,7 +200,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the multimap contains an entry with the value,
      * {@code false} otherwise.
      */
-    boolean containsValue(Object value);
+    boolean containsValue(@Nonnull Object value);
 
     /**
      * Returns whether the multimap contains the given key-value pair.
@@ -213,7 +214,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the multimap contains the key-value pair,
      * {@code false} otherwise
      */
-    boolean containsEntry(K key, V value);
+    boolean containsEntry(@Nonnull K key, @Nonnull V value);
 
     /**
      * Returns the number of key-value pairs in the multimap.
@@ -237,7 +238,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key the key whose values count is to be returned
      * @return the number of values that match the given key in the multimap
      */
-    int valueCount(K key);
+    int valueCount(@Nonnull K key);
 
     /**
      * Adds a local entry listener for this multimap.
@@ -260,7 +261,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return returns registration ID for the entry listener
      * @see #localKeySet()
      */
-    String addLocalEntryListener(EntryListener<K, V> listener);
+    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds an entry listener for this multimap.
@@ -273,7 +274,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID for the entry listener
      */
-    String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -283,7 +284,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param registrationId registration ID of listener
      * @return true if registration is removed, false otherwise
      */
-    boolean removeEntryListener(String registrationId);
+    boolean removeEntryListener(@Nonnull String registrationId);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -301,7 +302,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID
      */
-    String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                            @Nonnull K key, boolean includeValue);
 
     /**
      * Acquires a lock for the specified key.
@@ -322,7 +324,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @param key the key to lock
      */
-    void lock(K key);
+    void lock(@Nonnull K key);
 
     /**
      * Acquires the lock for the specified key for the specified lease time.
@@ -347,7 +349,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param leaseTime time to wait before releasing the lock
      * @param timeUnit  unit of time for the lease time
      */
-    void lock(K key, long leaseTime, TimeUnit timeUnit);
+    void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit);
 
     /**
      * Checks the lock for the specified key.
@@ -362,7 +364,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key key to lock to be checked.
      * @return {@code true} if the lock is acquired, {@code false} otherwise.
      */
-    boolean isLocked(K key);
+    boolean isLocked(@Nonnull K key);
 
     /**
      * Tries to acquire the lock for the specified key.
@@ -377,7 +379,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key the key to lock.
      * @return {@code true} if lock is acquired, {@code false} otherwise
      */
-    boolean tryLock(K key);
+    boolean tryLock(@Nonnull K key);
 
     /**
      * Tries to acquire the lock for the specified key.
@@ -399,7 +401,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the lock was acquired, {@code false} if the
      * waiting time elapsed before the lock was acquired
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
+    boolean tryLock(@Nonnull K key,
+                    long time, @Nullable TimeUnit timeunit) throws InterruptedException;
 
     /**
      * Tries to acquire the lock for the specified key for the specified
@@ -427,7 +430,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * waiting time elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException;
+    boolean tryLock(@Nonnull K key,
+                    long time, @Nullable TimeUnit timeunit,
+                    long leaseTime, @Nullable TimeUnit leaseTimeunit) throws InterruptedException;
 
     /**
      * Releases the lock for the specified key.
@@ -440,7 +445,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @param key the key to lock
      */
-    void unlock(K key);
+    void unlock(@Nonnull K key);
 
     /**
      * Releases the lock for the specified key regardless of the lock owner.
@@ -453,7 +458,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @param key key to lock
      */
-    void forceUnlock(K key);
+    void forceUnlock(@Nonnull K key);
 
     /**
      * Returns {@code LocalMultiMapStats} for this map.

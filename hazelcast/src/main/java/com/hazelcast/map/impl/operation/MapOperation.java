@@ -204,7 +204,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {
         boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
-                && canThisOpGenerateWANEvent();
+                && !disableWanReplicationEvent;
 
         if (canPublishWanEvent) {
             mapContainer.getWanReplicationPublisher().checkWanReplicationQueues();
@@ -304,14 +304,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     // for testing only
     public void setMapContainer(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
-    }
-
-    /**
-     * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
-     * to indicate WAN event generation is not allowed for this operation
-     */
-    protected final boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     protected final void publishWanUpdate(Data dataKey, Object value) {

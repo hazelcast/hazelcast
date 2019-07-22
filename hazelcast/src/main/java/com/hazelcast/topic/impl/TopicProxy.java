@@ -21,6 +21,11 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.spi.NodeEngine;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Topic proxy used when global ordering is disabled (nodes get
  * the messages in the order that the messages are published).
@@ -29,26 +34,26 @@ import com.hazelcast.spi.NodeEngine;
  */
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
     }
 
     @Override
-    public void publish(E message) {
+    public void publish(@Nullable E message) {
         publishInternal(message);
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(MessageListener<E> listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
-
+    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addMessageListenerInternal(listener);
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull String registrationId) {
         return removeMessageListenerInternal(registrationId);
     }
 

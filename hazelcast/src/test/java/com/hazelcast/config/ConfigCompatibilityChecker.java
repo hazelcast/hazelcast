@@ -111,12 +111,6 @@ public class ConfigCompatibilityChecker {
                 new DurableExecutorConfigChecker());
         checkCompatibleConfigs("scheduled executor", c1, c2, c1.getScheduledExecutorConfigs(), c2.getScheduledExecutorConfigs(),
                 new ScheduledExecutorConfigChecker());
-        checkCompatibleConfigs("map event journal", c1, c2, c1.getMapEventJournalConfigs(), c2.getMapEventJournalConfigs(),
-                new MapEventJournalConfigChecker());
-        checkCompatibleConfigs("cache event journal", c1, c2, c1.getCacheEventJournalConfigs(), c2.getCacheEventJournalConfigs(),
-                new CacheEventJournalConfigChecker());
-        checkCompatibleConfigs("map merkle tree", c1, c2, c1.getMapMerkleTreeConfigs(), c2.getMapMerkleTreeConfigs(),
-                new MapMerkleTreeConfigChecker());
         checkCompatibleConfigs("multimap", c1, c2, c1.getMultiMapConfigs(), c2.getMultiMapConfigs(), new MultimapConfigChecker());
         checkCompatibleConfigs("replicated map", c1, c2, c1.getReplicatedMapConfigs(), c2.getReplicatedMapConfigs(),
                 new ReplicatedMapConfigChecker());
@@ -223,10 +217,25 @@ public class ConfigCompatibilityChecker {
                 && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
     }
 
+    private static boolean isCompatible(MerkleTreeConfig c1, MerkleTreeConfig c2) {
+        boolean c1Disabled = c1 == null || !c1.isEnabled();
+        boolean c2Disabled = c2 == null || !c2.isEnabled();
+        return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                && c1.getDepth() == c2.getDepth());
+    }
+
     private static boolean isCompatible(HotRestartConfig c1, HotRestartConfig c2) {
         boolean c1Disabled = c1 == null || !c1.isEnabled();
         boolean c2Disabled = c2 == null || !c2.isEnabled();
         return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null && nullSafeEqual(c1.isFsync(), c2.isFsync()));
+    }
+
+    private static boolean isCompatible(EventJournalConfig c1, EventJournalConfig c2) {
+        boolean c1Disabled = c1 == null || !c1.isEnabled();
+        boolean c2Disabled = c2 == null || !c2.isEnabled();
+        return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
+                && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds()));
     }
 
     private static boolean isCompatible(MergePolicyConfig c1, MergePolicyConfig c2) {
@@ -271,49 +280,6 @@ public class ConfigCompatibilityChecker {
         @Override
         RingbufferConfig getDefault(Config c) {
             return c.getRingbufferConfig("default");
-        }
-    }
-
-    public static class MapMerkleTreeConfigChecker extends ConfigChecker<MerkleTreeConfig> {
-        @Override
-        boolean check(MerkleTreeConfig c1, MerkleTreeConfig c2) {
-            boolean c1Disabled = c1 == null || !c1.isEnabled();
-            boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getMapName(), c2.getMapName())
-                    && nullSafeEqual(c1.getDepth(), c2.getDepth()));
-        }
-
-        @Override
-        MerkleTreeConfig getDefault(Config c) {
-            return c.getMapMerkleTreeConfig("default");
-        }
-    }
-
-    public static class EventJournalConfigChecker extends ConfigChecker<EventJournalConfig> {
-        @Override
-        boolean check(EventJournalConfig c1, EventJournalConfig c2) {
-            boolean c1Disabled = c1 == null || !c1.isEnabled();
-            boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(c1.getMapName(), c2.getMapName())
-                    && nullSafeEqual(c1.getCacheName(), c2.getCacheName())
-                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
-                    && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds()));
-        }
-    }
-
-    public static class MapEventJournalConfigChecker extends EventJournalConfigChecker {
-        @Override
-        EventJournalConfig getDefault(Config c) {
-            return c.getMapEventJournalConfig("default");
-        }
-    }
-
-    public static class CacheEventJournalConfigChecker extends EventJournalConfigChecker {
-        @Override
-        EventJournalConfig getDefault(Config c) {
-            return c.getCacheEventJournalConfig("default");
         }
     }
 
@@ -669,10 +635,10 @@ public class ConfigCompatibilityChecker {
 
             boolean cpSubsystemConfigValuesEqual =
                     (c1.getCPMemberCount() == c2.getCPMemberCount() && c1.getGroupSize() == c2.getGroupSize()
-                    && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
-                    && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
-                    && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
-                    && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState());
+                            && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
+                            && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
+                            && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
+                            && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState());
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
@@ -683,12 +649,12 @@ public class ConfigCompatibilityChecker {
 
             final boolean raftAlgorithmConfigEqual =
                     (r1.getLeaderElectionTimeoutInMillis() == r2.getLeaderElectionTimeoutInMillis()
-                    && r1.getLeaderHeartbeatPeriodInMillis() == r2.getLeaderHeartbeatPeriodInMillis()
-                    && r1.getAppendRequestMaxEntryCount() == r2.getAppendRequestMaxEntryCount()
-                    && r1.getMaxMissedLeaderHeartbeatCount() == r2.getMaxMissedLeaderHeartbeatCount()
-                    && r1.getCommitIndexAdvanceCountToSnapshot() == r2.getCommitIndexAdvanceCountToSnapshot()
-                    && r1.getAppendRequestBackoffTimeoutInMillis() == r2.getAppendRequestBackoffTimeoutInMillis()
-                    && r1.getUncommittedEntryCountToRejectNewAppends() == r2.getUncommittedEntryCountToRejectNewAppends());
+                            && r1.getLeaderHeartbeatPeriodInMillis() == r2.getLeaderHeartbeatPeriodInMillis()
+                            && r1.getAppendRequestMaxEntryCount() == r2.getAppendRequestMaxEntryCount()
+                            && r1.getMaxMissedLeaderHeartbeatCount() == r2.getMaxMissedLeaderHeartbeatCount()
+                            && r1.getCommitIndexAdvanceCountToSnapshot() == r2.getCommitIndexAdvanceCountToSnapshot()
+                            && r1.getAppendRequestBackoffTimeoutInMillis() == r2.getAppendRequestBackoffTimeoutInMillis()
+                            && r1.getUncommittedEntryCountToRejectNewAppends() == r2.getUncommittedEntryCountToRejectNewAppends());
 
             if (!raftAlgorithmConfigEqual) {
                 return false;
@@ -761,7 +727,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
-                    && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig());
+                    && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig());
         }
 
         private static boolean isCompatible(ExpiryPolicyFactoryConfig c1, ExpiryPolicyFactoryConfig c2) {
@@ -821,7 +788,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
                     && nullSafeEqual(c1.getMetadataPolicy(), c2.getMetadataPolicy())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.isOptimizeQueries(), c2.isOptimizeQueries())
                     && nullSafeEqual(c1.getCacheDeserializedValues(), c2.getCacheDeserializedValues())
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
@@ -830,11 +796,11 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && (nullSafeEqual(maxSize1, maxSize2)
                     || (Math.min(maxSize1, maxSize2) == 0 && Math.max(maxSize1, maxSize2) == Integer.MAX_VALUE))
-                    && nullSafeEqual(c1.getEvictionPercentage(), c2.getEvictionPercentage())
-                    && nullSafeEqual(c1.getMinEvictionCheckMillis(), c2.getMinEvictionCheckMillis())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isReadBackupData(), c2.isReadBackupData())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMerkleTreeConfig(), c2.getMerkleTreeConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig())
                     && isCompatible(c1.getMapStoreConfig(), c2.getMapStoreConfig())
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
@@ -995,23 +961,23 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isReuseAddress(), c2.isReuseAddress())
                     && nullSafeEqual(c1.getPublicAddress(), c2.getPublicAddress())
                     && OUTBOUND_PORT_DEFINITIONS_CHECKER.check(c1.getOutboundPortDefinitions(),
-                                                                c2.getOutboundPortDefinitions())
+                    c2.getOutboundPortDefinitions())
                     && nullSafeEqual(c1.getOutboundPorts(), c2.getOutboundPorts())
                     && INTERFACES_CONFIG_CHECKER.check(c1.getInterfaces(), c2.getInterfaces())
                     && JOIN_CONFIG_CHECKER.check(c1.getJoin(), c2.getJoin())
                     && FAILURE_DETECTOR_CONFIG_CHECKER.check(c1.getIcmpFailureDetectorConfig(),
-                                                            c2.getIcmpFailureDetectorConfig())
+                    c2.getIcmpFailureDetectorConfig())
                     && MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER.check(c1.getMemberAddressProviderConfig(),
-                                                            c2.getMemberAddressProviderConfig())
+                    c2.getMemberAddressProviderConfig())
                     && SYMMETRIC_ENCRYPTION_CONFIG_CHECKER.check(c1.getSymmetricEncryptionConfig(),
-                                                            c2.getSymmetricEncryptionConfig())
+                    c2.getSymmetricEncryptionConfig())
                     && SOCKET_INTERCEPTOR_CONFIG_CHECKER.check(c1.getSocketInterceptorConfig(),
-                                                            c2.getSocketInterceptorConfig())
+                    c2.getSocketInterceptorConfig())
                     && SSL_CONFIG_CHECKER.check(c1.getSSLConfig(), c2.getSSLConfig())
                     && REST_API_CONFIG_CHECKER.check(c1.getRestApiConfig(), c2.getRestApiConfig())
                     && MEMCACHE_PROTOCOL_CONFIG_CHECKER.check(
-                            c1.getMemcacheProtocolConfig(),
-                            c2.getMemcacheProtocolConfig());
+                    c1.getMemcacheProtocolConfig(),
+                    c2.getMemcacheProtocolConfig());
         }
     }
 
@@ -1034,9 +1000,9 @@ public class ConfigCompatibilityChecker {
             }
             boolean compatible = JOIN_CONFIG_CHECKER.check(t1.getJoin(), t2.getJoin())
                     && FAILURE_DETECTOR_CONFIG_CHECKER.check(t1.getIcmpFailureDetectorConfig(),
-                                                            t2.getIcmpFailureDetectorConfig())
+                    t2.getIcmpFailureDetectorConfig())
                     && MEMBER_ADDRESS_PROVIDER_CONFIG_CHECKER.check(t1.getMemberAddressProviderConfig(),
-                                                            t2.getMemberAddressProviderConfig());
+                    t2.getMemberAddressProviderConfig());
 
             if (!compatible || (t1.getEndpointConfigs().size() != t2.getEndpointConfigs().size())) {
                 return false;
@@ -1045,11 +1011,11 @@ public class ConfigCompatibilityChecker {
             Set<EndpointQualifier> t2EndpointQualifiers = t2.getEndpointConfigs().keySet();
             isCollectionCompatible(t1EndpointQualifiers, t2EndpointQualifiers,
                     new ConfigChecker<EndpointQualifier>() {
-                @Override
-                boolean check(EndpointQualifier t1, EndpointQualifier t2) {
-                    return t1.equals(t2);
-                }
-            });
+                        @Override
+                        boolean check(EndpointQualifier t1, EndpointQualifier t2) {
+                            return t1.equals(t2);
+                        }
+                    });
 
             boolean endpointConfigsCompatible = true;
             for (EndpointQualifier endpointQualifier : t1EndpointQualifiers) {
@@ -1078,8 +1044,8 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getMulticastConfig(), c2.getMulticastConfig())
                     && isCompatible(c1.getTcpIpConfig(), c2.getTcpIpConfig())
                     && ALIASED_DISCOVERY_CONFIGS_CHECKER.check(
-                            AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c1),
-                            AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c2))
+                    AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c1),
+                    AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(c2))
                     && DISCOVERY_CONFIG_CHECKER.check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
         }
 

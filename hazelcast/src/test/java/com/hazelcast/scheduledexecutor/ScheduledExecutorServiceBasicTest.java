@@ -16,20 +16,19 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.core.IMap;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -108,12 +107,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         final IScheduledFuture f = service.scheduleAtFixedRate(
                 new ErroneousRunnableTask(), 1, 1, TimeUnit.SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(f.isDone());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(f.isDone()));
 
         assertEquals(1L, f.getStats().getTotalRuns());
         expected.expect(ExecutionException.class);
@@ -343,7 +337,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void schedule_withMapChanges_durable() throws Exception {
+    public void schedule_withMapChanges_durable() {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IMap<String, Integer> map = instances[1].getMap("map");
         for (int i = 0; i < MAP_INCREMENT_TASK_MAX_ENTRIES; i++) {
@@ -635,7 +629,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         // Used to make sure both futures (on the same handler) get the event.
         // Catching possible equal/hashcode issues in the Map
         final IScheduledFuture futureCopyInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
-                                                                                              .values().toArray()[0]).get(0);
+                .values().toArray()[0]).get(0);
 
         ScheduledTaskHandler handler = future.getHandler();
 
@@ -643,23 +637,19 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, replicaLostCount, null);
         ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
+        assertTrueEventually(() -> {
+            try {
+                future.get();
+                fail();
+            } catch (IllegalStateException ex) {
                 try {
-                    future.get();
+                    futureCopyInstance.get();
                     fail();
-                } catch (IllegalStateException ex) {
-                    try {
-                        futureCopyInstance.get();
-                        fail();
-                    } catch (IllegalStateException ex2) {
-                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
-                                future.getHandler().getPartitionId()), ex.getMessage());
-                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
-                                future.getHandler().getPartitionId()), ex2.getMessage());
-                    }
+                } catch (IllegalStateException ex2) {
+                    assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                            future.getHandler().getPartitionId()), ex.getMessage());
+                    assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                            future.getHandler().getPartitionId()), ex2.getMessage());
                 }
             }
         });
@@ -687,20 +677,16 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         instances[1].getLifecycleService().terminate();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                try {
-                    future.get(0, SECONDS);
-                    fail();
-                } catch (IllegalStateException ex) {
-                    System.err.println(ex.getMessage());
-                    assertEquals(format("Member with address: %s,  holding this scheduled task is not part of this cluster.",
-                            future.getHandler().getAddress()), ex.getMessage());
-                } catch (TimeoutException ex) {
-                    ignore(ex);
-                }
+        assertTrueEventually(() -> {
+            try {
+                future.get(0, SECONDS);
+                fail();
+            } catch (IllegalStateException ex) {
+                System.err.println(ex.getMessage());
+                assertEquals(format("Member with address: %s,  holding this scheduled task is not part of this cluster.",
+                        future.getHandler().getAddress()), ex.getMessage());
+            } catch (TimeoutException ex) {
+                ignore(ex);
             }
         });
     }
@@ -809,7 +795,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCountDownLatch("latch");
         latch.trySetCount(4);
 
-        Map<Member, IScheduledFuture<?>> futures = s.scheduleOnAllMembersAtFixedRate(
+        Map<Member, IScheduledFuture<Object>> futures = s.scheduleOnAllMembersAtFixedRate(
                 new ICountdownLatchRunnableTask("latch"), 0, 3, SECONDS);
 
         latch.await(10, SECONDS);

@@ -19,8 +19,10 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
+import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,6 +31,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -36,14 +41,58 @@ import static org.junit.Assert.assertNull;
 public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
 
     @Test
-    public void testRemovedEntry_shouldNotBeReached_afterMigration() throws Exception {
-        String mapName = randomMapName();
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
-        MapStoreTest.SimpleMapStore<Integer, Integer> store
-                = new MapStoreTest.SimpleMapStore<Integer, Integer>();
-        store.store.put(1, 0);
+    public void testRemovedEntry_shouldNotBeReached_afterMigration_entryStore() throws Exception {
+        TestEntryStore<Integer, Integer> store = new TestEntryStore<>();
+        store.putExternally(1, 0);
+        testRemovedEntry_shouldNotBeReached_afterMigration(store);
+    }
 
-        Config config = createConfig(mapName, store);
+    @Test
+    public void testEntryStoreShouldExpireEntryTimely_afterMigration() throws Exception {
+        TemporaryBlockerEntryStore<Integer, Integer> store = new TemporaryBlockerEntryStore<>();
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        Config config = createConfig(mapName, store, 5);
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node1.getMap(mapName);
+
+        map.put(1, 1, 30, TimeUnit.SECONDS);
+        long expectedExpirationTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        waitClusterForSafeState(node1);
+
+        factory.terminate(node1);
+
+        map = node2.getMap(mapName);
+
+        store.storePermit.release();
+
+        map.evictAll();
+
+        assertTrueEventually(() -> {
+            store.assertRecordStored(1, 1, expectedExpirationTime, 10000);
+        }, 20);
+        assertEquals(1, (int) map.get(1));
+        sleepAtLeastSeconds(30);
+        assertNull(map.get(1));
+    }
+
+    @Test
+    public void testRemovedEntry_shouldNotBeReached_afterMigration_mapStore() throws Exception {
+        MapStoreTest.SimpleMapStore<Integer, Integer> store
+                = new MapStoreTest.SimpleMapStore<>();
+        store.store.put(1, 0);
+        testRemovedEntry_shouldNotBeReached_afterMigration(store);
+    }
+
+    public void testRemovedEntry_shouldNotBeReached_afterMigration(MapStore store) throws Exception {
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+
+        Config config = createConfig(mapName, store, 100);
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node1.getMap(mapName);
@@ -56,16 +105,15 @@ public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
         map = node2.getMap(mapName);
 
         Integer value = map.get(1);
-        factory.shutdownAll();
 
         assertNull(value);
     }
 
-    private static Config createConfig(String mapName, MapStoreTest.SimpleMapStore store) {
+    private static Config createConfig(String mapName, MapStore store, int writeDelaySeconds) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig
                 .setImplementation(store)
-                .setWriteDelaySeconds(100)
+                .setWriteDelaySeconds(writeDelaySeconds)
                 .setWriteBatchSize(1)
                 .setWriteCoalescing(false);
 

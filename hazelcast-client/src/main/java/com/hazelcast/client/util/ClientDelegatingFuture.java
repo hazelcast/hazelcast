@@ -115,7 +115,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.sneakyThrow(e);
         }
     }
 

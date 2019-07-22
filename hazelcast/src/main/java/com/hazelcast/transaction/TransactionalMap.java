@@ -16,8 +16,8 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.BaseMap;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.BaseMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;

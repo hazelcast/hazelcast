@@ -57,7 +57,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,7 +117,7 @@ public class MapContainer {
     public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = config.findMapConfig(name);
-        this.eventJournalConfig = config.findMapEventJournalConfig(name);
+        this.eventJournalConfig = mapConfig.getEventJournalConfig();
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
@@ -239,8 +239,9 @@ public class MapContainer {
             return;
         }
         String wanReplicationRefName = wanReplicationRef.getName();
+
         Config config = nodeEngine.getConfig();
-        if (!config.findMapMerkleTreeConfig(name).isEnabled()
+        if (!mapConfig.getMerkleTreeConfig().isEnabled()
                 && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
             throw new InvalidConfigurationException(
                     "Map " + name + " has disabled merkle trees but the WAN replication scheme "

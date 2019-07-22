@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
@@ -33,7 +34,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * All registered subscriber side accumulators for an {@link com.hazelcast.core.IMap IMap}
+ * All registered subscriber side accumulators for an {@link IMap IMap}
  * can be reached from this registry class.
  * <p>
  * Every map has only one {@link SubscriberRegistry}.

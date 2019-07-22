@@ -35,7 +35,6 @@ enum ClientConfigSections {
     NEAR_CACHE("near-cache", true),
     QUERY_CACHES("query-caches", false),
     EXECUTOR_POOL_SIZE("executor-pool-size", false),
-    LICENSE_KEY("license-key", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false), FLAKE_ID_GENERATOR("flake-id-generator", true), RELIABLE_TOPIC(

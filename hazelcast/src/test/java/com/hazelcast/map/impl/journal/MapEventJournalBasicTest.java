@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -46,21 +46,20 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
     @Override
     protected Config getConfig() {
-        final MapStoreConfig mapStoreConfig = new MapStoreConfig()
+        Config config = super.getConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(EAGER)
                 .setImplementation(new CustomMapStore());
 
-        final MapConfig nonExpiringMapConfig = new MapConfig(NON_EXPIRING_MAP)
-                .setInMemoryFormat(getInMemoryFormat())
-                .setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(NON_EXPIRING_MAP)
+              .setInMemoryFormat(getInMemoryFormat())
+              .setMapStoreConfig(mapStoreConfig);
 
-        final MapConfig expiringMapConfig = new MapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
-                                                                       .setInMemoryFormat(getInMemoryFormat());
+        config.getMapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
+              .setInMemoryFormat(getInMemoryFormat());
 
-        return super.getConfig()
-                    .addMapConfig(nonExpiringMapConfig)
-                    .addMapConfig(expiringMapConfig);
+        return config;
     }
 
     protected InMemoryFormat getInMemoryFormat() {

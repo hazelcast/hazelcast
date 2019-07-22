@@ -21,6 +21,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
@@ -52,7 +53,7 @@ import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Used by {@link com.hazelcast.cache.ICache}, {@link com.hazelcast.core.IMap}
+ * Used by {@link com.hazelcast.cache.ICache}, {@link IMap}
  * and {@link ReplicatedMap} to provide a merge runnable
  * for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
  *

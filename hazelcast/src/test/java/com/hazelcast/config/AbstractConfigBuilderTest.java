@@ -163,12 +163,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapStoreInitialModeLazy();
 
     @Test
-    public abstract void testMapConfig_minEvictionCheckMillis();
-
-    @Test
-    public abstract void testMapConfig_minEvictionCheckMillis_defaultValue();
-
-    @Test
     public abstract void testMapConfig_metadataPolicy();
 
     @Test
@@ -176,9 +170,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testMapConfig_evictions();
-
-    @Test
-    public abstract void testMapConfig_optimizeQueries();
 
     @Test
     public abstract void testMapConfig_cacheValueConfig_defaultValue();
@@ -241,22 +232,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testWanReplicationSyncConfig();
 
     @Test
-    public abstract void testMapEventJournalConfig();
-
-    @Test
-    public abstract void testMapMerkleTreeConfig();
-
-    @Test
-    public abstract void testCacheEventJournalConfig();
-
-    @Test
     public abstract void testFlakeIdGeneratorConfig();
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testParseExceptionIsNotSwallowed();
-
-    @Test
-    public abstract void setMapStoreConfigImplementationTest();
 
     @Test
     public abstract void testMapPartitionLostListenerConfig();

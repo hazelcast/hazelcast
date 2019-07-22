@@ -29,7 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 import org.mockito.ArgumentMatchers;
 
 import java.net.UnknownHostException;

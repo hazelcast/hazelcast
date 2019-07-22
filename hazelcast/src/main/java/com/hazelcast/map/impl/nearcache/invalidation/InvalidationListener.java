@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 
 /**
- * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
+ * Used to receive invalidation events from an {@link IMap IMap}
  * <p>
  * For example, a client Near Cache implementation can listen changes in IMap data and
  * can remove stale data in its own cache.

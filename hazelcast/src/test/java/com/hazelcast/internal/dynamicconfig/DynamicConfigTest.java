@@ -18,6 +18,8 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -27,7 +29,6 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -44,7 +45,6 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PredicateConfig;
@@ -61,23 +61,21 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -234,8 +232,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setClassName("com.hazelcast.Foo");
+              .setEnabled(true)
+              .setClassName("com.hazelcast.Foo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -246,8 +244,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryClassName("com.hazelcast.FactoryFoo");
+              .setEnabled(true)
+              .setFactoryClassName("com.hazelcast.FactoryFoo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -258,8 +256,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byStoreImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setStoreImplementation(new SampleRingbufferStore());
+              .setEnabled(true)
+              .setStoreImplementation(new SampleRingbufferStore());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -270,8 +268,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryImplementation(new SampleRingbufferStoreFactory());
+              .setEnabled(true)
+              .setFactoryImplementation(new SampleRingbufferStoreFactory());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -539,25 +537,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEventJournalConfig() {
-        EventJournalConfig cacheJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setCacheName(randomName())
-                .setCapacity(39)
-                .setTimeToLiveSeconds(98);
-        EventJournalConfig mapJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setMapName(randomName())
-                .setCapacity(42)
-                .setTimeToLiveSeconds(52);
-
-        driver.getConfig().addEventJournalConfig(cacheJournalConfig);
-        driver.getConfig().addEventJournalConfig(mapJournalConfig);
-
-        assertConfigurationsEqualsOnAllMembers(mapJournalConfig, cacheJournalConfig);
-    }
-
-    @Test
     public void testFlakeIdGeneratorConfig() {
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(randomName())
                 .setPrefetchCount(123)
@@ -656,18 +635,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
         assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
-    }
-
-    @Test
-    public void testMerkleTreeConfig() {
-        MerkleTreeConfig config = new MerkleTreeConfig()
-                .setEnabled(true)
-                .setMapName(randomName())
-                .setDepth(10);
-
-        driver.getConfig().addMerkleTreeConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
     }
 
     @Test
@@ -787,18 +754,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(EventJournalConfig mapEventJournalConfig,
-                                                        EventJournalConfig cacheEventJournalConfig) {
-        String cacheName = cacheEventJournalConfig.getCacheName();
-        String mapName = mapEventJournalConfig.getMapName();
-        for (HazelcastInstance instance : members) {
-            EventJournalConfig registeredConfig = instance.getConfig().getCacheEventJournalConfig(cacheName);
-            assertEquals(cacheEventJournalConfig, registeredConfig);
-            registeredConfig = instance.getConfig().getMapEventJournalConfig(mapName);
-            assertEquals(mapEventJournalConfig, registeredConfig);
-        }
-    }
-
     private void assertConfigurationsEqualsOnAllMembers(FlakeIdGeneratorConfig config) {
         for (HazelcastInstance instance : members) {
             FlakeIdGeneratorConfig registeredConfig = instance.getConfig().getFlakeIdGeneratorConfig(config.getName());
@@ -830,14 +785,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(MerkleTreeConfig merkleTreeConfig) {
-        String mapName = merkleTreeConfig.getMapName();
-        for (HazelcastInstance instance : members) {
-            MerkleTreeConfig registeredConfig = instance.getConfig().getMapMerkleTreeConfig(mapName);
-            assertEquals(merkleTreeConfig, registeredConfig);
-        }
-    }
-
     private CacheSimpleConfig getCacheConfig() {
         CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
         entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
@@ -845,6 +792,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         entryListenerConfig.setOldValueRequired(true);
         entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
 
+        // TODO add journal config when client protocol for map codec is updated
         CacheSimpleConfig config = new CacheSimpleConfig()
                 .setName(name)
                 .setQuorumName("quorum")
@@ -858,7 +806,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setValueType("valueType")
                 .setReadThrough(true)
                 .setWriteThrough(true)
-                .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
+                .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
+//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+//                                                               .setCapacity(42)
+//                                                               .setTimeToLiveSeconds(52))
+                ;
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -894,6 +846,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
+                // TODO add merkle tree and journal config when client protocol for map codec is updated
+                //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
+//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+//                                                               .setCapacity(42)
+//                                                               .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

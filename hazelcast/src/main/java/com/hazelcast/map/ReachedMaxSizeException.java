@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 /**
- * Exception thrown when a write-behind {@link com.hazelcast.core.MapStore} rejects to accept a new element.
+ * Exception thrown when a write-behind {@link MapStore} rejects to accept a new element.
  * Used when {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} is set to {@code false}.
  */
 public class ReachedMaxSizeException extends RuntimeException {

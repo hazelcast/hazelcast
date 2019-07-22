@@ -44,8 +44,8 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
     protected HazelcastInstance[] instances;
 
     private int partitionId;
-    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<EJ_TYPE>();
+    private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<>();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     private void init() {
         instances = createInstances();
@@ -56,15 +56,15 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
     @Override
     protected Config getConfig() {
         int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        Config config = smallInstanceConfig();
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
-                .setMapName("default")
-                .setCacheName("default")
                 .setTimeToLiveSeconds(1)
                 .setCapacity(500 * defaultPartitionCount);
 
-        return smallInstanceConfig()
-                .addEventJournalConfig(eventJournalConfig);
+        config.getMapConfig("default").setEventJournalConfig(eventJournalConfig);
+        config.getCacheConfig("default").setEventJournalConfig(eventJournalConfig);
+        return config;
     }
 
     @Test
@@ -74,7 +74,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 
         String key = randomPartitionKey();
-        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> exception = new AtomicReference<>();
 
         readFromJournal(context, exception, 0);
 

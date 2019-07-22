@@ -23,9 +23,6 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
@@ -72,14 +69,14 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * XML specific implementation of the tests that should be maintained in
- * both XML and YAML configuration builder tests.
+ * XML specific implementation of the tests that should be
+ * maintained in both XML and YAML configuration builder tests.
  * <p>
- *
+ * <p>
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
  * <p>
- *
+ * <p>
  * NOTE2: Test cases specific to XML should be added to {@link XmlOnlyConfigBuilderTest}
  *
  * @see AbstractConfigBuilderTest
@@ -850,7 +847,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <max-idle-seconds>0</max-idle-seconds>    "
                 + "    <eviction-policy>NONE</eviction-policy>  "
                 + "    <max-size policy=\"per_partition\">0</max-size>"
-                + "    <eviction-percentage>25</eviction-percentage>"
                 + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -1003,35 +999,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_minEvictionCheckMillis() {
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"mymap\">"
-                + "<min-eviction-check-millis>123456789</min-eviction-check-millis>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(123456789L, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis_defaultValue() {
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"mymap\">"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
     public void testMapConfig_metadataPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1084,31 +1051,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionPolicy());
         assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionPolicy());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_optimizeQueries() {
-        String xml1 = HAZELCAST_START_TAG
-                + "<map name=\"mymap1\">"
-                + "<optimize-queries>true</optimize-queries>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config1 = buildConfig(xml1);
-        MapConfig mapConfig1 = config1.getMapConfig("mymap1");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig1.getCacheDeserializedValues());
-
-        String xml2 = HAZELCAST_START_TAG
-                + "<map name=\"mymap2\">"
-                + "<optimize-queries>false</optimize-queries>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-
-        Config config2 = buildConfig(xml2);
-        MapConfig mapConfig2 = config2.getMapConfig("mymap2");
-
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig2.getCacheDeserializedValues());
     }
 
     @Override
@@ -1444,7 +1386,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testWanReplicationConfig() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-publisher group-name=\"nyc\" publisher-id=\"publisherId\">\n"
@@ -1501,7 +1443,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testDefaultOfPersistWanReplicatedDataIsFalse() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-consumer>\n"
@@ -1518,7 +1460,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testWanReplicationSyncConfig() {
-        String configName  = "test";
+        String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <wan-publisher group-name=\"nyc\">\n"
@@ -1540,65 +1482,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, publishers.size());
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
-                                                                           .getConsistencyCheckStrategy());
-    }
-
-    @Override
-    @Test
-    public void testMapEventJournalConfig() {
-        String journalName = "mapName";
-        String xml = HAZELCAST_START_TAG
-                + "<event-journal enabled=\"false\">\n"
-                + "    <mapName>" + journalName + "</mapName>\n"
-                + "    <capacity>120</capacity>\n"
-                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
-                + "</event-journal>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
-
-        assertFalse(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Override
-    @Test
-    public void testMapMerkleTreeConfig() {
-        String mapName = "mapName";
-        String xml = HAZELCAST_START_TAG
-                + "<merkle-tree enabled=\"true\">\n"
-                + "    <mapName>" + mapName + "</mapName>\n"
-                + "    <depth>20</depth>\n"
-                + "</merkle-tree>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig(mapName);
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(20, treeConfig.getDepth());
-    }
-
-    @Override
-    @Test
-    public void testCacheEventJournalConfig() {
-        String journalName = "cacheName";
-        String xml = HAZELCAST_START_TAG
-                + "<event-journal enabled=\"true\">\n"
-                + "    <cacheName>" + journalName + "</cacheName>\n"
-                + "    <capacity>120</capacity>\n"
-                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
-                + "</event-journal>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+                .getConsistencyCheckStrategy());
     }
 
     @Override
@@ -1629,33 +1513,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
         expected.expect(InvalidConfigurationException.class);
         buildConfig(invalidXml);
-    }
-
-    @Override
-    @Test
-    public void setMapStoreConfigImplementationTest() {
-        String mapName = "mapStoreImpObjTest";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"" + mapName + "\">\n"
-                + "    <map-store enabled=\"true\">\n"
-                + "        <class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n"
-                + "        <write-delay-seconds>5</write-delay-seconds>\n"
-                + "    </map-store>\n"
-                + "</map>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        HazelcastInstance hz = createHazelcastInstance(config);
-        IMap<String, String> map = hz.getMap(mapName);
-        // MapStore is not instantiated until the MapContainer is created lazily
-        map.put("sample", "data");
-
-        MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        Object o = mapStoreConfig.getImplementation();
-
-        assertNotNull(o);
-        assertTrue(o instanceof DummyMapStore);
     }
 
     @Override
@@ -2072,6 +1929,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
                 + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
+                + "        <event-journal enabled=\"true\">\n"
+                + "            <capacity>120</capacity>\n"
+                + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "          </event-journal>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2113,6 +1974,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+
         assertEquals(1, cacheConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener", cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
         assertEquals(1, cacheConfig.getCacheEntryListeners().size());
@@ -2386,7 +2252,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "        <in-memory-format>BINARY</in-memory-format>"
                 + "        <statistics-enabled>true</statistics-enabled>"
-                + "        <optimize-queries>false</optimize-queries>"
                 + "        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>"
                 + "        <backup-count>2</backup-count>"
                 + "        <async-backup-count>1</async-backup-count>"
@@ -2394,9 +2259,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <max-idle-seconds>42</max-idle-seconds>"
                 + "        <eviction-policy>RANDOM</eviction-policy>"
                 + "        <max-size policy=\"PER_NODE\">42</max-size>"
-                + "        <eviction-percentage>25</eviction-percentage>"
-                + "        <min-eviction-check-millis>256</min-eviction-check-millis>"
                 + "        <read-backup-data>true</read-backup-data>"
+                + "        <merkle-tree enabled=\"true\">\n"
+                + "            <depth>20</depth>\n"
+                + "          </merkle-tree>"
+                + "        <event-journal enabled=\"true\">\n"
+                + "            <capacity>120</capacity>\n"
+                + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "          </event-journal>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2449,7 +2319,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customQuorumRule", mapConfig.getQuorumName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
-        assertFalse(mapConfig.isOptimizeQueries());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
         assertEquals(2, mapConfig.getBackupCount());
         assertEquals(1, mapConfig.getAsyncBackupCount());
@@ -2459,8 +2328,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
-        assertEquals(25, mapConfig.getEvictionPercentage());
-        assertEquals(256, mapConfig.getMinEvictionCheckMillis());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
@@ -2474,8 +2341,15 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isLocal());
         assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertTrue(mapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
 
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         assertNotNull(mapStoreConfig);

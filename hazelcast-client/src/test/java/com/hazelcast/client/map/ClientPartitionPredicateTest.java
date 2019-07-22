@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;

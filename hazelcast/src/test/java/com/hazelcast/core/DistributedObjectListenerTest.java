@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -42,9 +43,11 @@ public interface IndexProvider {
      *                     from them.
      * @param copyBehavior the desired index copy behaviour.
      * @param stats        the index stats instance to report the statistics to.
+     * @param storeAdapter the reference to the store adapter. {@code null} if the index is global.
      * @return the created index instance.
      */
     InternalIndex createIndex(String name, String[] components, boolean ordered, Extractors extractors,
-                              InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats);
+                              InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats,
+                              StoreAdapter storeAdapter);
 
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
 import com.hazelcast.cluster.Member;
 
 /**

@@ -33,7 +33,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Collection;
 

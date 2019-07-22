@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.wan.WanSyncStatus;
+import com.hazelcast.wan.impl.WanSyncStatus;
 
 /**
  * Local WAN sync statistics to be used by {@link MemberState} implementations.

@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,15 +57,12 @@ public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final int storeCount = mapStore.countStore.get();
-                final int deleteCount = mapStore.countDelete.get();
+        assertTrueEventually(() -> {
+            final int storeCount = mapStore.countStore.get();
+            final int deleteCount = mapStore.countDelete.get();
 
-                assertEquals(1000, storeCount + deleteCount);
-                assertTrue(mapStore.store.isEmpty());
-            }
+            assertEquals(1000, storeCount + deleteCount);
+            assertTrue(mapStore.store.isEmpty());
         });
     }
 }

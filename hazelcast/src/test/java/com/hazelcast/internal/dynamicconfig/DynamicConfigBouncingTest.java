@@ -35,7 +35,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;

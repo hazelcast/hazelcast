@@ -27,7 +27,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.collection.IQueue;

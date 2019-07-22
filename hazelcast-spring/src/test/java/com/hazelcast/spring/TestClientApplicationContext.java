@@ -18,7 +18,6 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -33,6 +32,7 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -49,7 +49,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.collection.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;
@@ -270,9 +270,9 @@ public class TestClientApplicationContext {
         ClientConfig config = client4.getClientConfig();
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        AwsConfig awsConfig = networkConfig.getAwsConfig();
         assertFalse(awsConfig.isEnabled());
-        assertTrue(awsConfig.isInsideAws());
+        assertTrue(awsConfig.isUsePublicIp());
         assertEquals("sample-access-key", awsConfig.getAccessKey());
         assertEquals("sample-secret-key", awsConfig.getSecretKey());
         assertEquals("sample-region", awsConfig.getRegion());

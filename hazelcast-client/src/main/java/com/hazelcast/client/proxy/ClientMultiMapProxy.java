@@ -44,20 +44,22 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ThreadUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,7 +70,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -82,6 +83,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
@@ -90,7 +92,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean put(K key, V value) {
+    public boolean put(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -103,7 +105,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public Collection<V> get(K key) {
+    public Collection<V> get(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
@@ -114,7 +116,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean remove(Object key, Object value) {
+    public boolean remove(@Nonnull Object key, @Nonnull Object value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -127,7 +129,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public Collection<V> remove(Object key) {
+    public Collection<V> remove(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
@@ -137,7 +139,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
-    public void delete(Object key) {
+    public void delete(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         ClientMessage request = MultiMapDeleteCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
@@ -187,7 +189,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean containsKey(K key) {
+    public boolean containsKey(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
@@ -198,7 +200,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(@Nonnull Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyValue = toData(value);
@@ -209,7 +211,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean containsEntry(K key, V value) {
+    public boolean containsEntry(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -236,7 +238,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public int valueCount(K key) {
+    public int valueCount(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
@@ -247,13 +249,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public String addLocalEntryListener(EntryListener<K, V> listener) {
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("Locality for client is ambiguous");
     }
 
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, final boolean includeValue) {
-        isNotNull(listener, "listener");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerCodec(includeValue), handler);
     }
@@ -283,13 +285,15 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean removeEntryListener(String registrationId) {
+    public boolean removeEntryListener(@Nonnull String registrationId) {
+        checkNotNull(registrationId, "Registration ID should not be null!");
         return deregisterListener(registrationId);
     }
 
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
-        isNotNull(listener, "listener");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, final boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);
@@ -320,7 +324,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public void lock(K key) {
+    public void lock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
@@ -330,8 +334,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+    public void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(timeUnit, "Null timeUnit is not allowed!");
         checkPositive(leaseTime, "leaseTime should be positive");
 
         final Data keyData = toData(key);
@@ -342,7 +347,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean isLocked(K key) {
+    public boolean isLocked(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
@@ -353,7 +358,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean tryLock(K key) {
+    public boolean tryLock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         try {
@@ -365,12 +370,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(@Nonnull K key, long time, @Nullable TimeUnit timeunit) throws InterruptedException {
         return tryLock(key, time, timeunit, Long.MAX_VALUE, null);
     }
 
     @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
+    public boolean tryLock(@Nonnull K key,
+                           long time, @Nullable TimeUnit timeunit,
+                           long leaseTime, @Nullable TimeUnit leaseUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
@@ -386,7 +393,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public void unlock(K key) {
+    public void unlock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
@@ -396,7 +403,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public void forceUnlock(K key) {
+    public void forceUnlock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
@@ -445,7 +452,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         @Override
         public void handleEntryEventV10(Data key, Data value, Data oldValue, Data mergingValue,
-                           int eventType, String uuid, int numberOfAffectedEntries) {
+                                        int eventType, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             final IMapEvent iMapEvent = createIMapEvent(key, value, oldValue,
                     mergingValue, eventType, numberOfAffectedEntries, member);

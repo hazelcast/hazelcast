@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.listener.MapListener;

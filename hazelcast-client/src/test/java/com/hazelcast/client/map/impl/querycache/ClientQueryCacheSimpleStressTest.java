@@ -21,7 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;

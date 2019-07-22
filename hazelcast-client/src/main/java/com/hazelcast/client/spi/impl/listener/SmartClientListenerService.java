@@ -25,6 +25,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +58,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
         }, 1, 1, TimeUnit.SECONDS);
     }
 
+    @Nonnull
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         trySyncConnectToAllMembers();

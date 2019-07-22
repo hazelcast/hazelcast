@@ -21,9 +21,6 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
@@ -72,11 +69,11 @@ import static org.junit.Assert.fail;
  * YAML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests
  * <p>
- *
+ * <p>
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
  * <p>
- *
+ * <p>
  * NOTE2: Test cases specific to YAML should be added to {@link YamlOnlyConfigBuilderTest}
  *
  * @see AbstractConfigBuilderTest
@@ -873,7 +870,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      max-size:\n"
                 + "        policy: per_partition\n"
                 + "        max-size: 0\n"
-                + "      eviction-percentage: 25\n"
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 2342\n";
@@ -1027,35 +1023,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_minEvictionCheckMillis() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap:\n"
-                + "      min-eviction-check-millis: 123456789\n";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(123456789L, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_minEvictionCheckMillis_defaultValue() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap: {}\n";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("mymap");
-
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, mapConfig.getMinEvictionCheckMillis());
-    }
-
-    @Override
-    @Test
     public void testMapConfig_metadataPolicy() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1107,31 +1074,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionPolicy());
         assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionPolicy());
-    }
-
-    @Override
-    @Test
-    public void testMapConfig_optimizeQueries() {
-        String yaml1 = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap1:\n"
-                + "      optimize-queries: true\n";
-
-        Config config1 = buildConfig(yaml1);
-        MapConfig mapConfig1 = config1.getMapConfig("mymap1");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig1.getCacheDeserializedValues());
-
-        String yaml2 = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    mymap2:\n"
-                + "      optimize-queries: false\n";
-
-        Config config2 = buildConfig(yaml2);
-        MapConfig mapConfig2 = config2.getMapConfig("mymap2");
-
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig2.getCacheDeserializedValues());
     }
 
     @Override
@@ -1560,87 +1502,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, publishers.size());
         WanPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
-                                                                           .getConsistencyCheckStrategy());
-    }
-
-    @Override
-    @Test
-    public void testMapEventJournalConfig() {
-        String journalName = "mapName";
-        String journal2Name = "map2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  event-journal:\n"
-                + "    map:\n"
-                + "      " + journalName + ":\n"
-                + "        enabled: false\n"
-                + "        capacity: 120\n"
-                + "        time-to-live-seconds: 20\n"
-                + "      " + journal2Name + ":\n"
-                + "        enabled: true\n";
-
-        Config config = buildConfig(yaml);
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
-
-        assertFalse(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-
-        EventJournalConfig journal2Config = config.getMapEventJournalConfig(journal2Name);
-        assertTrue(journal2Config.isEnabled());
-    }
-
-    @Override
-    @Test
-    public void testMapMerkleTreeConfig() {
-        String mapName = "mapName";
-        String map2Name = "map2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  merkle-tree:\n"
-                + "    map:\n"
-                + "      " + mapName + ":\n"
-                + "        enabled: true\n"
-                + "        depth: 20\n"
-                + "      " + map2Name + ":\n"
-                + "        enabled: false\n"
-                + "        depth: 20\n";
-
-        Config config = buildConfig(yaml);
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig(mapName);
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(20, treeConfig.getDepth());
-
-        MerkleTreeConfig tree2Config = config.getMapMerkleTreeConfig(map2Name);
-        assertFalse(tree2Config.isEnabled());
-    }
-
-    @Override
-    @Test
-    public void testCacheEventJournalConfig() {
-        String journalName = "cacheName";
-        String journal2Name = "cache2Name";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  event-journal:\n"
-                + "    cache:\n"
-                + "      " + journalName + ":\n"
-                + "        enabled: true\n"
-                + "        capacity: 120\n"
-                + "        time-to-live-seconds: 20\n"
-                + "      " + journal2Name + ":\n"
-                + "        enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(120, journalConfig.getCapacity());
-        assertEquals(20, journalConfig.getTimeToLiveSeconds());
-
-        EventJournalConfig journal2Config = config.getCacheEventJournalConfig(journal2Name);
-        assertFalse(journal2Config.isEnabled());
+                .getConsistencyCheckStrategy());
     }
 
     @Override
@@ -1679,33 +1541,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         // if we (for any reason) get through the parsing, then fail
         fail();
-    }
-
-    @Override
-    @Test
-    public void setMapStoreConfigImplementationTest() {
-        String mapName = "mapStoreImpObjTest";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    " + mapName + ":\n"
-                + "      map-store:\n"
-                + "        enabled: true\n"
-                + "        class-name: com.hazelcast.config.helpers.DummyMapStore\n"
-                + "        write-delay-seconds: 5";
-
-        Config config = buildConfig(yaml);
-        HazelcastInstance hz = createHazelcastInstance(config);
-        IMap<String, String> map = hz.getMap(mapName);
-        // MapStore is not instantiated until the MapContainer is created lazily
-        map.put("sample", "data");
-
-        MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        Object o = mapStoreConfig.getImplementation();
-
-        assertNotNull(o);
-        assertTrue(o instanceof DummyMapStore);
     }
 
     @Override
@@ -2154,6 +1989,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
+                + "      event-journal:\n"
+                + "        enabled: true\n"
+                + "        capacity: 120\n"
+                + "        time-to-live-seconds: 20\n"
                 + "      partition-lost-listeners:\n"
                 + "        - com.your-package.YourPartitionLostListener\n"
                 + "      cache-entry-listeners:\n"
@@ -2189,6 +2028,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+
         assertEquals(1, cacheConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener",
                 cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
@@ -2479,7 +2324,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      quorum-ref: customQuorumRule\n"
                 + "      in-memory-format: BINARY\n"
                 + "      statistics-enabled: true\n"
-                + "      optimize-queries: false\n"
                 + "      cache-deserialized-values: INDEX-ONLY\n"
                 + "      backup-count: 2\n"
                 + "      async-backup-count: 1\n"
@@ -2489,9 +2333,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      max-size:\n"
                 + "        policy: PER_NODE\n"
                 + "        max-size: 42\n"
-                + "      eviction-percentage: 25\n"
-                + "      min-eviction-check-millis: 256\n"
                 + "      read-backup-data: true\n"
+                + "      merkle-tree:\n"
+                + "        enabled: true\n"
+                + "        depth: 20\n"
+                + "      event-journal:\n"
+                + "        enabled: true\n"
+                + "        capacity: 120\n"
+                + "        time-to-live-seconds: 20\n"
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
@@ -2542,7 +2391,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customQuorumRule", mapConfig.getQuorumName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
-        assertFalse(mapConfig.isOptimizeQueries());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
         assertEquals(2, mapConfig.getBackupCount());
         assertEquals(1, mapConfig.getAsyncBackupCount());
@@ -2552,8 +2400,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
-        assertEquals(25, mapConfig.getEvictionPercentage());
-        assertEquals(256, mapConfig.getMinEvictionCheckMillis());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
@@ -2568,8 +2414,15 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
         assertFalse(mapConfig.getEntryListenerConfigs().get(0).isLocal());
         assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertTrue(mapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+
+        EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
 
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         assertNotNull(mapStoreConfig);

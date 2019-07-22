@@ -18,6 +18,7 @@ package com.hazelcast.wan;
 
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 class WanServiceMockingNodeExtension extends DefaultNodeExtension {
     private final WanReplicationService wanReplicationService;

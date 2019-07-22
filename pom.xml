@@ -39,7 +39,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>2.0.0-1</client.protocol.version>
+        <client.protocol.version>2.0.0-2</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>8</jdk.version>
@@ -106,8 +106,8 @@
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
-        <jsr107.api.version>1.1.0</jsr107.api.version>
-        <jsr107.tck.version>1.1.0</jsr107.tck.version>
+        <jsr107.api.version>1.1.1</jsr107.api.version>
+        <jsr107.tck.version>1.1.1</jsr107.tck.version>
 
         <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
 

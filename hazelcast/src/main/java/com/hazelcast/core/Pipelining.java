@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;

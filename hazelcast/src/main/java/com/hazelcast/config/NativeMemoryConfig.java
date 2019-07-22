@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 
@@ -29,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * Therefore, hundreds of gigabytes of native memory can be allocated &amp; used without introducing
  * pressure on GC mechanism.
  * <p>
- * Data structures, such as {@link com.hazelcast.core.IMap} and {@link com.hazelcast.cache.ICache},
+ * Data structures, such as {@link IMap} and {@link com.hazelcast.cache.ICache},
  * store their data (entries, indexes etc.) in native memory region when they are configured with
  * {@link InMemoryFormat#NATIVE}.
  */
