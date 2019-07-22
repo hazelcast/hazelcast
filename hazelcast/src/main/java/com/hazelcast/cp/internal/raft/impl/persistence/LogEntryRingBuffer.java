@@ -41,6 +41,13 @@ public class LogEntryRingBuffer {
         return offsets[retrievalPoint];
     }
 
+    public long deleteEntriesFrom(long deletionStartIndex) {
+        long offsetAtDeletionStart = getEntryOffset(deletionStartIndex);
+        long newBufLen = deletionStartIndex - bottomEntryIndex;
+        bufLen = (int) (max(0, min(bufLen, newBufLen)));
+        return offsetAtDeletionStart;
+    }
+
     /**
      * Called when receiving a snapshot and starting a new file with it. The
      * store puts the snapshot at the start of the new file and then copies all
@@ -84,15 +91,6 @@ public class LogEntryRingBuffer {
                 i = 0;
             }
             offsets[i] += offsetDelta;
-        }
-    }
-
-    public long deleteEntriesFrom(long deletionStartIndex) {
-        try {
-            return getEntryOffset(deletionStartIndex);
-        } finally {
-            long newBufLen = deletionStartIndex - bottomEntryIndex;
-            bufLen = (int) (max(0, min(bufLen, newBufLen)));
         }
     }
 }

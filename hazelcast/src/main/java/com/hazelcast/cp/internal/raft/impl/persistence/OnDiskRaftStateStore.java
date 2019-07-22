@@ -95,8 +95,9 @@ public class OnDiskRaftStateStore implements RaftStateStore {
 
     @Override
     public void flushLogs() throws IOException {
-        flushCalledOnCurrFile = true;
         logRaf.force();
+        flushCalledOnCurrFile = true;
+        deleteDanglingFile();
     }
 
     @Override
@@ -107,6 +108,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     private void deleteDanglingFile() {
         if (danglingFile != null) {
             IOUtil.delete(danglingFile);
+            danglingFile = null;
         }
     }
 
