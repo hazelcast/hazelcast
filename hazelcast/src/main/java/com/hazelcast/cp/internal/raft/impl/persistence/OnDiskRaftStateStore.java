@@ -17,6 +17,8 @@ import java.util.Collection;
 
 public class OnDiskRaftStateStore implements RaftStateStore {
 
+    public static final String RAFT_LOG_PREFIX = "raftlog-";
+
     private final LogEntryRingBuffer logEntryRingBuffer;
     private BufferedRaf logRaf;
     private ObjectDataOutput logDataOut;
@@ -56,17 +58,16 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         BufferedRaf newRaf = createFile(newFile);
         ObjectDataOutput newDataOut = newObjectDataOutput(newRaf);
         logDataOut.writeObject(snapshot);
-        if (logEntryRingBuffer.topIndex() <= snapshot.index()) {
-            return;
+        long newStartOffset = newRaf.filePointer();
+        if (logEntryRingBuffer.topIndex() > snapshot.index()) {
+            long copyFromOffset = logEntryRingBuffer.getEntryOffset(snapshot.index() + 1);
+            logRaf.seek(copyFromOffset);
+            logRaf.copyTo(newDataOut);
         }
-        long copyFromOffset = logEntryRingBuffer.getEntryOffset(snapshot.index() + 1);
-        long copyToOffset = newRaf.filePointer();
-        logRaf.seek(copyFromOffset);
-        logRaf.copyTo(newDataOut);
         logRaf.close();
         logRaf = newRaf;
         logDataOut = newDataOut;
-        logEntryRingBuffer.adjustToNewFile(copyToOffset, snapshot.index());
+        logEntryRingBuffer.adjustToNewFile(newStartOffset, snapshot.index());
         if (flushCalledOnCurrFile) {
             deleteDanglingFile();
             danglingFile = currentFile;
@@ -112,18 +113,18 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         }
     }
 
-    @Nonnull
-    private BufferedRaf createFile(File file) throws IOException {
-        return new BufferedRaf(new RandomAccessFile(file, "rw"));
-    }
-
     private ObjectDataOutputStream newObjectDataOutput(BufferedRaf bufRaf) {
         return bufRaf.asObjectDataOutputStream(serializationService);
     }
 
     @Nonnull
     private static File fileWithIndex(long entryIndex) {
-        return new File(String.format("raft-log-%016x.bin", entryIndex));
+        return new File(String.format(RAFT_LOG_PREFIX + "%016x.bin", entryIndex));
+    }
+
+    @Nonnull
+    private static BufferedRaf createFile(File file) throws IOException {
+        return new BufferedRaf(new RandomAccessFile(file, "rw"));
     }
 
     // TODO: get serialization service from Hazelcast node
