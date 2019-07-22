@@ -342,33 +342,43 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private SecureStoreConfig handleJavaKeyStore(Node keyStoreRoot) {
-        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig();
+        File path = null;
+        String password = null;
+        String type = null;
+        List<JavaKeyStoreSecureStoreConfig.Entry> entries = null;
         for (Node n : childElements(keyStoreRoot)) {
             String name = cleanNodeName(n);
             if ("entries".equals(name)) {
-                handleJavaKeyStoreEntries(n, keyStoreSecureStoreConfig);
+                entries = handleJavaKeyStoreEntries(n);
             } else {
                 String value = getTextContent(n);
                 if ("path".equals(name)) {
-                    keyStoreSecureStoreConfig.setPath(new File(value).getAbsoluteFile());
+                    path = new File(value).getAbsoluteFile();
                 } else if ("type".equals(name)) {
-                    keyStoreSecureStoreConfig.setType(value);
+                    type =  value;
                 } else if ("password".equals(name)) {
-                    keyStoreSecureStoreConfig.setPassword(value);
+                    password = value;
                 }
             }
+        }
+        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path, password);
+        if (type != null) {
+            keyStoreSecureStoreConfig.setType(type);
+        }
+        if (entries != null) {
+            keyStoreSecureStoreConfig.setEntries(entries);
         }
         return keyStoreSecureStoreConfig;
     }
 
-    private void handleJavaKeyStoreEntries(Node entriesRoot, JavaKeyStoreSecureStoreConfig javaKeyStoreSecureStoreConfig) {
+    private List<JavaKeyStoreSecureStoreConfig.Entry> handleJavaKeyStoreEntries(Node entriesRoot) {
         List<JavaKeyStoreSecureStoreConfig.Entry> entries = new ArrayList<>();
         for (Node n : childElements(entriesRoot)) {
             String entryName = getAttribute(n, "name");
             String password = getAttribute(n, "password");
             entries.add(new JavaKeyStoreSecureStoreConfig.Entry(entryName, password));
         }
-        javaKeyStoreSecureStoreConfig.setEntries(entries);
+        return entries;
     }
 
     private SecureStoreConfig handleVault(Node vaultRoot) {

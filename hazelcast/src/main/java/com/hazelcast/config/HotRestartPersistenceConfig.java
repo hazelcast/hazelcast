@@ -232,12 +232,21 @@ public class HotRestartPersistenceConfig {
         return this;
     }
 
+    /**
+     * Sets the Hot Restart Encryption at Rest configuration.
+     * @param encryptionAtRestConfig the Encryption at Rest configuration
+     * @return HotRestartPersistenceConfig§
+     */
     public HotRestartPersistenceConfig setEncryptionAtRestConfig(EncryptionAtRestConfig encryptionAtRestConfig) {
         checkNotNull(encryptionAtRestConfig, "Encryption at rest config cannot be null!");
         this.encryptionAtRestConfig = encryptionAtRestConfig;
         return this;
     }
 
+    /**
+     * Returns the Hot Restart Encryption at Rest configuration.
+     * @return the Encryption at Rest configuration
+     */
     public EncryptionAtRestConfig getEncryptionAtRestConfig() {
         return encryptionAtRestConfig;
     }

@@ -39,6 +39,18 @@ public class JavaKeyStoreSecureStoreConfig
     private List<Entry> entries = new ArrayList<>();
 
     /**
+     * Creates a new Java KeyStore configuration.
+     * @param path the KeyStore file path
+     * @param password the KeyStore password
+     */
+    public JavaKeyStoreSecureStoreConfig(File path, String password) {
+        checkNotNull(path, "Java Key Store path cannot be null!");
+        checkNotNull(password, "Java Key Store password cannot be null!");
+        this.path = path;
+        this.password = password;
+    }
+
+    /**
      * Returns the type of the Java KeyStore.
      * @return the Java KeyStore type
      */

@@ -76,6 +76,11 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
         return address;
     }
 
+    /**
+     * Sets the Vault server address.
+     *
+     * @param address the Vault server address
+     */
     public VaultSecureStoreConfig setAddress(String address) {
         checkNotNull(address, "Vault server address cannot be null!");
         this.address = address;
