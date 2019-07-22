@@ -263,7 +263,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      *
      * @return acknowledge type
      */
-    public WanAcknowledgeType getAcknowledgeType() {
+    public @Nonnull WanAcknowledgeType getAcknowledgeType() {
         return acknowledgeType;
     }
 
@@ -274,8 +274,8 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param acknowledgeType acknowledge type
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setAcknowledgeType(WanAcknowledgeType acknowledgeType) {
-        this.acknowledgeType = acknowledgeType;
+    public WanBatchReplicationPublisherConfig setAcknowledgeType(@Nonnull WanAcknowledgeType acknowledgeType) {
+        this.acknowledgeType = checkNotNull(acknowledgeType, "Acknowledge type name must not be null");
         return this;
     }
 
@@ -377,7 +377,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * Returns the configured behaviour of this WAN publisher when the WAN queue
      * is full.
      */
-    public WANQueueFullBehavior getQueueFullBehavior() {
+    public @Nonnull WANQueueFullBehavior getQueueFullBehavior() {
         return queueFullBehavior;
     }
 
@@ -388,15 +388,15 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param queueFullBehavior the behaviour of this publisher when the WAN queue is full
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setQueueFullBehavior(WANQueueFullBehavior queueFullBehavior) {
-        this.queueFullBehavior = queueFullBehavior;
+    public WanBatchReplicationPublisherConfig setQueueFullBehavior(@Nonnull WANQueueFullBehavior queueFullBehavior) {
+        this.queueFullBehavior = checkNotNull(queueFullBehavior, "Queue full behaviour must not be null");
         return this;
     }
 
     /**
      * Returns the initial WAN publisher state.
      */
-    public WanPublisherState getInitialPublisherState() {
+    public @Nonnull WanPublisherState getInitialPublisherState() {
         return initialPublisherState;
     }
 
@@ -406,9 +406,8 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param initialPublisherState the state
      * @return this configuration
      */
-    public WanBatchReplicationPublisherConfig setInitialPublisherState(WanPublisherState initialPublisherState) {
-        checkNotNull(initialPublisherState, "Initial WAN publisher state must not be null");
-        this.initialPublisherState = initialPublisherState;
+    public WanBatchReplicationPublisherConfig setInitialPublisherState(@Nonnull WanPublisherState initialPublisherState) {
+        this.initialPublisherState = checkNotNull(initialPublisherState, "Initial WAN publisher state must not be null");
         return this;
     }
 

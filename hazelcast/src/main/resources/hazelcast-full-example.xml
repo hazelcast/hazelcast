@@ -349,50 +349,6 @@
                 database for example, otherwise it will not be persisted. Default value
                 is true.
     -->
-
-        <wan-replication name="test">
-            <batch-publisher>
-                <group-name>nyc</group-name>
-                <publisher-id>publisherId</publisher-id>
-                <batch-size>100</batch-size>
-                <batch-max-delay-millis>200</batch-max-delay-millis>
-                <response-timeout-millis>300</response-timeout-millis>
-                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
-                <initial-publisher-state>STOPPED</initial-publisher-state>
-                <snapshot-enabled>true</snapshot-enabled>
-                <idle-min-park-ns>400</idle-min-park-ns>
-                <idle-max-park-ns>500</idle-max-park-ns>
-                <max-concurrent-invocations>600</max-concurrent-invocations>
-                <discovery-period-seconds>700</discovery-period-seconds>
-                <use-endpoint-private-address>true</use-endpoint-private-address>
-                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
-                <max-target-endpoints>800</max-target-endpoints>
-                <queue-capacity>21</queue-capacity>
-                <target-endpoints>a,b,c,d</target-endpoints>            <wan-sync>
-                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
-            </wan-sync>
-                <properties>
-                    <property name="propName1">propValue1</property>
-                </properties>
-                <endpoint>nyc-endpoint</endpoint>
-            </batch-publisher>
-            <custom-publisher>
-                <class-name>PublisherClassName</class-name>
-                <publisher-id>customPublisherId</publisher-id>
-            <properties>
-                <property name="propName1">propValue1</property>
-            </properties>
-        </custom-publisher>
-            <consumer>
-                <class-name>ConsumerClassName</class-name>
-                <properties>
-                    <property name="propName1">propValue1</property>
-                </properties>
-            </consumer>
-        </wan-replication>
-
-
-
     <wan-replication name="my-wan-cluster-batch">
         <batch-publisher>
             <group-name>nyc</group-name>
@@ -435,8 +391,9 @@
             <!--                </discovery-strategy>-->
             <!--            </discovery-strategies>-->
         </batch-publisher>
-        <custom-publisher publisher-id="customPublisherId"
-                          class-name="com.companyName.CustomWanPublisher">
+        <custom-publisher>
+            <publisher-id>customPublisherId</publisher-id>
+            <class-name>com.companyName.CustomWanPublisher</class-name>
             <properties>
                 <property name="prop1">prop1-value</property>
                 <property name="prop2">prop2-value</property>

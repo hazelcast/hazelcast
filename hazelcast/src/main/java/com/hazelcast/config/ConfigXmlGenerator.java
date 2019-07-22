@@ -677,24 +677,26 @@ public class ConfigXmlGenerator {
 
     private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
         String publisherId = c.getPublisherId();
-        gen.open("batch-publisher",
-                "group-name", c.getGroupName(),
-                "publisher-id", isNullOrEmptyAfterTrim(publisherId) ? null : publisherId,
-                "batch-size", c.getBatchSize(),
-                "batch-max-delay-millis", c.getBatchMaxDelayMillis(),
-                "response-timeout-millis", c.getResponseTimeoutMillis(),
-                "acknowledge-type", c.getAcknowledgeType(),
-                "initial-publisher-state", c.getInitialPublisherState(),
-                "snapshot-enabled", c.isSnapshotEnabled(),
-                "idle-max-park-ns", c.getIdleMaxParkNs(),
-                "idle-min-park-ns", c.getIdleMinParkNs(),
-                "max-concurrent-invocations", c.getMaxConcurrentInvocations(),
-                "discovery-period-seconds", c.getDiscoveryPeriodSeconds(),
-                "use-endpoint-private-address", c.isUseEndpointPrivateAddress(),
-                "queue-full-behavior", c.getQueueFullBehavior(),
-                "max-target-endpoints", c.getMaxTargetEndpoints(),
-                "queue-capacity", c.getQueueCapacity())
+        gen.open("batch-publisher");
+        gen.node("group-name", c.getGroupName())
+           .node("batch-size", c.getBatchSize())
+           .node("batch-max-delay-millis", c.getBatchMaxDelayMillis())
+           .node("response-timeout-millis", c.getResponseTimeoutMillis())
+           .node("acknowledge-type", c.getAcknowledgeType())
+           .node("initial-publisher-state", c.getInitialPublisherState())
+           .node("snapshot-enabled", c.isSnapshotEnabled())
+           .node("idle-max-park-ns", c.getIdleMaxParkNs())
+           .node("idle-min-park-ns", c.getIdleMinParkNs())
+           .node("max-concurrent-invocations", c.getMaxConcurrentInvocations())
+           .node("discovery-period-seconds", c.getDiscoveryPeriodSeconds())
+           .node("use-endpoint-private-address", c.isUseEndpointPrivateAddress())
+           .node("queue-full-behavior", c.getQueueFullBehavior())
+           .node("max-target-endpoints", c.getMaxTargetEndpoints())
+           .node("queue-capacity", c.getQueueCapacity())
            .appendProperties(c.getProperties());
+        if (!isNullOrEmptyAfterTrim(publisherId)) {
+            gen.node("publisher-id", publisherId);
+        }
         if (c.getTargetEndpoints() != null) {
             gen.node("target-endpoints", c.getTargetEndpoints());
         }
@@ -709,11 +711,11 @@ public class ConfigXmlGenerator {
 
     private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
         String publisherId = c.getPublisherId();
-        gen.open("custom-publisher",
-                "class-name", c.getClassName(),
-                "publisher-id", isNullOrEmptyAfterTrim(publisherId) ? null : publisherId)
-           .appendProperties(c.getProperties());
-        gen.close();
+        gen.open("custom-publisher")
+           .appendProperties(c.getProperties())
+           .node("class-name", c.getClassName())
+           .node("publisher-id", publisherId)
+           .close();
     }
 
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
