@@ -57,7 +57,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         File newFile = fileWithIndex(snapshot.index());
         BufferedRaf newRaf = createFile(newFile);
         ObjectDataOutput newDataOut = newObjectDataOutput(newRaf);
-        logDataOut.writeObject(snapshot);
+        newDataOut.writeObject(snapshot);
         long newStartOffset = newRaf.filePointer();
         if (logEntryRingBuffer.topIndex() > snapshot.index()) {
             long copyFromOffset = logEntryRingBuffer.getEntryOffset(snapshot.index() + 1);
@@ -69,7 +69,6 @@ public class OnDiskRaftStateStore implements RaftStateStore {
         logDataOut = newDataOut;
         logEntryRingBuffer.adjustToNewFile(newStartOffset, snapshot.index());
         if (flushCalledOnCurrFile) {
-            deleteDanglingFile();
             danglingFile = currentFile;
         }
         currentFile = newFile;
@@ -79,7 +78,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     public void deleteEntriesFrom(long startIndexInclusive) throws IOException {
         long rollbackOffset = logEntryRingBuffer.deleteEntriesFrom(startIndexInclusive);
         logRaf.seek(rollbackOffset);
-        logRaf.force();
+        logRaf.setLength(rollbackOffset);
     }
 
     @Override
