@@ -23,6 +23,7 @@ import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 import static com.hazelcast.cp.internal.raft.impl.log.RaftLog.newRaftLog;
@@ -44,24 +45,27 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
+    public void persistInitialMembers(
+            @Nonnull RaftEndpoint localMember,
+            @Nonnull Collection<RaftEndpoint> initialMembers
+    ) {
         this.localEndpoint = localMember;
         this.initialMembers = initialMembers;
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint votedFor) {
+    public void persistTerm(int term, @Nonnull RaftEndpoint votedFor) {
         this.term = term;
         this.votedFor = votedFor;
     }
 
     @Override
-    public void persistEntry(LogEntry entry) {
+    public void persistEntry(@Nonnull LogEntry entry) {
         raftLog.appendEntries(entry);
     }
 
     @Override
-    public void persistSnapshot(SnapshotEntry entry) {
+    public void persistSnapshot(@Nonnull SnapshotEntry entry) {
         raftLog.setSnapshot(entry);
     }
 

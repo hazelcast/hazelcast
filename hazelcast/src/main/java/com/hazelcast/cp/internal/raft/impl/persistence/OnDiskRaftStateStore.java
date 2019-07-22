@@ -40,7 +40,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistEntry(LogEntry entry) throws IOException {
+    public void persistEntry(@Nonnull LogEntry entry) throws IOException {
         if (entry.index() != nextEntryIndex) {
             throw new IllegalArgumentException(String.format(
                     "Expected entry index %,d, but got %,d", nextEntryIndex, entry.index()));
@@ -51,7 +51,7 @@ public class OnDiskRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistSnapshot(SnapshotEntry snapshot) throws IOException {
+    public void persistSnapshot(@Nonnull SnapshotEntry snapshot) throws IOException {
         File newFile = fileWithIndex(snapshot.index());
         BufferedRaf newRaf = createFile(newFile);
         ObjectDataOutput newDataOut = newObjectDataOutput(newRaf);
@@ -83,13 +83,13 @@ public class OnDiskRaftStateStore implements RaftStateStore {
 
     @Override
     public void persistInitialMembers(
-            RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers
+            @Nonnull RaftEndpoint localMember, @Nonnull Collection<RaftEndpoint> initialMembers
     ) throws IOException {
 
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint votedFor) throws IOException {
+    public void persistTerm(int term, @Nonnull RaftEndpoint votedFor) throws IOException {
 
     }
 

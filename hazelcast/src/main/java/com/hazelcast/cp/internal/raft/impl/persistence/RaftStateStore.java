@@ -21,6 +21,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
+import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -42,14 +43,16 @@ public interface RaftStateStore extends Closeable {
      * Persists the given local Raft endpoint and initial Raft group members.
      * When this method returns, all the provided data has become durable.
      */
-    void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) throws IOException;
+    void persistInitialMembers(
+            @Nonnull RaftEndpoint localMember, @Nonnull Collection<RaftEndpoint> initialMembers
+    ) throws IOException;
 
     /**
      * Persists the term and the Raft endpoint that the local node voted for in
      * the given term. When this method returns, all the provided data has
      * become durable.
      */
-    void persistTerm(int term, RaftEndpoint votedFor) throws IOException;
+    void persistTerm(int term, @Nonnull RaftEndpoint votedFor) throws IOException;
 
     /**
      * Persists the given log entry.
@@ -81,7 +84,7 @@ public interface RaftStateStore extends Closeable {
      * @see #deleteEntriesFrom(long)
      * @see RaftAlgorithmConfig
      */
-    void persistEntry(LogEntry entry) throws IOException;
+    void persistEntry(@Nonnull LogEntry entry) throws IOException;
 
     /**
      * Persists the given snapshot entry.
@@ -118,7 +121,7 @@ public interface RaftStateStore extends Closeable {
      * @see #persistEntry(LogEntry)
      * @see RaftAlgorithmConfig
      */
-    void persistSnapshot(SnapshotEntry entry) throws IOException;
+    void persistSnapshot(@Nonnull SnapshotEntry entry) throws IOException;
 
     /**
      * Rolls back the log by deleting all entries starting with the given index.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.persistence;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
@@ -24,5 +25,6 @@ import java.io.IOException;
  */
 public interface RaftStateLoader {
 
+    @Nonnull
     RestoredRaftState load() throws IOException;
 }

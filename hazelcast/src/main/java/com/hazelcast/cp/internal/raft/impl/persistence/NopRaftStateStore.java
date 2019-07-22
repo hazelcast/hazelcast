@@ -20,6 +20,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
@@ -40,19 +41,22 @@ public final class NopRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistInitialMembers(RaftEndpoint localMember, Collection<RaftEndpoint> initialMembers) {
+    public void persistInitialMembers(
+            @Nonnull RaftEndpoint localMember,
+            @Nonnull Collection<RaftEndpoint> initialMembers
+    ) {
     }
 
     @Override
-    public void persistTerm(int term, RaftEndpoint votedFor) {
+    public void persistTerm(int term, @Nonnull RaftEndpoint votedFor) {
     }
 
     @Override
-    public void persistEntry(LogEntry entry) {
+    public void persistEntry(@Nonnull LogEntry entry) {
     }
 
     @Override
-    public void persistSnapshot(SnapshotEntry entry) {
+    public void persistSnapshot(@Nonnull SnapshotEntry entry) {
     }
 
     @Override
