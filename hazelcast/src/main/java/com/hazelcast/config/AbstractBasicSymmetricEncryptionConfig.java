@@ -38,29 +38,57 @@ public abstract class AbstractBasicSymmetricEncryptionConfig<T extends AbstractB
     protected String algorithm = DEFAULT_SYMMETRIC_ALGORITHM;
     protected String salt = DEFAULT_SYMMETRIC_SALT;
 
+    /**
+     * Returns if this configuration is enabled.
+     *
+     * @return {@code true} if enabled, {@code false} otherwise
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Enables and disables this configuration.
+     *
+     * @param enabled {@code true} to enable, {@code false} to disable
+     */
     public T setEnabled(boolean enabled) {
         this.enabled = enabled;
         return (T) this;
     }
 
+    /**
+     * Returns the encryption algorithm.
+     * @return the encryption algorithm
+     */
     public String getAlgorithm() {
         return algorithm;
     }
 
+    /**
+     * Sets the encryption algorithm, such as {@code AES/CBC/PKCS5Padding}.
+     *
+     * @param algorithm the encryption algorithm
+     */
     public T setAlgorithm(String algorithm) {
         checkNotNull(algorithm, "Encryption algorithm cannot be null!");
         this.algorithm = algorithm;
         return (T) this;
     }
 
+    /**
+     * Returns the salt.
+     * @return the salt
+     */
     public String getSalt() {
         return salt;
     }
 
+    /**
+     * Sets the salt used for encryption.
+     *
+     * @param salt the salt
+     */
     public T setSalt(String salt) {
         this.salt = salt;
         return (T) this;

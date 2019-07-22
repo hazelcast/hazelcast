@@ -1279,17 +1279,10 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.open("symmetric-encryption", "enabled", sec.isEnabled());
-        symmetricEncInterceptorConfigXmlBodyGenerator(gen, sec);
-        gen.close();
-    }
-
-    private void symmetricEncInterceptorConfigXmlBodyGenerator(XmlGenerator gen, SymmetricEncryptionConfig sec) {
-        if (sec == null) {
-            return;
-        }
         commonSymmetricEncInterceptorConfigXmlBodyGenerator(gen, sec);
         gen.node("password", getOrMaskValue(sec.getPassword()))
            .node("iteration-count", sec.getIterationCount());
+        gen.close();
     }
 
     private static void memberAddressProviderConfigXmlGenerator(XmlGenerator gen,

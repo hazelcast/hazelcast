@@ -285,10 +285,8 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
-        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile(), "keyStorePassword");
         secureStoreConfig.setType("JCEKS");
-        secureStoreConfig.setPassword("keyStorePassword");
         secureStoreConfig.setEntries(Collections.singletonList(
                 new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
@@ -312,10 +310,8 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig();
-        secureStoreConfig.setPath(new File("path").getAbsoluteFile());
+        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile(), "keyStorePassword");
         secureStoreConfig.setType("JCEKS");
-        secureStoreConfig.setPassword("keyStorePassword");
         secureStoreConfig.setEntries(Collections.singletonList(
                 new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
