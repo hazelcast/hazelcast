@@ -154,7 +154,6 @@ public class JobRepository {
      */
     public long uploadJobResources(JobConfig jobConfig) {
         long jobId = newJobId();
-        IMap<String, Object> jobResourcesMap = getJobResources(jobId);
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             for (ResourceConfig rc : jobConfig.getResourceConfigs()) {
@@ -165,11 +164,19 @@ public class JobRepository {
                     readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
                 }
             }
-            // now upload it all
-            jobResourcesMap.putAll(tmpMap);
         } catch (Exception e) {
-            jobResourcesMap.destroy();
             throw new JetException("Job resource upload failed", e);
+        }
+        // avoid creating resources map if map is empty
+        if (tmpMap.size() > 0) {
+            IMap<String, Object> jobResourcesMap = getJobResources(jobId);
+            // now upload it all
+            try {
+                jobResourcesMap.putAll(tmpMap);
+            } catch (Exception e) {
+                jobResourcesMap.destroy();
+                throw new JetException("Job resource upload failed", e);
+            }
         }
         return jobId;
     }
