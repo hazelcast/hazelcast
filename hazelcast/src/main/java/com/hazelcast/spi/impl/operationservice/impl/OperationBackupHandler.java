@@ -24,14 +24,17 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+
+import java.util.Random;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.hasActiveInvocation;
@@ -50,12 +53,15 @@ final class OperationBackupHandler {
     private final BackpressureRegulator backpressureRegulator;
     private final OutboundOperationHandler outboundOperationHandler;
     private final ILogger logger;
+    private final AsyncBackupOverloadDetector asyncBackupOverloadDetector;
 
-    OperationBackupHandler(OperationServiceImpl operationService, OutboundOperationHandler outboundOperationHandler) {
+    OperationBackupHandler(OperationServiceImpl operationService, OutboundOperationHandler outboundOperationHandler,
+                           AsyncBackupOverloadDetector asyncBackupOverloadDetector) {
         this.outboundOperationHandler = outboundOperationHandler;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
+        this.asyncBackupOverloadDetector = asyncBackupOverloadDetector;
         this.logger = node.getLogger(getClass());
     }
 
@@ -95,7 +101,7 @@ final class OperationBackupHandler {
         long[] replicaVersions = versionManager.incrementPartitionReplicaVersions(op.getPartitionId(), namespace,
                 requestedTotalBackups);
 
-        boolean syncForced = backpressureRegulator.isSyncForced(backupAwareOp);
+        boolean syncForced = isSyncForced(backupAwareOp);
 
         int syncBackups = syncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
@@ -113,6 +119,25 @@ final class OperationBackupHandler {
         return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
     }
 
+    private final Random random = new Random();
+
+    private boolean isSyncForced(BackupAwareOperation backupAwareOp) {
+        // if there are no asynchronous backups, there is nothing to regulate.
+        if (backupAwareOp.getAsyncBackupCount() == 0) {
+            return false;
+        }
+
+        if (backupAwareOp instanceof UrgentSystemOperation) {
+            return false;
+        }
+
+        int ratio = asyncBackupOverloadDetector.getRatio();
+        if (ratio == 0) {
+            return false;
+        }
+        return random.nextInt(100) <= ratio;
+    }
+
     int syncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced) {
             // if force sync enabled, then the sum of the backups
@@ -123,6 +148,7 @@ final class OperationBackupHandler {
         int maxBackupCount = partitionService.getMaxAllowedBackupCount();
         return min(maxBackupCount, requestedSyncBackups);
     }
+
 
     int asyncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced || requestedAsyncBackups == 0) {

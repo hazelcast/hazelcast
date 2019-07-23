@@ -125,6 +125,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     final BackpressureRegulator backpressureRegulator;
     final OutboundResponseHandler outboundResponseHandler;
     final OutboundOperationHandler outboundOperationHandler;
+    private final AsyncBackupOverloadDetector asyncBackupOverloadDetector;
     volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
@@ -161,7 +162,9 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
 
         this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
 
-        this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
+        this.asyncBackupOverloadDetector = new AsyncBackupOverloadDetector(node);
+
+        this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler,asyncBackupOverloadDetector);
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
         ClassLoader configClassLoader = node.getConfigClassLoader();
@@ -463,6 +466,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
         operationExecutor.start();
         inboundResponseHandlerSupplier.start();
         slowOperationDetector.start();
+        asyncBackupOverloadDetector.start();
     }
 
     private void initInvocationContext() {
@@ -517,5 +521,6 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
 
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
+        asyncBackupOverloadDetector.shutdown();
     }
 }
