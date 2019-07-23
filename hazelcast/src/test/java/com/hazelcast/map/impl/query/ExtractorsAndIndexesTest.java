@@ -89,7 +89,7 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
         public String last;
     }
 
-    public static class Extractor extends ValueExtractor<Person, Void> {
+    public static class Extractor implements ValueExtractor<Person, Void> {
         @SuppressWarnings("unchecked")
         @Override
         public void extract(Person person, Void aVoid, ValueCollector valueCollector) {

@@ -21,13 +21,14 @@ package com.hazelcast.query.extractor;
  *
  * @param <T> type of the collected value
  */
-public abstract class ValueCollector<T> {
+@FunctionalInterface
+public interface ValueCollector<T> {
 
     /**
      * Collects a value passed as an argument
      *
      * @param value value to be collected
      */
-    public abstract void addObject(T value);
+    void addObject(T value);
 
 }
