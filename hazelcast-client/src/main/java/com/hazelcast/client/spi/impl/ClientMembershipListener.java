@@ -117,9 +117,9 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         for (Member target : currentMembersList) {
             if (target.getUuid().equals(uuid)) {
                 final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);
-                ((AbstractMember) member).updateAttribute(operationType, key, value);
+                ((AbstractMember) target).updateAttribute(operationType, key, value);
                 MemberAttributeEvent memberAttributeEvent =
-                        new MemberAttributeEvent(client.getCluster(), member, new HashSet<>(members), operationType, key, value);
+                        new MemberAttributeEvent(client.getCluster(), target, new HashSet<>(members), operationType, key, value);
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                 break;
             }
