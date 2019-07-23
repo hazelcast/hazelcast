@@ -217,14 +217,15 @@ hazelcast-client:
   # For the proper eviction configuration example for NATIVE in-memory format see "NearCacheEvictionConfigExample" below
   near-cache:
     default:
-      max-size: 2000
       time-to-live-seconds: 90
       max-idle-seconds: 100
-      eviction-policy: LFU
       invalidate-on-change: true
       in-memory-format: OBJECT
       serialize-keys: true
       local-update-policy: INVALIDATE
+      eviction:
+        eviction-policy: LFU
+        size: 2000
 
     NearCacheEvictionConfigExample:
       eviction:

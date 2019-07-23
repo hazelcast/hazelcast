@@ -827,8 +827,6 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
-                    && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
-                    && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig());
         }
 
@@ -838,7 +836,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getSize(), c2.getSize())
                     && nullSafeEqual(c1.getMaximumSizePolicy(), c2.getMaximumSizePolicy())
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
-                    && nullSafeEqual(c1.getEvictionPolicyType(), c2.getEvictionPolicyType())
                     && nullSafeEqual(c1.getEvictionStrategyType(), c2.getEvictionStrategyType())
                     && nullSafeEqual(c1.getComparatorClassName(), c2.getComparatorClassName());
         }

@@ -159,11 +159,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(2, fullClientConfig.getNearCacheConfigMap().size());
         final NearCacheConfig nearCacheConfig = fullClientConfig.getNearCacheConfig("asd");
 
-        assertEquals(2000, nearCacheConfig.getMaxSize());
         assertEquals(2000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(90, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(100, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertTrue(nearCacheConfig.isSerializeKeys());
@@ -207,7 +205,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertTrue(nearCacheConfig.isCacheLocalEntries());
+        assertFalse(nearCacheConfig.isCacheLocalEntries());
 
         assertNotNull(nearCacheConfig.getEvictionConfig());
         assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
@@ -224,9 +222,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testQueryCacheFullConfig() throws Exception {
         QueryCacheConfig queryCacheClassPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")
-                                                                          .get("query-cache-class-name-predicate");
+                .get("query-cache-class-name-predicate");
         QueryCacheConfig queryCacheSqlPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")
-                                                                        .get("query-cache-sql-predicate");
+                .get("query-cache-sql-predicate");
         EntryListenerConfig entryListenerConfig = queryCacheClassPredicateConfig.getEntryListenerConfigs().get(0);
 
         assertEquals("query-cache-class-name-predicate", queryCacheClassPredicateConfig.getName());

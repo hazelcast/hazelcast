@@ -384,8 +384,10 @@
                     metadata-policy="OFF">
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
                               initial-mode="EAGER" write-batch-size="10"/>
-                <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
-                               invalidate-on-change="true" serialize-keys="false"/>
+                <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+                               invalidate-on-change="true" serialize-keys="false">
+                    <hz:eviction size="5000" eviction-policy="LRU"/>
+                </hz:near-cache>
 
                 <hz:indexes>
                     <hz:index attribute="name"/>
@@ -429,16 +431,24 @@
             <hz:map name="randomEvictionMap" eviction-policy="RANDOM"/>
 
             <hz:map name="lfuNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LFU"/>
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="LFU"/>
+                </hz:near-cache>
             </hz:map>
             <hz:map name="lruNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LRU"/>
-            </hz:map>
-            <hz:map name="noneNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="NONE"/>
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="LRU"/>
+                </hz:near-cache>
             </hz:map>
             <hz:map name="randomNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="RANDOM"/>
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="RANDOM"/>
+                </hz:near-cache>
+            </hz:map>
+            <hz:map name="noneNearCacheEvictionMap">
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="NONE"/>
+                </hz:near-cache>
             </hz:map>
 
             <hz:map name="testMap3"

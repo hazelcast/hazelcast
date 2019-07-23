@@ -457,28 +457,6 @@
             <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Deprecated since 3.8, please use &lt;eviction/&gt;
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU">
-                <xs:annotation>
-                    <xs:documentation>
-                        Deprecated since 3.8, please use &lt;eviction/&gt;
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        Deprecated since 3.8, has no effect on a client since there is no local part of the distributed
-                        data
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
             <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>

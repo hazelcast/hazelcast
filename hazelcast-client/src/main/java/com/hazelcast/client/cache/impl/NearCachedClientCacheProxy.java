@@ -33,7 +33,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -51,14 +50,12 @@ import java.util.UUID;
 
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createInvalidationListenerCodec;
-import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static java.lang.String.format;
 
 /**
  * An {@link ICacheInternal} implementation which handles Near Cache specific behaviour of methods.
@@ -93,7 +90,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         ClientConfig clientConfig = getContext().getClientConfig();
         NearCacheConfig nearCacheConfig = checkNearCacheConfig(clientConfig.getNearCacheConfig(name),
                 clientConfig.getNativeMemoryConfig());
-        cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, getLogger());
+        cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
@@ -576,19 +573,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig, String cacheName, ILogger logger) {
-        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
-        if (localUpdatePolicy == CACHE) {
-            logger.warning(format("Deprecated local update policy is found for cache `%s`."
-                            + " The policy `%s` is subject to remove in further releases. Instead you can use `%s`",
-                    cacheName, CACHE, CACHE_ON_UPDATE));
-            return true;
-        }
-
-        return localUpdatePolicy == CACHE_ON_UPDATE;
     }
 
     private final class GetAsyncCallback implements ExecutionCallback<V> {

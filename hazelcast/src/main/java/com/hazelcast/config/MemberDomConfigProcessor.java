@@ -1649,16 +1649,10 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("max-size".equals(nodeName)) {
-                nearCacheConfig.setMaxSize(Integer.parseInt(value));
-                LOGGER.warning("The element <max-size/> for <near-cache/> is deprecated, please use <eviction> instead!");
-            } else if ("time-to-live-seconds".equals(nodeName)) {
+            if ("time-to-live-seconds".equals(nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
             } else if ("max-idle-seconds".equals(nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
-            } else if ("eviction-policy".equals(nodeName)) {
-                nearCacheConfig.setEvictionPolicy(value);
-                LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction> instead!");
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("serialize-keys".equals(nodeName)) {

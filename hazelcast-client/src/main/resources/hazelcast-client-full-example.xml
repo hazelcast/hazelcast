@@ -568,9 +568,6 @@
         - name: You can give a name for your Near Cache. It is optional and its default value is "default".
 
         It has the following sub-elements:
-            - <max-size>:
-                Maximum size of the Near Cache. When this is reached, Near Cache is evicted based on the policy defined.
-                Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
             - <time-to-live-seconds>:
                 Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this
                 period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE.
@@ -579,16 +576,9 @@
                 Maximum number of seconds each entry can stay in the Near Cache as untouched (not read). Entries that
                 are not read more than this period are removed from the Near Cache. Any integer between 0 and
                 Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
-            - <eviction-policy>:
-                Eviction policy configuration. Its default values is NONE. Available values are as follows:
-                - NONE:
-                    No items will be evicted and the property max-size will be ignored. You still
-                    can combine it with time-to-live-seconds and max-idle-seconds.
-                - LRU: 	Least Recently Used.
-                - LFU: 	Least Frequently Used.
-                - <invalidate-on-change>:
-                    Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
-                    value is true.
+             - <invalidate-on-change>:
+                Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
+                value is true.
             - <in-memory-format>:
                 Specifies in which format data will be stored in your Near Cache. Note that a map's in-memory format
                 can be different from that of its Near Cache.
@@ -602,9 +592,6 @@
                     This option is available only in Hazelcast Enterprise HD. Note that a map and its Near Cache
                     can independently use High-Density Memory Store. For example, while your map does not use
                     High-Density Memory Store, its Near Cache can use it.
-            - <cache-local-entries>:
-                Specifies whether the local entries will be cached. It can be useful when in-memory format for
-                Near Cache is different from that of the map. By default, it is disabled.
             - <invalidate-on-change>:
                 Specifies whether the cached entries are evicted when the entries are updated or removed.
                 Its default value is true.
@@ -629,12 +616,9 @@
            `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
     -->
     <near-cache name="default">
-        <max-size>2000</max-size>
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
-        <eviction-policy>LFU</eviction-policy>
         <in-memory-format>OBJECT</in-memory-format>
-        <cache-local-entries>true</cache-local-entries>
         <invalidate-on-change>true</invalidate-on-change>
         <serialize-keys>true</serialize-keys>
         <local-update-policy>INVALIDATE</local-update-policy>

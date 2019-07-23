@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.api.Client;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.api.Client;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -44,7 +44,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
@@ -111,14 +110,14 @@ public class ClientConfig {
     private final ConcurrentMap<String, Object> userContext;
 
     public ClientConfig() {
-        listenerConfigs = new LinkedList<ListenerConfig>();
-        nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
-        reliableTopicConfigMap = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
-        proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
-        flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
-        queryCacheConfigs = new ConcurrentHashMap<String, Map<String, QueryCacheConfig>>();
-        labels = new HashSet<String>();
-        userContext = new ConcurrentHashMap<String, Object>();
+        listenerConfigs = new LinkedList<>();
+        nearCacheConfigMap = new ConcurrentHashMap<>();
+        reliableTopicConfigMap = new ConcurrentHashMap<>();
+        proxyFactoryConfigs = new LinkedList<>();
+        flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
+        queryCacheConfigs = new ConcurrentHashMap<>();
+        labels = new HashSet<>();
+        userContext = new ConcurrentHashMap<>();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
@@ -129,26 +128,26 @@ public class ClientConfig {
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
-        listenerConfigs = new LinkedList<ListenerConfig>();
+        listenerConfigs = new LinkedList<>();
         for (ListenerConfig listenerConfig : config.listenerConfigs) {
             listenerConfigs.add(new ListenerConfig(listenerConfig));
         }
         executorPoolSize = config.executorPoolSize;
         instanceName = config.instanceName;
         configPatternMatcher = config.configPatternMatcher;
-        nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
+        nearCacheConfigMap = new ConcurrentHashMap<>();
         for (Entry<String, NearCacheConfig> entry : config.nearCacheConfigMap.entrySet()) {
             nearCacheConfigMap.put(entry.getKey(), new NearCacheConfig(entry.getValue()));
         }
-        reliableTopicConfigMap = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
+        reliableTopicConfigMap = new ConcurrentHashMap<>();
         for (Entry<String, ClientReliableTopicConfig> entry : config.reliableTopicConfigMap.entrySet()) {
             reliableTopicConfigMap.put(entry.getKey(), new ClientReliableTopicConfig(entry.getValue()));
         }
-        queryCacheConfigs = new ConcurrentHashMap<String, Map<String, QueryCacheConfig>>();
+        queryCacheConfigs = new ConcurrentHashMap<>();
         for (Entry<String, Map<String, QueryCacheConfig>> entry : config.queryCacheConfigs.entrySet()) {
             Map<String, QueryCacheConfig> value = entry.getValue();
 
-            ConcurrentHashMap<String, QueryCacheConfig> map = new ConcurrentHashMap<String, QueryCacheConfig>();
+            ConcurrentHashMap<String, QueryCacheConfig> map = new ConcurrentHashMap<>();
             for (Entry<String, QueryCacheConfig> cacheConfigEntry : value.entrySet()) {
                 map.put(cacheConfigEntry.getKey(), new QueryCacheConfig(cacheConfigEntry.getValue()));
             }
@@ -156,7 +155,7 @@ public class ClientConfig {
         }
         serializationConfig = new SerializationConfig(config.serializationConfig);
         nativeMemoryConfig = new NativeMemoryConfig(config.nativeMemoryConfig);
-        proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
+        proxyFactoryConfigs = new LinkedList<>();
         for (ProxyFactoryConfig factoryConfig : config.proxyFactoryConfigs) {
             proxyFactoryConfigs.add(new ProxyFactoryConfig(factoryConfig));
         }
@@ -164,12 +163,12 @@ public class ClientConfig {
         classLoader = config.classLoader;
         connectionStrategyConfig = new ClientConnectionStrategyConfig(config.connectionStrategyConfig);
         userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig(config.userCodeDeploymentConfig);
-        flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
+        flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
         for (Entry<String, ClientFlakeIdGeneratorConfig> entry : config.flakeIdGeneratorConfigMap.entrySet()) {
             flakeIdGeneratorConfigMap.put(entry.getKey(), new ClientFlakeIdGeneratorConfig(entry.getValue()));
         }
-        labels = new HashSet<String>(config.labels);
-        userContext = new ConcurrentHashMap<String, Object>(config.userContext);
+        labels = new HashSet<>(config.labels);
+        userContext = new ConcurrentHashMap<>(config.userContext);
     }
 
     /**
@@ -305,12 +304,7 @@ public class ClientConfig {
      */
     public ClientReliableTopicConfig getReliableTopicConfig(String name) {
         return ConfigUtils.getConfig(configPatternMatcher, reliableTopicConfigMap, name,
-                ClientReliableTopicConfig.class, new BiConsumer<ClientReliableTopicConfig, String>() {
-                    @Override
-                    public void accept(ClientReliableTopicConfig clientReliableTopicConfig, String name) {
-                        clientReliableTopicConfig.setName(name);
-                    }
-                });
+                ClientReliableTopicConfig.class, ClientReliableTopicConfig::setName);
     }
 
     /**
@@ -459,12 +453,7 @@ public class ClientConfig {
      */
     public ClientFlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         return ConfigUtils.getConfig(configPatternMatcher, getFlakeIdGeneratorConfigMap(), name,
-                ClientFlakeIdGeneratorConfig.class, new BiConsumer<ClientFlakeIdGeneratorConfig, String>() {
-                    @Override
-                    public void accept(ClientFlakeIdGeneratorConfig flakeIdGeneratorConfig, String name) {
-                        flakeIdGeneratorConfig.setName(name);
-                    }
-                });
+                ClientFlakeIdGeneratorConfig.class, ClientFlakeIdGeneratorConfig::setName);
     }
 
     /**
@@ -742,7 +731,7 @@ public class ClientConfig {
             checkFalse(queryCacheConfigs.containsKey(queryCacheName),
                     "A query cache already exists with name = [" + queryCacheName + ']');
         } else {
-            queryCacheConfigs = new ConcurrentHashMap<String, QueryCacheConfig>();
+            queryCacheConfigs = new ConcurrentHashMap<>();
             queryCacheConfigsPerMap.put(mapName, queryCacheConfigs);
         }
 
@@ -813,7 +802,7 @@ public class ClientConfig {
         Map<String, QueryCacheConfig> queryCacheConfigsForMap =
                 lookupByPattern(configPatternMatcher, allQueryCacheConfig, mapName);
         if (queryCacheConfigsForMap == null) {
-            queryCacheConfigsForMap = new HashMap<String, QueryCacheConfig>();
+            queryCacheConfigsForMap = new HashMap<>();
             allQueryCacheConfig.put(mapName, queryCacheConfigsForMap);
         }
 

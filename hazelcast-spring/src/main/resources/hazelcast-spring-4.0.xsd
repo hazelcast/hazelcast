@@ -3235,8 +3235,6 @@
         <xs:attribute name="invalidate-on-change" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
-        <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
-        <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="cache-local-entries" use="optional" type="xs:string" default="false"/>
     </xs:complexType>
 
@@ -3615,6 +3613,7 @@
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
+            <xs:enumeration value="RANDOM"/>
         </xs:restriction>
     </xs:simpleType>
 
