@@ -22,8 +22,6 @@ import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
-import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
-import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobExecutionRecordEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
@@ -72,8 +70,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_OPERATION = 10;
     public static final int JOB_EXECUTION_RECORD = 11;
     public static final int SESSION_WINDOW_P_WINDOWS = 12;
-    public static final int FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE = 13;
-    public static final int FILTER_JOB_ID = 14;
+    // 13 and 14 are unused
     public static final int SLIDING_WINDOW_P_SNAPSHOT_KEY = 15;
     public static final int GET_JOB_IDS = 16;
     public static final int JOIN_SUBMITTED_JOB = 17;
@@ -140,10 +137,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new JobExecutionRecord();
                 case SESSION_WINDOW_P_WINDOWS:
                     return new SessionWindowP.Windows<>();
-                case FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE:
-                    return new FilterExecutionIdByJobIdPredicate();
-                case FILTER_JOB_ID:
-                    return new FilterJobIdPredicate();
                 case SLIDING_WINDOW_P_SNAPSHOT_KEY:
                     return new SnapshotKey();
                 case GET_JOB_IDS:

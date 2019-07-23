@@ -56,7 +56,6 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.regex.Matcher.quoteReplacement;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -221,16 +220,11 @@ public class TaskletExecutionService {
         public void run() {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
-            final String oldName = currentThread().getName();
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
 
-            // swap the thread name by replacing the ".thread-NN" part at the end
             try {
-                currentThread().setName(oldName.replaceAll(".thread-[0-9]+$", quoteReplacement("." + tracker.tasklet)));
-                assert !oldName.equals(currentThread().getName()) : "unexpected thread name pattern: " + oldName;
                 blockingWorkerCount.incrementAndGet();
-
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -251,7 +245,6 @@ public class TaskletExecutionService {
             } finally {
                 blockingWorkerCount.decrementAndGet();
                 currentThread().setContextClassLoader(clBackup);
-                currentThread().setName(oldName);
                 tracker.executionTracker.taskletDone();
             }
         }
