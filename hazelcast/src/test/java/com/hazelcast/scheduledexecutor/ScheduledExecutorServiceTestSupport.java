@@ -39,7 +39,7 @@ import static java.lang.Thread.sleep;
  */
 public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
-    public static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
+    static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
 
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return instances[0].getScheduledExecutorService(name);
