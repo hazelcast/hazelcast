@@ -34,6 +34,7 @@ import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.List;
@@ -165,8 +166,10 @@ public class DefaultNodeContext implements NodeContext {
 
         HazelcastProperties props = node.getProperties();
 
+        BackpressureRegulator.NioRegulatorMonitor backpressureRegulatorMonitor = node.nodeEngine.getOperationService().getBackpressureRegulator().monitor;
         return new NioNetworking(
                 new NioNetworking.Context()
+                        .backpressureRegulatorMonitor(backpressureRegulatorMonitor)
                         .loggingService(loggingService)
                         .metricsRegistry(node.nodeEngine.getMetricsRegistry())
                         .threadNamePrefix(node.hazelcastInstance.getName())

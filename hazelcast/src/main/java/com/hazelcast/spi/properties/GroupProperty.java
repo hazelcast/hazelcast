@@ -771,6 +771,15 @@ public final class GroupProperty {
     public static final HazelcastProperty BACKPRESSURE_ENABLED
             = new HazelcastProperty("hazelcast.backpressure.enabled", false);
 
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.lowwatermark", 10 * 1024 * 1024);
+
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.highwatermark", 100 * 1024 * 1024);
+
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_WINDOW_MILLIS
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.window.millis", 5000);
+
     /**
      * Controls the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
      * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
@@ -783,10 +792,17 @@ public final class GroupProperty {
      * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
      * BackupAwareOperation operation gets its async backups converted to sync.
      * <p/>
-     * This property only has meaning when backpressure is enabled.
+     * Set to 0 or negative value, to disable async backup overload checking.
      */
-    public static final HazelcastProperty BACKPRESSURE_SYNCWINDOW
-            = new HazelcastProperty("hazelcast.backpressure.syncwindow", 100);
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.check.interval.millis", 1);
+
+    public static final HazelcastProperty BACKPRESSURE_CLIENT_OUTBOUND_QUEUE_LOWWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.client.outbound.lowwatermark", 500);
+
+    public static final HazelcastProperty BACKPRESSURE_CLIENT_OUTBOUND_QUEUE_HIGHWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.client.outbound.highwatermark", 1000);
+
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.

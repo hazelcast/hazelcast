@@ -18,8 +18,8 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -68,6 +69,7 @@ public class TcpIpNetworkingService
     private final AggregateEndpointManager aggregateEndpointManager;
 
     private final ScheduledExecutorService scheduler;
+    private final Semaphore schedulerPermits = new Semaphore(100);
 
     // accessed only in synchronized block
     private volatile TcpIpAcceptor acceptor;

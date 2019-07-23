@@ -16,22 +16,28 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 import com.hazelcast.util.function.Supplier;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,7 +59,7 @@ public final class NioOutboundPipeline
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
@@ -64,10 +70,15 @@ public final class NioOutboundPipeline
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
+
+    private final MwCounter bytesQueued = MwCounter.newMwCounter();
+
     @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
+
+    private final BackpressureRegulator.NioRegulatorMonitor backpressureRegulatorMonitor;
 
     private volatile long lastWriteTime;
 
@@ -80,8 +91,10 @@ public final class NioOutboundPipeline
                         NioThread owner,
                         ChannelErrorHandler errorHandler,
                         ILogger logger,
-                        IOBalancer balancer) {
+                        IOBalancer balancer,
+                        BackpressureRegulator.NioRegulatorMonitor backpressureRegulator) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
+        this.backpressureRegulatorMonitor = backpressureRegulator;
     }
 
     @Override
@@ -134,12 +147,28 @@ public final class NioOutboundPipeline
         return scheduled.get() ? 1 : 0;
     }
 
+    private final Set<Integer> URGENT_MESSAGE_TYPES = new HashSet<>();
+    {
+        for (ClientMessageType type : ClientMessageType.values()) {
+            URGENT_MESSAGE_TYPES.add(type.id());
+        }
+    }
+
     public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
+        bytesQueued.inc(frame.getFrameLength());
+
+        // Avoid blocking system threads, urgent messages. This requires client-protocol change to include the urgent flag
+        boolean clientUrgent = ((frame instanceof ClientMessage) && URGENT_MESSAGE_TYPES.contains(((ClientMessage) frame).getMessageType()));
+
+        if (frame.isUrgent() || clientUrgent) {
             priorityWriteQueue.offer(frame);
         } else {
+            if (backpressureRegulatorMonitor != null) {
+                backpressureRegulatorMonitor.process(channel);
+            }
             writeQueue.offer(frame);
         }
+
         schedule();
     }
 
@@ -151,6 +180,7 @@ public final class NioOutboundPipeline
             if (frame == null) {
                 return null;
             }
+
             normalFramesWritten.inc();
         } else {
             priorityFramesWritten.inc();

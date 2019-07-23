@@ -23,6 +23,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 
 import java.util.BitSet;
 import java.util.List;
@@ -39,6 +40,8 @@ import java.util.List;
 public interface InternalOperationService extends OperationService {
 
     String SERVICE_NAME = "hz:impl:operationService";
+
+    BackpressureRegulator getBackpressureRegulator();
 
     /**
      * Returns the size of the response queue.

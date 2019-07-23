@@ -25,12 +25,14 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -57,6 +59,9 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
+
+    private final AtomicBoolean yielded = new AtomicBoolean(false);
+
     private volatile long lastReadTime;
 
     private volatile long bytesReadLastPublish;
@@ -78,6 +83,10 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     public long priorityFramesRead() {
         return priorityFramesRead.get();
+    }
+
+    public boolean isYielded() {
+        return yielded.get();
     }
 
     @Override
@@ -264,6 +273,19 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         return sb.toString();
     }
 
+    public NioInboundPipeline yield() {
+        addTaskAndWakeup(new NioPipelineTask(this) {
+            @Override
+            protected void run0() throws IOException {
+                assert ((TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class)).getType().isClient();
+                unregisterOp(OP_READ);
+                NioInboundPipeline.this.yielded.set(true);
+            }
+        });
+
+        return this;
+    }
+
     @Override
     public NioInboundPipeline wakeup() {
         addTaskAndWakeup(new NioPipelineTask(this) {
@@ -271,6 +293,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             protected void run0() throws IOException {
                 registerOp(OP_READ);
                 NioInboundPipeline.this.run();
+                NioInboundPipeline.this.yielded.set(false);
             }
         });
 

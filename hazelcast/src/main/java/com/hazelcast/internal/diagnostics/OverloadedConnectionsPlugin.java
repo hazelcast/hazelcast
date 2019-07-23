@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
@@ -225,6 +226,14 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
                 } else {
                     return result.getClass().getName();
                 }
+            } catch (Exception ignore) {
+                logger.severe(ignore);
+                return null;
+            }
+        } else if (packet instanceof ClientMessage) {
+            try {
+                ClientMessage msg = (ClientMessage) packet;
+                return msg.getOperationName() + " -- " + msg.getMessageType();
             } catch (Exception ignore) {
                 logger.severe(ignore);
                 return null;

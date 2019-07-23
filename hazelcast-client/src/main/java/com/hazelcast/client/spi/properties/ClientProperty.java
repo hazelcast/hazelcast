@@ -97,7 +97,7 @@ public final class ClientProperty {
      * By default it is configured as Integer.MaxValue.
      */
     public static final HazelcastProperty MAX_CONCURRENT_INVOCATIONS
-            = new HazelcastProperty("hazelcast.client.max.concurrent.invocations", Integer.MAX_VALUE);
+            = new HazelcastProperty("hazelcast.client.max.concurrent.invocations", 1000);
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.
@@ -111,7 +111,7 @@ public final class ClientProperty {
      * </p>
      */
     public static final HazelcastProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
-            = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
+            = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", Long.MAX_VALUE, MILLISECONDS);
 
     /**
      * <p>Enables the Discovery SPI lookup over the old native implementations. This property is temporary and will

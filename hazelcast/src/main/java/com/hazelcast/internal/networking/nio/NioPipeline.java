@@ -110,7 +110,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         return owner;
     }
 
-    void start() {
+    protected void start() {
         addTaskAndWakeup(new NioPipelineTask(this) {
             @Override
             protected void run0() {
