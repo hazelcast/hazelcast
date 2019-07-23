@@ -23,7 +23,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
 public class MapScanLogicalRel extends TableScan implements LogicalRel {
-
+    /** Row type of the given scan operator. May differ from the actual scan in case of project pushdown. */
     private final RelDataType rowType;
 
     public MapScanLogicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {

@@ -64,6 +64,6 @@ public class HeapRow implements Row, DataSerializable {
 
     @Override
     public String toString() {
-        return "Rows {" + Arrays.toString(values) + '}';
+        return "Row {" + Arrays.toString(values) + '}';
     }
 }

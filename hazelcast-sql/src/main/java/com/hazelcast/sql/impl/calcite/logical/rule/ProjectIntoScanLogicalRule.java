@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
@@ -35,12 +34,9 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexVisitorImpl;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,233 +63,175 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         if (scan.getRowType().getFieldList().isEmpty())
             return;
 
-        ProjectPushInfo projectPushInfo = getFieldsInformation(scan.getRowType(), project.getProjects());
+        // Map projected field references to real scan fields.
+        ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(scan.getRowType().getFieldList());
 
-        MapScanLogicalRel newScan = createScan(scan, projectPushInfo);
+        for (RexNode projectExp : project.getProjects())
+            projectExp.accept(projectFieldVisitor);
+
+        projectFieldVisitor.done(scan.getCluster().getTypeFactory());
+
+        // Construct new scan operator with the given type.
+        MapScanLogicalRel newScan = new MapScanLogicalRel(scan.getCluster(),
+            scan.getTraitSet().plus(HazelcastConventions.LOGICAL),
+            scan.getTable(),
+            projectFieldVisitor.getNewScanDataType()
+        );
+
+        // Create new project nodes with references to scan fields.
+        ProjectConverter projectConverter = projectFieldVisitor.getNewProjectConverter();
 
         List<RexNode> newProjects = new ArrayList<>();
-        for (RexNode n : project.getChildExps()) {
-            newProjects.add(n.accept(projectPushInfo.getInputReWriter()));
+
+        for (RexNode projectExp : project.getProjects()) {
+            RexNode newProjectExp = projectExp.accept(projectConverter);
+
+            newProjects.add(newProjectExp);
         }
 
-        ProjectLogicalRel newProject = createProject(project, newScan, newProjects);
+        ProjectLogicalRel newProject = new ProjectLogicalRel(project.getCluster(),
+            project.getTraitSet().plus(HazelcastConventions.LOGICAL),
+            newScan,
+            newProjects,
+            project.getRowType()
+        );
 
+        // If new project is trivial, i.e. it contains only references to scan fields, then it can be eliminated.
         if (ProjectRemoveRule.isTrivial(newProject))
             call.transformTo(newScan);
         else
             call.transformTo(newProject);
     }
 
-    public static ProjectPushInfo getFieldsInformation(RelDataType rowType, List<RexNode> projects) {
-        ProjectFieldsVisitor fieldsVisitor = new ProjectFieldsVisitor(rowType);
-        for (RexNode exp : projects) {
-            exp.accept(fieldsVisitor);
+    /**
+     * Visitor which collects fields from project expressions and map them to respective scna fields.
+     */
+    private static class ProjectFieldVisitor extends RexVisitorImpl<Void> {
+        /** Scan fields. */
+        private final List<RelDataTypeField> scanFields;
+
+        /** Mapped project fields. */
+        private final Map<String, MappedScanField> mappedScanFields = new LinkedHashMap<>();
+
+        /** Data type for the new scan operator. */
+        private RelDataType newScanDataType;
+
+        /** Converter for expressions of the new project operator. */
+        private ProjectConverter newProjectConverter;
+
+        private ProjectFieldVisitor(List<RelDataTypeField> scanFields) {
+            super(true);
+
+            this.scanFields = scanFields;
         }
 
-        return fieldsVisitor.getInfo();
-    }
+        @Override
+        public Void visitInputRef(RexInputRef inputRef) {
+            RelDataTypeField scanField = scanFields.get(inputRef.getIndex());
 
-    public static class ProjectPushInfo {
-        private final FieldsReWriter reWriter;
-        private final List<String> fieldNames;
-        private final List<RelDataType> types;
+            MappedScanField mappedScanField =
+                mappedScanFields.computeIfAbsent(scanField.getName(), (k) -> new MappedScanField(scanField));
 
-        public ProjectPushInfo(Map<String, DesiredField> desiredFields) {
-            this.fieldNames = new ArrayList<>();
-            this.types = new ArrayList<>();
+            mappedScanField.addNode(inputRef);
 
-            Map<RexNode, Integer> mapper = new HashMap<>();
+            return null;
+        }
+
+        @Override
+        public Void visitCall(RexCall call) {
+            // TODO: Support "star" and "item".
+
+            for (RexNode operand : call.operands)
+                operand.accept(this);
+
+            return null;
+        }
+
+        private void done(RelDataTypeFactory typeFactory) {
+            List<String> fieldNames = new ArrayList<>(1);
+            List<RelDataType> types = new ArrayList<>(1);
+
+            Map<RexNode, Integer> projectExpToScanFieldMap = new HashMap<>();
 
             int index = 0;
-            for (Map.Entry<String, DesiredField> entry : desiredFields.entrySet()) {
-                fieldNames.add(entry.getKey());
-                DesiredField desiredField = entry.getValue();
-                types.add(desiredField.getType());
-                for (RexNode node : desiredField.getNodes()) {
-                    mapper.put(node, index);
-                }
+
+            for (MappedScanField mappedField : mappedScanFields.values()) {
+                fieldNames.add(mappedField.getScanField().getName());
+                types.add(mappedField.getScanField().getType());
+
+                for (RexNode projectNode : mappedField.getProjectNodes())
+                    projectExpToScanFieldMap.put(projectNode, index);
+
                 index++;
             }
-            this.reWriter = new FieldsReWriter(mapper);
+
+            newProjectConverter = new ProjectConverter(projectExpToScanFieldMap);
+            newScanDataType = typeFactory.createStructType(types, fieldNames);
         }
 
-        public FieldsReWriter getInputReWriter() {
-            return reWriter;
+        private RelDataType getNewScanDataType() {
+            return newScanDataType;
         }
 
-        /**
-         * Creates new row type based on stores types and field names.
-         *
-         * @param factory factory for data type descriptors.
-         * @return new row type
-         */
-        public RelDataType createNewRowType(RelDataTypeFactory factory) {
-            return factory.createStructType(types, fieldNames);
+        private ProjectConverter getNewProjectConverter() {
+            return newProjectConverter;
         }
     }
 
-    public static class DesiredField {
-        private final String name;
-        private final RelDataType type;
-        private final List<RexNode> nodes = new ArrayList<>();
+    /**
+     * Visitor which converts old project expressions (before pushdown) to new project expressions (after pushdown).
+     */
+    public static class ProjectConverter extends RexShuttle {
+        /** Map from old project expression to relevant field in the new scan operator. */
+        private final Map<RexNode, Integer> projectExpToScanFieldMap;
 
-        public DesiredField(String name, RelDataType type, RexNode node) {
-            this.name = name;
-            this.type = type;
-            addNode(node);
-        }
-
-        public void addNode(RexNode originalNode) {
-            nodes.add(originalNode);
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public RelDataType getType() {
-            return type;
-        }
-
-        public List<RexNode> getNodes() {
-            return nodes;
-        }
-    }
-
-    public static class FieldsReWriter extends RexShuttle {
-
-        private final Map<RexNode, Integer> mapper;
-
-        public FieldsReWriter(Map<RexNode, Integer> mapper) {
-            this.mapper = mapper;
+        private ProjectConverter(Map<RexNode, Integer> projectExpToScanFieldMap) {
+            this.projectExpToScanFieldMap = projectExpToScanFieldMap;
         }
 
         @Override
         public RexNode visitCall(final RexCall call) {
-            Integer index = mapper.get(call);
-            if (index != null) {
+            Integer index = projectExpToScanFieldMap.get(call);
+
+            if (index != null)
                 return new RexInputRef(index, call.getType());
-            }
+
             return super.visitCall(call);
         }
 
         @Override
         public RexNode visitInputRef(RexInputRef inputRef) {
-            Integer index = mapper.get(inputRef);
-            if (index != null) {
+            Integer index = projectExpToScanFieldMap.get(inputRef);
+
+            if (index != null)
                 return new RexInputRef(index, inputRef.getType());
-            }
+
             return super.visitInputRef(inputRef);
         }
-
-    }
-
-    private static class ProjectFieldsVisitor extends RexVisitorImpl<String> {
-        private final List<String> fieldNames;
-        private final List<RelDataTypeField> fields;
-
-        private final Map<String, DesiredField> desiredFields = new LinkedHashMap<>();
-
-        ProjectFieldsVisitor(RelDataType rowType) {
-            super(true);
-            this.fieldNames = rowType.getFieldNames();
-            this.fields = rowType.getFieldList();
-        }
-
-        ProjectPushInfo getInfo() {
-            return new ProjectPushInfo(ImmutableMap.copyOf(desiredFields));
-        }
-
-        @Override
-        public String visitInputRef(RexInputRef inputRef) {
-            int index = inputRef.getIndex();
-            String name = fieldNames.get(index);
-            RelDataTypeField field = fields.get(index);
-            addDesiredField(name, field.getType(), inputRef);
-            return name;
-        }
-
-        @Override
-        public String visitCall(RexCall call) {
-            String itemStarFieldName = getFieldNameFromItemStarField(call, fieldNames);
-            if (itemStarFieldName != null) {
-                addDesiredField(itemStarFieldName, call.getType(), call);
-                return itemStarFieldName;
-            }
-
-            if (SqlStdOperatorTable.ITEM.equals(call.getOperator())) {
-                String mapOrArray = call.operands.get(0).accept(this);
-                if (mapOrArray != null)
-                    return mapOrArray;
-            }
-            else {
-                for (RexNode operand : call.operands) {
-                    operand.accept(this);
-                }
-            }
-            return null;
-        }
-
-        private void addDesiredField(String name, RelDataType type, RexNode originalNode) {
-            DesiredField desiredField = desiredFields.get(name);
-            if (desiredField == null) {
-                desiredFields.put(name, new DesiredField(name, type, originalNode));
-            } else {
-                desiredField.addNode(originalNode);
-            }
-        }
-    }
-
-    public static String getFieldNameFromItemStarField(RexCall rexCall, List<String> fieldNames) {
-        if (!SqlStdOperatorTable.ITEM.equals(rexCall.getOperator())) {
-            return null;
-        }
-
-        if (rexCall.getOperands().size() != 2) {
-            return null;
-        }
-
-        if (!(rexCall.getOperands().get(0) instanceof RexInputRef && rexCall.getOperands().get(1) instanceof RexLiteral)) {
-            return null;
-        }
-
-        // get parent field reference from the first operand (ITEM($0, 'col_name' -> $0)
-        // and check if it corresponds to the dynamic star
-        RexInputRef rexInputRef = (RexInputRef) rexCall.getOperands().get(0);
-        String parentFieldName = fieldNames.get(rexInputRef.getIndex());
-
-        // get field name from the second operand (ITEM($0, 'col_name') -> col_name)
-        RexLiteral rexLiteral = (RexLiteral) rexCall.getOperands().get(1);
-        if (SqlTypeName.CHAR.equals(rexLiteral.getType().getSqlTypeName())) {
-            return RexLiteral.stringValue(rexLiteral);
-        }
-
-        return null;
     }
 
     /**
-     * Creates new {@code DrillScanRelBase} instance with row type and fields list
-     * obtained from specified {@code ProjectPushInfo projectPushInfo}
-     * using specified {@code TableScan scan} as prototype.
-     *
-     * @param scan            the prototype of resulting scan
-     * @param projectPushInfo the source of row type and fields list
-     * @return new scan instance
+     * Scan field mapped to project REX nodes.
      */
-    protected MapScanLogicalRel createScan(TableScan scan, ProjectPushInfo projectPushInfo) {
-        return new MapScanLogicalRel(scan.getCluster(),
-            scan.getTraitSet().plus(HazelcastConventions.LOGICAL),
-            scan.getTable(),
-            projectPushInfo.createNewRowType(scan.getCluster().getTypeFactory())
-        );
-    }
+    public static class MappedScanField {
+        /** Scna field. */
+        private final RelDataTypeField scanField;
+        private final List<RexNode> projectNodes = new ArrayList<>(1);
 
-    protected ProjectLogicalRel createProject(Project project, TableScan newScan, List<RexNode> newProjects) {
-        return new ProjectLogicalRel(project.getCluster(),
-            project.getTraitSet().plus(HazelcastConventions.LOGICAL),
-            newScan,
-            newProjects,
-            project.getRowType()
-        );
+        public MappedScanField(RelDataTypeField scanField) {
+            this.scanField = scanField;
+        }
+
+        public void addNode(RexNode projectNode) {
+            projectNodes.add(projectNode);
+        }
+
+        public RelDataTypeField getScanField() {
+            return scanField;
+        }
+
+        public List<RexNode> getProjectNodes() {
+            return projectNodes;
+        }
     }
 }

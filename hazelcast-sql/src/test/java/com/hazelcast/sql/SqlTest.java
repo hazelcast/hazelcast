@@ -39,10 +39,8 @@ import java.util.TreeSet;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-//    private static final String QUERY = "SELECT __key FROM persons";
     private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
-//    private static final String QUERY = "select height from persons where age >= 5 order by name";
-//    private static final String QUERY = "select age, height from persons where age >= 5";
+//    private static final String QUERY = "select height * 2 from persons order by name";
 
     @Test
     public void testSimpleQuery() throws Exception {

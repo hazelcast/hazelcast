@@ -216,6 +216,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private RelNode doConvertToRel(SqlNode node, SqlToRelConverter sqlToRelConverter) {
         RelRoot root = sqlToRelConverter.convertQuery(node, false, true);
 
+        // TODO: We loose the final projection here (see root.fields).
         return root.rel;
     }
 
@@ -225,10 +226,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
         hepBuilder.addRuleInstance(ProjectIntoScanLogicalRule.INSTANCE);
 
-        hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
         hepBuilder.addRuleInstance(MapScanLogicalRule.INSTANCE);
         hepBuilder.addRuleInstance(FilterLogicalRule.INSTANCE);
         hepBuilder.addRuleInstance(ProjectLogicalRule.INSTANCE);
+        hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
 
         HepPlanner hepPlanner = new HepPlanner(
             hepBuilder.build()
