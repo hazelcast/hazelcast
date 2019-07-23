@@ -16,15 +16,14 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.Client;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -33,6 +32,7 @@ import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -41,6 +41,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +55,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * The {@link ClientClusterService} implementation.
  */
@@ -61,8 +64,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     protected final HazelcastClientInstanceImpl client;
     private ClientMembershipListener clientMembershipListener;
-    private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
-    private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
+    private final AtomicReference<Map<Address, Member>> members = new AtomicReference<>();
+    private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final Object initialMembershipListenerMutex = new Object();
     private final Set<String> labels;
 
@@ -85,7 +88,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 addMembershipListenerWithoutInit((MembershipListener) listener);
             }
         }
-        members.set(Collections.unmodifiableMap(new LinkedHashMap<Address, Member>()));
+        members.set(Collections.unmodifiableMap(new LinkedHashMap<>()));
     }
 
     @Override
@@ -94,7 +97,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Member getMember(String uuid) {
+    public Member getMember(@Nonnull String uuid) {
+        checkNotNull(uuid, "UUID must not be null");
         final Collection<Member> memberList = getMemberList();
         for (Member member : memberList) {
             if (uuid.equals(member.getUuid())) {
@@ -110,8 +114,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Collection<Member> getMembers(MemberSelector selector) {
-        return new MemberSelectingCollection<Member>(getMemberList(), selector);
+    public Collection<Member> getMembers(@Nonnull MemberSelector selector) {
+        checkNotNull(selector, "selector must not be null");
+        return new MemberSelectingCollection<>(getMemberList(), selector);
     }
 
     @Override
@@ -126,7 +131,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public int getSize(MemberSelector selector) {
+    public int getSize(@Nonnull MemberSelector selector) {
+        checkNotNull(selector, "selector must not be null");
         int size = 0;
         for (Member member : getMemberList()) {
             if (selector.select(member)) {
@@ -151,11 +157,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return new ClientImpl(uuid, inetSocketAddress, client.getName(), labels);
     }
 
+    @Nonnull
     @Override
-    public String addMembershipListener(MembershipListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public String addMembershipListener(@Nonnull MembershipListener listener) {
+        checkNotNull(listener, "Listener can't be null");
 
         synchronized (initialMembershipListenerMutex) {
             String id = addMembershipListenerWithoutInit(listener);
@@ -164,7 +169,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    private String addMembershipListenerWithoutInit(MembershipListener listener) {
+    private @Nonnull
+    String addMembershipListenerWithoutInit(@Nonnull MembershipListener listener) {
         String id = UuidUtil.newUnsecureUuidString();
         listeners.put(id, listener);
         return id;
@@ -179,17 +185,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 return;
             }
-            LinkedHashSet<Member> members = new LinkedHashSet<Member>(memberCollection);
+            LinkedHashSet<Member> members = new LinkedHashSet<>(memberCollection);
             InitialMembershipEvent event = new InitialMembershipEvent(cluster, members);
             ((InitialMembershipListener) listener).init(event);
         }
     }
 
     @Override
-    public boolean removeMembershipListener(String registrationId) {
-        if (registrationId == null) {
-            throw new NullPointerException("registrationId can't be null");
-        }
+    public boolean removeMembershipListener(@Nonnull String registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
         return listeners.remove(registrationId) != null;
     }
 
@@ -212,7 +216,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     void handleInitialMembershipEvent(InitialMembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Set<Member> initialMembers = event.getMembers();
-            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>();
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<>();
             for (Member initialMember : initialMembers) {
                 newMap.put(initialMember.getAddress(), initialMember);
             }
@@ -224,7 +228,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     void handleMembershipEvent(MembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Member member = event.getMember();
-            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<>(members.get());
             if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
                 newMap.put(member.getAddress(), member);
             } else {
@@ -265,7 +269,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     public void reset() {
         clientMembershipListener.clearMembers();
         synchronized (initialMembershipListenerMutex) {
-            members.set(Collections.<Address, Member>emptyMap());
+            members.set(Collections.emptyMap());
         }
     }
 }

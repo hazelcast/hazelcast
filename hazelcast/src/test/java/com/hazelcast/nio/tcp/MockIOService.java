@@ -238,22 +238,29 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
+            public EventRegistration registerLocalListener(@Nonnull String serviceName,
+                                                           @Nonnull String topic,
+                                                           @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerLocalListener(@Nonnull String serviceName,
+                                                           @Nonnull String topic,
+                                                           @Nonnull EventFilter filter,
+                                                           @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName,
+                                                      @Nonnull String topic,
+                                                      @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
                 return null;
             }
 
@@ -263,21 +270,21 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public void deregisterAllListeners(String serviceName, String topic) {
+            public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
             }
 
             @Override
-            public Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic) {
+            public Collection<EventRegistration> getRegistrations(@Nonnull String serviceName, @Nonnull String topic) {
                 return null;
             }
 
             @Override
-            public EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic) {
+            public EventRegistration[] getRegistrationsAsArray(@Nonnull String serviceName, @Nonnull String topic) {
                 return new EventRegistration[0];
             }
 
             @Override
-            public boolean hasEventRegistration(String serviceName, String topic) {
+            public boolean hasEventRegistration(@Nonnull String serviceName, @Nonnull String topic) {
                 return false;
             }
 
@@ -298,7 +305,7 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public void executeEventCallback(Runnable callback) {
+            public void executeEventCallback(@Nonnull Runnable callback) {
                 new Thread(callback).start();
             }
         };

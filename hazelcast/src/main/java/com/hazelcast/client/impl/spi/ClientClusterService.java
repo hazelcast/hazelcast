@@ -22,11 +22,12 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.nio.Address;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
  * Cluster service for Hazelcast clients.
- *
+ * <p>
  * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
 public interface ClientClusterService {
@@ -50,7 +51,7 @@ public interface ClientClusterService {
      * @param uuid The UUID of the member.
      * @return The member that was found, or null if not found. If UUID is null, null is returned.
      */
-    Member getMember(String uuid);
+    Member getMember(@Nonnull String uuid);
 
     /**
      * Gets the collection of members.
@@ -65,7 +66,7 @@ public interface ClientClusterService {
      * @param selector {@link MemberSelector} instance to filter members to return
      * @return members that satisfy the given {@link MemberSelector}.
      */
-    Collection<Member> getMembers(MemberSelector selector);
+    Collection<Member> getMembers(@Nonnull MemberSelector selector);
 
     /**
      * Returns the address of the master member.
@@ -87,7 +88,7 @@ public interface ClientClusterService {
      * @param selector {@link MemberSelector} instance that filters members to be counted.
      * @return the number of members that satisfy the given {@link MemberSelector} instance.
      */
-    int getSize(MemberSelector selector);
+    int getSize(@Nonnull MemberSelector selector);
 
     /**
      * Returns the cluster-time.
@@ -100,13 +101,14 @@ public interface ClientClusterService {
      * @param listener The listener to be registered.
      * @return The registration ID
      */
-    String addMembershipListener(MembershipListener listener);
+    @Nonnull
+    String addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
      * @param registrationId The registrationId of the listener to be removed.
      * @return true if successfully removed, false otherwise.
      */
-    boolean removeMembershipListener(String registrationId);
+    boolean removeMembershipListener(@Nonnull String registrationId);
 
     void reset();
 }

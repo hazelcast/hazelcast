@@ -192,7 +192,6 @@ public interface HazelcastInstance {
      */
     Cluster getCluster();
 
-
     /**
      * Returns the local Endpoint which this HazelcastInstance belongs to.
      * <p>

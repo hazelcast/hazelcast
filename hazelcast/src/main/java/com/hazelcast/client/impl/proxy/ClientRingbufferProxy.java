@@ -43,6 +43,7 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.util.executor.CompletedFuture;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -150,7 +151,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public long add(E item) {
+    public long add(@Nonnull E item) {
         checkNotNull(item, "item can't be null");
 
         Data element = toData(item);
@@ -161,7 +162,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<Long> addAsync(E item, OverflowPolicy overflowPolicy) {
+    public ICompletableFuture<Long> addAsync(@Nonnull E item, @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(item, "item can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
@@ -187,7 +188,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<Long> addAllAsync(Collection<? extends E> collection, OverflowPolicy overflowPolicy) {
+    public ICompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection, @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
         checkFalse(collection.isEmpty(), "collection can't be empty");

@@ -39,24 +39,26 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.MapEvent;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +73,6 @@ import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -85,6 +86,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null time unit is not allowed!";
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    private static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Null predicate is not allowed!";
 
     private int targetPartitionId;
 
@@ -126,9 +130,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public V put(K key, V value, long ttl, TimeUnit timeUnit) {
+    public V put(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(timeUnit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         try {
             Data valueData = toData(value);
@@ -160,7 +165,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(name, keyData);
@@ -170,8 +175,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public boolean containsValue(Object value) {
-        checkNotNull(value, NULL_KEY_IS_NOT_ALLOWED);
+    public boolean containsValue(@Nonnull Object value) {
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         Data valueData = toData(value);
         ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
@@ -180,7 +185,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public V get(Object userKey) {
+    public V get(@Nonnull Object userKey) {
         K key = validateKey(userKey);
 
         V cachedValue = getCachedValue(key);
@@ -205,12 +210,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public V put(K key, V value) {
+    public V put(@Nonnull K key, @Nonnull V value) {
         return put(key, value, 0, MILLISECONDS);
     }
 
     @Override
-    public V remove(Object userKey) {
+    public V remove(@Nonnull Object userKey) {
         K key = validateKey(userKey);
 
         try {
@@ -225,14 +230,15 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> map) {
+    public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Entries cannot be null");
         try {
-            List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(map.size());
+            List<Entry<Data, Data>> dataEntries = new ArrayList<>(map.size());
             for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
                 Data keyData = toData(entry.getKey());
                 Data valueData = toData(entry.getValue());
 
-                dataEntries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+                dataEntries.add(new AbstractMap.SimpleImmutableEntry<>(keyData, valueData));
             }
 
             ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, dataEntries);
@@ -259,13 +265,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public boolean removeEntryListener(String registrationId) {
+    public boolean removeEntryListener(@Nonnull String registrationId) {
         return deregisterListener(registrationId);
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener) {
-        isNotNull(listener, "listener");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerCodec(), handler);
     }
@@ -294,13 +301,15 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         };
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, K key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        isNotNull(listener, "listener");
-        final Data keyData = toData(key);
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
-        return registerListener(createEntryListenerToKeyCodec(keyData), handler);
+        return key != null
+                ? registerListener(createEntryListenerToKeyCodec(keyData), handler)
+                : registerListener(createEntryListenerCodec(), handler);
     }
 
     private ListenerMessageCodec createEntryListenerToKeyCodec(final Data keyData) {
@@ -327,10 +336,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         };
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        isNotNull(listener, "listener");
-        isNotNull(predicate, "predicate");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+
         final Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
@@ -360,15 +371,20 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         };
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        isNotNull(listener, "listener");
-        isNotNull(predicate, "predicate");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   @Nullable K key) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = createHandler(listener);
-        return registerListener(createEntryListenerToKeyWithPredicateCodec(keyData, predicateData), handler);
+        return key != null
+                ? registerListener(createEntryListenerToKeyWithPredicateCodec(keyData, predicateData), handler)
+                : registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
     }
 
     private ListenerMessageCodec createEntryListenerToKeyWithPredicateCodec(final Data keyData,
@@ -397,54 +413,57 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         };
     }
 
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry> keys = new ArrayList<Entry>(result.response.size());
+        List<Entry> keys = new ArrayList<>(result.response.size());
         for (Data dataKey : result.response) {
-            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>((K) toObject(dataKey), null));
+            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>(toObject(dataKey), null));
         }
-        Set resultSet = new ResultSet(keys, IterationType.KEY);
-        return resultSet;
+        return (Set) new ResultSet(keys, IterationType.KEY);
     }
 
+    @Nonnull
     @Override
     public LocalReplicatedMapStats getReplicatedMapStats() {
         throw new UnsupportedOperationException("Replicated Map statistics are not available for client!");
     }
 
+    @Nonnull
     @Override
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(result.response, getSerializationService());
+        return new UnmodifiableLazyList<>(result.response, getSerializationService());
     }
 
+    @Nonnull
     @Override
-    public Collection<V> values(Comparator<V> comparator) {
+    public Collection<V> values(@Nullable Comparator<V> comparator) {
         List<V> values = (List<V>) values();
         sort(values, comparator);
         return values;
     }
 
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry> entries = new ArrayList<Entry>(result.response.size());
+        List<Entry> entries = new ArrayList<>(result.response.size());
         for (Entry<Data, Data> dataEntry : result.response) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
-            entries.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
+            entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         }
-        Set resultSet = new ResultSet(entries, IterationType.ENTRY);
-        return resultSet;
+        return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
 
     private EventHandler<ClientMessage> createHandler(EntryListener<K, V> listener) {
@@ -559,7 +578,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                                         int eventTypeId, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData, valueData,
+            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<>(member, eventTypeId, name, keyData, valueData,
                     oldValueData, null, getSerializationService());
             switch (eventType) {
                 case ADDED:

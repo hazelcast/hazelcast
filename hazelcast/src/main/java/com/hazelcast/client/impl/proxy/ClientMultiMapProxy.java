@@ -104,6 +104,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return resultParameters.response;
     }
 
+    @Nonnull
     @Override
     public Collection<V> get(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -128,6 +129,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return resultParameters.response;
     }
 
+    @Nonnull
     @Override
     public Collection<V> remove(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -146,11 +148,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         invoke(request, keyData);
     }
 
+    @Nonnull
     @Override
     public Set<K> localKeySet() {
         throw new UnsupportedOperationException("Locality for client is ambiguous");
     }
 
+    @Nonnull
     @Override
     public Set<K> keySet() {
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
@@ -165,6 +169,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return keySet;
     }
 
+    @Nonnull
     @Override
     public Collection<V> values() {
         ClientMessage request = MultiMapValuesCodec.encodeRequest(name);
@@ -173,6 +178,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
+    @Nonnull
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
         ClientMessage request = MultiMapEntrySetCodec.encodeRequest(name);
@@ -248,11 +254,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return resultParameters.response;
     }
 
+    @Nonnull
     @Override
     public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("Locality for client is ambiguous");
     }
 
+    @Nonnull
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -290,6 +298,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return deregisterListener(registrationId);
     }
 
+    @Nonnull
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -412,6 +421,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         invoke(request, keyData);
     }
 
+    @Nonnull
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");

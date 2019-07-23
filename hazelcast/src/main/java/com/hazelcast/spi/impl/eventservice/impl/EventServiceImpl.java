@@ -242,14 +242,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public EventRegistration registerLocalListener(String serviceName,
+    public EventRegistration registerLocalListener(@Nonnull String serviceName,
                                                    @Nonnull String topic,
                                                    @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
     }
 
     @Override
-    public EventRegistration registerLocalListener(String serviceName,
+    public EventRegistration registerLocalListener(@Nonnull String serviceName,
                                                    @Nonnull String topic,
                                                    @Nonnull EventFilter filter,
                                                    @Nonnull Object listener) {
@@ -257,14 +257,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public EventRegistration registerListener(String serviceName,
+    public EventRegistration registerListener(@Nonnull String serviceName,
                                               @Nonnull String topic,
                                               @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
     }
 
     @Override
-    public EventRegistration registerListener(String serviceName,
+    public EventRegistration registerListener(@Nonnull String serviceName,
                                               @Nonnull String topic,
                                               @Nonnull EventFilter filter,
                                               @Nonnull Object listener) {
@@ -285,7 +285,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return the event registration
      * @throws IllegalArgumentException if the listener or filter is null
      */
-    private EventRegistration registerListenerInternal(String serviceName,
+    private EventRegistration registerListenerInternal(@Nonnull String serviceName,
                                                        @Nonnull String topic,
                                                        @Nonnull EventFilter filter,
                                                        @Nonnull Object listener,
@@ -351,7 +351,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public void deregisterAllListeners(String serviceName, String topic) {
+    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
@@ -363,7 +363,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic) {
+    public EventRegistration[] getRegistrationsAsArray(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
             return EMPTY_REGISTRATIONS;
@@ -385,7 +385,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return a non-null immutable collection of listener registrations
      */
     @Override
-    public Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic) {
+    public Collection<EventRegistration> getRegistrations(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
             return Collections.emptySet();
@@ -400,7 +400,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     @Override
-    public boolean hasEventRegistration(String serviceName, String topic) {
+    public boolean hasEventRegistration(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
             return false;
@@ -557,7 +557,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @param forceCreate whether the segment should be created in case there is no segment
      * @return the segment for the service or null if there is no segment and {@code forceCreate} is {@code false}
      */
-    public EventServiceSegment getSegment(String service, boolean forceCreate) {
+    public EventServiceSegment getSegment(@Nonnull String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
             // we can't make use of the ConcurrentUtil; we need to register the segment to the metricsRegistry in case of creation
@@ -586,7 +586,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @param callback the callback to execute on a random event thread
      */
     @Override
-    public void executeEventCallback(Runnable callback) {
+    public void executeEventCallback(@Nonnull Runnable callback) {
         if (!nodeEngine.isRunning()) {
             return;
         }

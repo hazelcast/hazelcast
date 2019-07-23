@@ -25,6 +25,8 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -41,19 +43,19 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    public String addMembershipListener(MembershipListener listener) {
+    public String addMembershipListener(@Nonnull MembershipListener listener) {
         return clusterService.addMembershipListener(listener);
     }
 
     @Override
-    public boolean removeMembershipListener(String registrationId) {
+    public boolean removeMembershipListener(@Nonnull String registrationId) {
         return clusterService.removeMembershipListener(registrationId);
     }
 
     @Override
     public Set<Member> getMembers() {
         final Collection<Member> members = clusterService.getMemberList();
-        return new LinkedHashSet<Member>(members);
+        return new LinkedHashSet<>(members);
     }
 
     @Override
@@ -66,13 +68,14 @@ public class ClientClusterProxy implements Cluster {
         return clusterService.getClusterTime();
     }
 
+    @Nonnull
     @Override
     public ClusterState getClusterState() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void changeClusterState(ClusterState newState) {
+    public void changeClusterState(@Nonnull ClusterState newState) {
         throw new UnsupportedOperationException();
     }
 
@@ -87,7 +90,7 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    public void changeClusterState(ClusterState newState, TransactionOptions transactionOptions) {
+    public void changeClusterState(@Nonnull ClusterState newState, @Nonnull TransactionOptions transactionOptions) {
         throw new UnsupportedOperationException();
     }
 
@@ -97,17 +100,17 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    public void shutdown(TransactionOptions transactionOptions) {
+    public void shutdown(@Nullable TransactionOptions transactionOptions) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void changeClusterVersion(Version version) {
+    public void changeClusterVersion(@Nonnull Version version) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void changeClusterVersion(Version version, TransactionOptions options) {
+    public void changeClusterVersion(@Nonnull Version version, @Nonnull TransactionOptions options) {
         throw new UnsupportedOperationException();
     }
 

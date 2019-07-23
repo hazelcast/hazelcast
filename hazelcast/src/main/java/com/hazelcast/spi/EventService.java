@@ -56,7 +56,7 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName,
+    EventRegistration registerLocalListener(@Nonnull String serviceName,
                                             @Nonnull String topic,
                                             @Nonnull Object listener);
 
@@ -70,7 +70,7 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
-    EventRegistration registerLocalListener(String serviceName,
+    EventRegistration registerLocalListener(@Nonnull String serviceName,
                                             @Nonnull String topic,
                                             @Nonnull EventFilter filter,
                                             @Nonnull Object listener);
@@ -84,7 +84,7 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener is {@code null}
      */
-    EventRegistration registerListener(String serviceName,
+    EventRegistration registerListener(@Nonnull String serviceName,
                                        @Nonnull String topic,
                                        @Nonnull Object listener);
 
@@ -98,7 +98,8 @@ public interface EventService {
      * @return event registration
      * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
-    EventRegistration registerListener(String serviceName, String topic,
+    EventRegistration registerListener(@Nonnull String serviceName,
+                                       @Nonnull String topic,
                                        @Nonnull EventFilter filter,
                                        @Nonnull Object listener);
 
@@ -123,7 +124,7 @@ public interface EventService {
      * @param serviceName service name
      * @param topic       topic name
      */
-    void deregisterAllListeners(String serviceName, String topic);
+    void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic);
 
     /**
      * Returns all registrations belonging to the given service and topic.
@@ -132,7 +133,7 @@ public interface EventService {
      * @param topic       topic name
      * @return registrations
      */
-    Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic);
+    Collection<EventRegistration> getRegistrations(@Nonnull String serviceName, @Nonnull String topic);
 
     /**
      * Returns all registrations belonging to the given service and topic as an array.
@@ -141,7 +142,7 @@ public interface EventService {
      * @param topic       topic name
      * @return registrations array
      */
-    EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic);
+    EventRegistration[] getRegistrationsAsArray(@Nonnull String serviceName, @Nonnull String topic);
 
     /**
      * Returns true if a listener is registered with the specified service name and topic.
@@ -151,7 +152,7 @@ public interface EventService {
      * @return true if a listener is registered with specified service name and topic,
      * false otherwise.
      */
-    boolean hasEventRegistration(String serviceName, String topic);
+    boolean hasEventRegistration(@Nonnull String serviceName, @Nonnull String topic);
 
     /**
      * Publishes an event for all event registrations belonging to the specified service name and topic.
@@ -207,7 +208,10 @@ public interface EventService {
      * @param event         event object
      * @param orderKey      the order key for this event. All events with the same order key are ordered.
      */
-    void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
+    void publishRemoteEvent(String serviceName,
+                            Collection<EventRegistration> registrations,
+                            Object event,
+                            int orderKey);
 
     /**
      * Executes an event callback on a random event thread.
@@ -220,5 +224,5 @@ public interface EventService {
      * @param callback the callback to execute on a random event thread
      * @see com.hazelcast.util.executor.StripedRunnable
      */
-    void executeEventCallback(Runnable callback);
+    void executeEventCallback(@Nonnull Runnable callback);
 }

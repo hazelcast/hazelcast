@@ -17,19 +17,19 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
@@ -52,12 +52,12 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
@@ -67,6 +67,8 @@ import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -77,9 +79,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -100,6 +102,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private static final int DEFAULT_MERGE_RUN_DELAY_MILLIS = 100;
     private static final long CLUSTER_SHUTDOWN_SLEEP_DURATION_IN_MILLIS = 1000;
     private static final boolean ASSERTION_ENABLED = ClusterServiceImpl.class.desiredAssertionStatus();
+    private static final String TRANSACTION_OPTIONS_MUST_NOT_BE_NULL = "Transaction options must not be null!";
+    private static final String STATE_MUST_NOT_BE_NULL = "State must not be null!";
+    private static final String VERSION_MUST_NOT_BE_NULL = "Version must not be null!";
 
     private final boolean useLegacyMemberListFormat;
     private final Node node;
@@ -241,7 +246,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         operationService.send(op, triggerTo);
     }
 
-    public MembersView handleMastershipClaim(Address candidateAddress, String candidateUuid) {
+    public MembersView handleMastershipClaim(@Nonnull Address candidateAddress,
+                                             @Nonnull String candidateUuid) {
         checkNotNull(candidateAddress);
         checkNotNull(candidateUuid);
         checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
@@ -748,7 +754,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterId = null;
     }
 
-    public String addMembershipListener(MembershipListener listener) {
+    public String addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -768,7 +774,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return registration.getId();
     }
 
-    public boolean removeMembershipListener(String registrationId) {
+    public boolean removeMembershipListener(@Nonnull String registrationId) {
         checkNotNull(registrationId, "registrationId cannot be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -814,6 +820,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         logger.info(getMemberListString());
     }
 
+    @Nonnull
     @Override
     public ClusterState getClusterState() {
         return clusterStateManager.getState();
@@ -830,7 +837,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void changeClusterState(ClusterState newState) {
+    public void changeClusterState(@Nonnull ClusterState newState) {
+        checkNotNull(newState, STATE_MUST_NOT_BE_NULL);
         changeClusterState(newState, false);
     }
 
@@ -841,11 +849,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void changeClusterState(ClusterState newState, TransactionOptions options) {
+    public void changeClusterState(@Nonnull ClusterState newState, @Nonnull TransactionOptions options) {
+        checkNotNull(newState, STATE_MUST_NOT_BE_NULL);
+        checkNotNull(options, TRANSACTION_OPTIONS_MUST_NOT_BE_NULL);
         changeClusterState(newState, options, false);
     }
 
-    private void changeClusterState(ClusterState newState, TransactionOptions options, boolean isTransient) {
+    private void changeClusterState(@Nonnull ClusterState newState,
+                                    @Nonnull TransactionOptions options,
+                                    boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
                 options, partitionStateVersion, isTransient);
@@ -862,18 +874,22 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void changeClusterVersion(Version version) {
+    public void changeClusterVersion(@Nonnull Version version) {
+        checkNotNull(version, VERSION_MUST_NOT_BE_NULL);
         MemberMap memberMap = membershipManager.getMemberMap();
         changeClusterVersion(version, memberMap);
     }
 
-    public void changeClusterVersion(Version version, MemberMap memberMap) {
+    public void changeClusterVersion(@Nonnull Version version, @Nonnull MemberMap memberMap) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), memberMap, partitionStateVersion, false);
     }
 
     @Override
-    public void changeClusterVersion(Version version, TransactionOptions options) {
+    public void changeClusterVersion(@Nonnull Version version,
+                                     @Nonnull TransactionOptions options) {
+        checkNotNull(version, VERSION_MUST_NOT_BE_NULL);
+        checkNotNull(options, TRANSACTION_OPTIONS_MUST_NOT_BE_NULL);
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
                 options, partitionStateVersion, false);
@@ -905,7 +921,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void shutdown(TransactionOptions options) {
+    public void shutdown(@Nullable TransactionOptions options) {
         shutdownCluster(options);
     }
 
@@ -919,7 +935,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         long timeoutNanos = node.getProperties().getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
         long startNanos = System.nanoTime();
         node.getNodeExtension().getInternalHotRestartService()
-                .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+            .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
         timeoutNanos -= (System.nanoTime() - startNanos);
 
         if (node.config.getCPSubsystemConfig().getCPMemberCount() == 0) {

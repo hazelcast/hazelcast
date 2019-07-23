@@ -189,6 +189,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         return true;
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
