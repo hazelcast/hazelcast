@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -58,6 +59,10 @@ public class NamedTaskDecorator<V>
     public V call()
             throws Exception {
         return ((Callable<V>) delegate).call();
+    }
+
+    public void initializeContext(ManagedContext context) {
+        context.initialize(delegate);
     }
 
     @Override

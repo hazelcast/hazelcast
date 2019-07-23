@@ -17,6 +17,7 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -493,7 +494,12 @@ public class ScheduledExecutorServiceProxy
     }
 
     private void initializeManagedContext(Object object) {
-        getNodeEngine().getSerializationService().getManagedContext().initialize(object);
+        ManagedContext context = getNodeEngine().getSerializationService().getManagedContext();
+        if (object instanceof NamedTaskDecorator) {
+            ((NamedTaskDecorator) object).initializeContext(context);
+        } else {
+            context.initialize(object);
+        }
     }
 
     private static class GetAllScheduledOnMemberOperationFactory
