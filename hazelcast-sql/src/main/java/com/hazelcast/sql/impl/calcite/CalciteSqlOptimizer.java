@@ -40,15 +40,14 @@ import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rule.MapScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.Person;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
 import com.hazelcast.util.collection.PartitionIdSet;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
-import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -58,7 +57,6 @@ import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
-import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
@@ -66,7 +64,6 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.schema.impl.LongSchemaVersion;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -82,7 +79,6 @@ import org.apache.calcite.tools.RuleSets;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -138,15 +134,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private Prepare.CatalogReader prepareCatalogReader(JavaTypeFactory typeFactory, CalciteConnectionConfig config) {
-        CalciteSchema schema = CalciteSchema.createRootSchema(true);
+        HazelcastRootCalciteSchema schema = new HazelcastRootCalciteSchema(new HazelcastRootSchema(nodeEngine));
 
-        schema.add("persons", new HazelcastTable(typeFactory.createStructType(Person.class)));
-
-        CalciteSchema rootSchema = schema.createSnapshot(new LongSchemaVersion(System.nanoTime()));
-
-        return new CalciteCatalogReader(
-            rootSchema,
-            Collections.emptyList(), // Default schema path.
+        return new HazelcastCalciteCatalogReader(
+            schema,
             typeFactory,
             config
         );

@@ -16,20 +16,27 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.spi.NodeEngine;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.impl.AbstractTable;
 
+/**
+ * Hazelcast table which can register fields dynamically.
+ */
 public class HazelcastTable extends AbstractTable {
 
-    private final RelDataType rowType;
+    private final NodeEngine nodeEngine;
+    private final Object map;
+    private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(RelDataType rowType) {
-        this.rowType = rowType;
+    public HazelcastTable(NodeEngine nodeEngine, Object map) {
+        this.nodeEngine = nodeEngine;
+        this.map = map;
     }
 
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
-        return rowType;
+        return new HazelcastTableRelDataType(typeFactory, fields);
     }
 }
