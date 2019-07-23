@@ -491,21 +491,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
         }
+
         if (valueComparator.isEqual(testValue, oldValue, serializationService)) {
             mapServiceContext.interceptRemove(name, oldValue);
-            removeIndex(record);
             mapDataStore.remove(key, now);
-            onStore(record);
-            mutationObserver.onRemoveRecord(record.getKey(), record);
-            storage.removeRecord(record);
+
+            if (record != null) {
+                removeIndex(record);
+                onStore(record);
+                mutationObserver.onRemoveRecord(key, record);
+                storage.removeRecord(record);
+            }
             removed = true;
         }
         return removed;
     }
 
     @Override
-    public Object get(Data key, boolean backup, Address
-            callerAddress) {
+    public Object get(Data key, boolean backup, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
