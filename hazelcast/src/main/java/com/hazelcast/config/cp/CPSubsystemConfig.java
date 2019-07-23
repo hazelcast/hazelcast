@@ -28,6 +28,7 @@ import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -137,6 +138,9 @@ public class CPSubsystemConfig {
     public static final int DEFAULT_MISSING_CP_MEMBER_AUTO_REMOVAL_SECONDS = (int) TimeUnit.HOURS.toSeconds(4);
 
 
+    /** Default directory name for the CP data. */
+    public static final String CP_BASE_DIR_DEFAULT = "cp-data";
+
     /**
      * Number of {@link CPMember}s to initialize the {@link CPSubsystem}.
      * It is 0 by default, meaning that the CP subsystem is disabled.
@@ -243,6 +247,16 @@ public class CPSubsystemConfig {
      * implementation
      */
     private RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig();
+
+    /**
+     * TODO
+     */
+    private boolean persistenceEnabled;
+
+    /**
+     * TODO
+     */
+    private File baseDir = new File(CP_BASE_DIR_DEFAULT);
 
     /**
      * Configurations for CP {@link ISemaphore} instances
@@ -441,6 +455,24 @@ public class CPSubsystemConfig {
     public CPSubsystemConfig setRaftAlgorithmConfig(RaftAlgorithmConfig raftAlgorithmConfig) {
         checkNotNull(raftAlgorithmConfig);
         this.raftAlgorithmConfig = raftAlgorithmConfig;
+        return this;
+    }
+
+    public boolean isPersistenceEnabled() {
+        return persistenceEnabled;
+    }
+
+    public CPSubsystemConfig setPersistenceEnabled(boolean persistenceEnabled) {
+        this.persistenceEnabled = persistenceEnabled;
+        return this;
+    }
+
+    public File getBaseDir() {
+        return baseDir;
+    }
+
+    public CPSubsystemConfig setBaseDir(File baseDir) {
+        this.baseDir = baseDir;
         return this;
     }
 

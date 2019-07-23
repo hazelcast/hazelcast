@@ -54,7 +54,6 @@ public class HotRestartPersistenceConfig {
     public static final int DEFAULT_PARALLELISM = 1;
 
     private boolean enabled;
-    private boolean cpEnabled;
     private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
     private File backupDir;
     private int parallelism = DEFAULT_PARALLELISM;
@@ -80,15 +79,6 @@ public class HotRestartPersistenceConfig {
      */
     public HotRestartPersistenceConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
-        return this;
-    }
-
-    public boolean isCpEnabled() {
-        return cpEnabled;
-    }
-
-    public HotRestartPersistenceConfig setCpEnabled(boolean cpEnabled) {
-        this.cpEnabled = cpEnabled;
         return this;
     }
 
@@ -239,70 +229,19 @@ public class HotRestartPersistenceConfig {
         this.autoRemoveStaleData = autoRemoveStaleData;
         return this;
     }
-//
-//    @Override
-//    @SuppressWarnings("checkstyle:npathcomplexity")
-//    public final boolean equals(Object o) {
-//        if (this == o) {
-//            return true;
-//        }
-//        if (!(o instanceof HotRestartPersistenceConfig)) {
-//            return false;
-//        }
-//
-//        HotRestartPersistenceConfig that = (HotRestartPersistenceConfig) o;
-//        if (enabled != that.enabled) {
-//            return false;
-//        }
-//        if (parallelism != that.parallelism) {
-//            return false;
-//        }
-//        if (validationTimeoutSeconds != that.validationTimeoutSeconds) {
-//            return false;
-//        }
-//        if (dataLoadTimeoutSeconds != that.dataLoadTimeoutSeconds) {
-//            return false;
-//        }
-//        if (autoRemoveStaleData != that.autoRemoveStaleData) {
-//            return false;
-//        }
-//        if (baseDir != null ? !baseDir.equals(that.baseDir) : that.baseDir != null) {
-//            return false;
-//        }
-//        if (backupDir != null ? !backupDir.equals(that.backupDir) : that.backupDir != null) {
-//            return false;
-//        }
-//        return clusterDataRecoveryPolicy == that.clusterDataRecoveryPolicy;
-//    }
-//
-//    @Override
-//    public final int hashCode() {
-//        int result = (enabled ? 1 : 0);
-//        result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
-//        result = 31 * result + (backupDir != null ? backupDir.hashCode() : 0);
-//        result = 31 * result + parallelism;
-//        result = 31 * result + validationTimeoutSeconds;
-//        result = 31 * result + dataLoadTimeoutSeconds;
-//        result = 31 * result + (clusterDataRecoveryPolicy != null ? clusterDataRecoveryPolicy.hashCode() : 0);
-//        result = 31 * result + (autoRemoveStaleData ? 1 : 0);
-//        return result;
-//    }
 
     @Override
-    public boolean equals(Object o) {
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof HotRestartPersistenceConfig)) {
             return false;
         }
 
         HotRestartPersistenceConfig that = (HotRestartPersistenceConfig) o;
-
         if (enabled != that.enabled) {
-            return false;
-        }
-        if (cpEnabled != that.cpEnabled) {
             return false;
         }
         if (parallelism != that.parallelism) {
@@ -327,9 +266,8 @@ public class HotRestartPersistenceConfig {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = (enabled ? 1 : 0);
-        result = 31 * result + (cpEnabled ? 1 : 0);
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
         result = 31 * result + (backupDir != null ? backupDir.hashCode() : 0);
         result = 31 * result + parallelism;
@@ -342,9 +280,9 @@ public class HotRestartPersistenceConfig {
 
     @Override
     public String toString() {
-        return "HotRestartPersistenceConfig{" + "enabled=" + enabled + ", cpEnabled=" + cpEnabled + ", baseDir=" + baseDir
-                + ", backupDir=" + backupDir + ", parallelism=" + parallelism + ", validationTimeoutSeconds="
-                + validationTimeoutSeconds + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds + ", clusterDataRecoveryPolicy="
+        return "HotRestartPersistenceConfig{" + "enabled=" + enabled + ", baseDir=" + baseDir + ", backupDir=" + backupDir
+                + ", parallelism=" + parallelism + ", validationTimeoutSeconds=" + validationTimeoutSeconds
+                + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds + ", clusterDataRecoveryPolicy="
                 + clusterDataRecoveryPolicy + ", autoRemoveStaleData=" + autoRemoveStaleData + '}';
     }
 }

@@ -54,6 +54,10 @@ public class AddCPMemberOp extends MetadataRaftGroupOp implements IndeterminateO
         return PostponedResponse.INSTANCE;
     }
 
+    public CPMemberInfo getMember() {
+        return member;
+    }
+
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
