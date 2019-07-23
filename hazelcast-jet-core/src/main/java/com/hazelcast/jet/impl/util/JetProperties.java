@@ -33,8 +33,26 @@ public final class JetProperties {
             = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
     public static final HazelcastProperty JET_SHUTDOWNHOOK_ENABLED
             = new HazelcastProperty("jet.shutdownhook.enabled", SHUTDOWNHOOK_ENABLED.getDefaultValue());
+
+    /**
+     * Maximum number of time in seconds the job results will be kept in
+     * the cluster. They will be automatically deleted after this period
+     * is reached.
+     * <p>
+     * Default value is 7 days.
+     */
     public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
             = new HazelcastProperty("jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS);
+
+    /**
+     * Maximum number of job results to keep in the cluster, the oldest
+     * results will be automatically deleted after this size is reached.
+     * <p>
+     * Default value is 10,000 jobs.
+     */
+    public static final HazelcastProperty JOB_RESULTS_MAX_SIZE
+            = new HazelcastProperty("jet.job.results.max.size", 10_000);
+
     public static final HazelcastProperty JET_HOME
             = new HazelcastProperty("jet.home", "");
 

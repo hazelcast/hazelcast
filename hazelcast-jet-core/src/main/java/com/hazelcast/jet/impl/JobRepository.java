@@ -26,6 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.util.JetProperties;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -119,6 +121,11 @@ public class JobRepository {
      */
     public static final String SNAPSHOT_DATA_MAP_PREFIX = INTERNAL_JET_OBJECTS_PREFIX + "snapshot.";
 
+    /**
+     * Only do the cleanup if the number of JobResults exceeds the maximum
+     * number by at least 5% (1/20 = 0.05 = 5%).
+     */
+    private static final int MAX_NO_RESULTS_OVERHEAD = 20;
     private static final long DEFAULT_RESOURCES_EXPIRATION_MILLIS = HOURS.toMillis(2);
     private static final int JOB_ID_STRING_LENGTH = idToString(0L).length();
 
@@ -352,6 +359,14 @@ public class JobRepository {
                     }
                 }
             }
+        }
+
+        int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
+        // delete oldest job results
+        if (jobResults.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
+            jobResults.values().stream().sorted(Comparator.comparing(JobResult::getCompletionTime).reversed())
+                      .skip(maxNoResults)
+                      .forEach(r -> jobResults.remove(r.getJobId()));
         }
     }
 
