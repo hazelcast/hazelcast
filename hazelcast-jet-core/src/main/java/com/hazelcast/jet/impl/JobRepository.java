@@ -312,10 +312,6 @@ public class JobRepository {
         jobRecords.remove(jobId);
         // delete the execution ids, but keep the job id
         randomIds.removeAll(new FilterExecutionIdByJobIdPredicate(jobId));
-
-        // delete job resources
-        instance.getMap(snapshotDataMapName(jobId, 0)).destroy();
-        instance.getMap(snapshotDataMapName(jobId, 1)).destroy();
     }
 
     /**

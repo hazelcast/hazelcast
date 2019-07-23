@@ -148,9 +148,7 @@ class MasterSnapshotContext {
         boolean isExport = snapshotMapName != null;
         String finalMapName = isExport ? exportedSnapshotMapName(snapshotMapName)
                 : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
-        if (isExport) {
-            mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
-        }
+        mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
         logger.info(String.format("Starting snapshot %d for %s", newSnapshotId, mc.jobIdString())
                 + (isTerminal ? ", terminal" : "")
                 + (isExport ? ", exporting to '" + snapshotMapName + '\'' : ""));

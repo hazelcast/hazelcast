@@ -64,7 +64,6 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.function.Functions.entryKey;
-import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.util.Arrays.asList;
@@ -259,11 +258,6 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             }
             System.out.println("-- end of different keys");
             assertEquals(expectedMap, new HashMap<>(result));
-        }
-
-        for (int i = 0; i <= 1; i++) {
-            assertTrue("Snapshots map " + i + " not empty after job finished",
-                    instance1.getMap(snapshotDataMapName(job.getId(), i)).isEmpty());
         }
     }
 
