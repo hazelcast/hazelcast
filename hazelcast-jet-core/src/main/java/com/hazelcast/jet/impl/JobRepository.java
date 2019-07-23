@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.zip.DeflaterOutputStream;
@@ -169,7 +170,7 @@ public class JobRepository {
         }
         // avoid creating resources map if map is empty
         if (tmpMap.size() > 0) {
-            IMap<String, Object> jobResourcesMap = getJobResources(jobId);
+            IMap<String, Object> jobResourcesMap = getJobResources(jobId).get();
             // now upload it all
             try {
                 jobResourcesMap.putAll(tmpMap);
@@ -308,7 +309,6 @@ public class JobRepository {
         // delete job resources
         instance.getMap(snapshotDataMapName(jobId, 0)).destroy();
         instance.getMap(snapshotDataMapName(jobId, 1)).destroy();
-        getJobResources(jobId).destroy();
     }
 
     /**
@@ -384,8 +384,11 @@ public class JobRepository {
        return jobExecutionRecords.get(jobId);
     }
 
-    <T> IMap<String, T> getJobResources(long jobId) {
-        return instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId));
+    /**
+     * Gets the job resources map, lazily evaluated to avoid creating the map if it won't be needed
+     */
+    <T> Supplier<IMap<String, T>> getJobResources(long jobId) {
+        return Util.memoizeConcurrent(() -> instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId)));
     }
 
     public JobResult getJobResult(long jobId) {

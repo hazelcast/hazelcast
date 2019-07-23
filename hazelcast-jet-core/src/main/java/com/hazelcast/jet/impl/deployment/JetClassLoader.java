@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.NodeEngine;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,8 +31,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -42,19 +44,20 @@ public class JetClassLoader extends ClassLoader {
 
     private final long jobId;
     private final String jobName;
-    private final Map<String, byte[]> resources;
+    private final Supplier<IMap<String, byte[]>> resourcesSupplier;
     private final ILogger logger;
     private final JobResourceURLStreamHandler jobResourceURLStreamHandler;
 
     private volatile boolean isShutdown;
 
-    public JetClassLoader(NodeEngine nodeEngine,
+    public JetClassLoader(@Nonnull NodeEngine nodeEngine,
                           @Nullable ClassLoader parent, @Nullable String jobName,
-                          long jobId, Map<String, byte[]> resources) {
+                          long jobId, @Nonnull Supplier<IMap<String, byte[]>> resourcesSupplier
+    ) {
         super(parent == null ? JetClassLoader.class.getClassLoader() : parent);
         this.jobName = jobName;
         this.jobId = jobId;
-        this.resources = resources;
+        this.resourcesSupplier = resourcesSupplier;
         this.logger = nodeEngine.getLogger(getClass());
         jobResourceURLStreamHandler = new JobResourceURLStreamHandler();
     }
@@ -76,7 +79,7 @@ public class JetClassLoader extends ClassLoader {
     @Override
     protected URL findResource(String name) {
         if (!checkShutdown(name)) {
-            if (isEmpty(name) || !resources.containsKey(name)) {
+            if (isEmpty(name) || !resourcesSupplier.get().containsKey(name)) {
                 return null;
             }
 
@@ -106,7 +109,7 @@ public class JetClassLoader extends ClassLoader {
     @SuppressWarnings("unchecked")
     private InputStream resourceStream(String name) {
         if (!checkShutdown(name)) {
-            byte[] classData = resources.get(name);
+            byte[] classData = resourcesSupplier.get().get(name);
             if (classData == null) {
                 return null;
             }
