@@ -33,7 +33,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 
 public class AddMembershipListener {
 
@@ -51,7 +51,7 @@ public class AddMembershipListener {
             clientMessage.setAcquiresResource(false);
             clientMessage.setOperationName("Client.addPartitionListener");
 
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             initialFrame.content[LOCAL_ONLY] = (byte) (localOnly ? 1 : 0);
 
@@ -78,7 +78,7 @@ public class AddMembershipListener {
 
         public static ClientMessage encode(String uuid) {
             ClientMessage clientMessage = ClientMessage.createForEncode();
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
 
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             clientMessage.addFrame(initialFrame);
@@ -110,7 +110,7 @@ public class AddMembershipListener {
             public static ClientMessage encode(Member member, int eventType) {
 
                 ClientMessage clientMessage = ClientMessage.createForEncode();
-                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
                 initialFrame.flags |= ClientMessage.IS_EVENT;
 
                 Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
@@ -132,7 +132,7 @@ public class AddMembershipListener {
             public static ClientMessage encode(Collection<Member> members) {
 
                 ClientMessage clientMessage = ClientMessage.createForEncode();
-                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
                 initialFrame.flags |= ClientMessage.IS_EVENT;
 
                 Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
@@ -157,7 +157,7 @@ public class AddMembershipListener {
 
             public static ClientMessage encode(String uuid, String key, int operationType, String value) {
                 ClientMessage clientMessage = ClientMessage.createForEncode();
-                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
                 initialFrame.flags |= ClientMessage.IS_EVENT;
                 Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
                 Bits.writeIntL(initialFrame.content, OPERATION_TYPE, operationType);

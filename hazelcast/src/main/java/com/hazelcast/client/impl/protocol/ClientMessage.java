@@ -124,7 +124,7 @@ public class ClientMessage implements OutboundFrame, Iterable<ClientMessage.Fram
     public static final int DEFAULT_FLAGS = 0;
     public static final int BEGIN_FRAGMENT = 1 << 15;
     public static final int END_FRAGMENT = 1 << 14;
-    public static final int UNFRAGEMENTED_MESSAGE = BEGIN_FRAGMENT | END_FRAGMENT;
+    public static final int UNFRAGMENTED_MESSAGE = BEGIN_FRAGMENT | END_FRAGMENT;
     public static final int FINAL = 1 << 13;
     public static final int BEGIN_DATA_STRUCTURE = 1 << 12;
     public static final int END_DATA_STRUCTURE = 1 << 11;

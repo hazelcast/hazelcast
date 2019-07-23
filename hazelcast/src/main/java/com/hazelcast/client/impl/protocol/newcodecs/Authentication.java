@@ -33,7 +33,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 
 public class Authentication {
 
@@ -86,7 +86,7 @@ public class Authentication {
             clientMessage.setAcquiresResource(false);
             clientMessage.setOperationName("Client.authentication");
 
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             initialFrame.content[IS_OWNER_CONNECTION] = isOwnerConnection ? (byte) 1 : (byte) 0;
             initialFrame.content[SERIALIZATION_VERSION] = serializationVersion;
@@ -224,7 +224,7 @@ public class Authentication {
                                            Collection<Member> clientUnregisteredMembers, int partitionCount, String clusterId) {
             ClientMessage clientMessage = ClientMessage.createForEncode();
 
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             initialFrame.content[STATUS] = status;
             initialFrame.content[SERIALIZATION_VERSION] = serializationVersion;

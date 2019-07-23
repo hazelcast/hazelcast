@@ -28,7 +28,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FI
 import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 
 public class MapPut {
 
@@ -53,7 +53,7 @@ public class MapPut {
             clientMessage.setAcquiresResource(false);
             clientMessage.setOperationName("Map.put");
 
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             Bits.writeLongL(initialFrame.content, TTL_ID_FIELD_OFFSET, ttl);
             Bits.writeLongL(initialFrame.content, THREAD_ID_FIELD_OFFSET, threadId);
@@ -89,7 +89,7 @@ public class MapPut {
 
         public static ClientMessage encode(Data response) {
             ClientMessage clientMessage = ClientMessage.createForEncode();
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
 
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
             clientMessage.addFrame(initialFrame);

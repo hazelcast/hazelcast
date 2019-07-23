@@ -196,7 +196,7 @@ public class ClientMessageSplitAndBuildTest {
 
     private void assertMessageEquals(ClientMessage expected, ClientMessage actual) {
         //these flags related to framing and can differ between two semantically equal messages
-        int mask = ~(ClientMessage.UNFRAGEMENTED_MESSAGE | ClientMessage.FINAL);
+        int mask = ~(ClientMessage.UNFRAGMENTED_MESSAGE | ClientMessage.FINAL);
 
         ListIterator<ClientMessage.Frame> actualIterator = actual.iterator();
         for (ClientMessage.Frame expectedFrame : expected) {

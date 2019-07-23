@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT;
 import static com.hazelcast.client.impl.protocol.ClientMessage.FRAGMENTATION_ID_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 
@@ -68,7 +68,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
 
                 ClientMessage.Frame firstFrame = activeReader.getFrames().get(0);
                 int flags = firstFrame.flags;
-                if (ClientMessage.isFlagSet(flags, UNFRAGEMENTED_MESSAGE)) {
+                if (ClientMessage.isFlagSet(flags, UNFRAGMENTED_MESSAGE)) {
                     handleMessage(activeReader);
                 } else {
                     activeReader.getFrames().removeFirst();//remove the fragmentationFrame

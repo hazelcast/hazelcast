@@ -161,7 +161,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
-//        clientMessage.addFlag(ClientMessage.UNFRAGEMENTED_MESSAGE);
+//        clientMessage.addFlag(ClientMessage.UNFRAGMENTED_MESSAGE);
         return connection.write(clientMessage);
     }
 

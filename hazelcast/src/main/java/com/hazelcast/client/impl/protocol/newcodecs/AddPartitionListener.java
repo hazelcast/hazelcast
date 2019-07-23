@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 
 public class AddPartitionListener {
 
@@ -50,7 +50,7 @@ public class AddPartitionListener {
             clientMessage.setAcquiresResource(false);
             clientMessage.setOperationName("Client.addPartitionListener");
 
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
 
             clientMessage.addFrame(initialFrame);
@@ -72,7 +72,7 @@ public class AddPartitionListener {
 
         public static ClientMessage encode() {
             ClientMessage clientMessage = ClientMessage.createForEncode();
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
             clientMessage.addFrame(initialFrame);
 
             Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
@@ -98,7 +98,7 @@ public class AddPartitionListener {
 
             public static ClientMessage encodePartitionsEvent(Map<Address, List<Integer>> partitions, int partitionStateVersion) {
                 ClientMessage clientMessage = ClientMessage.createForEncode();
-                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGEMENTED_MESSAGE);
+                ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[HEADER_SIZE], UNFRAGMENTED_MESSAGE);
                 initialFrame.flags |= ClientMessage.IS_EVENT;
                 Bits.writeIntL(initialFrame.content, TYPE_FIELD_OFFSET, TYPE);
                 Bits.writeIntL(initialFrame.content, PARTITION_STATE_VERSION, partitionStateVersion);

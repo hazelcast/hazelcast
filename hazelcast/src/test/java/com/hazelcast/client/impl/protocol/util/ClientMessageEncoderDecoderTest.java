@@ -42,7 +42,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGEMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -55,7 +55,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     @Test
     public void test() {
         ClientMessage message = ClientMessage.createForEncode();
-        message.addFrame(new ClientMessage.Frame(new byte[100], UNFRAGEMENTED_MESSAGE | FINAL));
+        message.addFrame(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | FINAL));
         message.setMessageType((short) MapPut.Request.TYPE);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
