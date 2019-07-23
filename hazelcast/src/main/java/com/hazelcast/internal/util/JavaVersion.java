@@ -28,7 +28,9 @@ public enum JavaVersion {
     JAVA_9,
     JAVA_10,
     JAVA_11,
-    JAVA_12;
+    JAVA_12,
+    JAVA_13,
+    JAVA_14;
 
     private static final JavaVersion CURRENT_VERSION = detectCurrentVersion();
 
@@ -82,6 +84,10 @@ public enum JavaVersion {
             result = JAVA_11;
         } else if (version.startsWith("12")) {
             result = JAVA_12;
+        } else if (version.startsWith("13")) {
+            result = JAVA_13;
+        } else if (version.startsWith("14")) {
+            result = JAVA_14;
         }
         return result;
     }
@@ -90,7 +96,7 @@ public enum JavaVersion {
         return currentVersion.ordinal() >= minVersion.ordinal();
     }
 
-    static boolean isAtMost(JavaVersion currentVersion, JavaVersion minVersion) {
-        return currentVersion.ordinal() <= minVersion.ordinal();
+    static boolean isAtMost(JavaVersion currentVersion, JavaVersion maxVersion) {
+        return currentVersion.ordinal() <= maxVersion.ordinal();
     }
 }
