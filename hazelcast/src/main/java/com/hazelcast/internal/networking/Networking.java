@@ -21,6 +21,7 @@ import com.hazelcast.internal.networking.nio.NioNetworking;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 
 /**
  * The Networking is an abstraction responsible for lower level networking services.
@@ -59,6 +60,15 @@ public interface Networking {
                      ChannelInitializerProvider channelInitializerProvider,
                      SocketChannel socketChannel,
                      boolean clientMode) throws IOException;
+
+    /**
+     * Returns an iterator containing all Channels registered.
+     *
+     * The iterator is a copy of the channel at some moment in time.
+     *
+     * @return iterator of registered channels.
+     */
+    Iterator<Channel> channels();
 
     /**
      * Restarts Networking.

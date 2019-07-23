@@ -16,8 +16,10 @@
 
 package com.hazelcast.core.server;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,6 +45,8 @@ public final class StartServer {
      * @param args none
      */
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+        Config c = new Config();
+        c.setProperty(GroupProperty.BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS.getName(), "10");
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         printMemberPort(hz);
     }

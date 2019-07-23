@@ -32,11 +32,14 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -99,6 +102,7 @@ public final class NioNetworking implements Networking {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
+    private final BackpressureRegulator.NioRegulatorMonitor backpressureRegulatorMonitor;
     private volatile ExecutorService closeListenerExecutor;
     private final ConcurrencyDetection concurrencyDetection;
     private final boolean writeThroughEnabled;
@@ -121,6 +125,7 @@ public final class NioNetworking implements Networking {
 
     public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
+        this.backpressureRegulatorMonitor = ctx.backpressureRegulatorMonitor;
         this.metricsRegistry = ctx.metricsRegistry;
         this.loggingService = ctx.loggingService;
         this.inputThreadCount = ctx.inputThreadCount;
@@ -131,6 +136,7 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
+
         metricsRegistry.scanAndRegister(this, "tcp");
         this.concurrencyDetection = ctx.concurrencyDetection;
         this.writeThroughEnabled = ctx.writeThroughEnabled;
@@ -211,6 +217,11 @@ public final class NioNetworking implements Networking {
         this.outputThreads = outThreads;
 
         startIOBalancer();
+    }
+
+    @Override
+    public Iterator<Channel> channels() {
+        return new HashSet<Channel>(channels).iterator();
     }
 
     private void startIOBalancer() {
@@ -294,6 +305,7 @@ public final class NioNetworking implements Networking {
 
     private NioOutboundPipeline newOutboundPipeline(NioChannel channel) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
+
         NioThread[] threads = outputThreads;
         if (threads == null) {
             throw new IllegalStateException("NioNetworking is shutdown!");
@@ -306,7 +318,8 @@ public final class NioNetworking implements Networking {
                 loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer,
                 concurrencyDetection,
-                writeThroughEnabled);
+                writeThroughEnabled,
+                backpressureRegulatorMonitor);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -393,6 +406,8 @@ public final class NioNetworking implements Networking {
         private int inputThreadCount = 1;
         private int outputThreadCount = 1;
         private int balancerIntervalSeconds;
+        private BackpressureRegulator.NioRegulatorMonitor backpressureRegulatorMonitor;
+
         // The selector mode determines how IO threads will block (or not) on the Selector:
         //  select:         this is the default mode, uses Selector.select(long timeout)
         //  selectnow:      use Selector.selectNow()
@@ -423,6 +438,11 @@ public final class NioNetworking implements Networking {
 
         public Context concurrencyDetection(ConcurrencyDetection concurrencyDetection) {
             this.concurrencyDetection = concurrencyDetection;
+            return this;
+        }
+
+        public Context backpressureRegulatorMonitor(BackpressureRegulator.NioRegulatorMonitor monitor) {
+            this.backpressureRegulatorMonitor = monitor;
             return this;
         }
 

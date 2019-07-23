@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
@@ -25,13 +26,16 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -47,6 +51,7 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import static java.util.Arrays.asList;
 
 public final class NioOutboundPipeline
         extends NioPipeline
@@ -105,10 +110,15 @@ public final class NioOutboundPipeline
     private final AtomicReference<State> scheduled = new AtomicReference<>(State.SCHEDULED);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
+
+    private final MwCounter bytesQueued = MwCounter.newMwCounter();
+
     @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
+
+    private final BackpressureRegulator.NioRegulatorMonitor backpressureRegulatorMonitor;
 
     private volatile long lastWriteTime;
 
@@ -125,10 +135,12 @@ public final class NioOutboundPipeline
                         ILogger logger,
                         IOBalancer balancer,
                         ConcurrencyDetection concurrencyDetection,
-                        boolean writeThroughEnabled) {
+                        boolean writeThroughEnabled,
+                        BackpressureRegulator.NioRegulatorMonitor backpressureRegulator) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
         this.concurrencyDetection = concurrencyDetection;
         this.writeThroughEnabled = writeThroughEnabled;
+        this.backpressureRegulatorMonitor = backpressureRegulator;
     }
 
     @Override
@@ -181,11 +193,27 @@ public final class NioOutboundPipeline
         return scheduled.get().ordinal();
     }
 
+    private final Set<Integer> URGENT_MESSAGE_TYPES = new HashSet<>();
+    {
+        // ClientMessageType
+        URGENT_MESSAGE_TYPES.addAll(asList(0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
+                                           0x0008, 0x0009, 0x000a, 0x000b, 0x000c, 0x000d,
+                                           0x000e, 0x000f, 0x0010, 0x0011, 0x0012, 0x0013));
+    }
+
     public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
+        bytesQueued.inc(frame.getFrameLength());
+
+        // TODO Avoid blocking system threads, urgent messages. This requires client-protocol change to include the urgent flag
+        boolean clientUrgent = ((frame instanceof ClientMessage) && URGENT_MESSAGE_TYPES.contains(((ClientMessage) frame).getMessageType()));
+
+        if (frame.isUrgent() || clientUrgent) {
             priorityWriteQueue.offer(frame);
         } else {
             writeQueue.offer(frame);
+            if (backpressureRegulatorMonitor != null) {
+                backpressureRegulatorMonitor.process(channel);
+            }
         }
 
         // take care of the scheduling.
@@ -254,6 +282,7 @@ public final class NioOutboundPipeline
             if (frame == null) {
                 return null;
             }
+
             normalFramesWritten.inc();
         } else {
             priorityFramesWritten.inc();
@@ -434,7 +463,7 @@ public final class NioOutboundPipeline
 
     @Override
     protected Iterable<? extends ChannelHandler> handlers() {
-        return Arrays.asList(handlers);
+        return asList(handlers);
     }
 
     @Override
