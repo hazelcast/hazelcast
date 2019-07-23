@@ -28,7 +28,8 @@ public enum JavaVersion {
     JAVA_9,
     JAVA_10,
     JAVA_11,
-    JAVA_12;
+    JAVA_12,
+    JAVA_13;
 
     private static final JavaVersion CURRENT_VERSION = detectCurrentVersion();
 
@@ -36,8 +37,9 @@ public enum JavaVersion {
      * Check if the current runtime version is at least the given version.
      *
      * @param version version to be compared against the current runtime version
-     * @return Return true if current runtime version of Java is the same or greater than given version.
-     *         When the passed version is {@link #UNKNOWN} then it always returns true.
+     * @return {@code true} if current runtime version of Java is the same or greater than given version.
+     *         When the passed version is {@link #UNKNOWN} or the current runtime version cannot be detected
+     *         then it always returns true.
      */
     public static boolean isAtLeast(JavaVersion version) {
         return isAtLeast(CURRENT_VERSION, version);
@@ -82,12 +84,14 @@ public enum JavaVersion {
             result = JAVA_11;
         } else if (version.startsWith("12")) {
             result = JAVA_12;
+        } else if (version.startsWith("13")) {
+            result = JAVA_13;
         }
         return result;
     }
 
     static boolean isAtLeast(JavaVersion currentVersion, JavaVersion minVersion) {
-        return currentVersion.ordinal() >= minVersion.ordinal();
+        return currentVersion.ordinal() >= minVersion.ordinal() || currentVersion == UNKNOWN;
     }
 
     static boolean isAtMost(JavaVersion currentVersion, JavaVersion minVersion) {
