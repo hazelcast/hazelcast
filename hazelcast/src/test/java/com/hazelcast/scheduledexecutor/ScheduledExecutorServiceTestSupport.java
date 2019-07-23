@@ -313,7 +313,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         private transient HazelcastInstance instance;
 
-        public PlainInstanceAwareRunnableTask(String latchName) {
+        PlainInstanceAwareRunnableTask(String latchName) {
             this.latchName = latchName;
         }
 
