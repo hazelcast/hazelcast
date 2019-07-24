@@ -187,8 +187,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         MapStreamSerializer mapSerializer = new MapStreamSerializer();
         registerConstant(HashMap.class, mapSerializer);
         registerConstant(ConcurrentHashMap.class, mapSerializer);
-        SetStreamSerializer setSerializer = new SetStreamSerializer();
-        registerConstant(HashSet.class, setSerializer);
+        registerConstant(HashSet.class, new SetStreamSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
