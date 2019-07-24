@@ -51,7 +51,7 @@ public class FailoverConfigTest {
                 "setConnectionTimeout", "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation",
                 "getSocketOptions", "setSocketOptions", "setConfigPatternMatcher", "getConfigPatternMatcher", "setSecurityConfig",
                 "getNetworkConfig", "setNetworkConfig", "addReliableTopicConfig", "getReliableTopicConfig", "addNearCacheConfig",
-                "addNearCacheConfig", "addListenerConfig", "addProxyFactoryConfig", "getNearCacheConfig", "getNearCacheConfigMap",
+                "addListenerConfig", "addProxyFactoryConfig", "getNearCacheConfig", "getNearCacheConfigMap",
                 "setNearCacheConfigMap", "getFlakeIdGeneratorConfigMap", "findFlakeIdGeneratorConfig",
                 "getFlakeIdGeneratorConfig", "addFlakeIdGeneratorConfig", "setFlakeIdGeneratorConfigMap",
                 "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setGroupConfig",
@@ -65,8 +65,9 @@ public class FailoverConfigTest {
                 "setUserContext", "getUserContext", "equals", "hashCode");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
-            if (!method.getName().startsWith("$") && !allClientConfigMethods.contains(method.getName())) {
-                throw new IllegalStateException("There is a new method on client config. " + method
+            String methodName = method.getName();
+            if (!methodName.startsWith("$") && !allClientConfigMethods.contains(methodName)) {
+                throw new IllegalStateException("There is a new method on client config. " + methodName
                         + "Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
             }
         }

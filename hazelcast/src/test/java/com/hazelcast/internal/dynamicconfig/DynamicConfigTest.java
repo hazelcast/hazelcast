@@ -88,6 +88,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static org.junit.Assert.assertEquals;
 
@@ -232,8 +233,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-              .setEnabled(true)
-              .setClassName("com.hazelcast.Foo");
+                .setEnabled(true)
+                .setClassName("com.hazelcast.Foo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -244,8 +245,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-              .setEnabled(true)
-              .setFactoryClassName("com.hazelcast.FactoryFoo");
+                .setEnabled(true)
+                .setFactoryClassName("com.hazelcast.FactoryFoo");
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -256,8 +257,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byStoreImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-              .setEnabled(true)
-              .setStoreImplementation(new SampleRingbufferStore());
+                .setEnabled(true)
+                .setStoreImplementation(new SampleRingbufferStore());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -268,8 +269,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byFactoryImplementation() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig()
-              .setEnabled(true)
-              .setFactoryImplementation(new SampleRingbufferStoreFactory());
+                .setEnabled(true)
+                .setFactoryImplementation(new SampleRingbufferStoreFactory());
 
         driver.getConfig().addRingBufferConfig(config);
 
@@ -820,15 +821,21 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     private EvictionConfig getEvictionConfigByPolicy() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.RANDOM);
+        return new EvictionConfig().setSize(39)
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setEvictionPolicy(EvictionPolicy.RANDOM);
     }
 
     private EvictionConfig getEvictionConfigByClassName() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator");
+        return new EvictionConfig().setSize(39)
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setComparatorClassName("com.hazelcast.Comparator");
     }
 
     private EvictionConfig getEvictionConfigByImplementation() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, new SampleEvictionPolicyComparator());
+        return new EvictionConfig().setSize(39)
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setComparator(new SampleEvictionPolicyComparator());
     }
 
     private SetConfig getSetConfig(String name) {
@@ -837,7 +844,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setAsyncBackupCount(3)
                 .setMaxSize(99)
                 .setStatisticsEnabled(true)
-                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY,
+                        NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
     private MapConfig getMapConfig() {
@@ -893,7 +901,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setIncludeValue(true)
                 .setCoalesce(true)
                 .setPredicateConfig(new PredicateConfig("com.hazelcast.Predicate"))
-                .setEvictionConfig(new EvictionConfig(32, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator"));
+                .setEvictionConfig(new EvictionConfig().setSize(32)
+                        .setMaximumSizePolicy(ENTRY_COUNT)
+                        .setComparatorClassName("com.hazelcast.Comparator"));
     }
 
     private MapPartitionLostListenerConfig getMapPartitionLostListenerConfig_byClassName() {

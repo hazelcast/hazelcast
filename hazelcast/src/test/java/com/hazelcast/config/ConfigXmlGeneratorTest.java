@@ -1066,9 +1066,8 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testMapNearCacheEvictionConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
-                .setName("nearCache")
-                .setMaxSize(23)
-                .setEvictionPolicy("LRU");
+                .setName("nearCache");
+        expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
         MapConfig mapConfig = new MapConfig()
                 .setName("nearCacheTest")
@@ -1080,8 +1079,8 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
-        assertEquals(23, actualConfig.getMaxSize());
-        assertEquals("LRU", actualConfig.getEvictionPolicy());
+        assertEquals(23, actualConfig.getEvictionConfig().getSize());
+        assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
     }
 

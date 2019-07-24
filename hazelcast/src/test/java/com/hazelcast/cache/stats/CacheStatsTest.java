@@ -736,7 +736,9 @@ public class CacheStatsTest extends CacheTestSupport {
                 .setBackupCount(1)
                 .setStatisticsEnabled(true)
                 .setEvictionConfig(
-                        new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
+                        new EvictionConfig().setSize(maxEntryCount)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU)
                 );
 
         Config config = new Config();

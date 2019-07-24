@@ -28,9 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleConfigTest extends HazelcastTestSupport {
@@ -85,8 +82,12 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
-                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                        new EvictionConfig().setSize(1000)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU),
+                        new EvictionConfig().setSize(300)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
+                                .setEvictionPolicy(EvictionPolicy.LRU))
                 .withPrefabValues(WanReplicationRef.class,
                         new WanReplicationRef("red", null, null, false),
                         new WanReplicationRef("black", null, null, true))

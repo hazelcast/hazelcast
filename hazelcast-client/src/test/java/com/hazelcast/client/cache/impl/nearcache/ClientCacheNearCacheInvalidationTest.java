@@ -214,7 +214,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             keyAndValues.put(key, value);
         }
 
-        // verify that records are exist at Near Cache of client-1 because `local-update-policy` is `CACHE`
+        // verify that records are exist at Near Cache of client-1 because `local-update-policy` is `CACHE_ON_UPDATE`
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
             String key = entry.getKey();
             String exceptedValue = entry.getValue();

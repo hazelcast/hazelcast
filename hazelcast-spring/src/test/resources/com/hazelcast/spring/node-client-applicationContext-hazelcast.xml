@@ -150,19 +150,24 @@
         <hz:near-cache name="default"
                        time-to-live-seconds="1"
                        max-idle-seconds="70"
-                       eviction-policy="LRU"
-                       max-size="4000"
                        invalidate-on-change="true"
                        serialize-keys="false"
-                       local-update-policy="CACHE_ON_UPDATE"/>
+                       local-update-policy="CACHE_ON_UPDATE">
+            <hz:eviction eviction-policy="LRU" size="4000"/>
+        </hz:near-cache>
 
-        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU"/>
-        <hz:near-cache name="lruNearCacheEviction"
-                       eviction-policy="LRU"/>
-        <hz:near-cache name="noneNearCacheEviction"
-                       eviction-policy="NONE"/>
-        <hz:near-cache name="randomNearCacheEviction"
-                       eviction-policy="RANDOM"/>
+        <hz:near-cache name="lfuNearCacheEviction">
+            <hz:eviction eviction-policy="LFU"/>
+        </hz:near-cache>
+        <hz:near-cache name="lruNearCacheEviction">
+            <hz:eviction eviction-policy="LRU"/>
+        </hz:near-cache>
+        <hz:near-cache name="randomNearCacheEviction">
+            <hz:eviction eviction-policy="RANDOM"/>
+        </hz:near-cache>
+        <hz:near-cache name="noneNearCacheEviction">
+            <hz:eviction eviction-policy="NONE"/>
+        </hz:near-cache>
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"

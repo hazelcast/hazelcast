@@ -1083,9 +1083,6 @@
         - name: You can give a name for your Near Cache. It is optional and its default value is "default".
 
         It has the following sub-elements:
-            - <max-size>:
-                Maximum size of the Near Cache. When this is reached, Near Cache is evicted based on the policy defined.
-                Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
             - <time-to-live-seconds>:
                 Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this
                 period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE.
@@ -1094,13 +1091,6 @@
                 Maximum number of seconds each entry can stay in the Near Cache as untouched (not read). Entries that
                 are not read more than this period are removed from the Near Cache. Any integer between 0 and
                 Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
-            - <eviction-policy>:
-                Eviction policy configuration. Its default values is NONE. Available values are as follows:
-            - NONE:
-                No items will be evicted and the property max-size will be ignored. You still
-                can combine it with time-to-live-seconds and max-idle-seconds.
-            - LRU: 	Least Recently Used.
-            - LFU: 	Least Frequently Used.
             - <invalidate-on-change>:
                 Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
                 value is true.
@@ -1121,8 +1111,7 @@
                 Specifies whether the local entries will be cached. It can be useful when in-memory format for
                 Near Cache is different from that of the map. By default, it is disabled.
             - <eviction>:
-                Configuration for the eviction when the in-memory format of the Near Cache is NATIVE. It has the
-                following attributes:
+                Configuration for the eviction. It has following attributes:
                 - size: Maximum size (entry count) of the Near Cache.
                 - max-size-policy: Maximum size policy for eviction of the Near Cache. Available values are as follows:
                     * ENTRY_COUNT: Maximum entry count per member.
@@ -1225,10 +1214,8 @@
             </properties>
         </map-store>
         <near-cache>
-            <max-size>5000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
             <max-idle-seconds>60</max-idle-seconds>
-            <eviction-policy>LRU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
             <in-memory-format>BINARY</in-memory-format>
             <cache-local-entries>false</cache-local-entries>

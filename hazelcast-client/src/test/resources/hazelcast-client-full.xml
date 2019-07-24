@@ -237,14 +237,13 @@
            `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
     -->
     <near-cache name="default">
-        <max-size>2000</max-size>
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
-        <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <serialize-keys>true</serialize-keys>
         <local-update-policy>INVALIDATE</local-update-policy>
+        <eviction size="2000" eviction-policy="LFU"/>
     </near-cache>
 
     <near-cache name="NearCacheEvictionConfigExample">

@@ -1354,10 +1354,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        name: test\n"
                 + "        in-memory-format: OBJECT\n"
                 + "        serialize-keys: false\n"
-                + "        max-size: 1234\n"
                 + "        time-to-live-seconds: 77\n"
                 + "        max-idle-seconds: 92\n"
-                + "        eviction-policy: LFU\n"
                 + "        invalidate-on-change: false\n"
                 + "        cache-local-entries: false\n"
                 + "        eviction:\n"
@@ -1370,10 +1368,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertEquals(1234, nearCacheConfig.getMaxSize());
         assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -2354,10 +2350,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        properties:\n"
                 + "           jdbc_url: my.jdbc.com\n"
                 + "      near-cache:\n"
-                + "        max-size: 5000\n"
                 + "        time-to-live-seconds: 42\n"
                 + "        max-idle-seconds: 42\n"
-                + "        eviction-policy: LRU\n"
                 + "        invalidate-on-change: true\n"
                 + "        in-memory-format: BINARY\n"
                 + "        cache-local-entries: false\n"
@@ -2437,7 +2431,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         assertNotNull(nearCacheConfig);
-        assertEquals(5000, nearCacheConfig.getMaxSize());
         assertEquals(42, nearCacheConfig.getMaxIdleSeconds());
         assertEquals(42, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.BINARY, nearCacheConfig.getInMemoryFormat());

@@ -533,11 +533,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     getAttribute(node, "heartbeat-interval-millis"),
                     ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
             quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                              .withSuspicionThreshold(threshold)
-                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                              .withMinStdDeviationMillis(minStdDeviation)
-                                              .withMaxSampleSize(maxSampleSize);
+                    .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                    .withSuspicionThreshold(threshold)
+                    .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                    .withMinStdDeviationMillis(minStdDeviation)
+                    .withMaxSampleSize(maxSampleSize);
             return quorumConfigBuilder;
         }
 
@@ -1446,7 +1446,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("indexConfigs", indexes);
                 } else if ("eviction".equals(nodeName)) {
-                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false));
                 }
             }
             return builder;
@@ -1459,7 +1459,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, cacheConfigBuilder);
             for (Node childNode : childElements(node)) {
                 if ("eviction".equals(cleanNodeName(childNode))) {
-                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode));
+                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode, false));
                 } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
                 } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
@@ -1632,14 +1632,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true);
                 }
             }
             configBuilder.addPropertyValue("nearCacheConfig", nearCacheConfigBuilder.getBeanDefinition());
         }
 
-        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
-            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder, boolean isNearCache) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache));
         }
 
         private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(Node node) {

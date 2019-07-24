@@ -334,12 +334,11 @@
                `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
         -->
         <near-cache>
-            <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
             <max-idle-seconds>0</max-idle-seconds>
-            <eviction-policy>LFU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
+            <eviction eviction-policy="LRU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">

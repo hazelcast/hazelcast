@@ -139,11 +139,6 @@ public class InvalidConfigurationClientTest {
         buildConfig("eviction-policy", "LRU");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void WhenInvalid_EvictionPolicy() {
-        buildConfig("eviction-policy", "none");
-    }
-
     @Test
     public void WhenValid_NearCacheInMemoryFormat() {
         buildConfig("near-cache-in-memory-format", "OBJECT");
@@ -260,8 +255,6 @@ public class InvalidConfigurationClientTest {
                 + "    <max-idle-seconds>${near-cache-max-idle-seconds}</max-idle-seconds>\n"
                 + "    <invalidate-on-change>${near-cache-invalidate-on-change}</invalidate-on-change>\n"
                 + "    <in-memory-format>${near-cache-in-memory-format}</in-memory-format>\n"
-                + "    <cache-local-entries>${near-cache-cache-local-entries}</cache-local-entries>\n"
-                + "    <eviction-policy>${eviction-policy}</eviction-policy>\n"
                 + "    <eviction size=\"${near-cache-eviction-size}\""
                 + "       max-size-policy=\"${near-cache-eviction-max-size-policy}\""
                 + "       eviction-policy=\"${near-cache-eviction-policy}\"/>\n"
@@ -286,7 +279,6 @@ public class InvalidConfigurationClientTest {
         properties.setProperty("enable-shared-object", "true");
         properties.setProperty("allow-unsafe", "true");
         properties.setProperty("load-balancer-type", "random");
-        properties.setProperty("eviction-policy", "LFU");
         properties.setProperty("in-memory-format", "OBJECT");
 
         properties.setProperty("near-cache-time-to-live-seconds", "10000");

@@ -1327,10 +1327,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <near-cache name=\"test\">\n"
                 + "      <in-memory-format>OBJECT</in-memory-format>\n"
                 + "      <serialize-keys>false</serialize-keys>\n"
-                + "      <max-size>1234</max-size>\n"
                 + "      <time-to-live-seconds>77</time-to-live-seconds>\n"
                 + "      <max-idle-seconds>92</max-idle-seconds>\n"
-                + "      <eviction-policy>LFU</eviction-policy>\n"
                 + "      <invalidate-on-change>false</invalidate-on-change>\n"
                 + "      <cache-local-entries>false</cache-local-entries>\n"
                 + "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\"/>\n"
@@ -1343,10 +1341,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertEquals(1234, nearCacheConfig.getMaxSize());
         assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -2280,10 +2276,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            </properties>\n"
                 + "          </map-store>"
                 + "        <near-cache>\n"
-                + "            <max-size>5000</max-size>\n"
                 + "            <time-to-live-seconds>42</time-to-live-seconds>\n"
                 + "            <max-idle-seconds>42</max-idle-seconds>\n"
-                + "            <eviction-policy>LRU</eviction-policy>\n"
                 + "            <invalidate-on-change>true</invalidate-on-change>\n"
                 + "            <in-memory-format>BINARY</in-memory-format>\n"
                 + "            <cache-local-entries>false</cache-local-entries>\n"
@@ -2364,7 +2358,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         assertNotNull(nearCacheConfig);
-        assertEquals(5000, nearCacheConfig.getMaxSize());
         assertEquals(42, nearCacheConfig.getMaxIdleSeconds());
         assertEquals(42, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.BINARY, nearCacheConfig.getInMemoryFormat());

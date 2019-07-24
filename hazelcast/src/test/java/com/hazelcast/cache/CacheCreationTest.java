@@ -201,7 +201,8 @@ public class CacheCreationTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setName("test")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
+                .setEvictionConfig(new EvictionConfig().setSize(1000)
+                        .setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(EvictionPolicy.LFU));
 
         return createBasicConfig()
                 .addCacheConfig(cacheSimpleConfig);
@@ -210,7 +211,10 @@ public class CacheCreationTest extends HazelcastTestSupport {
     private CacheConfig createInvalidCacheConfig() {
         return new CacheConfig("test")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
+                .setEvictionConfig(new EvictionConfig()
+                        .setSize(1000)
+                        .setMaximumSizePolicy(ENTRY_COUNT)
+                        .setEvictionPolicy(EvictionPolicy.LFU));
     }
 
     protected Config createBasicConfig() {

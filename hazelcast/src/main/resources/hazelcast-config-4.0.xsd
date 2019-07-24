@@ -2909,32 +2909,6 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU">
-                <xs:annotation>
-                    <xs:documentation>
-                        Valid values are:
-                        NONE (no extra eviction, time-to-live-seconds may still apply),
-                        LRU (Least Recently Used),
-                        LFU (Least Frequently Used).
-                        LRU is the default.
-                        Regardless of the eviction policy used, time-to-live-seconds will still apply.
-
-                        Deprecated since 3.8, please use &lt;eviction/&gt;
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Maximum size of the Near Cache. When max size is reached,
-                        cache is evicted based on the policy defined.
-                        Any integer between 0 and Integer.MAX_VALUE.
-                        0 means Integer.MAX_VALUE. Default is 0.
-
-                        Deprecated since 3.8, please use &lt;eviction/&gt;
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>

@@ -557,9 +557,6 @@ hazelcast-client:
   #             This option is available only in Hazelcast Enterprise HD. Note that a map and its Near Cache
   #             can independently use High-Density Memory Store. For example, while your map does not use
   #             High-Density Memory Store, its Near Cache can use it.
-  #   - "cache-local-entries":
-  #       Specifies whether the local entries will be cached. It can be useful when in-memory format for
-  #       Near Cache is different from that of the map. By default, it is disabled.
   #   - "invalidate-on-change":
   #       Specifies whether the cached entries are evicted when the entries are updated or removed.
   #       Its default value is true.
@@ -583,12 +580,9 @@ hazelcast-client:
   # Proper eviction configuration example for NATIVE in-memory can be seen under 'NearCacheEvictionConfigExample'.
   near-cache:
     default:
-      max-size: 2000
       time-to-live-seconds: 90
       max-idle-seconds: 100
-      eviction-policy: LFU
       invalidate-on-change: true
-      cache-local-entries: true
       in-memory-format: OBJECT
       serialize-keys: true
       local-update-policy: INVALIDATE
