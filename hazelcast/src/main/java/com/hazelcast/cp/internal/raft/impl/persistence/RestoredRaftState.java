@@ -68,7 +68,7 @@ public class RestoredRaftState {
     }
 
     @Nonnull
-    public RaftEndpoint electedEndpoint() {
+    public RaftEndpoint votedFor() {
         return votedFor;
     }
 

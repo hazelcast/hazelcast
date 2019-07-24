@@ -230,6 +230,10 @@ public final class RaftNodeImpl implements RaftNode {
 
     @Override
     public void forceSetTerminatedStatus() {
+        if (isTerminatedOrSteppedDown()) {
+            return;
+        }
+
         execute(new Runnable() {
             @Override
             public void run() {

@@ -17,10 +17,18 @@
 package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class TestRaftGroupId implements CPGroupId {
+import java.io.IOException;
+
+public class TestRaftGroupId implements CPGroupId, DataSerializable {
 
     private String name;
+
+    public TestRaftGroupId() {
+    }
 
     public TestRaftGroupId(String name) {
         assert name != null;
@@ -60,5 +68,13 @@ public class TestRaftGroupId implements CPGroupId {
         return "TestRaftGroupId{" + "name='" + name + "\''}";
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+    }
 
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+    }
 }

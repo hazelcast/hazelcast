@@ -16,13 +16,31 @@
 
 package com.hazelcast.cp.internal.raft.impl.testing;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+
 /**
  * No-op entry operation which is appended in the Raft log when a new leader is elected and
  * {@link LocalRaftIntegration#appendNopEntryOnLeaderElection} is enabled.
  */
-public class NopEntry implements RaftRunnable {
+public class NopEntry implements RaftRunnable, DataSerializable {
+
+    public NopEntry() {
+    }
+
     @Override
     public Object run(Object service, long commitIndex) {
         return null;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 }

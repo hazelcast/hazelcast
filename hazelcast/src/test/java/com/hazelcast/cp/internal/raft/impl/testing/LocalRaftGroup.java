@@ -17,23 +17,24 @@
 package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raft.impl.RaftUtil;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.function.Function;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.util.function.Function;
 import org.junit.Assert;
 
 import java.util.Arrays;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.restoreRaftNode;
+import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.minority;
@@ -58,9 +59,9 @@ public class LocalRaftGroup {
         private int nodeCount;
         private RaftAlgorithmConfig config;
         private boolean appendNopEntryOnLeaderElection;
-        private Function<RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory = new Function<RaftAlgorithmConfig, RaftStateStore>() {
+        private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory = new IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore>() {
             @Override
-            public RaftStateStore apply(RaftAlgorithmConfig raftAlgorithmConfig) {
+            public RaftStateStore apply(RaftEndpoint endpoint, RaftAlgorithmConfig config) {
                 return NopRaftStateStore.INSTANCE;
             }
         };
@@ -79,7 +80,7 @@ public class LocalRaftGroup {
             return this;
         }
 
-        public LocalRaftGroupBuilder setRaftStateStoreFactory(Function<RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
+        public LocalRaftGroupBuilder setRaftStateStoreFactory(IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
             this.raftStateStoreFactory = raftStateStoreFactory;
             return this;
         }
@@ -109,7 +110,7 @@ public class LocalRaftGroup {
     private LocalRaftIntegration[] integrations;
     private RaftNodeImpl[] nodes;
     private int createdNodeCount;
-    private Function<RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory;
+    private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory;
 
     public LocalRaftGroup(int size) {
         this(size, new RaftAlgorithmConfig());
@@ -127,7 +128,7 @@ public class LocalRaftGroup {
 
     public LocalRaftGroup(int size, RaftAlgorithmConfig raftAlgorithmConfig,
                           String serviceName, Class<? extends SnapshotAwareService> serviceClazz,
-                          boolean appendNopEntryOnLeaderElection, Function<RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
+                          boolean appendNopEntryOnLeaderElection, IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
         initialMembers = new RaftEndpoint[size];
         members = new RaftEndpoint[size];
         integrations = new LocalRaftIntegration[size];
@@ -151,7 +152,7 @@ public class LocalRaftGroup {
             if (raftStateStoreFactory == null) {
                 nodes[i] = newRaftNode(groupId, members[i], asList(members), raftAlgorithmConfig, integration);
             } else {
-                RaftStateStore raftStateStore = raftStateStoreFactory.apply(raftAlgorithmConfig);
+                RaftStateStore raftStateStore = raftStateStoreFactory.apply(members[i], raftAlgorithmConfig);
                 nodes[i] = newRaftNode(groupId, members[i], asList(members), raftAlgorithmConfig, integration, raftStateStore);
             }
         }
@@ -218,7 +219,7 @@ public class LocalRaftGroup {
         integrations[oldSize] = integration;
         RaftEndpoint endpoint = integration.getLocalEndpoint();
         endpoints[oldSize] = endpoint;
-        RaftStateStore raftStateStore = raftStateStoreFactory.apply(raftAlgorithmConfig);
+        RaftStateStore raftStateStore = raftStateStoreFactory.apply(endpoint, raftAlgorithmConfig);
         RaftNodeImpl node = newRaftNode(groupId, endpoint, asList(initialMembers), raftAlgorithmConfig, integration, raftStateStore);
         nodes[oldSize] = node;
         this.members = endpoints;
@@ -322,7 +323,7 @@ public class LocalRaftGroup {
                         continue;
                     }
 
-                    assertEquals(leaderNode.getLocalMember(), RaftUtil.getLeaderMember(raftNode));
+                    assertEquals(leaderNode.getLocalMember(), getLeaderMember(raftNode));
                     assertEquals(leaderTerm, getTerm(raftNode));
                 }
                 leaderRef[0] = leaderNode;
@@ -339,7 +340,7 @@ public class LocalRaftGroup {
                 continue;
             }
             RaftNodeImpl node = nodes[i];
-            RaftEndpoint endpoint = RaftUtil.getLeaderMember(node);
+            RaftEndpoint endpoint = getLeaderMember(node);
             if (leader == null) {
                 leader = endpoint;
             } else if (!leader.equals(endpoint)) {

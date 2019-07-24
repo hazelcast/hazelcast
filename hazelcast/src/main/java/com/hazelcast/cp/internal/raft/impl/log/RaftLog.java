@@ -306,7 +306,7 @@ public final class RaftLog {
 
     /**
      * Installs the snapshot entry and truncates log entries those are included
-     * in snapshot (entries whose indexes are smaller than
+     * in the snapshot (entries whose indexes are smaller than or equal to
      * the snapshot's index).
      *
      * @return truncated log entries after snapshot is installed
@@ -321,6 +321,11 @@ public final class RaftLog {
         if (snapshot.index() <= snapshotIndex()) {
             throw new IllegalArgumentException("Illegal index: " + snapshot.index() + ", current snapshot index: "
                     + snapshotIndex());
+        }
+
+        if (truncateUpToIndex > snapshot.index()) {
+            throw new IllegalArgumentException("Truncation index: " + truncateUpToIndex + "cannot be bigger than snapshot indeX: "
+                    + snapshot.index());
         }
 
         long newHeadSeq = toSequence(truncateUpToIndex) + 1;
