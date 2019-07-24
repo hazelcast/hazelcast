@@ -96,7 +96,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (partitionId > -1) {
             ClientMessage request =
-                    ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, partitionId, mayInterruptIfRunning);
+                    ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, mayInterruptIfRunning);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
             ClientInvocationFuture f = clientInvocation.invoke();
             return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;

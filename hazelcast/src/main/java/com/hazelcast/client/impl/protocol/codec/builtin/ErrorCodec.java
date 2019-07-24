@@ -28,6 +28,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", justification = "fields may be needed for diagnostic")
 public final class ErrorCodec {
 
+    public static final int EXCEPTION = 109;
     /**
      * ClientMessageType of this message
      */

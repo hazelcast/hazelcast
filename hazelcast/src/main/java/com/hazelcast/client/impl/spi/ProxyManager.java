@@ -495,7 +495,7 @@ public final class ProxyManager {
         }
 
         @Override
-        public void handleDistributedObjectEventV10(String name, String serviceName, String eventTypeName) {
+        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName) {
             final ObjectNamespace ns = new DistributedObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();

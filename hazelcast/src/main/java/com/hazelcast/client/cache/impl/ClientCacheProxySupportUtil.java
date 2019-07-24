@@ -229,7 +229,7 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public void handleCacheEventV10(int type, Collection<CacheEventData> keys, int completionId) {
+        public void handleCacheEvent(int type, Collection<CacheEventData> keys, int completionId) {
             adaptor.handle(type, keys, completionId);
         }
 
@@ -284,7 +284,7 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public void handleCachePartitionLostEventV10(int partitionId, String uuid) {
+        public void handleCachePartitionLostEvent(int partitionId, String uuid) {
             Member member = clientContext.getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
         }
