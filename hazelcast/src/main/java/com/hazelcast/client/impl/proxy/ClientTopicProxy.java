@@ -88,7 +88,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         }
 
         @Override
-        public void handleTopicEventV10(Data item, long publishTime, String uuid) {
+        public void handleTopicEvent(Data item, long publishTime, String uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             Message message = new DataAwareMessage(name, item, publishTime, member, getSerializationService());
             listener.onMessage(message);

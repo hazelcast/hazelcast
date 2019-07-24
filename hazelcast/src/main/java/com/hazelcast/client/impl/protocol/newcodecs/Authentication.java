@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.newcodecs;
 
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
+//import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Bits;
 
@@ -44,7 +44,7 @@ public class Authentication {
         private static final int PARTITION_COUNT = SERIALIZATION_VERSION + Bits.BYTE_SIZE_IN_BYTES;
         private static final int HEADER_SIZE = PARTITION_COUNT + Bits.INT_SIZE_IN_BYTES;
 
-        public static final int TYPE = ClientMessageType.CLIENT_AUTHENTICATION.id();
+        public static final int TYPE = 0;//ClientMessageType.CLIENT_AUTHENTICATION.id();
 
         /**
          * @since 1.0

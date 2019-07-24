@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.newcodecs;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Bits;
@@ -41,7 +40,7 @@ public class AddMembershipListener {
         private static final int LOCAL_ONLY = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
         private static final int HEADER_SIZE = LOCAL_ONLY + Bits.BOOLEAN_SIZE_IN_BYTES;
 
-        public static final int TYPE = ClientMessageType.CLIENT_ADDMEMBERSHIPLISTENER.id();
+        public static final int TYPE = 0;//ClientMessageType.CLIENT_ADDMEMBERSHIPLISTENER.id();
 
         public boolean localOnly;
 

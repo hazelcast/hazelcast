@@ -687,30 +687,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         @Override
-        public void handleIMapInvalidationEventV10(Data key) {
-            if (key != null) {
-                nearCache.invalidate(serializeKeys ? key : toObject(key));
-            } else {
-                nearCache.clear();
-            }
-        }
-
-        @Override
-        public void handleIMapBatchInvalidationEventV10(Collection<Data> keys) {
-            for (Data key : keys) {
-                nearCache.invalidate(serializeKeys ? key : toObject(key));
-            }
-        }
-
-        @Override
-        public void handleIMapInvalidationEventV14(Data key, String sourceUuid,
+        public void handleIMapInvalidationEvent(Data key, String sourceUuid,
                                                    UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
 
         @Override
-        public void handleIMapBatchInvalidationEventV14(Collection<Data> keys,
+        public void handleIMapBatchInvalidationEvent(Collection<Data> keys,
                                                         Collection<String> sourceUuids,
                                                         Collection<UUID> partitionUuids,
                                                         Collection<Long> sequences) {

@@ -574,7 +574,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         @Override
-        public void handleEntryEventV10(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
+        public void handleEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
                                         int eventTypeId, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
@@ -630,7 +630,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         @Override
-        public void handleEntryEventV10(Data dataKey, Data value, Data oldValue, Data mergingValue,
+        public void handleEntryEvent(Data dataKey, Data value, Data oldValue, Data mergingValue,
                                         int eventType, String uuid, int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {

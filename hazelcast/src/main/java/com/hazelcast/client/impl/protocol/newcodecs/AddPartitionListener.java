@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.newcodecs;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
+//import com.hazelcast.client.impl.protocol.codec.ClientMessageType;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
@@ -42,7 +42,7 @@ public class AddPartitionListener {
     public static class Request {
         private static final int HEADER_SIZE = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
-        public static final int TYPE = ClientMessageType.CLIENT_ADDPARTITIONLISTENER.id();
+        public static final int TYPE = 0;//ClientMessageType.CLIENT_ADDPARTITIONLISTENER.id();
 
         public static ClientMessage encode() {
             ClientMessage clientMessage = ClientMessage.createForEncode();

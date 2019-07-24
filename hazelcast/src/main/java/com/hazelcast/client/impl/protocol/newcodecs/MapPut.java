@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.newcodecs;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapMessageType;
+//import com.hazelcast.client.impl.protocol.codec.MapMessageType;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
@@ -45,7 +45,7 @@ public class MapPut {
         private static final int TTL_ID_FIELD_OFFSET = THREAD_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
         private static final int HEADER_SIZE = TTL_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
-        public static final int TYPE = MapMessageType.MAP_PUT.id();
+        public static final int TYPE = 0;//MapMessageType.MAP_PUT.id();
 
         public static ClientMessage encode(String name, Data key, Data value, long threadId, long ttl) {
             ClientMessage clientMessage = ClientMessage.createForEncode();
