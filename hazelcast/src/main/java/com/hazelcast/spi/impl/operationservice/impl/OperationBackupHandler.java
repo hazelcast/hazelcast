@@ -124,7 +124,6 @@ final class OperationBackupHandler {
         return min(maxBackupCount, requestedSyncBackups);
     }
 
-
     int asyncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced || requestedAsyncBackups == 0) {
             // if syncForced, then there will never be any async backups (they are forced to become sync)

@@ -85,7 +85,7 @@ class BackpressureRegulator {
     private final DetectionThread thread = new DetectionThread();
     private final int checkIntervalMs;
     private volatile boolean stop;
-    private final long lowWaterMark ;
+    private final long lowWaterMark;
     private final long highWaterMark;
     private final long asyncBackpressureDurationMs;
     private volatile long timeoutMs = currentTimeMillis();
@@ -110,9 +110,8 @@ class BackpressureRegulator {
 
             int backupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
             if (backupTimeoutMillis < MINUTES.toMillis(1)) {
-                logger.warning(
-                        format("Back pressure is enabled, but '%s' is too small. ",
-                                OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
+                logger.warning(format("Back pressure is enabled, but '%s' is too small. ",
+                        OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
             }
         } else {
             logger.info("Backpressure is disabled");
