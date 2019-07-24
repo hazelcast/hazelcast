@@ -18,11 +18,12 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 public class ListLongCodec {
-    public static void encode(ClientMessage clientMessage, List<Long> list) {
+    public static void encode(ClientMessage clientMessage, Collection<Long> longs) {
 
     }
 

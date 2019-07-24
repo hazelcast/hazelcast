@@ -20,12 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 public class ListDataCodec {
 
-    public static void encode(ClientMessage clientMessage, List<Data> listData) {
+    public static void encode(ClientMessage clientMessage, Collection<Data> data) {
 
     }
 

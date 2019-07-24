@@ -21,6 +21,7 @@ import com.hazelcast.nio.Bits;
 import java.util.UUID;
 
 public class FixedSizeTypesCodec {
+    public static final int BYTE_SIZE_IN_BYTES = Bits.BYTE_SIZE_IN_BYTES;
     public static final int LONG_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES;
     public static final int INT_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;

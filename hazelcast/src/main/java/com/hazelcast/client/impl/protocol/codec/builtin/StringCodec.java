@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Iterator;
 
@@ -26,6 +27,14 @@ public class StringCodec {
     }
 
     public static String decode(Iterator<ClientMessage.Frame> iterator) {
+        return null;
+    }
+
+    public static void encodeNullable(ClientMessage clientMessage, String sourceUuid) {
+
+    }
+
+    public static String decodeNullable(Iterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

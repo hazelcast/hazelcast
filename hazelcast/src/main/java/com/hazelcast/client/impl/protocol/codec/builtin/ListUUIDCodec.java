@@ -18,12 +18,13 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
 public class ListUUIDCodec {
-    public static void encode(ClientMessage clientMessage, List<UUID> list) {
+    public static void encode(ClientMessage clientMessage, Collection<UUID> uuids) {
 
     }
 
