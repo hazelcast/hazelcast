@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.impl;
+package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
@@ -22,8 +22,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.impl.AbstractJoiner;
-import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
@@ -171,13 +169,13 @@ public class TcpIpJoiner extends AbstractJoiner {
             consensus = claimMastership(addresses);
             if (consensus) {
                 if (logger.isFineEnabled()) {
-                    Set<Address> votingEndpoints = new HashSet<Address>(addresses);
+                    Set<Address> votingEndpoints = new HashSet<>(addresses);
                     votingEndpoints.removeAll(blacklistedAddresses.keySet());
                     logger.fine("Setting myself as master after consensus! Voting endpoints: " + votingEndpoints);
                 }
                 clusterJoinManager.setThisMemberAsMaster();
             } else if (logger.isFineEnabled()) {
-                Set<Address> votingEndpoints = new HashSet<Address>(addresses);
+                Set<Address> votingEndpoints = new HashSet<>(addresses);
                 votingEndpoints.removeAll(blacklistedAddresses.keySet());
                 logger.fine("My claim to be master is rejected! Voting endpoints: " + votingEndpoints);
             }
@@ -194,13 +192,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private boolean claimMastership(Collection<Address> possibleAddresses) {
         if (logger.isFineEnabled()) {
-            Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
+            Set<Address> votingEndpoints = new HashSet<>(possibleAddresses);
             votingEndpoints.removeAll(blacklistedAddresses.keySet());
             logger.fine("Claiming myself as master node! Asking to endpoints: " + votingEndpoints);
         }
         claimingMastership = true;
         OperationServiceImpl operationService = node.getNodeEngine().getOperationService();
-        Collection<Future<Boolean>> futures = new LinkedList<Future<Boolean>>();
+        Collection<Future<Boolean>> futures = new LinkedList<>();
         for (Address address : possibleAddresses) {
             if (isBlacklisted(address)) {
                 continue;
@@ -318,7 +316,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
-        final Set<Address> possibleAddresses = new HashSet<Address>();
+        final Set<Address> possibleAddresses = new HashSet<>();
         final NetworkConfig networkConfig = getActiveMemberNetworkConfig(config);
         for (String possibleMember : possibleMembers) {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
@@ -410,7 +408,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static Collection<String> getConfigurationMembers(TcpIpConfig tcpIpConfig) {
         final Collection<String> configMembers = tcpIpConfig.getMembers();
-        final Set<String> possibleMembers = new HashSet<String>();
+        final Set<String> possibleMembers = new HashSet<>();
         for (String member : configMembers) {
             // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
             String[] members = member.split("[,; ]");

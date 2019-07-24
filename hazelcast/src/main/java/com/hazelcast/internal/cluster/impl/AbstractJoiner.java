@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;

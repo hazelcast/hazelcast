@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
