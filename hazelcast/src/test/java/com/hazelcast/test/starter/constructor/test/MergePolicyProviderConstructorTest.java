@@ -29,6 +29,7 @@ import com.hazelcast.test.starter.HazelcastStarter;
 import com.hazelcast.test.starter.constructor.MergePolicyProviderConstructor;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +41,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+@Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15263")
 public class MergePolicyProviderConstructorTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
