@@ -159,44 +159,6 @@
                 </dependency>
             </dependencies>
         </profile>
-
-        <profile>
-            <id>hibernate-4</id>
-            <dependencies>
-                <!--TEST DEPENDENCIES-->
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-hibernate4</artifactId>
-                    <version>${hazelcast.latest.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-core</artifactId>
-                    <version>4.3.8.Final</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>hibernate-3</id>
-            <dependencies>
-                <!--TEST DEPENDENCIES-->
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-hibernate3</artifactId>
-                    <version>${hazelcast.latest.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-core</artifactId>
-                    <version>3.6.10.Final</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
 
     <dependencies>
