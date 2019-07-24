@@ -33,7 +33,7 @@ public class SortPhysicalRule extends RelOptRule {
     private SortPhysicalRule() {
         super(
             RuleUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            "SortPhysicalRule"
+            SortPhysicalRule.class.getSimpleName()
         );
     }
 

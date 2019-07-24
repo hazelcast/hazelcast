@@ -38,6 +38,7 @@ import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistribution
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rule.MapScanPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
@@ -256,6 +257,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,
+            ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

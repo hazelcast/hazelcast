@@ -31,7 +31,7 @@ public class MapScanPhysicalRule extends RelOptRule {
     private MapScanPhysicalRule() {
         super(
             RuleUtils.single(MapScanLogicalRel.class, HazelcastConventions.LOGICAL),
-            "MapScanPhysicalRule"
+            MapScanPhysicalRule.class.getSimpleName()
         );
     }
 

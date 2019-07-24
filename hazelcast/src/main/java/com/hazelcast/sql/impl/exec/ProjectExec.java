@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -40,7 +41,7 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     private int curBatchRowCnt = -1;
 
     /** Current row. */
-    private Row curRow;
+    private RowBatch curRow;
 
     public ProjectExec(Exec upstream, List<Expression> projections) {
         super(upstream);
@@ -66,6 +67,8 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
                         curBatchRowCnt = batchRowCnt;
                     }
 
+                    break;
+
                 case WAIT:
                     return IterationResult.WAIT;
 
@@ -88,6 +91,16 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
      * @return Result.
      */
     private IterationResult advanceCurrentBatch() {
+        // TODO: Make sure that we do not perform unnecessary call to upstream.
+        // TODO: To achieve this, upstream must set FETCHED_DONE when the last row is returned.
+        if (curBatch == null) {
+            assert upstreamDone;
+
+            curRow = EmptyRowBatch.INSTANCE;
+
+            return IterationResult.FETCHED_DONE;
+        }
+
         // Prepare the next row.
         Row upstreamRow = curBatch.getRow(curBatchPos);
 
@@ -95,8 +108,11 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
         int colIdx = 0;
 
-        for (Expression projection : projections)
-            curRow0.set(colIdx++, projection.eval(ctx, upstreamRow));
+        for (Expression projection : projections) {
+            Object res = projection.eval(ctx, upstreamRow);
+
+            curRow0.set(colIdx++, res);
+        }
 
         curRow = curRow0;
 

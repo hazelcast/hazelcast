@@ -22,6 +22,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.exec.EmptyScanExec;
  import com.hazelcast.sql.impl.exec.Exec;
  import com.hazelcast.sql.impl.exec.MapScanExec;
+ import com.hazelcast.sql.impl.exec.ProjectExec;
  import com.hazelcast.sql.impl.exec.ReceiveExec;
  import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
  import com.hazelcast.sql.impl.exec.RootExec;
@@ -33,6 +34,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.mailbox.StripedInbox;
  import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
  import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+ import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
  import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
  import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
  import com.hazelcast.sql.impl.physical.RootPhysicalNode;
@@ -233,6 +235,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onSortNode(SortPhysicalNode node) {
         Exec res = new SortExec(stack.remove(0), node.getExpressions(), node.getAscs());
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onProjectNode(ProjectPhysicalNode node) {
+        Exec res = new ProjectExec(stack.remove(0), node.getProjections());
 
         stack.add(res);
     }

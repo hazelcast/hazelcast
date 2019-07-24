@@ -45,12 +45,14 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
     ) {
         PhysicalDistributionTrait currentTrait = rel.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
 
+        // Do nothing if input is already convered.
         if (currentTrait.equals(targetTrait))
             return rel;
 
         if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset) )
             return null;
 
+        // Only physical nodes could be converted.
         if (rel.getConvention() != HazelcastConventions.PHYSICAL)
             return null;
 

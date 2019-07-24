@@ -29,7 +29,7 @@ public class PhysicalDistributionTrait implements RelTrait {
     public static final PhysicalDistributionTrait SINGLETON =
         new PhysicalDistributionTrait(PhysicalDistributionType.SINGLETON);
 
-    /** Dsitribution without any restriction. */
+    /** Distribution without any restriction. */
     public static final PhysicalDistributionTrait ANY = new PhysicalDistributionTrait(PhysicalDistributionType.ANY);
 
     /** Distribution type. */

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
@@ -29,12 +30,14 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -96,6 +99,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     public void onMapScan(MapScanPhysicalRel rel) {
         String mapName = rel.getTable().getQualifiedName().get(0);
 
+        // TODO: Use expressions instead.
         List<String> fieldNames = rel.getRowType().getFieldNames();
 
         List<Expression> projection = new ArrayList<>();
@@ -192,6 +196,24 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(receiveNode);
+    }
+
+    @Override
+    public void onProject(ProjectPhysicalRel rel) {
+        PhysicalNode upstreamNode = pollSingleUpstream();
+
+        List<RexNode> projects = rel.getProjects();
+        List<Expression> convertedProjects = new ArrayList<>(projects.size());
+
+        for (RexNode project : projects) {
+            Expression convertedProject = project.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+            convertedProjects.add(convertedProject);
+        }
+
+        ProjectPhysicalNode projectNode = new ProjectPhysicalNode(upstreamNode, convertedProjects);
+
+        pushUpstream(projectNode);
     }
 
     /**

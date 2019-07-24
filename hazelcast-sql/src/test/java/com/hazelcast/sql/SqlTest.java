@@ -34,13 +34,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
-//    private static final String QUERY = "select height * 2 from persons order by name";
+//    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
+    private static final String QUERY = "select height + age from persons order by name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -105,9 +106,9 @@ public class SqlTest extends HazelcastTestSupport {
         public Person(int key) {
             this.__key = key;
             this.name = "Person " + key;
-            this.age = key;
-            this.height = 100.5 + key;
-            this.active = key % 2 == 0;
+            this.age = ThreadLocalRandom.current().nextInt(100);
+            this.height = ThreadLocalRandom.current().nextDouble(170);
+            this.active = ThreadLocalRandom.current().nextBoolean();
         }
 
     }

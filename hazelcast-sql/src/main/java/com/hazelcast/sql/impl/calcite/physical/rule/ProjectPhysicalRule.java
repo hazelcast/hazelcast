@@ -18,41 +18,47 @@ package com.hazelcast.sql.impl.calcite.physical.rule;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
-import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 
-public class RootPhysicalRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new RootPhysicalRule();
+/**
+ * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
+ * underlying operator.
+ */
+public class ProjectPhysicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
-    private RootPhysicalRule() {
+    private ProjectPhysicalRule() {
         super(
-            RuleUtils.parentChild(RootLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            RootPhysicalRule.class.getSimpleName()
+            RuleUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+            ProjectPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        RootLogicalRel root = call.rel(0);
-        RelNode input = call.rel(1);
+        ProjectLogicalRel project = call.rel(0);
+        RelNode input = project.getInput();
 
         RelTraitSet traits = input.getTraitSet()
             .plus(HazelcastConventions.PHYSICAL)
-            .plus(PhysicalDistributionTrait.SINGLETON);
+            .plus(PhysicalDistributionTrait.ANY);
 
-        RelNode convertedInput = convert(input, traits.simplify());
+        RelNode physicalInput = convert(input, traits.simplify());
 
-        RootPhysicalRel rootPhysical = new RootPhysicalRel(
-            root.getCluster(),
-            root.getTraitSet().plus(HazelcastConventions.PHYSICAL).plus(PhysicalDistributionTrait.SINGLETON),
-            convertedInput
+        ProjectPhysicalRel physicalProject = new ProjectPhysicalRel(
+            project.getCluster(),
+            project.getTraitSet().plus(HazelcastConventions.PHYSICAL).plus(PhysicalDistributionTrait.ANY),
+            physicalInput,
+            project.getProjects(),
+            project.getRowType()
         );
 
-        call.transformTo(rootPhysical);
+        call.transformTo(physicalProject);
     }
 }
