@@ -170,7 +170,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
      * The partitions can be empty on the response, client will not apply the empty partition table,
      * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
      */
-    private void processPartitionResponse(Connection connection, Map<Address, List<Integer>> partitions,
+    private void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
                                           int partitionStateVersion,
                                           boolean partitionStateVersionExist) {
 
@@ -198,7 +198,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private boolean shouldBeApplied(Connection connection, Map<Address, List<Integer>> partitions,
+    private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
                                     int partitionStateVersion, boolean partitionStateVersionExist, PartitionTable current) {
         if (partitions.isEmpty()) {
             if (logger.isFinestEnabled()) {
@@ -234,9 +234,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 + ". Current state version: " + current.partitionSateVersion));
     }
 
-    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Map<Address, List<Integer>> partitions) {
+    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
         Int2ObjectHashMap<Address> newPartitions = new Int2ObjectHashMap<Address>();
-        for (Map.Entry<Address, List<Integer>> entry : partitions.entrySet()) {
+        for (Map.Entry<Address, List<Integer>> entry : partitions) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
                 newPartitions.put(partition, address);
@@ -325,11 +325,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
 
         @Override
-        public void handlePartitionsEventV15(Collection<Map.Entry<Address, List<Integer>>> response, int stateVersion) {
-            processPartitionResponse(clientConnection, response, stateVersion, true);
-        }
-
-        @Override
         public void beforeListenerRegister() {
 
         }
@@ -337,6 +332,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public void onListenerRegister() {
 
+        }
+
+        @Override
+        public void handlePartitionsEvent(Collection<Map.Entry<Address, List<Integer>>> partitions, int partitionStateVersion) {
+            processPartitionResponse(clientConnection, partitions, partitionStateVersion, true);
         }
     }
 

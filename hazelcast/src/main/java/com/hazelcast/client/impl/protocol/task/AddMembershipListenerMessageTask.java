@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.client.impl.protocol.newcodecs.AddMembershipListener;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
@@ -39,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class AddMembershipListenerMessageTask
-        extends AbstractCallableMessageTask<AddMembershipListener.Request> {
+        extends AbstractCallableMessageTask<ClientAddMembershipListenerCodec.RequestParameters> {
 
     public AddMembershipListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -57,18 +56,18 @@ public class AddMembershipListenerMessageTask
     }
 
     @Override
-    protected AddMembershipListener.Request decodeClientMessage() {
-        return AddMembershipListener.Request.decode(clientMessage);
+    protected ClientAddMembershipListenerCodec.RequestParameters decodeClientMessage() {
+        return ClientAddMembershipListenerCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected AddMembershipListener.Request decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+    protected ClientAddMembershipListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientAddMembershipListenerCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return AddMembershipListener.Response.encode((String) response);
+        return ClientAddMembershipListenerCodec.encodeResponse((String) response);
     }
 
     @Override
@@ -113,7 +112,7 @@ public class AddMembershipListenerMessageTask
             for (MemberImpl member : members) {
                 membersToSend.add(translateMemberAddress(member));
             }
-            ClientMessage eventMessage = AddMembershipListener.Event.MemberListEvent.encode(membersToSend);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(membersToSend);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -126,7 +125,7 @@ public class AddMembershipListenerMessageTask
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
 
             ClientMessage eventMessage =
-                    AddMembershipListener.Event.MemberEvent.encode(translateMemberAddress(member),
+                    ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
                             MembershipEvent.MEMBER_ADDED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
@@ -138,8 +137,7 @@ public class AddMembershipListenerMessageTask
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage = AddMembershipListener.Event.MemberEvent
-                    .encode(translateMemberAddress(member), MembershipEvent.MEMBER_REMOVED);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member), MembershipEvent.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 

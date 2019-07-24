@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.newcodecs.Authentication;
-import com.hazelcast.client.impl.protocol.newcodecs.MapPut;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -56,7 +56,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     public void test() {
         ClientMessage message = ClientMessage.createForEncode();
         message.addFrame(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | FINAL));
-        message.setMessageType((short) MapPut.Request.TYPE);
+        message.setMessageType((short) MapPutCodec.REQUEST_MESSAGE_TYPE);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -86,7 +86,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     @Test
     public void testPut() {
         ClientMessage message =
-                MapPut.Request.encode("map", new HeapData(new byte[100]), new HeapData(new byte[100]), 5, 10);
+                MapPutCodec.encodeRequest("map", new HeapData(new byte[100]), new HeapData(new byte[100]), 5, 10);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -113,7 +113,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
-        MapPut.Request parameters = MapPut.Request.decode(resultingMessage.get());
+        MapPutCodec.RequestParameters parameters = MapPutCodec.decodeRequest(resultingMessage.get());
 
         assertEquals(5, parameters.threadId);
         assertEquals("map", parameters.name);
@@ -125,7 +125,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         labels.add("Label");
         String uuid = UUID.randomUUID().toString();
         String ownerUuid = UUID.randomUUID().toString();
-        ClientMessage message = Authentication.Request.encode("user", "pass",
+        ClientMessage message = ClientAuthenticationCodec.encodeRequest("user", "pass",
                 uuid, ownerUuid, true, "JAVA", (byte) 1,
                 "1.0", "name", labels, 271, "3.12");
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
@@ -154,7 +154,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
-        Authentication.Request parameters = Authentication.Request.decode(resultingMessage.get());
+        ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(resultingMessage.get());
 
         assertEquals("user", parameters.username);
         assertEquals("pass", parameters.password);
@@ -163,11 +163,11 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(true, parameters.isOwnerConnection);
         assertEquals("JAVA", parameters.clientType);
         assertEquals((byte) 1, parameters.serializationVersion);
-        assertEquals("1.0", parameters.clientHazelcastVersion.get());
-        assertEquals("name", parameters.clientName.get());
-        assertArrayEquals(labels.toArray(), parameters.labels.get().toArray());
-        assertEquals(271, (int) parameters.partitionCount.get());
-        assertEquals("3.12", parameters.clusterId.get());
+        assertEquals("1.0", parameters.clientHazelcastVersion);
+        assertEquals("name", parameters.clientName);
+        assertArrayEquals(labels.toArray(), parameters.labels.toArray());
+        assertEquals(271, (int) parameters.partitionCount);
+        assertEquals("3.12", parameters.clusterId);
     }
 
     @Test
@@ -181,7 +181,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         String ownerUuid = UUID.randomUUID().toString();
 
 
-        ClientMessage message = Authentication.Response.encode((byte) 2, new Address("127.0.0.1", 5701),
+        ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
                 uuid, ownerUuid, (byte) 1, "3.12", members, 271, "3.13");
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
@@ -209,17 +209,17 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
-        Authentication.Response parameters = Authentication.Response.decode(resultingMessage.get());
+        ClientAuthenticationCodec.ResponseParameters parameters = ClientAuthenticationCodec.decodeResponse(resultingMessage.get());
 
         assertEquals(2, parameters.status);
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.uuid);
         assertEquals(ownerUuid, parameters.ownerUuid);
         assertEquals(1, parameters.serializationVersion);
-        assertEquals("3.12", parameters.serverHazelcastVersion.get());
-        assertArrayEquals(members.toArray(), parameters.clientUnregisteredMembers.get().toArray());
-        assertEquals(271, (int) parameters.partitionCount.get());
-        assertEquals("3.13", parameters.clusterId.get());
+        assertEquals("3.12", parameters.serverHazelcastVersion);
+        assertArrayEquals(members.toArray(), parameters.clientUnregisteredMembers.toArray());
+        assertEquals(271, parameters.partitionCount);
+        assertEquals("3.13", parameters.clusterId);
     }
 
 }

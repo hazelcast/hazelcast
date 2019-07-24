@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.client.impl.protocol.newcodecs.MapPut;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
-public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPut.Request> {
+public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutCodec.RequestParameters> {
 
     public MapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,19 +44,18 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPut.Request>
     }
 
     @Override
-    protected MapPut.Request decodeClientMessage() {
-        return MapPut.Request.decode(clientMessage);
+    protected MapPutCodec.RequestParameters decodeClientMessage() {
+        return MapPutCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected MapPut.Request decodeClientMessage(ClientMessage clientMessage) {
-        //delete this
-        throw new RuntimeException("decodeClientMessage(ClientMessage clientMessage) in MAp PUT");
+    protected MapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapPutCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapPut.Response.encode(serializationService.toData(response));
+        return MapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

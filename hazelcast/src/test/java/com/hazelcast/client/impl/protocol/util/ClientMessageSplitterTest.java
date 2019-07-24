@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.newcodecs.Authentication;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -58,7 +58,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
             labels.add(generateRandomString(1000));
         }
 
-        clientMessage = Authentication.Request.encode(username, password, uuid, ownerUuid, isOwnerConnection,
+        clientMessage = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
                 clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
     }
 

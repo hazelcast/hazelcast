@@ -86,7 +86,6 @@ import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
-import com.hazelcast.client.impl.protocol.newcodecs.MapPut;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
@@ -529,11 +528,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
             request = MapPutWithMaxIdleCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
-            request = MapPut.Request.encode(name, keyData, valueData, getThreadId(), ttlMillis);
+            request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
         }
         ClientMessage response = invoke(request, keyData);
-        MapPut.Response putResponse = MapPut.Response.decode(response);
-        return toObject(putResponse.value);
+        MapPutCodec.ResponseParameters putResponse = MapPutCodec.decodeResponse(response);
+        return toObject(putResponse.response);
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.client.impl.protocol.newcodecs.AddMembershipListener;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -70,7 +69,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberEventV10(Member member, int eventType) {
+    public void handleMemberEvent(Member member, int eventType) {
         switch (eventType) {
             case MembershipEvent.MEMBER_ADDED:
                 memberAdded(member);
@@ -85,10 +84,10 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberListEventV10(Collection<Member> initialMembers) {
+    public void handleMemberListEvent(Collection<Member> initialMembers) {
         Set<Member> prevMembers = Collections.emptySet();
         if (!members.isEmpty()) {
-            prevMembers = new LinkedHashSet<Member>(members.size());
+            prevMembers = new LinkedHashSet<>(members.size());
             prevMembers.addAll(members);
             members.clear();
         }
@@ -111,8 +110,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberAttributeChangeEventV10(Member member, Collection<Member> members, String key, int opType,
-                                                    String value) {
+    public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key, int opType,
+                                                 String value) {
         Collection<Member> currentMembersList = clusterService.getMemberList();
         String uuid = member.getUuid();
         for (Member target : currentMembersList) {
@@ -137,7 +136,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     void listenMembershipEvents(Connection ownerConnection) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
-        ClientMessage clientMessage = AddMembershipListener.Request.encode(false);
+        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();

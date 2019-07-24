@@ -17,7 +17,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.newcodecs.Authentication;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.HandlerStatus;
@@ -69,7 +69,7 @@ public class ClientMessageSplitAndBuildTest {
                 labels.add(generateRandomString(1000));
             }
 
-            clientMessage1 = Authentication.Request.encode(username, password, uuid, ownerUuid, isOwnerConnection,
+            clientMessage1 = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
                     clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
         }
         {
@@ -87,7 +87,7 @@ public class ClientMessageSplitAndBuildTest {
                 labels.add(generateRandomString(1000));
             }
 
-            clientMessage2 = Authentication.Request.encode(username, password, uuid, ownerUuid, isOwnerConnection,
+            clientMessage2 = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
                     clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
         }
     }

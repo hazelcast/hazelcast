@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.newcodecs.AddPartitionListener;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
@@ -61,7 +61,7 @@ public class ClientPartitionListenerService {
         PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
         Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
         int partitionStateVersion = partitionTableView.getVersion();
-        return AddPartitionListener.Event.PartitionsEvent.encodePartitionsEvent(partitions, partitionStateVersion);
+        return ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions.entrySet(), partitionStateVersion);
     }
 
     public void registerPartitionListener(ClientEndpoint clientEndpoint, long correlationId) {
@@ -82,7 +82,7 @@ public class ClientPartitionListenerService {
      * @param partitionTableView will be converted to address-&gt;partitions mapping
      * @return address-&gt;partitions mapping, where address is the client address of the member
      */
-    public Map<Address, List<Integer>>  getPartitions(PartitionTableView partitionTableView) {
+    public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
 

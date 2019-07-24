@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Iterator;
 
+
 public class DataCodec {
     public static void encode(ClientMessage clientMessage, Data data) {
 
