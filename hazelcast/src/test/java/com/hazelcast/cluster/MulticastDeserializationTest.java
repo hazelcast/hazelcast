@@ -88,14 +88,13 @@ public class MulticastDeserializationTest {
         Hazelcast.newHazelcastInstance(config);
 
         sendJoinDatagram(new TestDeserialized());
-        Thread.sleep(500L);
         assertTrueEventually(new AssertTask() {
-            
+
             @Override
             public void run() throws Exception {
-                assertTrue("Object was not deserializaed", TestDeserialized.isDeserialized);
+                assertTrue("Object was not deserialized", TestDeserialized.isDeserialized);
             }
-        }); 
+        });
     }
 
     private Config createConfig(boolean withFilter) {
