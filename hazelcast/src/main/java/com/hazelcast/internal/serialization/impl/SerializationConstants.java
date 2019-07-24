@@ -63,6 +63,8 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_STRING_ARRAY = -20;
 
+    public static final int CONSTANT_TYPE_UUID = -28;
+
     // ------------------------------------------------------------
     // DEFAULT SERIALIZERS
 
@@ -81,7 +83,7 @@ public final class SerializationConstants {
     public static final int JAVA_DEFAULT_TYPE_LINKED_LIST = -27;
 
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 28;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 29;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

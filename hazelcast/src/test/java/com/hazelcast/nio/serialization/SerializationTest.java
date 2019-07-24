@@ -65,6 +65,7 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -596,6 +597,14 @@ public class SerializationTest extends HazelcastTestSupport {
         VersionedDataSerializable otherObject = ss.toObject(ss.toData(object));
         assertEquals("ObjectDataInput.getVersion should be equal to member version",
                 Version.of(BuildInfoProvider.getBuildInfo().getVersion()), otherObject.getVersion());
+    }
+
+    @Test
+    public void testUuidSerializer() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Random random = new Random();
+        UUID uuid = new UUID(random.nextLong(), random.nextLong());
+        assertEquals(uuid, ss.toObject(ss.toData(uuid)));
     }
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {
