@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raftop;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftNodeAware;
@@ -86,7 +86,7 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.GET_INITIAL_RAFT_GROUP_MEMBERS_IF_CURRENT_GROUP_MEMBER_OP;
     }
 

@@ -23,13 +23,11 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCountDownLatchConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMerkleTreeConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
@@ -59,7 +57,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
@@ -70,7 +67,6 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -96,8 +92,6 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -145,6 +139,7 @@ public class ClientDynamicClusterConfig extends Config {
         Data partitioningStrategy = mapConfig.getPartitioningStrategyConfig() == null
                 ? null : serializationService.toData(mapConfig.getPartitioningStrategyConfig().getPartitioningStrategy());
 
+        // todo add merkle tree and event journal config
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
                 mapConfig.getMaxIdleSeconds(), mapConfig.getEvictionPolicy().name(), mapConfig.isReadBackupData(),
@@ -165,6 +160,8 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(cacheConfig.getPartitionLostListenerConfigs());
+
+        // todo add event journal config
         ClientMessage request = DynamicConfigAddCacheConfigCodec.encodeRequest(cacheConfig.getName(), cacheConfig.getKeyType(),
                 cacheConfig.getValueType(), cacheConfig.isStatisticsEnabled(), cacheConfig.isManagementEnabled(),
                 cacheConfig.isReadThrough(), cacheConfig.isWriteThrough(), cacheConfig.getCacheLoaderFactory(),
@@ -392,90 +389,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addListenerConfig(ListenerConfig listenerConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
-        String mapName = eventJournalConfig.getMapName();
-        String cacheName = eventJournalConfig.getCacheName();
-        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
-            throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
-        }
-        ClientMessage request = DynamicConfigAddEventJournalConfigCodec.encodeRequest(eventJournalConfig.getMapName(),
-                eventJournalConfig.getCacheName(), eventJournalConfig.isEnabled(), eventJournalConfig.getCapacity(),
-                eventJournalConfig.getTimeToLiveSeconds());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public EventJournalConfig getMapEventJournalConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public EventJournalConfig getCacheEventJournalConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        String mapName = merkleTreeConfig.getMapName();
-        Preconditions.checkHasText(mapName, "Merkle tree config must define a map name");
-        ClientMessage request = DynamicConfigAddMerkleTreeConfigCodec.encodeRequest(
-                merkleTreeConfig.getMapName(), merkleTreeConfig.isEnabled(), merkleTreeConfig.getDepth());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

@@ -200,7 +200,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
             CommandParser commandParser = textParsers.getParser(operation);
             if (commandParser != null) {
-                command = commandParser.parser(this, cmd, space);
+                command = commandParser.parser(this, cmd, space, connection);
             } else {
                 command = new ErrorCommand(UNKNOWN);
             }

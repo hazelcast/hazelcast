@@ -116,7 +116,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_PREPARE;
     }
 }

@@ -16,8 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**

@@ -18,7 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
@@ -251,7 +250,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <config-replacers>\n"

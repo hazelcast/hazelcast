@@ -77,7 +77,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_BACKUP;
     }
 }

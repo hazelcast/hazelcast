@@ -172,6 +172,11 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public void onAccess(long now) {
         hits++;
+        onAccessSafe(now);
+    }
+
+    @Override
+    public void onAccessSafe(long now) {
         lastAccessTime = stripBaseTime(now);
     }
 

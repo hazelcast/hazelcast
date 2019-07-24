@@ -134,7 +134,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_REPLICATION_CONFIG;
     }
 

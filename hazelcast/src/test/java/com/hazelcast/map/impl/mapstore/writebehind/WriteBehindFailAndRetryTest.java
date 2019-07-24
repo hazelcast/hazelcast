@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.core.OutOfMemoryHandler;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;

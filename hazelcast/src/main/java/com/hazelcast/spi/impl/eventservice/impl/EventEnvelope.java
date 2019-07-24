@@ -61,7 +61,7 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.EVENT_ENVELOPE;
     }
 

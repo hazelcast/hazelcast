@@ -143,7 +143,7 @@ class RaftSessionRegistry implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.RAFT_SESSION_REGISTRY;
     }
 

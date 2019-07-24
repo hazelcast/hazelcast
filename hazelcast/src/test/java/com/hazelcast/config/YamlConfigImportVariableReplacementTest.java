@@ -415,7 +415,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() {
         String yaml = ""
                 + "hazelcast:\n"

@@ -38,7 +38,7 @@ public class ScheduledExecutorMergingEntryImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.SCHEDULED_EXECUTOR_MERGING_ENTRY;
     }
 }

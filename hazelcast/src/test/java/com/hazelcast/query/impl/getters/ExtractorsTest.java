@@ -164,7 +164,7 @@ public class ExtractorsTest {
         int power = 550;
     }
 
-    public static class PowerExtractor extends ValueExtractor<Bond, Object> {
+    public static class PowerExtractor implements ValueExtractor<Bond, Object> {
         @Override
         public void extract(Bond target, Object arguments, ValueCollector collector) {
             collector.addObject(target.car.power);

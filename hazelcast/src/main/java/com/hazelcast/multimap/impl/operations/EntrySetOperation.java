@@ -38,7 +38,7 @@ public class EntrySetOperation extends AbstractMultiMapOperation implements Read
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.ENTRY_SET;
     }
 }

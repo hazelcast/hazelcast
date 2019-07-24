@@ -195,18 +195,6 @@ hazelcast:
         policy: PER_NODE
         max-size: 0
 
-        # `eviction-percentage` property is deprecated and will be ignored when it is set.
-        #
-        # As of version 3.7, eviction mechanism changed.
-        # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        eviction-percentage: 25
-
-        # `min-eviction-check-millis` property is deprecated  and will be ignored when it is set.
-        #
-        # As of version 3.7, eviction mechanism changed.
-        # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        min-eviction-check-millis: 100
-
         # While recovering from split-brain (network partitioning),
         # map entries in the small cluster will merge into the bigger cluster
         # based on the policy set here. When an entry merge into the
@@ -230,32 +218,6 @@ hazelcast:
         #              INDEX-ONLY: Caches values only when they are inserted into an index.
         #              ALWAYS: Always cache deserialized values.
         cache-deserialized-values: INDEX-ONLY
-
-  # Configuration for an event journal. The event journal keeps events related
-  # to a specific partition and data structure. For instance, it could keep
-  # map add, update, remove, merge events along with the key, old value, new value and so on.
-  event-journal:
-    map:
-      mapName:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-
-    cache:
-      cacheName:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-
-  # Configuration for a merkle tree.
-  # The merkle tree is a data structure used for efficient comparison of the
-  # difference in the contents of large data structures. The precision of
-  # such a comparison mechanism is defined by the depth of the merkle tree.
-  merkle-tree:
-    map:
-      mapName:
-        enabled: false
-        depth: 10
 
   multimap:
     default:

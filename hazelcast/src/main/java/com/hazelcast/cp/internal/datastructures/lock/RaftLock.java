@@ -257,7 +257,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.RAFT_LOCK;
     }
 

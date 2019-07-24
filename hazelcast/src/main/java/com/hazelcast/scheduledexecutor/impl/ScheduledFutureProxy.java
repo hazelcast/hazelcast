@@ -18,8 +18,8 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -149,7 +149,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get();
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 
@@ -160,7 +160,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get(timeout, unit);
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 

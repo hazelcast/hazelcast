@@ -54,7 +54,7 @@ public class ExplicitSuspicionOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return EXPLICIT_SUSPICION;
     }
 

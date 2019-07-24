@@ -24,9 +24,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -54,7 +54,7 @@ public class ClientQueryCacheClientContextTest extends HazelcastTestSupport {
     private IMap<String, String> map1;
     private IMap<String, String> map2;
     private IMap<String, String> map3;
-    private Predicate predicate = TruePredicate.INSTANCE;
+    private Predicate predicate = Predicates.alwaysTrue();
 
     @Before
     public void setup() {

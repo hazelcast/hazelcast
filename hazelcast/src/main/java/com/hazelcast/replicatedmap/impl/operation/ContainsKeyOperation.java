@@ -64,7 +64,7 @@ public class ContainsKeyOperation extends AbstractNamedSerializableOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.CONTAINS_KEY;
     }
 

@@ -16,5 +16,7 @@
 
 /**
  * Backport of Java 8 functional interfaces which Agrona depends on.
+ * Serializable and exception-declaring variants of functional interfaces from
+ * {@code java.util.function}.
  */
 package com.hazelcast.util.function;

@@ -44,7 +44,7 @@ public class CollectionTxnRemoveBackupOperation extends CollectionOperation impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TXN_REMOVE_BACKUP;
     }
 

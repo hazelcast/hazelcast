@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.8.0-7</client.protocol.version>
+        <client.protocol.version>2.0.0-3</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>8</jdk.version>
@@ -56,7 +56,7 @@
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.1.0</maven.javadoc.plugin.version>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
@@ -105,8 +105,8 @@
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
-        <jsr107.api.version>1.1.0</jsr107.api.version>
-        <jsr107.tck.version>1.1.0</jsr107.tck.version>
+        <jsr107.api.version>1.1.1</jsr107.api.version>
+        <jsr107.tck.version>1.1.1</jsr107.tck.version>
 
         <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
 
@@ -736,16 +736,6 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.6</name>
-                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
-                                </property>
-                                <property>
-                                    <name>api_1.7</name>
-                                    <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
-                                </property>
-                            </javaApiLinks>
                             <maxmemory>1024</maxmemory>
                         </configuration>
                         <executions>
@@ -755,7 +745,7 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
                                 </configuration>
                             </execution>
                         </executions>
@@ -820,7 +810,7 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
                                 </configuration>
                             </execution>
                         </executions>

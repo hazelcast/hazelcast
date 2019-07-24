@@ -94,7 +94,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ITEM;
     }
 

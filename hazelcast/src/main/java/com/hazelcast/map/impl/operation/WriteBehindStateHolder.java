@@ -132,9 +132,11 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             for (DelayedEntry e : delayedEntryList) {
                 Data key = mapServiceContext.toData(e.getKey());
                 Data value = mapServiceContext.toData(e.getValue());
+                long expirationTime = e.getExpirationTime();
 
                 out.writeData(key);
                 out.writeData(value);
+                out.writeLong(expirationTime);
                 out.writeLong(e.getStoreTime());
                 out.writeInt(e.getPartitionId());
                 out.writeLong(e.getSequence());
@@ -166,11 +168,12 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             for (int j = 0; j < listSize; j++) {
                 Data key = in.readData();
                 Data value = in.readData();
+                long expirationTime = in.readLong();
                 long storeTime = in.readLong();
                 int partitionId = in.readInt();
                 long sequence = in.readLong();
 
-                DelayedEntry<Data, Data> entry = DelayedEntries.createDefault(key, value, storeTime, partitionId);
+                DelayedEntry<Data, Data> entry = DelayedEntries.createDefault(key, value, expirationTime, storeTime, partitionId);
                 entry.setSequence(sequence);
                 delayedEntriesList.add(entry);
             }
@@ -197,7 +200,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.WRITE_BEHIND_STATE_HOLDER;
     }
 }

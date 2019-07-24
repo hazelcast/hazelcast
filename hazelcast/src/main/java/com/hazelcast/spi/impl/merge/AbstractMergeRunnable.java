@@ -21,9 +21,11 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -51,8 +53,8 @@ import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Used by {@link com.hazelcast.cache.ICache}, {@link com.hazelcast.core.IMap}
- * and {@link com.hazelcast.core.ReplicatedMap} to provide a merge runnable
+ * Used by {@link com.hazelcast.cache.ICache}, {@link IMap}
+ * and {@link ReplicatedMap} to provide a merge runnable
  * for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
  *
  * @param <K>           type of the store key

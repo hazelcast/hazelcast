@@ -185,7 +185,7 @@
                                reuse-address="false"
                                tcp-no-delay="false"/>
 
-            <hz:aws enabled="false" inside-aws="true" access-key="sample-access-key" secret-key="sample-secret-key"
+            <hz:aws enabled="false" use-public-ip="true" access-key="sample-access-key" secret-key="sample-secret-key"
                     region="sample-region" security-group-name="sample-group"
                     tag-key="sample-tag-key" tag-value="sample-tag-value"/>
         </hz:network>
@@ -363,7 +363,7 @@
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="username" value="spring-group"/>
+        <property name="name" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>
     </bean>
 

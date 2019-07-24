@@ -77,7 +77,7 @@ public class ScheduledTaskResult
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.TASK_RESOLUTION;
     }
 

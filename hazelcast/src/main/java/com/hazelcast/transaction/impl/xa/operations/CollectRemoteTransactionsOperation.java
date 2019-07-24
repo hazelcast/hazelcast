@@ -52,7 +52,7 @@ public class CollectRemoteTransactionsOperation extends AbstractXAOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.COLLECT_REMOTE_TX;
     }
 

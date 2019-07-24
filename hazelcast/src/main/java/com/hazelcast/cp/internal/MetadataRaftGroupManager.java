@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -400,7 +400,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return group.id();
             }
 
-            String msg = group.getId() + " already exists with a different size: " + group.memberCount();
+            String msg = group.id() + " already exists with a different size: " + group.memberCount();
             logger.severe(msg);
             throw new IllegalStateException(msg);
         }

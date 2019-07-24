@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.Node;
+import com.hazelcast.map.IMap;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.operation.LegacyMergeOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -29,7 +29,7 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private HazelcastInstance member;
 

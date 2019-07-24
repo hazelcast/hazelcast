@@ -56,7 +56,7 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_IF_ABSENT;
     }
 }

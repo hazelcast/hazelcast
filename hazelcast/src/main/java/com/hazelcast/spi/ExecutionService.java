@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -90,7 +91,7 @@ public interface ExecutionService {
      * configure when you want to load more data from the database
      * in parallel.
      *
-     * @see com.hazelcast.core.MapLoader#loadAll(java.util.Collection)
+     * @see MapLoader#loadAll(java.util.Collection)
      */
     String MAP_LOADER_EXECUTOR = "hz:map-load";
 
@@ -98,7 +99,7 @@ public interface ExecutionService {
      * The name of the executor that loads the entry keys and dispatches
      * the keys to the partition owners for value loading.
      *
-     * @see com.hazelcast.core.MapLoader#loadAllKeys()
+     * @see MapLoader#loadAllKeys()
      */
     String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
 

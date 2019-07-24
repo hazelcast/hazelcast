@@ -17,8 +17,8 @@
 package com.hazelcast.client.test.executor.tasks;
 
 import com.hazelcast.client.test.IdentifiedFactory;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -43,7 +43,7 @@ public class SelectNoMembers
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

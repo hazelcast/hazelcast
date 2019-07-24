@@ -44,7 +44,7 @@ public class DisposeBackupTaskOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.DISPOSE_BACKUP_TASK_OP;
     }
 

@@ -63,7 +63,7 @@ public class MasterResponseOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MASTER_RESPONSE;
     }
 }

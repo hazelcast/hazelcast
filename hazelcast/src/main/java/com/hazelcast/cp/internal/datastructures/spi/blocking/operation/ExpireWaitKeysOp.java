@@ -70,7 +70,7 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataServiceDataSerializerHook.EXPIRE_WAIT_KEYS_OP;
     }
 

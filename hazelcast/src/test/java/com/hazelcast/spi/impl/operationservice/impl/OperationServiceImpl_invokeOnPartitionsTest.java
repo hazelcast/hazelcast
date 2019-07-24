@@ -281,7 +281,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }
@@ -298,7 +298,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 145;
         }
     }
@@ -368,7 +368,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 654;
         }
 

@@ -40,7 +40,7 @@ public final class BackupAckResponse extends Response {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return BACKUP_ACK_RESPONSE;
     }
 

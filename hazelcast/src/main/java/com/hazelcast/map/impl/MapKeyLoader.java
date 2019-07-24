@@ -16,10 +16,9 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.Member;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -32,9 +31,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -54,6 +53,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
@@ -79,7 +79,7 @@ public class MapKeyLoader {
     private OperationService opService;
     private IPartitionService partitionService;
     private final ClusterService clusterService;
-    private IFunction<Object, Data> toData;
+    private Function<Object, Data> toData;
     private ExecutionService execService;
     private CoalescingDelayedTrigger delayedTrigger;
 
@@ -163,7 +163,7 @@ public class MapKeyLoader {
             .withTransition(State.LOADED, State.LOADING);
 
     public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
-                        ClusterService clusterService, ExecutionService execService, IFunction<Object, Data> serialize) {
+                        ClusterService clusterService, ExecutionService execService, Function<Object, Data> serialize) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;

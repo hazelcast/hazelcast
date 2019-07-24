@@ -47,7 +47,7 @@ public class ExpirationTimeMergePolicy<V, T extends MergingExpirationTime<V>>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.EXPIRATION_TIME;
     }
 }

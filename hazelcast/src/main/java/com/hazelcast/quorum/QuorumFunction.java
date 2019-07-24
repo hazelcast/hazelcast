@@ -16,7 +16,8 @@
 
 package com.hazelcast.quorum;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipListener;
 
 import java.util.Collection;
 
@@ -30,7 +31,7 @@ import java.util.Collection;
  * </ul>
  *
  * A {@code QuorumFunction} that implements {@link HeartbeatAware} will be also notified of heartbeats.
- * Additionally, a {@code QuorumFunction} that implements {@link com.hazelcast.core.MembershipListener}
+ * Additionally, a {@code QuorumFunction} that implements {@link MembershipListener}
  * will be notified of membership events. All listener invocations are executed before the
  * {@code QuorumFunction}'s {@link #apply(Collection)} method is invoked.
  *

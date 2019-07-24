@@ -46,7 +46,7 @@ public class LocalGetOp extends AbstractAtomicLongOp implements IndeterminateOpe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.LOCAL_GET_OP;
     }
 }

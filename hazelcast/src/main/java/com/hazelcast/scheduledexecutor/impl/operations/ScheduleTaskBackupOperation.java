@@ -45,7 +45,7 @@ public class ScheduleTaskBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SCHEDULE_BACKUP_OP;
     }
 

@@ -165,7 +165,7 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.PERMISSION_CONFIG_DTO;
     }
 

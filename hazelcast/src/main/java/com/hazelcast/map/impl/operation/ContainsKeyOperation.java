@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
@@ -41,7 +41,7 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CONTAINS_KEY;
     }
 

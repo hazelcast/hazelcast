@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -33,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
+ * Contains the configuration for an {@link IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
@@ -362,7 +363,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_CONFIG;
     }
 

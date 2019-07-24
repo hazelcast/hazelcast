@@ -52,7 +52,7 @@ public class EvictionOperation extends AbstractNamedSerializableOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.EVICTION;
     }
 

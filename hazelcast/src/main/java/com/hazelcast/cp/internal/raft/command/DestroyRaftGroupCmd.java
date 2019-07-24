@@ -35,7 +35,7 @@ public class DestroyRaftGroupCmd extends RaftGroupCmd implements IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.DESTROY_RAFT_GROUP_COMMAND;
     }
 

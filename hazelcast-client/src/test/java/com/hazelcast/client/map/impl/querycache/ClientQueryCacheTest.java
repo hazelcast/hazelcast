@@ -23,12 +23,11 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -52,7 +51,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientQueryCacheTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Integer> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private static TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -125,7 +124,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
             public void entryRemoved(EntryEvent event) {
                 countRemoveEvent.incrementAndGet();
             }
-        }, new SqlPredicate("this > 20"), true);
+        }, Predicates.sql("this > 20"), true);
 
         for (int i = 0; i < 30; i++) {
             map.remove(i);
@@ -245,7 +244,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             map.put(i, i);
         }
-        Predicate<Integer, Integer> predicate = new SqlPredicate("this > 5 AND this < 100");
+        Predicate<Integer, Integer> predicate = Predicates.sql("this > 5 AND this < 100");
         QueryCache<Integer, Integer> cache = map.getQueryCache(queryCacheName, predicate, includeValue);
 
         for (int i = 50; i < 100; i++) {
@@ -260,7 +259,7 @@ public class ClientQueryCacheTest extends HazelcastTestSupport {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig
                 .setPopulate(enableInitialPopulation)
-                .getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+                .getPredicateConfig().setImplementation(Predicates.alwaysTrue());
 
         return addConfig(queryCacheConfig, mapName);
     }

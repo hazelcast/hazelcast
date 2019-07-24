@@ -42,7 +42,7 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_ALL_BACKUP;
     }
 }

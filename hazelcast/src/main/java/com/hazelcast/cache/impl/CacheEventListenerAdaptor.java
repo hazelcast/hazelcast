@@ -263,7 +263,7 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_EVENT_LISTENER_ADAPTOR;
     }
 

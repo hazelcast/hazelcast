@@ -47,7 +47,7 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_BACKUP;
     }
 

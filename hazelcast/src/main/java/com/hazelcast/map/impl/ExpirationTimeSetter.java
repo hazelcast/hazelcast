@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -53,7 +54,7 @@ public final class ExpirationTimeSetter {
     /**
      * Returns last-access-time of an entry if it was accessed before, otherwise it returns creation-time of the entry.
      * This calculation is required for max-idle-seconds expiration, because after first creation of an entry via
-     * {@link com.hazelcast.core.IMap#put}, the {@code lastAccessTime} is zero till the first access.
+     * {@link IMap#put}, the {@code lastAccessTime} is zero till the first access.
      * Any subsequent get or update operation after first put will increase the {@code lastAccessTime}.
      */
     public static long getIdlenessStartTime(Record record) {
@@ -64,7 +65,7 @@ public final class ExpirationTimeSetter {
     /**
      * Returns last-update-time of an entry if it was updated before, otherwise it returns creation-time of the entry.
      * This calculation is required for time-to-live expiration, because after first creation of an entry via
-     * {@link com.hazelcast.core.IMap#put}, the {@code lastUpdateTime} is zero till the first update.
+     * {@link IMap#put}, the {@code lastUpdateTime} is zero till the first update.
      */
     public static long getLifeStartTime(Record record) {
         long lastUpdateTime = record.getLastUpdateTime();

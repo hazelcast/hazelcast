@@ -16,11 +16,11 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,7 +39,7 @@ import static java.lang.Thread.sleep;
  */
 public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
-    public static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
+    static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
 
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return instances[0].getScheduledExecutorService(name);
@@ -304,6 +304,28 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
             throw new IllegalStateException("Erroneous task");
         }
 
+    }
+
+
+    static class PlainInstanceAwareRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+
+        private final String latchName;
+
+        private transient HazelcastInstance instance;
+
+        PlainInstanceAwareRunnableTask(String latchName) {
+            this.latchName = latchName;
+        }
+
+        @Override
+        public void run() {
+            this.instance.getCountDownLatch(latchName).countDown();
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            instance = hazelcastInstance;
+        }
     }
 
     static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {

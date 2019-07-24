@@ -55,7 +55,7 @@ public final class ContainsValueOperationFactory extends AbstractMapOperationFac
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CONTAINS_VALUE_FACTORY;
     }
 }

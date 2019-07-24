@@ -39,7 +39,7 @@ public class AggregateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.ADD;
     }
 

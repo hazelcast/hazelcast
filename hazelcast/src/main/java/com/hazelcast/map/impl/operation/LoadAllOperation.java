@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +32,7 @@ import java.util.List;
 
 /**
  * Triggers loading values for the given keys from the defined
- * {@link com.hazelcast.core.MapLoader}.
+ * {@link MapLoader}.
  * The values are loaded asynchronously and the loaded key-value pairs are sent to
  * the partition threads to update the record stores.
  * <p>
@@ -116,7 +117,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LOAD_ALL;
     }
 }

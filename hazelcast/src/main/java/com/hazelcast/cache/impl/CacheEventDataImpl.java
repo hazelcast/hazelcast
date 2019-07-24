@@ -106,7 +106,7 @@ public class CacheEventDataImpl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_EVENT_DATA;
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.topic.ITopic;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
+ * Contains the configuration for a {@link ITopic}.
  */
 public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
@@ -276,7 +277,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.TOPIC_CONFIG;
     }
 

@@ -89,7 +89,7 @@ public class RestartCPMemberOp extends Operation implements RaftSystemOperation,
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.RESTART_CP_MEMBER_OP;
     }
 

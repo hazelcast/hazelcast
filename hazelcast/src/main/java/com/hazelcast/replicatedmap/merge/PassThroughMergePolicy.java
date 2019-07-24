@@ -46,7 +46,7 @@ public final class PassThroughMergePolicy implements ReplicatedMapMergePolicy, I
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PASS_THROUGH_MERGE_POLICY;
     }
 

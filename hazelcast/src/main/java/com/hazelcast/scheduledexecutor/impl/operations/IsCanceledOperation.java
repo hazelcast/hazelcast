@@ -53,7 +53,7 @@ public class IsCanceledOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.IS_CANCELED_OP;
     }
 

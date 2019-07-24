@@ -17,27 +17,27 @@
 package com.hazelcast.config;
 
 /**
- * The ConfigPatternMatcher provides a strategy to match an item name to a configuration pattern.
+ * The ConfigPatternMatcher provides a strategy to match an item name
+ * to a configuration pattern.
  * <p>
- * It is used on each Config.getXXXConfig() and ClientConfig.getXXXConfig() call for map, list, queue, set, executor, topic,
- * semaphore etc., so for example {@code itemName} is the name of a map and <code>configPatterns</code> are all defined map
- * configurations.
+ * It is used on each Config.getXXXConfig() and ClientConfig.getXXXConfig()
+ * call for any data structure. It is supplied a list of config patterns
+ * and the name of the item that the configuration is requested for.
  * <p>
- * If no configuration is found by the matcher it should return {@code null}. In this case the default config will be used
- * for this item then. If multiple configurations are found by the matcher a {@link com.hazelcast.config.ConfigurationException}
- * should be thrown.
- * <p>
- * Since Hazelcast 3.5 the default matcher is {@link com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher}.
+ * Default matcher is {@link com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher}.
  */
 public interface ConfigPatternMatcher {
 
     /**
      * Returns the best match for an item name out of a list of configuration patterns.
      *
-     * @param configPatterns list of configuration patterns
-     * @param itemName       item name to match
-     * @return a key of configPatterns which matches the item name or {@code null} if nothing matches
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @param configPatterns    list of known configuration patterns
+     * @param itemName          item name to match
+     * @return                  a key of configPatterns which matches
+     *                          the item name or {@code null} if there
+     *                          is no match
+     * @throws InvalidConfigurationException if ambiguous configurations are found
      */
-    String matches(Iterable<String> configPatterns, String itemName) throws ConfigurationException;
+    String matches(Iterable<String> configPatterns, String itemName)
+            throws InvalidConfigurationException;
 }

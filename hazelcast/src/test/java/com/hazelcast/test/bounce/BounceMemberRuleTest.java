@@ -17,7 +17,7 @@
 package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

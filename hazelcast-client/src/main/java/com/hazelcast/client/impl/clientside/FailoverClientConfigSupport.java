@@ -240,9 +240,6 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getClassLoader(), alternativeConfig.getClassLoader())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "classLoader");
         }
-        if (notEqual(mainConfig.getLicenseKey(), alternativeConfig.getLicenseKey())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "licenseKey");
-        }
         if (notEqual(mainConfig.getConnectionStrategyConfig(), alternativeConfig.getConnectionStrategyConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "connectionStrategy");
         }

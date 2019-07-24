@@ -156,7 +156,7 @@ public class MemcacheEntry implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TextProtocolsDataSerializerHook.MEMCACHE_ENTRY;
     }
 }

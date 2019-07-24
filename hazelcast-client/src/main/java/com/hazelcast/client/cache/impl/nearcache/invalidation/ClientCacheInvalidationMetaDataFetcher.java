@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationM
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.core.Client;
+import com.hazelcast.client.api.Client;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;

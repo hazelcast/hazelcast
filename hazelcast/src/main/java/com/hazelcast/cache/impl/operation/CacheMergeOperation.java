@@ -126,7 +126,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.MERGE;
     }
 }

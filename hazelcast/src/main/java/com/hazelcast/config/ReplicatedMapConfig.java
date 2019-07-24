@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
@@ -33,7 +34,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
+ * Contains the configuration for an {@link ReplicatedMap}
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
@@ -105,18 +106,18 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     }
 
     /**
-     * Returns the name of this {@link com.hazelcast.core.ReplicatedMap}.
+     * Returns the name of this {@link ReplicatedMap}.
      *
-     * @return the name of the {@link com.hazelcast.core.ReplicatedMap}
+     * @return the name of the {@link ReplicatedMap}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the name of this {@link com.hazelcast.core.ReplicatedMap}.
+     * Sets the name of this {@link ReplicatedMap}.
      *
-     * @param name the name of the {@link com.hazelcast.core.ReplicatedMap}
+     * @param name the name of the {@link ReplicatedMap}
      * @return the current replicated map config instance
      */
     public ReplicatedMapConfig setName(String name) {
@@ -402,7 +403,7 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.REPLICATED_MAP_CONFIG;
     }
 

@@ -22,8 +22,8 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
@@ -140,7 +140,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
             return authenticate(clientEngine.getSecurityContext());
         } else if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            return authenticate(usernamePasswordCredentials);
+            return verifyGroupName(usernamePasswordCredentials);
         } else {
             logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
                     + "group-name and group-password should be used for authentication!\n" + "Current credentials type is: "
@@ -155,9 +155,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
         Connection connection = endpoint.getConnection();
-        credentials.setEndpoint(connection.getInetAddress().getHostAddress());
         try {
-            LoginContext lc = securityContext.createClientLoginContext(credentials);
+            LoginContext lc = securityContext.createClientLoginContext(credentials, connection);
             lc.login();
             endpoint.setLoginContext(lc);
             return AUTHENTICATED;
@@ -167,10 +166,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         }
     }
 
-    private AuthenticationStatus authenticate(UsernamePasswordCredentials credentials) {
+    private AuthenticationStatus verifyGroupName(UsernamePasswordCredentials credentials) {
         GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
         String nodeGroupName = groupConfig.getName();
-        boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
+        boolean usernameMatch = nodeGroupName.equals(credentials.getName());
         return usernameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
     }
 

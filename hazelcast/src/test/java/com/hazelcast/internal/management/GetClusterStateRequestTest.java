@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.internal.json.JsonObject;

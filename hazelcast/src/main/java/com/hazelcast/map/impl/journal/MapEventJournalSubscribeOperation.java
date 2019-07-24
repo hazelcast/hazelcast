@@ -66,7 +66,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_JOURNAL_SUBSCRIBE_OPERATION;
     }
 }

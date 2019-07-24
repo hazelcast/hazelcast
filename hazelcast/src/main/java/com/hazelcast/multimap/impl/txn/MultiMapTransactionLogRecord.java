@@ -162,7 +162,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_TRANSACTION_LOG_RECORD;
     }
 }

@@ -91,7 +91,7 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT;
     }
 }

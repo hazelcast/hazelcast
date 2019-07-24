@@ -21,7 +21,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -106,8 +105,6 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         mapConfig.setTimeToLiveSeconds(100);
         mapConfig.setMaxIdleSeconds(22);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setEvictionPercentage(35);
-        mapConfig.setMinEvictionCheckMillis(199);
         mapConfig.setReadBackupData(false);
         mapConfig.setBackupCount(3);
         mapConfig.setAsyncBackupCount(2);

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.semaphore.proxy;
 
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;

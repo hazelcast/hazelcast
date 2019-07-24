@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.PerIndexStats;
@@ -383,7 +382,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        List<Indexes> allIndexes = new ArrayList<>();
         for (IMap map : maps) {
             allIndexes.addAll(getAllIndexes(map));
         }

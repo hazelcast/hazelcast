@@ -112,7 +112,7 @@ public class EvictAllOperation extends MapOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_ALL;
     }
 }

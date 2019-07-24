@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
@@ -69,7 +69,7 @@ public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationSta
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.INIT_SEMAPHORE_OP;
     }
 

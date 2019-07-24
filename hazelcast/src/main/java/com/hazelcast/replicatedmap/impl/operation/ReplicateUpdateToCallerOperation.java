@@ -128,7 +128,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE_TO_CALLER;
     }
 }

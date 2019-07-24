@@ -20,11 +20,9 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projections;
-import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -340,7 +338,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.entrySet(new PartitionPredicate(10, Predicates.equal("this", 10)));
+        map.entrySet(Predicates.partitionPredicate(10, Predicates.equal("this", 10)));
         assertEquals(1, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
         assertEquals(0, valueStats().getQueryCount());

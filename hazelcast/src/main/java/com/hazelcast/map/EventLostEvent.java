@@ -17,8 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * This event is fired in case of an event lost detection.

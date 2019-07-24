@@ -108,7 +108,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.POST_JOIN_PROXY;
     }
 

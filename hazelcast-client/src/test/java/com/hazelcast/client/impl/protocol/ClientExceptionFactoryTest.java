@@ -21,10 +21,8 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -192,9 +190,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new ClassNotFoundException(randomString())},
                 new Object[]{new ConcurrentModificationException(randomString())},
                 new Object[]{new ConfigMismatchException(randomString())},
-                new Object[]{new ConfigurationException(randomString())},
                 new Object[]{new DistributedObjectDestroyedException(randomString())},
-                new Object[]{new DuplicateInstanceNameException(randomString())},
                 new Object[]{new EOFException(randomString())},
                 new Object[]{new ExecutionException(new IOException())},
                 new Object[]{new HazelcastException(randomString())},

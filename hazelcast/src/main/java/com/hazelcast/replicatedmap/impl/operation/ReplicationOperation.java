@@ -161,7 +161,7 @@ public class ReplicationOperation extends AbstractSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.REPLICATION;
     }
 }

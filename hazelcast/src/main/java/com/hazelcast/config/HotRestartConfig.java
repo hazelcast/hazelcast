@@ -77,6 +77,15 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns an immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     */
+    HotRestartConfig getAsReadOnly() {
+        return new HotRestartConfigReadOnly(this);
+    }
+
     @Override
     public String toString() {
         return "HotRestartConfig{"
@@ -91,7 +100,7 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.HOT_RESTART_CONFIG;
     }
 
@@ -128,5 +137,22 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (fsync ? 1 : 0);
         return result;
+    }
+
+    // not private for testing
+    static class HotRestartConfigReadOnly extends HotRestartConfig {
+        HotRestartConfigReadOnly(HotRestartConfig config) {
+            super(config);
+        }
+
+        @Override
+        public HotRestartConfig setFsync(boolean fsync) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public HotRestartConfig setEnabled(boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

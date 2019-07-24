@@ -19,7 +19,7 @@ package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.ValidationException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;

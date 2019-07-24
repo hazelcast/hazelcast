@@ -20,6 +20,8 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
+
 /**
  * Topic proxy used when global ordering is enabled (all nodes listening to
  * the same topic get their messages in the same order).
@@ -36,7 +38,7 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public void publish(E message) {
+    public void publish(@Nullable E message) {
         Operation operation = new PublishOperation(getName(), toData(message))
                 .setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);

@@ -78,7 +78,7 @@ public class GenericOperation extends AbstractRingBufferOperation implements Rea
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return GENERIC_OPERATION;
     }
 

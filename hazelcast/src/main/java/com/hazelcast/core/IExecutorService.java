@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.monitor.LocalExecutorStats;
 
 import java.util.Collection;

@@ -65,7 +65,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_FRAGMENT_MIGRATION_STATE;
     }
 

@@ -129,7 +129,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReferenceObjects.DATA_SERIALIZABLE_CLASS_ID;
     }
 

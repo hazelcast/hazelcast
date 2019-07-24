@@ -47,7 +47,7 @@ public class CollectionReserveAddOperation extends CollectionOperation implement
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_RESERVE_ADD;
     }
 

@@ -32,9 +32,9 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -153,7 +153,9 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
-        return nodeEngine.getConfig().findMapEventJournalConfig(namespace.getObjectName());
+        return nodeEngine.getConfig()
+                         .findMapConfig(namespace.getObjectName())
+                         .getEventJournalConfig();
     }
 
     @Override

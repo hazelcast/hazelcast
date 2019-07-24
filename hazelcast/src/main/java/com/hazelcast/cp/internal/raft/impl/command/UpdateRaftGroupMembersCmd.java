@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.command;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
@@ -65,7 +65,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.UPDATE_RAFT_GROUP_MEMBERS_COMMAND;
     }
 

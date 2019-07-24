@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -142,7 +142,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUEUE_STORE_CONFIG;
     }
 

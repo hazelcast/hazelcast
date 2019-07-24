@@ -101,7 +101,7 @@ public class MadePublishableOperation extends MapOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MADE_PUBLISHABLE;
     }
 }

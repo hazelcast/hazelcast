@@ -38,7 +38,7 @@ public class ShutdownOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SHUTDOWN;
     }
 

@@ -20,9 +20,9 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.WanSyncStats;
-import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
+import com.hazelcast.wan.ConsistencyCheckResult;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;

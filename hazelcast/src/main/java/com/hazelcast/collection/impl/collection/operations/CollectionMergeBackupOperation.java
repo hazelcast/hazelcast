@@ -63,7 +63,7 @@ public class CollectionMergeBackupOperation extends CollectionOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_MERGE_BACKUP;
     }
 

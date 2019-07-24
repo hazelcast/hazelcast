@@ -89,7 +89,7 @@ public class CacheLegacyMergeOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.LEGACY_MERGE;
     }
 }

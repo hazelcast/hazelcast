@@ -15,8 +15,10 @@
  */
 
 package com.hazelcast.nio;
+
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+@PrivateApi
 public class DefaultAggregateEndpointManager
         implements AggregateEndpointManager {
 

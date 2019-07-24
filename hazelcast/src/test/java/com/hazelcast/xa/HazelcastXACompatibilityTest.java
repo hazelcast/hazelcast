@@ -18,7 +18,7 @@ package com.hazelcast.xa;
 
 import com.atomikos.datasource.xa.XID;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

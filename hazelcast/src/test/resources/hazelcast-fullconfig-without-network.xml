@@ -62,7 +62,7 @@
     </properties>
     <wan-replication name="my-wan-cluster">
         <wan-publisher group-name="tokyo" publisher-id="tokyoPublisherId">
-            <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
+            <class-name>com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication</class-name>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
@@ -234,7 +234,6 @@
         -->
         <statistics-enabled>false</statistics-enabled>
 
-        <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--
             Number of backups. If 1 is set as the backup-count for example,
@@ -275,20 +274,6 @@
         -->
 
         <max-size policy="PER_NODE">20</max-size>
-        <!--
-            `eviction-percentage` property is deprecated.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <eviction-percentage>25</eviction-percentage>
-        <!--
-            `min-eviction-check-millis` property is deprecated.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <min-eviction-check-millis>200</min-eviction-check-millis>
 
         <!--
             While recovering from split-brain (network partitioning), data structure entries in the small cluster
@@ -312,9 +297,18 @@
 
         <read-backup-data>true</read-backup-data>
 
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
+
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
+
+        <event-journal enabled="true">
+            <capacity>10</capacity>
+            <time-to-live-seconds>10</time-to-live-seconds>
+        </event-journal>
 
         <!--
             Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
@@ -545,6 +539,10 @@
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
+        <event-journal enabled="true">
+            <capacity>100</capacity>
+            <time-to-live-seconds>100</time-to-live-seconds>
+        </event-journal>
     </cache>
 
     <flake-id-generator name="default">
@@ -804,11 +802,6 @@
         <recently-active-quorum heartbeat-tolerance-millis="60000" />
     </quorum>
 
-    <merkle-tree enabled="true">
-        <mapName>default</mapName>
-        <depth>5</depth>
-    </merkle-tree>
-
     <hot-restart-persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>
         <base-dir>base-dir</base-dir>
@@ -817,18 +810,6 @@
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
     </hot-restart-persistence>
-
-    <event-journal>
-        <mapName>mapName</mapName>
-        <capacity>10</capacity>
-        <time-to-live-seconds>10</time-to-live-seconds>
-    </event-journal>
-
-    <event-journal>
-        <cacheName>cacheName</cacheName>
-        <capacity>100</capacity>
-        <time-to-live-seconds>100</time-to-live-seconds>
-    </event-journal>
 
     <lite-member enabled="true"/>
 

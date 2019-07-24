@@ -62,7 +62,7 @@ public class IndexInfo implements IdentifiedDataSerializable, Comparable<IndexIn
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.INDEX_INFO;
     }
 

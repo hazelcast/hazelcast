@@ -23,12 +23,12 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.AbstractEntryEventTypesTest.Person;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -59,7 +59,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
     private IMap<Integer, Person> map;
     private QueryCache queryCache;
-    private Predicate predicate = new SqlPredicate("age > 50");
+    private Predicate predicate = Predicates.sql("age > 50");
 
     @Parameterized.Parameter
     public boolean includeValues;

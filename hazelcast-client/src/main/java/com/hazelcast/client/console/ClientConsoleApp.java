@@ -26,20 +26,20 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.collection.IList;
+import com.hazelcast.map.IMap;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.nio.IOUtil;
@@ -184,7 +184,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     /**
      * A line reader
      */
-
     static class DefaultLineReader implements LineReader {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
@@ -1343,6 +1342,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     @Override
     public void entryEvicted(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent event) {
         println(event);
     }
 

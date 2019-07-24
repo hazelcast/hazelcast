@@ -35,8 +35,6 @@ enum ConfigSections {
     EXECUTOR_SERVICE("executor-service", true),
     DURABLE_EXECUTOR_SERVICE("durable-executor-service", true),
     SCHEDULED_EXECUTOR_SERVICE("scheduled-executor-service", true),
-    EVENT_JOURNAL("event-journal", true),
-    MERKLE_TREE("merkle-tree", true),
     QUEUE("queue", true),
     MAP("map", true),
     CACHE("cache", true),

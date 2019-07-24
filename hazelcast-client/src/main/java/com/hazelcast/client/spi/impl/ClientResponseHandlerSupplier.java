@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 

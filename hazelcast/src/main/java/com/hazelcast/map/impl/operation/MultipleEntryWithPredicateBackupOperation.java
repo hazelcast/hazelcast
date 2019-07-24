@@ -61,7 +61,7 @@ public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBack
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_PREDICATE_BACKUP;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch.operation;
 
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
@@ -77,7 +77,7 @@ public class AwaitOp extends AbstractCountDownLatchOp implements CallerAware, In
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.AWAIT_OP;
     }
 

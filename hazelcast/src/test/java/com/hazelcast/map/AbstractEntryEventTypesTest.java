@@ -18,13 +18,12 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -55,7 +54,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     public boolean includeValue;
 
     @SuppressWarnings("unchecked")
-    final Predicate<Integer, Person> predicate = new SqlPredicate("age > 50");
+    final Predicate<Integer, Person> predicate = Predicates.sql("age > 50");
 
     final AtomicInteger eventCounter = new AtomicInteger();
     HazelcastInstance instance;

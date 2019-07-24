@@ -97,7 +97,7 @@ public class MapPartitionLostListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_PARTITION_LOST_LISTENER_CONFIG;
     }
 }

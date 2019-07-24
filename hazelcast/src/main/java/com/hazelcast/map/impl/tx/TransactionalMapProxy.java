@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultUtils;
 import com.hazelcast.map.impl.query.Target;
@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.tx.TxnValueWrapper.Type;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
@@ -48,7 +48,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
+ * Proxy implementation of {@link TransactionalMap} interface.
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 
@@ -347,7 +347,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     @SuppressWarnings("unchecked")
     public Set<Object> keySet() {
-        return keySet(TruePredicate.INSTANCE);
+        return keySet(Predicates.alwaysTrue());
     }
 
     @Override
@@ -374,7 +374,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             } else {
                 Data keyData = entry.getKey();
 
-                if (predicate == TruePredicate.INSTANCE) {
+                if (predicate == Predicates.alwaysTrue()) {
                     returningKeySet.add(toObjectIfNeeded(keyData));
                 } else {
                     cachedQueryEntry.init(ss, keyData, entry.getValue().value, extractors);
@@ -391,7 +391,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     @SuppressWarnings("unchecked")
     public Collection<Object> values() {
-        return values(TruePredicate.INSTANCE);
+        return values(Predicates.alwaysTrue());
     }
 
     @Override

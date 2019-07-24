@@ -23,8 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
 
@@ -39,7 +40,7 @@ import java.io.IOException;
  * <p>
  * The operation can also wait until there is enough room or the wait timeout has elapsed.
  *
- * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TransactionalQueue#offer(Object)
  * @see TxnOfferOperation
  */
 public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
@@ -97,7 +98,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER;
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -42,8 +42,8 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  *                   </hz:tcp-ip>
  *              </hz:join>
  *          </hz:network>
- *          <hz:map name="map" backup-count="2" max-size="0" eviction-percentage="30"
- *              read-backup-data="true" eviction-policy="NONE"
+ *          <hz:map name="map" backup-count="2" max-size="0"
+ *             read-backup-data="true" eviction-policy="NONE"
  *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
  *      </hz:config>
  * </hz:hazelcast>

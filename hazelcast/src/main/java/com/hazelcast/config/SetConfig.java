@@ -16,8 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.ISet;
+
 /**
- * Contains the configuration for an {@link com.hazelcast.core.ISet}.
+ * Contains the configuration for an {@link ISet}.
  */
 public class SetConfig extends CollectionConfig<SetConfig> {
 
@@ -49,7 +51,7 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SET_CONFIG;
     }
 

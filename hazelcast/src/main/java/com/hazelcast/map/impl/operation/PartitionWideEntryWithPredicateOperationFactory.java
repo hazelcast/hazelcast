@@ -30,7 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
@@ -127,7 +127,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
      */
     private Set<Data> tryToObtainKeysFromIndexes(NodeEngine nodeEngine) {
         // Do not use index in this case, because it requires full-table-scan.
-        if (predicate == TruePredicate.INSTANCE) {
+        if (predicate == Predicates.alwaysTrue()) {
             return null;
         }
 
@@ -202,7 +202,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_FACTORY;
     }
 }

@@ -66,7 +66,7 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Num
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.INT_AVG;
     }
 

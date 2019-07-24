@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -74,7 +74,7 @@ public final class BinaryOperationFactory implements OperationFactory, NodeAware
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.PARALLEL_OPERATION_FACTORY;
     }
 }

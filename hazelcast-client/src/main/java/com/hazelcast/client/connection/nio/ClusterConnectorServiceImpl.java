@@ -30,9 +30,9 @@ import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -150,7 +150,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             client.onClusterConnect(connection);
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
-        } catch (ConfigurationException e) {
+        } catch (InvalidConfigurationException e) {
             setOwnerConnectionAddress(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {

@@ -244,7 +244,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SCHEDULED_EXECUTOR_CONFIG;
     }
 

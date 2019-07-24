@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
@@ -53,7 +53,7 @@ public class DrainPermitsOp extends AbstractSemaphoreOp implements Indeterminate
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSemaphoreDataSerializerHook.DRAIN_PERMITS_OP;
     }
 }

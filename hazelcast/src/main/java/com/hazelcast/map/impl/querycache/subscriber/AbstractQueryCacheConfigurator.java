@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -84,7 +84,7 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
 
         if (!isNullOrEmpty(predicateConfig.getSql())) {
             String sql = predicateConfig.getSql();
-            return new SqlPredicate(sql);
+            return Predicates.sql(sql);
         }
 
         return null;

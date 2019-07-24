@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 
 /**
@@ -43,6 +44,11 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
     @Override
     public V getValue() {
         return null;
+    }
+
+    @Override
+    public long getExpirationTime() {
+        return EntryLoader.MetadataAwareValue.NO_TIME_SET;
     }
 
     @Override

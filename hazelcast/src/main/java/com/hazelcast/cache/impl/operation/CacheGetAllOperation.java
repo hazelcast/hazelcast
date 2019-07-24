@@ -69,7 +69,7 @@ public class CacheGetAllOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.GET_ALL;
     }
 

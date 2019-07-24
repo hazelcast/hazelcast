@@ -62,7 +62,7 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE;
     }
 

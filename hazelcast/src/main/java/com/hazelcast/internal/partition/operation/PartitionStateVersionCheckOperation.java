@@ -83,7 +83,7 @@ public final class PartitionStateVersionCheckOperation extends AbstractPartition
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_STATE_VERSION_CHECK_OP;
     }
 }

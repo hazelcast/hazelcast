@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection.impl.common;
 
-import com.hazelcast.core.ItemEvent;
+import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 

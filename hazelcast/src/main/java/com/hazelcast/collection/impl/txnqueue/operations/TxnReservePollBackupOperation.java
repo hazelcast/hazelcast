@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
@@ -53,7 +53,7 @@ public class TxnReservePollBackupOperation extends QueueOperation implements Bac
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_POLL_BACKUP;
     }
 

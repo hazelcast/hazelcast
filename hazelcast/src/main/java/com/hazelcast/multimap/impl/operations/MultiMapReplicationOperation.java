@@ -116,7 +116,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_REPLICATION_OPERATION;
     }
 }

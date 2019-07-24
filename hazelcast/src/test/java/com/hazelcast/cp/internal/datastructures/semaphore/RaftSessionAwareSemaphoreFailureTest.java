@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionAwareSemaphoreProxy;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ThreadUtil;
@@ -32,7 +32,7 @@ import static com.hazelcast.cp.internal.session.ProxySessionManagerService.NO_SE
 import static com.hazelcast.cp.internal.session.ProxySessionManagerService.SERVICE_NAME;
 import static org.junit.Assert.assertNotEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RaftSessionAwareSemaphoreFailureTest extends RaftSemaphoreFailureTest {
 

@@ -60,7 +60,7 @@
             <hz:wan-replication name="testWan">
                 <hz:wan-publisher group-name="tokyo"
                                   publisher-id="tokyoPublisherId"
-                                  class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
+                                  class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
                     <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
                     <hz:queue-capacity>1000</hz:queue-capacity>
                     <hz:initial-publisher-state>STOPPED</hz:initial-publisher-state>
@@ -127,7 +127,7 @@
                         <hz:property name="maxEndpoints">2</hz:property>
                     </hz:properties>
                 </hz:wan-publisher>
-                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
+                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication">
                     <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
                 </hz:wan-publisher>
                 <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer"
@@ -378,8 +378,6 @@
             <hz:map name="testMap"
                     backup-count="2"
                     max-size="0"
-                    eviction-percentage="30"
-                    min-eviction-check-millis="1000"
                     read-backup-data="true"
                     eviction-policy="NONE"
                     in-memory-format="BINARY"
@@ -399,13 +397,16 @@
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
+                <hz:merkle-tree enabled="${testMap.merkleTree.enabled}" depth="${testMap.merkleTree.depth}"/>
                 <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
+                <hz:event-journal enabled="${testMap.journal.enabled}"
+                                  capacity="${testMap.journal.capacity}"
+                                  time-to-live-seconds="${testMap.journal.ttl}"/>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
                     max-size="1000"
                     max-size-policy="PER_NODE"
-                    eviction-percentage="30"
                     read-backup-data="true"
                     eviction-policy="NONE">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
@@ -444,7 +445,6 @@
                     backup-count="2"
                     max-size="0"
                     max-size-policy="PER_NODE"
-                    eviction-percentage="30"
                     read-backup-data="true"
                     eviction-policy="NONE">
                 <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory"
@@ -458,7 +458,6 @@
             <hz:map name="testMap4"
                     backup-count="2"
                     max-size="0"
-                    eviction-percentage="30"
                     read-backup-data="true"
                     eviction-policy="NONE">
                 <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
@@ -490,14 +489,11 @@
                     async-backup-count="1"
                     time-to-live-seconds="1"
                     max-size="10"
-                    eviction-percentage="50"
                     eviction-policy="LRU"/>
 
-            <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
-            <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
             <hz:map name="mapWithValueCachingSetToNever" cache-deserialized-values="NEVER"/>
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="${map.conf.cache.deserialized.values}"/>
-            <hz:map name="mapWithDefaultOptimizedQueries"/>
+            <hz:map name="mapWithDefaultValueCaching"/>
             <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
                     in-memory-format="NATIVE"/>
 
@@ -532,12 +528,10 @@
                 </hz:wan-replication-ref>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:hot-restart enabled="true" fsync="true"/>
+                <hz:event-journal enabled="true"
+                                  capacity="123"
+                                  time-to-live-seconds="321"/>
             </hz:cache>
-
-            <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
-                              capacity="123" time-to-live-seconds="321"/>
-
-            <hz:merkle-tree map-name="mapName" enabled="true" depth="15"/>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
                 <hz:entry-listeners>

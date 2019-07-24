@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref.proxy;
 
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -81,12 +81,6 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
     @Override
     public T getAndSet(T newValue) {
         return getAndSetAsync(newValue).join();
-    }
-
-    @Override
-    public T setAndGet(T update) {
-        set(update);
-        return update;
     }
 
     @Override

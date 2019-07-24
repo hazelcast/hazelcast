@@ -52,7 +52,7 @@ public class CacheClearResponse
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CLEAR_RESPONSE;
     }
 

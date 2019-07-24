@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -308,10 +309,10 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Setting {@link #writeCoalescing} is meaningful if you are using write-behind {@link com.hazelcast.core.MapStore}.
+     * Setting {@link #writeCoalescing} is meaningful if you are using write-behind {@link MapStore}.
      * <p>
      * When {@link #writeCoalescing} is {@code true}, only the latest store operation on a key in the {@link #writeDelaySeconds}
-     * time-window will be reflected to {@link com.hazelcast.core.MapStore}.
+     * time-window will be reflected to {@link MapStore}.
      * <p>
      * Default value is {@value #DEFAULT_WRITE_COALESCING}.
      *
@@ -406,7 +407,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MAP_STORE_CONFIG;
     }
 

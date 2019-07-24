@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -100,7 +100,7 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL;
     }
 

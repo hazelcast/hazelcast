@@ -23,11 +23,11 @@ import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.TransactionalList;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.transaction.TransactionException;
@@ -43,7 +43,7 @@ import java.util.Map;
 
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
- * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
+ * transactional data-structures like the {@link TransactionalMap}.
  *
  * Provides client instance and client connection proxies that need to be accessed for sending invocations.
  */

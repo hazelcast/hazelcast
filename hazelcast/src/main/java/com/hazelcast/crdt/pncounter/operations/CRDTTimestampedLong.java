@@ -63,7 +63,7 @@ public class CRDTTimestampedLong implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.CRDT_TIMESTAMPED_LONG;
     }
 

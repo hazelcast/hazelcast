@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.set;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;

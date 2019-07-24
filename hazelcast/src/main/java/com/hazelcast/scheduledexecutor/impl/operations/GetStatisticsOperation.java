@@ -54,7 +54,7 @@ public class GetStatisticsOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.GET_STATS_OP;
     }
 

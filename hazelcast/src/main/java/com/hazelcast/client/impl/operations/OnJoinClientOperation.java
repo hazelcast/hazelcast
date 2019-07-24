@@ -86,7 +86,7 @@ public class OnJoinClientOperation extends AbstractClientOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClientDataSerializerHook.ON_JOIN;
     }
 }

@@ -22,7 +22,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
@@ -36,8 +36,8 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.AddWanConfigResult;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.AddWanConfigResult;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -855,7 +855,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
      * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
      */
-    private boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
+    private boolean authenticate(HttpPostCommand command, String groupName, String pass)
             throws UnsupportedEncodingException {
         String decodedName = URLDecoder.decode(groupName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
@@ -873,7 +873,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String decodedPass = URLDecoder.decode(pass, "UTF-8");
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(groupName, decodedPass);
         try {
-            LoginContext lc = securityContext.createMemberLoginContext(credentials);
+            LoginContext lc = securityContext.createMemberLoginContext(credentials, command.getConnection());
             lc.login();
         } catch (LoginException e) {
             return false;

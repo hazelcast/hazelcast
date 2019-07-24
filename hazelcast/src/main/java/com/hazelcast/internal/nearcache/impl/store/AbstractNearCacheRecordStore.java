@@ -20,7 +20,6 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
@@ -33,11 +32,11 @@ import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
@@ -466,9 +465,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return RESERVATION_ID.incrementAndGet(this);
     }
 
-    @SerializableByConvention
     @SuppressWarnings("WeakerAccess")
-    protected class ReserveForUpdateFunction implements IFunction<K, R> {
+    protected class ReserveForUpdateFunction implements Function<K, R> {
 
         private final Data keyData;
 

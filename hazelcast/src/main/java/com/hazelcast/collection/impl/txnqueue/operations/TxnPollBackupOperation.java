@@ -48,7 +48,7 @@ public class TxnPollBackupOperation extends QueueOperation implements BackupOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_POLL_BACKUP;
     }
 

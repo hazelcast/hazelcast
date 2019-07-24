@@ -47,7 +47,7 @@ public class CollectionContainsOperation extends CollectionOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_CONTAINS;
     }
 

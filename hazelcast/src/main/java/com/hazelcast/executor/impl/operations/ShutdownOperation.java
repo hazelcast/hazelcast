@@ -53,7 +53,7 @@ public final class ShutdownOperation extends AbstractNamedOperation implements M
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ExecutorDataSerializerHook.SHUTDOWN;
     }
 }

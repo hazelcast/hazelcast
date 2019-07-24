@@ -23,13 +23,12 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -139,7 +138,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
     public void testListenWithPredicate() {
         ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
         final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, FalsePredicate.INSTANCE);
+        replicatedMap.addEntryListener(listener, Predicates.alwaysFalse());
         replicatedMap.put(2, 2);
         assertTrueFiveSeconds(new AssertTask() {
             @Override
@@ -165,7 +164,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
             public void onEntryEvent(EntryEvent<DeserializationCounter, DeserializationCounter> event) {
                 eventReceivedLatch.countDown();
             }
-        }, TruePredicate.INSTANCE);
+        }, Predicates.alwaysTrue());
 
         DeserializationCounter key = new DeserializationCounter();
         DeserializationCounter value = new DeserializationCounter();
@@ -208,6 +207,7 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         final AtomicLong removeCount = new AtomicLong();
         final AtomicLong updateCount = new AtomicLong();
         final AtomicLong evictCount = new AtomicLong();
+        final AtomicLong expiryCount = new AtomicLong();
         final AtomicLong mapClearCount = new AtomicLong();
         final AtomicLong mapEvictCount = new AtomicLong();
 
@@ -236,6 +236,11 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         public void entryEvicted(EntryEvent<Object, Object> event) {
             keys.add(event.getKey());
             evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Object, Object> event) {
+            throw new UnsupportedOperationException("Expired event is not published by replicated map");
         }
 
         @Override

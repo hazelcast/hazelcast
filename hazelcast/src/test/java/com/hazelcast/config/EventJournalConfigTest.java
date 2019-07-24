@@ -33,11 +33,6 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 public class EventJournalConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setCacheName_throwsException() {
-        getReadOnlyConfig().setCacheName("cache-other");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setCapacity_throwsException() {
         getReadOnlyConfig().setCapacity(27);
     }
@@ -45,11 +40,6 @@ public class EventJournalConfigTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyClass_setEnabled_throwsException() {
         getReadOnlyConfig().setEnabled(false);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyClass_setMapName_throwsException() {
-        getReadOnlyConfig().setMapName("map-other");
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -61,13 +51,13 @@ public class EventJournalConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EventJournalConfig.class)
-                .suppress(Warning.NONFINAL_FIELDS)
-                .verify();
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .verify();
     }
 
     private EventJournalConfigReadOnly getReadOnlyConfig() {
         EventJournalConfig config = new EventJournalConfig();
-        config.setEnabled(true).setCacheName("cache").setMapName("map").setCapacity(33).setTimeToLiveSeconds(15);
+        config.setEnabled(true).setCapacity(33).setTimeToLiveSeconds(15);
         return new EventJournalConfigReadOnly(config);
     }
 }

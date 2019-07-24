@@ -112,7 +112,7 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.METADATA_RAFT_GROUP_SNAPSHOT;
     }
 

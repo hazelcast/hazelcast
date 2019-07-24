@@ -30,11 +30,11 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;

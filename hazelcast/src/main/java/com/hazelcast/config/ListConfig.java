@@ -16,8 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IList;
+
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IList}.
+ * Contains the configuration for an {@link IList}.
  */
 public class ListConfig extends CollectionConfig<ListConfig> {
 
@@ -49,7 +51,7 @@ public class ListConfig extends CollectionConfig<ListConfig> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LIST_CONFIG;
     }
 

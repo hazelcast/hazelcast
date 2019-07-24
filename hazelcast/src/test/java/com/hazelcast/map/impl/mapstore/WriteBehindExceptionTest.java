@@ -18,7 +18,8 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,8 +39,16 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
     private final CountDownLatch latch2 = new CountDownLatch(1);
 
     @Test
-    public void testWriteBehindStoreWithException() throws InterruptedException {
-        final MapStore mapStore = new MapStore();
+    public void testWriteBehindUsesStoreAllUntilException_entryStore() throws InterruptedException {
+        testWriteBehindUsesStoreAllUntilException(new EntryStore<Integer, String>());
+    }
+
+    @Test
+    public void testWriteBehindUsesStoreAllUntilException_mapStore() throws InterruptedException {
+        testWriteBehindUsesStoreAllUntilException(new MapStore<Integer, String>());
+    }
+
+    private <K, V>  void testWriteBehindUsesStoreAllUntilException(MapStore<K, V> mapStore) throws InterruptedException {
         mapStore.setLoadAllKeys(false);
         Config config = newConfig(mapStore, 5);
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
@@ -70,20 +79,20 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
 
     }
 
-    class MapStore extends MapStoreTest.SimpleMapStore<Integer, String> {
+    class MapStore<K, V> extends MapStoreTest.SimpleMapStore<K, V> {
 
         MapStore() {
         }
 
-        public void storeAll(final Map<Integer, String> map) {
+        public void storeAll(final Map<K, V> map) {
             latch1.countDown();
-            for (Map.Entry<Integer, String> entry : map.entrySet()) {
+            for (Map.Entry<K, V> entry : map.entrySet()) {
                 store(entry.getKey(), entry.getValue());
             }
         }
 
         @Override
-        public void delete(Integer key) {
+        public void delete(K key) {
             if (key.equals(6)) {
                 throw new RuntimeException("delete db rejected value");
             }
@@ -91,19 +100,23 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         }
 
         @Override
-        public void deleteAll(Collection<Integer> keys) {
+        public void deleteAll(Collection<K> keys) {
             latch2.countDown();
-            for (Integer key : keys) {
+            for (K key : keys) {
                 delete(key);
             }
         }
 
         @Override
-        public void store(Integer key, String value) {
+        public void store(K key, V value) {
             if (key.equals(5)) {
                 throw new RuntimeException("db rejected value");
             }
             super.store(key, value);
         }
+    }
+
+    class EntryStore<K, V> extends MapStore<K, EntryLoader.MetadataAwareValue<V>> implements com.hazelcast.map.EntryStore<K, V> {
+
     }
 }

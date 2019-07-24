@@ -21,7 +21,7 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation,
@@ -65,7 +65,7 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.RETRIEVE_DISPOSE_RESULT;
     }
 }

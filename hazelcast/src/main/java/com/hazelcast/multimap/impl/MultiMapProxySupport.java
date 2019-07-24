@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockProxySupport;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.operations.CountOperation;

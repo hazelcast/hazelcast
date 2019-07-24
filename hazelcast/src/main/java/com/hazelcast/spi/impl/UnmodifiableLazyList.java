@@ -199,7 +199,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.UNMODIFIABLE_LAZY_LIST;
     }
 }

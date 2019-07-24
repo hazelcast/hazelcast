@@ -24,6 +24,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -106,6 +108,8 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    private EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
@@ -138,6 +142,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         this.quorumName = cacheSimpleConfig.quorumName;
         this.mergePolicy = cacheSimpleConfig.mergePolicy;
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
+        this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
     }
 
@@ -666,6 +671,26 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     /**
+     * Gets the {@code EventJournalConfig} for this {@code CacheSimpleConfig}
+     *
+     * @return event journal config
+     */
+    public EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
+    }
+
+    /**
+     * Sets the {@code EventJournalConfig} for this {@code CacheSimpleConfig}
+     *
+     * @param eventJournalConfig event journal config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
+        return this;
+    }
+
+    /**
      * Returns invalidation events disabled status for per entry.
      *
      * @return {@code true} if invalidation events are disabled for per entry, {@code false} otherwise
@@ -690,7 +715,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG;
     }
 
@@ -719,6 +744,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         writeNullableList(partitionLostListenerConfigs, out);
         out.writeUTF(mergePolicy);
         out.writeObject(hotRestartConfig);
+        out.writeObject(eventJournalConfig);
     }
 
     @Override
@@ -746,6 +772,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicy = in.readUTF();
         hotRestartConfig = in.readObject();
+        eventJournalConfig = in.readObject();
     }
 
     @Override
@@ -834,6 +861,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
             return false;
         }
+        if (eventJournalConfig != null
+                ? !eventJournalConfig.equals(that.eventJournalConfig)
+                : that.eventJournalConfig != null) {
+            return false;
+        }
         return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
     }
 
@@ -862,6 +894,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
         result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
+        result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
         return result;
     }
@@ -891,6 +924,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
                 + ", mergePolicy=" + mergePolicy
                 + ", hotRestartConfig=" + hotRestartConfig
+                + ", eventJournal=" + eventJournalConfig
                 + '}';
     }
 
@@ -929,7 +963,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG;
         }
 
@@ -1010,7 +1044,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             }
 
             @Override
-            public int getId() {
+            public int getClassId() {
                 return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG;
             }
 
@@ -1117,7 +1151,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             }
 
             @Override
-            public int getId() {
+            public int getClassId() {
                 return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_DURATION_CONFIG;
             }
 

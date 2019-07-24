@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref.operation;
 
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRef;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -55,7 +55,7 @@ public class ContainsOp extends AbstractAtomicRefOp implements IndeterminateOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.CONTAINS_OP;
     }
 

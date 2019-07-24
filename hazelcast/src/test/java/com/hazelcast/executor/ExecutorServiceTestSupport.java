@@ -23,7 +23,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.nio.ObjectDataInput;

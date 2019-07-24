@@ -191,16 +191,6 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setEvictionPercentageOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setEvictionPercentage(65);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setMinEvictionCheckMillisOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMinEvictionCheckMillis(23);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setTimeToLiveSecondsOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setTimeToLiveSeconds(42);
     }
@@ -278,11 +268,6 @@ public class MapConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setPartitioningStrategyConfigOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setPartitioningStrategyConfig(new PartitioningStrategyConfig());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setOptimizeQueriesOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setOptimizeQueries(true);
     }
 
     @Test(expected = UnsupportedOperationException.class)

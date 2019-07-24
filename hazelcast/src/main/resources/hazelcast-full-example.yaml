@@ -139,7 +139,7 @@ hazelcast:
   # The "wan-replication" element has the following sub-elements:
   # * "wan-publisher":
   #     Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
-  #     Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+  #     Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication:
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
   # * "wan-consumer":
@@ -269,7 +269,7 @@ hazelcast:
       wan-publisher:
         nycPublisherId:
           group-name: nyc
-          class-name: com.hazelcast.enterprise.wan.replication.WanBatchReplication
+          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
           queue-capacity: 15000
           queue-full-behavior: DISCARD_AFTER_MUTATION
           initial-publisher-state: REPLICATING
@@ -906,13 +906,6 @@ hazelcast:
   # * "statistics-enabled":
   #     When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
   #     number of hits, key, value, etc. Its default value is true.
-  # * "optimize-queries":
-  # It is deprecated as of Hazelcast 3.6. Use the "cache-deserialized-values" element instead. When
-  # "optimize-queries" and "cache-deserialized-values" are used at the same time, Hazelcast will do its
-  # best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not
-  # rely on it. If true, it increases the speed of query processes in the map. It only works when
-  # "in-memory-format" is set to BINARY and performs a pre-caching on the entries queried. Its default
-  # value is false.
   # * "metadata-policy"
   # Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
   # create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -988,13 +981,6 @@ hazelcast:
   # - FREE_NATIVE_MEMORY_PERCENTAGE:
   #     Minimum free native memory size percentage for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # * "eviction-percentage":
-  # When "max-size" is reached, the specified percentage of the map will be evicted. For example, if set to 25,
-  # 25% of the entries will be evicted. Valid values are integers between 0 and 100. Its default value is 25.
-  # * "min-eviction-check-millis":
-  # Specifies the frequency of the eviction process, i.e. minimum time in milliseconds which should elapse before
-  # checking whether a partition of the map is evictable or not. Its default value is 100. Setting it to 0 (zero)
-  # makes the eviction process run for every put operation.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
   # split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
@@ -1010,12 +996,46 @@ hazelcast:
   # * "read-backup-data":
   # Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
   # at least 1 sync or async backup.
+  # * "merkle-tree":
+  # It has the following sub-elements:
+  # - "enabled":
+  # 	Specifies whether the merkle tree is enabled.
+  # - "depth":
+  # 	The depth of the merkle tree.
+  # 	A larger depth means that a data synchronization mechanism will be able
+  # 	to pinpoint a smaller subset of the data structure contents in which a
+  # 	change occurred. This causes the synchronization mechanism to be more
+  # 	efficient. On the other hand, a larger tree depth means the merkle tree
+  # 	will consume more memory.
+  # 	A smaller depth means the data synchronization mechanism will have to
+  # 	transfer larger chunks of the data structure in which a possible change
+  # 	happened. On the other hand, a shallower tree consumes less memory.
+  # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
   # * "hot-restart":
   # Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
   # sub-element.
   # - "fsync":
   #     Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+  # * "event-journal":
+  # It has the following attributes and sub-elements:
+  # - enabled:
+  # 	Specifies whether the event journal is enabled.
+  # - "capacity":
+  # 	The capacity of the event journal. The capacity is the total number of items that the event journal
+  # 	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+  # 	The capacity is shared equally between all partitions.
+  # 	This is done by assigning each partition {@code getCapacity() / partitionCount}
+  # 	available slots in the event journal. Because of this, the effective total
+  # 	capacity may be somewhat lower and you must take into account that the
+  # 	configured capacity is at least greater than the partition count.
+  # - "time-to-live-seconds":
+  # 	Sets the time to live in seconds.
+  # 	Time to live is the time the event journal retains items before removing them from the journal.
+  # 	The events are removed on journal read and write actions, not while the journal is idle.
+  # 	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+  # 	events never expire but they can be overwritten when the capacity of the journal is exceeed.
+  # 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
   # * "map-store":
   # Configuration options when you want to load/store the map entries from/to a persistent data store such as a
   # relational database. Before configuring "map-store", you need to implement Hazelcast's MapStore or MapLoader
@@ -1165,7 +1185,6 @@ hazelcast:
       in-memory-format: BINARY
       metadata-policy: CREATE_ON_UPDATE
       statistics-enabled: true
-      optimize-queries: true
       cache-deserialized-values: ALWAYS
       backup-count: 1
       async-backup-count: 0
@@ -1175,8 +1194,6 @@ hazelcast:
       max-size:
         policy: PER_NODE
         max-size: 0
-      eviction-percentage: 25
-      min-eviction-check-millis: 100
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -1184,6 +1201,13 @@ hazelcast:
       hot-restart:
         enabled: false
         fsync: false
+      event-journal:
+        enabled: false
+        capacity: 10000
+        time-to-live-seconds: 0
+      merkle-tree:
+        enabled: false
+        depth: 10
       map-store:
         enabled: true
         initial-mode: LAZY
@@ -1491,6 +1515,25 @@ hazelcast:
   # sub-element.
   # - "fsync":
   #     Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+  # * "event-journal":
+  # It has the following attributes and sub-elements:
+  # - enabled:
+  # 	Specifies whether the event journal is enabled.
+  # - "capacity":
+  # 	The capacity of the event journal. The capacity is the total number of items that the event journal
+  # 	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+  # 	The capacity is shared equally between all partitions.
+  # 	This is done by assigning each partition {@code getCapacity() / partitionCount}
+  # 	available slots in the event journal. Because of this, the effective total
+  # 	capacity may be somewhat lower and you must take into account that the
+  # 	configured capacity is at least greater than the partition count.
+  # - "time-to-live-seconds":
+  # 	Sets the time to live in seconds.
+  # 	Time to live is the time the event journal retains items before removing them from the journal.
+  # 	The events are removed on journal read and write actions, not while the journal is idle.
+  # 	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+  # 	events never expire but they can be overwritten when the capacity of the journal is exceeed.
+  # 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
   # * "disable-per-entry-invalidation-events":
   # Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
   # Full-flush invalidation means the invalidation of events for all entries when clear is called.
@@ -1540,86 +1583,11 @@ hazelcast:
       hot-restart:
         enabled: false
         fsync: false
+      event-journal:
+        enabled: false
+        capacity: 10000
+        time-to-live-seconds: 0
       disable-per-entry-invalidation-events: true
-  #
-  # ===== HAZELCAST EVENT JOURNAL CONFIGURATION =====
-  #
-  # Configuration element's name is "event-journal".
-  # It has the following attributes and sub-elements:
-  # * enabled:
-  # 	Specifies whether the event journal is enabled.
-  # * "mapName":
-  # 	Map name to which this configuration applies. This attribute's default value is "default".
-  # 	Configuration for the event journal with name "default" applies to all maps without
-  # 	configuration for a specific named map. In another words, if you specify the default
-  # 	event journal config as enabled then all maps which don't have specific event journal
-  # 	will be also enabled.
-  # * "cacheName":
-  # 	Cache name to which this configuration applies. This attribute's default value is "default".
-  # 	Configuration for the event journal with name "default" applies to all caches without
-  # 	configuration for a specific named cache. In another words, if you specify the default
-  # 	event journal config as enabled then all caches which don't have specific event journal
-  # 	will be also enabled.
-  # * "capacity":
-  # 	The capacity of the event journal. The capacity is the total number of items that the event journal
-  # 	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
-  # 	The capacity is shared equally between all partitions.
-  # 	This is done by assigning each partition {@code getCapacity() / partitionCount}
-  # 	available slots in the event journal. Because of this, the effective total
-  # 	capacity may be somewhat lower and you must take into account that the
-  # 	configured capacity is at least greater than the partition count.
-  # * "time-to-live-seconds":
-  # 	Sets the time to live in seconds.
-  # 	Time to live is the time the event journal retains items before removing them from the journal.
-  # 	The events are removed on journal read and write actions, not while the journal is idle.
-  # 	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
-  # 	events never expire but they can be overwritten when the capacity of the journal is exceeed.
-  # 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
-  #
-  #
-  event-journal:
-    map:
-      default:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-    cache:
-      default:
-        enabled: false
-        capacity: 10000
-        time-to-live-seconds: 0
-
-  #
-  # ===== HAZELCAST MERKLE TREE CONFIGURATION =====
-  #
-  # Configuration element's name is "merkle-tree".
-  # Merkle trees can be configured for map only, under the "map" element.
-  # Under the "map" element, the Merkle tree configurations belong to map names to which the
-  # configuration applies. Configuration for the merkle tree with name "default" applies to all
-  # maps without configuration for a specific named map. In another words, if you specify the default
-  # merkle tree config as enabled then all maps which don't have specific merkle tree
-  # will be also enabled.
-  #
-  # It has the following attributes and sub-elements:
-  # * "enabled":
-  # 	Specifies whether the merkle tree is enabled.
-  # * "depth":
-  # 	The depth of the merkle tree.
-  # 	A larger depth means that a data synchronization mechanism will be able
-  # 	to pinpoint a smaller subset of the data structure contents in which a
-  # 	change occurred. This causes the synchronization mechanism to be more
-  # 	efficient. On the other hand, a larger tree depth means the merkle tree
-  # 	will consume more memory.
-  # 	A smaller depth means the data synchronization mechanism will have to
-  # 	transfer larger chunks of the data structure in which a possible change
-  # 	happened. On the other hand, a shallower tree consumes less memory.
-  # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
-  #
-  merkle-tree:
-    map:
-      default:
-        enabled: false
-        depth: 10
 
   #
   # ===== HAZELCAST LIST CONFIGURATION =====

@@ -60,10 +60,11 @@ abstract class AbstractDomVariableReplacer implements DomVariableReplacer {
         }
     }
 
-    private static void handleMissingVariable(String variable, String nodeName, boolean failFast) throws ConfigurationException {
+    private static void handleMissingVariable(String variable, String nodeName, boolean failFast)
+            throws InvalidConfigurationException {
         String message = format("Could not find a replacement for '%s' on node '%s'", variable, nodeName);
         if (failFast) {
-            throw new ConfigurationException(message);
+            throw new InvalidConfigurationException(message);
         }
         LOGGER.warning(message);
     }

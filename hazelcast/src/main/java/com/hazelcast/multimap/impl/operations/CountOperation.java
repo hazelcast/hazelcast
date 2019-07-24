@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public class CountOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
@@ -46,7 +46,7 @@ public class CountOperation extends AbstractKeyBasedMultiMapOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.COUNT;
     }
 

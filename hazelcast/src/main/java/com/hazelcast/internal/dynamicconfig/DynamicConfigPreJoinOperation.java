@@ -68,7 +68,7 @@ public class DynamicConfigPreJoinOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.DYNAMIC_CONFIG_PRE_JOIN_OP;
     }
 }

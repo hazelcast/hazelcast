@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.ItemListener;
 
 import java.util.EventListener;
 

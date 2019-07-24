@@ -22,7 +22,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultValueCollector extends ValueCollector {
+public class DefaultValueCollector implements ValueCollector {
 
     private Object value;
     private List<Object> values;

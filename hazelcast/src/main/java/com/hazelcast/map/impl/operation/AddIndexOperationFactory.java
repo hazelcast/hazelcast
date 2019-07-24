@@ -58,7 +58,7 @@ public class AddIndexOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX_FACTORY;
     }
 }

@@ -16,12 +16,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.api.ClientType;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;

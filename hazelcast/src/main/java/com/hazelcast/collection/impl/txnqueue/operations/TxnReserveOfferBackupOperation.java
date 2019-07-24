@@ -22,6 +22,7 @@ import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
 
@@ -33,7 +34,7 @@ import java.io.IOException;
  * transaction is done on the partition owner.
  *
  * @see TxnReserveOfferOperation
- * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TransactionalQueue#offer(Object)
  */
 public class TxnReserveOfferBackupOperation extends QueueOperation implements BackupOperation {
 
@@ -57,7 +58,7 @@ public class TxnReserveOfferBackupOperation extends QueueOperation implements Ba
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER_BACKUP;
     }
 

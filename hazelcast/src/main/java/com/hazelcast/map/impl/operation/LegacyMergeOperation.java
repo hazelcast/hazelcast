@@ -86,7 +86,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     @Override
     public Operation getBackupOperation() {
         if (dataValue == null) {
-            return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
+            return new RemoveBackupOperation(name, dataKey, disableWanReplicationEvent);
         } else {
             return super.getBackupOperation();
         }
@@ -109,7 +109,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.LEGACY_MERGE;
     }
 }

@@ -124,7 +124,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_ENTRY_BACKUP;
     }
 }

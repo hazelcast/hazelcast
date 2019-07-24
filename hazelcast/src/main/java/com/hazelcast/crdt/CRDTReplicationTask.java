@@ -18,7 +18,7 @@ package com.hazelcast.crdt;
 
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.CRDTReplicationConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;

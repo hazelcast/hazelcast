@@ -21,16 +21,16 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
@@ -318,10 +318,10 @@ public class ClientTxnMapTest {
         assertNull(txMap.put(emp2, emp2));
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
-        assertEquals(0, txMap.keySet(new SqlPredicate("age = 10")).size());
-        assertEquals(0, txMap.values(new SqlPredicate("age = 10")).size());
-        assertEquals(2, txMap.keySet(new SqlPredicate("age >= 10")).size());
-        assertEquals(2, txMap.values(new SqlPredicate("age >= 10")).size());
+        assertEquals(0, txMap.keySet(Predicates.sql("age = 10")).size());
+        assertEquals(0, txMap.values(Predicates.sql("age = 10")).size());
+        assertEquals(2, txMap.keySet(Predicates.sql("age >= 10")).size());
+        assertEquals(2, txMap.values(Predicates.sql("age >= 10")).size());
 
         context.commitTransaction();
 
@@ -345,13 +345,13 @@ public class ClientTxnMapTest {
         assertNull(txMap.put("employee1_repeated", emp1));
 
         assertEquals(2, txMap.size());
-        assertEquals(2, txMap.keySet(new SqlPredicate("age = 10")).size());
-        assertEquals(2, txMap.values(new SqlPredicate("age = 10")).size());
+        assertEquals(2, txMap.keySet(Predicates.sql("age = 10")).size());
+        assertEquals(2, txMap.values(Predicates.sql("age = 10")).size());
 
         context.commitTransaction();
 
-        assertEquals(2, map.keySet(new SqlPredicate("age = 10")).size());
-        assertEquals(2, map.values(new SqlPredicate("age = 10")).size());
+        assertEquals(2, map.keySet(Predicates.sql("age = 10")).size());
+        assertEquals(2, map.values(Predicates.sql("age = 10")).size());
     }
 
     @Test

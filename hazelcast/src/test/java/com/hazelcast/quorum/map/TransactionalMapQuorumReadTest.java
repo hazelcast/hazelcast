@@ -17,8 +17,7 @@
 package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -28,6 +27,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -179,7 +179,7 @@ public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(MAP_NAME + quorumType.name());
-        map.keySet(TruePredicate.INSTANCE);
+        map.keySet(Predicates.alwaysTrue());
         transactionContext.commitTransaction();
     }
 
@@ -188,7 +188,7 @@ public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(MAP_NAME + quorumType.name());
-        map.keySet(TruePredicate.INSTANCE);
+        map.keySet(Predicates.alwaysTrue());
         transactionContext.commitTransaction();
     }
 
@@ -215,7 +215,7 @@ public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(MAP_NAME + quorumType.name());
-        map.values(TruePredicate.INSTANCE);
+        map.values(Predicates.alwaysTrue());
         transactionContext.commitTransaction();
     }
 
@@ -224,7 +224,7 @@ public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(MAP_NAME + quorumType.name());
-        map.values(TruePredicate.INSTANCE);
+        map.values(Predicates.alwaysTrue());
         transactionContext.commitTransaction();
     }
 

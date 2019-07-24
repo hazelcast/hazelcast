@@ -48,7 +48,7 @@ public class CollectionTxnAddBackupOperation extends CollectionOperation impleme
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_TXN_ADD_BACKUP;
     }
 

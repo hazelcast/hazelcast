@@ -20,9 +20,10 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapClearedListener;
@@ -158,6 +159,13 @@ public class EntryListenerConfig extends ListenerConfig {
         }
 
         @Override
+        public void entryExpired(EntryEvent event) {
+            if (mapListener instanceof EntryExpiredListener) {
+                ((EntryExpiredListener) mapListener).entryExpired(event);
+            }
+        }
+
+        @Override
         public void entryRemoved(EntryEvent event) {
             if (mapListener instanceof EntryRemovedListener) {
                 ((EntryRemovedListener) mapListener).entryRemoved(event);
@@ -202,7 +210,7 @@ public class EntryListenerConfig extends ListenerConfig {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return ConfigDataSerializerHook.MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER;
         }
 
@@ -298,7 +306,7 @@ public class EntryListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ENTRY_LISTENER_CONFIG;
     }
 

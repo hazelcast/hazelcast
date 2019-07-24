@@ -27,11 +27,10 @@ import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndAlterCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndSetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
-import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.spi.InternalCompletableFuture;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -159,13 +158,6 @@ public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy 
     @Override
     public E getAndSet(E newValue) {
         return getAndSetAsync(newValue).join();
-    }
-
-    @Override
-    public E setAndGet(E update) {
-        ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
-        ClientMessage response = invokeOnPartition(request);
-        return toObject(AtomicReferenceSetAndGetCodec.decodeResponse(response).response);
     }
 
     @Override

@@ -33,12 +33,11 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Map.Entry;
@@ -252,11 +251,11 @@ public final class EntryOperator {
     private boolean outOfPredicateScope(Entry entry) {
         assert entry instanceof QueryableEntry;
 
-        if (predicate == null || predicate == TruePredicate.INSTANCE) {
+        if (predicate == null || predicate == Predicates.alwaysTrue()) {
             return false;
         }
 
-        return predicate == FalsePredicate.INSTANCE || !predicate.apply(entry);
+        return predicate == Predicates.alwaysFalse() || !predicate.apply(entry);
     }
 
     private Entry createMapEntry(Data key, Object value, Boolean locked) {

@@ -18,7 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;

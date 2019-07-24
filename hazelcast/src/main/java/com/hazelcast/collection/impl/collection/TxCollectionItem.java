@@ -59,7 +59,7 @@ public class TxCollectionItem extends CollectionItem {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.TX_COLLECTION_ITEM;
     }
 

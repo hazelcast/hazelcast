@@ -59,7 +59,7 @@ public class QuorumListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.QUORUM_LISTENER_CONFIG;
     }
 }

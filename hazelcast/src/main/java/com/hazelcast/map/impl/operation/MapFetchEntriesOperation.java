@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import java.io.IOException;
 
 /**
- * Operation for fetching a chunk of entries from a single {@link com.hazelcast.core.IMap} partition.
+ * Operation for fetching a chunk of entries from a single {@link IMap} partition.
  * The starting offset is defined by the {@link #lastTableIndex} and the soft limit is defined by the {@link #fetchSize}.
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
@@ -70,7 +71,7 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_ENTRIES;
     }
 }

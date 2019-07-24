@@ -56,7 +56,7 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TXN_PREPARE_BACKUP;
     }
 

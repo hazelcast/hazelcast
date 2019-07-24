@@ -16,11 +16,13 @@
 
 package com.hazelcast.projection;
 
+import com.hazelcast.map.IMap;
+
 import java.io.Serializable;
 
 /**
  * Enables transforming object into other objects.
- * Exemplary usage scenario is the project() method of the {@link com.hazelcast.core.IMap}
+ * Exemplary usage scenario is the project() method of the {@link IMap}
  * <p>
  * Only 1:1 transformations allowed. Use an Aggregator to perform N:1 or N:M aggregations.
  * <pre>
@@ -38,7 +40,8 @@ import java.io.Serializable;
  * @param <O> output type
  * @since 3.8
  */
-public abstract class Projection<I, O> implements Serializable {
+@FunctionalInterface
+public interface Projection<I, O> extends Serializable {
 
     /**
      * Transforms the input object into the output object.
@@ -46,6 +49,6 @@ public abstract class Projection<I, O> implements Serializable {
      * @param input object.
      * @return the output object.
      */
-    public abstract O transform(I input);
+    O transform(I input);
 
 }

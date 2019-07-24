@@ -64,12 +64,12 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EVENT_JOURNAL_READ_RESULT_SET;
     }
 
     @SerializableByConvention
-    private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalCacheEvent, T> {
+    private static class ProjectionAdapter<K, V, T> implements Projection<InternalEventJournalCacheEvent, T> {
 
         private final Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 

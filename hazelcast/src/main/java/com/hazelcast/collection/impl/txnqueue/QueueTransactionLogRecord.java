@@ -54,7 +54,7 @@ public class QueueTransactionLogRecord extends CollectionTransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.QUEUE_TRANSACTION_LOG_RECORD;
     }
 }

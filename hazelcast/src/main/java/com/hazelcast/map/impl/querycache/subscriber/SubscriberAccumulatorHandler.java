@@ -99,6 +99,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
                 break;
             case REMOVED:
             case EVICTED:
+            case EXPIRED:
                 queryCache.delete(keyData, entryEventType);
                 break;
             case CLEAR_ALL:

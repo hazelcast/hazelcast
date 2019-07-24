@@ -17,12 +17,13 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapLoaderLifecycleSupport;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.PostProcessingMapStore;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.map.EntryLoader;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -45,6 +46,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
      */
     private MapStore mapStore;
 
+    private boolean withExpirationTime;
+
     private final String mapName;
 
     private final Object impl;
@@ -56,9 +59,13 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         MapStore store = null;
         if (impl instanceof MapStore) {
             store = (MapStore) impl;
+
         }
         if (impl instanceof MapLoader) {
             loader = (MapLoader) impl;
+        }
+        if (impl instanceof EntryLoader) {
+            withExpirationTime = true;
         }
         this.mapLoader = loader;
         this.mapStore = store;
@@ -184,6 +191,10 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     public boolean isPostProcessingMapStore() {
         return isMapStore() && mapStore instanceof PostProcessingMapStore;
+    }
+
+    public boolean isWithExpirationTime() {
+        return withExpirationTime;
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
@@ -96,7 +96,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
     }
 

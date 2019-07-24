@@ -45,7 +45,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_RESERVE_REMOVE;
     }
 

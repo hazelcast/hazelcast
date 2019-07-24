@@ -19,15 +19,14 @@ package com.hazelcast.client.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.BasicMapTest;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,8 +48,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -408,11 +407,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
         Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
         result.get();
@@ -427,11 +422,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String oldValue = "oldValue";
         String newValue = "Val";
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryEvictedListener<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
         map.set(key, oldValue);
         Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
@@ -1178,7 +1169,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         }
         expected.add(4);
 
-        Set<Integer> keySet = map.keySet(new SqlPredicate("this == 4value"));
+        Set<Integer> keySet = map.keySet(Predicates.sql("this == 4value"));
 
         assertEquals(expected, keySet);
     }
@@ -1219,7 +1210,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         }
         expected.add("4value");
 
-        Collection<String> collection = map.values(new SqlPredicate("this == 4value"));
+        Collection<String> collection = map.values(Predicates.sql("this == 4value"));
         Set<String> resultSet = new TreeSet<String>(collection);
 
         assertEquals(expected, resultSet);
@@ -1261,23 +1252,11 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
             test.put(i, i);
         }
 
-        Collection<Integer> values = test.values(new TestPagingPredicate(100));
+        Collection<Integer> values = test.values(Predicates.pagingPredicate(100));
         Type genericSuperClass = values.getClass().getGenericSuperclass();
         Type actualType = ((ParameterizedType) genericSuperClass).getActualTypeArguments()[0];
         // Raw class is expected. ParameterizedType-s cause troubles to Jackson serializer.
         assertInstanceOf(Class.class, actualType);
-    }
-
-    private static class TestPagingPredicate extends PagingPredicate {
-
-        TestPagingPredicate(int pageSize) {
-            super(pageSize);
-        }
-
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return true;
-        }
     }
 
     @Test
@@ -1290,7 +1269,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
             map.put(key, value);
         }
 
-        Set<Map.Entry<Integer, String>> entrySet = map.entrySet(new SqlPredicate("this == 1value"));
+        Set<Map.Entry<Integer, String>> entrySet = map.entrySet(Predicates.sql("this == 1value"));
         assertEquals(1, entrySet.size());
 
         Map.Entry<Integer, String> entry = entrySet.iterator().next();
@@ -1344,14 +1323,14 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     @SuppressWarnings("deprecation")
     public void testAddLocalEntryListener_WithPredicate() {
         IMap<String, String> map = client.getMap(randomString());
-        map.addLocalEntryListener(new EmptyEntryListener(), new FalsePredicate(), true);
+        map.addLocalEntryListener(new EmptyEntryListener(), Predicates.alwaysFalse(), true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     @SuppressWarnings("deprecation")
     public void testAddLocalEntryListener_WithPredicateAndKey() {
         IMap<String, String> map = client.getMap(randomString());
-        map.addLocalEntryListener(new EmptyEntryListener(), new FalsePredicate(), "Key", true);
+        map.addLocalEntryListener(new EmptyEntryListener(), Predicates.alwaysFalse(), "Key", true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -1363,7 +1342,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySet_WithPredicate() {
         IMap<String, String> map = client.getMap(randomString());
-        map.localKeySet(new FalsePredicate());
+        map.localKeySet(Predicates.alwaysFalse());
     }
 
     private static class DelayGetRemoveMapInterceptor implements MapInterceptor, Serializable {
@@ -1417,6 +1396,11 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         }
 
         public void mapCleared(MapEvent event) {
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<String, String> event) {
+
         }
     }
 

@@ -158,7 +158,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return WanDataSerializerHook.WAN_MAP_ENTRY_VIEW;
     }
 

@@ -71,7 +71,8 @@ import com.hazelcast.nio.serialization.Portable;
  * @param <T> type of the target object to extract the value from
  * @param <A> type of the extraction argument object passed to the extract() method
  */
-public abstract class ValueExtractor<T, A> {
+@FunctionalInterface
+public interface ValueExtractor<T, A> {
 
     /**
      * Extracts a value from the given target object.
@@ -115,6 +116,6 @@ public abstract class ValueExtractor<T, A> {
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
      */
-    public abstract void extract(T target, A argument, ValueCollector collector);
+    void extract(T target, A argument, ValueCollector collector);
 
 }

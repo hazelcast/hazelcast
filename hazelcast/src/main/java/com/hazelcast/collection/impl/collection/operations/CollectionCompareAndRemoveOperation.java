@@ -71,7 +71,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 

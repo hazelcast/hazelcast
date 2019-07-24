@@ -58,7 +58,7 @@ public class SetTtlOperation extends LockAwareOperation implements BackupAwareOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SET_TTL;
     }
 

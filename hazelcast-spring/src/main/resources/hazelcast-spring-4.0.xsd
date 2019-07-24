@@ -713,7 +713,9 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="map-eviction-policy" type="map-eviction-policy" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -756,22 +758,6 @@
                                             You can retrieve some statistics like owned entry count, backup entry count,
                                             last update time, locked entry count by setting this parameter's value
                                             as "true". The method for retrieving the statistics is `getLocalMapStats()`.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="optimize-queries" use="optional" type="parameterized-boolean">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This parameter is deprecated as of Hazelcast 3.6
-                                            Use cache-deserialized-values attribute instead.
-
-                                            When both optimize-query and cache-deserialized-values are used at the same time
-                                            Hazelcast will do its best to detect possible conflicts. Conflict detection
-                                            is done on best-effort basis and you should not rely on it.
-
-                                            This parameter is used to increase the speed of query processes in the map.
-                                            It only works when `in-memory-format` is set as `BINARY` and performs
-                                            a pre-caching on the entries queried.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -869,31 +855,6 @@
                                             automatically evicted from the map. Entry is touched if get, put or
                                             containsKey is called. Any integer between 0 and Integer.MAX_VALUE. 0 means
                                             infinite. Default is 0.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="eviction-percentage" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see
-                                            documentation for further details.)
-
-                                            When max. size is reached, specified percentage of the map will be evicted.
-                                            Any integer between 0 and 100. If 25 is set for example, 25% of the
-                                            entries will get evicted.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="min-eviction-check-millis" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see
-                                            documentation for further details.)
-
-                                            Minimum time in milliseconds which should pass before checking if a
-                                            partition of this map is evictable or not. Default value is 100 millis.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1046,6 +1007,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -1177,116 +1139,6 @@
                                         <xs:documentation>
                                             This boolean parameter enables hot-restart feature when set as true.
                                             Only available on Hazelcast Enterprise.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="event-journal" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Configuration for an event journal. The event journal keeps events related
-                                        to a specific partition and data structure. For instance, it could keep
-                                        map add, update, remove, merge events along with the key, old value, new value and so on.
-                                        This configuration is not tied to a specific data structure and can be reused.
-                                    </xs:documentation>
-                                </xs:annotation>
-                                <xs:attribute name="map-name" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the map to which this config applies.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="cache-name" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the cache to which this config applies.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="enabled" type="parameterized-boolean" default="true">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            True if the event journal is enabled, false otherwise.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Number of items in the event journal. If no time-to-live-seconds
-                                            is set, the size will always be equal to capacity after the event
-                                            journal has been filled. This is because no items are getting retired.
-                                            The default value is 10000.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="time-to-live-seconds" use="optional" type="parameterized-unsigned-int">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Maximum number of seconds for each entry to stay in the event journal.
-                                            Entries that are older than &lt;time-to-live-seconds&gt; are evicted from the journal.
-                                            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="merkle-tree" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Configuration for a merkle tree.
-                                        The merkle tree is a data structure used for efficient comparison of the
-                                        difference in the contents of large data structures. The precision of
-                                        such a comparison mechanism is defined by the depth of the merkle tree.
-                                        A larger depth means that a data synchronization mechanism will be able
-                                        to pinpoint a smaller subset of the data structure contents in which a
-                                        change occurred. This causes the synchronization mechanism to be more
-                                        efficient. On the other hand, a larger tree depth means the merkle tree
-                                        will consume more memory.
-                                        A smaller depth means the data synchronization mechanism will have to
-                                        transfer larger chunks of the data structure in which a possible change
-                                        happened. On the other hand, a shallower tree consumes less memory.
-                                        The depth must be between 2 and 27 (exclusive).
-                                        As the comparison mechanism is iterative, a larger depth will also prolong
-                                        the duration of the comparison mechanism. Care must be taken to not have
-                                        large tree depths if the latency of the comparison operation is high.
-                                        The default depth is 10.
-                                        This configuration is not tied to a specific data structure and can be
-                                        reused.
-                                        See https://en.wikipedia.org/wiki/Merkle_tree.
-                                    </xs:documentation>
-                                </xs:annotation>
-                                <xs:attribute name="map-name" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the map to which this config applies.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="enabled" type="parameterized-boolean" default="true">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            True if the merkle tree is enabled, false otherwise.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="depth" type="parameterized-unsigned-int">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The depth of the merkle tree.
-                                            A larger depth means that a data synchronization mechanism will be able
-                                            to pinpoint a smaller subset of the data structure contents in which a
-                                            change occurred. This causes the synchronization mechanism to be more
-                                            efficient. On the other hand, a larger tree depth means the merkle tree
-                                            will consume more memory.
-                                            A smaller depth means the data synchronization mechanism will have to
-                                            transfer larger chunks of the data structure in which a possible change
-                                            happened. On the other hand, a shallower tree consumes less memory.
-                                            The depth must be between 2 and 27 (exclusive). The default depth is 10.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1923,7 +1775,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IMap"/>
+                    <tool:exports type="com.hazelcast.map.IMap"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1972,7 +1824,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.MultiMap"/>
+                    <tool:exports type="com.hazelcast.multimap.MultiMap"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1984,7 +1836,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ReplicatedMap"/>
+                    <tool:exports type="com.hazelcast.replicatedmap.ReplicatedMap"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -1996,7 +1848,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IQueue"/>
+                    <tool:exports type="com.hazelcast.collection.IQueue"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2020,7 +1872,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                    <tool:exports type="com.hazelcast.topic.ITopic"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2032,7 +1884,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                    <tool:exports type="com.hazelcast.topic.ITopic"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2044,7 +1896,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ISet"/>
+                    <tool:exports type="com.hazelcast.collection.ISet"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2056,7 +1908,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IList"/>
+                    <tool:exports type="com.hazelcast.collection.IList"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2140,7 +1992,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IAtomicLong"/>
+                    <tool:exports type="com.hazelcast.cp.IAtomicLong"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2152,7 +2004,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IAtomicReference"/>
+                    <tool:exports type="com.hazelcast.cp.IAtomicReference"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2164,7 +2016,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ICountDownLatch"/>
+                    <tool:exports type="com.hazelcast.cp.ICountDownLatch"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2176,7 +2028,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ISemaphore"/>
+                    <tool:exports type="com.hazelcast.cp.ISemaphore"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2188,7 +2040,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.ILock"/>
+                    <tool:exports type="com.hazelcast.cp.lock.ILock"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -4200,6 +4052,42 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="event-journal">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for an event journal. The event journal keeps events related
+                to a specific partition and data structure. For instance, it could keep
+                map add, update, remove, merge events along with the key, old value, new value and so on.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if the event journal is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Number of items in the event journal. If no time-to-live-seconds
+                    is set, the size will always be equal to capacity after the event
+                    journal has been filled. This is because no items are getting retired.
+                    The default value is 10000.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="time-to-live-seconds" use="optional" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Maximum number of seconds for each entry to stay in the event journal.
+                    Entries that are older than &lt;time-to-live-seconds&gt; are evicted from the journal.
+                    Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart">
         <xs:attribute name="fsync" type="parameterized-boolean" default="false">
             <xs:annotation>
@@ -4214,6 +4102,54 @@
                 <xs:documentation>
                     True if hot-restart is enabled, false otherwise
                     Only available on Hazelcast Enterprise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="merkle-tree">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for a merkle tree.
+                The merkle tree is a data structure used for efficient comparison of the
+                difference in the contents of large data structures. The precision of
+                such a comparison mechanism is defined by the depth of the merkle tree.
+                A larger depth means that a data synchronization mechanism will be able
+                to pinpoint a smaller subset of the data structure contents in which a
+                change occurred. This causes the synchronization mechanism to be more
+                efficient. On the other hand, a larger tree depth means the merkle tree
+                will consume more memory.
+                A smaller depth means the data synchronization mechanism will have to
+                transfer larger chunks of the data structure in which a possible change
+                happened. On the other hand, a shallower tree consumes less memory.
+                The depth must be between 2 and 27 (exclusive).
+                As the comparison mechanism is iterative, a larger depth will also prolong
+                the duration of the comparison mechanism. Care must be taken to not have
+                large tree depths if the latency of the comparison operation is high.
+                The default depth is 10.
+                See https://en.wikipedia.org/wiki/Merkle_tree.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if the merkle tree is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="depth" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    The depth of the merkle tree.
+                    A larger depth means that a data synchronization mechanism will be able
+                    to pinpoint a smaller subset of the data structure contents in which a
+                    change occurred. This causes the synchronization mechanism to be more
+                    efficient. On the other hand, a larger tree depth means the merkle tree
+                    will consume more memory.
+                    A smaller depth means the data synchronization mechanism will have to
+                    transfer larger chunks of the data structure in which a possible change
+                    happened. On the other hand, a shallower tree consumes less memory.
+                    The depth must be between 2 and 27 (exclusive). The default depth is 10.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

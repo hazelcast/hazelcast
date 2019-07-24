@@ -100,7 +100,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return TransactionDataSerializerHook.PUT_REMOTE_TX_BACKUP;
     }
 }

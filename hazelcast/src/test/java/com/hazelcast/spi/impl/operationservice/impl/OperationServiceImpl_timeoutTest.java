@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

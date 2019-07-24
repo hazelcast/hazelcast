@@ -64,7 +64,7 @@ public class SizeOperation extends AbstractNamedSerializableOperation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.SIZE;
     }
 

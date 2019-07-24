@@ -112,7 +112,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MERGE_OPERATION;
     }
 }

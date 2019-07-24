@@ -84,7 +84,7 @@ public class SyncStateOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.SYNC_STATE_OP;
     }
 

@@ -48,7 +48,7 @@ public class DeserializingEventJournalMapEvent<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVENT_JOURNAL_DESERIALIZING_MAP_EVENT;
     }
 

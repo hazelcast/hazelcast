@@ -43,7 +43,7 @@ public class MapSizeOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.SIZE;
     }
 }

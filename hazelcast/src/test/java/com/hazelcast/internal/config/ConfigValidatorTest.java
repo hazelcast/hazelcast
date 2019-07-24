@@ -94,24 +94,6 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, mapMergePolicyProvider, properties);
     }
 
-    @Test
-    @SuppressWarnings("deprecation")
-    public void checkMapConfig_withIgnoredConfigMinEvictionCheckMillis() {
-        MapConfig mapConfig = getMapConfig(BINARY)
-                .setMinEvictionCheckMillis(100);
-
-        checkMapConfig(mapConfig, nativeMemoryConfig, mapMergePolicyProvider, properties);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void checkMapConfig_withIgnoredConfigEvictionPercentage() {
-        MapConfig mapConfig = getMapConfig(BINARY)
-                .setEvictionPercentage(50);
-
-        checkMapConfig(mapConfig, nativeMemoryConfig, mapMergePolicyProvider, properties);
-    }
-
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
         return new MapConfig()
                 .setInMemoryFormat(inMemoryFormat);

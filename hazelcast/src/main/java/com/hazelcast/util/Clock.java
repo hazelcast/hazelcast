@@ -44,6 +44,15 @@ public final class Clock {
         return CLOCK.currentTimeMillis();
     }
 
+    /**
+     * Converts from configured clock implementation offset to JVM time offset
+     * @param millis
+     * @return
+     */
+    public static long toSystemCurrentTimeMillis(long millis) {
+        return CLOCK.toSystemCurrentTimeMillis(millis);
+    }
+
     static {
         CLOCK = createClock();
     }
@@ -80,6 +89,20 @@ public final class Clock {
     public abstract static class ClockImpl {
 
         protected abstract long currentTimeMillis();
+
+        /**
+         * This method converts a given custom clock millisecond offset
+         * to underlying system's millisecond offset. Default
+         * implementation adds the difference between {@link System#currentTimeMillis()}
+         * and {@link ClockImpl#currentTimeMillis()} to given millisecond
+         * offset. An implementation of this abstract class may choose
+         * to override this.
+         * @param millis
+         * @return
+         */
+        protected long toSystemCurrentTimeMillis(long millis) {
+            return millis + (System.currentTimeMillis() - currentTimeMillis());
+        }
     }
 
     /**
@@ -90,6 +113,11 @@ public final class Clock {
         @Override
         protected long currentTimeMillis() {
             return System.currentTimeMillis();
+        }
+
+        @Override
+        protected long toSystemCurrentTimeMillis(long millis) {
+            return millis;
         }
     }
 
@@ -108,6 +136,11 @@ public final class Clock {
         @Override
         protected long currentTimeMillis() {
             return System.currentTimeMillis() + offset;
+        }
+
+        @Override
+        protected long toSystemCurrentTimeMillis(long millis) {
+            return millis - offset;
         }
     }
 }

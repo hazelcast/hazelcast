@@ -241,7 +241,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.CARDINALITY_ESTIMATOR_CONFIG;
     }
 

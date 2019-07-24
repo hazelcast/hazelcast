@@ -54,7 +54,7 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.BACKUP_ENTRY_PROCESSOR;
     }
 

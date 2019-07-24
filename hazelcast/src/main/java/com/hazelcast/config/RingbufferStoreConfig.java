@@ -142,7 +142,7 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RINGBUFFER_STORE_CONFIG;
     }
 

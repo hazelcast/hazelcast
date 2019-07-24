@@ -61,7 +61,7 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.CONTAINS_VALUE;
     }
 }

@@ -42,7 +42,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     public MapTransactionLogRecord() {
     }
 
-    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, long version, String ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, String ownerUuid) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -125,7 +125,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MAP_TRANSACTION_LOG_RECORD;
     }
 }

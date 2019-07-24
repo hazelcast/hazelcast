@@ -81,7 +81,7 @@ public class CustomComparator implements Comparator<Map.Entry>, IdentifiedDataSe
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CLASS_ID;
     }
 

@@ -17,8 +17,8 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;

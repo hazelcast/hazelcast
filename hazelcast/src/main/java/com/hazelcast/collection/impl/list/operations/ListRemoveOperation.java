@@ -67,7 +67,7 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_REMOVE;
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;

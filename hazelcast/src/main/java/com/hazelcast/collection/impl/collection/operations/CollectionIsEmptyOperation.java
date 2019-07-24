@@ -36,7 +36,7 @@ public class CollectionIsEmptyOperation extends CollectionOperation implements R
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_IS_EMPTY;
     }
 }

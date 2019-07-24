@@ -101,7 +101,7 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.PARTITION_STRATEGY_CONFIG;
     }
 

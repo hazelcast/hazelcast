@@ -96,7 +96,7 @@ public class NotEqualPredicateTest {
     @Test
     public void getId_isConstant() {
         NotEqualPredicate predicate = new NotEqualPredicate("bar", "foo");
-        int id = predicate.getId();
+        int id = predicate.getClassId();
 
         // make sure the ID has not been changed by accident
         assertEquals(id, 9);

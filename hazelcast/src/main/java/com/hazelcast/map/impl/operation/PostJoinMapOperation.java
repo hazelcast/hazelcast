@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.ListenerAdapter;
@@ -115,7 +115,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return MapDataSerializerHook.INTERCEPTOR_INFO;
         }
     }
@@ -212,7 +212,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.POST_JOIN_MAP_OPERATION;
     }
 

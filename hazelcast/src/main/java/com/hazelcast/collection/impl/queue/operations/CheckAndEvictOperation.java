@@ -43,7 +43,7 @@ public class CheckAndEvictOperation extends QueueOperation implements MutatingOp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.CHECK_EVICT;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong.operation;
 
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.cp.CPGroupId;
@@ -63,7 +63,7 @@ public class CompareAndSetOp extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.COMPARE_AND_SET_OP;
     }
 

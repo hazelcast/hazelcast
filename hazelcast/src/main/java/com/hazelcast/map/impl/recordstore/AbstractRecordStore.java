@@ -16,14 +16,16 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -65,6 +67,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final RecordStoreMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
+    private final StoreAdapter storeAdapter;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -82,6 +85,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
                 .createRecordStoreMutationObservers(getName(), partitionId);
         this.mutationObserver = new CompositeRecordStoreMutationObserver<>(mutationObservers);
+        this.storeAdapter = new RecordStoreAdapter(this);
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
@@ -140,14 +144,36 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return Clock.currentTimeMillis();
     }
 
-    protected void updateRecord(Data key, Record record, Object value, long now, boolean countAsAccess) {
+    protected void updateRecord(Data key, Record record, Object value,
+                                long now, boolean countAsAccess, long ttl, long maxIdle, boolean mapStoreOperation) {
         updateStatsOnPut(countAsAccess, now);
+        record.onUpdate(now);
         if (countAsAccess) {
             record.onAccess(now);
         }
-        record.onUpdate(now);
+        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
+        if (mapStoreOperation) {
+            value = runMapStore(record, key, value, now);
+        }
         mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
+    }
+
+    protected Record putNewRecord(Data key, Object value, long ttlMillis, long maxIdleMillis, long now) {
+        Record record = createRecord(key, value, ttlMillis, maxIdleMillis, now);
+        runMapStore(record, key, value, now);
+        storage.put(key, record);
+        mutationObserver.onPutRecord(key, record);
+        return record;
+    }
+
+    protected Object runMapStore(Record record, Data key, Object value, long now) {
+        long expirationTime = record.getExpirationTime();
+        value = mapDataStore.add(key, value, expirationTime, now);
+        if (mapDataStore.isPostProcessingMapStore()) {
+            recordFactory.setValue(record, value);
+        }
+        return value;
     }
 
     @Override
@@ -161,7 +187,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            queryableEntry.setMetadata(record.getMetadata());
+            queryableEntry.setRecord(record);
+            queryableEntry.setStoreAdapter(storeAdapter);
             indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }
@@ -200,8 +227,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected RecordStoreLoader createRecordStoreLoader(MapStoreContext mapStoreContext) {
-        return mapStoreContext.getMapStoreWrapper() == null
-                ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
+        MapStoreWrapper wrapper = mapStoreContext.getMapStoreWrapper();
+        if (wrapper == null) {
+            return RecordStoreLoader.EMPTY_LOADER;
+        } else if (wrapper.isWithExpirationTime()) {
+            return new EntryRecordStoreLoader(this);
+        } else {
+            return new BasicRecordStoreLoader(this);
+        }
     }
 
     protected Data toData(Object value) {

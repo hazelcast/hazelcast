@@ -71,7 +71,7 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 }

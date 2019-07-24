@@ -28,6 +28,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -52,11 +53,12 @@ public abstract class ClientProxy implements DistributedObject {
         this.serializationService = context.getSerializationService();
     }
 
-    protected final String registerListener(ListenerMessageCodec codec, EventHandler handler) {
+    protected final @Nonnull
+    String registerListener(ListenerMessageCodec codec, EventHandler handler) {
         return getContext().getListenerService().registerListener(codec, handler);
     }
 
-    protected final boolean deregisterListener(String registrationId) {
+    protected final boolean deregisterListener(@Nonnull String registrationId) {
         return getContext().getListenerService().deregisterListener(registrationId);
     }
 
@@ -87,6 +89,7 @@ public abstract class ClientProxy implements DistributedObject {
         return name;
     }
 
+    @Nonnull
     @Override
     public final String getName() {
         return name;

@@ -96,7 +96,7 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.CACHE_PARTITION_LOST_LISTENER_CONFIG;
     }
 }

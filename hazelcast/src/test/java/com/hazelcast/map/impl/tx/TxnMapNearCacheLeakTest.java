@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCacheLeakTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -50,7 +51,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCach
 import static java.util.Arrays.asList;
 
 /**
- * Basic Near Cache tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
+ * Basic Near Cache tests for {@link TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

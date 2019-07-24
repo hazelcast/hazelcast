@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.util.Map;
@@ -80,7 +81,7 @@ public interface DiscoveryStrategy {
      * may include, but are not limited, to location information like datacenter, rack, host or additional
      * tags to be used for custom purpose.
      * <p>
-     * Information discovered from this method are shaded into the {@link com.hazelcast.core.Member}s
+     * Information discovered from this method are shaded into the {@link Member}s
      * attributes. Existing attributes will not be overridden, that way local attribute configuration
      * overrides provided metadata.
      * <p>

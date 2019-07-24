@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  *
  * @param <I> type of the input
  */
-public final class SingleAttributeProjection<I, O> extends Projection<I, O> implements IdentifiedDataSerializable {
+public final class SingleAttributeProjection<I, O> implements Projection<I, O>, IdentifiedDataSerializable {
 
     private String attributePath;
 
@@ -63,7 +63,7 @@ public final class SingleAttributeProjection<I, O> extends Projection<I, O> impl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ProjectionDataSerializerHook.SINGLE_ATTRIBUTE;
     }
 

@@ -45,7 +45,7 @@ public class AggregateBackupOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CardinalityEstimatorDataSerializerHook.AGGREGATE_BACKUP;
     }
 

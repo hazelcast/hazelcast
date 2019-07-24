@@ -47,7 +47,7 @@ public class ListIndexOfOperation extends CollectionOperation implements Readonl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.LIST_INDEX_OF;
     }
 

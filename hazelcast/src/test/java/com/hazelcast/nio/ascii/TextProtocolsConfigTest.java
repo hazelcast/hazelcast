@@ -17,7 +17,7 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -171,7 +171,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
         config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig());
-        expectedException.expect(ConfigurationException.class);
+        expectedException.expect(InvalidConfigurationException.class);
         factory.newHazelcastInstance(config);
     }
 
@@ -202,7 +202,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
         Config config = new Config()
                 .setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "false");
         config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig());
-        expectedException.expect(ConfigurationException.class);
+        expectedException.expect(InvalidConfigurationException.class);
         factory.newHazelcastInstance(config);
     }
 
@@ -284,7 +284,7 @@ public class TextProtocolsConfigTest extends RestApiConfigTestBase {
 
     private void createMemberWithRestConfigAndAssertConfigException(Config config) {
         config.getNetworkConfig().setRestApiConfig(new RestApiConfig());
-        expectedException.expect(ConfigurationException.class);
+        expectedException.expect(InvalidConfigurationException.class);
         factory.newHazelcastInstance(config);
     }
 

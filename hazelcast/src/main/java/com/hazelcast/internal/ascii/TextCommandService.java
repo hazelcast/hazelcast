@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.memcache.Stats;
 
 import java.util.Map;

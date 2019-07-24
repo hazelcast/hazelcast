@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong.operation;
 
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.cp.CPGroupId;
@@ -59,7 +59,7 @@ public class GetAndSetOp extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.GET_AND_SET_OP;
     }
 

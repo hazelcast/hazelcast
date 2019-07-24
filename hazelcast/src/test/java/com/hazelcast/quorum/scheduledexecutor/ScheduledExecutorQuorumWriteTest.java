@@ -16,8 +16,8 @@
 
 package com.hazelcast.quorum.scheduledexecutor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Member;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
@@ -51,6 +51,7 @@ import static com.hazelcast.quorum.scheduledexecutor.ScheduledExecutorQuorumWrit
 import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -203,38 +204,37 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void scheduleOnMembers_runnable_quorum() throws Exception {
-        wait(exec(0).scheduleOnMembers(runnable(), asList(member(0)), 10, TimeUnit.MILLISECONDS));
+        wait(exec(0).scheduleOnMembers(runnable(), singletonList(member(0)), 10, TimeUnit.MILLISECONDS));
     }
 
     @Test(expected = QuorumException.class)
     public void scheduleOnMembers_runnable_noQuorum() throws Exception {
-        wait(exec(3).scheduleOnMembers(runnable(), asList(member(3)), 10, TimeUnit.MILLISECONDS));
+        wait(exec(3).scheduleOnMembers(runnable(), singletonList(member(3)), 10, TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void scheduleOnMembers_callable_quorum() throws Exception {
-        Map<Member, IScheduledFuture<?>> futures = (Map<Member, IScheduledFuture<?>>) exec(0)
-                .scheduleOnMembers(callable(), asList(member(0)),
-                10, TimeUnit.MILLISECONDS);
+        Map<Member, IScheduledFuture<String>> futures = exec(0)
+                .scheduleOnMembers(callable(), singletonList(member(0)),
+                        10, TimeUnit.MILLISECONDS);
         wait(futures);
     }
 
     @Test(expected = QuorumException.class)
     public void scheduleOnMembers_callable_noQuorum() throws Exception {
-        Map<Member, IScheduledFuture<?>> futures = (Map<Member, IScheduledFuture<?>>) exec(3)
-                .scheduleOnMembers(callable(),
-                asList(member(3)), 10, TimeUnit.MILLISECONDS);
+        Map<Member, IScheduledFuture<String>> futures = exec(3)
+                .scheduleOnMembers(callable(), singletonList(member(3)), 10, TimeUnit.MILLISECONDS);
         wait(futures);
     }
 
     @Test
     public void scheduleOnMembersAtFixedRate_runnable_quorum() {
-        cancel(exec(0).scheduleOnMembersAtFixedRate(runnable(), asList(member(0)), 10, 10, TimeUnit.MILLISECONDS));
+        cancel(exec(0).scheduleOnMembersAtFixedRate(runnable(), singletonList(member(0)), 10, 10, TimeUnit.MILLISECONDS));
     }
 
     @Test(expected = QuorumException.class)
     public void scheduleOnMembersAtFixedRate_runnable_noQuorum() throws Exception {
-        wait(exec(3).scheduleOnMembersAtFixedRate(runnable(), asList(member(3)), 10, 10, TimeUnit.MILLISECONDS));
+        wait(exec(3).scheduleOnMembersAtFixedRate(runnable(), singletonList(member(3)), 10, 10, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -247,9 +247,10 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
         exec(3, "shutdown").shutdown();
     }
 
-    static class ExecRunnable implements Runnable, Callable, Serializable {
+    @SuppressWarnings("unused")
+    static class ExecRunnable implements Runnable, Callable<String>, Serializable {
         @Override
-        public Object call() throws Exception {
+        public String call() throws Exception {
             return "response";
         }
 
@@ -260,7 +261,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
             return new ExecRunnable();
         }
 
-        public static Callable callable() {
+        public static Callable<String> callable() {
             return new ExecRunnable();
         }
     }
@@ -273,13 +274,13 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
         return getNodeEngineImpl(cluster.getInstance(index)).getLocalMember();
     }
 
-    private void wait(Map<Member, IScheduledFuture<?>> futures) throws Exception {
+    private <V> void wait(Map<Member, IScheduledFuture<V>> futures) throws Exception {
         for (IScheduledFuture f : futures.values()) {
             f.get();
         }
     }
 
-    private void cancel(Map<Member, IScheduledFuture<?>> futures) {
+    private <V> void cancel(Map<Member, IScheduledFuture<V>> futures) {
         for (IScheduledFuture f : futures.values()) {
             f.cancel(false);
         }

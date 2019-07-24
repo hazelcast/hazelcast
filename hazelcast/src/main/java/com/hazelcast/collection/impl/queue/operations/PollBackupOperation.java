@@ -54,7 +54,7 @@ public final class PollBackupOperation extends QueueOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.POLL_BACKUP;
     }
 

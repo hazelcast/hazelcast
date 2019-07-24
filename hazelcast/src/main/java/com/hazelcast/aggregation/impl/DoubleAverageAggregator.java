@@ -66,7 +66,7 @@ public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Numb
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return AggregatorDataSerializerHook.DOUBLE_AVG;
     }
 

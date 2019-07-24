@@ -83,7 +83,7 @@ public class CacheClearOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CLEAR;
     }
 

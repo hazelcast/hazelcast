@@ -59,7 +59,7 @@ public class AppendRequestOp extends AsyncRaftOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.APPEND_REQUEST_OP;
     }
 }

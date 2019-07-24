@@ -49,7 +49,7 @@ public final class HeartbeatOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.HEARTBEAT;
     }
 

@@ -71,7 +71,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MULTIPLE_ENTRY_FACTORY;
     }
 }

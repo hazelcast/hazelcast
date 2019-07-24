@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx.suppliers;
 
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 

@@ -91,7 +91,7 @@ public class RaftLockOwnershipState implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftLockDataSerializerHook.RAFT_LOCK_OWNERSHIP_STATE;
     }
 

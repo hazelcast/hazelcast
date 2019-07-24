@@ -71,7 +71,7 @@ public class GetOperation extends AbstractPNCounterOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CRDTDataSerializerHook.PN_COUNTER_GET_OPERATION;
     }
 }

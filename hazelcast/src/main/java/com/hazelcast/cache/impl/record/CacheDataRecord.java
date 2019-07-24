@@ -75,7 +75,7 @@ public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_DATA_RECORD;
     }
 }

@@ -191,7 +191,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }

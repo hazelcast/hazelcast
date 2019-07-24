@@ -23,10 +23,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -234,22 +232,10 @@ public class ClientExceptionFactory {
                 return new ConfigMismatchException(message);
             }
         });
-        register(ClientProtocolErrorCodes.CONFIGURATION, ConfigurationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ConfigurationException(message);
-            }
-        });
         register(ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new DistributedObjectDestroyedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.DUPLICATE_INSTANCE_NAME, DuplicateInstanceNameException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new DuplicateInstanceNameException(message);
             }
         });
         register(ClientProtocolErrorCodes.EOF, EOFException.class, new ExceptionFactory() {

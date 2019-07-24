@@ -18,9 +18,9 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -105,7 +105,7 @@ public class ClientPutAllRemoveBounceTest extends HazelcastTestSupport {
             }
 
             map.putAll(m);
-            map.removeAll(new SqlPredicate("id >= " + min + " and id < " + max));
+            map.removeAll(Predicates.sql("id >= " + min + " and id < " + max));
         }
     }
 }

@@ -51,8 +51,6 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         newConfig.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
         newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
         newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
-        newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
-        newConfig.setMinEvictionCheckMillis(mapConfig.getMinEvictionCheckMillis());
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
@@ -75,7 +73,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.UPDATE_MAP_CONFIG;
     }
 }

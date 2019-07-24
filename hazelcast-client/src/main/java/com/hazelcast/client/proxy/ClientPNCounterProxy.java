@@ -25,7 +25,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;

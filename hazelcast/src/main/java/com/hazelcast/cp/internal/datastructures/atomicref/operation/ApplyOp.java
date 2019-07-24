@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref.operation;
 
-import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRef;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicReferenceDataSerializerHook;
@@ -123,7 +123,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicReferenceDataSerializerHook.APPLY_OP;
     }
 

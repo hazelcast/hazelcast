@@ -69,7 +69,7 @@ public class CollectionEventFilter implements EventFilter, IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CollectionDataSerializerHook.COLLECTION_EVENT_FILTER;
     }
 

@@ -175,7 +175,7 @@ public class CPSessionInfo implements CPSession, IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftSessionServiceDataSerializerHook.RAFT_SESSION;
     }
 

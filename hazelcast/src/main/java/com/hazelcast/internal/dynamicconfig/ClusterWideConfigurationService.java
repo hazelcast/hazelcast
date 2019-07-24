@@ -21,12 +21,12 @@ import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -51,9 +51,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
@@ -98,7 +98,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
     private final DynamicConfigListener listener;
-    private final Object journalMutex = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
@@ -129,12 +128,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, ReliableTopicConfig>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs =
             new ConcurrentHashMap<String, CacheSimpleConfig>();
-    private final ConcurrentMap<String, EventJournalConfig> cacheEventJournalConfigs =
-            new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
-            new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, MerkleTreeConfig> mapMerkleTreeConfigs =
-            new ConcurrentHashMap<String, MerkleTreeConfig>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
@@ -162,9 +155,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             queueConfigs,
             reliableTopicConfigs,
             cacheSimpleConfigs,
-            cacheEventJournalConfigs,
-            mapEventJournalConfigs,
-            mapMerkleTreeConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
     };
@@ -279,7 +269,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * @param newConfig       Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws ConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws InvalidConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -346,12 +336,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             if (currentConfig == null) {
                 listener.onConfigRegistered(cacheSimpleConfig);
             }
-        } else if (newConfig instanceof EventJournalConfig) {
-            EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
-            registerEventJournalConfig(eventJournalConfig, configCheckMode);
-        } else if (newConfig instanceof MerkleTreeConfig) {
-            MerkleTreeConfig config = (MerkleTreeConfig) newConfig;
-            currentConfig = mapMerkleTreeConfigs.putIfAbsent(config.getMapName(), config);
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
@@ -367,32 +351,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
     }
 
-    private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, ConfigCheckMode configCheckMode) {
-        String mapName = eventJournalConfig.getMapName();
-        String cacheName = eventJournalConfig.getCacheName();
-        synchronized (journalMutex) {
-            EventJournalConfig currentMapJournalConfig = null;
-            if (mapName != null) {
-                currentMapJournalConfig = mapEventJournalConfigs.putIfAbsent(mapName, eventJournalConfig);
-                checkCurrentConfigNullOrEqual(configCheckMode, currentMapJournalConfig, eventJournalConfig);
-            }
-            if (cacheName != null) {
-                EventJournalConfig currentCacheJournalConfig = cacheEventJournalConfigs.putIfAbsent(cacheName,
-                        eventJournalConfig);
-                try {
-                    checkCurrentConfigNullOrEqual(configCheckMode, currentCacheJournalConfig, eventJournalConfig);
-                } catch (ConfigurationException e) {
-                    // exception when registering cache journal config.
-                    // let's remove map journal if we configured any
-                    if (mapName != null && currentMapJournalConfig == null) {
-                        mapEventJournalConfigs.remove(mapName);
-                    }
-                    throw e;
-                }
-            }
-        }
-    }
-
     private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig,
                                                Object newConfig) {
         if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
@@ -406,7 +364,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                     + " is already a conflicting configuration '" + currentConfig + "'";
             switch (checkMode) {
                 case THROW_EXCEPTION:
-                    throw new ConfigurationException(message);
+                    throw new InvalidConfigurationException(message);
                 case WARNING:
                     logger.warning(message);
                     break;
@@ -617,36 +575,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public Map<String, CacheSimpleConfig> getCacheSimpleConfigs() {
         return cacheSimpleConfigs;
-    }
-
-    @Override
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        return cacheEventJournalConfigs;
-    }
-
-    @Override
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
-    }
-
-    @Override
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        return mapEventJournalConfigs;
-    }
-
-    @Override
-    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
-    }
-
-    @Override
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        return mapMerkleTreeConfigs;
     }
 
     @Override

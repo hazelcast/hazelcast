@@ -22,12 +22,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -35,6 +35,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -109,14 +110,16 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberAttributeChangeEventV10(String uuid, String key, int opType, String value) {
-        Collection<Member> members = clusterService.getMemberList();
-        for (Member target : members) {
+    public void handleMemberAttributeChangeEventV10(Member member, Collection<Member> members, String key, int opType,
+                                                    String value) {
+        Collection<Member> currentMembersList = clusterService.getMemberList();
+        String uuid = member.getUuid();
+        for (Member target : currentMembersList) {
             if (target.getUuid().equals(uuid)) {
                 final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);
                 ((AbstractMember) target).updateAttribute(operationType, key, value);
                 MemberAttributeEvent memberAttributeEvent =
-                        new MemberAttributeEvent(client.getCluster(), target, operationType, key, value);
+                        new MemberAttributeEvent(client.getCluster(), target, new HashSet<>(members), operationType, key, value);
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                 break;
             }

@@ -19,8 +19,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -29,6 +28,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Indexes;
@@ -40,6 +40,7 @@ import java.util.Set;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Contains helper methods for {@link
@@ -85,8 +86,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
                 queryCacheConfig, getEvictionListener(), extractors);
 
+        assert indexes.isGlobal();
         for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
+            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered(), null);
         }
     }
 
@@ -101,7 +103,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     @Override
     public void setPublisherListenerId(String publisherListenerId) {
-        this.publisherListenerId = publisherListenerId;
+        this.publisherListenerId = requireNonNull(publisherListenerId, "publisherListenerId cannot be null");
     }
 
     @Override

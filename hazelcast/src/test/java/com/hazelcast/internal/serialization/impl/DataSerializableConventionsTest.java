@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.query.impl.SkipIndexPredicate;
+import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
@@ -63,7 +63,7 @@ import static org.junit.Assert.fail;
  * is excluded from conventions tests by being annotated with {@link SerializableByConvention} or
  * they also implement {@code IdentifiedDataSerializable}.
  * Additionally, tests whether IDS instanced obtained from DS factories
- * have the same ID as the one reported by their `getId` method and that F_ID/ID combinations are unique.
+ * have the same ID as the one reported by their `getClassId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
@@ -182,7 +182,7 @@ public class DataSerializableConventionsTest {
                     ctor.setAccessible(true);
                     IdentifiedDataSerializable instance = ctor.newInstance();
                     int factoryId = instance.getFactoryId();
-                    int typeId = instance.getId();
+                    int typeId = instance.getClassId();
                     if (factoryToTypeId.containsEntry(factoryId, typeId)) {
                         fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass.toString() + " is already"
                                 + " registered in another type.");
@@ -203,7 +203,7 @@ public class DataSerializableConventionsTest {
 
         if (!classesThrowingUnsupportedOperationException.isEmpty()) {
             System.out.println("INFO: " + classesThrowingUnsupportedOperationException.size() + " classes threw"
-                    + " UnsupportedOperationException in getFactoryId/getId invocation:");
+                    + " UnsupportedOperationException in getFactoryId/getClassId invocation:");
             for (String className : classesThrowingUnsupportedOperationException) {
                 System.out.println(className);
             }
@@ -250,7 +250,7 @@ public class DataSerializableConventionsTest {
                 ctor.setAccessible(true);
                 IdentifiedDataSerializable instance = ctor.newInstance();
                 int factoryId = instance.getFactoryId();
-                int typeId = instance.getId();
+                int typeId = instance.getClassId();
 
                 if (!factories.containsKey(factoryId)) {
                     fail("Factory with ID " + factoryId + " declared in " + klass + " not found."

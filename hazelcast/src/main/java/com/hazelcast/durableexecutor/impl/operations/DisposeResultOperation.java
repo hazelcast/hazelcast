@@ -63,7 +63,7 @@ public class DisposeResultOperation extends AbstractDurableExecutorOperation imp
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return DurableExecutorDataSerializerHook.DISPOSE_RESULT;
     }
 }

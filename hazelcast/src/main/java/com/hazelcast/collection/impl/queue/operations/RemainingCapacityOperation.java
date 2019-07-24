@@ -46,7 +46,7 @@ public class RemainingCapacityOperation extends QueueOperation implements Readon
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.REMAINING_CAPACITY;
     }
 }

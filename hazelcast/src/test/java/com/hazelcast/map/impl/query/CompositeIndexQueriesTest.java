@@ -18,17 +18,17 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
+import com.hazelcast.query.impl.predicates.SqlPredicate;
+import com.hazelcast.query.impl.predicates.VisitablePredicate;
 import com.hazelcast.query.impl.predicates.Visitor;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -110,7 +110,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
         map.put(101, new Person(10));
         check("name = '010' and age = 110", 2, 3, 7, 0);
-        map.removeAll(new SqlPredicate("name = '010' and age = 110"));
+        map.removeAll(Predicates.sql("name = '010' and age = 110"));
         check("name = '010' and age = 110", 0, 5, 7, 0);
     }
 
@@ -190,7 +190,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
         map.put(50, new Person(null));
         check("this.name = null and age = null", 5, 2, 3, 7);
-        map.removeAll(new SqlPredicate("this.name = null and age = null"));
+        map.removeAll(Predicates.sql("this.name = null and age = null"));
         check("this.name = null and age = null", 0, 4, 3, 7);
     }
 
@@ -200,7 +200,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
     private void check(String sql, int expectedSize, int... queryCounts) {
         if (sql != null) {
-            SqlPredicate sqlPredicate = new SqlPredicate(sql);
+            SqlPredicate sqlPredicate = (SqlPredicate) Predicates.sql(sql);
             Set<Map.Entry<Integer, Person>> result = map.entrySet(sqlPredicate);
             assertEquals(expectedSize, result.size());
 

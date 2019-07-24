@@ -20,7 +20,7 @@ import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.ExpectedRuntimeException;

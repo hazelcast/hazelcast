@@ -74,7 +74,7 @@ public class DestroyRaftNodesOp extends Operation implements IdentifiedDataSeria
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.DESTROY_RAFT_NODES_OP;
     }
 

@@ -78,7 +78,7 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.QUEUE_ITEM;
     }
 

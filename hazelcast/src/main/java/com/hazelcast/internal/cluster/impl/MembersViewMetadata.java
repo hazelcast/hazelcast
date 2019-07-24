@@ -65,7 +65,7 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBERS_VIEW_METADATA;
     }
 

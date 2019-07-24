@@ -25,10 +25,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.map.impl.MapEntries;
@@ -43,21 +39,19 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -636,7 +630,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
 
             ChangeStateEntryProcessor entryProcessor = new ChangeStateEntryProcessor();
-            EntryObject entryObject = new PredicateBuilder().getEntryObject();
+            EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
             Predicate<Integer, Employee> predicate = entryObject.get("id").lessThan(5);
             Map<Integer, Employee> res = map.executeOnEntries(entryProcessor, predicate);
 
@@ -1216,7 +1210,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.executeOnEntries(new DeleteEntryProcessor<>(), new SqlPredicate("__key >=0"));
+        map.executeOnEntries(new DeleteEntryProcessor<>(), Predicates.sql("__key >=0"));
 
         assertSizeEventually(0, map);
     }
@@ -1241,7 +1235,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             map.put(i, new SampleTestObjects.ObjectWithInteger(i));
         }
 
-        map.executeOnEntries(new DeleteEntryProcessor<>(), new SqlPredicate("attribute >=0"));
+        map.executeOnEntries(new DeleteEntryProcessor<>(), Predicates.sql("attribute >=0"));
 
         assertSizeEventually(0, map);
     }
@@ -1506,11 +1500,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             SimpleValue that = (SimpleValue) o;
 
-            if (i != that.i) {
-                return false;
-            }
-
-            return true;
+            return i == that.i;
         }
 
         @Override
@@ -1626,7 +1616,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         Operation operation = new MultipleEntryWithPredicateOperation(MAP_NAME, dataKeys,
-                new NoOpEntryProcessor(), new SqlPredicate("this < " + keyCount));
+                new NoOpEntryProcessor(), Predicates.sql("this < " + keyCount));
 
         OperationFactory operationFactory = new BinaryOperationFactory(operation, nodeEngineImpl);
 

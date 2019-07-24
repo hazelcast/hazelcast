@@ -26,15 +26,19 @@ public final class DelayedEntries {
     private DelayedEntries() {
     }
 
-    public static <K, V> DelayedEntry<K, V> createDefault(K key, V value, long storeTime, int partitionId) {
-        return new AddedDelayedEntry<>(key, value, storeTime, partitionId);
+    public static <K, V> DelayedEntry<K, V> createDefault(K key, V value, long expirationTime, long storeTime, int partitionId) {
+        return new AddedDelayedEntry<>(key, value, expirationTime, storeTime, partitionId);
     }
 
-    public static <K, V> DelayedEntry<K, V> createWithoutValue(K key) {
+    public static <K, V> DelayedEntry<K, V> createDefault(K key) {
+        return new AddedDelayedEntry<>(key, null, Long.MAX_VALUE, -1, -1);
+    }
+
+    public static <K, V> DelayedEntry<K, V> createNullEntry(K key) {
         return new NullValueDelayedEntry<>(key);
     }
 
-    public static <K, V> DelayedEntry<K, V> createWithoutValue(K key, long storeTime, int partitionId) {
+    public static <K, V> DelayedEntry<K, V> createDeletedEntry(K key, long storeTime, int partitionId) {
         return new DeletedDelayedEntry<>(key, storeTime, partitionId);
     }
 
@@ -53,6 +57,11 @@ public final class DelayedEntries {
         @Override
         public Object getValue() {
             return null;
+        }
+
+        @Override
+        public long getExpirationTime() {
+            return Long.MAX_VALUE;
         }
 
         @Override

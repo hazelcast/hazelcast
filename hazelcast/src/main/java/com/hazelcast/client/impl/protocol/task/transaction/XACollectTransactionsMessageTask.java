@@ -20,9 +20,9 @@ import com.hazelcast.client.impl.CollectRemoteTransactionsOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.impl.xa.XAService;
 
+import javax.transaction.xa.Xid;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +52,7 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCollectTransactionsCodec.encodeResponse((List<Data>) response);
+        return XATransactionCollectTransactionsCodec.encodeResponse((List<Xid>) response);
     }
 
     @Override
@@ -61,7 +62,7 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
-        List<Data> list = new ArrayList<Data>();
+        List<Data> list = new ArrayList<>();
         for (Object o : map.values()) {
             if (o instanceof Throwable) {
                 if (o instanceof MemberLeftException) {
@@ -72,7 +73,10 @@ public class XACollectTransactionsMessageTask
             SerializableList xidSet = (SerializableList) o;
             list.addAll(xidSet.getCollection());
         }
-        return list;
+
+        List<Xid> xidList = new ArrayList<>(list.size());
+        list.forEach(xidData -> xidList.add(serializationService.toObject(xidData)));
+        return xidList;
     }
 
     @Override

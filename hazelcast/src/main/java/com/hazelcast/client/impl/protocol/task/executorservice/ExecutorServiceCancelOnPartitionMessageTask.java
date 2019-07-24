@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -39,7 +39,7 @@ public class ExecutorServiceCancelOnPartitionMessageTask
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
         final String serviceName = DistributedExecutorService.SERVICE_NAME;
         CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
-        return operationService.createInvocationBuilder(serviceName, op, parameters.partitionId);
+        return operationService.createInvocationBuilder(serviceName, op, getPartitionId());
     }
 
     @Override

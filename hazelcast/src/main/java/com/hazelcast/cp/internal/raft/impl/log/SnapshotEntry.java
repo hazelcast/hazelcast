@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -77,7 +77,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.SNAPSHOT_ENTRY;
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

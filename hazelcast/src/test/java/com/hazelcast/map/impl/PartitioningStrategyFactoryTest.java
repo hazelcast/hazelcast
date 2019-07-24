@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -68,7 +68,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapService mapService = (MapService) mapProxy.getService();
         MapServiceContextImpl mapServiceContext = (MapServiceContextImpl) mapService.getMapServiceContext();
-        partitioningStrategyFactory = mapServiceContext.partitioningStrategyFactory;
+        partitioningStrategyFactory = mapServiceContext.getPartitioningStrategyFactory();
     }
 
     @Test

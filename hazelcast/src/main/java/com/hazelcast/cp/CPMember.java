@@ -17,8 +17,8 @@
 package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Endpoint;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.nio.Address;
 
 /**

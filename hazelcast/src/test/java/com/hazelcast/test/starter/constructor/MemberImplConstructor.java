@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 import com.hazelcast.version.MemberVersion;
 
@@ -27,7 +27,7 @@ import java.util.Map;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.instance.MemberImpl"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.cluster.impl.MemberImpl"})
 public class MemberImplConstructor extends AbstractStarterObjectConstructor {
 
     public MemberImplConstructor(Class<?> targetClass) {
@@ -46,7 +46,7 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         ClassLoader targetClassloader = targetClass.getClassLoader();
         Class<?> memberVersionClass = targetClassloader.loadClass("com.hazelcast.version.MemberVersion");
 
-        Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+        Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
         Constructor<?> constructor = targetClass
                 .getDeclaredConstructor(Map.class, memberVersionClass, Boolean.TYPE, String.class, Map.class, Boolean.TYPE,
                         Integer.TYPE, hzImplClass);

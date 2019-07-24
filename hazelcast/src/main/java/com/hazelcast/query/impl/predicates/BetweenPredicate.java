@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -94,7 +93,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PredicateDataSerializerHook.BETWEEN_PREDICATE;
     }
 

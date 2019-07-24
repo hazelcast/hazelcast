@@ -278,7 +278,7 @@ public class ExtractorHelperTest {
     public abstract class InitExceptionExtractor extends NameExtractor {
     }
 
-    public static final class IqExtractor extends ValueExtractor<Object, Object> {
+    public static final class IqExtractor implements ValueExtractor<Object, Object> {
 
         @Override
         public void extract(Object target, Object arguments, ValueCollector collector) {
@@ -291,7 +291,7 @@ public class ExtractorHelperTest {
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Object, Object> {
+    public static class NameExtractor implements ValueExtractor<Object, Object> {
 
         @Override
         public void extract(Object target, Object arguments, ValueCollector collector) {

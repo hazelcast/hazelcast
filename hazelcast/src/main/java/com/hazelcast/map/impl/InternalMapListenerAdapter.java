@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

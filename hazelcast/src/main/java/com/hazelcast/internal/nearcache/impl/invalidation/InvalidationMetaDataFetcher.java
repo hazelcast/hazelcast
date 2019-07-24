@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -115,8 +115,8 @@ public abstract class InvalidationMetaDataFetcher {
             return;
         }
 
-        repairUuids(resultHolder.partitionUuidList, handlers);
-        repairSequences(resultHolder.namePartitionSequenceList, handlers);
+        repairUuids(resultHolder.getPartitionUuidList(), handlers);
+        repairSequences(resultHolder.getNamePartitionSequenceList(), handlers);
     }
 
     protected void handleExceptionWhileProcessingMetadata(Member member, Exception e) {

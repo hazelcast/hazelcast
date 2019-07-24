@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,7 +32,7 @@ import java.util.Map;
 /**
  * Inserts the {@link MapEntries} for all partitions of a member via locally invoked {@link PutAllOperation}.
  * <p>
- * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
+ * Used to reduce the number of remote invocations of an {@link IMap#putAll(Map)} call.
  */
 public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperationFactory {
 
@@ -85,7 +86,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL_PARTITION_AWARE_FACTORY;
     }
 }

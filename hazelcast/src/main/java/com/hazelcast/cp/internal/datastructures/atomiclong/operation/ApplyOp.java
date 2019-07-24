@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong.operation;
 
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,7 +44,7 @@ public class ApplyOp<R> extends AbstractAtomicLongOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftAtomicLongDataSerializerHook.APPLY_OP;
     }
 

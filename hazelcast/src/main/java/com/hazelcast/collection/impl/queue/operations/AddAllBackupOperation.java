@@ -50,7 +50,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.ADD_ALL_BACKUP;
     }
 

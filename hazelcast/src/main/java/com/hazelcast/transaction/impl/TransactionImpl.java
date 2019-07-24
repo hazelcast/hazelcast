@@ -43,7 +43,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -105,7 +104,7 @@ public class TransactionImpl implements Transaction {
         this.nodeEngine = nodeEngine;
         this.txnId = newUnsecureUuidString();
         this.timeoutMillis = options.getTimeoutMillis();
-        this.transactionType = options.getTransactionType() == LOCAL ? ONE_PHASE : options.getTransactionType();
+        this.transactionType = options.getTransactionType();
         this.durability = transactionType == ONE_PHASE ? 0 : options.getDurability();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid == null;

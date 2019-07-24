@@ -82,7 +82,7 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.FETCH_WITH_QUERY;
     }
 }

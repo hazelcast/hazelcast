@@ -34,7 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredicateCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;

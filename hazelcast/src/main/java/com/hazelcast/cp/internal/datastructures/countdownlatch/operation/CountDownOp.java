@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch.operation;
 
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook;
@@ -59,7 +59,7 @@ public class CountDownOp extends AbstractCountDownLatchOp implements Indetermina
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_OP;
     }
 

@@ -65,7 +65,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.VALUES;
     }
 }

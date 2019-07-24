@@ -16,19 +16,20 @@
 
 package com.hazelcast.map.listener;
 
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.map.IMap;
 
 /**
- * Invoked after all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}.
+ * Invoked after all entries are evicted by {@link IMap#evictAll()}.
  *
  * @since 3.5
  */
 public interface MapEvictedListener extends MapListener {
 
     /**
-     * Invoked when all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}.
+     * Invoked when all entries are evicted by {@link IMap#evictAll()}.
      *
-     * @param event the map event invoked when all entries are evicted by {@link com.hazelcast.core.IMap#evictAll()}
+     * @param event the map event invoked when all entries are evicted by {@link IMap#evictAll()}
      */
     void mapEvicted(MapEvent event);
 }

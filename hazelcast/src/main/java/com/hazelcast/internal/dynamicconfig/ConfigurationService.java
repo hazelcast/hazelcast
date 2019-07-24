@@ -22,13 +22,11 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
@@ -220,31 +218,6 @@ public interface ConfigurationService {
     CacheSimpleConfig findCacheSimpleConfig(String name);
 
     /**
-     * Finds existing CacheEventJournal config.
-     *
-     * @param name name of the config
-     * @return CacheEventJournal config or {@code null} when requested CacheEventJournal configuration does not exist
-     */
-    EventJournalConfig findCacheEventJournalConfig(String name);
-
-    /**
-     * Finds existing MapEventJournal config.
-     *
-     * @param name name of the config
-     * @return MapEventJournal config or {@code null} when requested MapEventJournal configuration does not exist
-     */
-    EventJournalConfig findMapEventJournalConfig(String name);
-
-    /**
-     * Finds an existing map {@link MerkleTreeConfig}.
-     *
-     * @param name name of the config
-     * @return map {@link MerkleTreeConfig} or {@code null} when the requested
-     * configuration does not exist
-     */
-    MerkleTreeConfig findMapMerkleTreeConfig(String name);
-
-    /**
      * Finds existing FlakeIdGeneratorConfig config.
      *
      * @param name name of the config
@@ -391,27 +364,6 @@ public interface ConfigurationService {
      * @return registered cache configurations
      */
     Map<String, CacheSimpleConfig> getCacheSimpleConfigs();
-
-    /**
-     * Returns all registered CacheEventJournal configurations.
-     *
-     * @return registered CacheEventJournal configurations
-     */
-    Map<String, EventJournalConfig> getCacheEventJournalConfigs();
-
-    /**
-     * Returns all registered MapEventJournal configurations.
-     *
-     * @return registered MapEventJournal configurations
-     */
-    Map<String, EventJournalConfig> getMapEventJournalConfigs();
-
-    /**
-     * Returns a map of all registered IMap {@link MerkleTreeConfig}s.
-     *
-     * @return a map of registered IMap {@link MerkleTreeConfig}s
-     */
-    Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs();
 
     /**
      * Returns all registered FlakeIdGenerator configurations.

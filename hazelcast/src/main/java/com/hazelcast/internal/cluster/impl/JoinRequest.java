@@ -89,9 +89,6 @@ public class JoinRequest extends JoinMessage {
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         credentials = in.readObject();
-        if (credentials != null) {
-            credentials.setEndpoint(getAddress().getHost());
-        }
         tryCount = in.readInt();
         int size = in.readInt();
         attributes = createHashMap(size);
@@ -144,7 +141,7 @@ public class JoinRequest extends JoinMessage {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.JOIN_REQUEST;
     }
 }

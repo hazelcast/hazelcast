@@ -21,12 +21,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -73,7 +73,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @SuppressWarnings("RedundantCast")
     public void pagingPredicate_fails() {
-        getMapWithNodeCount(1).aggregate(new DoubleAverageAggregator(), new PagingPredicate());
+        getMapWithNodeCount(1).aggregate(new DoubleAverageAggregator(), Predicates.pagingPredicate(1));
     }
 
     @Test

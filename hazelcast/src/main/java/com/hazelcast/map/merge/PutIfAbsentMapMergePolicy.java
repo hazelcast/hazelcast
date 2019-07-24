@@ -51,7 +51,7 @@ public class PutIfAbsentMapMergePolicy implements MapMergePolicy, IdentifiedData
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_IF_ABSENT_MERGE_POLICY;
     }
 }

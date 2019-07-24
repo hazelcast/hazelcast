@@ -76,7 +76,7 @@ public class CreateRaftNodeOp extends Operation implements IdentifiedDataSeriali
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.CREATE_RAFT_NODE_OP;
     }
 

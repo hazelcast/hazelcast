@@ -41,17 +41,18 @@ import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -59,7 +60,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -73,9 +73,10 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         super(serviceName, name, context);
     }
 
+    @Nonnull
     @Override
-    public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        isNotNull(listener, "listener");
+    public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+        checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
@@ -137,7 +138,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean removeItemListener(String registrationId) {
+    public boolean removeItemListener(@Nonnull String registrationId) {
+        checkNotNull(registrationId, "Null registrationId is not allowed!");
         return deregisterListener(registrationId);
     }
 
@@ -147,7 +149,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean add(E e) {
+    public boolean add(@Nonnull E e) {
         if (offer(e)) {
             return true;
         }
@@ -165,7 +167,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
      * @throws HazelcastException if client loses the connected node.
      */
     @Override
-    public boolean offer(E e) {
+    public boolean offer(@Nonnull E e) {
         try {
             return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
@@ -175,15 +177,19 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public void put(E e) throws InterruptedException {
+    public void put(@Nonnull E e) throws InterruptedException {
+        checkNotNull(e, "Null item is not allowed!");
+
         Data data = toData(e);
         ClientMessage request = QueuePutCodec.encodeRequest(name, data);
         invokeOnPartitionInterruptibly(request);
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        checkNotNull(e, "item can't be null");
+    public boolean offer(@Nonnull E e,
+                         long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
+        checkNotNull(e, "Null item is not allowed!");
+        checkNotNull(unit, "Null timeUnit is not allowed!");
 
         Data data = toData(e);
         ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
@@ -192,6 +198,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return resultParameters.response;
     }
 
+    @Nonnull
     @Override
     public E take() throws InterruptedException {
         ClientMessage request = QueueTakeCodec.encodeRequest(name);
@@ -201,7 +208,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
+        checkNotNull(unit, "Null timeUnit is not allowed!");
+
         ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
         ClientMessage response = invokeOnPartitionInterruptibly(request);
         QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
@@ -217,7 +226,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean remove(Object o) {
+    public boolean remove(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed!");
         Data data = toData(o);
         ClientMessage request = QueueRemoveCodec.encodeRequest(name, data);
         ClientMessage response = invokeOnPartition(request);
@@ -226,7 +236,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean contains(Object o) {
+    public boolean contains(@Nonnull Object o) {
+        checkNotNull(o, "Null item is not allowed!");
         Data data = toData(o);
         ClientMessage request = QueueContainsCodec.encodeRequest(name, data);
         ClientMessage response = invokeOnPartition(request);
@@ -235,7 +246,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public int drainTo(Collection<? super E> objects) {
+    public int drainTo(@Nonnull Collection<? super E> objects) {
+        checkNotNull(objects, "Null objects parameter is not allowed!");
+
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
@@ -248,7 +261,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public int drainTo(Collection<? super E> c, int maxElements) {
+    public int drainTo(@Nonnull Collection<? super E> c, int maxElements) {
+        checkNotNull(c, "Null collection parameter is not allowed!");
+
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invokeOnPartition(request);
         QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
@@ -335,8 +350,11 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         return array;
     }
 
+    @Nonnull
     @Override
-    public <T> T[] toArray(T[] ts) {
+    public <T> T[] toArray(@Nonnull T[] ts) {
+        checkNotNull(ts, "Null array parameter is not allowed!");
+
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
@@ -353,8 +371,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean containsAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean containsAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed!");
+
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -363,8 +382,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> c) {
-        checkNotNull(c);
+    public boolean addAll(@Nonnull Collection<? extends E> c) {
+        checkNotNull(c, "Null collection is not allowed!");
+
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -373,8 +393,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean removeAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed!");
+
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -384,8 +405,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
-        checkNotNull(c);
+    public boolean retainAll(@Nonnull Collection<?> c) {
+        checkNotNull(c, "Null collection is not allowed!");
+
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);

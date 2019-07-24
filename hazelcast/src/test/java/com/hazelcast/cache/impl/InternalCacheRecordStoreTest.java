@@ -22,7 +22,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -207,7 +207,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return InternalCacheRecordStoreTestFactory.INTERNAL_CACHE_PRIMARY_STATE_GETTER;
         }
     }

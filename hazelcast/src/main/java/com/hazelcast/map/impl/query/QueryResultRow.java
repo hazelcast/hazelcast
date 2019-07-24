@@ -63,7 +63,7 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_RESULT_ROW;
     }
 

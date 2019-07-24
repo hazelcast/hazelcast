@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -26,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Contains the configuration for the {@link com.hazelcast.core.ILock}.
+ * Contains the configuration for the {@link ILock}.
  */
 public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
 
@@ -135,7 +136,7 @@ public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LOCK_CONFIG;
     }
 

@@ -18,11 +18,13 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -32,7 +34,7 @@ import java.util.Set;
 
 /**
  * Provides {@link com.hazelcast.config.InMemoryFormat InMemoryFormat} specific
- * operations for {@link com.hazelcast.core.IMap IMap}.
+ * operations for {@link IMap IMap}.
  */
 public interface MapOperationProvider {
 
@@ -83,7 +85,7 @@ public interface MapOperationProvider {
 
     MapOperation createGetOperation(String name, Data dataKey);
 
-    MapOperation createQueryOperation(Query query);
+    Operation createQueryOperation(Query query);
 
     MapOperation createQueryPartitionOperation(Query query);
 
@@ -100,7 +102,7 @@ public interface MapOperationProvider {
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
-    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
+    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean expirationTime);
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 

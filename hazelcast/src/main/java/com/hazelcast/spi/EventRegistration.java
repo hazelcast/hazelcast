@@ -17,12 +17,12 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * The result of a Event Registration.
  */
-public interface EventRegistration extends DataSerializable {
+public interface EventRegistration extends IdentifiedDataSerializable {
 
     /**
      * Returns the event registration ID.

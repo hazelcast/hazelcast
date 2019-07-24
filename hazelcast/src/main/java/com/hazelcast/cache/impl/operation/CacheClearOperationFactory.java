@@ -54,7 +54,7 @@ public class CacheClearOperationFactory
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CLEAR_FACTORY;
     }
 

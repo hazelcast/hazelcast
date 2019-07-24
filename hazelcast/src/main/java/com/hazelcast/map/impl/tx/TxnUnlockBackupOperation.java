@@ -63,7 +63,7 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TXN_UNLOCK_BACKUP;
     }
 }

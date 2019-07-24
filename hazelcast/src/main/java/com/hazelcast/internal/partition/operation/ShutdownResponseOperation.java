@@ -67,7 +67,7 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.SHUTDOWN_RESPONSE;
     }
 }
