@@ -751,22 +751,18 @@ public final class GroupProperty {
     public static final HazelcastProperty BACKPRESSURE_ENABLED
             = new HazelcastProperty("hazelcast.backpressure.enabled", false);
 
-    /**
-     * Controls the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
-     * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
-     * <p>
-     * A sync window of 10 means that 1 in 10 BackupAwareOperations get their async backups convert to sync backups.
-     * <p>
-     * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. 1
-     * is also the smallest legal value for the sync window.
-     * <p>
-     * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
-     * BackupAwareOperation operation gets its async backups converted to sync.
-     * <p>
-     * This property only has meaning when backpressure is enabled.
-     */
-    public static final HazelcastProperty BACKPRESSURE_SYNCWINDOW
-            = new HazelcastProperty("hazelcast.backpressure.syncwindow", 100);
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.lowwatermark", 1024 * 1024);
+
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.highwatermark", 5*1024 * 1024);
+
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_DURATION
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.duration", 5000);
+
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.check.interval.millis", 100);
+
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.

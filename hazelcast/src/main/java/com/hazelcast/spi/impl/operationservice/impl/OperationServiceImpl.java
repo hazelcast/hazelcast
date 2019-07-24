@@ -125,7 +125,6 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     final BackpressureRegulator backpressureRegulator;
     final OutboundResponseHandler outboundResponseHandler;
     final OutboundOperationHandler outboundOperationHandler;
-    private final AsyncBackupOverloadDetector asyncBackupOverloadDetector;
     volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
@@ -148,7 +147,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
         this.failOnIndeterminateOperationState = nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
 
         this.backpressureRegulator = new BackpressureRegulator(
-                node.getProperties(), node.getLogger(BackpressureRegulator.class));
+                node.getProperties(), node.getLogger(BackpressureRegulator.class), node);
 
         this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService,
                 node.getLogger(OutboundResponseHandler.class));
@@ -162,9 +161,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
 
         this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
 
-        this.asyncBackupOverloadDetector = new AsyncBackupOverloadDetector(node);
-
-        this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler,asyncBackupOverloadDetector);
+        this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
         ClassLoader configClassLoader = node.getConfigClassLoader();
@@ -466,7 +463,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
         operationExecutor.start();
         inboundResponseHandlerSupplier.start();
         slowOperationDetector.start();
-        asyncBackupOverloadDetector.start();
+        backpressureRegulator.start();
     }
 
     private void initInvocationContext() {
@@ -521,6 +518,6 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
 
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
-        asyncBackupOverloadDetector.shutdown();
+        backpressureRegulator.shutdown();
     }
 }

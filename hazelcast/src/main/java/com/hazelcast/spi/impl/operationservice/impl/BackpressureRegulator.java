@@ -16,25 +16,35 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.Iterator;
+import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_DURATION;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static java.lang.Math.max;
-import static java.lang.Math.round;
+import static com.hazelcast.util.Clock.currentTimeMillis;
+import static java.lang.Long.min;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -65,32 +75,38 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 class BackpressureRegulator {
 
-    /**
-     * The percentage above and below a certain sync-window we should randomize.
-     */
-    static final float RANGE = 0.25f;
-
-    private final AtomicInteger syncCountdown = new AtomicInteger();
     private final boolean enabled;
     private final boolean disabled;
-    private final int syncWindow;
     private final int partitionCount;
     private final int maxConcurrentInvocations;
     private final int backoffTimeoutMs;
+    private final Random random = new Random();
+    private final Node node;
+    private final DetectionThread thread = new DetectionThread();
+    private final int checkIntervalMs;
+    private volatile boolean stop;
+    private final long lowWaterMark ;
+    private final long highWaterMark;
+    private final long asyncBackpressureDurationMs;
+    private volatile long timeoutMs = currentTimeMillis();
+    @Probe
+    private volatile int ratio;
 
-    BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
+    BackpressureRegulator(HazelcastProperties properties, ILogger logger, Node node) {
         this.enabled = properties.getBoolean(BACKPRESSURE_ENABLED);
         this.disabled = !enabled;
         this.partitionCount = properties.getInteger(PARTITION_COUNT);
-        this.syncWindow = getSyncWindow(properties);
-        this.syncCountdown.set(syncWindow);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
+        this.lowWaterMark = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK);
+        this.highWaterMark = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK);
+        this.asyncBackpressureDurationMs = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_DURATION);
+        this.checkIntervalMs = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS);
 
+        this.node = node;
         if (enabled) {
             logger.info("Backpressure is enabled"
-                    + ", maxConcurrentInvocations:" + maxConcurrentInvocations
-                    + ", syncWindow: " + syncWindow);
+                    + ", maxConcurrentInvocations:" + maxConcurrentInvocations);
 
             int backupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
             if (backupTimeoutMillis < MINUTES.toMillis(1)) {
@@ -101,18 +117,6 @@ class BackpressureRegulator {
         } else {
             logger.info("Backpressure is disabled");
         }
-    }
-
-    int syncCountDown() {
-        return syncCountdown.get();
-    }
-
-    private int getSyncWindow(HazelcastProperties props) {
-        int syncWindow = props.getInteger(BACKPRESSURE_SYNCWINDOW);
-        if (enabled && syncWindow <= 0) {
-            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
-        }
-        return syncWindow;
     }
 
     private int getBackoffTimeoutMs(HazelcastProperties props) {
@@ -178,25 +182,79 @@ class BackpressureRegulator {
             return false;
         }
 
-        for (; ; ) {
-            int current = syncCountdown.decrementAndGet();
-            if (current > 0) {
-                return false;
-            }
-
-            if (syncCountdown.compareAndSet(current, randomSyncDelay())) {
-                return true;
-            }
+        int ratio = getRatio();
+        if (ratio == 0) {
+            return false;
         }
+        return random.nextInt(100) <= ratio;
     }
 
-    private int randomSyncDelay() {
-        if (syncWindow == 1) {
-            return 1;
+    private int getRatio() {
+        if (currentTimeMillis() > timeoutMs) {
+            return 0;
         }
 
-        Random random = ThreadLocalRandomProvider.get();
-        int randomSyncWindow = round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
-        return max(1, randomSyncWindow);
+        return ratio;
+    }
+
+    public void start() {
+        thread.start();
+    }
+
+    public void shutdown() {
+        stop = true;
+        thread.interrupt();
+    }
+
+    private class DetectionThread extends Thread {
+        @Override
+        public void run() {
+            while (!stop) {
+                try {
+                    Thread.sleep(checkIntervalMs);
+                } catch (InterruptedException e) {
+                }
+
+                long startMs = System.currentTimeMillis();
+                long max = maxPending();
+                if (max < lowWaterMark) {
+                    continue;
+                }
+
+                // overload detected.
+                timeoutMs = System.currentTimeMillis() + asyncBackpressureDurationMs;
+                max = min(max, highWaterMark);
+                ratio = Math.round(100 * ((float) max) / highWaterMark);
+                long duration = System.currentTimeMillis() - startMs;
+                System.out.println("ratio:" + ratio + " max:" + max + " duration:" + duration + " ms");
+            }
+        }
+
+        private long maxPending() {
+            long max = 0;
+            for (Iterator<Channel> it = node.networkingService.getNetworking().channels(); it.hasNext(); ) {
+                Channel channel = it.next();
+                TcpIpConnection c = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+                if (c.isClient()) {
+                    continue;
+                }
+
+                Queue<OutboundFrame> writeQueue = ((NioChannel) channel).outboundPipeline().writeQueue;
+                long pending = 0;
+                for (OutboundFrame frame : writeQueue) {
+                    if (frame instanceof Packet) {
+                        pending += frame.getFrameLength();
+                    }
+
+                    // if we exceed the high watermark for one of the connections, we are done. We don't need
+                    // to check the rest of the connections. Also we don't need to check the rest of the packet
+                    // of the current connection.
+                    if (pending > highWaterMark) {
+                        return pending;
+                    }
+                }
+            }
+            return max;
+        }
     }
 }
