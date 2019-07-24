@@ -51,14 +51,13 @@ public class MembershipEvent extends EventObject {
      */
     public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
 
-
     private static final long serialVersionUID = -2010865371829087371L;
 
-    private final Member member;
+    protected Member member;
+
+    protected Set<Member> members;
 
     private final int eventType;
-
-    private final Set<Member> members;
 
     public MembershipEvent(Cluster cluster, Member member, int eventType, Set<Member> members) {
         super(cluster);
