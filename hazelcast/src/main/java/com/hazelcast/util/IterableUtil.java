@@ -16,10 +16,9 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.IFunction;
-
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.function.Function;
 
 /**
  * Utility functions for working with {@link Iterable}
@@ -38,17 +37,12 @@ public final class IterableUtil {
     }
 
     /** Transform the Iterable by applying a function to each element  **/
-    public static <T, R> Iterable<R> map(final Iterable<T> iterable, final IFunction<T, R> mapper) {
-        return new Iterable<R>() {
-            @Override
-            public Iterator<R> iterator() {
-                return map(iterable.iterator(), mapper);
-            }
-        };
+    public static <T, R> Iterable<R> map(Iterable<T> iterable, Function<T, R> mapper) {
+        return () -> map(iterable.iterator(), mapper);
     }
 
     /** Transform the Iterator by applying a function to each element  **/
-    public static <T, R> Iterator<R> map(final Iterator<T> iterator, final IFunction<T, R> mapper) {
+    public static <T, R> Iterator<R> map(Iterator<T> iterator, Function<T, R> mapper) {
         return new Iterator<R>() {
             @Override
             public boolean hasNext() {

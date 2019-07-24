@@ -18,8 +18,8 @@ package com.hazelcast.multimap.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.Partition;
 
 import java.util.Random;

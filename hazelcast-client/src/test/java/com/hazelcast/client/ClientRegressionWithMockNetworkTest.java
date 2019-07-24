@@ -31,13 +31,13 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.map.IMap;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.MapListener;
@@ -157,8 +157,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
-        clientConfig.setSmartRouting(false);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        clientConfig.getNetworkConfig().setSmartRouting(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {

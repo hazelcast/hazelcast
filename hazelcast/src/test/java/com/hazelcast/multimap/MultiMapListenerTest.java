@@ -22,8 +22,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,13 +50,13 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiMapListenerTest extends HazelcastTestSupport {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListener_whenNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addLocalEntryListener(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddListener_whenListenerNull() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
         multiMap.addEntryListener(null, true);

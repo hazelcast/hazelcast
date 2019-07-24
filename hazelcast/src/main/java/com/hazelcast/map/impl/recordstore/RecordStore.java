@@ -18,10 +18,11 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -63,13 +64,13 @@ public interface RecordStore<R extends Record> {
 
     /**
      * @return oldValue only if it exists in memory, otherwise just returns
-     * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
+     * null and doesn't try to load it from {@link MapLoader}
      */
     Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
      * @return oldValue if it exists in memory otherwise tries to load oldValue
-     * by using {@link com.hazelcast.core.MapLoader}
+     * by using {@link MapLoader}
      */
     Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
@@ -117,6 +118,23 @@ public interface RecordStore<R extends Record> {
     boolean remove(Data dataKey, Object testValue);
 
     boolean setTtl(Data key, long ttl);
+
+    /**
+     * Checks whether ttl or maxIdle are set on the record.
+     * @param record the record to be checked
+     * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
+     */
+    boolean isTtlOrMaxIdleDefined(Record record);
+
+    /**
+     * Callback which is called when the record is being accessed from the record or index store.
+     * <p>
+     * An implementation is not supposed to be thread safe.
+     * @param record the accessed record
+     * @param now the current time
+     */
+    void accessRecord(Record record, long now);
+
 
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
@@ -186,6 +204,8 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoad(Data key, Object value, Address callerAddress);
 
+    Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress);
+
     /**
      * Puts key-value pair to map which is the result of a load from map store operation on backup.
      *
@@ -196,6 +216,8 @@ public interface RecordStore<R extends Record> {
      * @see com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation
      */
     Object putFromLoadBackup(Data key, Object value);
+
+    Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
     boolean merge(MapMergeTypes mergingEntry,
                   SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
@@ -269,7 +291,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Iterates over record store entries but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
-     * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * {@link IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
      *
      * @param now    current time in millis
@@ -377,6 +399,18 @@ public interface RecordStore<R extends Record> {
     R getRecordOrNull(Data key);
 
     /**
+     * Check if record is reachable according to TTL or idle times.
+     * If not reachable return null.
+     *
+     * @param record the record from record-store.
+     * @param now    current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return null if evictable.
+     */
+    R getOrNullIfExpired(R record, long now, boolean backup);
+
+
+   /**
      * Evicts entries from this record-store.
      *
      * @param excludedKey this key has lowest priority to be selected for eviction
@@ -412,7 +446,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Starts the map loader if there is a configured and enabled
-     * {@link com.hazelcast.core.MapLoader} and the key loading has not already
+     * {@link MapLoader} and the key loading has not already
      * been started.
      * The loading may start again if there was a migration and the record store
      * on the migration source has started but not completed the loading.
@@ -466,7 +500,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Triggers loading values for the given {@code keys} from the
-     * defined {@link com.hazelcast.core.MapLoader}.
+     * defined {@link MapLoader}.
      * The values will be loaded asynchronously and this method will
      * return as soon as the value loading task has been offloaded
      * to a different thread.

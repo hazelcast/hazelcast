@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.InvocationUtil;
@@ -73,6 +72,7 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
@@ -82,8 +82,8 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -124,44 +124,42 @@ import static java.lang.Thread.currentThread;
 @SuppressWarnings("WeakerAccess")
 class MapServiceContextImpl implements MapServiceContext {
 
-    protected static final long DESTROY_TIMEOUT_SECONDS = 30;
+    private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
-    protected final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
-    protected final IndexProvider indexProvider = new DefaultIndexProvider();
-    protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-
+    private final ILogger logger;
+    private final NodeEngine nodeEngine;
+    private final QueryEngine queryEngine;
+    private final EventService eventService;
+    private final QueryRunner mapQueryRunner;
+    private final MapEventJournal eventJournal;
+    private final QueryOptimizer queryOptimizer;
+    private final MapEventPublisher mapEventPublisher;
+    private final QueryCacheContext queryCacheContext;
+    private final ExpirationManager expirationManager;
+    private final PartitionScanRunner partitionScanRunner;
+    private final MergePolicyProvider mergePolicyProvider;
+    private final MapNearCacheManager mapNearCacheManager;
+    private final MapOperationProviders operationProviders;
+    private final PartitionContainer[] partitionContainers;
+    private final LocalMapStatsProvider localMapStatsProvider;
+    private final ResultProcessorRegistry resultProcessorRegistry;
+    private final InternalSerializationService serializationService;
+    private final MapClearExpiredRecordsTask clearExpiredRecordsTask;
+    private final PartitioningStrategyFactory partitioningStrategyFactory;
+    private final ConstructorFunction<String, MapContainer> mapConstructor;
+    private final IndexProvider indexProvider = new DefaultIndexProvider();
+    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
+    private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     /**
      * Per node global write behind queue item counter.
      * Creating here because we want to have a counter per node.
      * This is used by owner and backups together so it should be defined
      * getting this into account.
      */
-    protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
+    private final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
 
-    protected final NodeEngine nodeEngine;
-    protected final InternalSerializationService serializationService;
-    protected final ConstructorFunction<String, MapContainer> mapConstructor;
-    protected final PartitionContainer[] partitionContainers;
-    protected final MapClearExpiredRecordsTask clearExpiredRecordsTask;
-    protected final ExpirationManager expirationManager;
-    protected final MapNearCacheManager mapNearCacheManager;
-    protected final LocalMapStatsProvider localMapStatsProvider;
-    protected final MergePolicyProvider mergePolicyProvider;
-    protected final QueryEngine queryEngine;
-    protected final QueryRunner mapQueryRunner;
-    protected final PartitionScanRunner partitionScanRunner;
-    protected final QueryOptimizer queryOptimizer;
-    protected final PartitioningStrategyFactory partitioningStrategyFactory;
-    protected final QueryCacheContext queryCacheContext;
-    protected final MapEventJournal eventJournal;
-    protected final MapEventPublisher mapEventPublisher;
-    protected final EventService eventService;
-    protected final MapOperationProviders operationProviders;
-    protected final ResultProcessorRegistry resultProcessorRegistry;
-    protected ILogger logger;
-
-    protected MapService mapService;
+    private MapService mapService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
@@ -314,17 +312,10 @@ class MapServiceContextImpl implements MapServiceContext {
     protected void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
         for (PartitionContainer partitionContainer : partitionContainers) {
             if (partitionContainer != null) {
-                removeRecordStoresFromPartitionMatchingWith(allRecordStores(),
+                removeRecordStoresFromPartitionMatchingWith(recordStore -> true,
                         partitionContainer.getPartitionId(), onShutdown, onRecordStoreDestroy);
             }
         }
-    }
-
-    /**
-     * @return predicate that matches with all record stores of all maps
-     */
-    private static Predicate<RecordStore> allRecordStores() {
-        return recordStore -> true;
     }
 
     @Override
@@ -648,9 +639,9 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void removeInterceptor(String mapName, String id) {
+    public boolean removeInterceptor(String mapName, String id) {
         MapContainer mapContainer = getMapContainer(mapName);
-        mapContainer.getInterceptorRegistry().deregister(id);
+        return mapContainer.getInterceptorRegistry().deregister(id);
     }
 
     // TODO: interceptors should get a wrapped object which includes the serialized version
@@ -800,11 +791,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionScanRunner getPartitionScanRunner() {
-        return partitionScanRunner;
-    }
-
-    @Override
     public ResultProcessorRegistry getResultProcessorRegistry() {
         return resultProcessorRegistry;
     }
@@ -868,5 +854,14 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
+    }
+
+    InternalSerializationService getSerializationService() {
+        return serializationService;
+    }
+
+    // used only for testing purposes
+    PartitioningStrategyFactory getPartitioningStrategyFactory() {
+        return partitioningStrategyFactory;
     }
 }

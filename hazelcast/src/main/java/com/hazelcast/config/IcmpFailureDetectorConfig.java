@@ -114,7 +114,8 @@ public class IcmpFailureDetectorConfig {
      */
     public IcmpFailureDetectorConfig setIntervalMilliseconds(int intervalMilliseconds) {
         if (intervalMilliseconds < MIN_INTERVAL_MILLIS) {
-            throw new ConfigurationException(format("Interval can't be set to less than %d milliseconds.", MIN_INTERVAL_MILLIS));
+            throw new InvalidConfigurationException(format("Interval can't be set to less than %d milliseconds.",
+                    MIN_INTERVAL_MILLIS));
         }
 
         this.intervalMilliseconds = intervalMilliseconds;

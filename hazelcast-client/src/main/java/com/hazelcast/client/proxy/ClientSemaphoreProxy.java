@@ -26,7 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.cp.ISemaphore;
 
 import java.util.concurrent.TimeUnit;
 

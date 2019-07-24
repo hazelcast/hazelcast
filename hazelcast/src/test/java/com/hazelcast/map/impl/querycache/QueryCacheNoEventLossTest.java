@@ -21,11 +21,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EventLostListener;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -166,7 +166,7 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
     private Config newConfig() {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig()
                 .setName(QUERY_CACHE_NAME)
-                .setPredicateConfig(new PredicateConfig(TruePredicate.INSTANCE));
+                .setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()));
 
         MapConfig mapConfig = new MapConfig(MAP_NAME)
                 .addQueryCacheConfig(queryCacheConfig);

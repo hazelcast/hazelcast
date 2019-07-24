@@ -20,8 +20,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
-import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
-import com.hazelcast.config.ConfigCompatibilityChecker.MapMerkleTreeConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.QuorumConfigChecker;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -303,36 +301,36 @@ public class ConfigXmlGeneratorTest {
 
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
-          .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
-          .setClientBlockUnmappedActions(false)
-          .setClientLoginModuleConfigs(Arrays.asList(
-                  new LoginModuleConfig()
-                          .setClassName("f.o.o")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                  new LoginModuleConfig()
-                          .setClassName("b.a.r")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                  new LoginModuleConfig()
-                          .setClassName("l.o.l")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-          .setMemberLoginModuleConfigs(Arrays.asList(
-                  new LoginModuleConfig()
-                          .setClassName("member.f.o.o")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                  new LoginModuleConfig()
-                          .setClassName("member.b.a.r")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                  new LoginModuleConfig()
-                          .setClassName("member.l.o.l")
-                          .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-        .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
-        .setClientPermissionConfigs(new HashSet<PermissionConfig>(singletonList(
-                new PermissionConfig()
-                        .setActions(newHashSet("read", "remove"))
-                        .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
-                        .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
-                        .setName("mycounter")
-                        .setPrincipal("devos"))));
+                .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
+                .setClientBlockUnmappedActions(false)
+                .setClientLoginModuleConfigs(Arrays.asList(
+                        new LoginModuleConfig()
+                                .setClassName("f.o.o")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                        new LoginModuleConfig()
+                                .setClassName("b.a.r")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                        new LoginModuleConfig()
+                                .setClassName("l.o.l")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                .setMemberLoginModuleConfigs(Arrays.asList(
+                        new LoginModuleConfig()
+                                .setClassName("member.f.o.o")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                        new LoginModuleConfig()
+                                .setClassName("member.b.a.r")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                        new LoginModuleConfig()
+                                .setClassName("member.l.o.l")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+                .setClientPermissionConfigs(new HashSet<PermissionConfig>(singletonList(
+                        new PermissionConfig()
+                                .setActions(newHashSet("read", "remove"))
+                                .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
+                                .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
+                                .setName("mycounter")
+                                .setPrincipal("devos"))));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -354,9 +352,9 @@ public class ConfigXmlGeneratorTest {
 
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban")
-            .addPrefixes("dangerous.", "bang");
+                .addPrefixes("dangerous.", "bang");
         filterConfig.getWhitelist().addClasses("WhiteOne", "WhiteTwo").addPackages("com.hazelcast", "test.package")
-            .addPrefixes("java");
+                .addPrefixes("java");
 
         SerializationConfig expectedConfig = new SerializationConfig()
                 .setAllowUnsafe(true)
@@ -510,6 +508,7 @@ public class ConfigXmlGeneratorTest {
                 .setValueType("valueType")
                 .setReadThrough(true)
                 .setHotRestartConfig(hotRestartConfig())
+                .setEventJournalConfig(eventJournalConfig())
                 .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
                 .setWriteThrough(true)
                 .setPartitionLostListenerConfigs(singletonList(
@@ -1009,13 +1008,12 @@ public class ConfigXmlGeneratorTest {
                 .setReadBackupData(true)
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
-                .setEvictionPercentage(80)
-                .setMinEvictionCheckMillis(1000)
-                .setOptimizeQueries(true)
                 .setMapStoreConfig(mapStoreConfig)
                 .setMaxSizeConfig(maxSizeConfig)
                 .setWanReplicationRef(wanReplicationRef())
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
+                .setMerkleTreeConfig(merkleTreeConfig())
+                .setEventJournalConfig(eventJournalConfig())
                 .setHotRestartConfig(hotRestartConfig())
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
@@ -1123,7 +1121,7 @@ public class ConfigXmlGeneratorTest {
                 .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
         publisherConfig.getWanSyncConfig()
-                       .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
                 .setClassName("dummyClass")
                 .setProperties(props)
@@ -1139,53 +1137,6 @@ public class ConfigXmlGeneratorTest {
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
                 xmlConfig.getWanReplicationConfigs());
-    }
-
-    @Test
-    public void testMapMerkleTree() {
-        String mapName = "mapName";
-        MerkleTreeConfig expectedConfig = new MerkleTreeConfig()
-                .setMapName(mapName)
-                .setEnabled(true)
-                .setDepth(10);
-        Config config = new Config().addMerkleTreeConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        MerkleTreeConfig actualConfig = xmlConfig.getMapMerkleTreeConfig(mapName);
-        assertTrue(new MapMerkleTreeConfigChecker().check(expectedConfig, actualConfig));
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapEventJournal() {
-        String mapName = "mapName";
-        EventJournalConfig expectedConfig = new EventJournalConfig()
-                .setMapName(mapName)
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-        Config config = new Config().addEventJournalConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        EventJournalConfig actualConfig = xmlConfig.getMapEventJournalConfig(mapName);
-        assertTrue(new EventJournalConfigChecker().check(expectedConfig, actualConfig));
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testCacheEventJournal() {
-        String cacheName = "cacheName";
-        EventJournalConfig expectedConfig = new EventJournalConfig()
-                .setCacheName(cacheName)
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-        Config config = new Config().addEventJournalConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        EventJournalConfig actualConfig = xmlConfig.getCacheEventJournalConfig(cacheName);
-        assertTrue(new EventJournalConfigChecker().check(expectedConfig, actualConfig));
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -1357,30 +1308,30 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getCPSubsystemConfig()
-              .setCPMemberCount(10)
-              .setGroupSize(5)
-              .setSessionTimeToLiveSeconds(15)
-              .setSessionHeartbeatIntervalSeconds(3)
-              .setMissingCPMemberAutoRemovalSeconds(120)
-              .setFailOnIndeterminateOperationState(true);
+                .setCPMemberCount(10)
+                .setGroupSize(5)
+                .setSessionTimeToLiveSeconds(15)
+                .setSessionHeartbeatIntervalSeconds(3)
+                .setMissingCPMemberAutoRemovalSeconds(120)
+                .setFailOnIndeterminateOperationState(true);
 
         config.getCPSubsystemConfig()
-              .getRaftAlgorithmConfig()
-              .setLeaderElectionTimeoutInMillis(500)
-              .setLeaderHeartbeatPeriodInMillis(100)
-              .setMaxMissedLeaderHeartbeatCount(10)
-              .setAppendRequestMaxEntryCount(25)
-              .setAppendRequestMaxEntryCount(250)
-              .setUncommittedEntryCountToRejectNewAppends(75)
+                .getRaftAlgorithmConfig()
+                .setLeaderElectionTimeoutInMillis(500)
+                .setLeaderHeartbeatPeriodInMillis(100)
+                .setMaxMissedLeaderHeartbeatCount(10)
+                .setAppendRequestMaxEntryCount(25)
+                .setAppendRequestMaxEntryCount(250)
+                .setUncommittedEntryCountToRejectNewAppends(75)
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-              .addSemaphoreConfig(new CPSemaphoreConfig("sem1", true))
-              .addSemaphoreConfig(new CPSemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new CPSemaphoreConfig("sem1", true))
+                .addSemaphoreConfig(new CPSemaphoreConfig("sem2", false));
 
         config.getCPSubsystemConfig()
-              .addLockConfig(new FencedLockConfig("lock1", 1))
-              .addLockConfig(new FencedLockConfig("lock1", 2));
+                .addLockConfig(new FencedLockConfig("lock1", 1))
+                .addLockConfig(new FencedLockConfig("lock1", 2));
 
 
         CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
@@ -1489,7 +1440,7 @@ public class ConfigXmlGeneratorTest {
         Config cfg = new Config();
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         MemberAddressProviderConfig expected = cfg.getAdvancedNetworkConfig()
-                                                  .getMemberAddressProviderConfig();
+                .getMemberAddressProviderConfig();
         expected.setEnabled(true)
                 .setEnabled(true)
                 .setClassName("ClassName");
@@ -1631,6 +1582,19 @@ public class ConfigXmlGeneratorTest {
         return new HotRestartConfig()
                 .setEnabled(true)
                 .setFsync(true);
+    }
+
+    private static MerkleTreeConfig merkleTreeConfig() {
+        return new MerkleTreeConfig()
+                .setEnabled(true)
+                .setDepth(15);
+    }
+
+    private static EventJournalConfig eventJournalConfig() {
+        return new EventJournalConfig()
+                .setEnabled(true)
+                .setCapacity(123)
+                .setTimeToLiveSeconds(321);
     }
 
     private static EvictionConfig evictionConfig() {

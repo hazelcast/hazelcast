@@ -20,8 +20,8 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -37,6 +37,8 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -49,7 +51,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 /**
- * The serverside {@link com.hazelcast.core.ITopic} implementation for reliable topics.
+ * The serverside {@link ITopic} implementation for reliable topics.
  *
  * @param <E> type of item contained in the topic
  */
@@ -57,6 +59,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     public static final int MAX_BACKOFF = 2000;
     public static final int INITIAL_BACKOFF_MS = 100;
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final Executor executor;
@@ -151,7 +154,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public void publish(E payload) {
+    public void publish(@Nullable E payload) {
         try {
             Data data = nodeEngine.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, thisAddress);
@@ -206,9 +209,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         }
     }
 
+    @Nonnull
     @Override
-    public String addMessageListener(MessageListener<E> listener) {
-        checkNotNull(listener, "listener can't be null");
+    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener;
@@ -227,7 +231,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public boolean removeMessageListener(String registrationId) {
+    public boolean removeMessageListener(@Nonnull String registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);

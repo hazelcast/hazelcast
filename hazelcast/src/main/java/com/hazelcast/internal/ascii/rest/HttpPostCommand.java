@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ascii.TextDecoder;
 import com.hazelcast.util.StringUtil;
@@ -45,10 +46,12 @@ public class HttpPostCommand extends HttpCommand {
     private ByteBuffer data;
     private String contentType;
     private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
+    private Connection connection;
 
-    public HttpPostCommand(TextDecoder decoder, String uri) {
+    public HttpPostCommand(TextDecoder decoder, String uri, Connection connection) {
         super(HTTP_POST, uri);
         this.decoder = decoder;
+        this.connection = connection;
     }
 
     /**
@@ -236,5 +239,9 @@ public class HttpPostCommand extends HttpCommand {
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
             decoder.sendResponse(new NoOpCommand(RES_100));
         }
+    }
+
+    protected Connection getConnection() {
+        return connection;
     }
 }

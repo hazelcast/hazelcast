@@ -18,10 +18,10 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.topic.ITopic;
 
 /**
- * Management bean for {@link com.hazelcast.core.ITopic}
+ * Management bean for {@link ITopic}
  */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {

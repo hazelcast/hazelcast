@@ -38,7 +38,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.WanSyncStatus;
+import com.hazelcast.wan.impl.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -91,7 +91,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         runtimeProps.put("prop1", 598123L);
 
         ClusterState clusterState = ClusterState.ACTIVE;
-        com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
+        com.hazelcast.instance.impl.NodeState nodeState = com.hazelcast.instance.impl.NodeState.PASSIVE;
         Version clusterVersion = Version.of("3.9.0");
         MemberVersion memberVersion = MemberVersion.of("3.8.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);

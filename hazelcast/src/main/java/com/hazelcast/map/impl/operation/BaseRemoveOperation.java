@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation
         implements BackupAwareOperation, MutatingOperation {
@@ -56,8 +56,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey,
-                false, disableWanReplicationEvent);
+        return new RemoveBackupOperation(name, dataKey, disableWanReplicationEvent);
     }
 
     @Override

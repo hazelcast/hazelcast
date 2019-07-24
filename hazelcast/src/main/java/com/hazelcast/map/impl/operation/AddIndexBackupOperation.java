@@ -72,7 +72,7 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX_BACKUP;
     }
 

@@ -21,9 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -358,7 +358,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(42, "value-42");
         map.put(65, "value-65");
 
-        Predicate<Integer, Object> predicate = new SqlPredicate("__key IN (23, 65)");
+        Predicate<Integer, Object> predicate = Predicates.sql("__key IN (23, 65)");
         Map<Integer, Object> resultMap = adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), predicate);
         assertEquals(2, resultMap.size());
         assertEquals("newValue-23", resultMap.get(23));

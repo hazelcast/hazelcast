@@ -24,15 +24,15 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -584,7 +584,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         populateNearCache(map, mapSize);
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("salary").equal(0);
         map.executeOnEntries(
                 entry -> {
@@ -705,7 +705,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> map = instance.getMap(mapName);
 
         CountDownLatch latch = new CountDownLatch(mapSize);
-        addEntryEvictedListener(map, latch);
+        addEntryExpiredListener(map, latch);
 
         populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
         populateNearCache(map, mapSize);

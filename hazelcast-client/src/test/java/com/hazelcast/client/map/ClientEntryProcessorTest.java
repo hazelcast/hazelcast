@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -92,7 +91,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         IMap<String, String> clientMap = client.getMap(mapName);
         clientMap.put(member1Key, "value");
 
-        clientMap.executeOnEntries(new ValueUpdater("newValue"), FalsePredicate.INSTANCE);
+        clientMap.executeOnEntries(new ValueUpdater("newValue"), Predicates.alwaysFalse());
 
         IMap<String, String> member1Map = member1.getMap(mapName);
         String member1Value = member1Map.get(member1Key);
@@ -109,7 +108,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         IMap<String, String> clientMap = client.getMap(mapName);
         clientMap.put(member1Key, "value");
 
-        clientMap.executeOnEntries(new ValueUpdater("newValue"), TruePredicate.INSTANCE);
+        clientMap.executeOnEntries(new ValueUpdater("newValue"), Predicates.alwaysTrue());
 
         IMap<String, String> member1Map = member1.getMap(mapName);
         String member1Value = member1Map.get(member1Key);

@@ -22,7 +22,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -108,7 +107,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testAddBinarySyncFillUp() {
-        Config config = buildConfig(InMemoryFormat.BINARY);
+        Config config = buildConfig(smallInstanceConfig(), InMemoryFormat.BINARY);
         config.getReplicatedMapConfig("default").setAsyncFillup(false);
         testFillUp(config);
     }
@@ -155,9 +154,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertClusterSizeEventually(2, instance1, instance2);
 
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         for (String key : keys) {
             map1.put(key, "bar");
         }

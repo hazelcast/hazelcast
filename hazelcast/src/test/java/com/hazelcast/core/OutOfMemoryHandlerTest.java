@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.AbstractOutOfMemoryHandlerTest;
+import com.hazelcast.instance.impl.AbstractOutOfMemoryHandlerTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

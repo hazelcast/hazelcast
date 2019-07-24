@@ -77,15 +77,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     @Override
-    public final void run() {
-        try {
-            runInternal();
-        } catch (NativeOutOfMemoryError e) {
-            WithForcedEviction.rerun(this);
-        }
-    }
-
-    @Override
     public final void beforeRun() throws Exception {
         super.beforeRun();
 
@@ -112,6 +103,32 @@ public abstract class MapOperation extends AbstractNamedOperation
         innerBeforeRun();
     }
 
+    protected void innerBeforeRun() throws Exception {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
+    @Override
+    public final void run() {
+        try {
+            runInternal();
+        } catch (NativeOutOfMemoryError e) {
+            WithForcedEviction.rerun(this);
+        }
+    }
+
+    protected void runInternal() {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
+    @Override
+    public final void afterRun() throws Exception {
+        afterRunInternal();
+        disposeDeferredBlocks();
+        super.afterRun();
+    }
+
     private void assertNativeMapOnPartitionThread() {
         if (!ASSERTION_ENABLED) {
             return;
@@ -121,20 +138,6 @@ public abstract class MapOperation extends AbstractNamedOperation
             assert getPartitionId() != GENERIC_PARTITION_ID
                     : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
         }
-    }
-
-    protected void innerBeforeRun() throws Exception {
-        // Intentionally empty method body. Concrete
-        // classes can override this method.
-    }
-
-    protected abstract void runInternal();
-
-    @Override
-    public final void afterRun() throws Exception {
-        afterRunInternal();
-        disposeDeferredBlocks();
-        super.afterRun();
     }
 
     protected void afterRunInternal() {
@@ -201,7 +204,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {
         boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
-                && canThisOpGenerateWANEvent();
+                && !disableWanReplicationEvent;
 
         if (canPublishWanEvent) {
             mapContainer.getWanReplicationPublisher().checkWanReplicationQueues();
@@ -301,14 +304,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     // for testing only
     public void setMapContainer(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
-    }
-
-    /**
-     * @return {@code true} if this operation can generate WAN event, otherwise return {@code false}
-     * to indicate WAN event generation is not allowed for this operation
-     */
-    protected final boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     protected final void publishWanUpdate(Data dataKey, Object value) {

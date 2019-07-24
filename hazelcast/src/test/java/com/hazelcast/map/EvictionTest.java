@@ -27,12 +27,16 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -68,6 +72,7 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.query.SampleTestObjects.Employee;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Math.max;
 import static java.lang.String.format;
@@ -186,6 +191,48 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, "value1", 0, SECONDS, 0, SECONDS);
 
         assertTrue(map.containsKey(1));
+    }
+
+    @Test
+    public void testMaxIdle_readThroughOrderedIndex() {
+        testMaxIdle_readThroughIndex(true);
+    }
+
+    @Test
+    public void testMaxIdle_readThroughUnorderedIndex() {
+        testMaxIdle_readThroughIndex(false);
+    }
+
+    private void testMaxIdle_readThroughIndex(boolean ordered) {
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        // make the cleaner task as aggressive as possible
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Employee> map = node.getMap(mapName);
+        map.addIndex("city", ordered);
+
+        for (int i = 0; i < 5; ++i) {
+            String cityName = i % 2 == 0 ? "cityname" : null;
+
+            Employee emp = new Employee(i, "name" + i, cityName, 0, true, i);
+            map.put(i, emp, 0L, SECONDS, 14L, SECONDS);
+        }
+
+        EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
+        Predicate predicateCityNull = entryObject.get("city").isNull();
+        // Touch the map entry though the index to make sure expiration cleaning task
+        // doesn't evict it.
+        assertTrueAllTheTime(() -> {
+            assertTrue(map.containsKey(0));
+            Collection<Employee> valuesNullCity = map.values(predicateCityNull);
+            assertEquals(2, valuesNullCity.size());
+
+            Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
+            assertEquals(3, valuesNotNullCity.size());
+        }, 30);
     }
 
     /**
@@ -389,7 +436,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(25)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -443,7 +489,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(25)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -495,8 +540,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(50)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -527,7 +570,6 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = newMapConfig(mapName)
                 .setStatisticsEnabled(false)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(10)
                 .setMaxSizeConfig(max);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -577,7 +619,6 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = newMapConfig(mapName)
                 .setStatisticsEnabled(disableStats)
                 .setEvictionPolicy(LFU)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
@@ -604,7 +645,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
         MapConfig mapConfig = newMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LFU)
-                .setEvictionPercentage(90)
                 .setMaxSizeConfig(maxSizeConfig);
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
@@ -637,7 +677,7 @@ public class EvictionTest extends HazelcastTestSupport {
         EntryListenerConfig entryListenerConfig = new EntryListenerConfig()
                 .setLocal(true)
                 .setImplementation(new EntryAdapter() {
-                    public void entryEvicted(EntryEvent event) {
+                    public void entryExpired(EntryEvent event) {
                         entryEvictedEventCount.incrementAndGet();
                     }
                 });
@@ -734,7 +774,8 @@ public class EvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(numOfEntries);
         map.addEntryListener(new EntryAdapter() {
-            public void entryEvicted(EntryEvent event) {
+            @Override
+            public void entryExpired(EntryEvent event) {
                 latch.countDown();
             }
         }, false);
@@ -762,7 +803,8 @@ public class EvictionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(putCount);
         map.addEntryListener(new EntryAdapter() {
-            public void entryEvicted(final EntryEvent event) {
+            @Override
+            public void entryExpired(final EntryEvent event) {
                 latch.countDown();
             }
         }, true);
@@ -827,13 +869,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
 
         final CountDownLatch latch = new CountDownLatch(entryCount);
-        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                super.entryEvicted(event);
-                latch.countDown();
-            }
-        }, false);
+        map.addEntryListener((EntryExpiredListener<Integer, Integer>) event -> latch.countDown(), false);
 
         // put some sample data
         for (int i = 0; i < entryCount; i++) {
@@ -1028,7 +1064,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            public void entryExpired(EntryEvent<Integer, Integer> event) {
                 evictedEntryLatch.countDown();
                 count.incrementAndGet();
             }
@@ -1111,12 +1147,7 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, Integer> map = initialNode.getMap(mapName);
 
         final CountDownLatch evictedEntryCounterLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<String, Integer> event) {
-                evictedEntryCounterLatch.countDown();
-            }
-        }, false);
+        map.addEntryListener((EntryExpiredListener<String, Integer>) event -> evictedEntryCounterLatch.countDown(), false);
 
         String key = getClass().getCanonicalName();
 
@@ -1305,8 +1336,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         MapConfig mapConfig = newMapConfig(mapName + "*")
                 .setMaxSizeConfig(maxSizeConfig)
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setMinEvictionCheckMillis(0);
+                .setEvictionPolicy(EvictionPolicy.LRU);
 
         return getConfig()
                 .addMapConfig(mapConfig);

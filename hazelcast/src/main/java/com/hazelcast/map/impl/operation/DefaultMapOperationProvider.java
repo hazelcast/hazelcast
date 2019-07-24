@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.tx.TxnSetOperation;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -234,7 +235,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createQueryOperation(Query query) {
+    public Operation createQueryOperation(Query query) {
         return new QueryOperation(query);
     }
 
@@ -265,8 +266,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
-        return new PutFromLoadAllOperation(name, keyValueSequence);
+    public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean includesExpirationTime) {
+        return new PutFromLoadAllOperation(name, keyValueSequence, includesExpirationTime);
     }
 
     @Override

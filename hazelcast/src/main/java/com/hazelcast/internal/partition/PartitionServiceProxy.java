@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.logging.ILogger;

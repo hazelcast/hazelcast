@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;

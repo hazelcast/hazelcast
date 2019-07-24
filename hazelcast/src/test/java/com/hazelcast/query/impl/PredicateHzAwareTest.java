@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -71,8 +71,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
     }
 
     private static class SimpleProjection
-            extends Projection<Map.Entry<String, Integer>, Integer>
-            implements HazelcastInstanceAware, Serializable {
+            implements Projection<Map.Entry<String, Integer>, Integer>, HazelcastInstanceAware, Serializable {
 
         private transient HazelcastInstance instance;
 

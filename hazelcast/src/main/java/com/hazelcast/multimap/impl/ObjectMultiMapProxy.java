@@ -20,8 +20,8 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -31,6 +31,8 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -50,6 +52,7 @@ public class ObjectMultiMapProxy<K, V>
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     public ObjectMultiMapProxy(MultiMapConfig config, MultiMapService service, NodeEngine nodeEngine, String name) {
         super(config, service, nodeEngine, name);
@@ -85,7 +88,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean put(K key, V value) {
+    public boolean put(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -96,7 +99,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public Collection<V> get(K key) {
+    public Collection<V> get(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -106,7 +109,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean remove(Object key, Object value) {
+    public boolean remove(@Nonnull Object key, @Nonnull Object value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -117,7 +120,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public Collection<V> remove(Object key) {
+    public Collection<V> remove(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -126,7 +129,7 @@ public class ObjectMultiMapProxy<K, V>
         return result.getObjectCollection(nodeEngine);
     }
 
-    public void delete(Object key) {
+    public void delete(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -178,7 +181,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean containsKey(K key) {
+    public boolean containsKey(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -187,7 +190,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(@Nonnull Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -196,7 +199,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean containsEntry(K key, V value) {
+    public boolean containsEntry(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -207,7 +210,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public int valueCount(K key) {
+    public int valueCount(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -216,29 +219,34 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public String addLocalEntryListener(EntryListener<K, V> listener) {
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, false, true);
     }
 
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, includeValue, false);
     }
 
     @Override
-    public boolean removeEntryListener(String registrationId) {
+    public boolean removeEntryListener(@Nonnull String registrationId) {
+        checkNotNull(registrationId, "Registration ID should not be null!");
         return getService().removeListener(name, registrationId);
     }
 
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return getService().addListener(name, listener, dataKey, includeValue, false);
     }
 
     @Override
-    public void lock(K key) {
+    public void lock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -247,8 +255,9 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+    public void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(timeUnit, "Null timeUnit is not allowed!");
         checkPositive(leaseTime, "leaseTime should be positive");
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -257,7 +266,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean isLocked(K key) {
+    public boolean isLocked(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -266,7 +275,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean tryLock(K key) {
+    public boolean tryLock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -275,7 +284,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit)
+    public boolean tryLock(@Nonnull K key, long time, TimeUnit timeunit)
             throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -285,7 +294,9 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
+    public boolean tryLock(@Nonnull K key,
+                           long time, @Nullable TimeUnit timeunit,
+                           long leaseTime, @Nullable TimeUnit leaseUnit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -294,7 +305,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public void unlock(K key) {
+    public void unlock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -303,7 +314,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     @Override
-    public void forceUnlock(K key) {
+    public void forceUnlock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();

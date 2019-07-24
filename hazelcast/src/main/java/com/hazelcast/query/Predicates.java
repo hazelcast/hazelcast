@@ -16,7 +16,8 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.predicates.FalsePredicate;
+import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.BetweenPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -28,12 +29,18 @@ import com.hazelcast.query.impl.predicates.LikePredicate;
 import com.hazelcast.query.impl.predicates.NotEqualPredicate;
 import com.hazelcast.query.impl.predicates.NotPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
+import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
+import com.hazelcast.query.impl.predicates.SqlPredicate;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.Map;
 
 /**
- * A utility class to create {@link com.hazelcast.query.Predicate} instances.
+ * A utility class to create new {@link PredicateBuilder} and {@link com.hazelcast.query.Predicate} instances.
  * <p>
  * <b>Special Attributes</b>
  * <p>
@@ -169,6 +176,7 @@ import java.util.Date;
  * </ul>
  * </ul>
  */
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling"})
 public final class Predicates {
 
     //we don't want instances. private constructor.
@@ -176,17 +184,25 @@ public final class Predicates {
     }
 
     /**
+     * Creates a new instance of {@link PredicateBuilder}.
+     * @return the new {@link PredicateBuilder} instance.
+     */
+    public static PredicateBuilder newPredicateBuilder() {
+        return new PredicateBuilderImpl();
+    }
+
+    /**
      * Creates an <b>always true</b> predicate that will pass all items.
      */
     public static <K, V> Predicate<K, V> alwaysTrue() {
-        return new TruePredicate();
+        return TruePredicate.INSTANCE;
     }
 
     /**
      * Creates an <b>always false</b> predicate that will filter out all items.
      */
     public static <K, V> Predicate<K, V> alwaysFalse() {
-        return new FalsePredicate();
+        return FalsePredicate.INSTANCE;
     }
 
     /**
@@ -425,6 +441,86 @@ public final class Predicates {
      */
     public static Predicate in(String attribute, Comparable... values) {
         return new InPredicate(attribute, values);
+    }
+
+    /**
+     * Creates a <b>SQL</b> predicate that will pass items that match the given SQL 'where' expression. The following
+     * operators are supported: {@code =}, {@code &lt;}, {@code &gt;}, {@code &lt;=}, {@code &gt;=}, {@code ==},
+     * {@code !=}, {@code &lt;&gt;}, {@code between}, {@code in}, {@code like}, {@code ilike}, {@code regex},
+     * {@code and}, {@code or}.
+     * <p>
+     * Example: {@code active AND (age &gt; 20 OR salary &lt; 60000)}
+     * <p>
+     * See also <i>Special Attributes</i>, <i>Attribute Paths</i>, <i>Handling of {@code null}</i> and
+     * <i>Implicit Type Conversion</i> sections of {@link Predicates}.
+     *
+     * @param expression the 'where' expression.
+     * @return the created <b>sql</b> predicate instance.
+     * @throws IllegalArgumentException if the SQL expression is invalid.
+     */
+    public static Predicate sql(String expression) {
+        return new SqlPredicate(expression);
+    }
+
+    /**
+     * Creates a paging predicate with a page size. Results will not be filtered and will be returned in natural order.
+     *
+     * @param pageSize page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(int pageSize) {
+        return new PagingPredicateImpl<>(pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with an inner predicate and page size. Results will be filtered via inner predicate
+     * and will be returned in natural order.
+     *
+     * @param predicate the inner predicate through which results will be filtered
+     * @param pageSize  the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @throws {@link IllegalArgumentException} if inner predicate is also a paging predicate
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate predicate, int pageSize) {
+        return new PagingPredicateImpl<>(predicate, pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with a comparator and page size. Results will not be filtered and will be ordered
+     * via comparator.
+     *
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize   the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize) {
+        return new PagingPredicateImpl<>(comparator, pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with an inner predicate, comparator and page size. Results will be filtered via inner predicate
+     * and will be ordered via comparator.
+     *
+     * @param predicate  the inner predicate through which results will be filtered
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize   the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @throws {@link IllegalArgumentException} if inner predicate is also a {@link PagingPredicate}
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate<K, V> predicate, Comparator<Map.Entry<K, V>> comparator,
+                                                               int pageSize) {
+        return new PagingPredicateImpl<>(predicate, comparator, pageSize);
+    }
+
+    /**
+     * Creates a new partition predicate that restricts the execution of the target predicate to a single partition.
+     *
+     * @param partitionKey the partition key
+     * @param target       the target {@link Predicate}
+     * @throws NullPointerException     if partition key or target predicate is {@code null}
+     */
+    public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {
+        return new PartitionPredicateImpl<>(partitionKey, target);
     }
 
 }

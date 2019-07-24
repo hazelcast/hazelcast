@@ -17,12 +17,12 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.util.IterationType;
 
 import java.util.Collection;
@@ -46,7 +46,7 @@ public abstract class DefaultMapAggregateMessageTask<P>
 
     @Override
     protected Predicate getPredicate() {
-        return TruePredicate.INSTANCE;
+        return Predicates.alwaysTrue();
     }
 
     @Override

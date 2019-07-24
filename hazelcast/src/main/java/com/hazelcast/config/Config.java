@@ -16,18 +16,25 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.topic.ITopic;
 
 import java.io.File;
 import java.net.URL;
@@ -118,12 +125,6 @@ public class Config {
 
     private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
-
-    private final Map<String, EventJournalConfig> mapEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
-
-    private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
-
-    private final Map<String, MerkleTreeConfig> mapMerkleTreeConfigs = new ConcurrentHashMap<String, MerkleTreeConfig>();
 
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
@@ -357,6 +358,7 @@ public class Config {
     }
 
     // TODO (TK) : Inspect usages of NetworkConfig to replace where needed with {@link Config#getActiveMemberNetworkConfig()}
+
     /**
      * Returns the network configuration for this hazelcast instance. The
      * network configuration defines how a member will interact with other
@@ -382,7 +384,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IMap} configuration for
+     * Returns a read-only {@link IMap} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -472,7 +474,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IMap} configurations,
+     * Returns the map of {@link IMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -483,7 +485,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IMap} configurations,
+     * Sets the map of {@link IMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -613,7 +615,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IQueue} configuration for
+     * Returns a read-only {@link IQueue} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -683,7 +685,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IQueue} configurations,
+     * Returns the map of {@link IQueue} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -694,7 +696,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IQueue} configurations,
+     * Sets the map of {@link IQueue} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -711,7 +713,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ILock} configuration for
+     * Returns a read-only {@link ILock} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -781,7 +783,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ILock} configurations,
+     * Returns the map of {@link ILock} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -792,7 +794,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ILock} configurations,
+     * Sets the map of {@link ILock} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -809,7 +811,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.IList} configuration for
+     * Returns a read-only {@link IList} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -879,7 +881,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.IList} configurations,
+     * Returns the map of {@link IList} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -890,7 +892,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.IList} configurations,
+     * Sets the map of {@link IList} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -907,7 +909,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ISet} configuration for
+     * Returns a read-only {@link ISet} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -977,7 +979,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ISet} configurations,
+     * Returns the map of {@link ISet} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -988,7 +990,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ISet} configurations,
+     * Sets the map of {@link ISet} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -1005,7 +1007,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.MultiMap} configuration for
+     * Returns a read-only {@link MultiMap} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -1075,7 +1077,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.MultiMap} configurations,
+     * Returns the map of {@link MultiMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -1086,7 +1088,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.MultiMap} configurations,
+     * Sets the map of {@link MultiMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -1103,7 +1105,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ReplicatedMap} configuration for
+     * Returns a read-only {@link ReplicatedMap} configuration for
      * the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -1174,7 +1176,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ReplicatedMap}
+     * Returns the map of {@link ReplicatedMap}
      * configurations, mapped by config name. The config name may be a pattern
      * with which the configuration was initially obtained.
      *
@@ -1185,7 +1187,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ReplicatedMap} configurations,
+     * Sets the map of {@link ReplicatedMap} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -1583,7 +1585,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ITopic}
+     * Returns a read-only {@link ITopic}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -1762,7 +1764,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of {@link com.hazelcast.core.ITopic} configurations,
+     * Sets the map of {@link ITopic} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
@@ -2272,7 +2274,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link com.hazelcast.core.ISemaphore}
+     * Returns a read-only {@link ISemaphore}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -2330,7 +2332,7 @@ public class Config {
     }
 
     /**
-     * Adds the {@link com.hazelcast.core.ISemaphore} configuration.
+     * Adds the {@link ISemaphore} configuration.
      * The configuration is saved under the config name, which may be a
      * pattern with which the configuration will be obtained in the future.
      *
@@ -2343,7 +2345,7 @@ public class Config {
     }
 
     /**
-     * Returns the collection of {@link com.hazelcast.core.ISemaphore} configs
+     * Returns the collection of {@link ISemaphore} configs
      * added to this config object.
      *
      * @return semaphore configs
@@ -2353,7 +2355,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.core.ISemaphore} configurations,
+     * Returns the map of {@link ISemaphore} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
@@ -2632,261 +2634,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only map {@link EventJournal}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the map event journal config
-     * @return the map event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public EventJournalConfig findMapEventJournalConfig(String name) {
-        name = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getMapEventJournalConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns a read-only cache {@link EventJournal}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the cache event journal config
-     * @return the cache event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public EventJournalConfig findCacheEventJournalConfig(String name) {
-        name = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getCacheEventJournalConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the map event journal config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the event journal by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addEventJournalConfig(EventJournalConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the map event journal config
-     * @return the map event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public EventJournalConfig getMapEventJournalConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapEventJournalConfigs, name, EventJournalConfig.class,
-                new BiConsumer<EventJournalConfig, String>() {
-                    @Override
-                    public void accept(EventJournalConfig eventJournalConfig, String name) {
-                        eventJournalConfig.setMapName(name);
-                        if ("default".equals(name)) {
-                            eventJournalConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Returns the cache event journal config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the event journal by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addEventJournalConfig(EventJournalConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the cache event journal config
-     * @return the cache event journal configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public EventJournalConfig getCacheEventJournalConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, cacheEventJournalConfigs, name, EventJournalConfig.class,
-                new BiConsumer<EventJournalConfig, String>() {
-                    @Override
-                    public void accept(EventJournalConfig eventJournalConfig, String name) {
-                        eventJournalConfig.setCacheName(name);
-                        if ("default".equals(name)) {
-                            eventJournalConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Adds the event journal configuration. The configuration may apply to a map
-     * and/or cache. A non-empty value for {@link EventJournalConfig#getMapName()}
-     * means the configuration applies to maps and a non-empty value for
-     * {@link EventJournalConfig#getCacheName()} means the configuration
-     * applies to caches.
-     * The returned name may be a pattern with which the configuration
-     * will be obtained in the future.
-     *
-     * @param eventJournalConfig the event journal configuration
-     * @return this config instance
-     * @throws IllegalArgumentException if the
-     *                                  {@link EventJournalConfig#getMapName()} and
-     *                                  {@link EventJournalConfig#getCacheName()}
-     *                                  are both empty
-     */
-    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
-        final String mapName = eventJournalConfig.getMapName();
-        final String cacheName = eventJournalConfig.getCacheName();
-        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
-            throw new IllegalArgumentException("Event journal config should have either map name or cache name non-empty");
-        }
-        if (!StringUtil.isNullOrEmpty(mapName)) {
-            mapEventJournalConfigs.put(mapName, eventJournalConfig);
-        }
-        if (!StringUtil.isNullOrEmpty(cacheName)) {
-            cacheEventJournalConfigs.put(cacheName, eventJournalConfig);
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only map {@link MerkleTreeConfig} for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the map merkle tree config
-     * @return the map merkle tree configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public MerkleTreeConfig findMapMerkleTreeConfig(String name) {
-        name = getBaseName(name);
-        final MerkleTreeConfig config = lookupByPattern(configPatternMatcher, mapMerkleTreeConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getMapMerkleTreeConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the map merkle tree config for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * If there is no default config as well, it will create one and disable
-     * the merkle tree by default.
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addMerkleTreeConfig(MerkleTreeConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the map merkle tree config
-     * @return the map merkle tree configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public MerkleTreeConfig getMapMerkleTreeConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapMerkleTreeConfigs, name, MerkleTreeConfig.class,
-                new BiConsumer<MerkleTreeConfig, String>() {
-                    @Override
-                    public void accept(MerkleTreeConfig merkleTreeConfig, String name) {
-                        merkleTreeConfig.setMapName(name);
-                        if ("default".equals(name)) {
-                            merkleTreeConfig.setEnabled(false);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Adds the merkle tree configuration.
-     * The returned {@link MerkleTreeConfig#getMapName()} may be a
-     * pattern with which the configuration will be obtained in the future.
-     *
-     * @param merkleTreeConfig the merkle tree configuration
-     * @return this config instance
-     * @throws IllegalArgumentException if the {@link MerkleTreeConfig#getMapName()}
-     *                                  is empty
-     */
-    public Config addMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        final String mapName = merkleTreeConfig.getMapName();
-        if (StringUtil.isNullOrEmpty(mapName)) {
-            throw new IllegalArgumentException("Merkle tree config must define a map name");
-        }
-        mapMerkleTreeConfigs.put(mapName, merkleTreeConfig);
-        return this;
-    }
-
-    /**
      * Returns the map of {@link FlakeIdGenerator} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
@@ -2984,90 +2731,6 @@ public class Config {
         flakeIdGeneratorConfigMap.putAll(map);
         for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns the map of map event journal configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the map event journal configurations mapped by config name
-     */
-    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
-        return mapEventJournalConfigs;
-    }
-
-    /**
-     * Returns the map of cache event journal configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the cache event journal configurations mapped by config name
-     */
-    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
-        return cacheEventJournalConfigs;
-    }
-
-    /**
-     * Sets the map of map event journal configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param eventJournalConfigs the map event journal configuration map to set
-     * @return this config instance
-     */
-    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        this.mapEventJournalConfigs.clear();
-        this.mapEventJournalConfigs.putAll(eventJournalConfigs);
-        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
-            entry.getValue().setMapName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Sets the map of cache event journal configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param eventJournalConfigs the cache event journal configuration map to set
-     * @return this config instance
-     */
-    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
-        this.cacheEventJournalConfigs.clear();
-        this.cacheEventJournalConfigs.putAll(eventJournalConfigs);
-        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
-            entry.getValue().setCacheName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns the map of map merkle tree configurations, mapped by config
-     * name. The config name may be a pattern with which the configuration was
-     * initially obtained.
-     *
-     * @return the map merkle tree configurations mapped by config name
-     */
-    public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        return mapMerkleTreeConfigs;
-    }
-
-    /**
-     * Sets the map of map merkle configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param merkleTreeConfigs the map merkle tree configuration map to set
-     * @return this config instance
-     */
-    public Config setMapMerkleTreeConfigs(Map<String, MerkleTreeConfig> merkleTreeConfigs) {
-        this.mapMerkleTreeConfigs.clear();
-        this.mapMerkleTreeConfigs.putAll(merkleTreeConfigs);
-        for (Entry<String, MerkleTreeConfig> entry : merkleTreeConfigs.entrySet()) {
-            entry.getValue().setMapName(entry.getKey());
         }
         return this;
     }
@@ -3290,7 +2953,7 @@ public class Config {
      *
      * @return the license key
      * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
-     *         {@link HazelcastRuntimePermission}
+     *                           {@link HazelcastRuntimePermission}
      */
     public String getLicenseKey() {
         SecurityManager sm = System.getSecurityManager();
@@ -3406,8 +3069,6 @@ public class Config {
                 + ", atomicReferenceConfigs=" + atomicReferenceConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
-                + ", mapEventJournalConfigs=" + mapEventJournalConfigs
-                + ", cacheEventJournalConfigs=" + cacheEventJournalConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig
                 + ", managementCenterConfig=" + managementCenterConfig
                 + ", securityConfig=" + securityConfig

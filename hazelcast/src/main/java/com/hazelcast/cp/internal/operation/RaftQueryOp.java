@@ -36,6 +36,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
+import static com.hazelcast.cp.internal.operation.RaftReplicateOp.CALLER_RUNS_EXECUTOR;
+
 /**
  * The operation that passes a query to leader or a follower of a Raft group.
  * The given query can run locally on leader or a follower, or can be committed
@@ -82,7 +84,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             ((RaftNodeAware) op).setRaftNode(raftNode);
         }
 
-        raftNode.query(op, queryPolicy).andThen(this);
+        raftNode.query(op, queryPolicy).andThen(this, CALLER_RUNS_EXECUTOR);
     }
 
     @Override

@@ -18,7 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -59,8 +59,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
 
 
     public static class ValuesProjection
-            extends Projection<Map.Entry<Integer, OnlyDeserializedTwiceObject>, OnlyDeserializedTwiceObject>
-            implements Serializable {
+            implements Projection<Map.Entry<Integer, OnlyDeserializedTwiceObject>, OnlyDeserializedTwiceObject>, Serializable {
 
         @Override
         public OnlyDeserializedTwiceObject transform(Map.Entry<Integer, OnlyDeserializedTwiceObject> input) {

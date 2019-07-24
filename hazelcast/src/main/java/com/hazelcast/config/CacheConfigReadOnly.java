@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.BinaryInterface;
 
+import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -58,6 +59,20 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
             return null;
         }
         return wanReplicationRef.getAsReadOnly();
+    }
+
+    @Nonnull
+    @Override
+    public HotRestartConfig getHotRestartConfig() {
+        HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        return hotRestartConfig.getAsReadOnly();
+    }
+
+    @Nonnull
+    @Override
+    public EventJournalConfig getEventJournalConfig() {
+        EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
+        return eventJournalConfig.getAsReadOnly();
     }
 
     @Override
@@ -149,7 +164,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+    public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         throw throwReadOnly();
     }
 
@@ -177,6 +192,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     @Override
     public CacheConfiguration<K, V> setCacheWriterFactory(
             Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
         throw throwReadOnly();
     }
 

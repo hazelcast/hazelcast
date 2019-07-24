@@ -56,7 +56,7 @@ class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
             return result;
         } catch (Throwable t) {
             callback.onFailure(t);
-            return sneakyThrow(t);
+            throw sneakyThrow(t);
         }
     }
 
@@ -79,7 +79,7 @@ class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
             return result;
         } catch (Throwable t) {
             callback.onFailure(t, finishTime);
-            return sneakyThrow(t);
+            throw sneakyThrow(t);
         }
     }
 }

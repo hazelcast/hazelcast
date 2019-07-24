@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * In Hazelcast the data is split up in partitions: by default, 271 and configurable through the 'hazelcast.partition.count'

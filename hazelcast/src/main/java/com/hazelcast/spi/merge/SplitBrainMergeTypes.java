@@ -17,7 +17,15 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
 import java.util.Collection;
@@ -37,7 +45,7 @@ import java.util.Collection;
 public class SplitBrainMergeTypes {
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IMap}.
+     * Provided merge types of {@link IMap}.
      *
      * @since 3.10
      */
@@ -56,7 +64,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.ReplicatedMap}.
+     * Provided merge types of {@link ReplicatedMap}.
      *
      * @since 3.10
      */
@@ -65,7 +73,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.MultiMap}.
+     * Provided merge types of {@link MultiMap}.
      *
      * @since 3.10
      */
@@ -75,7 +83,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of collections ({@link com.hazelcast.core.ISet} and {@link com.hazelcast.core.IList}).
+     * Provided merge types of collections ({@link ISet} and {@link IList}).
      *
      * @since 3.10
      */
@@ -83,7 +91,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IQueue}.
+     * Provided merge types of {@link IQueue}.
      *
      * @since 3.10
      */
@@ -99,7 +107,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IAtomicLong}.
+     * Provided merge types of {@link IAtomicLong}.
      *
      * @since 3.10
      */
@@ -107,7 +115,7 @@ public class SplitBrainMergeTypes {
     }
 
     /**
-     * Provided merge types of {@link com.hazelcast.core.IAtomicReference}.
+     * Provided merge types of {@link IAtomicReference}.
      *
      * @since 3.10
      */

@@ -35,8 +35,8 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
@@ -62,7 +62,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FencedLockFailureTest extends HazelcastRaftTestSupport {
 
@@ -178,7 +178,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
             boolean[] verified = new boolean[1];
             CountDownLatch latch = new CountDownLatch(1);
-            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
             operationService.execute(new PartitionSpecificRunnable() {
                 @Override
                 public int getPartitionId() {
@@ -359,14 +359,18 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             RaftLockService service = getNodeEngineImpl(lockInstance).getService(RaftLockService.SERVICE_NAME);
-            assertFalse(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
+            RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
         unlockLatch.countDown();
 
         assertTrueEventually(() -> {
             RaftLockService service = getNodeEngineImpl(lockInstance).getService(RaftLockService.SERVICE_NAME);
-            assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
+            RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertTrue(registry.getWaitTimeouts().isEmpty());
             assertTrue(lock.isLocked());
         });
 
@@ -540,6 +544,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
             Map<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
             assertEquals(1, waitTimeouts.size());
             lockWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
@@ -553,7 +558,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
             boolean[] verified = new boolean[1];
             CountDownLatch latch = new CountDownLatch(1);
-            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            OperationServiceImpl operationService = nodeEngine.getOperationService();
             operationService.execute(new PartitionSpecificRunnable() {
                 @Override
                 public int getPartitionId() {

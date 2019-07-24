@@ -16,12 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IList;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IList} (read-only).
+ * Contains the configuration for an {@link IList} (read-only).
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */

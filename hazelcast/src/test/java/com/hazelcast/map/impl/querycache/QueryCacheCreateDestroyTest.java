@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -120,7 +120,7 @@ public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
 
     private static Config newConfigWithQueryCache(String mapName, String queryCacheName) {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
-        queryCacheConfig.getPredicateConfig().setImplementation(new TruePredicate());
+        queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());
         queryCacheConfig.setPopulate(true);
 
         Config config = new Config();

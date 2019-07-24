@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.json.JsonObject;
 

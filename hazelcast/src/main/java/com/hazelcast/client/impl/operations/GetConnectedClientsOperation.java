@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.api.Client;
+import com.hazelcast.client.api.ClientType;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngine;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientType;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.Collection;

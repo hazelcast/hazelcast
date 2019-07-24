@@ -76,14 +76,14 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
         };
     }
 
-    public static class IqExtractor extends ValueExtractor<Person, Object> {
+    public static class IqExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Person, Object> {
+    public static class NameExtractor implements ValueExtractor<Person, Object> {
         @Override
         public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.brain.name);

@@ -21,7 +21,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
@@ -411,9 +410,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setEvictionPercentage(25);
         mapConfig.setMaxSizeConfig(msc);
-        mapConfig.setMinEvictionCheckMillis(0L);
 
         return config;
     }

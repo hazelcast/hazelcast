@@ -34,7 +34,7 @@ public interface NodeState extends JsonSerializable {
     /**
      * @return the current node state (status)
      */
-    com.hazelcast.instance.NodeState getNodeState();
+    com.hazelcast.instance.impl.NodeState getNodeState();
 
     /**
      * @return the current version of the Cluster

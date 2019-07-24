@@ -18,16 +18,19 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 
+import javax.annotation.Nonnull;
+
 /**
  * Client service to add/remove remote listeners.
- *
+ * <p>
  * For smart client, it registers local  listeners to all nodes in cluster.
  * For unisocket client, it registers global listener to one node.
  */
 public interface ClientListenerService {
 
+    @Nonnull
     String registerListener(ListenerMessageCodec listenerMessageCodec, EventHandler handler);
 
-    boolean deregisterListener(String registrationId);
+    boolean deregisterListener(@Nonnull String registrationId);
 
 }

@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.api.ClientType;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -338,7 +338,7 @@ public class Statistics {
             ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
             Credentials credentials = connectionManager.getLastCredentials();
             if (credentials != null) {
-                addStat(stats, "credentials.principal", credentials.getPrincipal());
+                addStat(stats, "credentials.principal", credentials.getName());
             }
 
             for (Gauge gauge : allGauges) {

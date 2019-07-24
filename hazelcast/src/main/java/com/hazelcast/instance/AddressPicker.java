@@ -24,14 +24,13 @@ import java.util.Map;
 /**
  * Strategy to select an {@link Address} that a Hazelcast cluster member binds its server socket to
  * and a (potentially different) address that Hazelcast will advertise to other cluster members and clients.
- *
  */
 public interface AddressPicker {
 
     /**
      * Picks both server socket listener address and public address.
      *
-     * @throws Exception
+     * @throws Exception if failure happened while picking an address.
      */
     void pickAddress() throws Exception;
 

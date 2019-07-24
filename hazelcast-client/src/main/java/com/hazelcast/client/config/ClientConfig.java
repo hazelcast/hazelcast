@@ -16,20 +16,21 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.api.Client;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Preconditions;
 
@@ -103,7 +104,6 @@ public class ClientConfig {
     private final List<ProxyFactoryConfig> proxyFactoryConfigs;
     private ManagedContext managedContext;
     private ClassLoader classLoader;
-    private String licenseKey;
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
@@ -162,7 +162,6 @@ public class ClientConfig {
         }
         managedContext = config.managedContext;
         classLoader = config.classLoader;
-        licenseKey = config.licenseKey;
         connectionStrategyConfig = new ClientConnectionStrategyConfig(config.connectionStrategyConfig);
         userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig(config.userCodeDeploymentConfig);
         flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
@@ -315,19 +314,6 @@ public class ClientConfig {
     }
 
     /**
-     * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
-     *
-     * @param name            name of the IMap / ICache that Near Cache config will be applied to
-     * @param nearCacheConfig nearCacheConfig
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     */
-    @Deprecated
-    public ClientConfig addNearCacheConfig(String name, NearCacheConfig nearCacheConfig) {
-        nearCacheConfig.setName(name);
-        return addNearCacheConfig(nearCacheConfig);
-    }
-
-    /**
      * Helper method to add a new NearCacheConfig
      *
      * @param nearCacheConfig {@link com.hazelcast.config.NearCacheConfig}
@@ -430,8 +416,8 @@ public class ClientConfig {
      *
      * @param name name of the flake ID generator config
      * @return the flake ID generator configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @throws InvalidConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
@@ -466,8 +452,8 @@ public class ClientConfig {
      *
      * @param name name of the flake ID generator config
      * @return the cache configuration
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @throws InvalidConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
@@ -542,91 +528,6 @@ public class ClientConfig {
     }
 
     /**
-     * Use {@link ClientNetworkConfig#isSmartRouting} instead
-     */
-    @Deprecated
-    public boolean isSmartRouting() {
-        return networkConfig.isSmartRouting();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSmartRouting} instead
-     */
-    @Deprecated
-    public ClientConfig setSmartRouting(boolean smartRouting) {
-        networkConfig.setSmartRouting(smartRouting);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getSocketInterceptorConfig} instead
-     */
-    @Deprecated
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return networkConfig.getSocketInterceptorConfig();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSocketInterceptorConfig} instead
-     */
-    @Deprecated
-    public ClientConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
-        networkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionAttemptPeriod} instead
-     */
-    @Deprecated
-    public int getConnectionAttemptPeriod() {
-        return networkConfig.getConnectionAttemptPeriod();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionAttemptPeriod} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
-        networkConfig.setConnectionAttemptPeriod(connectionAttemptPeriod);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionAttemptLimit} instead
-     */
-    @Deprecated
-    public int getConnectionAttemptLimit() {
-        return networkConfig.getConnectionAttemptLimit();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionAttemptLimit} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
-        networkConfig.setConnectionAttemptLimit(connectionAttemptLimit);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getConnectionTimeout} instead
-     */
-    @Deprecated
-    public int getConnectionTimeout() {
-        return networkConfig.getConnectionTimeout();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setConnectionTimeout} instead
-     */
-    @Deprecated
-    public ClientConfig setConnectionTimeout(int connectionTimeout) {
-        networkConfig.setConnectionTimeout(connectionTimeout);
-        return this;
-    }
-
-    /**
      * Gets {@link com.hazelcast.security.Credentials}
      *
      * @return {@link com.hazelcast.security.Credentials}
@@ -645,32 +546,6 @@ public class ClientConfig {
     public ClientConfig setCredentials(Credentials credentials) {
         securityConfig.setCredentials(credentials);
         return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#addAddress} instead
-     */
-    @Deprecated
-    public ClientConfig addAddress(String... addresses) {
-        networkConfig.addAddress(addresses);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setAddresses} instead
-     */
-    @Deprecated
-    public ClientConfig setAddresses(List<String> addresses) {
-        networkConfig.setAddresses(addresses);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getAddresses} instead
-     */
-    @Deprecated
-    public List<String> getAddresses() {
-        return networkConfig.getAddresses();
     }
 
     /**
@@ -738,40 +613,6 @@ public class ClientConfig {
      */
     public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#isRedoOperation} instead
-     */
-    @Deprecated
-    public boolean isRedoOperation() {
-        return networkConfig.isRedoOperation();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setRedoOperation} instead
-     */
-    @Deprecated
-    public ClientConfig setRedoOperation(boolean redoOperation) {
-        networkConfig.setRedoOperation(redoOperation);
-        return this;
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#getSocketOptions} instead
-     */
-    @Deprecated
-    public SocketOptions getSocketOptions() {
-        return networkConfig.getSocketOptions();
-    }
-
-    /**
-     * Use {@link ClientNetworkConfig#setSocketOptions} instead
-     */
-    @Deprecated
-    public ClientConfig setSocketOptions(SocketOptions socketOptions) {
-        networkConfig.setSocketOptions(socketOptions);
         return this;
     }
 
@@ -893,18 +734,6 @@ public class ClientConfig {
         return this;
     }
 
-    public String getLicenseKey() {
-        return licenseKey;
-    }
-
-    /**
-     * @deprecated As of Hazelcast 3.10.3, enterprise license keys are required only for members, and not for clients
-     */
-    public ClientConfig setLicenseKey(final String licenseKey) {
-        this.licenseKey = licenseKey;
-        return this;
-    }
-
     public ClientConfig addQueryCacheConfig(String mapName, QueryCacheConfig queryCacheConfig) {
         Map<String, Map<String, QueryCacheConfig>> queryCacheConfigsPerMap = getQueryCacheConfigs();
         String queryCacheName = queryCacheConfig.getName();
@@ -1016,7 +845,7 @@ public class ClientConfig {
     }
 
     /**
-     * Adds a label for this client {@link com.hazelcast.core.Client} available
+     * Adds a label for this client {@link Client} available
      *
      * @param label The label to be added.
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
@@ -1123,9 +952,6 @@ public class ClientConfig {
         if (classLoader != null ? !classLoader.equals(that.classLoader) : that.classLoader != null) {
             return false;
         }
-        if (licenseKey != null ? !licenseKey.equals(that.licenseKey) : that.licenseKey != null) {
-            return false;
-        }
         if (!connectionStrategyConfig.equals(that.connectionStrategyConfig)) {
             return false;
         }
@@ -1161,7 +987,6 @@ public class ClientConfig {
         result = 31 * result + proxyFactoryConfigs.hashCode();
         result = 31 * result + (managedContext != null ? managedContext.hashCode() : 0);
         result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
-        result = 31 * result + (licenseKey != null ? licenseKey.hashCode() : 0);
         result = 31 * result + connectionStrategyConfig.hashCode();
         result = 31 * result + userCodeDeploymentConfig.hashCode();
         result = 31 * result + flakeIdGeneratorConfigMap.hashCode();

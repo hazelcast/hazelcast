@@ -59,7 +59,7 @@ hazelcast:
 
         tokyoPublisherId:
           group-name: tokyo
-          class-name: com.hazelcast.enterprise.wan.replication.WanBatchReplication
+          class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
           queue-capacity: 1000
           queue-full-behavior: THROW_EXCEPTION
           initial-publisher-state: REPLICATING
@@ -230,7 +230,6 @@ hazelcast:
       # You can disable if you do not plan to use eviction on your entries.
       statistics-enabled: false
 
-      optimize-queries: true
       cache-deserialized-values: ALWAYS
 
       # Number of backups. If 1 is set as the backup-count for example,
@@ -264,18 +263,6 @@ hazelcast:
         policy: PER_NODE
         max-size: 20
 
-      # `eviction-percentage` property is deprecated.
-      #
-      # As of version 3.7, eviction mechanism changed.
-      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-      eviction-percentage: 25
-
-      # `min-eviction-check-millis` property is deprecated.
-      #
-      # As of version 3.7, eviction mechanism changed.
-      # It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-      min-eviction-check-millis: 200
-
       # While recovering from split-brain (network partitioning), data structure entries in the small cluster
       # merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
       # an entry with the same key (or value) might already exist in the cluster.
@@ -298,8 +285,17 @@ hazelcast:
 
       read-backup-data: true
 
+      merkle-tree:
+        enabled: true
+        depth: 5
+
       hot-restart:
         fsync: true
+
+      event-journal:
+        enabled: true
+        capacity: 10
+        time-to-live-seconds: 10
 
       # Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
       #
@@ -551,6 +547,10 @@ hazelcast:
         - DummyListener
       hot-restart:
         fsync: true
+      event-journal:
+        enabled: true
+        capacity: 100
+        time-to-live-seconds: 100
 
   flake-id-generator:
     default:
@@ -804,12 +804,6 @@ hazelcast:
       recently-active-quorum:
         heartbeat-tolerance-millis: 60000
 
-  merkle-tree:
-    map:
-      default:
-        enabled: true
-        depth: 5
-
   hot-restart-persistence:
     enabled: false
     backup-dir: backup-dir
@@ -818,17 +812,6 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
-
-  event-journal:
-    map:
-      mapName:
-        capacity: 10
-        time-to-live-seconds: 10
-
-    cache:
-      cacheName:
-        capacity: 100
-        time-to-live-seconds: 100
 
   lite-member:
     enabled: true

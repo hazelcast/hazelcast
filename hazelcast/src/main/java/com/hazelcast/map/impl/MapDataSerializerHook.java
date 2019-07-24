@@ -137,12 +137,14 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.SetReadCursorOpera
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
+import com.hazelcast.map.impl.tx.TxnDeleteBackupOperation;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnPrepareBackupOperation;
 import com.hazelcast.map.impl.tx.TxnPrepareOperation;
 import com.hazelcast.map.impl.tx.TxnRollbackBackupOperation;
 import com.hazelcast.map.impl.tx.TxnRollbackOperation;
+import com.hazelcast.map.impl.tx.TxnSetBackupOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockBackupOperation;
 import com.hazelcast.map.impl.tx.TxnUnlockOperation;
@@ -315,8 +317,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int SET_TTL_BACKUP = 149;
     public static final int MERKLE_TREE_NODE_ENTRIES = 150;
     public static final int ADD_INDEX_BACKUP = 151;
+    public static final int TXN_SET_BACKUP = 152;
+    public static final int TXN_DELETE_BACKUP = 153;
 
-    private static final int LEN = ADD_INDEX_BACKUP + 1;
+    private static final int LEN = TXN_DELETE_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -474,6 +478,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[SET_TTL_BACKUP] = arg -> new SetTtlBackupOperation();
         constructors[MERKLE_TREE_NODE_ENTRIES] = arg -> new MerkleTreeNodeEntries();
         constructors[ADD_INDEX_BACKUP] = arg -> new AddIndexBackupOperation();
+        constructors[TXN_SET_BACKUP] = arg -> new TxnSetBackupOperation();
+        constructors[TXN_DELETE_BACKUP] = arg -> new TxnDeleteBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

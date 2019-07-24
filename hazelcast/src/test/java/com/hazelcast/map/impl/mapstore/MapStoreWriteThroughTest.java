@@ -23,7 +23,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleTestObjects.Employee;
@@ -92,7 +92,6 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
-        mapConfig.setMinEvictionCheckMillis(0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);

@@ -18,12 +18,11 @@ package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
 
     private static final int DEFAULT_TEST_TIMEOUT = 120;
 
@@ -89,7 +88,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -117,7 +116,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("__key >= " + equalsOrBiggerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("__key >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -143,7 +142,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers to prove whether #keySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertKeySetSizeEventually(expectedSize, new SqlPredicate("id < " + smallerThan), cache);
+        assertKeySetSizeEventually(expectedSize, Predicates.sql("id < " + smallerThan), cache);
     }
 
     @Test
@@ -171,7 +170,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -197,7 +196,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 0;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("id < " + smallerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("id < " + smallerThan), cache);
     }
 
     @Test
@@ -224,7 +223,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // ust choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertEntrySetSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertEntrySetSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     @Test
@@ -252,7 +251,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers for querying in order to prove whether #keySet with predicate is correctly working
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("id >= " + equalsOrBiggerThan), cache);
     }
 
     @Test
@@ -277,7 +276,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 17;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     @Test
@@ -302,7 +301,7 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
         // just choose arbitrary numbers to prove whether #entrySet with predicate is working
         int smallerThan = 17;
         int expectedSize = 0;
-        assertValuesSizeEventually(expectedSize, new SqlPredicate("__key < " + smallerThan), cache);
+        assertValuesSizeEventually(expectedSize, Predicates.sql("__key < " + smallerThan), cache);
     }
 
     private void assertKeySetSizeEventually(final int expectedSize, final Predicate predicate,

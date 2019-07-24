@@ -24,6 +24,7 @@ import com.hazelcast.spi.NotifiableEventListener;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -119,7 +120,7 @@ public class EventServiceSegment<S> {
      * @param forceCreate whether to create the registration set if none exists or to return null
      * @return the collection of registrations for the topic or null if none exists and {@code forceCreate} is {@code false}
      */
-    public Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
+    public Collection<Registration> getRegistrations(@Nonnull String topic, boolean forceCreate) {
         Collection<Registration> listenerList = registrations.get(topic);
         if (listenerList == null && forceCreate) {
             ConstructorFunction<String, Collection<Registration>> func
@@ -150,7 +151,7 @@ public class EventServiceSegment<S> {
      * @param registration the listener registration
      * @return if the registration is added
      */
-    public boolean addRegistration(String topic, Registration registration) {
+    public boolean addRegistration(@Nonnull String topic, Registration registration) {
         Collection<Registration> registrations = getRegistrations(topic, true);
         if (registrations.add(registration)) {
             registrationIdMap.put(registration.getId(), registration);

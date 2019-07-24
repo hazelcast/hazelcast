@@ -46,6 +46,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventual
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -70,7 +71,7 @@ public class RestClusterTest {
     }
 
     protected Config createConfig() {
-        return new Config();
+        return smallInstanceConfig();
     }
 
     protected Config createConfigWithRestEnabled() {

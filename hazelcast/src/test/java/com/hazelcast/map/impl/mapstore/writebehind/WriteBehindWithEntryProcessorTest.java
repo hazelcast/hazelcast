@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -74,6 +74,53 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
         assertStoreOperationsCompleted(salaries.length, mapStore);
         assertArrayEquals("Map store should contain all partial updates on the object", salaries, getStoredSalaries(mapStore));
+    }
+
+    @Test
+    public void updates_on_same_key_when_in_memory_format_is_object() {
+        long customerId = 0L;
+        int numberOfSubscriptions = 1000;
+        MapStore<Long, Customer> mapStore = new CustomerDataStore(customerId);
+        IMap<Long, Customer> map = createMap(mapStore);
+
+        // 1 store op
+        addCustomer(customerId, map);
+        // + 1000 store op
+        addSubscriptions(map, customerId, numberOfSubscriptions);
+        // + 500 store op
+        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);
+
+        assertStoreOperationCount(mapStore, 1 + numberOfSubscriptions + numberOfSubscriptions / 2);
+        assertFinalSubscriptionCountInStore(mapStore, numberOfSubscriptions / 2);
+    }
+
+    @Test
+    public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() {
+        MapStore<Integer, TestObject> mapStore = new MapStoreTest.SimpleMapStore<>();
+        IMap<Integer, TestObject> map = TestMapUsingMapStoreBuilder.<Integer, TestObject>create()
+                .withMapStore(mapStore)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withWriteCoalescing(true)
+                .withInMemoryFormat(InMemoryFormat.OBJECT)
+                .build();
+
+        final TestObject testObject = new TestObject();
+        map.executeOnKey(1, new EntryProcessor<Integer, TestObject, Object>() {
+            @Override
+            public Object process(Map.Entry<Integer, TestObject> entry) {
+                entry.setValue(testObject);
+                return null;
+            }
+
+            @Override
+            public EntryProcessor<Integer, TestObject, Object> getBackupProcessor() {
+                return null;
+            }
+        });
+
+        assertEquals(0, testObject.serializedCount);
+        assertEquals(0, testObject.deserializedCount);
     }
 
     private Double[] getStoredSalaries(JournalingMapStore<Integer, Employee> mapStore) {
@@ -131,53 +178,6 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         public Iterator<V> iterator() {
             return queue.iterator();
         }
-    }
-
-    @Test
-    public void updates_on_same_key_when_in_memory_format_is_object() {
-        long customerId = 0L;
-        int numberOfSubscriptions = 1000;
-        MapStore<Long, Customer> mapStore = new CustomerDataStore(customerId);
-        IMap<Long, Customer> map = createMap(mapStore);
-
-        // 1 store op
-        addCustomer(customerId, map);
-        // + 1000 store op
-        addSubscriptions(map, customerId, numberOfSubscriptions);
-        // + 500 store op
-        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);
-
-        assertStoreOperationCount(mapStore, 1 + numberOfSubscriptions + numberOfSubscriptions / 2);
-        assertFinalSubscriptionCountInStore(mapStore, numberOfSubscriptions / 2);
-    }
-
-    @Test
-    public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() {
-        MapStore<Integer, TestObject> mapStore = new MapStoreTest.SimpleMapStore<>();
-        IMap<Integer, TestObject> map = TestMapUsingMapStoreBuilder.<Integer, TestObject>create()
-                .withMapStore(mapStore)
-                .withNodeFactory(createHazelcastInstanceFactory(1))
-                .withWriteDelaySeconds(1)
-                .withWriteCoalescing(true)
-                .withInMemoryFormat(InMemoryFormat.OBJECT)
-                .build();
-
-        final TestObject testObject = new TestObject();
-        map.executeOnKey(1, new EntryProcessor<Integer, TestObject, Object>() {
-            @Override
-            public Object process(Map.Entry<Integer, TestObject> entry) {
-                entry.setValue(testObject);
-                return null;
-            }
-
-            @Override
-            public EntryProcessor<Integer, TestObject, Object> getBackupProcessor() {
-                return null;
-            }
-        });
-
-        assertEquals(0, testObject.serializedCount);
-        assertEquals(0, testObject.deserializedCount);
     }
 
     private static class TestObject implements DataSerializable {

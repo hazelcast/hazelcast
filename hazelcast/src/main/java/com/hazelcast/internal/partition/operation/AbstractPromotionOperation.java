@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationEvent.MigrationStatus;
 import com.hazelcast.internal.partition.MigrationCycleOperation;

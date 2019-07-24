@@ -27,13 +27,14 @@ import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
 
 /**
  * Transaction commit operation for a queue offer, executed on the primary replica.
  *
- * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TransactionalQueue#offer(Object)
  * @see TxnReserveOfferOperation
  */
 public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier, MutatingOperation {

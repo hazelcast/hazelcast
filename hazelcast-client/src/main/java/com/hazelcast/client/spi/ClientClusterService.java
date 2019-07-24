@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.core.Client;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.client.api.Client;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
@@ -60,10 +60,10 @@ public interface ClientClusterService {
     Collection<Member> getMemberList();
 
     /**
-     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     * Returns a collection of the members that satisfy the given {@link MemberSelector}.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
-     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     * @param selector {@link MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link MemberSelector}.
      */
     Collection<Member> getMembers(MemberSelector selector);
 
@@ -82,10 +82,10 @@ public interface ClientClusterService {
     int getSize();
 
     /**
-     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * Gets the number of members that satisfy the given {@link MemberSelector} instance.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
-     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * @param selector {@link MemberSelector} instance that filters members to be counted.
+     * @return the number of members that satisfy the given {@link MemberSelector} instance.
      */
     int getSize(MemberSelector selector);
 

@@ -16,10 +16,11 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -35,7 +36,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_T
 
 /**
  * This operation will execute the remote clear on replicated map if
- * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
+ * {@link ReplicatedMap#clear()} is called.
  */
 public class ClearOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 

@@ -22,8 +22,8 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -117,34 +117,27 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         final AtomicBoolean thread1FinishedFirst = new AtomicBoolean();
 
         // thread 1: start a single member and load the data
-        Thread thread1 = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
-                instances.set(0, hcInstance);
-                node1Started.countDown();
-                // get map and trigger loading the data
-                IMap<String, String> map = hcInstance.getMap(MAP_NAME);
-                map.size();
-                node1FinishedLoading.countDown();
-            }
+        Thread thread1 = new Thread(() -> {
+            HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
+            instances.set(0, hcInstance);
+            node1Started.countDown();
+            // get map and trigger loading the data
+            IMap<String, String> map = hcInstance.getMap(MAP_NAME);
+            map.size();
+            node1FinishedLoading.countDown();
         }, "Thread 1");
         thread1.start();
 
         node1Started.await();
         // thread 2: a second member joins the cluster
-        Thread thread2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
-                try {
-                    hcInstance.getMap(MAP_NAME);
-                    final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
-                    thread1FinishedFirst.set(node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS));
-                } catch (InterruptedException e) {
-                    ignore(e);
-                }
+        Thread thread2 = new Thread(() -> {
+            HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
+            try {
+                hcInstance.getMap(MAP_NAME);
+                final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
+                thread1FinishedFirst.set(node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS));
+            } catch (InterruptedException e) {
+                ignore(e);
             }
         }, "Thread 2");
         thread2.start();

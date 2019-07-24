@@ -19,11 +19,11 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
@@ -473,34 +473,14 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         assertEqualsStringFormat("backupMultiMap should have size %d, but was %d", expectedSize, actualBackupSize);
     }
 
-    private static class EmptyEntryListener<K, V> implements EntryListener<K, V> {
+    private static class EmptyEntryListener<K, V> extends EntryAdapter<K, V> {
         @Override
-        public void mapEvicted(MapEvent event) {
+        public void onEntryEvent(EntryEvent<K, V> event) {
 
         }
 
         @Override
-        public void mapCleared(MapEvent event) {
-
-        }
-
-        @Override
-        public void entryUpdated(EntryEvent<K, V> event) {
-
-        }
-
-        @Override
-        public void entryRemoved(EntryEvent<K, V> event) {
-
-        }
-
-        @Override
-        public void entryEvicted(EntryEvent<K, V> event) {
-
-        }
-
-        @Override
-        public void entryAdded(EntryEvent<K, V> event) {
+        public void onMapEvent(MapEvent event) {
 
         }
     }

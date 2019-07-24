@@ -24,14 +24,14 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.instance.Node;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
@@ -39,7 +39,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.nio.Address;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -565,7 +566,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
         assertPredicateResultCorrect(map, predicate);
     }
 
@@ -581,7 +582,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance node = nodeBuilder.getRandomNode();
 
         IMap<Integer, SampleIndexableObject> map = node.getMap(mapName);
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
 
         assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
@@ -674,8 +675,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         config.getMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(50)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig)
                 .setMapStoreConfig(storeConfig);
 
@@ -764,7 +763,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
+    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final Predicate predicate) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {

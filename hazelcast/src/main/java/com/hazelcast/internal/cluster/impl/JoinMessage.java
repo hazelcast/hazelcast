@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,7 +35,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
     protected int buildNumber;
     /**
      * this is populated with the codebase version of the node trying to join the cluster
-     * (ie {@link com.hazelcast.instance.Node#getVersion()}).
+     * (ie {@link Node#getVersion()}).
      */
     protected MemberVersion memberVersion;
     protected Address address;

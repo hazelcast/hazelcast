@@ -20,8 +20,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -76,7 +76,7 @@ public class ClientMultiMapListenersTest {
         mm.addLocalEntryListener(myEntryListener);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddListener_whenListenerNull() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
         mm.addEntryListener(null, true);

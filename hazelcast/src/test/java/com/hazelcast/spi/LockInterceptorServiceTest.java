@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.concurrent.lock.LockProxySupport;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreInfo;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;

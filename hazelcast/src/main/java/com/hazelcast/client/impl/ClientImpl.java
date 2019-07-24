@@ -16,14 +16,14 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.api.Client;
+import com.hazelcast.client.api.ClientType;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
 
 /**
- * Default {@link com.hazelcast.core.Client} implementation.
+ * Default {@link Client} implementation.
  */
 public class ClientImpl implements Client {
 

@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Preconditions;
 

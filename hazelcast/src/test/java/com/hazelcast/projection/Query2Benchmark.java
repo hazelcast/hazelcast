@@ -22,11 +22,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -79,12 +79,12 @@ public class Query2Benchmark {
 
     @Benchmark
     public void testAllIndices() {
-        map.keySet(new SqlPredicate("f1=100 and f2=100 and f3=100 and f4=100 and f5=0"));
+        map.keySet(Predicates.sql("f1=100 and f2=100 and f3=100 and f4=100 and f5=0"));
     }
 
     @Benchmark
     public void testSuppression() {
-        map.keySet(new SqlPredicate("%f1=100 and %f2=100 and %f3=100 and %f4=100 and f5=0"));
+        map.keySet(Predicates.sql("%f1=100 and %f2=100 and %f3=100 and %f4=100 and f5=0"));
     }
 
     public static class Pojo implements DataSerializable {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.multimap.MultiMap;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * It does not allow duplicates: The same value can be associated with the same key once only. Duplicates are
  * eliminated.
  *
- * The name has a prefix Internal- to avoid confusion with {@link com.hazelcast.core.MultiMap}
+ * The name has a prefix Internal- to avoid confusion with {@link MultiMap}
  *
  * @param <K>
  * @param <V>

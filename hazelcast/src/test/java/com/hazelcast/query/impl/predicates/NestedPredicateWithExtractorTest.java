@@ -20,12 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -87,7 +86,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("name").equal("body1");
         Collection<Body> values = map.values(predicate);
 
@@ -105,7 +104,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        Collection<Body> values = map.values(new SqlPredicate("name == 'body1'"));
+        Collection<Body> values = map.values(Predicates.sql("name == 'body1'"));
 
         // THEN
         assertEquals(1, values.size());
@@ -121,7 +120,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("limbname").equal("leg");
         Collection<Body> values = map.values(predicate);
 
@@ -183,7 +182,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        Collection<Body> values = map.values(new SqlPredicate("limbname == 'leg'"));
+        Collection<Body> values = map.values(Predicates.sql("limbname == 'leg'"));
 
         // THEN
         assertEquals(1, values.size());
@@ -192,7 +191,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         assertEquals(2, limbExtractorExecutions);
     }
 
-    public static class BodyNameExtractor extends ValueExtractor<Body, Object> {
+    public static class BodyNameExtractor implements ValueExtractor<Body, Object> {
 
         @Override
         public void extract(Body target, Object arguments, ValueCollector collector) {
@@ -201,7 +200,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Body, Object> {
+    public static class LimbNameExtractor implements ValueExtractor<Body, Object> {
 
         @Override
         public void extract(Body target, Object arguments, ValueCollector collector) {

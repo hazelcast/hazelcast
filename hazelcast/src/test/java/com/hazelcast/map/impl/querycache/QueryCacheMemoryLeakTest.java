@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheFactory;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
@@ -89,7 +89,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                 @Override
                 public void run() {
                     while (!stop.get()) {
-                        QueryCache queryCache = map.getQueryCache(queryCacheName, TruePredicate.INSTANCE, true);
+                        QueryCache queryCache = map.getQueryCache(queryCacheName, Predicates.alwaysTrue(), true);
                         queryCache.destroy();
                     }
                 }
@@ -136,7 +136,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                         final IMap<Integer, Integer> map = node1.getMap(name);
                         int key = RandomPicker.getInt(0, Integer.MAX_VALUE);
                         map.put(key, 1);
-                        QueryCache queryCache = map.getQueryCache(name, TruePredicate.INSTANCE, true);
+                        QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
                         queryCache.get(key);
 
                         queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
@@ -184,7 +184,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = node1.getMap(name);
         int key = RandomPicker.getInt(0, Integer.MAX_VALUE);
         map.put(key, 1);
-        QueryCache queryCache = map.getQueryCache(name, TruePredicate.INSTANCE, true);
+        QueryCache queryCache = map.getQueryCache(name, Predicates.alwaysTrue(), true);
         queryCache.get(key);
 
         queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
@@ -211,7 +211,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
         populateMap(map);
 
         for (int j = 0; j < 10; j++) {
-            map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+            map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
         }
 
         map.destroy();
@@ -241,7 +241,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
                         try {
                             populateMap(map);
                             for (int j = 0; j < 10; j++) {
-                                map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+                                map.getQueryCache(j + "-test-QC", Predicates.alwaysTrue(), true);
                             }
                         } finally {
                             map.destroy();

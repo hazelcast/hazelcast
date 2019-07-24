@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains out-of-the-box merge policies for {@link com.hazelcast.core.IMap}.
+ * Contains out-of-the-box merge policies for {@link com.hazelcast.map.IMap}.
  */
 package com.hazelcast.map.merge;

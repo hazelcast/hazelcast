@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.OutOfMemoryHandlerHelper;
+import com.hazelcast.instance.impl.OutOfMemoryHandlerHelper;
 
 /**
  * Handler for <code>OutOfMemoryError</code>.

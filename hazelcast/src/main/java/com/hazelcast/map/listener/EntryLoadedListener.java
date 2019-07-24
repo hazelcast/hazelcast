@@ -17,12 +17,13 @@
 package com.hazelcast.map.listener;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.map.MapLoader;
 
 /**
  * Invoked upon load of an entry.
  *
  * EntryLoadedListener is notified upon load of an entry by a {@link
- * com.hazelcast.core.MapLoader}. By using this listener and
+ * MapLoader}. By using this listener and
  * {@link EntryAddedListener}, one can distinguish an application put from
  * map-loader load.
  *

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
@@ -33,7 +34,7 @@ import java.io.IOException;
  * TransactionLogRecord implementation to be used in {@code ClusterState} transactions.
  *
  * @see ClusterState
- * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
+ * @see Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
 public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
 

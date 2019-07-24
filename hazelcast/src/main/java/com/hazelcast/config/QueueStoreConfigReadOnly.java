@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 
 import java.util.Properties;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.QueueStore}.
+ * Contains the configuration for an {@link QueueStore}.
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */

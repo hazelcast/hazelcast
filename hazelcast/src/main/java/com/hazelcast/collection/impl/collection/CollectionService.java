@@ -20,10 +20,10 @@ import com.hazelcast.collection.impl.collection.operations.CollectionMergeOperat
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
-import com.hazelcast.core.ItemEvent;
+import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.collection.ItemListener;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;

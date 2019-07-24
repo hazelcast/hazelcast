@@ -22,8 +22,6 @@ package com.hazelcast.util;
  * http://creativecommons.org/licenses/publicdomain
  */
 
-import com.hazelcast.core.IBiFunction;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -48,6 +46,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -726,7 +726,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             return oldValue;
         }
 
-        V applyIfPresent(K key, int hash, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V applyIfPresent(K key, int hash, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
                 V oldValue = get(key, hash);
@@ -749,7 +749,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
 
-        V merge(K key, V value, int hash, IBiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        V merge(K key, V value, int hash, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
                 V oldValue = get(key, hash);
@@ -771,7 +771,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * This method must be called with exactly one of <code>value</code> and
          * <code>function</code> non-null.
          **/
-        V put(K key, int hash, V value, IFunction<? super K, ? extends V> function, boolean onlyIfAbsent) {
+        V put(K key, int hash, V value, Function<? super K, ? extends V> function, boolean onlyIfAbsent) {
             lock();
             try {
                 return putInternal(key, hash, value, function, onlyIfAbsent);
@@ -780,7 +780,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
-        private V putInternal(K key, int hash, V value, IFunction<? super K, ? extends V> function, boolean onlyIfAbsent) {
+        private V putInternal(K key, int hash, V value, Function<? super K, ? extends V> function, boolean onlyIfAbsent) {
             removeStale();
             int c = count;
             // ensure capacity
@@ -819,7 +819,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             return resultValue;
         }
 
-        V getValue(K key, V value, IFunction<? super K, ? extends V> function) {
+        V getValue(K key, V value, Function<? super K, ? extends V> function) {
             return value != null ? value : function.apply(key);
         }
 
@@ -1422,7 +1422,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * override this default implementation.
      */
     @Override
-    public V applyIfAbsent(K key, IFunction<? super K, ? extends V> mappingFunction) {
+    public V applyIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         checkNotNull(key);
         checkNotNull(mappingFunction);
 
@@ -1433,7 +1433,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @Override
-    public V applyIfPresent(K key, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key);
         checkNotNull(remappingFunction);
 

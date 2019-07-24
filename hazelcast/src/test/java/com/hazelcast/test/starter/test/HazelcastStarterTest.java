@@ -19,9 +19,9 @@ package com.hazelcast.test.starter.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.nio.tcp.FirewallingNetworkingService;
@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;

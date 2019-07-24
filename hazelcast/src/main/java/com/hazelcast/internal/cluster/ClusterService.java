@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
 
@@ -28,7 +28,7 @@ import java.util.Collection;
 /**
  * A service responsible for member related functionality, e.g. members joining, leaving etc.
  * <p>
- * This API is an internal API; the end user will use the {@link com.hazelcast.core.Cluster} interface.
+ * This API is an internal API; the end user will use the {@link Cluster} interface.
  */
 public interface ClusterService extends CoreService, Cluster {
 
@@ -68,10 +68,10 @@ public interface ClusterService extends CoreService, Cluster {
     Collection<MemberImpl> getMemberImpls();
 
     /**
-     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     * Returns a collection of the members that satisfy the given {@link MemberSelector}.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
-     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}
+     * @param selector {@link MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link MemberSelector}
      */
     Collection<Member> getMembers(MemberSelector selector);
 
@@ -123,10 +123,10 @@ public interface ClusterService extends CoreService, Cluster {
     int getSize();
 
     /**
-     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * Gets the number of members that satisfy the given {@link MemberSelector} instance.
      *
-     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted
-     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance
+     * @param selector {@link MemberSelector} instance that filters members to be counted
+     * @return the number of members that satisfy the given {@link MemberSelector} instance
      */
     int getSize(MemberSelector selector);
 

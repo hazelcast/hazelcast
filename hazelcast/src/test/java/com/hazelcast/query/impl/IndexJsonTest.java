@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -64,9 +63,9 @@ public class IndexJsonTest {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         Indexes is = Indexes.newBuilder(ss, copyBehavior).extractors(Extractors.newBuilder(ss).build()).indexProvider(
                 new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
-        Index numberIndex = is.addOrGetIndex("age", false);
-        Index boolIndex = is.addOrGetIndex("active", false);
-        Index stringIndex = is.addOrGetIndex("name", false);
+        Index numberIndex = is.addOrGetIndex("age", false, null);
+        Index boolIndex = is.addOrGetIndex("active", false, null);
+        Index stringIndex = is.addOrGetIndex("name", false, null);
 
         for (int i = 0; i < 1001; i++) {
             Data key = ss.toData(i);
@@ -80,7 +79,7 @@ public class IndexJsonTest {
         assertEquals(501, boolIndex.getRecords(true).size());
         assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true"))).size());
         assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1001, is.query(new SqlPredicate("name == sancar")).size());
+        assertEquals(1001, is.query(Predicates.sql("name == sancar")).size());
     }
 
 }

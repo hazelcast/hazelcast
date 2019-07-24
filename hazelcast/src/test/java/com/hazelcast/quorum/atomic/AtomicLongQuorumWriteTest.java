@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.atomic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

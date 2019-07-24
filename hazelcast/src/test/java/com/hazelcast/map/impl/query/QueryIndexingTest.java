@@ -19,11 +19,11 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.mock.MockUtil;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -69,7 +69,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         h1 = nodeFactory.newHazelcastInstance(config);
         h2 = nodeFactory.newHazelcastInstance(config);
 
-        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         predicate = entryObject.get("name").equal(null).and(entryObject.get("city").isNull());
 
         assertClusterSizeEventually(2, h1);
@@ -86,7 +86,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         map.putAll(employees);
         waitAllForSafeState(h1, h2);
 
-        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
+        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.getMap("employees"));
 
         assertEquals(count / 2, matchingEntries.size());
         // N queries result in getters called N times
@@ -104,14 +104,14 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         map.putAll(employees);
         waitAllForSafeState(h1, h2);
 
-        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
+        Collection<Employee> matchingEntries = runQueryNTimes(3, h2.getMap("employees"));
         assertEquals(count / 2, matchingEntries.size());
 
         assertFieldsAreNull(matchingEntries);
     }
 
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
-        Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
+        Map<Integer, Employee> employees = new HashMap<>();
         for (int i = 0; i < employeeCount; i++) {
             Employee val;
             if (i % 2 == 0) {

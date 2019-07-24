@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.crdt.pncounter.operations.AddOperation;
 import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.crdt.pncounter.operations.GetOperation;

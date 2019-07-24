@@ -17,7 +17,7 @@
 package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.Collection;
 

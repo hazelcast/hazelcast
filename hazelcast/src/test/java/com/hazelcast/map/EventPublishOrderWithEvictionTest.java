@@ -23,7 +23,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -108,7 +107,6 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(maxSize);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
-        mapConfig.setMinEvictionCheckMillis(0);
 
         return createHazelcastInstance(config).getMap(mapName);
     }

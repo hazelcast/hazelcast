@@ -30,7 +30,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -67,6 +67,8 @@ public class AddMapConfigMessageTask
             config.setEntryListenerConfigs(
                     (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
+        // TODO add merkle tree config
+        // config.setMerkleTreeConfig(parameters.merkleTreeConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setMapAttributeConfigs(parameters.mapAttributeConfigs);

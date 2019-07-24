@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.map.MapStore;
+
 /**
  * Represents a read-only view of a data structure entry.
  *

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
 
@@ -49,7 +48,7 @@ import java.util.Set;
  * com.hazelcast.config.QueryCacheConfig#setEvictionConfig}.
  * Events caused by {@code IMap} eviction are not reflected to this cache.
  * But the events published after an explicit call to {@link
- * com.hazelcast.core.IMap#evict} are reflected to this cache.
+ * IMap#evict} are reflected to this cache.
  * <p>
  * <b>GOTCHAS</b>
  * <ul>
@@ -75,9 +74,9 @@ import java.util.Set;
  * </li>
  * <li>
  * There are some gotchas same with underlying {@link
- * com.hazelcast.core.IMap IMap} implementation, one should take care of
+ * IMap IMap} implementation, one should take care of
  * them before using this {@code QueryCache}. Please check gotchas section
- * in {@link com.hazelcast.core.IMap IMap} class for them.
+ * in {@link IMap IMap} class for them.
  * </li>
  * </ul>
  * <p>
@@ -90,17 +89,17 @@ import java.util.Set;
 public interface QueryCache<K, V> {
 
     /**
-     * @see com.hazelcast.core.IMap#get(Object)
+     * @see IMap#get(Object)
      */
     V get(Object key);
 
     /**
-     * @see com.hazelcast.core.IMap#containsKey(Object)
+     * @see IMap#containsKey(Object)
      */
     boolean containsKey(Object key);
 
     /**
-     * @see com.hazelcast.core.IMap#containsValue(Object)
+     * @see IMap#containsValue(Object)
      */
     boolean containsValue(Object value);
 
@@ -207,7 +206,6 @@ public interface QueryCache<K, V> {
      * Clears and releases all local and remote resources created for this cache.
      */
     void destroy();
-
 }
 
 

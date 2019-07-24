@@ -16,16 +16,14 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -37,6 +35,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.util.IterableUtil.map;
@@ -66,7 +65,7 @@ public final class InvocationUtil {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
-            return new CompletedFuture<Object>(null, null, new CallerRunsExecutor());
+            return new CompletedFuture(null, null, new CallerRunsExecutor());
         }
 
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
@@ -83,7 +82,7 @@ public final class InvocationUtil {
         // ChainingFuture uses the iterator to start invocations
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
-        return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
+        return new ChainingFuture(invocationIterator, executor, memberIterator, logger);
     }
 
     /**
@@ -114,11 +113,7 @@ public final class InvocationUtil {
         return execution;
     }
 
-    // IFunction extends Serializable, but this function is only executed locally
-    @SerializableByConvention
-    private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
-        private static final long serialVersionUID = 2903680336421872278L;
-
+    private static class InvokeOnMemberFunction implements Function<Member, ICompletableFuture<Object>> {
         private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;

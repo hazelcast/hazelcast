@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientListener;
-import com.hazelcast.core.ClientService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.api.Client;
+import com.hazelcast.client.api.ClientListener;
+import com.hazelcast.client.api.ClientService;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
@@ -29,7 +29,7 @@ import java.util.Collection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * The default implementation of the {@link com.hazelcast.core.ClientService}.
+ * The default implementation of the {@link ClientService}.
  */
 public final class ClientServiceProxy implements ClientService {
 

@@ -18,8 +18,8 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 
 /**
  * The StaticLB is a {@link com.hazelcast.client.LoadBalancer} that always returns the same member. This can

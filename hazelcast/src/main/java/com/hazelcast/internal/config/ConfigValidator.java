@@ -23,7 +23,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
@@ -65,8 +64,6 @@ import java.util.Map;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
-import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
@@ -127,18 +124,6 @@ public final class ConfigValidator {
             checkHotRestartSpecificConfig(mapConfig, properties);
         }
         checkMapMergePolicy(mapConfig, mergePolicyProvider);
-        logIgnoredConfig(mapConfig);
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void logIgnoredConfig(MapConfig mapConfig) {
-        if (mapConfig.getMinEvictionCheckMillis() != DEFAULT_MIN_EVICTION_CHECK_MILLIS
-                || mapConfig.getEvictionPercentage() != DEFAULT_EVICTION_PERCENTAGE) {
-            LOGGER.warning("As of Hazelcast version 3.7 `minEvictionCheckMillis` and `evictionPercentage`"
-                    + " are deprecated due to a change of the eviction mechanism."
-                    + " The new eviction mechanism uses a probabilistic algorithm based on sampling."
-                    + " Please see documentation for further details.");
-        }
     }
 
     /**
@@ -566,16 +551,16 @@ public final class ConfigValidator {
     }
 
     /**
-     * Throws {@link ConfigurationException} if given group property is defined within Hazelcast properties.
+     * Throws {@link InvalidConfigurationException} if given group property is defined within Hazelcast properties.
      *
      * @param properties        Group properties
      * @param hazelcastProperty property to be checked
-     * @throws ConfigurationException
+     * @throws InvalidConfigurationException
      */
     public static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
-            throws ConfigurationException {
+            throws InvalidConfigurationException {
         if (properties.containsKey(hazelcastProperty)) {
-            throw new ConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
+            throw new InvalidConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
                     + " is provided together with new Config object. "
                     + "Remove the property from your configuration to fix this issue.");
         }

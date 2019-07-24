@@ -16,14 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IMap} (read-only).
+ * Contains the configuration for an {@link IMap} (read-only).
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
@@ -119,8 +121,39 @@ public class MapConfigReadOnly extends MapConfig {
         return Collections.unmodifiableList(readOnlyOnes);
     }
 
+    @Nonnull
     @Override
-    public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        return merkleTreeConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        throw throwReadOnly();
+    }
+
+    @Nonnull
+    @Override
+    public EventJournalConfig getEventJournalConfig() {
+        final EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
+        return eventJournalConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        throw throwReadOnly();
+    }
+
+    @Nonnull
+    @Override
+    public HotRestartConfig getHotRestartConfig() {
+        final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        return hotRestartConfig.getAsReadOnly();
+    }
+
+    @Override
+    public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         throw throwReadOnly();
     }
 
@@ -141,16 +174,6 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setAsyncBackupCount(int asyncBackupCount) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setEvictionPercentage(int evictionPercentage) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMinEvictionCheckMillis(long checkIfEvictableAfterMillis) {
         throw throwReadOnly();
     }
 
@@ -236,11 +259,6 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
         throw throwReadOnly();
     }
 

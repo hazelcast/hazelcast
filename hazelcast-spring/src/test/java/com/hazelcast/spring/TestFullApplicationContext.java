@@ -16,6 +16,13 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
@@ -62,7 +69,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -72,7 +79,6 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -109,31 +115,20 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -142,13 +137,16 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -302,6 +300,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
         assertTrue(cacheConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
@@ -313,7 +315,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(27, config.getMapConfigs().size());
+        assertEquals(25, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -321,12 +323,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, testMapConfig.getBackupCount());
         assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
-        assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
         assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
         assertTrue(testMapConfig.getHotRestartConfig().isFsync());
+        EventJournalConfig journalConfig = testMapConfig.getEventJournalConfig();
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
-        assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
@@ -409,7 +415,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, simpleMapConfig.getAsyncBackupCount());
         assertEquals(EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
-        assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
 
         // test that the simpleMapConfig does NOT have a nearCacheConfig
@@ -423,20 +428,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
 
-        MapConfig mapWithOptimizedQueriesConfig = config.getMapConfig("mapWithOptimizedQueries");
-        assertEquals(CacheDeserializedValues.ALWAYS, mapWithOptimizedQueriesConfig.getCacheDeserializedValues());
-
         MapConfig mapWithValueCachingSetToNever = config.getMapConfig("mapWithValueCachingSetToNever");
         assertEquals(CacheDeserializedValues.NEVER, mapWithValueCachingSetToNever.getCacheDeserializedValues());
 
         MapConfig mapWithValueCachingSetToAlways = config.getMapConfig("mapWithValueCachingSetToAlways");
         assertEquals(CacheDeserializedValues.ALWAYS, mapWithValueCachingSetToAlways.getCacheDeserializedValues());
 
-        MapConfig mapWithNotOptimizedQueriesConfig = config.getMapConfig("mapWithNotOptimizedQueries");
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithNotOptimizedQueriesConfig.getCacheDeserializedValues());
-
-        MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
-        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultOptimizedQueriesConfig.getCacheDeserializedValues());
+        MapConfig mapWithDefaultValueCaching = config.getMapConfig("mapWithDefaultValueCaching");
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultValueCaching.getCacheDeserializedValues());
 
         MapConfig testMapWithPartitionLostListenerConfig = config.getMapConfig("mapWithPartitionLostListener");
         List<MapPartitionLostListenerConfig> partitionLostListenerConfigs
@@ -985,7 +984,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
         assertEquals("tokyo", publisherConfig.getGroupName());
         assertEquals("tokyoPublisherId", publisherConfig.getPublisherId());
-        assertEquals("com.hazelcast.enterprise.wan.replication.WanBatchReplication", publisherConfig.getClassName());
+        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", publisherConfig.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
         assertEquals(1000, publisherConfig.getQueueCapacity());
@@ -1365,32 +1364,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
 
         assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Test
-    public void testMapEventJournalConfigIsWellParsed() {
-        EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(123, journalConfig.getCapacity());
-        assertEquals(321, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Test
-    public void testCacheEventJournalConfigIsWellParsed() {
-        EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
-
-        assertTrue(journalConfig.isEnabled());
-        assertEquals(123, journalConfig.getCapacity());
-        assertEquals(321, journalConfig.getTimeToLiveSeconds());
-    }
-
-    @Test
-    public void testMapMerkleTreeConfigIsWellParsed() {
-        MerkleTreeConfig treeConfig = config.getMapMerkleTreeConfig("mapName");
-
-        assertTrue(treeConfig.isEnabled());
-        assertEquals(15, treeConfig.getDepth());
     }
 
     @Test

@@ -20,11 +20,11 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionContext;
@@ -184,21 +184,21 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
      */
     private void internalRunWithException(IMap<Integer, Integer> queryMap) {
         try {
-            queryMap.values(TruePredicate.INSTANCE);
+            queryMap.values(Predicates.alwaysTrue());
             failExpectedException("IMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            queryMap.keySet(TruePredicate.INSTANCE);
+            queryMap.keySet(Predicates.alwaysTrue());
             failExpectedException("IMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
 
         try {
-            queryMap.entrySet(TruePredicate.INSTANCE);
+            queryMap.entrySet(Predicates.alwaysTrue());
             failExpectedException("IMap.entrySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
@@ -242,7 +242,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
         }
 
         try {
-            queryMap.localKeySet(TruePredicate.INSTANCE);
+            queryMap.localKeySet(Predicates.alwaysTrue());
             failExpectedException("IMap.localKeySet(predicate)");
         } catch (UnsupportedOperationException e) {
             ignore(e);
@@ -265,14 +265,14 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
             TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
 
             try {
-                txnMap.values(TruePredicate.INSTANCE);
+                txnMap.values(Predicates.alwaysTrue());
                 failExpectedException("TransactionalMap.values(predicate)");
             } catch (QueryResultSizeExceededException e) {
                 checkException(e);
             }
 
             try {
-                txnMap.keySet(TruePredicate.INSTANCE);
+                txnMap.keySet(Predicates.alwaysTrue());
                 failExpectedException("TransactionalMap.keySet(predicate)");
             } catch (QueryResultSizeExceededException e) {
                 checkException(e);

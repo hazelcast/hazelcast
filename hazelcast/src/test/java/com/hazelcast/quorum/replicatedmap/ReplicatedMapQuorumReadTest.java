@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.replicatedmap;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

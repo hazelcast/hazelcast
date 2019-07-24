@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 

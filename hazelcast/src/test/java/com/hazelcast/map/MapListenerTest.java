@@ -20,11 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,7 +57,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = hz.getMap("map");
         AllListener listener = new AllListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, listener);
@@ -76,7 +75,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         // GIVEN MAP & LISTENER
         IMap<String, Person> map = instances[0].getMap("map");
         MyEntryListener listener = new MyEntryListener();
-        map.addEntryListener(listener, new SqlPredicate("age > " + AGE_THRESHOLD), true);
+        map.addEntryListener(listener, Predicates.sql("age > " + AGE_THRESHOLD), true);
 
         // GIVEN MAP EVENTS
         generateMapEvents(map, null);

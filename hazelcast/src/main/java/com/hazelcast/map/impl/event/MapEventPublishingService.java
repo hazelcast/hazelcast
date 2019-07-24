@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;

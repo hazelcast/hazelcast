@@ -56,7 +56,6 @@ import static com.hazelcast.config.ConfigSections.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
-import static com.hazelcast.config.ConfigSections.EVENT_JOURNAL;
 import static com.hazelcast.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.config.ConfigSections.GROUP;
@@ -71,7 +70,6 @@ import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
-import static com.hazelcast.config.ConfigSections.MERKLE_TREE;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.config.ConfigSections.NETWORK;
@@ -167,10 +165,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
-        } else if (EVENT_JOURNAL.isEqual(nodeName)) {
-            handleEventJournal(node);
-        } else if (MERKLE_TREE.isEqual(nodeName)) {
-            handleMerkleTree(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -379,7 +373,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         if (quorumConfigBuilder != null) {
             boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumConfig.getQuorumFunctionClassName());
             if (quorumFunctionDefinedByClassName) {
-                throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                throw new InvalidConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
                         + "recently-active-quorum and a quorum function class name.");
             }
             // ensure parsed attributes are reflected in constructed quorum config
@@ -430,11 +424,11 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
         quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                                          .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                          .withSuspicionThreshold(threshold)
-                                          .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                          .withMinStdDeviationMillis(minStdDeviation)
-                                          .withMaxSampleSize(maxSampleSize);
+                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                .withSuspicionThreshold(threshold)
+                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                .withMinStdDeviationMillis(minStdDeviation)
+                .withMaxSampleSize(maxSampleSize);
         return quorumConfigBuilder;
     }
 
@@ -1305,7 +1299,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-        protected void handleLock(Node node) {
+    protected void handleLock(Node node) {
         String name = getAttribute(node, "name");
         LockConfig lockConfig = new LockConfig();
         lockConfig.setName(name);
@@ -1550,14 +1544,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     @SuppressWarnings("deprecation")
-    protected void handleMap(Node parentNode) {
+    protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
         handleMapNode(parentNode, mapConfig);
     }
 
-    void handleMapNode(Node parentNode, final MapConfig mapConfig) {
+    void handleMapNode(Node parentNode, final MapConfig mapConfig) throws Exception {
         for (Node node : childElements(parentNode)) {
             String nodeName = cleanNodeName(node);
             String value = getTextContent(node).trim();
@@ -1573,12 +1567,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 handleMaxSizeConfig(mapConfig, node, value);
-            } else if ("eviction-percentage".equals(nodeName)) {
-                mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value
-                ));
-            } else if ("min-eviction-check-millis".equals(nodeName)) {
-                mapConfig.setMinEvictionCheckMillis(getLongValue("min-eviction-check-millis", value
-                ));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value
                 ));
@@ -1593,14 +1581,18 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
                 mapConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("merkle-tree".equals(nodeName)) {
+                MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+                handleViaReflection(node, mapConfig, merkleTreeConfig);
+            } else if ("event-journal".equals(nodeName)) {
+                EventJournalConfig eventJournalConfig = new EventJournalConfig();
+                handleViaReflection(node, mapConfig, eventJournalConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(getBooleanValue(value));
-            } else if ("optimize-queries".equals(nodeName)) {
-                mapConfig.setOptimizeQueries(getBooleanValue(value));
             } else if ("cache-deserialized-values".equals(nodeName)) {
                 CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues.parseString(value);
                 mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
@@ -1706,14 +1698,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return hotRestartConfig;
     }
 
-    protected void handleCache(Node node) {
+    protected void handleCache(Node node) throws Exception {
         String name = getAttribute(node, "name");
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(name);
         handleCacheNode(node, cacheConfig);
     }
 
-    void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) {
+    void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
@@ -1757,6 +1749,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
                 cacheConfig.setMergePolicy(value);
+            } else if ("event-journal".equals(nodeName)) {
+                EventJournalConfig eventJournalConfig = new EventJournalConfig();
+                handleViaReflection(n, cacheConfig, eventJournalConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
             } else if ("disable-per-entry-invalidation-events".equals(nodeName)) {
@@ -2264,7 +2259,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         endpointConfig.setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
-        protected void handleTopic(Node node) {
+    protected void handleTopic(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         TopicConfig tConfig = new TopicConfig();
@@ -2358,18 +2353,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addSemaphoreConfig(sConfig);
-    }
-
-    protected void handleEventJournal(Node node) throws Exception {
-        EventJournalConfig journalConfig = new EventJournalConfig();
-        handleViaReflection(node, config, journalConfig);
-        config.addEventJournalConfig(journalConfig);
-    }
-
-    protected void handleMerkleTree(Node node) throws Exception {
-        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-        handleViaReflection(node, config, merkleTreeConfig);
-        config.addMerkleTreeConfig(merkleTreeConfig);
     }
 
     protected void handleRingbuffer(Node node) {

@@ -27,13 +27,14 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -42,10 +43,9 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.TestSerializationConstants;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -101,7 +101,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = getClientConfig();
         clientConfig.getSerializationConfig()
-                    .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, classId -> new NamedPortable());
+                .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, classId -> new NamedPortable());
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -113,40 +113,51 @@ public class ClientMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("deprecation")
     public void testIssue537() {
-        final CountDownLatch latch = new CountDownLatch(2);
-        final CountDownLatch nullLatch = new CountDownLatch(2);
-
-        EntryListener<String, GenericEvent> listener = new EntryAdapter<String, GenericEvent>() {
-            @Override
-            public void entryAdded(EntryEvent<String, GenericEvent> event) {
-                latch.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<String, GenericEvent> event) {
-                GenericEvent value = event.getValue();
-                GenericEvent oldValue = event.getOldValue();
-                if (value == null) {
-                    nullLatch.countDown();
-                }
-                if (oldValue != null) {
-                    nullLatch.countDown();
-                }
-                latch.countDown();
-            }
-        };
-
         IMap<String, GenericEvent> map = createMap();
+        AddAndExpiredListener listener = new AddAndExpiredListener();
         String id = map.addEntryListener(listener, true);
 
         map.put("key1", new GenericEvent("value1"), 2, TimeUnit.SECONDS);
 
-        assertOpenEventually(latch);
-        assertOpenEventually(nullLatch);
+        assertOpenEventually(listener.latch);
+        assertOpenEventually(listener.nullLatch);
 
         map.removeEntryListener(id);
         map.put("key2", new GenericEvent("value2"));
         assertEquals(1, map.size());
+    }
+
+    private static class AddAndExpiredListener implements EntryAddedListener<String, GenericEvent>,
+            EntryExpiredListener<String, GenericEvent> {
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch nullLatch = new CountDownLatch(2);
+
+        @Override
+        public void entryAdded(EntryEvent<String, GenericEvent> event) {
+            latch.countDown();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<String, GenericEvent> event) {
+            GenericEvent value = event.getValue();
+            GenericEvent oldValue = event.getOldValue();
+            if (value == null) {
+                nullLatch.countDown();
+            }
+            if (oldValue != null) {
+                nullLatch.countDown();
+            }
+            latch.countDown();
+        }
+
+        public CountDownLatch getLatch() {
+            return latch;
+        }
+
+        public CountDownLatch getNullLatch() {
+            return nullLatch;
+        }
     }
 
     @Test
@@ -276,13 +287,9 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncPutWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<String> future = map.putAsync("key", "value1", 3, TimeUnit.SECONDS);
+        Future<String> future = map.putAsync("key", "value1", 10, TimeUnit.SECONDS);
         assertNull(future.get());
         assertEquals("value1", map.get("key"));
 
@@ -295,13 +302,9 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncPutWithMaxIdle() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
-            }
-        }, true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<String> future = map.putAsync("key", "value1", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
+        Future<String> future = map.putAsync("key", "value1", 0, TimeUnit.SECONDS, 10, TimeUnit.SECONDS);
         assertNull(future.get());
         assertEquals("value1", map.get("key"));
 
@@ -322,9 +325,9 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncSetWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener((EntryEvictedListener<String, String>) event -> latch.countDown(), true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
+        Future<Void> future = map.setAsync("key", "value1", 10, TimeUnit.SECONDS);
         future.get();
         assertEquals("value1", map.get("key"));
 
@@ -336,9 +339,9 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testAsyncSetWithMaxIdle() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener((EntryEvictedListener<String, String>) event -> latch.countDown(), true);
+        map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<Void> future = map.setAsync("key", "value1", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
+        Future<Void> future = map.setAsync("key", "value1", 0, TimeUnit.SECONDS, 10, TimeUnit.SECONDS);
         future.get();
         assertEquals("value1", map.get("key"));
 
@@ -505,7 +508,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         fillMap(map);
 
-        Collection values = map.values(new SqlPredicate("this == value1"));
+        Collection values = map.values(Predicates.sql("this == value1"));
         assertEquals(1, values.size());
         assertEquals("value1", values.iterator().next());
     }
@@ -669,13 +672,13 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         fillMap(map);
 
-        Collection collection = map.values(new SqlPredicate("this == value1"));
+        Collection collection = map.values(Predicates.sql("this == value1"));
         assertEquals("value1", collection.iterator().next());
 
-        Set<String> set = map.keySet(new SqlPredicate("this == value1"));
+        Set<String> set = map.keySet(Predicates.sql("this == value1"));
         assertEquals("key1", set.iterator().next());
 
-        Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
+        Set<Map.Entry<String, String>> set1 = map.entrySet(Predicates.sql("this == value1"));
         assertEquals("key1", set1.iterator().next().getKey());
         assertEquals("value1", set1.iterator().next().getValue());
     }
@@ -747,7 +750,8 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testListeners_clearAllFromNode() {
         CountDownLatch gateAdd = new CountDownLatch(1);
         CountDownLatch gateClearAll = new CountDownLatch(1);
-        EntryListener<Integer, Deal> listener = new IntegerDealEntryListener(gateAdd, null, null, null, gateClearAll, null);
+        EntryListener<Integer, Deal> listener = new IntegerDealEntryListener(gateAdd, null, null,
+                null, null, gateClearAll, null);
 
         String name = randomString();
         MultiMap<Integer, Deal> multiMap = client.getMultiMap(name);
@@ -768,6 +772,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         CountDownLatch gateAdd = new CountDownLatch(3);
         CountDownLatch gateRemove = new CountDownLatch(1);
         CountDownLatch gateEvict = new CountDownLatch(1);
+        CountDownLatch gateExpiry = new CountDownLatch(1);
         CountDownLatch gateUpdate = new CountDownLatch(1);
         CountDownLatch gateClearAll = new CountDownLatch(1);
         CountDownLatch gateEvictAll = new CountDownLatch(1);
@@ -781,10 +786,10 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         assertEquals(1, clientMap.size());
 
-        EntryListener listener = new IntegerDealEntryListener(gateAdd, gateRemove, gateEvict, gateUpdate, gateClearAll,
-                gateEvictAll);
+        EntryListener listener = new IntegerDealEntryListener(gateAdd, gateRemove, gateEvict,
+                gateExpiry, gateUpdate, gateClearAll, gateEvictAll);
 
-        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
+        clientMap.addEntryListener(listener, Predicates.sql("id=1"), 2, true);
         clientMap.put(2, new Deal(1));
         clientMap.put(2, new Deal(1));
         clientMap.remove(2);
@@ -796,9 +801,14 @@ public class ClientMapTest extends HazelcastTestSupport {
         clientMap.put(2, new Deal(1));
         clientMap.evictAll();
 
+        clientMap.put(2, new Deal(1), 1, TimeUnit.SECONDS);
+        sleepAtLeastSeconds(1);
+        clientMap.get(1);
+
         assertOpenEventually(gateAdd);
         assertOpenEventually(gateRemove);
         assertOpenEventually(gateEvict);
+        assertOpenEventually(gateExpiry);
         assertOpenEventually(gateUpdate);
         assertOpenEventually(gateClearAll);
         assertOpenEventually(gateEvictAll);
@@ -885,18 +895,15 @@ public class ClientMapTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
-                assertEquals("put count", 0, localMapStats.getPutOperationCount());
-                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
-                assertEquals("get count", 0, localMapStats.getGetOperationCount());
-                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+            assertEquals("put count", 0, localMapStats.getPutOperationCount());
+            assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+            assertEquals("get count", 0, localMapStats.getGetOperationCount());
+            assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
 
-                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
-            }
+            assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+            assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
         });
     }
 
@@ -911,18 +918,15 @@ public class ClientMapTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
-                assertEquals("put count", 0, localMapStats.getPutOperationCount());
-                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
-                assertEquals("get count", 0, localMapStats.getGetOperationCount());
-                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+            assertEquals("put count", 0, localMapStats.getPutOperationCount());
+            assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+            assertEquals("get count", 0, localMapStats.getGetOperationCount());
+            assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
 
-                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
-            }
+            assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+            assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
         });
     }
 
@@ -937,18 +941,15 @@ public class ClientMapTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
-                assertEquals("put count", 0, localMapStats.getPutOperationCount());
-                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
-                assertEquals("get count", 0, localMapStats.getGetOperationCount());
-                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+            assertEquals("put count", 0, localMapStats.getPutOperationCount());
+            assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+            assertEquals("get count", 0, localMapStats.getGetOperationCount());
+            assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
 
-                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
-            }
+            assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+            assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
         });
     }
 
@@ -1031,15 +1032,19 @@ public class ClientMapTest extends HazelcastTestSupport {
         private final CountDownLatch _gateAdd;
         private final CountDownLatch _gateRemove;
         private final CountDownLatch _gateEvict;
+        private final CountDownLatch _gateExpiry;
         private final CountDownLatch _gateUpdate;
         private final CountDownLatch _gateClearAll;
         private final CountDownLatch _gateEvictAll;
 
-        IntegerDealEntryListener(CountDownLatch gateAdd, CountDownLatch gateRemove, CountDownLatch gateEvict,
-                                 CountDownLatch gateUpdate, CountDownLatch gateClearAll, CountDownLatch gateEvictAll) {
+        IntegerDealEntryListener(CountDownLatch gateAdd, CountDownLatch gateRemove,
+                                 CountDownLatch gateEvict, CountDownLatch gateExpiry,
+                                 CountDownLatch gateUpdate, CountDownLatch gateClearAll,
+                                 CountDownLatch gateEvictAll) {
             _gateAdd = gateAdd;
             _gateRemove = gateRemove;
             _gateEvict = gateEvict;
+            _gateExpiry = gateExpiry;
             _gateUpdate = gateUpdate;
             _gateClearAll = gateClearAll;
             _gateEvictAll = gateEvictAll;
@@ -1053,6 +1058,11 @@ public class ClientMapTest extends HazelcastTestSupport {
         @Override
         public void entryEvicted(EntryEvent<Integer, Deal> event) {
             _gateEvict.countDown();
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<Integer, Deal> event) {
+            _gateExpiry.countDown();
         }
 
         @Override

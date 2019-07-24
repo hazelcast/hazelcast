@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,32 +65,19 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         final SampleableConcurrentHashMap<String, String> map =
                 new SampleableConcurrentHashMap<String, String>(10);
 
-        assertEquals(map.applyIfAbsent("key", new IFunction<String, String>() {
-            @Override
-            public String apply(String input) {
-                return "value";
-            }
-        }), "value");
+        assertEquals(map.applyIfAbsent("key", input -> "value"), "value");
 
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
         final CountDownLatch latch = new CountDownLatch(COUNT);
 
         for (int i = 0; i < COUNT; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        assertEquals(map.applyIfAbsent("key", new IFunction<String, String>() {
-                            @Override
-                            public String apply(String input) {
-                                return "value1";
-                            }
-                        }), "value");
-                    } catch (Throwable e) {
-                        error.set(e);
-                    } finally {
-                        latch.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    assertEquals(map.applyIfAbsent("key", input -> "value1"), "value");
+                } catch (Throwable e) {
+                    error.set(e);
+                } finally {
+                    latch.countDown();
                 }
             }).start();
         }
@@ -104,12 +90,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
         map.clear();
 
-        map.applyIfAbsent("key", new IFunction<String, String>() {
-            @Override
-            public String apply(String input) {
-                return null;
-            }
-        });
+        map.applyIfAbsent("key", input -> null);
 
         assertEquals(map.size(), 0);
     }

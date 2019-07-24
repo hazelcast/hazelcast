@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -54,6 +54,8 @@ public class RangeVisitorTest extends VisitorTestSupport {
         when(indexes.getConverter("age")).thenReturn(INTEGER_CONVERTER);
         when(indexes.getConverter("name")).thenReturn(STRING_CONVERTER);
         when(indexes.getConverter("noConverter")).thenReturn(null);
+        when(indexes.getConverter("collection[any]")).thenReturn(INTEGER_CONVERTER);
+        when(indexes.getConverter("collection[0]")).thenReturn(INTEGER_CONVERTER);
 
         visitor = new RangeVisitor();
     }
@@ -69,6 +71,8 @@ public class RangeVisitorTest extends VisitorTestSupport {
         check(same(), equal("age", 0), equal("name", "Alice"));
         check(same(), equal("age", 0), equal("name", "Alice"), greaterEqual("unindexed", true));
         check(same(), between("name", "Alice", "Bob"));
+        check(same(), equal("collection[any]", 0));
+        check(same(), equal("collection[any]", 0), equal("collection[any]", 1));
     }
 
     @Test
@@ -84,6 +88,7 @@ public class RangeVisitorTest extends VisitorTestSupport {
         check(alwaysFalse(), greaterEqual("age", "10"), lessThan("age", 10.0));
         check(alwaysFalse(), greaterThan("age", "10"), lessThan("age", 0));
         check(alwaysFalse(), equal("name", "Alice"), equal("name", "Bob"), greaterEqual("age", "10"), equal("age", 9));
+        check(alwaysFalse(), equal("collection[0]", 0), equal("collection[0]", 1));
     }
 
     @Test
@@ -107,6 +112,8 @@ public class RangeVisitorTest extends VisitorTestSupport {
         check(and(ref(0), equal("age", 1)), new CustomPredicate(), equal("age", 1), equal("age", "1"));
         check(and(ref(0), ref(1), equal("age", 1)), new CustomPredicate(), equal("unindexed", true), equal("age", 1),
                 equal("age", "1"));
+
+        check(equal("collection[0]", 1), equal("collection[0]", 1), equal("collection[0]", "1"));
     }
 
     @Test
@@ -134,7 +141,7 @@ public class RangeVisitorTest extends VisitorTestSupport {
     @Test
     public void testBetweenPredicateOptimization() {
         BetweenPredicate predicate = new BetweenPredicate("age", 20, 10);
-        assertSame(FalsePredicate.INSTANCE, visitor.visit(predicate, indexes));
+        assertSame(Predicates.alwaysFalse(), visitor.visit(predicate, indexes));
 
         predicate = new BetweenPredicate("noConverter", 20, 10);
         assertSame(predicate, visitor.visit(predicate, indexes));

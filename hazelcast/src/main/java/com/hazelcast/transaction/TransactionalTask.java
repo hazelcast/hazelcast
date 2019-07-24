@@ -33,7 +33,7 @@ public interface TransactionalTask<T> {
      * Executes the transactional logic.
      *
      * @param context the TransactionalTaskContext that provides access to the transaction and to the
-     *                transactional resource like the {@link com.hazelcast.core.TransactionalMap}.
+     *                transactional resource like the {@link TransactionalMap}.
      * @return the result of the task
      * @throws TransactionException if transaction error happens while executing this task.
      */

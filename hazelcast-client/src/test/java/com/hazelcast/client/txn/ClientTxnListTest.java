@@ -18,8 +18,8 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.TransactionalList;
+import com.hazelcast.collection.IList;
+import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

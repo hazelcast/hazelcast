@@ -18,19 +18,19 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
@@ -69,6 +69,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -78,7 +79,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -493,11 +494,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, String value) {
         lock.lock();
         try {
-            MemberImpl member = membershipManager.getMember(uuid);
+            MemberMap memberMap = membershipManager.getMemberMap();
+            MemberImpl member = memberMap.getMember(uuid);
             if (!member.equals(getLocalMember())) {
                 member.updateAttribute(operationType, key, value);
             }
-            sendMemberAttributeEvent(member, operationType, key, value);
+            sendMemberAttributeEvent(member, memberMap, operationType, key, value);
         } finally {
             lock.unlock();
         }
@@ -553,11 +555,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.shrinkMissingMembers(memberUuidsToRemove);
     }
 
-    private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
-                                          Object value) {
+    private void sendMemberAttributeEvent(MemberImpl member, MemberMap memberMap, MemberAttributeOperationType operationType,
+                                          String key, Object value) {
+        Set<Member> members = new HashSet<>(memberMap.getMembers());
         final MemberAttributeServiceEvent event
-                = new MemberAttributeServiceEvent(this, member, operationType, key, value);
-        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, operationType, key, value);
+                = new MemberAttributeServiceEvent(this, member, members, operationType, key, value);
+        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, members, operationType,
+                key, value);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {

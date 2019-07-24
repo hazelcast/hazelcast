@@ -161,7 +161,7 @@ public class MatchingPointConfigPatternMatcherTest {
         assertEquals(mapConfig3, config.getMapConfig("com.hazelcast.test.sub.myMap"));
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMapConfigWildcardMultipleAmbiguousConfigs() {
         MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast*");
         MapConfig mapConfig2 = new MapConfig().setName("*com.hazelcast");

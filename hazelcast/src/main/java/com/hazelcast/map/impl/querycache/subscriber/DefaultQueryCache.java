@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -34,7 +34,7 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -72,7 +72,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * @param <K> the key type for this {@link InternalQueryCache}
  * @param <V> the value type for this {@link InternalQueryCache}
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     DefaultQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
@@ -315,17 +315,17 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public Set<K> keySet() {
-        return keySet(TruePredicate.INSTANCE);
+        return keySet(Predicates.alwaysTrue());
     }
 
     @Override
     public Collection<V> values() {
-        return values(TruePredicate.INSTANCE);
+        return values(Predicates.alwaysTrue());
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return entrySet(TruePredicate.INSTANCE);
+        return entrySet(Predicates.alwaysTrue());
     }
 
     @Override
@@ -456,7 +456,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void addIndex(String attribute, boolean ordered) {
         checkNotNull(attribute, "attribute cannot be null");
 
-        getIndexes().addOrGetIndex(attribute, ordered);
+        assert indexes.isGlobal();
+        getIndexes().addOrGetIndex(attribute, ordered, null);
 
         InternalSerializationService serializationService = context.getSerializationService();
 
@@ -495,10 +496,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return;
         }
 
-        // 1. Reset subscriber side resources
+        // 1. Reset client-side subscriber resources
         subscriberAccumulator.reset();
 
-        // 2. Reset/recreate publisher, which is always on server side, resources.
+        // 2. Reset/recreate server-side publisher resources
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(cacheName)
                 .forMap(delegate)

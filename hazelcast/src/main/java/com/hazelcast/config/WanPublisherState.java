@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.wan.impl.WanReplicationService;
+
 /**
  * Defines the state in which a WAN publisher can be in if it is not shutting
  * down.
@@ -54,7 +56,7 @@ public enum WanPublisherState {
      * it will become available. Once it becomes available, you can then switch
      * the publisher state to REPLICATING to begin replicating to that cluster.
      *
-     * @see com.hazelcast.wan.WanReplicationService#clearQueues(String, String)
+     * @see WanReplicationService#clearQueues(String, String)
      */
     STOPPED((byte) 2, false, false);
 

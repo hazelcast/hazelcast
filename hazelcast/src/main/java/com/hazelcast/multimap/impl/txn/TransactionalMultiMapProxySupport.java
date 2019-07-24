@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.CountOperation;

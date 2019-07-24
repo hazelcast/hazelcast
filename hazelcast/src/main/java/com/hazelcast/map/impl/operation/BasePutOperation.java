@@ -76,12 +76,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         if (isPostProcessing(recordStore)) {
             dataValue = mapServiceContext.toData(record.getValue());
         }
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, shouldUnlockKeyOnBackup(),
-                putTransient, !canThisOpGenerateWANEvent());
-    }
-
-    protected boolean shouldUnlockKeyOnBackup() {
-        return false;
+        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo,
+                putTransient, disableWanReplicationEvent);
     }
 
     @Override

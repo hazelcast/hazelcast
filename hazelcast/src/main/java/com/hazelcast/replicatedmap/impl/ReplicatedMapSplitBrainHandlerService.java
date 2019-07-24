@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
- * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}.
+ * Contains split-brain handling logic for {@link ReplicatedMap}.
  */
 class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ReplicatedRecordStore> {
 

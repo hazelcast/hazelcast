@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -43,7 +43,7 @@ public class TransactionCreateMessageTask
         TransactionOptions options = new TransactionOptions();
         options.setDurability(parameters.durability);
         options.setTimeout(parameters.timeout, TimeUnit.MILLISECONDS);
-        options.setTransactionType(TransactionOptions.TransactionType.getByValue(parameters.transactionType));
+        options.setTransactionType(TransactionOptions.TransactionType.getById(parameters.transactionType));
 
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();

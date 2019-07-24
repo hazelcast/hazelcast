@@ -22,8 +22,8 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,7 +43,7 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
     public void testIndexConfigIsRespected() {
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig("map").addQueryCacheConfig(
-                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(TruePredicate.INSTANCE))
+                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()))
                                       .addIndexConfig(new MapIndexConfig("field", true)));
         config.addMapConfig(mapConfig);
 

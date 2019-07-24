@@ -22,14 +22,14 @@ import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTe
 import com.hazelcast.cp.internal.datastructures.lock.operation.GetLockOwnershipStateOp;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FencedLockSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Long> {
 

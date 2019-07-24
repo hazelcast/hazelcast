@@ -19,11 +19,11 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -121,7 +121,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive());
                 }
@@ -150,7 +150,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                Collection<Employee> values = employees.values(Predicates.sql("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive() && employee.getName().startsWith("joe15"));
                 }
@@ -170,14 +170,14 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
             map.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
         }
         assertEquals(500, map.size());
-        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active=true and age>44"));
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(Predicates.sql("active=true and age>44"));
         assertEquals(30, entries.size());
 
         nodeFactory.newInstances(getTestConfig(), 3);
 
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            entries = map.entrySet(new SqlPredicate("active=true and age>44"));
+            entries = map.entrySet(Predicates.sql("active=true and age>44"));
             assertEquals(30, entries.size());
         }
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.quorum.lock;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ILock;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

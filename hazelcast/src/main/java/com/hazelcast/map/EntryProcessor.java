@@ -91,7 +91,7 @@ public interface EntryProcessor<K, V, R> extends Serializable {
      * @param entry entry to be processed
      * @return a result that will be returned from the method taking the
      * {@link EntryProcessor}, such as
-     * {@link com.hazelcast.core.IMap#executeOnKey(Object, EntryProcessor) IMap.executeOnKey()}
+     * {@link IMap#executeOnKey(Object, EntryProcessor) IMap.executeOnKey()}
      */
     R process(Entry<K, V> entry);
 

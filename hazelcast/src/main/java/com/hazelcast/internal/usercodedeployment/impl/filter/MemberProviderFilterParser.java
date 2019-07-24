@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.filter.AlwaysApplyFilter;
 import com.hazelcast.internal.util.filter.Filter;
 

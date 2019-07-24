@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
