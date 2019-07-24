@@ -1045,7 +1045,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 // TODO [basri] hot restart cluster start hasn't started yet
                 // TODO [basri] should we delay this until cluster start completes?
                 this.markedAPMember = metadataStore.isMarkedAPMember();
-                this.cpMember = metadataStore.readLocalMember(nodeEngine.getThisAddress());
+                this.cpMember = metadataStore.readLocalMember();
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
