@@ -18,8 +18,8 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
-import com.hazelcast.client.api.ClientService;
-import com.hazelcast.client.impl.ClientServiceProxy;
+import com.hazelcast.client.ClientService;
+import com.hazelcast.client.impl.serverside.ClientServiceProxy;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;

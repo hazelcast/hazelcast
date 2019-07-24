@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientPartitionListenerService;
+import com.hazelcast.client.impl.serverside.ClientPartitionListenerService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.instance.impl.Node;

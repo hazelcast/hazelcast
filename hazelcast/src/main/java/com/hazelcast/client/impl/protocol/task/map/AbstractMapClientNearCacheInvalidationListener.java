@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.serverside.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;

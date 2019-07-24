@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.serverside.ClientEndpoint;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -30,7 +31,7 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.client.impl.ClientEndpoint}.
+ * A Serializable DTO for {@link ClientEndpoint}.
  */
 public class ClientEndPointDTO implements JsonSerializable {
 

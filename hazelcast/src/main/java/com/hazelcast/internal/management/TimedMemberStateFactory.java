@@ -26,7 +26,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.crdt.pncounter.PNCounterService;

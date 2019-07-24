@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.client.impl.serverside.ClientEngine;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -94,7 +95,7 @@ public interface OperationService {
     /**
      * Executes a PartitionSpecificRunnable.
      * <p/>
-     * This method is typically used by the {@link com.hazelcast.client.impl.ClientEngine}
+     * This method is typically used by the {@link ClientEngine}
      * when it has received a Packet containing a request that needs to be processed.
      *
      * @param task the task to execute

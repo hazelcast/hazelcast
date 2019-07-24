@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEndpointManager;
-import com.hazelcast.client.impl.ClientEngine;
-import com.hazelcast.client.impl.StubAuthenticationException;
-import com.hazelcast.client.impl.client.SecureRequest;
+import com.hazelcast.client.impl.serverside.ClientEndpoint;
+import com.hazelcast.client.impl.serverside.ClientEndpointImpl;
+import com.hazelcast.client.impl.serverside.ClientEndpointManager;
+import com.hazelcast.client.impl.serverside.ClientEngine;
+import com.hazelcast.client.impl.serverside.StubAuthenticationException;
+import com.hazelcast.client.impl.serverside.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;

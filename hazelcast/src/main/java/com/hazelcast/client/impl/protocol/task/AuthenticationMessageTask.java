@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.serverside.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;

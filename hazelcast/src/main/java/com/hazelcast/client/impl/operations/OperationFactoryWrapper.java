@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.operations;
 
-import com.hazelcast.client.impl.ClientDataSerializerHook;
+import com.hazelcast.client.impl.serverside.ClientDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;

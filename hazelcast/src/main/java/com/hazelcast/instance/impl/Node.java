@@ -16,10 +16,10 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.client.api.ClientListener;
-import com.hazelcast.client.impl.ClientEngine;
-import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.client.impl.NoOpClientEngine;
+import com.hazelcast.client.ClientListener;
+import com.hazelcast.client.impl.serverside.ClientEngine;
+import com.hazelcast.client.impl.serverside.ClientEngineImpl;
+import com.hazelcast.client.impl.serverside.NoOpClientEngine;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.cluster.Member;

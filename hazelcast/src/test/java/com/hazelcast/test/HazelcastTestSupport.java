@@ -17,7 +17,7 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.serverside.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;

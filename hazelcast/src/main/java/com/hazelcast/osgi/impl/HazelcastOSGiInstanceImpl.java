@@ -19,7 +19,7 @@ package com.hazelcast.osgi.impl;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;

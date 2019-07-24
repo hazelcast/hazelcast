@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.client.impl.StubAuthenticationException;
+import com.hazelcast.client.impl.serverside.StubAuthenticationException;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;

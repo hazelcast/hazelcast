@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.operations;
 
-import com.hazelcast.client.impl.ClientDataSerializerHook;
-import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointManagerImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.serverside.ClientDataSerializerHook;
+import com.hazelcast.client.impl.serverside.ClientEndpoint;
+import com.hazelcast.client.impl.serverside.ClientEndpointManagerImpl;
+import com.hazelcast.client.impl.serverside.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ClientAwareService;

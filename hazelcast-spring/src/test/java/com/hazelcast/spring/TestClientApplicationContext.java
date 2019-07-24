@@ -31,7 +31,7 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.client.impl.util.RoundRobinLB;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;

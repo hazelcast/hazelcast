@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientTypes;
-import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
-import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.serverside.ClientPrincipal;
+import com.hazelcast.client.impl.serverside.ClientTypes;
+import com.hazelcast.client.impl.serverside.ReAuthenticationOperationSupplier;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

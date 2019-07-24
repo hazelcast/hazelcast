@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.client.impl.ClientEngine;
-import com.hazelcast.client.impl.ClientSelector;
-import com.hazelcast.client.impl.ClientSelectors;
+import com.hazelcast.client.impl.serverside.ClientEngine;
+import com.hazelcast.client.impl.serverside.ClientSelector;
+import com.hazelcast.client.impl.serverside.ClientSelectors;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;

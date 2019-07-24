@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.client.impl.serverside.ClientEngine;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;

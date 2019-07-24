@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.impl.serverside.ClientTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

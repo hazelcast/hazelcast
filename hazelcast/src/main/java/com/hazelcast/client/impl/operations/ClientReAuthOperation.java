@@ -16,19 +16,19 @@
 
 package com.hazelcast.client.impl.operations;
 
-import com.hazelcast.client.impl.ClientDataSerializerHook;
-import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.client.impl.StubAuthenticationException;
-import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.serverside.ClientDataSerializerHook;
+import com.hazelcast.client.impl.serverside.ClientEndpoint;
+import com.hazelcast.client.impl.serverside.ClientEngineImpl;
+import com.hazelcast.client.impl.serverside.ClientPrincipal;
+import com.hazelcast.client.impl.serverside.StubAuthenticationException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Set;
