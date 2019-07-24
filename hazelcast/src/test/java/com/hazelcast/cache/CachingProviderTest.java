@@ -22,6 +22,7 @@ import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -206,6 +207,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
         cleanupForDefaultCacheManagerTest();
         try {
             System.setProperty(AbstractHazelcastCachingProvider.NAMED_JCACHE_HZ_INSTANCE, "false");
+            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), "server");
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
             Collection<HazelcastInstance> instances = getStartedInstances();
@@ -224,6 +226,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     public void whenDefaultCacheManager_thenSharedNameHazelcastInstanceExists() {
         cleanupForDefaultCacheManagerTest();
         try {
+            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), "server");
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
             Collection<HazelcastInstance> instances = getStartedInstances();
