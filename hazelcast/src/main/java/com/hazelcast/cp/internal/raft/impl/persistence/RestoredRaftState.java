@@ -21,6 +21,8 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
@@ -36,12 +38,12 @@ public class RestoredRaftState {
     private final LogEntry[] entries;
 
     public RestoredRaftState(
-            RaftEndpoint localEndpoint,
-            Collection<RaftEndpoint> initialMembers,
+            @Nonnull RaftEndpoint localEndpoint,
+            @Nonnull Collection<RaftEndpoint> initialMembers,
             int term,
-            RaftEndpoint votedFor,
-            SnapshotEntry snapshot,
-            LogEntry[] entries
+            @Nonnull RaftEndpoint votedFor,
+            @Nullable SnapshotEntry snapshot,
+            @Nonnull LogEntry[] entries
     ) {
         this.localEndpoint = localEndpoint;
         this.initialMembers = initialMembers;
@@ -51,10 +53,12 @@ public class RestoredRaftState {
         this.entries = entries;
     }
 
+    @Nonnull
     public RaftEndpoint localEndpoint() {
         return localEndpoint;
     }
 
+    @Nonnull
     public Collection<RaftEndpoint> initialMembers() {
         return initialMembers;
     }
@@ -63,14 +67,17 @@ public class RestoredRaftState {
         return term;
     }
 
+    @Nonnull
     public RaftEndpoint electedEndpoint() {
         return votedFor;
     }
 
+    @Nullable
     public SnapshotEntry snapshot() {
         return snapshot;
     }
 
+    @Nonnull
     public LogEntry[] entries() {
         return entries;
     }

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
 import com.hazelcast.cp.internal.persistence.NopCPMemberMetadataStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -48,6 +49,7 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -281,7 +283,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public RaftStateStore createRaftStateStore(RaftGroupId groupId) {
+    public RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, LogFileStructure logFileStructure) {
         return NopRaftStateStore.INSTANCE;
     }
 }
