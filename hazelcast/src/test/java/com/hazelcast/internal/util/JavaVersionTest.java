@@ -64,15 +64,15 @@ public class JavaVersionTest extends HazelcastTestSupport {
     @Test
     public void testIsAtLeast_unknown() {
         assertTrue(JavaVersion.isAtLeast(UNKNOWN, UNKNOWN));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_7));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_8));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_9));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_10));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_11));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_12));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_13));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_14));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_7));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_8));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_9));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_10));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_11));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_12));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_13));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_14));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertTrue(JavaVersion.isAtLeast(JAVA_13, JAVA_12));
         assertTrue(JavaVersion.isAtLeast(JAVA_14, JAVA_13));
 
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_1_7));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_1_8));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_9));
