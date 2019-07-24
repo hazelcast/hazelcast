@@ -19,7 +19,7 @@ public class AsyncBackupOverloadDetector {
     private final Node node;
     private volatile boolean stop;
     private long lowWaterMark = Long.getLong("hazelcast.asyncbackup.lowwatermark", 1024 * 1024);
-    private long highWaterMark = Long.getLong("hazelcast.asyncbackup.", 1024 * 1024 * 5);
+    private long highWaterMark = Long.getLong("hazelcast.asyncbackup.highwatermark", 5 * 1024 * 1024);
     private long durationMs = Long.getLong("hazelcast.asyncbackup.duration", 5000);
     private volatile long timeoutMs = currentTimeMillis();
     private int ratio;
@@ -67,8 +67,8 @@ public class AsyncBackupOverloadDetector {
                 timeoutMs = System.currentTimeMillis() + durationMs;
                 max = min(max, highWaterMark);
                 ratio = Math.round(100 * ((float) max) / highWaterMark);
-                long duration = System.currentTimeMillis()-startMs;
-                System.out.println("ratio:" + ratio + " max:" + max+" duration:"+duration+" ms");
+                long duration = System.currentTimeMillis() - startMs;
+                System.out.println("ratio:" + ratio + " max:" + max + " duration:" + duration + " ms");
             }
         }
     }
@@ -90,7 +90,7 @@ public class AsyncBackupOverloadDetector {
                 }
 
                 //optimization
-                if(pending>highWaterMark){
+                if (pending > highWaterMark) {
                     break;
                 }
             }
