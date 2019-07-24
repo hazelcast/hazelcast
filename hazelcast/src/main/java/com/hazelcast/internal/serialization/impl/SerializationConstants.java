@@ -82,8 +82,12 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_LINKED_LIST = -27;
 
+    public static final int JAVA_DEFAULT_TYPE_MAP = -29;
+
+    public static final int JAVA_DEFAULT_TYPE_SET = -30;
+
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 29;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 31;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

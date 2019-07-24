@@ -46,10 +46,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.CharArraySerializer;
@@ -181,6 +184,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Enum.class, new EnumSerializer());
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
+        MapStreamSerializer mapSerializer = new MapStreamSerializer();
+        registerConstant(HashMap.class, mapSerializer);
+        registerConstant(ConcurrentHashMap.class, mapSerializer);
+        SetStreamSerializer setSerializer = new SetStreamSerializer();
+        registerConstant(HashSet.class, setSerializer);
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);

@@ -60,12 +60,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -321,6 +324,40 @@ public class SerializationTest extends HazelcastTestSupport {
         ArrayList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", arrayList.equals(deserialized));
     }
+
+    @Test
+    public void testHashMapSerialization() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Map map = new HashMap();
+        map.put(35, new Person(35, 180, 100, "Orhan", null));
+        map.put(12, new Person(12, 120, 60, "Osman", null));
+        Data data = ss.toData(map);
+        Map deserialized = ss.toObject(data);
+        assertTrue("Objects are not identical!", map.equals(deserialized));
+    }
+
+    @Test
+    public void testConcurrentHashMapSerialization() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Map map = new ConcurrentHashMap();
+        map.put(35, new Person(35, 180, 100, "Orhan", null));
+        map.put(12, new Person(12, 120, 60, "Osman", null));
+        Data data = ss.toData(map);
+        Map deserialized = ss.toObject(data);
+        assertTrue("Objects are not identical!", map.equals(deserialized));
+    }
+
+    @Test
+    public void testHashSetSerialization() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Set<Person> hashSet = new HashSet<Person>();
+        hashSet.add(new Person(35, 180, 100, "Orhan", null));
+        hashSet.add(new Person(12, 120, 60, "Osman", null));
+        Data data = ss.toData(hashSet);
+        Set deserialized = ss.toObject(data);
+        assertTrue("Objects are not identical!", hashSet.equals(deserialized));
+    }
+
 
     @Test
     public void testArraySerialization() {
