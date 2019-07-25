@@ -101,8 +101,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         eventJournalReadResponseDecoder = message -> {
             final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
             final PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
-                    params.readCount, params.items, params.itemSeqs,
-                    params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
+                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;
         };

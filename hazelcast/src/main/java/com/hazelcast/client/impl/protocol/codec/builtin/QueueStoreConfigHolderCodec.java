@@ -20,15 +20,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.List;
 
 public class QueueStoreConfigHolderCodec {
-    public static void encodeNullable(ClientMessage clientMessage, QueueStoreConfigHolder configHolder) {
+    public static void encode(ClientMessage clientMessage, QueueStoreConfigHolder configHolder) {
 
     }
 
-    public static QueueStoreConfigHolder decodeNullable(Iterator<ClientMessage.Frame> iterator) {
+    public static QueueStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

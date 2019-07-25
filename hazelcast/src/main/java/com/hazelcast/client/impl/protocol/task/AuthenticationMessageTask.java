@@ -48,29 +48,11 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
-
-        if (parameters.clientHazelcastVersionExist) {
-            clientVersion = parameters.clientHazelcastVersion;
-        }
-
-        if (parameters.clientNameExist) {
-            clientName = parameters.clientName;
-        }
-
-        if (parameters.labelsExist) {
-            labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
-        } else {
-            labels = Collections.emptySet();
-        }
-
-        if (parameters.partitionCountExist) {
-            partitionCount = parameters.partitionCount;
-        }
-
-        if (parameters.clusterIdExist) {
-            clusterId = parameters.clusterId;
-        }
-
+        clientVersion = parameters.clientHazelcastVersion;
+        clientName = parameters.clientName;
+        labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
+        partitionCount = parameters.partitionCount;
+        clusterId = parameters.clusterId;
         return parameters;
     }
 

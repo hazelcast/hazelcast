@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.CacheSimpleConfig;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 public class TimedExpiryPolicyFactoryConfigCodec {
-    public static void encodeNullable(ClientMessage clientMessage, CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig config) {
+    public static void encode(ClientMessage clientMessage, CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig config) {
 
     }
 
-    public static CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decodeNullable(Iterator<ClientMessage.Frame> iterator) {
+    public static CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

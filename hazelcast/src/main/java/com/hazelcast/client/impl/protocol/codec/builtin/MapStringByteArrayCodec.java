@@ -25,7 +25,7 @@ public class MapStringByteArrayCodec {
 
     }
 
-    public static List<Map.Entry<String, byte[]>> decode(Iterator<ClientMessage.Frame> iterator) {
+    public static List<Map.Entry<String, byte[]>> decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

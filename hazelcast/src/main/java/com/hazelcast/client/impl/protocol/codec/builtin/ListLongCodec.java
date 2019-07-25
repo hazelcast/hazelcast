@@ -17,17 +17,41 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.nio.serialization.Data;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 
 public class ListLongCodec {
-    public static void encode(ClientMessage clientMessage, Collection<Long> longs) {
 
+    public static void encode(ClientMessage clientMessage, Collection<Long> collection) {
+        int itemCount = collection.size();
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES]);
+        Iterator<Long> iterator = collection.iterator();
+        for (int i = 0; i < itemCount; i++) {
+            FixedSizeTypesCodec.encodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES, iterator.next());
+        }
+        clientMessage.addFrame(frame);
     }
 
-    public static List<Long> decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static List<Long> decode(ListIterator<ClientMessage.Frame> iterator) {
+        return decode(iterator.next());
     }
+
+    public static List<Long> decode(ClientMessage.Frame frame) {
+        int itemCount = frame.content.length / FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+        List<Long> result = new ArrayList<>(itemCount);
+        for (int i = 0; i < itemCount; i++) {
+            FixedSizeTypesCodec.decodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES);
+        }
+        return result;
+    }
+
 }

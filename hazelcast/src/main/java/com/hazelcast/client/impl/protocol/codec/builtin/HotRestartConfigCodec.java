@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.HotRestartConfig;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 public class HotRestartConfigCodec {
-    public static void encodeNullable(ClientMessage clientMessage, HotRestartConfig hotRestartConfig) {
+    public static void encode(ClientMessage clientMessage, HotRestartConfig hotRestartConfig) {
 
     }
 
-    public static HotRestartConfig decodeNullable(Iterator<ClientMessage.Frame> iterator) {
+    public static HotRestartConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

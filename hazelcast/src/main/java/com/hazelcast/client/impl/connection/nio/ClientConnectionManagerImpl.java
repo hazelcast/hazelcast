@@ -707,15 +707,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
-            if (result.partitionCountExist) {
-                clusterPartitionCount = result.partitionCount;
-            }
-            if (result.clusterIdExist) {
-                clusterId = result.clusterId;
-            }
-            if (result.serverHazelcastVersionExist) {
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-            }
+            clusterPartitionCount = result.partitionCount;
+            clusterId = result.clusterId;
+            connection.setConnectedServerVersion(result.serverHazelcastVersion);
 
             connection.setRemoteEndpoint(result.address);
             if (asOwner) {
@@ -736,8 +730,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return true;
             }
 
-            if (!result.serverHazelcastVersionExist ||
-                    BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
+            if (BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
                 //this means that server is too old and failover not supported
                 //IllegalStateException will cause client to give up trying on this cluster
                 onFailure(new ClientNotAllowedInClusterException("Cluster does not support failover. "

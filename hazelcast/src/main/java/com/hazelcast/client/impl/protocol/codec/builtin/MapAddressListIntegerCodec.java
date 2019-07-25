@@ -23,10 +23,10 @@ import java.util.*;
 
 public class MapAddressListIntegerCodec {
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Address, List<Integer>>> collection) {
-
+        MapCodec.encode(clientMessage, collection, AddressCodec::encode, ListIntegerCodec::encode);
     }
 
-    public static List<Map.Entry<Address, List<Integer>>> decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static List<Map.Entry<Address, List<Integer>>> decode(ListIterator<ClientMessage.Frame> iterator) {
+        return MapCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
     }
 }

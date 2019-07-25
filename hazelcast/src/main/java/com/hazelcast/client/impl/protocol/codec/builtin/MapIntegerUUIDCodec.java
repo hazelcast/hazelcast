@@ -20,12 +20,29 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.*;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+
 public class MapIntegerUUIDCodec {
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Integer, UUID>> collection) {
-
+        List<Integer> keyList = new ArrayList<>(collection.size());
+        List<UUID> valueList = new ArrayList<>(collection.size());
+        for (Map.Entry<Integer, UUID> entry : collection) {
+            keyList.add(entry.getKey());
+            valueList.add(entry.getValue());
+        }
+        ListIntegerCodec.encode(clientMessage, keyList);
+        ListUUIDCodec.encode(clientMessage, valueList);
     }
 
-    public static List<Map.Entry<Integer, UUID>> decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static List<Map.Entry<Integer, UUID>> decode(ListIterator<ClientMessage.Frame> iterator) {
+        List<Integer> keyList = ListIntegerCodec.decode(iterator);
+        List<UUID> valueList = ListUUIDCodec.decode(iterator);
+        int mapSize = keyList.size();
+        List<Map.Entry<Integer, UUID>> result = new ArrayList<>(mapSize);
+        for (int i = 0; i < mapSize; i++){
+            result.add(new AbstractMap.SimpleEntry<>(keyList.get(i), valueList.get(i)));
+        }
+        return result;
     }
 }

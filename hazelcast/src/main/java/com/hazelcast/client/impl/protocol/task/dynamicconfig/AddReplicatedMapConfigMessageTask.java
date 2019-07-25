@@ -51,11 +51,8 @@ public class AddReplicatedMapConfigMessageTask
         ReplicatedMapConfig config = new ReplicatedMapConfig(parameters.name);
         config.setAsyncFillup(parameters.asyncFillup);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
-        if (parameters.mergeBatchSizeExist) {
-            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(true, parameters.mergePolicy,
-                    parameters.mergeBatchSize);
-            config.setMergePolicyConfig(mergePolicyConfig);
-        }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {

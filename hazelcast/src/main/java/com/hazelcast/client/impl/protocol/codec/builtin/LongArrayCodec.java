@@ -18,14 +18,35 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.ListIterator;
+import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
+import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
 public class LongArrayCodec {
-    public static void encodeNullable(ClientMessage clientMessage, long[] itemSeqs) {
 
+    public static void encode(ClientMessage clientMessage, long[] array) {
+        int itemCount = array.length;
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES]);
+        for (int i = 0; i < itemCount; i++) {
+            FixedSizeTypesCodec.encodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES, array[i]);
+        }
+        clientMessage.addFrame(frame);
     }
 
-    public static long[] decodeNullable(Iterator<ClientMessage.Frame> iterator) {
-        return new long[0];
+    public static long[] decode(ClientMessage.Frame frame) {
+        int itemCount = frame.content.length / FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+        long[] result = new long[itemCount];
+        for (int i = 0; i < itemCount; i++) {
+            FixedSizeTypesCodec.decodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES);
+        }
+        return result;
     }
+
+    public static long[] decode(ListIterator<ClientMessage.Frame> iterator) {
+        return decode(iterator.next());
+    }
+
 }

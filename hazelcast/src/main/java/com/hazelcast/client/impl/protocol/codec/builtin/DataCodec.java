@@ -17,25 +17,24 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 
 public class DataCodec {
     public static void encode(ClientMessage clientMessage, Data data) {
-
+        clientMessage.addFrame(new ClientMessage.Frame(data.toByteArray(), DEFAULT_FLAGS));
     }
 
-    public static Data decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static Data decode(ClientMessage.Frame frame) {
+        return new HeapData(frame.content);
     }
 
-    public static void encodeNullable(ClientMessage clientMessage, Data data) {
-
+    public static Data decode(ListIterator<ClientMessage.Frame> iterator) {
+        return decode(iterator.next());
     }
 
-    public static Data decodeNullable(Iterator<ClientMessage.Frame> iterator) {
-        return null;
-    }
 }

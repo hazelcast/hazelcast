@@ -20,14 +20,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 public class SimpleEntryViewCodec {
-    public static void encodeNullable(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
+    public static void encode(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
 
     }
 
-    public static SimpleEntryView<Data, Data> decodeNullable(Iterator<ClientMessage.Frame> iterator) {
+    public static SimpleEntryView<Data, Data> decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

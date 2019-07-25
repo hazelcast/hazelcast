@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;

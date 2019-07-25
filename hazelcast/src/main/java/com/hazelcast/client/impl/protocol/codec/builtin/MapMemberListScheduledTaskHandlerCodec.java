@@ -24,10 +24,11 @@ import java.util.*;
 
 public class MapMemberListScheduledTaskHandlerCodec {
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> collection) {
+        MapCodec.encode(clientMessage, collection, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
 
     }
 
-    public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> decode(ListIterator<ClientMessage.Frame> iterator) {
+        return MapCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
     }
 }

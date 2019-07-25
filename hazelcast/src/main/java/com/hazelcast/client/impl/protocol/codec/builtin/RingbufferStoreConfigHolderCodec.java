@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 public class RingbufferStoreConfigHolderCodec {
-    public static void encodeNullable(ClientMessage clientMessage, RingbufferStoreConfigHolder configHolder) {
+    public static void encode(ClientMessage clientMessage, RingbufferStoreConfigHolder configHolder) {
 
     }
 
-    public static RingbufferStoreConfigHolder decodeNullable(Iterator<ClientMessage.Frame> iterator) {
+    public static RingbufferStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

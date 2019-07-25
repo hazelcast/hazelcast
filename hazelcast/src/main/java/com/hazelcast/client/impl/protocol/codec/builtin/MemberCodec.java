@@ -16,17 +16,48 @@
 
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 
-import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class MemberCodec {
-    public static Member decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
-    }
+
+    private static final int LITE_MEMBER_FIELD_OFFSET = 0;
+    private static final int UUID_FIELD_OFFSET = LITE_MEMBER_FIELD_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = UUID_FIELD_OFFSET + FixedSizeTypesCodec.UUID_SIZE_IN_BYTES ;
 
     public static void encode(ClientMessage clientMessage, Member member) {
+        clientMessage.addFrame(BEGIN_FRAME);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE], DEFAULT_FLAGS);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, LITE_MEMBER_FIELD_OFFSET, member.isLiteMember());
 
+        FixedSizeTypesCodec.encodeUUID(initialFrame.content, UUID_FIELD_OFFSET, UUID.fromString(member.getUuid()));
+        clientMessage.addFrame(initialFrame);
+        AddressCodec.encode(clientMessage, member.getAddress());
+        MapCodec.encode(clientMessage, member.getAttributes(), StringCodec::encode, StringCodec::encode);
+        clientMessage.addFrame(END_FRAME);
+    }
+
+    public static Member decode(ListIterator<ClientMessage.Frame> iterator) {
+        iterator.next();//begin frame
+        ClientMessage.Frame initialFrame = iterator.next();
+
+        boolean isLiteMember = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, LITE_MEMBER_FIELD_OFFSET);
+        UUID uuid = FixedSizeTypesCodec.decodeUUID(initialFrame.content, UUID_FIELD_OFFSET);
+        Address address = AddressCodec.decode(iterator);
+        Map<String, String> attributes = MapCodec.decodeToMap(iterator, StringCodec::decode, StringCodec::decode);
+        fastForwardToEndFrame(iterator);
+        return new MemberImpl(address, uuid.toString(), attributes, isLiteMember);
     }
 }

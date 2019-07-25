@@ -17,23 +17,26 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.serialization.Data;
 
-import java.util.Iterator;
+import java.util.ListIterator;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
+import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
 public class StringCodec {
-    public static void encode(ClientMessage clientMessage, String string) {
 
+    public static void encode(ClientMessage clientMessage, String value) {
+        clientMessage.addFrame(new ClientMessage.Frame(value.getBytes(Bits.UTF_8), DEFAULT_FLAGS));
     }
 
-    public static String decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static String decode(ListIterator<ClientMessage.Frame> iterator) {
+        return decode(iterator.next());
     }
 
-    public static void encodeNullable(ClientMessage clientMessage, String sourceUuid) {
-
+    public static String decode(ClientMessage.Frame frame) {
+        return new String(frame.content, Bits.UTF_8);
     }
 
-    public static String decodeNullable(Iterator<ClientMessage.Frame> iterator) {
-        return null;
-    }
 }

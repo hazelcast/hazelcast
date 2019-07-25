@@ -191,9 +191,9 @@ public class AddMembershipListener {
 
                         iterator.next();//begin
                         Member member = MemberCodec.decode(iterator);
-                        for (frame = iterator.next(); !frame.isDataStructureEndFrame(); frame = iterator.next()) {
-
-                        }
+//                        for (frame = iterator.next(); !frame.isDataStructureEndFrame(); frame = iterator.next()) {
+//
+//                        }
                         handleMemberEventV10(member, eventType);
                         break;
                     case MemberListEvent.TYPE:

@@ -20,12 +20,34 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.*;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+
 public class MapStringLongCodec {
+
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<String, Long>> collection) {
+        List<Long> valueList = new ArrayList<>(collection.size());
+        clientMessage.addFrame(BEGIN_FRAME);
+        for (Map.Entry<String, Long> entry : collection) {
+            StringCodec.encode(clientMessage, entry.getKey());
+            valueList.add(entry.getValue());
+        }
+        clientMessage.addFrame(END_FRAME);
 
+        clientMessage.addFrame(BEGIN_FRAME);
+        ListLongCodec.encode(clientMessage, valueList);
+        clientMessage.addFrame(END_FRAME);
     }
 
-    public static List<Map.Entry<String, Long>> decode(Iterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static List<Map.Entry<String, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
+        List<String> listK = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
+        List<Long> listV = ListLongCodec.decode(iterator);
+
+        List<Map.Entry<String, Long>> result = new ArrayList<>(listK.size());
+        for (int i = 0; i < listK.size(); i++) {
+            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(0)));
+        }
+        return result;
     }
+
 }

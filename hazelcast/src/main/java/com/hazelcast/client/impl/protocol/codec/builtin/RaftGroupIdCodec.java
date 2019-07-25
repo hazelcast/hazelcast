@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cp.internal.RaftGroupId;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 public class RaftGroupIdCodec {
     public static void encode(ClientMessage clientMessage, RaftGroupId groupId) {
 
     }
 
-    public static RaftGroupId decode(Iterator<ClientMessage.Frame> iterator) {
+    public static RaftGroupId decode(ListIterator<ClientMessage.Frame> iterator) {
         return null;
     }
 }

@@ -146,6 +146,10 @@ public class ClientMessage implements OutboundFrame, Iterable<ClientMessage.Fram
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
         public int flags;
 
+        public Frame(byte[] content) {
+            this(content, DEFAULT_FLAGS);
+        }
+
         public Frame(byte[] content, int flags) {
             this.content = content;
             this.flags = flags;
