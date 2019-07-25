@@ -17,9 +17,11 @@ public interface CPMemberMetadataStore {
     boolean isMarkedAPMember();
 
     /**
-     *  Marks this member as AP member on the storage layer.
+     *  Marks this member as AP member on the storage layer,
+     *  if it is not a CP member already.
+     * @return true if marked as AP, false otherwise
      */
-    void markAPMember() throws IOException;
+    boolean tryMarkAPMember() throws IOException;
 
     /**
      * Persists {@link CPMember} identity of the local member to storage.

@@ -1024,7 +1024,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         discoveryCompleted.set(true);
         try {
-            metadataStore.markAPMember();
+            metadataStore.tryMarkAPMember();
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -1173,7 +1173,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 logger.info("I am not a CP member! I'll serve as an AP member.");
                 discoveryCompleted.set(true);
                 try {
-                    metadataStore.markAPMember();
+                    boolean marked = metadataStore.tryMarkAPMember();
+                    assert marked;
                 } catch (IOException e) {
                     throw new HazelcastException(e);
                 }
