@@ -340,7 +340,7 @@ public class RaftLogTest {
         };
         log.appendEntries(entries);
 
-        List<LogEntry> truncated = log.truncateEntriesFrom(3);
+        List<LogEntry> truncated = log.deleteEntriesFrom(3);
         assertEquals(2, truncated.size());
         assertArrayEquals(Arrays.copyOfRange(entries, 2, 4), truncated.toArray());
 
@@ -362,7 +362,7 @@ public class RaftLogTest {
         log.appendEntries(entries);
         log.setSnapshot(new SnapshotEntry(1, 2, null, 0, Collections.<RaftEndpoint>emptySet()));
 
-        List<LogEntry> truncated = log.truncateEntriesFrom(3);
+        List<LogEntry> truncated = log.deleteEntriesFrom(3);
         assertEquals(2, truncated.size());
         assertArrayEquals(Arrays.copyOfRange(entries, 2, 4), truncated.toArray());
 
@@ -379,7 +379,7 @@ public class RaftLogTest {
         log.appendEntries(entries);
 
         exception.expect(IllegalArgumentException.class);
-        log.truncateEntriesFrom(4);
+        log.deleteEntriesFrom(4);
     }
 
     @Test
@@ -393,7 +393,7 @@ public class RaftLogTest {
         log.setSnapshot(new SnapshotEntry(1, 2, null, 0, Collections.<RaftEndpoint>emptySet()));
 
         exception.expect(IllegalArgumentException.class);
-        log.truncateEntriesFrom(1);
+        log.deleteEntriesFrom(1);
     }
 
     @Test

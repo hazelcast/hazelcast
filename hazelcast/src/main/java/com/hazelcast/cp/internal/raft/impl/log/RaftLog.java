@@ -175,24 +175,25 @@ public final class RaftLog {
     }
 
     /**
-     * Truncates log entries with indexes {@code >= entryIndex}.
+     * Deletes all log entries with {@code index >= entryIndex}.
      *
-     * @return truncated log entries
-     * @throws IllegalArgumentException If no entries are available to
-     *                                  truncate, if {@code entryIndex} is
-     *                                  greater than last log index or smaller
-     *                                  than snapshot index.
+     * @return the deleted log entries
+     * @throws IllegalArgumentException If no entries are available to delete, if {@code entryIndex} is
+     *                                  greater than last log index or smaller than snapshot index.
      */
-    public List<LogEntry> truncateEntriesFrom(long entryIndex) {
+    public List<LogEntry> deleteEntriesFrom(long entryIndex) {
         if (entryIndex <= snapshotIndex()) {
-            throw new IllegalArgumentException("Illegal index: " + entryIndex + ", snapshot index: " + snapshotIndex());
+            throw new IllegalArgumentException(String.format(
+                    "Illegal index %,d, snapshot index is %,d", entryIndex, snapshotIndex()));
         }
         if (entryIndex > lastLogOrSnapshotIndex()) {
-            throw new IllegalArgumentException("Illegal index: " + entryIndex + ", last log index: " + lastLogOrSnapshotIndex());
+            throw new IllegalArgumentException(String.format(
+                    "Illegal index %,d, last log index is %,d", entryIndex, lastLogOrSnapshotIndex()));
         }
 
         long startSequence = toSequence(entryIndex);
-        assert startSequence >= logs.headSequence() : "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
+        assert startSequence >= logs.headSequence() :
+                "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
 
         List<LogEntry> truncated = new ArrayList<LogEntry>();
         for (long ix = startSequence; ix <= logs.tailSequence(); ix++) {
