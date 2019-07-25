@@ -17,18 +17,14 @@
 package com.hazelcast.test.compatibility;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
-import com.hazelcast.cp.internal.persistence.NopCPMemberMetadataStore;
-import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
-import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
-import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
+import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
@@ -49,7 +45,6 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -278,12 +273,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public CPMemberMetadataStore getCPMemberMetadataStore() {
-        return NopCPMemberMetadataStore.INSTANCE;
-    }
-
-    @Override
-    public RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, LogFileStructure logFileStructure) {
-        return NopRaftStateStore.INSTANCE;
+    public CPPersistenceService getCPPersistenceService() {
+        return NopCPPersistenceService.INSTANCE;
     }
 }

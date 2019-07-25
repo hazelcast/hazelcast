@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
@@ -269,6 +270,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         resetLocalRaftState();
 
         metadataGroupManager.restart(seed);
+        getCpPersistenceService().reset();
         logger.info("CP state is reset with groupId seed: " + seed);
     }
 
@@ -423,6 +425,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public boolean onShutdown(long timeout, TimeUnit unit) {
         CPMemberInfo localMember = getLocalCPMember();
         if (localMember == null) {
+            return true;
+        }
+
+        if (getCpPersistenceService().isEnabled()) {
+            // When persistence is enabled, we do not remove this member from CP subsystem.
+            // Because it is supposed to recover by restoring disk data.
             return true;
         }
 
@@ -673,8 +681,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftStateStore stateStore = nodeEngine.getNode().getNodeExtension()
-                                              .createRaftStateStore((RaftGroupId) groupId, null);
+        RaftStateStore stateStore = getCpPersistenceService().createRaftStateStore((RaftGroupId) groupId, null);
         RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
 
         if (nodes.putIfAbsent(groupId, node) == null) {
@@ -689,11 +696,14 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
     }
 
+    CPPersistenceService getCpPersistenceService() {
+        return nodeEngine.getNode().getNodeExtension().getCPPersistenceService();
+    }
+
     public RaftNodeImpl restoreRaftNode(RaftGroupId groupId, RestoredRaftState restoredState, LogFileStructure logFileStructure) {
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, restoredState.localEndpoint());
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftStateStore stateStore =
-                nodeEngine.getNode().getNodeExtension().createRaftStateStore(groupId, logFileStructure);
+        RaftStateStore stateStore = getCpPersistenceService().createRaftStateStore(groupId, logFileStructure);
         RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(
                 groupId, restoredState, raftAlgorithmConfig, integration, stateStore);
 

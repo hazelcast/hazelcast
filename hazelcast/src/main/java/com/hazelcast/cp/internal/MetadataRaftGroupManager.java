@@ -131,7 +131,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         this.membershipManager = new RaftGroupMembershipManager(nodeEngine, raftService);
         this.logger = nodeEngine.getLogger(getClass());
         this.config = config;
-        this.metadataStore = nodeEngine.getNode().getNodeExtension().getCPMemberMetadataStore();
+        this.metadataStore = raftService.getCpPersistenceService().getCPMemberMetadataStore();
     }
 
     boolean init() {
@@ -182,7 +182,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         metadataGroupIdRef.set(new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0));
         localCPMember.set(null);
-        // TODO: metadataStore reset
         discoveryCompleted.set(false);
 
         scheduleDiscoverInitialCPMembersTask(false);
