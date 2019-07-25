@@ -30,14 +30,14 @@ import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 /**
  * A JSON representation of {@link CustomWanPublisherConfig}.
  */
-public class WanPublisherConfigDTO implements JsonSerializable {
+public class CustomWanPublisherConfigDTO implements JsonSerializable {
 
     private CustomWanPublisherConfig config;
 
-    public WanPublisherConfigDTO() {
+    public CustomWanPublisherConfigDTO() {
     }
 
-    public WanPublisherConfigDTO(CustomWanPublisherConfig config) {
+    public CustomWanPublisherConfigDTO(CustomWanPublisherConfig config) {
         this.config = config;
     }
 

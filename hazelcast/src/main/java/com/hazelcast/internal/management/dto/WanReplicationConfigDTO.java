@@ -50,7 +50,7 @@ public class WanReplicationConfigDTO implements JsonSerializable {
             batchPublishers.add(new WanBatchReplicationPublisherConfigDTO(publisherConfig).toJson());
         }
         for (CustomWanPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
-            customPublishers.add(new WanPublisherConfigDTO(publisherConfig).toJson());
+            customPublishers.add(new CustomWanPublisherConfigDTO(publisherConfig).toJson());
         }
         root.add("batchPublishers", batchPublishers);
         root.add("customPublishers", customPublishers);
@@ -83,7 +83,7 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         JsonValue customPublishers = json.get("customPublishers");
         if (customPublishers != null && !customPublishers.isNull()) {
             for (JsonValue jsonValue : customPublishers.asArray()) {
-                WanPublisherConfigDTO dto = new WanPublisherConfigDTO();
+                CustomWanPublisherConfigDTO dto = new CustomWanPublisherConfigDTO();
                 dto.fromJson(jsonValue.asObject());
                 config.addCustomPublisherConfig(dto.getConfig());
             }

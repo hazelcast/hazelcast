@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CustomWanPublisherConfigDTOTest {
+public class CustomCustomWanPublisherConfigDTOTest {
 
     private static final WanCustomPublisherConfigChecker WAN_PUBLISHER_CONFIG_CHECKER = new WanCustomPublisherConfigChecker();
 
@@ -63,10 +63,10 @@ public class CustomWanPublisherConfigDTOTest {
     }
 
     private CustomWanPublisherConfig cloneThroughJson(CustomWanPublisherConfig expected) {
-        WanPublisherConfigDTO dto = new WanPublisherConfigDTO(expected);
+        CustomWanPublisherConfigDTO dto = new CustomWanPublisherConfigDTO(expected);
 
         JsonObject json = dto.toJson();
-        WanPublisherConfigDTO deserialized = new WanPublisherConfigDTO(null);
+        CustomWanPublisherConfigDTO deserialized = new CustomWanPublisherConfigDTO(null);
         deserialized.fromJson(json);
 
         return deserialized.getConfig();

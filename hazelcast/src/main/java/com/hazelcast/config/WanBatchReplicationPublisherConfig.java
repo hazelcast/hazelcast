@@ -29,12 +29,12 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Configuration object for a WAN publisher. A single publisher defines how
- * WAN events are sent to a specific endpoint.
- * The endpoint can be a different cluster defined by static IP's or discovered
- * using a cloud discovery mechanism. When using a custom WAN publisher
- * implementation, the target may also be some other external system which is
- * not a Hazelcast cluster.
+ * Configuration object for the built-in WAN publisher (available in
+ * Hazelcast Enterprise). The publisher sends events to another Hazelcast
+ * cluster in batches, sending when either when enough events are enqueued
+ * or enqueued events have waited for enough time.
+ * The endpoint can be a different cluster defined by static IP's or
+ * discovered using a cloud discovery mechanism.
  *
  * @see DiscoveryConfig
  * @see AwsConfig
@@ -91,8 +91,6 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * protocol type {@code WAN} and this string as identifier. If such an {@link EndpointConfig}
      * is found, its configuration is used when the WAN publisher opens a connection to the
      * target cluster members.
-     *
-     * @since 3.12
      */
     private String endpoint;
 
@@ -165,7 +163,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     /**
-     * Retuns {@code true} if key-based coalescing is configured for this WAN
+     * Returns {@code true} if key-based coalescing is configured for this WAN
      * publisher.
      * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent}
      * of a key is sent to target.
@@ -263,7 +261,8 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      *
      * @return acknowledge type
      */
-    public @Nonnull WanAcknowledgeType getAcknowledgeType() {
+    public @Nonnull
+    WanAcknowledgeType getAcknowledgeType() {
         return acknowledgeType;
     }
 
@@ -377,7 +376,8 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * Returns the configured behaviour of this WAN publisher when the WAN queue
      * is full.
      */
-    public @Nonnull WANQueueFullBehavior getQueueFullBehavior() {
+    public @Nonnull
+    WANQueueFullBehavior getQueueFullBehavior() {
         return queueFullBehavior;
     }
 
@@ -396,7 +396,8 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     /**
      * Returns the initial WAN publisher state.
      */
-    public @Nonnull WanPublisherState getInitialPublisherState() {
+    public @Nonnull
+    WanPublisherState getInitialPublisherState() {
         return initialPublisherState;
     }
 
@@ -735,10 +736,39 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
         return this;
     }
 
+    /**
+     * Returns the WAN endpoint configuration qualifier. When using pre-3.12 network
+     * configuration, its value can be {@code null} and is not taken into account.
+     * With 3.12+ advanced network config, an {@link EndpointConfig} or
+     * {@link ServerSocketEndpointConfig} is looked up with protocol type
+     * {@code WAN} and this string as identifier. If such an {@link EndpointConfig}
+     * is found, its configuration is used when the WAN publisher opens a
+     * connection to the target cluster members.
+     *
+     * @return endpoint qualifier
+     * @see NetworkConfig
+     * @see AdvancedNetworkConfig
+     * @since 3.12
+     */
     public String getEndpoint() {
         return endpoint;
     }
 
+    /**
+     * Sets the WAN endpoint configuration qualifier. When using pre-3.12 network
+     * configuration, its value can be {@code null} and is not taken into account.
+     * With 3.12+ advanced network config, an {@link EndpointConfig} or
+     * {@link ServerSocketEndpointConfig} is looked up with protocol type
+     * {@code WAN} and this string as identifier. If such an {@link EndpointConfig}
+     * is found, its configuration is used when the WAN publisher opens a
+     * connection to the target cluster members.
+     *
+     * @param endpoint endpoint qualifier
+     * @return this configuration
+     * @see NetworkConfig
+     * @see AdvancedNetworkConfig
+     * @since 3.12
+     */
     public WanBatchReplicationPublisherConfig setEndpoint(String endpoint) {
         this.endpoint = endpoint;
         return this;

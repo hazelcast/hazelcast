@@ -2326,12 +2326,12 @@
                         maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>
-                        Configuration object for a WAN publisher. A single publisher defines how
-                        WAN events are sent to a specific endpoint.
-                        The endpoint can be a different cluster defined by static IP's or discovered
-                        using a cloud discovery mechanism. When using a custom WAN publisher
-                        implementation, the target may also be some other external system which is
-                        not a Hazelcast cluster.
+                        Configuration object for the built-in WAN publisher (available in
+                        Hazelcast Enterprise). The publisher sends events to another Hazelcast
+                        cluster in batches, sending when either when enough events are enqueued
+                        or enqueued events have waited for enough time.
+                        The endpoint can be a different cluster defined by static IP's or
+                        discovered using a cloud discovery mechanism.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

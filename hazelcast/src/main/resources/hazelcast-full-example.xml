@@ -151,33 +151,33 @@
             WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
             Waits until a batch size is reached or a delay time is passed.
             Please see the batch-size and batch-max-delay-millis configuration descriptions below.
-            * "group-name":
+            * "<group-name>":
                 Sets the group name used as an endpoint group name for authentication
                 on the target endpoint.
                 If there is no separate publisher ID property defined, this group name
                 will also be used as a WAN publisher ID. This ID is then used for
                 identifying the publisher in a WanReplicationConfig.
-            * "publisher-id":
+            * "<publisher-id>":
                 Sets the publisher ID used for identifying the publisher in a
                 WanReplicationConfig.
                 If there is no publisher ID defined (it is empty), the group name will
                 be used as a publisher ID.
-            * "batch-size":
+            * "<batch-size>":
                 Changes the maximum size of events that are sent to the target cluster
                 in a single batch. The batch of events is not sent until this size is
                 reached. Its default value is 500.
-            * "batch-max-delay-millis":
+            * "<batch-max-delay-millis>":
                 If the number of events generated does not reach the "batch-size", they
                 are sent to the target cluster after a certain amount of time is passed.
                 You can set this time in milliseconds using this element. Its default
                 value is 1000 milliseconds.
-            * "response-timeout-millis":
+            * "<response-timeout-millis>":
                 After a replication event is sent to the target cluster, the source member
                 waits for a confirmation that says the event has reached the target. If
                 confirmation is not received for a period of `response-timeout-millis`,
                 the event is resent to the target cluster. The default value is 60000
                 milliseconds.
-            * "acknowledge-type":
+            * "<acknowledge-type>":
                 Acknowledgment type for each target cluster when the events are replicated.
                 You can set it to the following values:
                 - ACK_ON_RECEIPT:
@@ -187,7 +187,7 @@
                     Guarantees that the event is both received and applied by the target cluster.
                     It is more time consuming, but it is the best way if you have strong
                     consistency requirements.
-            * "initial-publisher-state":
+            * "<initial-publisher-state>":
                 Defines the initial state in which a WAN publisher is started.
                 - REPLICATING (default):
                     State where both enqueuing new events is allowed, enqueued events are
@@ -201,16 +201,16 @@
                     State where neither new events are enqueued nor dequeued. As with the PAUSED
                     state, some events might still be replicated after the publisher has
                     switched to this state. WAN sync is enabled.
-            * "snapshot-enabled":
+            * "<snapshot-enabled>":
                 Sets if key-based coalescing is configured for this WAN publisher.
                 When enabled, only the latest WanReplicationEvent of a key is sent to target.
-            * "idle-max-park-ns":
+            * "<idle-max-park-ns>":
                 Sets the maximum duration in nanoseconds that the WAN replication thread
                 will be parked if there are no events to replicate.
-            * "idle-min-park-ns":
+            * "<idle-min-park-ns>":
                 Sets the minimum duration in nanoseconds that the WAN replication thread
                 will be parked if there are no events to replicate.
-            * "max-concurrent-invocations":
+            * "<max-concurrent-invocations>":
                 Sets the maximum number of WAN event batches being sent to the target
                 cluster concurrently.
                 Setting this property to anything less than 2 will only allow a
@@ -234,15 +234,15 @@
                 by setting it to less than 2 in which case WAN will use the
                 default replication strategy and adapt to the target endpoint count
                 while maintaining causality.
-            * "discovery-period-seconds":
+            * "<discovery-period-seconds>":
                 Sets the period in seconds in which WAN tries to discover new target
                 endpoints and reestablish connections to failed endpoints.
-            * "use-endpoint-private-address":
+            * "<use-endpoint-private-address>":
                 Sets whether the WAN connection manager should connect to the
                 endpoint on the private address returned by the discovery SPI.
                 By default this property is false which means the WAN connection
                 manager will always use the public address.
-            * "queue-full-behavior":
+            * "<queue-full-behavior>":
                 Policy to be applied when WAN Replication event queues are full. You can
                 set it to the following values:
                 - DISCARD_AFTER_MUTATION (default):
@@ -252,12 +252,12 @@
                     The WAN queue size is checked before each supported mutating operation. If
                     one of the queues of the target cluster is full,
                     WANReplicationQueueFullException is thrown and the operation is not allowed.
-            * "max-target-endpoints":
+            * "<max-target-endpoints>":
                 Returns the maximum number of endpoints that WAN will connect to when
                 using a discovery mechanism to define endpoints.
                 This property has no effect when static endpoint addresses are defined
                 using target-endpoints.
-            * "queue-capacity":
+            * "<queue-capacity>":
                 Size of the queue of events. Its default value is 10000. If you exceed
                 this queue size, then the oldest, not yet replicated updates might get
                 lost. Therefore, if you have a large rate of put/update/remove operations,
@@ -321,10 +321,10 @@
                 </discovery-strategies>
         * <custom-publisher>:
             Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
-            * "class-name":
+            * "<class-name>":
                 Mandatory config value defining the fully qualified class name of the
                 WAN publisher implementation.
-            * "publisher-id":
+            * "<publisher-id>":
                 Mandatory config value for the publisher ID used for identifying the
                 publisher in a WanReplicationConfig.
         * <consumer>:
