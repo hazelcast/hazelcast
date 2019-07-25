@@ -32,6 +32,7 @@ import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
@@ -130,7 +131,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void syncMap(String wanReplicationName, String targetGroupName, String mapName) {
+    public UUID syncMap(String wanReplicationName, String targetGroupName, String mapName) {
         node.getManagementCenterService().log(
                 WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, mapName));
 
@@ -138,7 +139,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void syncAllMaps(String wanReplicationName, String targetGroupName) {
+    public UUID syncAllMaps(String wanReplicationName, String targetGroupName) {
         node.getManagementCenterService().log(
                 WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, null));
 
@@ -146,7 +147,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void consistencyCheck(String wanReplicationName, String targetGroupName, String mapName) {
+    public UUID consistencyCheck(String wanReplicationName, String targetGroupName, String mapName) {
         node.getManagementCenterService().log(
                 new WanConsistencyCheckIgnoredEvent(wanReplicationName, targetGroupName, mapName,
                         "Consistency check is supported for enterprise clusters only."));

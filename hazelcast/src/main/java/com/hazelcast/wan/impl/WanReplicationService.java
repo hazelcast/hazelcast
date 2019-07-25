@@ -25,6 +25,8 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 
+import java.util.UUID;
+
 /**
  * This is the WAN replications service API core interface. The
  * WanReplicationService needs to be capable of creating the actual
@@ -92,13 +94,14 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param wanReplicationName the name of the wan replication config
      * @param targetGroupName    the group name on the target cluster
      * @param mapName            the map name
+     * @return the UUID of the synchronization
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication
      *                                       config for {@code wanReplicationName}
      * @throws SyncFailedException           if there is a anti-entropy request in
      *                                       progress
      */
-    void syncMap(String wanReplicationName, String targetGroupName, String mapName);
+    UUID syncMap(String wanReplicationName, String targetGroupName, String mapName);
 
     /**
      * Initiate wan sync for all maps.
@@ -106,12 +109,13 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      *
      * @param wanReplicationName the name of the wan replication config
      * @param targetGroupName    the group name on the target cluster
+     * @return the UUID of the synchronization
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication config for
      *                                       {@code wanReplicationName}
      * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
-    void syncAllMaps(String wanReplicationName, String targetGroupName);
+    UUID syncAllMaps(String wanReplicationName, String targetGroupName);
 
 
     /**
@@ -121,11 +125,13 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param wanReplicationName the name of the wan replication config
      * @param targetGroupName    the group name on the target cluster
      * @param mapName            the map name
+     * @return the UUID of the consistency check request or {@code null}
+     * if consistency check is ignored because of the configuration
      * @throws UnsupportedOperationException if the operation is not supported (not EE)
      * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
      * @throws SyncFailedException           if there is a anti-entropy request in progress
      */
-    void consistencyCheck(String wanReplicationName, String targetGroupName, String mapName);
+    UUID consistencyCheck(String wanReplicationName, String targetGroupName, String mapName);
 
 
     /**

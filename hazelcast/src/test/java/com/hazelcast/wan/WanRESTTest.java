@@ -34,11 +34,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -74,8 +77,35 @@ public class WanRESTTest extends HazelcastTestSupport {
 
     @Test
     public void consistencyCheckSuccess() throws Exception {
-        assertSuccess(communicator.wanMapConsistencyCheck("atob", "B", "mapName"));
+        UUID expectedUuid = UUID.randomUUID();
+        when(wanServiceMock.consistencyCheck("atob", "B", "mapName"))
+                .thenReturn(expectedUuid);
+        String result = communicator.wanMapConsistencyCheck("atob", "B", "mapName");
+        assertSuccess(result);
+        assertUuid(result, expectedUuid);
         verify(wanServiceMock, times(1)).consistencyCheck("atob", "B", "mapName");
+    }
+
+    @Test
+    public void syncSuccess() throws Exception {
+        UUID expectedUuid = UUID.randomUUID();
+        when(wanServiceMock.syncMap("atob", "B", "mapName"))
+                .thenReturn(expectedUuid);
+        String result = communicator.syncMapOverWAN("atob", "B", "mapName");
+        assertSuccess(result);
+        assertUuid(result, expectedUuid);
+        verify(wanServiceMock, times(1)).syncMap("atob", "B", "mapName");
+    }
+
+    @Test
+    public void syncAllSuccess() throws Exception {
+        UUID expectedUuid = UUID.randomUUID();
+        when(wanServiceMock.syncAllMaps("atob", "B"))
+                .thenReturn(expectedUuid);
+        String result = communicator.syncMapsOverWAN("atob", "B");
+        assertSuccess(result);
+        assertUuid(result, expectedUuid);
+        verify(wanServiceMock, times(1)).syncAllMaps("atob", "B");
     }
 
     @Test
@@ -114,6 +144,24 @@ public class WanRESTTest extends HazelcastTestSupport {
         verify(wanServiceMock, times(1)).consistencyCheck("atob", "B", "mapName");
     }
 
+    @Test
+    public void syncFail() throws Exception {
+        doThrow(new RuntimeException("Error occurred"))
+                .when(wanServiceMock)
+                .syncMap("atob", "B", "mapName");
+        assertFail(communicator.syncMapOverWAN("atob", "B", "mapName"));
+        verify(wanServiceMock, times(1)).syncMap("atob", "B", "mapName");
+    }
+
+    @Test
+    public void syncAllFail() throws Exception {
+        doThrow(new RuntimeException("Error occurred"))
+                .when(wanServiceMock)
+                .syncAllMaps("atob", "B");
+        assertFail(communicator.syncMapsOverWAN("atob", "B"));
+        verify(wanServiceMock, times(1)).syncAllMaps("atob", "B");
+    }
+
     @Override
     protected Config getConfig() {
         Config config = smallInstanceConfig()
@@ -140,5 +188,10 @@ public class WanRESTTest extends HazelcastTestSupport {
     private void assertSuccess(String jsonResult) {
         JsonObject result = Json.parse(jsonResult).asObject();
         assertEquals("success", result.getString("status", null));
+    }
+
+    private void assertUuid(String jsonResult, UUID expectedUuid) {
+        JsonObject result = Json.parse(jsonResult).asObject();
+        assertEquals(expectedUuid.toString(), result.getString("uuid", null));
     }
 }
