@@ -15,6 +15,7 @@ public class PlusBiCallExpression<T> extends BiCallExpression<T> {
     /** Expected type of the second operand. */
     private transient ExpressionType type2;
 
+    /** Optimized expression. */
     private transient PlusBiOpt<T> opt;
 
     public PlusBiCallExpression() {
