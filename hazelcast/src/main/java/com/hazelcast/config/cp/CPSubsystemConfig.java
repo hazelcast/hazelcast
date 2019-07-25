@@ -281,6 +281,8 @@ public class CPSubsystemConfig {
         this.sessionHeartbeatIntervalSeconds = config.sessionHeartbeatIntervalSeconds;
         this.failOnIndeterminateOperationState = config.failOnIndeterminateOperationState;
         this.missingCPMemberAutoRemovalSeconds = config.missingCPMemberAutoRemovalSeconds;
+        this.persistenceEnabled = config.persistenceEnabled;
+        this.baseDir = config.baseDir;
         for (CPSemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
             this.semaphoreConfigs.put(semaphoreConfig.getName(), new CPSemaphoreConfig(semaphoreConfig));
         }
