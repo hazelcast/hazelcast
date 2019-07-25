@@ -256,6 +256,19 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return metadataGroupIdRef.get();
     }
 
+    public void setMetadataGroupId(RaftGroupId groupId) {
+        if (groupId.equals(getMetadataGroupId())) {
+            return;
+        }
+        if (getMetadataGroupId().seed() != 0
+            || initializationStatus != MetadataRaftGroupInitStatus.IN_PROGRESS
+            || !initializedCPMembers.isEmpty()
+            || !groups.isEmpty()) {
+            throw new IllegalStateException("Metadata groupId is not allowed to be set!");
+        }
+        metadataGroupIdRef.set(groupId);
+    }
+
     long getGroupIdSeed() {
         return getMetadataGroupId().seed();
     }

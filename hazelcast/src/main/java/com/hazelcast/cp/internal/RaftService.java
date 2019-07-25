@@ -269,8 +269,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         // we should clear the current raft state before resetting the metadata manager
         resetLocalRaftState();
 
-        metadataGroupManager.restart(seed);
         getCpPersistenceService().reset();
+        metadataGroupManager.restart(seed);
         logger.info("CP state is reset with groupId seed: " + seed);
     }
 
