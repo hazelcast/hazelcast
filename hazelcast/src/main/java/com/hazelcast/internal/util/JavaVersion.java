@@ -104,7 +104,9 @@ public enum JavaVersion implements JavaMajorVersion {
             versionClass = Class.forName("java.lang.Runtime$Version");
         } catch (ClassNotFoundException e) {
             // if Runtime is present but Runtime.Version doesn't, it's Java8 for sure
-            logger.info("Detected runtime version: Java 8");
+            if (logger.isFineEnabled()) {
+                logger.fine("Detected runtime version: Java 8");
+            }
             return JAVA_8;
         }
 
@@ -114,7 +116,10 @@ public enum JavaVersion implements JavaMajorVersion {
             Method majorMethod = versionClass.getDeclaredMethod("major");
             int majorVersion = (int) majorMethod.invoke(versionObj);
 
-            logger.info("Detected runtime version: Java " + majorVersion);
+            if (logger.isFineEnabled()) {
+                logger.fine("Detected runtime version: Java " + majorVersion);
+            }
+
             JavaVersion foundVersion = valueOf(majorVersion);
             if (foundVersion != null) {
                 return foundVersion;
