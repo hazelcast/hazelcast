@@ -27,4 +27,5 @@ public interface PhysicalNodeVisitor {
     void onSortNode(SortPhysicalNode node);
     void onReceiveSortMergeNode(ReceiveSortMergePhysicalNode node);
     void onProjectNode(ProjectPhysicalNode node);
+    void onFilterNode(FilterPhysicalNode node);
 }

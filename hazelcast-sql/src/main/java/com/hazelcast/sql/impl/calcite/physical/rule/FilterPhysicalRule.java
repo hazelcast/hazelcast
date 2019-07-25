@@ -14,37 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.logical.rule;
+package com.hazelcast.sql.impl.calcite.physical.rule;
 
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.logical.LogicalFilter;
 
-public class FilterLogicalRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new FilterLogicalRule();
+/**
+ * This rule converts logical filter into physical filter. Physical projection inherits distribution of the
+ * underlying operator.
+ */
+public class FilterPhysicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new FilterPhysicalRule();
 
-    private FilterLogicalRule() {
+    private FilterPhysicalRule() {
         super(
-            RuleUtils.single(LogicalFilter.class, Convention.NONE),
-            RelFactories.LOGICAL_BUILDER,
-            FilterLogicalRule.class.getSimpleName()
+            RuleUtils.parentChild(FilterLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+            FilterPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        LogicalFilter filter = call.rel(0);
+        FilterLogicalRel filter = call.rel(0);
         RelNode input = filter.getInput();
 
-        FilterLogicalRel newFilter = new FilterLogicalRel(
+        FilterPhysicalRel newFilter = new FilterPhysicalRel(
             filter.getCluster(),
-            RuleUtils.toLogicalConvention(filter.getTraitSet()),
-            RuleUtils.toLogicalInput(input),
+            RuleUtils.toPhysicalConvention(filter.getTraitSet(), PhysicalDistributionTrait.ANY),
+            RuleUtils.toPhysicalInput(input, PhysicalDistributionTrait.ANY),
             filter.getCondition()
         );
 

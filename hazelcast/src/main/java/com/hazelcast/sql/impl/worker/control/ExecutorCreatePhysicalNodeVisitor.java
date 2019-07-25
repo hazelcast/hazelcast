@@ -21,6 +21,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.QueryId;
  import com.hazelcast.sql.impl.exec.EmptyScanExec;
  import com.hazelcast.sql.impl.exec.Exec;
+ import com.hazelcast.sql.impl.exec.FilterExec;
  import com.hazelcast.sql.impl.exec.MapScanExec;
  import com.hazelcast.sql.impl.exec.ProjectExec;
  import com.hazelcast.sql.impl.exec.ReceiveExec;
@@ -32,6 +33,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.mailbox.Outbox;
  import com.hazelcast.sql.impl.mailbox.SingleInbox;
  import com.hazelcast.sql.impl.mailbox.StripedInbox;
+ import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
  import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
  import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
  import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
@@ -242,6 +244,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onProjectNode(ProjectPhysicalNode node) {
         Exec res = new ProjectExec(stack.remove(0), node.getProjections());
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onFilterNode(FilterPhysicalNode node) {
+        Exec res = new FilterExec(stack.remove(0), node.getCondition());
 
         stack.add(res);
     }

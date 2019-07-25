@@ -25,6 +25,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.commons.codec.language.bm.Rule;
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
@@ -45,20 +46,14 @@ public class ProjectPhysicalRule extends RelOptRule {
         ProjectLogicalRel project = call.rel(0);
         RelNode input = project.getInput();
 
-        RelTraitSet traits = input.getTraitSet()
-            .plus(HazelcastConventions.PHYSICAL)
-            .plus(PhysicalDistributionTrait.ANY);
-
-        RelNode physicalInput = convert(input, traits.simplify());
-
-        ProjectPhysicalRel physicalProject = new ProjectPhysicalRel(
+        ProjectPhysicalRel newProject = new ProjectPhysicalRel(
             project.getCluster(),
-            project.getTraitSet().plus(HazelcastConventions.PHYSICAL).plus(PhysicalDistributionTrait.ANY),
-            physicalInput,
+            RuleUtils.toPhysicalConvention(project.getTraitSet(), PhysicalDistributionTrait.ANY),
+            RuleUtils.toPhysicalInput(input, PhysicalDistributionTrait.ANY),
             project.getProjects(),
             project.getRowType()
         );
 
-        call.transformTo(physicalProject);
+        call.transformTo(newProject);
     }
 }

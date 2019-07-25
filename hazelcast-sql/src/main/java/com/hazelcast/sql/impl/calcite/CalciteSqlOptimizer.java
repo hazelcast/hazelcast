@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rule.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.MapScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
@@ -53,7 +54,6 @@ import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
@@ -257,21 +257,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,
+            FilterPhysicalRule.INSTANCE,
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
-        RelTraitSet traits = logicalRel.getTraitSet()
-            .plus(HazelcastConventions.PHYSICAL)
-            .plus(PhysicalDistributionTrait.SINGLETON);
-
-        final Program program = Programs.of(rules);
+        Program program = Programs.of(rules);
 
         RelNode res = program.run(
             planner,
             logicalRel,
-            traits,
+            RuleUtils.toPhysicalConvention(logicalRel.getTraitSet(), PhysicalDistributionTrait.SINGLETON),
             ImmutableList.of(),
             ImmutableList.of()
         );

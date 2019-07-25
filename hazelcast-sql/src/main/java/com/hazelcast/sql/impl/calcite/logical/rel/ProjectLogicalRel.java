@@ -38,6 +38,6 @@ public class ProjectLogicalRel extends Project implements LogicalRel {
 
     @Override
     public Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
-        return new ProjectLogicalRel(getCluster(), traitSet, input, exps, rowType);
+        return new ProjectLogicalRel(getCluster(), traitSet, input, getProjects(), rowType);
     }
 }

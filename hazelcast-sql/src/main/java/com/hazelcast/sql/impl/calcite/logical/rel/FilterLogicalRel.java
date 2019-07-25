@@ -23,8 +23,13 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rex.RexNode;
 
 public class FilterLogicalRel extends Filter implements LogicalRel {
-    public FilterLogicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode child, RexNode condition) {
-        super(cluster, traits, child, condition);
+    public FilterLogicalRel(
+        RelOptCluster cluster,
+        RelTraitSet traits,
+        RelNode input,
+        RexNode condition
+    ) {
+        super(cluster, traits, input, condition);
     }
 
     @Override

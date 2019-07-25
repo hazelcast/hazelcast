@@ -29,6 +29,14 @@ public class CallExpression<T> implements Expression<T> {
         this.operands = operands;
     }
 
+    public int getOperator() {
+        return operator;
+    }
+
+    public List<Expression> getOperands() {
+        return operands;
+    }
+
     @Override
     public T eval(QueryContext ctx, Row row) {
         T res;

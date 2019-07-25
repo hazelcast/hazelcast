@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 
 public class SortPhysicalRule extends RelOptRule {
@@ -42,30 +41,18 @@ public class SortPhysicalRule extends RelOptRule {
         SortLogicalRel sort = call.rel(0);
         RelNode input = sort.getInput();
 
-        RelTraitSet inputTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastConventions.PHYSICAL)
-            .plus(PhysicalDistributionTrait.ANY);
-
-        // Current implementation doesn't enforce any traits on child data sources.
-        // Resulting tree is: Merge (SINGLETON) <- Scan (ANY) <- Input (ANY).
-        // This way we do not produce addiotional exchanges.
         SortPhysicalRel newSort = new SortPhysicalRel(
             sort.getCluster(),
-            sort.getTraitSet().plus(HazelcastConventions.PHYSICAL).plus(PhysicalDistributionTrait.ANY),
-            convert(input, inputTraits),
+            RuleUtils.toPhysicalConvention(sort.getTraitSet(), PhysicalDistributionTrait.ANY),
+            RuleUtils.toPhysicalInput(input, PhysicalDistributionTrait.ANY),
             sort.getCollation(),
             sort.offset,
             sort.fetch
         );
 
-        RelTraitSet exchangeTraits = RelTraitSet.createEmpty()
-            .plus(HazelcastConventions.PHYSICAL)
-            .plus(PhysicalDistributionTrait.SINGLETON)
-            .plus(sort.getCollation());
-
         SortMergeExchangePhysicalRel newSortExchange = new SortMergeExchangePhysicalRel(
             sort.getCluster(),
-            exchangeTraits,
+            RuleUtils.toPhysicalConvention(sort.getTraitSet(), PhysicalDistributionTrait.SINGLETON),
             newSort,
             sort.getCollation()
         );

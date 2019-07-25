@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 
 /**
  * No-op optimizer.

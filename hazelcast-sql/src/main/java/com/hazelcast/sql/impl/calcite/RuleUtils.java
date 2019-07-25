@@ -1,9 +1,14 @@
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
+import org.apache.calcite.plan.RelTrait;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+
+import static org.apache.calcite.plan.RelOptRule.convert;
 
 /**
  * Static utility classes for rules.
@@ -33,6 +38,84 @@ public class RuleUtils {
         RelOptRuleOperand childOperand = RelOptRule.operand(childCls, RelOptRule.any());
 
         return RelOptRule.operand(cls, convention, RelOptRule.some(childOperand));
+    }
+
+    /**
+     * Add a single trait to the trait set.
+     *
+     * @param traitSet Original trait set.
+     * @param trait Trait to add.
+     * @return Resulting trait set.
+     */
+    public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait) {
+        return traitSet.plus(trait).simplify();
+    }
+
+    /**
+     * Add two traits to the trait set.
+     *
+     * @param traitSet Original trait set.
+     * @param trait1 Trait to add.
+     * @param trait2 Trait to add.
+     * @return Resulting trait set.
+     */
+    public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait1, RelTrait trait2) {
+        return traitSet.plus(trait1).plus(trait2).simplify();
+    }
+
+    /**
+     * Add three traits to the trait set.
+     *
+     * @param traitSet Original trait set.
+     * @param trait1 Trait to add.
+     * @param trait2 Trait to add.
+     * @param trait3 Trait to add.
+     * @return Resulting trait set.
+     */
+    public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait1, RelTrait trait2, RelTrait trait3) {
+        return traitSet.plus(trait1).plus(trait2).plus(trait3).simplify();
+    }
+
+    /**
+     * Convert the given trait set to logical convention.
+     *
+     * @param traitSet Original trait set.
+     * @return New trait set with logical convention.
+     */
+    public static RelTraitSet toLogicalConvention(RelTraitSet traitSet) {
+        return traitPlus(traitSet, HazelcastConventions.LOGICAL);
+    }
+
+    /**
+     * Convert the given input into logical input.
+     *
+     * @param input Original input.
+     * @return Logical input.
+     */
+    public static RelNode toLogicalInput(RelNode input) {
+        return convert(input, toLogicalConvention(input.getTraitSet()));
+    }
+
+    /**
+     * Convert the given trait set to physical convention.
+     *
+     * @param traitSet Original trait set.
+     * @param distribution Distribution.
+     * @return New trait set with physical convention and provided distribution.
+     */
+    public static RelTraitSet toPhysicalConvention(RelTraitSet traitSet, PhysicalDistributionTrait distribution) {
+        return traitPlus(traitSet, HazelcastConventions.PHYSICAL, distribution);
+    }
+
+    /**
+     * Convert the given input into physical input.
+     *
+     * @param input Original input.
+     * @param distribution Distribution.
+     * @return Logical input.
+     */
+    public static RelNode toPhysicalInput(RelNode input, PhysicalDistributionTrait distribution) {
+        return convert(input, toPhysicalConvention(input.getTraitSet(), distribution));
     }
 
     private RuleUtils() {

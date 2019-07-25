@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
@@ -51,7 +50,7 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         super(
             RuleUtils.parentChild(LogicalProject.class, LogicalTableScan.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
-            "ProjectIntoScanLogicalRule"
+            ProjectIntoScanLogicalRule.class.getSimpleName()
         );
     }
 
@@ -72,8 +71,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         projectFieldVisitor.done(scan.getCluster().getTypeFactory());
 
         // Construct new scan operator with the given type.
-        MapScanLogicalRel newScan = new MapScanLogicalRel(scan.getCluster(),
-            scan.getTraitSet().plus(HazelcastConventions.LOGICAL),
+        MapScanLogicalRel newScan = new MapScanLogicalRel(
+            scan.getCluster(),
+            RuleUtils.toLogicalConvention(scan.getTraitSet()),
             scan.getTable(),
             projectFieldVisitor.getNewScanDataType()
         );
@@ -89,8 +89,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
             newProjects.add(newProjectExp);
         }
 
-        ProjectLogicalRel newProject = new ProjectLogicalRel(project.getCluster(),
-            project.getTraitSet().plus(HazelcastConventions.LOGICAL),
+        ProjectLogicalRel newProject = new ProjectLogicalRel(
+            project.getCluster(),
+            RuleUtils.toLogicalConvention(project.getTraitSet()),
             newScan,
             newProjects,
             project.getRowType()

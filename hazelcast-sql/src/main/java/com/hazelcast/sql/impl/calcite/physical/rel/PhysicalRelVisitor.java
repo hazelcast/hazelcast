@@ -26,4 +26,5 @@ public interface PhysicalRelVisitor {
     void onSortMergeExchange(SortMergeExchangePhysicalRel rel);
     void onSort(SortPhysicalRel rel);
     void onProject(ProjectPhysicalRel rel);
+    void onFilter(FilterPhysicalRel rel);
 }

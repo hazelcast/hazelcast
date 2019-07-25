@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.expression.Predicate;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
@@ -37,7 +38,7 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     private int curBatchRowCnt = -1;
 
     /** Current row. */
-    private Row curRow;
+    private RowBatch curRow;
 
     public FilterExec(Exec upstream, Predicate filter) {
         super(upstream);
@@ -47,10 +48,9 @@ public class FilterExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
+        // Cycle is needed because some of the rows will be filtered, so we do not how many upstream rows to consume.
         while (true) {
-            // No batch -> need to fetch one.
             if (curBatch == null) {
-                // Already fetched everything -> return.
                 if (upstreamDone)
                     return IterationResult.FETCHED_DONE;
 
@@ -62,7 +62,7 @@ public class FilterExec extends AbstractUpstreamAwareExec {
 
                         if (batchRowCnt > 0) {
                             curBatch = batch;
-                            curBatchPos = -1;
+                            curBatchPos = 0;
                             curBatchRowCnt = batchRowCnt;
                         }
 
@@ -76,54 +76,72 @@ public class FilterExec extends AbstractUpstreamAwareExec {
                 }
             }
 
-            if (curBatch != null) {
-                IterationResult res = advanceCurrentBatch();
+            IterationResult res = advanceCurrentBatch();
 
-                if (res != null)
-                    return res;
-            }
+            if (res != null)
+                return res;
         }
     }
 
     /**
      * Advance position in the current batch
      *
-     * @return Iteration result is succeeded, {@code null} if failed.
+     * @return Iteration result is succeeded, {@code null} if all rows from the given batch were filtered.
      */
     private IterationResult advanceCurrentBatch() {
-        // Loop until the first matching row is found.
-        assert curBatch != null;
+        if (curBatch == null) {
+            assert upstreamDone;
+
+            curRow = EmptyRowBatch.INSTANCE;
+
+            return IterationResult.FETCHED_DONE;
+        }
 
         RowBatch curBatch0 = curBatch;
         int curBatchPos0 = curBatchPos;
 
         while (true) {
-            curBatchPos0++;
+            Row candidateRow = curBatch0.getRow(curBatchPos0);
 
-            if (curBatchPos0 == curBatchRowCnt) {
-                // Shifted behind -> nullify and return null.
+            boolean matches = filter.eval(ctx, candidateRow);
+            boolean last = curBatchPos0 + 1 == curBatchRowCnt;
+
+            // Nullify state if this was the last entry in the upstream batch.
+            if (last) {
                 curBatch = null;
                 curBatchPos = -1;
                 curBatchRowCnt = -1;
-
-                curRow = null;
-
-                return upstreamDone ? IterationResult.FETCHED_DONE : null;
             }
-            else {
-                // Shifted successfully -> check filter match.
-                Row candidateRow = curBatch0.getRow(curBatchPos0);
 
-                if (filter.eval(ctx, candidateRow)) {
+            if (matches) {
+                curRow = candidateRow;
+
+                if (last)
+                    // Return DONE if the upstream is not going to provide more data.
+                    return upstreamDone ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                else {
+                    // Advance batch position for the next call.
                     curBatchPos = curBatchPos0;
-                    curRow = candidateRow;
 
-                    if (curBatchPos0 + 1 == curBatchRowCnt && upstreamDone)
-                        return IterationResult.FETCHED_DONE;
-                    else
-                        return IterationResult.FETCHED;
+                    // This is not the last entry.
+                    return IterationResult.FETCHED;
                 }
             }
+            else {
+                if (last) {
+                    if (upstreamDone) {
+                        // Set empty batch for the downstream operator.
+                        curRow = EmptyRowBatch.INSTANCE;
+
+                        return IterationResult.FETCHED_DONE;
+                    }
+                    else
+                        // Request next batch.
+                        return null;
+                }
+            }
+
+            curBatchPos0++;
         }
     }
 

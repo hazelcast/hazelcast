@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
@@ -28,6 +29,8 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
+import com.hazelcast.sql.impl.expression.Predicate;
+import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
@@ -99,7 +102,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     public void onMapScan(MapScanPhysicalRel rel) {
         String mapName = rel.getTable().getQualifiedName().get(0);
 
-        // TODO: Use expressions instead.
         List<String> fieldNames = rel.getRowType().getFieldNames();
 
         List<Expression> projection = new ArrayList<>();
@@ -110,7 +112,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
             mapName,    // Scan
             projection, // Project
-            null        // Filter:
+            null        // Filter
         );
 
         pushUpstream(mapScanNode);
@@ -214,6 +216,20 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         ProjectPhysicalNode projectNode = new ProjectPhysicalNode(upstreamNode, convertedProjects);
 
         pushUpstream(projectNode);
+    }
+
+    @Override
+    public void onFilter(FilterPhysicalRel rel) {
+        PhysicalNode upstreamNode = pollSingleUpstream();
+
+        RexNode condition = rel.getCondition();
+        Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+        assert convertedCondition instanceof Predicate;
+
+        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Predicate)convertedCondition);
+
+        pushUpstream(filterNode);
     }
 
     /**

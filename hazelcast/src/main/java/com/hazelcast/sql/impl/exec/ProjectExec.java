@@ -80,11 +80,6 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
         return advanceCurrentBatch();
     }
 
-    @Override
-    public RowBatch currentBatch() {
-        return curRow;
-    }
-
     /**
      * Advance currently available batch.
      *
@@ -101,7 +96,6 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
             return IterationResult.FETCHED_DONE;
         }
 
-        // Prepare the next row.
         Row upstreamRow = curBatch.getRow(curBatchPos);
 
         HeapRow curRow0 = new HeapRow(projections.size());
@@ -116,7 +110,6 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
         curRow = curRow0;
 
-        // Advance position.
         if (++curBatchPos == curBatchRowCnt) {
             curBatch = null;
             curBatchPos = -1;
@@ -127,5 +120,10 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
         }
 
         return IterationResult.FETCHED;
+    }
+
+    @Override
+    public RowBatch currentBatch() {
+        return curRow;
     }
 }
