@@ -97,15 +97,8 @@ public enum JavaVersion implements JavaMajorVersion {
 
     private static JavaMajorVersion detectCurrentVersion() {
         final ILogger logger = Logger.getLogger(JavaVersion.class);
-        final Class runtimeClass;
+        final Class runtimeClass = Runtime.class;
         final Class versionClass;
-
-        try {
-            runtimeClass = Class.forName("java.lang.Runtime");
-        } catch (ClassNotFoundException e) {
-            logger.warning("Unable to detect Java version, falling back to Java 8", e);
-            return JAVA_8;
-        }
 
         try {
             versionClass = Class.forName("java.lang.Runtime$Version");
@@ -128,7 +121,6 @@ public enum JavaVersion implements JavaMajorVersion {
             }
 
             return new FutureJavaVersion(majorVersion);
-
         } catch (Exception e) {
             logger.warning("Unable to detect Java version, falling back to Java 8", e);
             return JAVA_8;
