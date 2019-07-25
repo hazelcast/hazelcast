@@ -17,12 +17,12 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
@@ -755,11 +755,14 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.backpressure.asyncbackup.lowwatermark", 1024 * 1024);
 
     public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK
-            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.highwatermark", 5*1024 * 1024);
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.highwatermark", 5 * 1024 * 1024);
 
-    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_DURATION
-            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.duration", 5000);
+    public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_WINDOW_MILLIS
+            = new HazelcastProperty("hazelcast.backpressure.asyncbackup.window.millis", 5000);
 
+    /**
+     * Set to 0 or negative value, to disable async backup overload checking.
+     */
     public static final HazelcastProperty BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS
             = new HazelcastProperty("hazelcast.backpressure.asyncbackup.check.interval.millis", 100);
 
