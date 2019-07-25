@@ -22,6 +22,7 @@ import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -52,7 +53,7 @@ public interface RaftStateStore extends Closeable {
      * the given term. When this method returns, all the provided data has
      * become durable.
      */
-    void persistTerm(int term, @Nonnull RaftEndpoint votedFor) throws IOException;
+    void persistTerm(int term, @Nullable RaftEndpoint votedFor) throws IOException;
 
     /**
      * Persists the given log entry.
