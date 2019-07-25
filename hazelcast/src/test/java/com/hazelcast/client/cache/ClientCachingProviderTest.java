@@ -46,7 +46,7 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class ClientCachingProviderTest extends CachingProviderTest {
 
-    private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-jcache.xml";
+    private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-client-jcache.xml";
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
     @Before
