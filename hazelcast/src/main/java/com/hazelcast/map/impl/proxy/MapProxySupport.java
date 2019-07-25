@@ -1141,7 +1141,7 @@ abstract class MapProxySupport<K, V>
     }
 
     public <R> ICompletableFuture<Map<K, R>> submitToKeysInternal(Set<K> keys, Set<Data> dataKeys,
-                                                                  EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                                                  EntryProcessor<K, V, R> entryProcessor) {
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
@@ -1177,7 +1177,7 @@ abstract class MapProxySupport<K, V>
     }
 
     public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                                 EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                                                 EntryProcessor<K, V, R> entryProcessor,
                                                                  ExecutionCallback<? super R> callback) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(key);

@@ -211,7 +211,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      * @return result key set of the query.
      * @throws NullPointerException if the specified predicate is null.
      */
-    Set<K> keySet(Predicate predicate);
+    Set<K> keySet(Predicate<K, V> predicate);
 
     /**
      * Returns a collection clone of the values contained in this map.
@@ -228,5 +228,5 @@ public interface BaseMap<K, V> extends DistributedObject {
      * @return result value collection of the query.
      * @throws NullPointerException if the predicate is null
      */
-    Collection<V> values(Predicate predicate);
+    Collection<V> values(Predicate<K, V> predicate);
 }
