@@ -1,9 +1,9 @@
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.expression.CallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.PlusBiCallExpression;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -18,6 +18,7 @@ import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 
 import java.util.ArrayList;
@@ -74,7 +75,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             }
         }
 
-        return new CallExpression(convertedOperator, convertedOperands);
+        if (convertedOperator == CallOperator.PLUS) {
+            return new PlusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
+        }
+        else
+            // TODO: Proper exception.
+            throw new UnsupportedOperationException("Operator is not supported: " + SqlKind.PLUS);
     }
 
     @Override
