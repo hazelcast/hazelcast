@@ -24,10 +24,12 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateLoader;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.function.Function;
+import com.hazelcast.util.function.IntFunction;
 import org.junit.Assert;
 
 import java.util.Arrays;
@@ -59,12 +61,14 @@ public class LocalRaftGroup {
         private int nodeCount;
         private RaftAlgorithmConfig config;
         private boolean appendNopEntryOnLeaderElection;
+        private IntFunction<TestRaftEndpoint> endpointFactory;
         private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory = new IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore>() {
             @Override
             public RaftStateStore apply(RaftEndpoint endpoint, RaftAlgorithmConfig config) {
                 return NopRaftStateStore.INSTANCE;
             }
         };
+        private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory;
 
         public LocalRaftGroupBuilder(int nodeCount) {
             this(nodeCount, new RaftAlgorithmConfig());
@@ -85,9 +89,19 @@ public class LocalRaftGroup {
             return this;
         }
 
+        public LocalRaftGroupBuilder setRaftStateLoaderFactory(IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
+            this.raftStateLoaderFactory = raftStateLoaderFactory;
+            return this;
+        }
+
+        public LocalRaftGroupBuilder setEndpointFactory(IntFunction<TestRaftEndpoint> endpointFactory) {
+            this.endpointFactory = endpointFactory;
+            return this;
+        }
+
         public LocalRaftGroup build() {
             return new LocalRaftGroup(nodeCount, config, RaftDataService.SERVICE_NAME, RaftDataService.class,
-                    appendNopEntryOnLeaderElection, raftStateStoreFactory);
+                    appendNopEntryOnLeaderElection, endpointFactory, raftStateStoreFactory, raftStateLoaderFactory);
         }
 
         public static LocalRaftGroup newGroup(int nodeCount) {
@@ -98,6 +112,8 @@ public class LocalRaftGroup {
             return new LocalRaftGroupBuilder(nodeCount, config).build();
         }
     }
+
+    static final int FIRST_RAFT_NODE_PORT = 5000;
 
 
     private final CPGroupId groupId;
@@ -111,6 +127,13 @@ public class LocalRaftGroup {
     private RaftNodeImpl[] nodes;
     private int createdNodeCount;
     private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory;
+    private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory;
+    private IntFunction<TestRaftEndpoint> endpointFactory = new IntFunction<TestRaftEndpoint>() {
+        @Override
+        public TestRaftEndpoint apply(int port) {
+            return newRaftMember(port);
+        }
+    };
 
     public LocalRaftGroup(int size) {
         this(size, new RaftAlgorithmConfig());
@@ -123,12 +146,14 @@ public class LocalRaftGroup {
     public LocalRaftGroup(int size, RaftAlgorithmConfig raftAlgorithmConfig,
                           String serviceName, Class<? extends SnapshotAwareService> serviceClazz,
                           boolean appendNopEntryOnLeaderElection) {
-        this(size, raftAlgorithmConfig, serviceName, serviceClazz, appendNopEntryOnLeaderElection, null);
+        this(size, raftAlgorithmConfig, serviceName, serviceClazz, appendNopEntryOnLeaderElection, null, null, null);
     }
 
-    public LocalRaftGroup(int size, RaftAlgorithmConfig raftAlgorithmConfig,
-                          String serviceName, Class<? extends SnapshotAwareService> serviceClazz,
-                          boolean appendNopEntryOnLeaderElection, IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
+    public LocalRaftGroup(int size, RaftAlgorithmConfig raftAlgorithmConfig, String serviceName,
+                          Class<? extends SnapshotAwareService> serviceClazz, boolean appendNopEntryOnLeaderElection,
+                          IntFunction<TestRaftEndpoint> endpointFactory,
+                          IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory,
+                          IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
         initialMembers = new RaftEndpoint[size];
         members = new RaftEndpoint[size];
         integrations = new LocalRaftIntegration[size];
@@ -137,7 +162,13 @@ public class LocalRaftGroup {
         this.serviceName = serviceName;
         this.serviceClazz = serviceClazz;
         this.appendNopEntryOnLeaderElection = appendNopEntryOnLeaderElection;
+
+        if (endpointFactory != null) {
+            this.endpointFactory = endpointFactory;
+        }
+
         this.raftStateStoreFactory = raftStateStoreFactory;
+        this.raftStateLoaderFactory = raftStateLoaderFactory;
 
         for (; createdNodeCount < size; createdNodeCount++) {
             LocalRaftIntegration integration = createNewLocalRaftIntegration();
@@ -149,18 +180,42 @@ public class LocalRaftGroup {
         nodes = new RaftNodeImpl[size];
         for (int i = 0; i < size; i++) {
             LocalRaftIntegration integration = integrations[i];
+
             if (raftStateStoreFactory == null) {
-                nodes[i] = newRaftNode(groupId, members[i], asList(members), raftAlgorithmConfig, integration);
+                if (raftStateLoaderFactory != null) {
+                    try {
+                        RaftStateLoader loader = raftStateLoaderFactory.apply(members[i], raftAlgorithmConfig);
+                        RestoredRaftState state = loader.load();
+                        assertNotNull(state);
+                        nodes[i] = restoreRaftNode(groupId, state, raftAlgorithmConfig, integration);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    nodes[i] = newRaftNode(groupId,  members[i], asList(members), raftAlgorithmConfig, integration);
+                }
+
             } else {
                 RaftStateStore raftStateStore = raftStateStoreFactory.apply(members[i], raftAlgorithmConfig);
-                nodes[i] = newRaftNode(groupId, members[i], asList(members), raftAlgorithmConfig, integration, raftStateStore);
+                if (raftStateLoaderFactory != null) {
+                    try {
+                        RaftStateLoader loader = raftStateLoaderFactory.apply(members[i], raftAlgorithmConfig);
+                        RestoredRaftState state = loader.load();
+                        assertNotNull(state);
+                        nodes[i] = restoreRaftNode(groupId, state, raftAlgorithmConfig, integration, raftStateStore);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    nodes[i] = newRaftNode(groupId, members[i], asList(members), raftAlgorithmConfig, integration, raftStateStore);
+                }
             }
         }
 
     }
 
     private LocalRaftIntegration createNewLocalRaftIntegration() {
-        TestRaftEndpoint endpoint = newRaftMember(5000 + createdNodeCount);
+        TestRaftEndpoint endpoint = endpointFactory.apply(FIRST_RAFT_NODE_PORT + createdNodeCount);
         return new LocalRaftIntegration(endpoint, groupId, createServiceInstance(), appendNopEntryOnLeaderElection);
     }
 
@@ -438,11 +493,26 @@ public class LocalRaftGroup {
         assertThat(indexes.length, greaterThan(0));
         assertThat(indexes.length, lessThan(size()));
 
-        int[] firstSplit = new int[size() - indexes.length];
+        int runningMemberCount = 0;
+        for (int i = 0; i < size(); i++) {
+            if (getIntegration(i).isShutdown()) {
+                continue;
+            }
+            runningMemberCount++;
+        }
+
+        int[] firstSplit = new int[runningMemberCount - indexes.length];
         int[] secondSplit = indexes;
+
+        if (firstSplit.length == 0) {
+            return;
+        }
 
         int ix = 0;
         for (int i = 0; i < size(); i++) {
+            if (getIntegration(i).isShutdown()) {
+                continue;
+            }
             if (Arrays.binarySearch(indexes, i) < 0) {
                 firstSplit[ix++] = i;
             }
@@ -450,7 +520,6 @@ public class LocalRaftGroup {
 
         split(secondSplit, firstSplit);
         split(firstSplit, secondSplit);
-
     }
 
     private void split(int[] firstSplit, int[] secondSplit) {
