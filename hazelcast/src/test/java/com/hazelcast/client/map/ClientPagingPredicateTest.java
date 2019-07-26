@@ -50,6 +50,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -444,6 +445,32 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testCustomComparatorAbleToActOnKeysAndValues() {
+        Set<Integer> keys = map.keySet(Predicates.pagingPredicate(new CustomComparator(), pageSize));
+        assertEquals(pageSize, keys.size());
+        int counter = 0;
+        for (Integer key : keys) {
+            assertEquals(counter++, (int) key);
+        }
+
+        Collection<Integer> values = map.values(Predicates.pagingPredicate(new CustomComparator(), pageSize));
+        assertEquals(pageSize, values.size());
+        counter = 0;
+        for (Integer value : values) {
+            assertEquals(counter++, (int) value);
+        }
+
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet(Predicates.pagingPredicate(new CustomComparator(), pageSize));
+        assertEquals(pageSize, entries.size());
+        counter = 0;
+        for (Map.Entry<Integer, Integer> entry : entries) {
+            assertEquals(counter, (int) entry.getKey());
+            assertEquals(counter, (int) entry.getValue());
+            ++counter;
+        }
+    }
+
     private static class TestComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {
 
         int ascending = 1;
@@ -570,6 +597,19 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
         @Override
         public int compareTo(Employee employee) {
             return id - employee.id;
+        }
+
+    }
+
+    static class CustomComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {
+
+        @Override
+        public int compare(Map.Entry<Integer, Integer> a, Map.Entry<Integer, Integer> b) {
+            assertNotNull(a.getKey());
+            assertNotNull(a.getValue());
+            assertNotNull(b.getKey());
+            assertNotNull(b.getValue());
+            return a.getKey() - b.getValue();
         }
 
     }
