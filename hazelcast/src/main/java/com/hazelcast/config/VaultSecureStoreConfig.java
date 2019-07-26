@@ -16,57 +16,64 @@
 
 package com.hazelcast.config;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * HashiCorp Vault Secure Store configuration.
  * <p>
- * The Vault Secure Store uses the Vault REST API to communicate with Vault. The Vault Secure Store
- * expects the encryption keys to be stored as key/value pairs under the same secret path. For each
- * key/value pair, the key represents the name of the encryption key and the value a Base64-encoded
- * value of the key. For instance, the following invocation of the Vault command-line client:
- * <pre>
- * vault kv put hz/hotrestart/cluster1 current=@current.base64 prev=@prev.base64
- * </pre>
- * results in two keys (named "current" and "prev") to be stored under the secret path
- * "hz/hotrestart/cluster1".
+ * The Vault Secure Store uses the Vault REST API to communicate with Vault. The relevant
+ * configuration properties are the Vault REST server address; the secret path; the
+ * authentication token; and, optionally, the SSL/TLS configuration for HTTPS support.
  * <p>
- * The Vault Secure Store can communicate with the Vault server using HTTP or HTTPS. For the latter,
- * appropriate SSL/TLS configuration must be provided.
+ * Only the KV secrets engine (see https://www.vaultproject.io/docs/secrets/kv/index.html)
+ * is supported.
+ * <p>
+ * The encryption key is expected to be stored at the specified secret path and represented
+ * as a single key/value pair under the specified secret path. The key/value pair is
+ * expected to be in the following format:
+ * <pre>
+ * name=Base64-encoded-data
+ * </pre>
+ * where {@code name} can be an arbitrary string. Multiple key/value pairs under the same
+ * secret path are not supported.
+ * <p>
+ * If KV secrets engine V2 is used, the Vault Secure Store is able to retrieve the
+ * available previous versions of the encryption keys.
+ * <p>
+ * Changes to the encryption key can be detected automatically if polling
+ * (see {@link #setPollingInterval(int)}) is enabled.
  */
 public class VaultSecureStoreConfig extends SecureStoreConfig {
 
     /**
-     * The HashiCorp Vault secret engine version.
+     * Default interval (in seconds) for polling for changes to the encryption key: 0
+     * (polling disabled).
      */
-    public enum SecretEngineVersion {
-        /**
-         * Version 1.
-         */
-        V1,
-        /**
-         * Version 2.
-         */
-        V2
-    }
-
-    /**
-     * The default secret engine version to use ({@link SecretEngineVersion#V2}).
-     */
-    public static final SecretEngineVersion DEFAULT_SECRET_ENGINE_VERSION = SecretEngineVersion.V2;
+    public static final int DEFAULT_POLLING_INTERVAL = 0;
 
     private String address;
     private String secretPath;
-    private SecretEngineVersion secretEngineVersion = DEFAULT_SECRET_ENGINE_VERSION;
     private String token;
-    private String namespace;
     private SSLConfig sslConfig;
-    private List<Entry> entries = new ArrayList<>();
+    private int pollingInterval = DEFAULT_POLLING_INTERVAL;
 
+    /**
+     * Creates a new Vault Secure Store configuration.
+     * @param address the Vault server address
+     * @param secretPath the secret path
+     * @param token the access token
+     */
+    public VaultSecureStoreConfig(String address, String secretPath, String token) {
+        checkNotNull(address, "Vault server address cannot be null!");
+        checkNotNull(secretPath, "Vault secret path cannot be null!");
+        checkNotNull(token, "Vault token cannot be null!");
+        this.address = address;
+        this.secretPath = secretPath;
+        this.token = token;
+    }
     /**
      * Returns the Vault server address.
      *
@@ -112,6 +119,7 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
     /**
      * Returns the Vault secret path.
      *
+     * @see #setSecretPath(String)
      * @return the Vault secret path
      */
     public String getSecretPath() {
@@ -119,7 +127,7 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
     }
 
     /**
-     * Sets the Vault secret path.
+     * Sets the Vault secret path where the encryption keys is expected to be stored.
      *
      * @param secretPath the secret path
      * @return the updated {@link VaultSecureStoreConfig} instance
@@ -132,44 +140,25 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
     }
 
     /**
-     * Returns the Vault secret engine version.
+     * Returns the Vault polling interval (in seconds).
      *
-     * @return the Vault secret engine version
+     * @return the polling interval
      */
-    public SecretEngineVersion getSecretEngineVersion() {
-        return secretEngineVersion;
+    public int getPollingInterval() {
+        return pollingInterval;
     }
 
     /**
-     * Sets the Vault secret engine version.
+     * Sets the polling interval (in seconds) for checking for changes in Vault. The value 0
+     * (default) disables polling.
      *
-     * @param secretEngineVersion the secret engine version
+     * @param pollingInterval the polling interval
      * @return the updated {@link VaultSecureStoreConfig} instance
-     * @throws IllegalArgumentException if secretEngineVersion is {code null}
+     * @throws IllegalArgumentException if pollingInterval is less than zero
      */
-    public VaultSecureStoreConfig setSecretEngineVersion(SecretEngineVersion secretEngineVersion) {
-        checkNotNull(secretEngineVersion, "Vault secret engine version cannot be null!");
-        this.secretEngineVersion = secretEngineVersion;
-        return this;
-    }
-
-    /**
-     * Returns the Vault namespace.
-     *
-     * @return the Vault namespace
-     */
-    public String getNamespace() {
-        return namespace;
-    }
-
-    /**
-     * Sets the Vault namespace.
-     *
-     * @param namespace the namespace
-     * @return the updated {@link VaultSecureStoreConfig} instance
-     */
-    public VaultSecureStoreConfig setNamespace(String namespace) {
-        this.namespace = namespace;
+    public VaultSecureStoreConfig setPollingInterval(int pollingInterval) {
+        checkNotNegative(pollingInterval, "Polling interval cannot be negative!");
+        this.pollingInterval = pollingInterval;
         return this;
     }
 
@@ -193,33 +182,14 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
         return this;
     }
 
-    /**
-     * Returns the key entries to be looked up in Vault
-     *
-     * @return a list of {@link Entry} objects.
-     */
-    public List<Entry> getEntries() {
-        return entries;
-    }
-
-    /**
-     * Sets the entries to be looked in Vault under the provided secret path.
-     *
-     * @param entries a list of {@link Entry} objects
-     * @return the updated {@link VaultSecureStoreConfig} instance
-     * @throws IllegalArgumentException if entries is {code null}
-     */
-    public VaultSecureStoreConfig setEntries(List<Entry> entries) {
-        checkNotNull(entries, "Vault entries cannot be null!");
-        this.entries = entries;
-        return this;
-    }
-
     @Override
     public String toString() {
-        return "VaultSecureStoreConfig{" + "address='" + address + '\'' + ", secretPath='" + secretPath + '\''
-                + ", secretEngineVersion=" + secretEngineVersion + ", entries=" + entries + ", token='***'" + ", namespace=" + (
-                namespace == null ? null : ('\'' + namespace + '\'')) + '}';
+        return "VaultSecureStoreConfig{"
+                + "address='" + address + '\''
+                + ", secretPath='" + secretPath + '\''
+                + ", pollingInterval='" + pollingInterval + '\''
+                + ", token='***'"
+                + '}';
     }
 
     @Override
@@ -237,73 +207,19 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
         if (!Objects.equals(secretPath, other.secretPath)) {
             return false;
         }
-        if (secretEngineVersion != other.secretEngineVersion) {
+        if (this.pollingInterval != other.pollingInterval) {
             return false;
         }
-        if (!Objects.equals(token, other.token)) {
-            return false;
-        }
-        if (!Objects.equals(entries, other.entries)) {
-            return false;
-        }
-        return Objects.equals(namespace, other.namespace);
+        return Objects.equals(token, other.token);
     }
 
     @Override
     public final int hashCode() {
         int result = address == null ? 0 : address.hashCode();
         result = 31 * result + (secretPath == null ? 0 : secretPath.hashCode());
-        result = 31 * result + (secretEngineVersion == null ? 0 : secretEngineVersion.hashCode());
+        result = 31 * result + pollingInterval;
         result = 31 * result + (token == null ? 0 : token.hashCode());
-        result = 31 * result + (entries == null ? 0 : entries.hashCode());
-        result = 31 * result + (namespace == null ? 0 : namespace.hashCode());
         return result;
     }
 
-    /**
-     * An entry to be looked up under the provided secret path.
-     */
-    public static class Entry {
-        private final String name;
-
-        /**
-         * Constructs a new entry with given name.
-         *
-         * @param name the entry name
-         */
-        public Entry(String name) {
-            this.name = name;
-        }
-
-        /**
-         * Returns the entry name.
-         *
-         * @return the entry name
-         */
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String toString() {
-            return "Entry{" + "name='" + name + '\'' + '}';
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof Entry)) {
-                return false;
-            }
-            Entry other = (Entry) o;
-            return Objects.equals(name, other.name);
-        }
-
-        @Override
-        public final int hashCode() {
-            return name == null ? 0 : name.hashCode();
-        }
-    }
 }

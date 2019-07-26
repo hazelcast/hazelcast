@@ -23,10 +23,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Contains configuration for the Hot Restart Persistence at Rest encryption
  */
-public class EncryptionAtRestConfig
-        extends AbstractBasicSymmetricEncryptionConfig<EncryptionAtRestConfig> {
+public class EncryptionAtRestConfig extends AbstractBasicSymmetricEncryptionConfig<EncryptionAtRestConfig> {
 
-    private SecureStoreConfig secureStoreConfig;
+    private SecureStoreConfig secureStoreConfig = new NoSecureStoreConfig();
 
     public SecureStoreConfig getSecureStoreConfig() {
         return secureStoreConfig;
@@ -44,8 +43,7 @@ public class EncryptionAtRestConfig
                 + "enabled=" + enabled
                 + ", algorithm='" + algorithm + '\''
                 + ", salt='***'"
-                + ", secureStoreConfig=" + secureStoreConfig
-                + '}';
+                + ", secureStoreConfig=" + secureStoreConfig + '}';
     }
 
     @Override
@@ -76,6 +74,18 @@ public class EncryptionAtRestConfig
         result = 31 * result + (salt == null ? 0 : salt.hashCode());
         result = 31 * result + (secureStoreConfig == null ? 0 : secureStoreConfig.hashCode());
         return result;
+    }
+
+    private static final class NoSecureStoreConfig extends SecureStoreConfig {
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof NoSecureStoreConfig;
+        }
     }
 
 }

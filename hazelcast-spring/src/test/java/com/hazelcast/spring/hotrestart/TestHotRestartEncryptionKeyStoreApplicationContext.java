@@ -81,10 +81,6 @@ public class TestHotRestartEncryptionKeyStoreApplicationContext {
         assertEquals(new File("/mnt/hot-restart/keystore.p12").getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
         assertEquals("PKCS12", keyStoreConfig.getType());
         assertEquals("password", keyStoreConfig.getPassword());
-        assertEquals(2, keyStoreConfig.getEntries().size());
-        assertEquals("entry", keyStoreConfig.getEntries().get(0).getName());
-        assertEquals("entry-password", keyStoreConfig.getEntries().get(0).getPassword());
-        assertEquals("entry2", keyStoreConfig.getEntries().get(1).getName());
-        assertEquals("entry2-password", keyStoreConfig.getEntries().get(1).getPassword());
+        assertEquals(60, keyStoreConfig.getPollingInterval());
     }
 }

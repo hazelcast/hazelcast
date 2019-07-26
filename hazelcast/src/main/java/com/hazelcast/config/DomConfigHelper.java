@@ -86,6 +86,11 @@ public final class DomConfigHelper {
         return new IterableNodeList(node, Node.ELEMENT_NODE, nodeName);
     }
 
+    public static Node childElementWithName(Node node, String nodeName) {
+        Iterator<Node> it = childElementsWithName(node, nodeName).iterator();
+        return it.hasNext() ? it.next() : null;
+    }
+
     public static Node firstChildElement(Node node) {
         Iterator<Node> it = new IterableNodeList(node, Node.ELEMENT_NODE, null).iterator();
         return it.hasNext() ? it.next() : null;
