@@ -115,8 +115,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         predicate.nextPage();
         Collection<Integer> values = map.values(predicate);
         assertEquals(5, values.size());
-        Integer value = 10;
-        for (Integer val : values) {
+        int value = 10;
+        for (int val : values) {
             assertEquals(value++, val);
         }
         predicate.previousPage();
@@ -124,7 +124,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         values = map.values(predicate);
         assertEquals(5, values.size());
         value = 5;
-        for (Integer val : values) {
+        for (int val : values) {
             assertEquals(value++, val);
         }
         predicate.previousPage();
@@ -132,7 +132,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         values = map.values(predicate);
         assertEquals(5, values.size());
         value = 0;
-        for (Integer val : values) {
+        for (int val : values) {
             assertEquals(value++, val);
         }
     }
@@ -302,7 +302,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.set(i, i);
         }
 
-        int resultSize = map.entrySet(new PagingPredicateImpl(Predicates.equal("this", size), pageSize) {
+        int resultSize = map.entrySet(new PagingPredicateImpl<Integer, Integer>(Predicates.equal("this", size), pageSize) {
             @Override
             public boolean apply(Map.Entry mapEntry) {
                 fail("full scan is not expected");
@@ -340,12 +340,9 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     static class TestComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {
 
-        int ascending = 1;
+        final int ascending;
 
-        IterationType iterationType = IterationType.ENTRY;
-
-        TestComparator() {
-        }
+        final IterationType iterationType;
 
         TestComparator(boolean ascending, IterationType iterationType) {
             this.ascending = ascending ? 1 : -1;

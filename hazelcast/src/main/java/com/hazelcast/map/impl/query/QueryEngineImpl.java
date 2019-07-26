@@ -85,6 +85,7 @@ public class QueryEngineImpl implements QueryEngine {
         this.resultProcessorRegistry = mapServiceContext.getResultProcessorRegistry();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Result execute(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
@@ -248,9 +249,8 @@ public class QueryEngineImpl implements QueryEngine {
 
     private PartitionIdSet getLocalPartitionIds() {
         int partitionCount = partitionService.getPartitionCount();
-        PartitionIdSet partitionIds = new PartitionIdSet(partitionCount,
-                partitionService.getMemberPartitions(nodeEngine.getThisAddress()));
-        return partitionIds;
+        List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return new PartitionIdSet(partitionCount, memberPartitions);
     }
 
     private PartitionIdSet getAllPartitionIds() {
