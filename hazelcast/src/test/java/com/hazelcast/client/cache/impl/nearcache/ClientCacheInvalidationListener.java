@@ -20,7 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
-import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.querycache;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;

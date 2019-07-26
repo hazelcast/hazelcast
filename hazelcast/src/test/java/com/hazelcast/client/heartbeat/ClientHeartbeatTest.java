@@ -17,16 +17,16 @@
 package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
-import com.hazelcast.client.spi.ClientListenerService;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.spi.properties.ClientProperty;
+import com.hazelcast.client.impl.spi.ClientListenerService;
+import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;

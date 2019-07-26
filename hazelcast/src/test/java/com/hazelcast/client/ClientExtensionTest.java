@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.clientside.DefaultClientExtension;
-import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

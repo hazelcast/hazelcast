@@ -17,7 +17,7 @@
 package com.hazelcast.client.usercodedeployment;
 
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
-import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
+import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

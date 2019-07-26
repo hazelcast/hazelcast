@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
 /**
  * This class is related to SPI. To register custom services to java client.

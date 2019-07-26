@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.partitionservice;
 
-import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;

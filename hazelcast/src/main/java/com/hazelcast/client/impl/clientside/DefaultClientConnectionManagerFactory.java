@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 

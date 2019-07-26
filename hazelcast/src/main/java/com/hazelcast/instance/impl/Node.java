@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.client.api.ClientListener;
+import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.NoOpClientEngine;

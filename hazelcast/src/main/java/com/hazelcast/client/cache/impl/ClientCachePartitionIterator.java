@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
-import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ClientContext;
 
 public class ClientCachePartitionIterator<K, V> extends ClientClusterWideIterator<K, V> {
 

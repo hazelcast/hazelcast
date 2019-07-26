@@ -18,7 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.map.helpers.GenericEvent;
-import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;

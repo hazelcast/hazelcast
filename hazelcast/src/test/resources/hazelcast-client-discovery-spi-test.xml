@@ -26,9 +26,9 @@
 
   <network>
     <discovery-strategies>
-      <node-filter class="com.hazelcast.client.spi.impl.discovery.ClientDiscoverySpiTest$TestNodeFilter"/>
+      <node-filter class="com.hazelcast.client.impl.spi.impl.discovery.ClientDiscoverySpiTest$TestNodeFilter"/>
       <discovery-strategy enabled="true"
-                          class="com.hazelcast.client.spi.impl.discovery.ClientDiscoverySpiTest$TestDiscoveryStrategy">
+                          class="com.hazelcast.client.impl.spi.impl.discovery.ClientDiscoverySpiTest$TestDiscoveryStrategy">
         <properties>
           <property name="key-string">foo</property>
           <property name="key-int">123</property>

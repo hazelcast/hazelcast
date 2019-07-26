@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.core.HazelcastInstance;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClientInternal;

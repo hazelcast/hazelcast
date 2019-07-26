@@ -17,7 +17,7 @@
 package com.hazelcast.client.cluster;
 
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
-import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;

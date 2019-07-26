@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.querycache.subscriber;
 
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
 
 import java.util.concurrent.ScheduledFuture;

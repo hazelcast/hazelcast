@@ -17,7 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
