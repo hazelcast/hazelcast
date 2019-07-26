@@ -3094,6 +3094,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <session-heartbeat-interval-seconds>3</session-heartbeat-interval-seconds>\n"
                 + "  <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>\n"
                 + "  <fail-on-indeterminate-operation-state>true</fail-on-indeterminate-operation-state>\n"
+                + "  <persistence-enabled>true</persistence-enabled>\n"
+                + "  <base-dir>/mnt/cp-data</base-dir>\n"
                 + "  <raft-algorithm>\n"
                 + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
                 + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
@@ -3133,6 +3135,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        assertTrue(cpSubsystemConfig.isPersistenceEnabled());
+        assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

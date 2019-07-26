@@ -855,6 +855,8 @@
         <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
         <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <persistence-enabled>false</persistence-enabled>
+        <base-dir>data</base-dir>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
