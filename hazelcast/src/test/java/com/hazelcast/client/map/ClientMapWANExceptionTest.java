@@ -18,7 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -79,7 +79,7 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName("dummyWan");
 
-        wanConfig.addWanPublisherConfig(getWanPublisherConfig());
+        wanConfig.addCustomPublisherConfig(getWanPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef();
         wanRef.setName("dummyWan");
@@ -90,9 +90,10 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         return config;
     }
 
-    private WanPublisherConfig getWanPublisherConfig() {
-        WanPublisherConfig target = new WanPublisherConfig();
-        target.setClassName(FullQueueWanReplication.class.getName());
-        return target;
+    private CustomWanPublisherConfig getWanPublisherConfig() {
+        CustomWanPublisherConfig pc = new CustomWanPublisherConfig();
+        pc.setPublisherId("customPublisherId")
+          .setClassName(FullQueueWanReplication.class.getName());
+        return pc;
     }
 }

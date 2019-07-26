@@ -17,8 +17,8 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -211,7 +211,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
     @Test
     public void programmaticImplCreationTest() {
         Config config = getConfig();
-        WanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan").getWanPublisherConfigs().get(0);
+        CustomWanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan")
+                                                         .getCustomPublisherConfigs()
+                                                         .get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
         publisherConfig.setImplementation(dummyWanReplication);
         instance1 = factory.newHazelcastInstance(config);
@@ -300,7 +302,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
     protected Config getConfig() {
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("dummyWan")
-                .addWanPublisherConfig(getPublisherConfig());
+                .addCustomPublisherConfig(getPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
@@ -314,10 +316,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 .addMapConfig(mapConfig);
     }
 
-    private WanPublisherConfig getPublisherConfig() {
-        WanPublisherConfig publisherConfig = new WanPublisherConfig();
-        publisherConfig.setClassName(DummyWanReplication.class.getName());
-        return publisherConfig;
+    private CustomWanPublisherConfig getPublisherConfig() {
+        return new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
+                .setClassName(DummyWanReplication.class.getName());
     }
 
     private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {

@@ -24,28 +24,31 @@ import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 
+import java.util.function.Consumer;
+
 import static com.hazelcast.util.JsonUtil.fromJsonObject;
 import static com.hazelcast.util.JsonUtil.toJsonObject;
 import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 
 /**
- * A JSON representation of {@link WanPublisherConfig}.
+ * A JSON representation of {@link WanBatchReplicationPublisherConfig}.
  */
-public class WanPublisherConfigDTO implements JsonSerializable {
+public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
 
-    private WanPublisherConfig config;
+    private WanBatchReplicationPublisherConfig config;
 
-    public WanPublisherConfigDTO() {
+    public WanBatchReplicationPublisherConfigDTO() {
     }
 
-    public WanPublisherConfigDTO(WanPublisherConfig config) {
+    public WanBatchReplicationPublisherConfigDTO(WanBatchReplicationPublisherConfig config) {
         this.config = config;
     }
 
@@ -54,29 +57,35 @@ public class WanPublisherConfigDTO implements JsonSerializable {
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
 
-        if (config.getGroupName() != null) {
-            root.add("groupName", config.getGroupName());
-        }
+        root.add("groupName", config.getGroupName());
 
         if (config.getPublisherId() != null) {
             root.add("publisherId", config.getPublisherId());
         }
 
-        root.add("queueCapacity", config.getQueueCapacity());
-
-        if (config.getQueueFullBehavior() != null) {
-            root.add("queueFullBehavior", config.getQueueFullBehavior().getId());
+        root.add("batchSize", config.getBatchSize());
+        root.add("batchMaxDelayMillis", config.getBatchMaxDelayMillis());
+        root.add("responseTimeoutMillis", config.getResponseTimeoutMillis());
+        if (config.getAcknowledgeType() != null) {
+            root.add("acknowledgeType", config.getAcknowledgeType().getId());
         }
         if (config.getInitialPublisherState() != null) {
             root.add("initialPublisherState", config.getInitialPublisherState().getId());
         }
-
-        if (!isNullOrEmpty(config.getProperties())) {
-            root.add("properties", toJsonObject(config.getProperties()));
+        root.add("snapshotEnabled", config.isSnapshotEnabled());
+        root.add("idleMaxParkNs", config.getIdleMaxParkNs());
+        root.add("idleMinParkNs", config.getIdleMinParkNs());
+        root.add("maxConcurrentInvocations", config.getMaxConcurrentInvocations());
+        root.add("discoveryPeriodSeconds", config.getDiscoveryPeriodSeconds());
+        root.add("useEndpointPrivateAddress", config.isUseEndpointPrivateAddress());
+        if (config.getQueueFullBehavior() != null) {
+            root.add("queueFullBehavior", config.getQueueFullBehavior().getId());
         }
+        root.add("maxTargetEndpoints", config.getMaxTargetEndpoints());
+        root.add("queueCapacity", config.getQueueCapacity());
 
-        if (config.getClassName() != null) {
-            root.add("className", config.getClassName());
+        if (config.getTargetEndpoints() != null) {
+            root.add("targetEndpoints", config.getTargetEndpoints());
         }
 
         serializeAliasedDiscoveryConfig(root, "aws", config.getAwsConfig());
@@ -94,46 +103,40 @@ public class WanPublisherConfigDTO implements JsonSerializable {
         if (syncConfig != null) {
             root.add("sync", new WanSyncConfigDTO(syncConfig).toJson());
         }
+
+        if (config.getEndpoint() != null) {
+            root.add("endpoint", config.getEndpoint());
+        }
+
+        if (!isNullOrEmpty(config.getProperties())) {
+            root.add("properties", toJsonObject(config.getProperties()));
+        }
         return root;
     }
 
     @Override
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void fromJson(JsonObject json) {
-        config = new WanPublisherConfig();
-        JsonValue groupName = json.get("groupName");
-        if (groupName != null && !groupName.isNull()) {
-            config.setGroupName(groupName.asString());
-        }
+        config = new WanBatchReplicationPublisherConfig();
 
-        JsonValue publisherId = json.get("publisherId");
-        if (publisherId != null && !publisherId.isNull()) {
-            config.setPublisherId(publisherId.asString());
-        }
-
-        JsonValue queueCapacity = json.get("queueCapacity");
-        if (queueCapacity != null && !queueCapacity.isNull()) {
-            config.setQueueCapacity(queueCapacity.asInt());
-        }
-
-        JsonValue queueFullBehavior = json.get("queueFullBehavior");
-        if (queueFullBehavior != null && !queueFullBehavior.isNull()) {
-            config.setQueueFullBehavior(
-                    WANQueueFullBehavior.getByType(queueFullBehavior.asInt()));
-        }
-
-        JsonValue initialPublisherState = json.get("initialPublisherState");
-        if (initialPublisherState != null && !initialPublisherState.isNull()) {
-            config.setInitialPublisherState(
-                    WanPublisherState.getByType((byte) initialPublisherState.asInt()));
-        }
-
-        config.setProperties(fromJsonObject((JsonObject) json.get("properties")));
-
-        JsonValue className = json.get("className");
-        if (className != null && !className.isNull()) {
-            config.setClassName(className.asString());
-        }
+        consumeIfExists(json, "groupName", v -> config.setGroupName(v.asString()));
+        consumeIfExists(json, "publisherId", v -> config.setPublisherId(v.asString()));
+        consumeIfExists(json, "batchSize", v -> config.setBatchSize(v.asInt()));
+        consumeIfExists(json, "batchMaxDelayMillis", v -> config.setBatchMaxDelayMillis(v.asInt()));
+        consumeIfExists(json, "responseTimeoutMillis", v -> config.setResponseTimeoutMillis(v.asInt()));
+        consumeIfExists(json, "acknowledgeType", v -> config.setAcknowledgeType(WanAcknowledgeType.getById(v.asInt())));
+        consumeIfExists(json, "initialPublisherState",
+                v -> config.setInitialPublisherState(WanPublisherState.getByType((byte) v.asInt())));
+        consumeIfExists(json, "snapshotEnabled", v -> config.setSnapshotEnabled(v.asBoolean()));
+        consumeIfExists(json, "idleMaxParkNs", v -> config.setIdleMaxParkNs(v.asLong()));
+        consumeIfExists(json, "idleMinParkNs", v -> config.setIdleMinParkNs(v.asLong()));
+        consumeIfExists(json, "maxConcurrentInvocations", v -> config.setMaxConcurrentInvocations(v.asInt()));
+        consumeIfExists(json, "discoveryPeriodSeconds", v -> config.setDiscoveryPeriodSeconds(v.asInt()));
+        consumeIfExists(json, "useEndpointPrivateAddress", v -> config.setUseEndpointPrivateAddress(v.asBoolean()));
+        consumeIfExists(json, "queueFullBehavior", v -> config.setQueueFullBehavior(WANQueueFullBehavior.getByType(v.asInt())));
+        consumeIfExists(json, "maxTargetEndpoints", v -> config.setMaxTargetEndpoints(v.asInt()));
+        consumeIfExists(json, "queueCapacity", v -> config.setQueueCapacity(v.asInt()));
+        consumeIfExists(json, "targetEndpoints", v -> config.setTargetEndpoints(v.asString()));
 
         AwsConfig awsConfig = (AwsConfig) this.deserializeAliasedDiscoveryConfig(json, "aws");
         if (awsConfig != null) {
@@ -169,6 +172,17 @@ public class WanPublisherConfigDTO implements JsonSerializable {
             WanSyncConfigDTO syncDTO = new WanSyncConfigDTO();
             syncDTO.fromJson(syncJson.asObject());
             config.setWanSyncConfig(syncDTO.getConfig());
+        }
+
+        consumeIfExists(json, "endpoint", v -> config.setEndpoint(v.asString()));
+
+        config.setProperties(fromJsonObject((JsonObject) json.get("properties")));
+    }
+
+    private void consumeIfExists(JsonObject json, String attribute, Consumer<JsonValue> valueConsumer) {
+        JsonValue value = json.get(attribute);
+        if (value != null && !value.isNull()) {
+            valueConsumer.accept(value);
         }
     }
 
@@ -207,7 +221,7 @@ public class WanPublisherConfigDTO implements JsonSerializable {
         }
     }
 
-    public WanPublisherConfig getConfig() {
+    public WanBatchReplicationPublisherConfig getConfig() {
         return config;
     }
 }

@@ -56,6 +56,7 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1413,16 +1414,32 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  wan-replication:\n"
                 + "    " + configName + ":\n"
-                + "      wan-publisher:\n"
+                + "      batch-publisher:\n"
                 + "        publisherId:\n"
                 + "          group-name: nyc\n"
-                + "          class-name: PublisherClassName\n"
-                + "          queue-capacity: 15000\n"
-                + "          queue-full-behavior: DISCARD_AFTER_MUTATION\n"
+                + "          batch-size: 1000\n"
+                + "          batch-max-delay-millis: 2000\n"
+                + "          response-timeout-millis: 60000\n"
+                + "          acknowledge-type: ACK_ON_RECEIPT\n"
                 + "          initial-publisher-state: STOPPED\n"
+                + "          snapshot-enabled: true\n"
+                + "          idle-max-park-ns: 2000\n"
+                + "          idle-min-park-ns: 1000\n"
+                + "          max-concurrent-invocations: 100\n"
+                + "          discovery-period-seconds: 20\n"
+                + "          use-endpoint-private-address: true\n"
+                + "          queue-full-behavior: DISCARD_AFTER_MUTATION\n"
+                + "          max-target-endpoints: 200\n"
+                + "          queue-capacity: 15000\n"
+                + "          target-endpoints: 10.3.5.1:5701,10.3.5.2:5701\n"
                 + "          properties:\n"
                 + "            propName1: propValue1\n"
-                + "      wan-consumer:\n"
+                + "      custom-publisher:\n"
+                + "        customPublisherId:\n"
+                + "          class-name: PublisherClassName\n"
+                + "          properties:\n"
+                + "            propName1: propValue1\n"
+                + "      consumer:\n"
                 + "        class-name: ConsumerClassName\n"
                 + "        properties:\n"
                 + "          propName1: propValue1\n";
@@ -1441,18 +1458,39 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
-        assertNotNull(publishers);
-        assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals("PublisherClassName", publisherConfig.getClassName());
+        List<WanBatchReplicationPublisherConfig> batchPublishers = wanReplicationConfig.getBatchPublisherConfigs();
+        assertNotNull(batchPublishers);
+        assertEquals(1, batchPublishers.size());
+        WanBatchReplicationPublisherConfig publisherConfig = batchPublishers.get(0);
         assertEquals("nyc", publisherConfig.getGroupName());
         assertEquals("publisherId", publisherConfig.getPublisherId());
-        assertEquals(15000, publisherConfig.getQueueCapacity());
-        assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
+        assertEquals(1000, publisherConfig.getBatchSize());
+        assertEquals(2000, publisherConfig.getBatchMaxDelayMillis());
+        assertEquals(60000, publisherConfig.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, publisherConfig.getAcknowledgeType());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-
+        assertTrue(publisherConfig.isSnapshotEnabled());
+        assertEquals(2000, publisherConfig.getIdleMaxParkNs());
+        assertEquals(1000, publisherConfig.getIdleMinParkNs());
+        assertEquals(100, publisherConfig.getMaxConcurrentInvocations());
+        assertEquals(20, publisherConfig.getDiscoveryPeriodSeconds());
+        assertTrue(publisherConfig.isUseEndpointPrivateAddress());
+        assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
+        assertEquals(200, publisherConfig.getMaxTargetEndpoints());
+        assertEquals(15000, publisherConfig.getQueueCapacity());
+        assertEquals("10.3.5.1:5701,10.3.5.2:5701", publisherConfig.getTargetEndpoints());
         properties = publisherConfig.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+
+        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        assertNotNull(customPublishers);
+        assertEquals(1, customPublishers.size());
+        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        assertEquals("customPublisherId", customPublisher.getPublisherId());
+        assertEquals("PublisherClassName", customPublisher.getClassName());
+        properties = customPublisher.getProperties();
         assertNotNull(properties);
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
@@ -1466,7 +1504,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  wan-replication:\n"
                 + "    " + configName + ":\n"
-                + "      wan-consumer: {}\n";
+                + "      consumer: {}\n";
 
         Config config = buildConfig(yaml);
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
@@ -1482,9 +1520,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  wan-replication:\n"
                 + "    " + configName + ":\n"
-                + "      wan-publisher:\n"
+                + "      batch-publisher:\n"
                 + "        nyc:\n"
-                + "          class-name: PublisherClassName\n"
                 + "          wan-sync:\n"
                 + "            consistency-check-strategy: MERKLE_TREES\n";
 
@@ -1493,10 +1530,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
+        WanBatchReplicationPublisherConfig publisherConfig = publishers.get(0);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
                 .getConsistencyCheckStrategy());
     }
@@ -1653,12 +1690,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  wan-replication:\n"
                 + "    my-wan-cluster:\n"
-                + "      wan-publisher:\n"
+                + "      batch-publisher:\n"
                 + "        istanbulPublisherId:\n"
                 + "          group-name: istanbul\n"
-                + "          class-name: com.hazelcast.wan.custom.WanPublisher\n"
+                + "          batch-size: 100\n"
+                + "          batch-max-delay-millis: 200\n"
+                + "          response-timeout-millis: 300\n"
+                + "          acknowledge-type: ACK_ON_RECEIPT\n"
+                + "          initial-publisher-state: STOPPED\n"
+                + "          snapshot-enabled: true\n"
+                + "          idle-min-park-ns: 400\n"
+                + "          idle-max-park-ns: 500\n"
+                + "          max-concurrent-invocations: 600\n"
+                + "          discovery-period-seconds: 700\n"
+                + "          use-endpoint-private-address: true\n"
                 + "          queue-full-behavior: THROW_EXCEPTION\n"
+                + "          max-target-endpoints: 800\n"
                 + "          queue-capacity: 21\n"
+                + "          target-endpoints: a,b,c,d\n"
                 + "          aws:\n"
                 + "            enabled: false\n"
                 + "            connection-timeout-seconds: 10\n"
@@ -1688,13 +1737,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                  key-boolean: false\n"
                 + "          properties:\n"
                 + "            custom.prop.publisher: prop.publisher\n"
-                + "            discovery.period: 5\n"
-                + "            maxEndpoints: 2\n"
                 + "        ankara:\n"
-                + "          class-name: com.hazelcast.wan.custom.WanPublisher>\n"
                 + "          queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE\n"
                 + "          initial-publisher-state: STOPPED\n"
-                + "      wan-consumer:\n"
+                + "      consumer:\n"
                 + "        class-name: com.hazelcast.wan.custom.WanConsumer\n"
                 + "        properties:\n"
                 + "          custom.prop.consumer: prop.consumer\n"
@@ -1704,32 +1750,42 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
         assertNotNull(wanConfig);
 
-        List<WanPublisherConfig> publisherConfigs = wanConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanPublisherConfig publisherConfig1 = publisherConfigs.get(0);
-        assertEquals("istanbul", publisherConfig1.getGroupName());
-        assertEquals("istanbulPublisherId", publisherConfig1.getPublisherId());
-        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
-        assertEquals(WanPublisherState.REPLICATING, publisherConfig1.getInitialPublisherState());
-        assertEquals(21, publisherConfig1.getQueueCapacity());
-        Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
-        assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
-        assertEquals("5", pubProperties.get("discovery.period"));
-        assertEquals("2", pubProperties.get("maxEndpoints"));
-        assertFalse(publisherConfig1.getAwsConfig().isEnabled());
-        assertAwsConfig(publisherConfig1.getAwsConfig());
-        assertFalse(publisherConfig1.getGcpConfig().isEnabled());
-        assertFalse(publisherConfig1.getAzureConfig().isEnabled());
-        assertFalse(publisherConfig1.getKubernetesConfig().isEnabled());
-        assertFalse(publisherConfig1.getEurekaConfig().isEnabled());
-        assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
+        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbulPublisherId", pc1.getPublisherId());
+        assertEquals(100, pc1.getBatchSize());
+        assertEquals(200, pc1.getBatchMaxDelayMillis());
+        assertEquals(300, pc1.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc1.getAcknowledgeType());
+        assertEquals(WanPublisherState.STOPPED, pc1.getInitialPublisherState());
+        assertTrue(pc1.isSnapshotEnabled());
+        assertEquals(400, pc1.getIdleMinParkNs());
+        assertEquals(500, pc1.getIdleMaxParkNs());
+        assertEquals(600, pc1.getMaxConcurrentInvocations());
+        assertEquals(700, pc1.getDiscoveryPeriodSeconds());
+        assertTrue(pc1.isUseEndpointPrivateAddress());
+        assertEquals(THROW_EXCEPTION, pc1.getQueueFullBehavior());
+        assertEquals(800, pc1.getMaxTargetEndpoints());
+        assertEquals(21, pc1.getQueueCapacity());
+        assertEquals("a,b,c,d", pc1.getTargetEndpoints());
 
-        WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
-        assertEquals("ankara", publisherConfig2.getGroupName());
-        assertNull(publisherConfig2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig2.getInitialPublisherState());
+        Map<String, Comparable> pubProperties = pc1.getProperties();
+        assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
+        assertFalse(pc1.getAwsConfig().isEnabled());
+        assertAwsConfig(pc1.getAwsConfig());
+        assertFalse(pc1.getGcpConfig().isEnabled());
+        assertFalse(pc1.getAzureConfig().isEnabled());
+        assertFalse(pc1.getKubernetesConfig().isEnabled());
+        assertFalse(pc1.getEurekaConfig().isEnabled());
+        assertDiscoveryConfig(pc1.getDiscoveryConfig());
+
+        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        assertEquals("ankara", pc2.getGroupName());
+        assertNull(pc2.getPublisherId());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
@@ -2970,13 +3026,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testAllPermissionsCovered() {
         InputStream yamlResource = YamlConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.yaml");
-        Config config = null;
+        Config config;
         try {
             config = new YamlConfigBuilder(yamlResource).build();
         } finally {
             IOUtil.closeResource(yamlResource);
         }
-        Set<PermissionConfig.PermissionType> permTypes = new HashSet<PermissionConfig.PermissionType>(Arrays
+        Set<PermissionConfig.PermissionType> permTypes = new HashSet<>(Arrays
                 .asList(PermissionConfig.PermissionType.values()));
         for (PermissionConfig pc : config.getSecurityConfig().getClientPermissionConfigs()) {
             permTypes.remove(pc.getType());

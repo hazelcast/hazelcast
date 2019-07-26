@@ -18,15 +18,14 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
@@ -64,6 +63,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
@@ -128,9 +128,9 @@ public class MapContainer {
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = Extractors.newBuilder(serializationService)
-                .setMapAttributeConfigs(mapConfig.getMapAttributeConfigs())
-                .setClassLoader(classloader)
-                .build();
+                                    .setMapAttributeConfigs(mapConfig.getMapAttributeConfigs())
+                                    .setClassLoader(classloader)
+                                    .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
         if (shouldUseGlobalIndex(mapConfig)) {
@@ -150,12 +150,12 @@ public class MapContainer {
      */
     public Indexes createIndexes(boolean global) {
         return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
-                .global(global)
-                .extractors(extractors)
-                .statsEnabled(mapConfig.isStatisticsEnabled())
-                .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
-                .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
-                .build();
+                      .global(global)
+                      .extractors(extractors)
+                      .statsEnabled(mapConfig.isStatisticsEnabled())
+                      .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
+                      .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                      .build();
     }
 
     // this method is overridden
@@ -274,16 +274,15 @@ public class MapContainer {
      */
     private boolean hasPublisherWithMerkleTreeSync(Config config, String wanReplicationRefName) {
         WanReplicationConfig replicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
-        if (replicationConfig != null) {
-            for (WanPublisherConfig publisherConfig : replicationConfig.getWanPublisherConfigs()) {
-                if (publisherConfig.getWanSyncConfig() != null
-                        && ConsistencyCheckStrategy.MERKLE_TREES.equals(publisherConfig.getWanSyncConfig()
-                        .getConsistencyCheckStrategy())) {
-                    return true;
-                }
-            }
+        if (replicationConfig == null) {
+            return false;
         }
-        return false;
+        return replicationConfig.getBatchPublisherConfigs()
+                                .stream()
+                                .anyMatch(c -> {
+                                    WanSyncConfig syncConfig = c.getWanSyncConfig();
+                                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
+                                });
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
