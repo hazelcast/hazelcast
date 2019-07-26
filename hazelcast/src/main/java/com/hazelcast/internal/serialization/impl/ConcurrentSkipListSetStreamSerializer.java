@@ -16,21 +16,20 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.Collection;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
- * The {@link java.util.ArrayList} serializer
+ * The {@link ConcurrentSkipListSet} serializer
  */
-public class ArrayListStreamSerializer extends AbstractCollectionStreamSerializer {
+public class ConcurrentSkipListSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected List createCollection(int size) {
-        return new ArrayList(size);
+    protected Collection createCollection(int size) {
+        return new ConcurrentSkipListSet();
     }
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
+        return SerializationConstants.JAVA_DEFAULT_TYPE_CONCURRENT_SKIP_LIST_SET;
     }
 }

@@ -16,21 +16,21 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.Collection;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * The {@link java.util.ArrayList} serializer
+ * The {@link Set} serializer
  */
-public class ArrayListStreamSerializer extends AbstractCollectionStreamSerializer {
+public class TreeSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected List createCollection(int size) {
-        return new ArrayList(size);
+    protected Collection createCollection(int size) {
+        return new TreeSet();
     }
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
+        return SerializationConstants.JAVA_DEFAULT_TYPE_TREE_SET;
     }
 }

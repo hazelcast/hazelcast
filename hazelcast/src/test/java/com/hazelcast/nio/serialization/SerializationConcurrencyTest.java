@@ -30,8 +30,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -171,7 +173,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    public static class Person implements DataSerializable {
+    public static class Person implements DataSerializable, Delayed {
 
         private int age;
 
@@ -253,6 +255,31 @@ public class SerializationConcurrencyTest {
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (address != null ? address.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            Person other = (Person) o;
+            if (this.age < other.age) {
+                return 1;
+            }
+
+            if (this.age > other.age) {
+                return -1;
+            }
+
+            return 0;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "Person{" + "age=" + age + ", height=" + height + ", weight=" + weight + ", name='" + name + '\''
+                    + ", address=" + address + '}';
         }
     }
 

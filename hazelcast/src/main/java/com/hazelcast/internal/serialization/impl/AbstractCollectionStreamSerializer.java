@@ -21,50 +21,44 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Collection;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
- * The {@link Map} serializer
+ * The {@link Collection} serializer
  */
-public class MapStreamSerializer implements StreamSerializer<Map> {
+public abstract class AbstractCollectionStreamSerializer implements StreamSerializer<Collection> {
 
     @Override
-    public void write(ObjectDataOutput out, Map map) throws IOException {
-        int size = map == null ? NULL_ARRAY_LENGTH : map.size();
+    public void write(ObjectDataOutput out, Collection linkedList) throws IOException {
+        int size = linkedList == null ? NULL_ARRAY_LENGTH : linkedList.size();
         out.writeInt(size);
         if (size > 0) {
-            Iterator iterator = map.entrySet().iterator();
+            Iterator iterator = linkedList.iterator();
             while (iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                out.writeObject(entry.getKey());
-                out.writeObject(entry.getValue());
+                out.writeObject(iterator.next());
             }
         }
     }
 
     @Override
-    public Map read(ObjectDataInput in) throws IOException {
+    public Collection read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        Map result = null;
+        Collection result = null;
         if (size > NULL_ARRAY_LENGTH) {
-            result = new HashMap(size);
+            result = createCollection(size);
             for (int i = 0; i < size; i++) {
-                result.put(in.readObject(), in.readObject());
+                result.add(in.readObject());
             }
         }
         return result;
     }
 
     @Override
-    public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_MAP;
-    }
-
-    @Override
     public void destroy() {
     }
+
+    protected abstract Collection createCollection(int size);
 }

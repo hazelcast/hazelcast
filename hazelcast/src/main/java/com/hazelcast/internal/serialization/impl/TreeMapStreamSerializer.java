@@ -16,21 +16,20 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * The {@link java.util.ArrayList} serializer
+ * The {@link Map} serializer
  */
-public class ArrayListStreamSerializer extends AbstractCollectionStreamSerializer {
+public class TreeMapStreamSerializer extends AbstractMapStreamSerializer {
     @Override
-    protected List createCollection(int size) {
-        return new ArrayList(size);
+    public int getTypeId() {
+        return SerializationConstants.JAVA_DEFAULT_TYPE_TREE_MAP;
     }
 
     @Override
-    public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
+    protected Map createMap(int size) {
+        return new TreeMap();
     }
 }

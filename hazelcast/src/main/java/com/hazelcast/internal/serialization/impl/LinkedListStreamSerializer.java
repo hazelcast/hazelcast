@@ -16,52 +16,20 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
-
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
-
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import java.util.List;
 
 /**
  * The {@link java.util.LinkedList} serializer
  */
-public class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
-
+public class LinkedListStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    public void write(ObjectDataOutput out, LinkedList linkedList) throws IOException {
-        int size = linkedList == null ? NULL_ARRAY_LENGTH : linkedList.size();
-        out.writeInt(size);
-        if (size > 0) {
-            Iterator iterator = linkedList.iterator();
-            while (iterator.hasNext()) {
-                out.writeObject(iterator.next());
-            }
-        }
-    }
-
-    @Override
-    public LinkedList read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        LinkedList result = null;
-        if (size > NULL_ARRAY_LENGTH) {
-            result = new LinkedList();
-            for (int i = 0; i < size; i++) {
-                result.add(i, in.readObject());
-            }
-        }
-        return result;
+    protected List createCollection(int size) {
+        return new LinkedList();
     }
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
-    }
-
-    @Override
-    public void destroy() {
     }
 }

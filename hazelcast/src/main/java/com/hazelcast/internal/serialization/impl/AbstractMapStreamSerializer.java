@@ -21,48 +21,46 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
- * The {@link Set} serializer
+ * The {@link Map} serializer
  */
-public class SetStreamSerializer implements StreamSerializer<Set> {
+public abstract class AbstractMapStreamSerializer implements StreamSerializer<Map> {
 
     @Override
-    public void write(ObjectDataOutput out, Set set) throws IOException {
-        int size = set == null ? NULL_ARRAY_LENGTH : set.size();
+    public void write(ObjectDataOutput out, Map map) throws IOException {
+        int size = map == null ? NULL_ARRAY_LENGTH : map.size();
         out.writeInt(size);
         if (size > 0) {
-            Iterator iterator = set.iterator();
+            Iterator iterator = map.entrySet().iterator();
             while (iterator.hasNext()) {
-                out.writeObject(iterator.next());
+                Map.Entry entry = (Map.Entry) iterator.next();
+                out.writeObject(entry.getKey());
+                out.writeObject(entry.getValue());
             }
         }
     }
 
     @Override
-    public Set read(ObjectDataInput in) throws IOException {
+    public Map read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        Set result = null;
+        Map result = null;
         if (size > NULL_ARRAY_LENGTH) {
-            result = new HashSet(size);
+            result = createMap(size);
             for (int i = 0; i < size; i++) {
-                result.add(in.readObject());
+                result.put(in.readObject(), in.readObject());
             }
         }
         return result;
     }
 
     @Override
-    public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_SET;
-    }
-
-    @Override
     public void destroy() {
     }
+
+    protected abstract Map createMap(int size);
 }
