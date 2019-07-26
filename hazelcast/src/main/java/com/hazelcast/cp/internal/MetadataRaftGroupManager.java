@@ -1054,8 +1054,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         DiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
             this.terminateOnDiscoveryFailure = terminateOnDiscoveryFailure;
             try {
-                // TODO [basri] hot restart cluster start hasn't started yet
-                // TODO [basri] should we delay this until cluster start completes?
                 this.markedAPMember = metadataStore.isMarkedAPMember();
                 this.cpMember = metadataStore.readLocalMember();
             } catch (IOException e) {
@@ -1070,6 +1068,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
 
             if (cpMember != null) {
+                logger.fine("CP member is already set: " + cpMember);
                 localCPMember.set((CPMemberInfo) cpMember);
             } else if (!markedAPMember) {
                 // If there is no AP and CP identity restored,
@@ -1120,6 +1119,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             // Hence, we need to check these flags in the reverse order here.
 
             if (!nodeEngine.getClusterService().isJoined()) {
+                scheduleSelf();
+                return true;
+            }
+
+            if (!raftService.isStartCompleted()) {
+                logger.fine("Re-scheduling, startup is not completed yet!");
                 scheduleSelf();
                 return true;
             }
