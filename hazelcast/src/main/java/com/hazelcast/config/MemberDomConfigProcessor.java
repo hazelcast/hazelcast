@@ -37,7 +37,6 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -329,98 +328,77 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleSecureStore(Node secureStoreRoot, EncryptionAtRestConfig encryptionAtRestConfig) {
         Node n = firstChildElement(secureStoreRoot);
-        String name = cleanNodeName(n);
-        SecureStoreConfig secureStoreConfig;
-        if ("keystore".equals(name)) {
-            secureStoreConfig = handleJavaKeyStore(n);
-        } else if ("vault".equals(name)) {
-            secureStoreConfig = handleVault(n);
-        } else {
-            throw new InvalidConfigurationException("Unrecognized Secure Store type: " + name);
+        if (n != null) {
+            String name = cleanNodeName(n);
+            SecureStoreConfig secureStoreConfig;
+            if ("keystore".equals(name)) {
+                secureStoreConfig = handleJavaKeyStore(n);
+            } else if ("vault".equals(name)) {
+                secureStoreConfig = handleVault(n);
+            } else {
+                throw new InvalidConfigurationException("Unrecognized Secure Store type: " + name);
+            }
+            encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
         }
-        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
     }
 
     private SecureStoreConfig handleJavaKeyStore(Node keyStoreRoot) {
         File path = null;
         String password = null;
         String type = null;
-        List<JavaKeyStoreSecureStoreConfig.Entry> entries = null;
+        String currentKeyAlias = null;
+        int pollingInterval = JavaKeyStoreSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
         for (Node n : childElements(keyStoreRoot)) {
             String name = cleanNodeName(n);
-            if ("entries".equals(name)) {
-                entries = handleJavaKeyStoreEntries(n);
-            } else {
-                String value = getTextContent(n);
-                if ("path".equals(name)) {
-                    path = new File(value).getAbsoluteFile();
-                } else if ("type".equals(name)) {
-                    type =  value;
-                } else if ("password".equals(name)) {
-                    password = value;
-                }
+            String value = getTextContent(n);
+            if ("path".equals(name)) {
+                path = new File(value).getAbsoluteFile();
+            } else if ("type".equals(name)) {
+                type = value;
+            } else if ("password".equals(name)) {
+                password = value;
+            } else if ("current-key-alias".equals(name)) {
+                currentKeyAlias = value;
+            } else if ("polling-interval".equals(name)) {
+                pollingInterval = parseInt(value);
             }
         }
-        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path, password);
+        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path)
+                .setPassword(password)
+                .setPollingInterval(pollingInterval)
+                .setCurrentKeyAlias(currentKeyAlias);
+
         if (type != null) {
             keyStoreSecureStoreConfig.setType(type);
-        }
-        if (entries != null) {
-            keyStoreSecureStoreConfig.setEntries(entries);
         }
         return keyStoreSecureStoreConfig;
     }
 
-    private List<JavaKeyStoreSecureStoreConfig.Entry> handleJavaKeyStoreEntries(Node entriesRoot) {
-        List<JavaKeyStoreSecureStoreConfig.Entry> entries = new ArrayList<>();
-        for (Node n : childElements(entriesRoot)) {
-            String entryName = getAttribute(n, "name");
-            String password = getAttribute(n, "password");
-            entries.add(new JavaKeyStoreSecureStoreConfig.Entry(entryName, password));
-        }
-        return entries;
-    }
-
     private SecureStoreConfig handleVault(Node vaultRoot) {
-        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig();
+        String address = null;
+        String secretPath = null;
+        String token = null;
+        SSLConfig sslConfig = null;
+        int pollingInterval = VaultSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
         for (Node n : childElements(vaultRoot)) {
             String name = cleanNodeName(n);
-            if ("entries".equals(name)) {
-                handleVaultEntries(n, vaultSecureStoreConfig);
-            } else {
-                String value = getTextContent(n);
-                if ("address".equals(name)) {
-                    vaultSecureStoreConfig.setAddress(value);
-                } else if ("secret-path".equals(name)) {
-                    vaultSecureStoreConfig.setSecretPath(value);
-                } else if ("token".equals(name)) {
-                    vaultSecureStoreConfig.setToken(value);
-                } else if ("namespace".equals(name)) {
-                    vaultSecureStoreConfig.setNamespace(value);
-                } else if ("secret-engine-version".equals(name)) {
-                    VaultSecureStoreConfig.SecretEngineVersion secretEngineVersion =
-                            VaultSecureStoreConfig.SecretEngineVersion.valueOf(value);
-                    vaultSecureStoreConfig.setSecretEngineVersion(secretEngineVersion);
-                } else if ("ssl".equals(name)) {
-                    handleSSLConfig(n, vaultSecureStoreConfig);
-                }
+            String value = getTextContent(n);
+            if ("address".equals(name)) {
+                address = value;
+            } else if ("secret-path".equals(name)) {
+                secretPath = value;
+            } else if ("token".equals(name)) {
+                token = value;
+            } else if ("ssl".equals(name)) {
+                sslConfig = parseSslConfig(n);
+            } else if ("polling-interval".equals(name)) {
+                pollingInterval = parseInt(value);
             }
         }
+        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig(address, secretPath, token)
+                .setSSLConfig(sslConfig)
+                .setPollingInterval(pollingInterval);
         return vaultSecureStoreConfig;
-    }
-
-    private void handleSSLConfig(Node node, VaultSecureStoreConfig vaultSecureStoreConfig) {
-        SSLConfig sslConfig = parseSslConfig(node);
-        vaultSecureStoreConfig.setSSLConfig(sslConfig);
-    }
-
-    private void handleVaultEntries(Node entriesRoot, VaultSecureStoreConfig vaultSecureStoreConfig) {
-        List<VaultSecureStoreConfig.Entry> entries = new ArrayList<>();
-        for (Node n : childElements(entriesRoot)) {
-            String entryName = getAttribute(n, "name");
-            entries.add(new VaultSecureStoreConfig.Entry(entryName));
-        }
-        vaultSecureStoreConfig.setEntries(entries);
     }
 
     private void handleCRDTReplication(Node root) {

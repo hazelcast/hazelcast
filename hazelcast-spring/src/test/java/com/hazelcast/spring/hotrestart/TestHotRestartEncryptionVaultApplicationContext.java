@@ -82,14 +82,11 @@ public class TestHotRestartEncryptionVaultApplicationContext {
         assertEquals("http://localhost:1234", vaultConfig.getAddress());
         assertEquals("secret/path", vaultConfig.getSecretPath());
         assertEquals("token", vaultConfig.getToken());
-        assertEquals("namespace", vaultConfig.getNamespace());
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
         assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
-        assertEquals(2, vaultConfig.getEntries().size());
-        assertEquals("entry", vaultConfig.getEntries().get(0).getName());
-        assertEquals("entry2", vaultConfig.getEntries().get(1).getName());
+        assertEquals(60, vaultConfig.getPollingInterval());
     }
 }

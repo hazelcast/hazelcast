@@ -43,7 +43,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -284,10 +283,10 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile(), "keyStorePassword");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig =
+                new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile()).setPassword("keyStorePassword");
         secureStoreConfig.setType("JCEKS");
-        secureStoreConfig.setEntries(Collections.singletonList(
-                new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
+        secureStoreConfig.setPollingInterval(60);
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
@@ -309,10 +308,10 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        JavaKeyStoreSecureStoreConfig secureStoreConfig = new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile(), "keyStorePassword");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig =
+                new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile()).setPassword("keyStorePassword");
         secureStoreConfig.setType("JCEKS");
-        secureStoreConfig.setEntries(Collections.singletonList(
-                new JavaKeyStoreSecureStoreConfig.Entry("entry", "entryPassword")));
+        secureStoreConfig.setPollingInterval(60);
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
@@ -323,8 +322,6 @@ public class ConfigXmlGeneratorTest {
         assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
         JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) actualConfig.getSecureStoreConfig();
         assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getPassword());
-        assertEquals(1, keyStoreConfig.getEntries().size());
-        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getEntries().get(0).getPassword());
     }
 
     @Test
@@ -339,13 +336,9 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig();
-        secureStoreConfig.setAddress("http://address:1234");
-        secureStoreConfig.setSecretPath("secret/path");
-        secureStoreConfig.setToken("token");
-        secureStoreConfig.setNamespace("namespace");
-        secureStoreConfig.setEntries(Collections.singletonList(
-                new VaultSecureStoreConfig.Entry("entry")));
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig("http://address:1234",
+                "secret/path", "token");
+        secureStoreConfig.setPollingInterval(60);
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
                  .setProperty("trustStorePassword", "Hazelcast");
@@ -377,13 +370,9 @@ public class ConfigXmlGeneratorTest {
         encryptionAtRestConfig.setEnabled(true);
         encryptionAtRestConfig.setAlgorithm("AES");
         encryptionAtRestConfig.setSalt("salt");
-        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig();
-        secureStoreConfig.setAddress("http://address:1234");
-        secureStoreConfig.setSecretPath("secret/path");
-        secureStoreConfig.setToken("token");
-        secureStoreConfig.setNamespace("namespace");
-        secureStoreConfig.setEntries(Collections.singletonList(
-                new VaultSecureStoreConfig.Entry("entry")));
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig("http://address:1234",
+                "secret/path", "token");
+        secureStoreConfig.setPollingInterval(60);
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
                  .setProperty("trustStorePassword", "Hazelcast");

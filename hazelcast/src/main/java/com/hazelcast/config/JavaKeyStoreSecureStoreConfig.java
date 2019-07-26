@@ -17,37 +17,60 @@
 package com.hazelcast.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Java KeyStore Secure Store configuration.
+ * <p>
+ * The Java KeyStore Secure Store exposes (symmetric) encryption keys stored in a Java KeyStore
+ * with path, type, and password as specified by {@link #getType()}, {@link #getPath()}, and
+ * {@link #getPassword()}, respectively. The Java KeyStore SecureStore loads all symmetric keys
+ * available in the KeyStore and treats them as versions of a single key. More specifically:
+ * <ul>
+ *     <li>If an alias for the current encryption key is set (see
+ *     {@link #setCurrentKeyAlias(String)}), the corresponding KeyStore entry is treated as
+ *     the current version of the encryption key, while any other entries are treated as
+ *     historical versions of the encryption key.</li>
+ *     <li>If an alias for the current encryption key is not set, the KeyStore entry with an
+ *     alias that comes last in alphabetical order is treated as the current version of the
+ *     encryption key, while any other entries are treated as historical versions of the
+ *     encryption key.</li>
+ *     <li>The KeyStore entries are expected to use the same password as the KeyStore.</li>
+ * </ul>
+ * The Java KeyStore can also poll the KeyStore for changes at preconfigured interval (disabled
+ * by default).
+ * <p>
+ * Only file-based KeyStores are supported.
  */
 public class JavaKeyStoreSecureStoreConfig
         extends SecureStoreConfig {
     /**
-     * The default Java KeyStore type (JCEKS).
+     * The default Java KeyStore type (PKCS12).
      */
-    public static final String DEFAULT_KEYSTORE_TYPE = "JCEKS";
+    public static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
+
+    /**
+     * Default interval (in seconds) for polling for changes in the KeyStore: 0 (polling
+     * disabled).
+     */
+    public static final int DEFAULT_POLLING_INTERVAL = 0;
 
     private File path;
     private String type = DEFAULT_KEYSTORE_TYPE;
     private String password;
-    private List<Entry> entries = new ArrayList<>();
+    private String currentKeyAlias;
+    private int pollingInterval = DEFAULT_POLLING_INTERVAL;
 
     /**
-     * Creates a new Java KeyStore configuration.
+     * Creates a new Java KeyStore Secure Store configuration.
      * @param path the KeyStore file path
-     * @param password the KeyStore password
      */
-    public JavaKeyStoreSecureStoreConfig(File path, String password) {
+    public JavaKeyStoreSecureStoreConfig(File path) {
         checkNotNull(path, "Java Key Store path cannot be null!");
-        checkNotNull(password, "Java Key Store password cannot be null!");
         this.path = path;
-        this.password = password;
     }
 
     /**
@@ -59,7 +82,7 @@ public class JavaKeyStoreSecureStoreConfig
     }
 
     /**
-     * Sets the Java KeyStore type (JCEKS, PKCS12 etc.)
+     * Sets the Java KeyStore type (PKCS12, JCEKS etc.)
      * @param type the KeyStore type
      * @return the updated {@link JavaKeyStoreSecureStoreConfig} instance
      * @throws IllegalArgumentException if type is {code null}
@@ -102,96 +125,51 @@ public class JavaKeyStoreSecureStoreConfig
      * Sets the Java KeyStore password.
      * @param password the KeyStore password
      * @return the updated {@link JavaKeyStoreSecureStoreConfig} instance
-     * @throws IllegalArgumentException if password is {code null}
      */
     public JavaKeyStoreSecureStoreConfig setPassword(String password) {
-        checkNotNull(password, "Java Key Store password cannot be null!");
+        // null password allowed
         this.password = password;
         return this;
     }
 
     /**
-     * Returns the Java KeyStore entries.
-     * @return a list of {@link Entry} objects
+     * Returns the alias for the current encryption key entry or {@code null} if no alias is set.
+     * @return the alias or {@code null}
      */
-    public List<Entry> getEntries() {
-        return entries;
+    public String getCurrentKeyAlias() {
+        return currentKeyAlias;
     }
 
     /**
-     * Sets the Java KeyStore entries.
-     * @param entries a list of {@link Entry} objects
+     * Sets the alias for the current encryption key entry.
+     * @param currentKeyAlias the alias for the current encryption key or {@code null}
      * @return the updated {@link JavaKeyStoreSecureStoreConfig} instance
-     * @throws IllegalArgumentException if entries is {code null}
      */
-    public JavaKeyStoreSecureStoreConfig setEntries(List<Entry> entries) {
-        checkNotNull(entries, "Java Key Store entries cannot be null!");
-        this.entries = entries;
+    public JavaKeyStoreSecureStoreConfig setCurrentKeyAlias(String currentKeyAlias) {
+        this.currentKeyAlias = currentKeyAlias;
         return this;
     }
 
     /**
-     * A key entry to be looked up in the Java KeyStore.
+     * Returns the polling interval (in seconds) for checking for changes in the KeyStore.
+     *
+     * @return the polling interval
      */
-    public static class Entry {
-        private final String name;
-        private final String password;
+    public int getPollingInterval() {
+        return pollingInterval;
+    }
 
-        /**
-         * Creates a new entry with given name and password
-         * @param name the entry name
-         * @param password the entry password
-         */
-        public Entry(String name, String password) {
-            this.name = name;
-            this.password = password;
-        }
-
-        /**
-         * Returns the entry name.
-         * @return the entry name
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Returns the entry password.
-         * @return the entry password
-         */
-        public String getPassword() {
-            return password;
-        }
-
-        @Override
-        public String toString() {
-            return "Entry{"
-                    + "name='" + name + '\''
-                    + ", password='***'"
-                    + '}';
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof Entry)) {
-                return false;
-            }
-            Entry other = (Entry) o;
-            if (!Objects.equals(name, other.name)) {
-                return false;
-            }
-            return Objects.equals(password, other.password);
-        }
-
-        @Override
-        public final int hashCode() {
-            int result = name == null ? 0 : name.hashCode();
-            result = 31 * result + (password == null ? 0 : password.hashCode());
-            return result;
-        }
+    /**
+     * Sets the polling interval (in seconds) for checking for changes in the KeyStore. The value 0 disables polling.
+     *
+     * @param pollingInterval the polling interval
+     * @return the updated {@link JavaKeyStoreSecureStoreConfig} instance
+     * @throws IllegalArgumentException if pollingInterval is less than zero
+     */
+    public JavaKeyStoreSecureStoreConfig setPollingInterval(int pollingInterval) {
+        checkNotNegative(pollingInterval, "Polling interval cannot be negative!");
+        this.pollingInterval = pollingInterval;
+        return this;
     }
 
     @Override
@@ -199,8 +177,9 @@ public class JavaKeyStoreSecureStoreConfig
         return "JavaKeyStoreSecureStoreConfig{"
                 + "path='" + path + '\''
                 + ", type='" + type + '\''
+                + ", pollingInterval='" + pollingInterval + '\''
+                + ", currentKeyAlias='" + currentKeyAlias + '\''
                 + ", password='***'"
-                + ", entries=" + entries
                 + '}';
     }
 
@@ -222,7 +201,10 @@ public class JavaKeyStoreSecureStoreConfig
         if (!Objects.equals(password, other.password)) {
             return false;
         }
-        return Objects.equals(entries, other.entries);
+        if (!Objects.equals(currentKeyAlias, other.currentKeyAlias)) {
+            return false;
+        }
+        return this.pollingInterval == other.pollingInterval;
     }
 
     @Override
@@ -230,7 +212,8 @@ public class JavaKeyStoreSecureStoreConfig
         int result = path == null ? 0 : path.hashCode();
         result = 31 * result + (type == null ? 0 : type.hashCode());
         result = 31 * result + (password == null ? 0 : password.hashCode());
-        result = 31 * result + (entries == null ? 0 : entries.hashCode());
+        result = 31 * result + (currentKeyAlias == null ? 0 : currentKeyAlias.hashCode());
+        result = 31 * result + pollingInterval;
         return result;
     }
 

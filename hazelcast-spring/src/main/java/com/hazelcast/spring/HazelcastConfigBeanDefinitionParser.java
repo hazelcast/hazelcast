@@ -139,14 +139,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
@@ -380,65 +381,43 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder encryptionAtRestConfigBuilder = createBeanBuilder(EncryptionAtRestConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
             fillValues(node, encryptionAtRestConfigBuilder, "secureStore");
-            for (Node secureStoreNode : childElementsWithName(node, "secure-store")) {
-                for (Node child : childElements(secureStoreNode)) {
-                    String nodeName = cleanNodeName(child);
-                    AbstractBeanDefinition secureStoreBeanDefinition = null;
-                    if ("keystore".equals(nodeName)) {
-                        secureStoreBeanDefinition = handleKeyStoreSecureStoreConfig(child);
-                    } else if ("vault".equals(nodeName)) {
-                        secureStoreBeanDefinition = handleVaultSecureStoreConfig(child);
-                    }
-                    if (secureStoreBeanDefinition != null) {
-                        encryptionAtRestConfigBuilder.addPropertyValue("secureStoreConfig", secureStoreBeanDefinition);
-                    }
+            Node secureStoreNode = childElementWithName(node, "secure-store");
+            for (Node child : childElements(secureStoreNode)) {
+                String nodeName = cleanNodeName(child);
+                AbstractBeanDefinition secureStoreBeanDefinition = null;
+                if ("keystore".equals(nodeName)) {
+                    secureStoreBeanDefinition = handleKeyStoreSecureStoreConfig(child);
+                } else if ("vault".equals(nodeName)) {
+                    secureStoreBeanDefinition = handleVaultSecureStoreConfig(child);
+                }
+                if (secureStoreBeanDefinition != null) {
+                    encryptionAtRestConfigBuilder.addPropertyValue("secureStoreConfig", secureStoreBeanDefinition);
                 }
             }
-            hotRestartConfigBuilder.addPropertyValue("encryptionAtRestConfig",
-                    encryptionAtRestConfigBuilder.getBeanDefinition());
+            hotRestartConfigBuilder.addPropertyValue("encryptionAtRestConfig", encryptionAtRestConfigBuilder.getBeanDefinition());
         }
 
         private AbstractBeanDefinition handleKeyStoreSecureStoreConfig(Node node) {
             BeanDefinitionBuilder keyStoreConfigBuilder = createBeanBuilder(JavaKeyStoreSecureStoreConfig.class);
-            fillValues(node, keyStoreConfigBuilder, "entries");
-            ManagedList<AbstractBeanDefinition> entries = new ManagedList<>();
-            for (Node entriesNode : childElementsWithName(node, "entries")) {
-                for (Node child : childElements(entriesNode)) {
-                    String nodeName = cleanNodeName(child);
-                    if ("entry".equals(nodeName)) {
-                        String name = getAttribute(child, "name");
-                        String password = getAttribute(child, "password");
-                        BeanDefinitionBuilder entryConfigBuilder = createBeanBuilder(JavaKeyStoreSecureStoreConfig.Entry.class);
-                        entryConfigBuilder.addConstructorArgValue(name);
-                        entryConfigBuilder.addConstructorArgValue(password);
-                        entries.add(entryConfigBuilder.getBeanDefinition());
-                    }
-                }
-            }
-            keyStoreConfigBuilder.addPropertyValue("entries", entries);
+            Node pathNode = childElementWithName(node, "path");
+            keyStoreConfigBuilder.addConstructorArgValue(new File(getTextContent(pathNode).trim()).getAbsoluteFile());
+            fillValues(node, keyStoreConfigBuilder);
             return keyStoreConfigBuilder.getBeanDefinition();
         }
 
         private AbstractBeanDefinition handleVaultSecureStoreConfig(Node node) {
             BeanDefinitionBuilder vaultConfigBuilder = createBeanBuilder(VaultSecureStoreConfig.class);
-            fillValues(node, vaultConfigBuilder, "entries", "ssl");
-            ManagedList<AbstractBeanDefinition> entries = new ManagedList<>();
-            for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("entries".equals(nodeName)) {
-                    for (Node entryChild : childElements(child)) {
-                        if ("entry".equals(cleanNodeName(entryChild))) {
-                            String name = getAttribute(entryChild, "name");
-                            BeanDefinitionBuilder entryConfigBuilder = createBeanBuilder(VaultSecureStoreConfig.Entry.class);
-                            entryConfigBuilder.addConstructorArgValue(name);
-                            entries.add(entryConfigBuilder.getBeanDefinition());
-                        }
-                    }
-                } else if ("ssl".equals(nodeName)) {
-                    handleSSLConfig(child, vaultConfigBuilder);
-                }
+            Node addressNode = childElementWithName(node, "address");
+            Node secretPathNode = childElementWithName(node, "secrets-path");
+            Node tokenNode = childElementWithName(node, "token");
+            vaultConfigBuilder.addConstructorArgValue(getTextContent(addressNode).trim());
+            vaultConfigBuilder.addConstructorArgValue(getTextContent(secretPathNode).trim());
+            vaultConfigBuilder.addConstructorArgValue(getTextContent(tokenNode).trim());
+            fillValues(node, vaultConfigBuilder, "ssl");
+            Node ssl = childElementWithName(node, "ssl");
+            if (ssl != null) {
+                handleSSLConfig(ssl, vaultConfigBuilder);
             }
-            vaultConfigBuilder.addPropertyValue("entries", entries);
             return vaultConfigBuilder.getBeanDefinition();
         }
 

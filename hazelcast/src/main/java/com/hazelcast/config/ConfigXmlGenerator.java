@@ -1408,15 +1408,9 @@ public class ConfigXmlGenerator {
         gen.open("keystore")
            .node("path", secureStoreConfig.getPath().getAbsolutePath())
            .node("type", secureStoreConfig.getType())
-           .node("password", getOrMaskValue(secureStoreConfig.getPassword()));
-        gen.open("entries");
-        for (JavaKeyStoreSecureStoreConfig.Entry entry : secureStoreConfig.getEntries()) {
-            gen.open("entry", "name",
-                    entry.getName(), "password",
-                    getOrMaskValue(entry.getPassword()))
-               .close();
-        }
-        gen.close();
+           .node("password", getOrMaskValue(secureStoreConfig.getPassword()))
+           .node("polling-interval", secureStoreConfig.getPollingInterval())
+           .node("current-key-alias", secureStoreConfig.getCurrentKeyAlias());
         gen.close();
     }
 
@@ -1425,16 +1419,8 @@ public class ConfigXmlGenerator {
            .node("address", secureStoreConfig.getAddress())
            .node("secret-path", secureStoreConfig.getSecretPath())
            .node("token", getOrMaskValue(secureStoreConfig.getToken()))
-           .node("secret-engine-version", secureStoreConfig.getSecretEngineVersion());
-        if (secureStoreConfig.getNamespace() != null) {
-           gen.node("namespace", secureStoreConfig.getNamespace());
-        }
+           .node("polling-interval", secureStoreConfig.getPollingInterval());
         sslConfigXmlGenerator(gen, secureStoreConfig.getSSLConfig());
-        gen.open("entries");
-        for (VaultSecureStoreConfig.Entry entry : secureStoreConfig.getEntries()) {
-            gen.open("entry", "name", entry.getName()).close();
-        }
-        gen.close();
         gen.close();
     }
 

@@ -2449,13 +2449,13 @@
             Store that it will be used to retrieve the encryption keys.
             * <keystore>:
                 Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
-                JCEKS or PKCS12), the KeyStore password, and a list of key entries to be looked up in the KeyStore, in the
-                given order (the first key will be considered the current and will be used for encrypting the data).
+                PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and
+                (optionally) a polling interval for checking for changes in the KeyStore.
             * <vault>:
-                Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the secret path where
-                key entries will be looked up, the access token, the (optional) namespace, the (optional) <ssl> configuration
-                for HTTPS support, and a list of key entries to be looked up in Vault, in the given order (the first key will
-                be considered the current and will be used for encrypting the data).
+                Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets
+                engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace,
+                the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for
+                changes in Vault.
     -->
     <hot-restart-persistence enabled="true">
         <base-dir>/mnt/hot-restart</base-dir>
@@ -2471,17 +2471,15 @@
                     <path>/path/to/keystore.file</path>
                     <type>PKCS12</type>
                     <password>password</password>
-                    <entries>
-                        <entry name="entry" password="entry-password"/>
-                        <entry name="entry2" password="entry2-password"/>
-                    </entries>
+                    <current-key-alias>current</current-key-alias>
+                    <polling-interval>60</polling-interval>
                 </keystore>
                 <!--
                 <vault>
                     <address>http://localhost:1234</address>
                     <secret-path>secret/path</secret-path>
                     <token>token</token>
-                    <namespace>namespace</namespace>
+                    <polling-interval>60</polling-interval>
                     <ssl enabled="false">
                         <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
                         <properties>
@@ -2495,10 +2493,6 @@
                             <property name="trustStoreType">JKS</property>
                         </properties>
                     </ssl>
-                    <entries>
-                        <entry name="entry"/>
-                        <entry name="entry2"/>
-                    </entries>
                 </vault>
                 -->
             </secure-store>

@@ -3975,7 +3975,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="password" type="xs:string" use="required">
+        <xs:attribute name="password" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
                     The password to access the entry.
@@ -3993,37 +3993,33 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="type" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="type" type="xs:string" minOccurs="0" maxOccurs="1" default="PKCS12">
                 <xs:annotation>
                     <xs:documentation>
-                        The type of the KeyStore (JCEKS, PKCS12, etc.).
+                        The type of the KeyStore (PKCS12, JCEKS, etc.).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="password" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         The password to access the KeyStore (JCEKS, PKCS12, etc.).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="entries" minOccurs="1" maxOccurs="1">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The key entries to be looked up in the KeyStore, in the specified order.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:sequence>
-                        <xs:element name="entry" type="keystore-entry" minOccurs="1" maxOccurs="unbounded">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    The key entry to be looked up in the KeyStore.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                </xs:complexType>
+            <xs:element name="current-key-alias" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The alias for the current encryption key entry (optional).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="polling-interval" type="xs:int" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The polling interval for checking for changes in the KeyStore.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:all>
     </xs:complexType>
@@ -4036,27 +4032,12 @@
         </xs:annotation>
     </xs:element>
 
-    <xs:complexType name="vault-entry">
-        <xs:annotation>
-            <xs:documentation>
-                The key entry stored in Vault.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the entry.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="vault">
         <xs:all>
             <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The address of the Vault server.
+                        The address of the Vault REST API server.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4067,19 +4048,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="secret-engine-version" minOccurs="0" maxOccurs="1" default="V2">
-                <xs:simpleType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The version of Vault secret engine to use.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:restriction base="non-space-string">
-                        <xs:enumeration value="V1"/>
-                        <xs:enumeration value="V2"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:element>
             <xs:element name="token" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -4087,10 +4055,10 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="namespace" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="polling-interval" type="xs:int" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        The Vault namespace.
+                        The polling interval for checking for changes in Vault.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4100,24 +4068,6 @@
                         SSL/TLS configuration for HTTPS connections.
                     </xs:documentation>
                 </xs:annotation>
-            </xs:element>
-            <xs:element name="entries" minOccurs="1" maxOccurs="1">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The key entries to be looked up in Vault, in the specified order.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:sequence>
-                        <xs:element name="entry" type="vault-entry" minOccurs="1" maxOccurs="unbounded">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    The key entry to be looked up in Vault.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                </xs:complexType>
             </xs:element>
         </xs:all>
     </xs:complexType>
@@ -4132,7 +4082,7 @@
 
     <xs:complexType name="secure-store">
         <xs:sequence>
-            <xs:element ref="secure-store-substitution-group" minOccurs="1" maxOccurs="1"/>
+            <xs:element ref="secure-store-substitution-group" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 
