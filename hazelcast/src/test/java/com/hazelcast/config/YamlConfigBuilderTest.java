@@ -125,17 +125,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: dev\n"
-                + "    password: clusterpass";
-        buildConfig(yaml);
-    }
-
-    @Override
-    @Test(expected = InvalidConfigurationException.class)
     public void testJoinValidation() {
         String yaml = ""
                 + "hazelcast:\n"

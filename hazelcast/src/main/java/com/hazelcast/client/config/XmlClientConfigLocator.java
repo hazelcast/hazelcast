@@ -33,7 +33,7 @@ public class XmlClientConfigLocator extends AbstractConfigLocator {
     }
 
     @Override
-    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+    protected boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
         return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_CLIENT_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 

@@ -85,7 +85,6 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         System.clearProperty("hazelcast.client.config");
     }
 
-    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast>"

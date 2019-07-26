@@ -33,7 +33,7 @@ public class YamlClientConfigLocator extends AbstractConfigLocator {
     }
 
     @Override
-    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+    protected boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
         return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_CLIENT_CONFIG, YAML_ACCEPTED_SUFFIXES);
     }
 

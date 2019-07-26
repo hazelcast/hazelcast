@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Test cases specific only to YAML based configuration. The cases not
  * YAML specific should be added to {@link YamlConfigBuilderTest}.
@@ -106,6 +108,18 @@ public class YamlOnlyConfigBuilderTest {
 
         expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/instance-name"));
         buildConfig(yaml);
+    }
+
+    @Test
+    public void testWithoutRootHazelcastNode() {
+        String yaml = ""
+                + "map:\n"
+                + "  myMap:\n"
+                + "    backup-count: 2";
+
+        Config config = buildConfig(yaml);
+        MapConfig myMapConfig = config.getMapConfig("myMap");
+        assertEquals(2, myMapConfig.getBackupCount());
     }
 
     private Config buildConfig(String yaml) {

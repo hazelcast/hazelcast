@@ -108,7 +108,7 @@ public abstract class AbstractYamlConfigBuilder {
 
             YamlNode imdgRootLoaded = asMapping(rootLoaded).child(getConfigRoot());
             if (imdgRootLoaded == null) {
-                return;
+                imdgRootLoaded = rootLoaded;
             }
 
             replaceVariables(asW3cNode(imdgRootLoaded));
