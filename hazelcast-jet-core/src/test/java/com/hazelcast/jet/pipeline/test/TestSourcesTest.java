@@ -43,7 +43,7 @@ public class TestSourcesTest extends PipelineTestSupport {
         List<Object> expected = Arrays.asList(input);
 
         p.drawFrom(TestSources.items(input))
-         .apply(Assertions.assertOrdered(expected));
+                .apply(Assertions.assertOrdered(expected));
 
         jet().newJob(p).join();
     }
@@ -83,4 +83,31 @@ public class TestSourcesTest extends PipelineTestSupport {
         expectedException.expect(AssertionCompletedException.class);
         executeAndPeel();
     }
+
+    /**
+     * Emitted items from itemStream method are not 100% accurate (due to rounding) for numbers which does not satisfy
+     * "1_000_000_000 % itemsPerSecond = 0". Goal of this test is to validate that the number of emitted items is in range
+     * <0.5*expected,2*expected>, i.e. whether number of emitted items in not completely incorrect.
+     */
+    @Test
+    public void test_itemStream_in_expected_range() throws Throwable {
+        int itemsPerSecond = 5327;
+
+        p.drawFrom(TestSources.itemStream(itemsPerSecond))
+                .withNativeTimestamps(0)
+                .window(WindowDefinition.tumbling(1000))
+                .aggregate(AggregateOperations.counting())
+                .apply(assertCollectedEventually(10, windowResults -> {
+                    // first window may be incomplete
+                    assertTrue("sink list should contain some items", windowResults.size() > 1);
+                    assertTrue("emitted items is more than twice lower then expected itemsPerSecond",
+                            (long) windowResults.get(1).result() > itemsPerSecond / 2);
+                    assertTrue("emitted items is more than twice higher then expected itemsPerSecond",
+                            (long) windowResults.get(1).result() < itemsPerSecond * 2);
+                }));
+
+        expectedException.expect(AssertionCompletedException.class);
+        executeAndPeel();
+    }
+
 }
