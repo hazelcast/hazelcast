@@ -903,7 +903,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setQuorumName(randomString())
                 .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
                 .addMapIndexConfig(new MapIndexConfig("attr", true))
-                .setMetadataPolicy(MetadataPolicy.OFF);
+                .setMetadataPolicy(MetadataPolicy.OFF)
+                .setReadBackupData(true)
+                .setStatisticsEnabled(false);
     }
 
     private MapConfig getMapConfig_withEntryListenerImplementation() {
