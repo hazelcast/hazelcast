@@ -468,15 +468,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         final int numRemoteMembers = ptionArrgmt.remotePartitionAssignment.get().size();
         final int queueSize = edge.getConfig().getQueueSize();
 
-        final int[][] ptionsPerProcessor =
-                ptionArrgmt.assignPartitionsToProcessors(downstreamParallelism, edge.isDistributed());
-
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             if (downstreamParallelism < upstreamParallelism) {
                 throw new IllegalArgumentException(String.format(
-                        "The edge %s specifies the %s routing policy, but the downstream vertex" +
+                    "The edge %s specifies the %s routing policy, but the downstream vertex" +
                         " parallelism (%d) is less than the upstream vertex parallelism (%d)",
-                        edge, RoutingPolicy.ISOLATED.name(), downstreamParallelism, upstreamParallelism));
+                    edge, RoutingPolicy.ISOLATED.name(), downstreamParallelism, upstreamParallelism));
             }
             if (edge.isDistributed()) {
                 throw new IllegalArgumentException("Isolated edges must be local: " + edge);
@@ -484,10 +481,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             // there is only one producer per consumer for a one to many edge, so queueCount is always 1
             ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edge.edgeId(),
-                    e -> createConveyorArray(downstreamParallelism, 1, queueSize));
+                e -> createConveyorArray(downstreamParallelism, 1, queueSize));
             return IntStream.range(0, downstreamParallelism)
                             .filter(i -> i % upstreamParallelism == processorIndex)
-                            .mapToObj(i -> new ConveyorCollector(localConveyors[i], 0, ptionsPerProcessor[i]))
+                            .mapToObj(i -> new ConveyorCollector(localConveyors[i], 0, null))
                             .toArray(OutboundCollector[]::new);
         }
 
@@ -499,14 +496,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
          * For a distributed edge, there is one additional producer per member represented
          * by the ReceiverTasklet.
          */
+        final int[][] ptionsPerProcessor = getPartitionDistribution(edge, downstreamParallelism);
         final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edge.edgeId(),
-                e -> {
-                    int queueCount = upstreamParallelism + (edge.isDistributed() ? numRemoteMembers : 0);
-                    return createConveyorArray(downstreamParallelism, queueCount, queueSize);
-                });
+            e -> {
+                int queueCount = upstreamParallelism + (edge.isDistributed() ? numRemoteMembers : 0);
+                return createConveyorArray(downstreamParallelism, queueCount, queueSize);
+            });
         final OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
         Arrays.setAll(localCollectors, n ->
-                new ConveyorCollector(localConveyors[n], processorIndex, ptionsPerProcessor[n]));
+            new ConveyorCollector(localConveyors[n], processorIndex, ptionsPerProcessor[n]));
 
         // in a local edge, we only have the local collectors.
         if (!edge.isDistributed()) {
@@ -526,9 +524,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         int index = 1;
         for (Map.Entry<Address, int[]> entry : memberToPartitions.entrySet()) {
             allCollectors[index++] = new ConveyorCollectorWithPartition(senderConveyorMap.get(entry.getKey()),
-                    processorIndex, entry.getValue());
+                processorIndex, entry.getValue());
         }
         return allCollectors;
+    }
+
+    private int[][] getPartitionDistribution(EdgeDef edge, int downstreamParallelism) {
+        return edge.routingPolicy().equals(RoutingPolicy.PARTITIONED) ?
+            ptionArrgmt.assignPartitionsToProcessors(downstreamParallelism, edge.isDistributed())
+            : new int[downstreamParallelism][];
     }
 
     private void createIfAbsentReceiverTasklet(

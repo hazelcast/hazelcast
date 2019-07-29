@@ -19,13 +19,15 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ProgressState;
 
+import javax.annotation.Nullable;
+
 public class ConveyorCollector implements OutboundCollector {
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
     private final int[] partitions;
 
-    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, int[] partitions) {
+    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, @Nullable int[] partitions) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
         this.partitions = partitions;

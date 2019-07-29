@@ -22,10 +22,9 @@ import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @FunctionalInterface
 public interface OutboundCollector {
@@ -50,8 +49,9 @@ public interface OutboundCollector {
     }
 
     /**
-     * Returns the list of partitions handled by this collector.
+     * Returns the list of partitions handled by this collector (only if edge is partitioned).
      */
+    @Nullable
     default int[] getPartitions() {
         throw new UnsupportedOperationException();
     }
@@ -79,16 +79,12 @@ public interface OutboundCollector {
     abstract class Composite implements OutboundCollector {
 
         protected final OutboundCollector[] collectors;
-        protected final int[] partitions;
         protected final ProgressTracker progTracker = new ProgressTracker();
         protected final BitSet broadcastTracker;
 
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
             this.broadcastTracker = new BitSet(collectors.length);
-            this.partitions = Stream.of(collectors)
-                                    .flatMapToInt(c -> IntStream.of(c.getPartitions()))
-                                    .sorted().toArray();
         }
 
         @Override
@@ -108,11 +104,6 @@ public interface OutboundCollector {
                 broadcastTracker.clear();
             }
             return progTracker.toProgressState();
-        }
-
-        @Override
-        public int[] getPartitions() {
-            return partitions;
         }
     }
 
@@ -173,6 +164,7 @@ public interface OutboundCollector {
 
         private final Partitioner partitioner;
         private final OutboundCollector[] partitionLookupTable;
+        private final int[] partitions;
         private int partitionId = -1;
 
         Partitioned(OutboundCollector[] collectors, Partitioner partitioner, int partitionCount) {
@@ -180,11 +172,19 @@ public interface OutboundCollector {
             this.partitioner = partitioner;
             this.partitionLookupTable = new OutboundCollector[partitionCount];
 
+            int[] myPartitions = new int[partitionCount];
+            int idx = 0;
             for (OutboundCollector collector : collectors) {
-                for (int partitionId : collector.getPartitions()) {
-                    partitionLookupTable[partitionId] = collector;
+                int[] partitionsForCollector = collector.getPartitions();
+                assert partitionsForCollector != null : "collector must define partitions";
+
+                for (int partition : partitionsForCollector) {
+                    partitionLookupTable[partition] = collector;
                 }
+                System.arraycopy(partitionsForCollector, 0, myPartitions, idx, partitionsForCollector.length);
+                idx += partitionsForCollector.length;
             }
+            this.partitions = Arrays.copyOf(myPartitions, idx);
         }
 
         @Override
@@ -207,6 +207,11 @@ public interface OutboundCollector {
             assert collector != null : "This item should not be handled by this collector as "
                     + "requested partitionId is not present";
             return collector.offer(item, partitionId);
+        }
+
+        @Override
+        public int[] getPartitions() {
+            return partitions;
         }
     }
 }
