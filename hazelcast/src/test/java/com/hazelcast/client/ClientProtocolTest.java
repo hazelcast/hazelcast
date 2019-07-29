@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;

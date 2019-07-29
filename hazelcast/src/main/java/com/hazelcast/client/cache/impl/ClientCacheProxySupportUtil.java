@@ -26,10 +26,10 @@ import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationLis
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
-import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;

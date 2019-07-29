@@ -17,8 +17,6 @@
 package com.hazelcast.client;
 
 
-import com.hazelcast.client.api.Client;
-import com.hazelcast.client.api.ClientListener;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;

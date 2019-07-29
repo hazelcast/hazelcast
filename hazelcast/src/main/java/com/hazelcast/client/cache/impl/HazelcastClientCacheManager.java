@@ -23,7 +23,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.clientside.ClientICacheManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;

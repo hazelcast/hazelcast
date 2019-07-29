@@ -18,7 +18,7 @@ package com.hazelcast.client.topic;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.proxy.ClientReliableTopicProxy;
+import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;

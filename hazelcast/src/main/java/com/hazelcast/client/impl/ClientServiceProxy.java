@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.api.Client;
-import com.hazelcast.client.api.ClientListener;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientListener;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;

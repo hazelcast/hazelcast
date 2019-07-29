@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.api.ClientType;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;

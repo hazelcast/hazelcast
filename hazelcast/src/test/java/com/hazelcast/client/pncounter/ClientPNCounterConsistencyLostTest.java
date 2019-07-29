@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.pncounter;
 
-import com.hazelcast.client.proxy.ClientPNCounterProxy;
+import com.hazelcast.client.impl.proxy.ClientPNCounterProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.Config;

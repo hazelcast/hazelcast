@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
+import com.hazelcast.client.impl.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;

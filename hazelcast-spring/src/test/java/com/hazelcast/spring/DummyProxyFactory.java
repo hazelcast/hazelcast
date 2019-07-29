@@ -16,9 +16,9 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ClientProxy;
+import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
 public class DummyProxyFactory implements ClientProxyFactory {
 

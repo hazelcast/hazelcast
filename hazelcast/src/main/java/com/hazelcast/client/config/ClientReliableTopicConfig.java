@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.concurrent.Executor;
@@ -27,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Contains the ReliableTopic configuration for a client.
  *
- * @see com.hazelcast.client.proxy.ClientReliableTopicProxy
+ * @see ClientReliableTopicProxy
  */
 public class ClientReliableTopicConfig {
     /**

@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.statistics;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.api.ClientType;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;

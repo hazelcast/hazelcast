@@ -19,7 +19,7 @@ package classloading;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
-import com.hazelcast.client.spi.impl.discovery.ClientDiscoverySpiTest;
+import com.hazelcast.client.impl.spi.impl.discovery.ClientDiscoverySpiTest;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.Hazelcast;

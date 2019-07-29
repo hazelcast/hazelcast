@@ -17,7 +17,7 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;

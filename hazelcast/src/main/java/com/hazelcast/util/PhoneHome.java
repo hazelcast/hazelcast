@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.client.api.ClientType;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;

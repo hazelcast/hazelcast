@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.api.ClientType;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.test.TestHazelcastFactory;

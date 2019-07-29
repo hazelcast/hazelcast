@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.test;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
