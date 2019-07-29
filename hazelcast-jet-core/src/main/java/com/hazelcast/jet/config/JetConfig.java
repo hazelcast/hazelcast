@@ -18,6 +18,7 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
@@ -33,7 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.jet.impl.util.JetProperties.JET_HOME;
+import static com.hazelcast.jet.core.JetProperties.JET_HOME;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -571,7 +572,7 @@ public class JetConfig {
 
     /**
      * Returns the absolute path for jet.home based from the system property
-     * {@link com.hazelcast.jet.impl.util.JetProperties#JET_HOME}
+     * {@link JetProperties#JET_HOME}
      */
     private static String jetHome() {
         return new File(System.getProperty(JET_HOME.getName(), JET_HOME.getDefaultValue())).getAbsolutePath();

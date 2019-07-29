@@ -37,7 +37,10 @@
 
     <!-- custom properties which can be read in the user code -->
     <properties>
-       <property name="custom.property">custom property</property>
+        <property name="jet.idle.cooperative.min.microseconds">50</property>
+        <property name="jet.idle.cooperative.max.microseconds">500</property>
+        <property name="jet.idle.noncooperative.min.microseconds">50</property>
+        <property name="jet.idle.noncooperative.max.microseconds">1000</property>
     </properties>
 
     <edge-defaults>

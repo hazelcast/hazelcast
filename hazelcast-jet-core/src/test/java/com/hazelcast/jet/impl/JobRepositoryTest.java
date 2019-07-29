@@ -41,8 +41,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Properties;
 
-import static com.hazelcast.jet.impl.util.JetProperties.JOB_RESULTS_MAX_SIZE;
-import static com.hazelcast.jet.impl.util.JetProperties.JOB_SCAN_PERIOD;
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
+import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;

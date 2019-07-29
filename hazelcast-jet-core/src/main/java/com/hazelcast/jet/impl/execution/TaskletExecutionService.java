@@ -24,6 +24,8 @@ import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -47,23 +49,22 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MIN_MICROSECONDS;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
 public class TaskletExecutionService {
-
-    private static final long MAXIMUM_IDLE_COOPERATIVE = MILLISECONDS.toNanos(1);
-    private static final long MAXIMUM_IDLE_NON_COOPERATIVE = MILLISECONDS.toNanos(5);
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final CooperativeWorker[] cooperativeWorkers;
@@ -78,17 +79,18 @@ public class TaskletExecutionService {
     private volatile IdleStrategy idlerCooperative;
     private volatile IdleStrategy idlerNonCooperative;
 
-    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, long minimumIdleTimeNs) {
+    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
         this.logger = nodeEngine.getLoggingService().getLogger(TaskletExecutionService.class);
 
-        logFine(logger, "Actual minimum idle time=%dµs", NANOSECONDS.toMicros(minimumIdleTimeNs));
-        idlerCooperative = new BackoffIdleStrategy(0, 0, minimumIdleTimeNs,
-                Math.max(minimumIdleTimeNs, MAXIMUM_IDLE_COOPERATIVE));
-        idlerNonCooperative = new BackoffIdleStrategy(0, 0, minimumIdleTimeNs,
-                Math.max(minimumIdleTimeNs, MAXIMUM_IDLE_NON_COOPERATIVE));
+        idlerCooperative = createIdler(
+            properties, JET_IDLE_COOPERATIVE_MIN_MICROSECONDS, JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
+        );
+        idlerNonCooperative = createIdler(
+            properties, JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS, JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
+        );
 
         nodeEngine.getMetricsRegistry().newProbeBuilder()
                        .withTag("module", "jet")
@@ -98,6 +100,7 @@ public class TaskletExecutionService {
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
+
         for (int i = 0; i < cooperativeWorkers.length; i++) {
             nodeEngine.getMetricsRegistry().newProbeBuilder()
                            .withTag("module", "jet")
@@ -205,6 +208,28 @@ public class TaskletExecutionService {
         } catch (InterruptedException e) {
             sneakyThrow(e);
         }
+    }
+
+    private BackoffIdleStrategy createIdler(
+        HazelcastProperties props, HazelcastProperty minProp, HazelcastProperty maxProp
+    ) {
+        int min = props.getInteger(minProp);
+        int max = props.getInteger(maxProp);
+        String minName = minProp.getName();
+        String maxName = maxProp.getName();
+        if (min >= max) {
+            logger.warning(
+                String.format(
+                    "The property %s must be set less than or equal to %s but current values are: %s=%d, %s=%d." +
+                        " Using minimum value as maximum instead.",
+                    minName, maxName, minName, min, maxName, max));
+            max = min;
+        }
+
+        logger.info(String.format("Creating idler with %s=%dµs,%s=%dµs", minName, min, maxName, max));
+        return new BackoffIdleStrategy(0, 0,
+            minProp.getTimeUnit().toNanos(min), maxProp.getTimeUnit().toNanos(max)
+        );
     }
 
     private final class BlockingWorker implements Runnable {

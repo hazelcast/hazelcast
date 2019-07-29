@@ -27,7 +27,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.util.JetProperties;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryBackupProcessor;

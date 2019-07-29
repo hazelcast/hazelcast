@@ -78,7 +78,7 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.JetProperties.JOB_SCAN_PERIOD;
+import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;

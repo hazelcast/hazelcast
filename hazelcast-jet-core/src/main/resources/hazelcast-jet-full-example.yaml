@@ -38,7 +38,10 @@ hazelcast-jet:
 
   # custom properties which can be read in the user code
   properties:
-    custom.property: custom property
+    jet.idle.cooperative.min.microseconds: 50
+    jet.idle.cooperative.max.microseconds: 500
+    jet.idle.noncooperative.min.microseconds: 50
+    jet.idle.noncooperative.max.microseconds: 1000
 
   edge-defaults:
     # capacity of the concurrent SPSC queue between each two processors

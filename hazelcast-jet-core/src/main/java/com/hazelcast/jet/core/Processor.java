@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.JetProperties;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -61,7 +60,7 @@ public interface Processor {
      * operations. Violations of this rule will manifest as less than 100% CPU
      * usage under maximum load (note that this is possible for other reasons too,
      * for example if the network is the bottleneck or if {@linkplain
-     * JetProperties#JET_MINIMUM_IDLE_MICROSECONDS parking time} is too high).
+     * JetProperties#JET_IDLE_COOPERATIVE_MAX_MICROSECONDS parking time} is too high).
      * The processor must also return as soon as the outbox rejects an item
      * (that is when the {@link Outbox#offer(Object) offer()} method returns
      * {@code false}).

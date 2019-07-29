@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -83,7 +85,8 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         Mockito.when(neMock.getMetricsRegistry()).thenReturn(metricsRegistry);
         Mockito.when(loggingService.getLogger(TaskletExecutionService.class))
                .thenReturn(Logger.getLogger(TaskletExecutionService.class));
-        es = new TaskletExecutionService(neMock, THREAD_COUNT, 10_000);
+        HazelcastProperties properties = new HazelcastProperties(new Properties());
+        es = new TaskletExecutionService(neMock, THREAD_COUNT, properties);
         classLoaderMock = mock(ClassLoader.class);
     }
 
