@@ -30,7 +30,9 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
-import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,9 +42,11 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 
 import example.serialization.TestDeserialized;
@@ -59,8 +63,17 @@ public class MulticastDeserializationTest {
     // TTL = 0 : restricted to the same host, won't be output by any interface
     private static final int MULTICAST_TTL = 0;
 
-    @After
-    public void tearDown() {
+    @Rule
+    public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
+            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
+
+    @Before
+    public void before() {
+        cleanup();
+    }
+
+    @AfterClass
+    public static void cleanup() {
         TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
     }
