@@ -74,6 +74,11 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
     }
 
     @Override
+    public boolean isDynamicStruct() {
+        return true;
+    }
+
+    @Override
     public RelDataTypeFamily getFamily() {
         return getSqlTypeName().getFamily();
     }
