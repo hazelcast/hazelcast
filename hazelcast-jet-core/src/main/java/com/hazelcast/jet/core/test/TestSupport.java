@@ -325,7 +325,9 @@ public final class TestSupport {
                 metaSupplierContext.setJetInstance(jetInstance);
             }
             metaSupplier.init(metaSupplierContext);
-            supplier = metaSupplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS);
+            Address address = jetInstance != null
+                    ? jetInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
+            supplier = metaSupplier.get(singletonList(address)).apply(address);
             TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
             if (jetInstance != null) {
                 supplierContext.setJetInstance(jetInstance);
