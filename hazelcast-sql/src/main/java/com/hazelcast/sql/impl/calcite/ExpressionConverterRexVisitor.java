@@ -22,6 +22,7 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -147,9 +148,11 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;
 
-                String name = function.getName();
-
-                if (name.equals("CHAR_LENGTH"))
+                if (
+                    function == SqlStdOperatorTable.CHAR_LENGTH ||
+                    function == SqlStdOperatorTable.CHARACTER_LENGTH ||
+                    function == HazelcastSqlOperatorTable.LENGTH
+                )
                     return CallOperator.CHAR_LENGTH;
             }
 

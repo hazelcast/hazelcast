@@ -2,8 +2,6 @@ package com.hazelcast.sql.impl.expression.call;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.call.BiCallExpression;
-import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.metadata.ExpressionType;
 import com.hazelcast.sql.impl.row.Row;
 

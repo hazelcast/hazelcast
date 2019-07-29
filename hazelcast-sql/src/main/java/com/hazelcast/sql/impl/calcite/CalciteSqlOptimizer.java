@@ -145,10 +145,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlValidator prepareValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
-        //
         SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
-            SqlStdOperatorTable.instance(),
-            catalogReader
+            HazelcastSqlOperatorTable.instance(),
+            SqlStdOperatorTable.instance()
         );
 
         return new HazelcastSqlValidator(
