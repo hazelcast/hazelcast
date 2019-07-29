@@ -29,11 +29,11 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +72,8 @@ public class AddMapConfigMessageTask
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setMapAttributeConfigs(parameters.mapAttributeConfigs);
+        config.setReadBackupData(parameters.readBackupData);
+        config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.mapEvictionPolicy != null) {
             MapEvictionPolicy evictionPolicy = serializationService.toObject(parameters.mapEvictionPolicy);
             config.setMapEvictionPolicy(evictionPolicy);
