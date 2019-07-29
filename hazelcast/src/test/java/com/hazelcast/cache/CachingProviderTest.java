@@ -75,6 +75,15 @@ public class CachingProviderTest extends HazelcastTestSupport {
         instance3 = instanceFactory.newHazelcastInstance(config);
     }
 
+
+    protected String getConfigClasspathLocation() {
+        return CONFIG_CLASSPATH_LOCATION;
+    }
+
+    protected String getProviderType() {
+        return "server";
+    }
+
     protected HazelcastInstance createHazelcastInstance(String instanceName) {
         Config config = new Config();
         config.setInstanceName(instanceName);
@@ -136,13 +145,13 @@ public class CachingProviderTest extends HazelcastTestSupport {
     @Test
     public void whenConfigLocationAsUri_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null);
+                new URI("classpath:" + getConfigClasspathLocation()), null);
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
     @Test
     public void whenConfigLocationAsUriViaProperty_thenThatInstanceIsUsed() throws URISyntaxException {
-        System.setProperty("PROPERTY_PLACEHOLDER", "classpath:" + CONFIG_CLASSPATH_LOCATION);
+        System.setProperty("PROPERTY_PLACEHOLDER", "classpath:" + getConfigClasspathLocation());
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 new URI("PROPERTY_PLACEHOLDER"), null);
         assertCacheManagerInstance(cacheManager, instance3);
@@ -160,7 +169,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     public void whenConfigLocationAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 new URI("classpath:this-config-does-not-exist"), null,
-                propertiesByLocation("classpath:" + CONFIG_CLASSPATH_LOCATION));
+                propertiesByLocation("classpath:" + getConfigClasspathLocation()));
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
@@ -184,14 +193,14 @@ public class CachingProviderTest extends HazelcastTestSupport {
     @Test
     public void whenInstanceItselfAsProperty_andValidConfigURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null, propertiesByInstanceItself(instance2));
+                new URI("classpath:" + getConfigClasspathLocation()), null, propertiesByInstanceItself(instance2));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenInstanceItselfAsProperty_andValidInstanceNameURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null, propertiesByInstanceItself(instance2));
+                new URI("classpath:" + getConfigClasspathLocation()), null, propertiesByInstanceItself(instance2));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
@@ -207,7 +216,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
         cleanupForDefaultCacheManagerTest();
         try {
             System.setProperty(AbstractHazelcastCachingProvider.NAMED_JCACHE_HZ_INSTANCE, "false");
-            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), "server");
+            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), getProviderType());
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
             Collection<HazelcastInstance> instances = getStartedInstances();
@@ -226,7 +235,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     public void whenDefaultCacheManager_thenSharedNameHazelcastInstanceExists() {
         cleanupForDefaultCacheManagerTest();
         try {
-            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), "server");
+            System.setProperty(GroupProperty.JCACHE_PROVIDER_TYPE.getName(), getProviderType());
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
             Collection<HazelcastInstance> instances = getStartedInstances();

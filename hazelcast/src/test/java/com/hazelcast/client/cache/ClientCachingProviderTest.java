@@ -49,6 +49,16 @@ public class ClientCachingProviderTest extends CachingProviderTest {
     private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-client-jcache.xml";
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
+    @Override
+    protected String getConfigClasspathLocation() {
+        return CONFIG_CLASSPATH_LOCATION;
+    }
+
+    @Override
+    protected String getProviderType() {
+        return "client";
+    }
+
     @Before
     public void setup() {
         // start a member
