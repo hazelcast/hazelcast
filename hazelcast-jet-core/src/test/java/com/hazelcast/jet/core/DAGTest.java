@@ -328,15 +328,12 @@ public class DAGTest {
     }
 
     @Test
-    public void when_multigraph_then_invalid() {
+    public void when_multigraph_then_valid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(from(a, 0).to(b, 0));
-
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(from(a, 1).to(b, 1));

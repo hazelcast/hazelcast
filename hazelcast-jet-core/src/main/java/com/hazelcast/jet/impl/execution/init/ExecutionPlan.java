@@ -335,10 +335,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private void initDag() {
         final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
-        vertices.forEach(v -> {
+        for (VertexDef v : vertices) {
             v.inboundEdges().forEach(e -> e.initTransientFields(vMap, v, false));
             v.outboundEdges().forEach(e -> e.initTransientFields(vMap, v, true));
-        });
+        }
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         vertices.stream()
                 .map(VertexDef::outboundEdges)

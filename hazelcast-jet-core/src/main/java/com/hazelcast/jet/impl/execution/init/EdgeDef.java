@@ -44,7 +44,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
     private transient VertexDef sourceVertex;
     private transient VertexDef destVertex;
 
-
     EdgeDef() {
     }
 
@@ -63,7 +62,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         final VertexDef farVertex = vMap.get(oppositeVertexId);
         this.sourceVertex = isOutbound ? nearVertex : farVertex;
         this.destVertex = isOutbound ? farVertex : nearVertex;
-        this.id = sourceVertex.vertexId() + ":" + destVertex.vertexId();
+        this.id = sourceVertex.vertexId() + "-" + sourceOrdinal + ':' + destVertex.vertexId() + '-' + destOrdinal;
     }
 
     public RoutingPolicy routingPolicy() {
@@ -148,6 +147,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     }
 
     @Override public String toString() {
-        return String.format("%s(%d) -> %s(%d)", sourceVertex.name(), sourceOrdinal, destVertex.name(), destOrdinal);
+        return String.format("%s(%d) -> %s(%d)", sourceVertex == null ? "null" : sourceVertex.name(), sourceOrdinal,
+                destVertex == null ? "null" : destVertex.name(), destOrdinal);
     }
 }

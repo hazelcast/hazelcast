@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
 import static com.hazelcast.jet.function.Functions.wholeItem;
@@ -440,12 +441,14 @@ public class Edge implements IdentifiedDataSerializable {
         return this == obj
                 || obj instanceof Edge
                     && this.sourceName.equals((that = (Edge) obj).sourceName)
-                    && this.destName.equals(that.destName);
+                    && this.destName.equals(that.destName)
+                    && this.sourceOrdinal == that.sourceOrdinal
+                    && this.destOrdinal == that.destOrdinal;
     }
 
     @Override
     public int hashCode() {
-        return 37 * sourceName.hashCode() + destName.hashCode();
+        return Objects.hash(sourceName, destName, sourceOrdinal, destOrdinal);
     }
 
     void restoreSourceAndDest(Map<String, Vertex> nameToVertex) {
