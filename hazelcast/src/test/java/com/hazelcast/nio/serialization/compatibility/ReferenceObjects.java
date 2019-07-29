@@ -26,10 +26,28 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 import static java.util.Arrays.asList;
 
@@ -132,15 +150,56 @@ class ReferenceObjects {
     static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
     static Externalizable externalizable = new AJavaExternalizable(anInt, aFloat);
 
-    static ArrayList arrayList = new ArrayList(asList(
-            aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+    static ArrayList nonNullList = new ArrayList(asList(
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
             serializable, externalizable));
 
+    static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
+
+    static HashMap hashMap = new HashMap();
+
+    static {
+        nonNullList.forEach(e -> {
+            if (e != null) {
+                if (e instanceof String[] || e instanceof long[] || e instanceof int[] || e instanceof float[]
+                        || e instanceof short[] || e instanceof double[] || e instanceof char[] || e instanceof byte[]
+                        || e instanceof boolean[]) {
+                    // skip these arrays since their equals methods don't work as expected inside the map equals method
+                } else {
+                    hashMap.put(e.getClass(), e);
+                }
+            }
+        });
+    }
+
     static LinkedList linkedList = new LinkedList(arrayList);
+    static CopyOnWriteArrayList copyOnWriteArrayList = new CopyOnWriteArrayList(arrayList);
+
+    static ConcurrentSkipListMap concurrentSkipListMap = new ConcurrentSkipListMap();
+    static ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap(hashMap);
+    static LinkedHashMap linkedHashMap = new LinkedHashMap(hashMap);
+    static TreeMap treeMap = new TreeMap();
+
+    static HashSet hashSet = new HashSet(arrayList);
+    static TreeSet treeSet = new TreeSet();
+    static LinkedHashSet linkedHashSet = new LinkedHashSet(arrayList);
+    static CopyOnWriteArraySet copyOnWriteArraySet = new CopyOnWriteArraySet(arrayList);
+    static ConcurrentSkipListSet concurrentSkipListSet = new ConcurrentSkipListSet();
+    static ArrayDeque arrayDeque = new ArrayDeque(nonNullList);
+    static LinkedBlockingQueue linkedBlockingQueue = new LinkedBlockingQueue(nonNullList);
+    static ArrayBlockingQueue arrayBlockingQueue = new ArrayBlockingQueue(5);
+    static PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue();
+    static {
+        arrayBlockingQueue.offer(aPortable);
+        priorityBlockingQueue.offer(anInt);
+    }
+    static DelayQueue delayQueue = new DelayQueue();
+    static SynchronousQueue synchronousQueue = new SynchronousQueue();
+    static LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue(nonNullList);
 
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
@@ -149,6 +208,8 @@ class ReferenceObjects {
             anIdentifiedDataSerializable, aPortable,
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
             serializable, externalizable,
-            arrayList, linkedList,
+            arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
+            hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
+            arrayBlockingQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue
     };
 }
