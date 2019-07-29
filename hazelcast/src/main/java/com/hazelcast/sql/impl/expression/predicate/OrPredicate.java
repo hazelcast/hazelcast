@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
@@ -24,31 +24,37 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Negation predicate.
+ * Disjunctive predicate.
  */
-public class NotPredicate implements Predicate {
-    /** Child predicate. */
-    private Predicate child;
+public class OrPredicate implements Predicate {
+    /** Left part. */
+    private Predicate left;
 
-    public NotPredicate() {
+    /** Right part. */
+    private Predicate right;
+
+    public OrPredicate() {
         // No-op.
     }
 
-    public NotPredicate(Predicate child) {
-        this.child = child;
+    public OrPredicate(Predicate left, Predicate right) {
+        this.left = left;
+        this.right = right;
     }
 
     @Override public Boolean eval(QueryContext ctx, Row row) {
-        return !child.eval(ctx, row);
+        return left.eval(ctx, row) || right.eval(ctx, row);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(child);
+        out.writeObject(left);
+        out.writeObject(right);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        child = in.readObject();
+        left = in.readObject();
+        right = in.readObject();
     }
 }

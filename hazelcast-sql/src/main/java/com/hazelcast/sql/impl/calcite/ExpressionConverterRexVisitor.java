@@ -1,9 +1,10 @@
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.PlusBiCallExpression;
+import com.hazelcast.sql.impl.expression.call.PlusBiCallExpression;
+import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -18,6 +19,7 @@ import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 
@@ -75,9 +77,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             }
         }
 
-        if (convertedOperator == CallOperator.PLUS) {
+        if (convertedOperator == CallOperator.PLUS)
             return new PlusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
-        }
+        else if (convertedOperator == CallOperator.CHAR_LENGTH)
+            return new CharLengthFunction(convertedOperands.get(0));
         else
             // TODO: Proper exception.
             throw new UnsupportedOperationException("Operator is not supported: " + SqlKind.PLUS);
@@ -140,6 +143,15 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
         switch (operator.getKind()) {
             case PLUS:
                 return CallOperator.PLUS;
+
+            case OTHER_FUNCTION: {
+                SqlFunction function = (SqlFunction)operator;
+
+                String name = function.getName();
+
+                if (name.equals("CHAR_LENGTH"))
+                    return CallOperator.CHAR_LENGTH;
+            }
 
             default:
                 // TODO: Proper exception.

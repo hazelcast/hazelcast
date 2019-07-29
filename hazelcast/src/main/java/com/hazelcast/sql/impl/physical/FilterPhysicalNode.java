@@ -2,8 +2,7 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.Predicate;
+import com.hazelcast.sql.impl.expression.predicate.Predicate;
 
 import java.io.IOException;
 

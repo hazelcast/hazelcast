@@ -1,14 +1,15 @@
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.call;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 
 /**
  * Expression with two operands.
  */
-public abstract class BiCallExpression<T> implements Expression {
+public abstract class BiCallExpression<T> implements CallExpression<T> {
     /** First operand. */
     private Expression operand1;
 
@@ -23,11 +24,6 @@ public abstract class BiCallExpression<T> implements Expression {
         this.operand1 = operand1;
         this.operand2 = operand2;
     }
-
-    /**
-     * @return Operator.
-     */
-    public abstract int operator();
 
     public Expression getOperand1() {
         return operand1;

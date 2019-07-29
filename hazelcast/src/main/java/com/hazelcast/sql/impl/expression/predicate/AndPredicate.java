@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
@@ -24,26 +24,26 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Disjunctive predicate.
+ * Conjunctive predicate.
  */
-public class OrPredicate implements Predicate {
+public class AndPredicate implements Predicate {
     /** Left part. */
     private Predicate left;
 
     /** Right part. */
     private Predicate right;
 
-    public OrPredicate() {
+    public AndPredicate() {
         // No-op.
     }
 
-    public OrPredicate(Predicate left, Predicate right) {
+    public AndPredicate(Predicate left, Predicate right) {
         this.left = left;
         this.right = right;
     }
 
     @Override public Boolean eval(QueryContext ctx, Row row) {
-        return left.eval(ctx, row) || right.eval(ctx, row);
+        return left.eval(ctx, row) && right.eval(ctx, row);
     }
 
     @Override

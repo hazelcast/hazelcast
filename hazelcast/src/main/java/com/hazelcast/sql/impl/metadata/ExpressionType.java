@@ -12,6 +12,8 @@ public class ExpressionType {
     public static final int PRECEDENCE_REAL = 6;
     public static final int PRECEDENCE_DOUBLE = 7;
 
+    public static final ExpressionType UNKNOWN = new ExpressionType(false, -1, null);
+
     public static final ExpressionType TINYINT = new ExpressionType(true, PRECEDENCE_TINYINT, Byte.class);
     public static final ExpressionType SMALLINT = new ExpressionType(true, PRECEDENCE_SMALLINT, Short.class);
     public static final ExpressionType INT = new ExpressionType(true, PRECEDENCE_INT, Integer.class);
@@ -47,9 +49,7 @@ public class ExpressionType {
         if (candidate == null)
             return true;
 
-        Class candidateClazz = candidate.getClass();
-
-        return candidateClazz == clazz;
+        return clazz == candidate.getClass();
     }
 
     public static ExpressionType of(Object obj) {

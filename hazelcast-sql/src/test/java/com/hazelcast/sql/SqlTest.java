@@ -41,7 +41,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class SqlTest extends HazelcastTestSupport {
 
 //    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
-    private static final String QUERY = "select height + age from persons order by name";
+//    private static final String QUERY = "select height + age from persons order by name";
+    private static final String QUERY = "select CHAR_LENGTH(name) + height from persons order by name";
 
     @Test
     public void testSimpleQuery() throws Exception {

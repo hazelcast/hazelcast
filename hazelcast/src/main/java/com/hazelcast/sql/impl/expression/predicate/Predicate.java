@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.predicate;
+
+import com.hazelcast.sql.impl.expression.Expression;
 
 /**
  * Predicate: specialized type of {@link Expression} which returns boolean value.

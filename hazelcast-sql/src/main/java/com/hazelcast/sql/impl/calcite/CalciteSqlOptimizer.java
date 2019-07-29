@@ -145,7 +145,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlValidator prepareValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
-        final SqlOperatorTable opTab = ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(), catalogReader);
+        //
+        SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
+            SqlStdOperatorTable.instance(),
+            catalogReader
+        );
 
         return new HazelcastSqlValidator(
             opTab,
@@ -156,7 +160,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
-        final VolcanoPlanner planner = new VolcanoPlanner(
+        VolcanoPlanner planner = new VolcanoPlanner(
             null,
             Contexts.of(config)
         );
@@ -175,12 +179,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         SqlValidator validator,
         VolcanoPlanner planner
     ) {
-        final SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder =
-            SqlToRelConverter.configBuilder()
-                .withTrimUnusedFields(true)
-                .withExpand(false)
-                .withExplain(false)
-                .withConvertTableAccess(false);
+        SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder = SqlToRelConverter.configBuilder()
+            .withTrimUnusedFields(true)
+            .withExpand(false)
+            .withExplain(false)
+            .withConvertTableAccess(false);
 
         return new SqlToRelConverter(
             null,
