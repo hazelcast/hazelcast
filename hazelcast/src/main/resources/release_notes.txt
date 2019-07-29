@@ -33,7 +33,17 @@ With this fix, the lock operation checks if an entry has already expired. [#1531
 the `HazelcastInstanceAware` marker. [#15233]
 * Fixed an issue where storing `MapStore` instances in `MapStoreConfig`
 could cause member failures when the configuration is added
-dynamically. [#15225]
+dynamically: When you configure the map store by the class name
+and start Hazelcast with this configuration, the `MapStoreConfig#implementation`
+field was altered to store the reference to the `MapStore` instance
+created by Hazelcast (this meant that someone can access the created map store
+instance via `MapStoreConfig#getImplementation()`). With this fix,
+`MapStoreConfig` behavior has become aligned with other data structures' configuration,
+i.e., it is not altered anymore and if you did not set anything as `implementation`
+then `MapStoreConfig#getImplementation()` returns `null` after Hazelcast is started.
+Also, this fix eliminates the side effects with the
+dynamically added map configurations, potentially breaking this functionality
+for the maps with map stores configured. [#15225]
 * Fixed an issue where IMap's `localLockedEntryCount` metric was not considering
 the entries with null values. [#15218]
 * Fixed a possible `NullPointerException` for the `remove` variable in
