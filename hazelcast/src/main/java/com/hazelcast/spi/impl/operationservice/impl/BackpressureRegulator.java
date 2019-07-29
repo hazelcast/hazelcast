@@ -16,25 +16,36 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.Clock;
 
+import java.util.Iterator;
+import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ASYNCBACKUP_WINDOW_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static java.lang.Math.max;
-import static java.lang.Math.round;
+import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Long.min;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -65,54 +76,87 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 class BackpressureRegulator {
 
-    /**
-     * The percentage above and below a certain sync-window we should randomize.
-     */
-    static final float RANGE = 0.25f;
+    private static final int HUNDRED = 100;
 
-    private final AtomicInteger syncCountdown = new AtomicInteger();
     private final boolean enabled;
     private final boolean disabled;
-    private final int syncWindow;
     private final int partitionCount;
     private final int maxConcurrentInvocations;
     private final int backoffTimeoutMs;
+    private final Random random = new Random();
+    private final Node node;
+    private final AsyncBackupOverloadDetectionThread asyncBackupOverloadDetectionThread;
+    private final int asyncBackupOverloadCheckIntervalMs;
+    private final ILogger logger;
+    private final long asyncBackupLowWaterMark;
+    private final long asyncBackupHighWaterMark;
+    private final long asyncBackupBackpressureWindowMs;
+    private volatile long timeoutMs = currentTimeMillis();
+    private volatile int asyncToSyncBackupRatio;
 
-    BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
+    BackpressureRegulator(HazelcastProperties properties, ILogger logger, Node node) {
         this.enabled = properties.getBoolean(BACKPRESSURE_ENABLED);
+        this.logger = logger;
         this.disabled = !enabled;
+        this.node = node;
         this.partitionCount = properties.getInteger(PARTITION_COUNT);
-        this.syncWindow = getSyncWindow(properties);
-        this.syncCountdown.set(syncWindow);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
+        this.asyncBackupLowWaterMark = getAsyncBackupLowWaterMark(properties);
+        this.asyncBackupHighWaterMark = getAsyncBackupHighWaterMark(properties);
+        this.asyncBackupBackpressureWindowMs = getAsyncBackupBackpressureWindowMs(properties);
+        this.asyncBackupOverloadCheckIntervalMs = getAsyncBackupOverloadCheckIntervalMs(properties);
+        this.asyncBackupOverloadDetectionThread = new AsyncBackupOverloadDetectionThread(node.hazelcastInstance.getName());
 
         if (enabled) {
-            logger.info("Backpressure is enabled"
-                    + ", maxConcurrentInvocations:" + maxConcurrentInvocations
-                    + ", syncWindow: " + syncWindow);
+            logger.info("Backpressure on invocations is enabled"
+                    + ", maxConcurrentInvocations:" + maxConcurrentInvocations);
 
             int backupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
             if (backupTimeoutMillis < MINUTES.toMillis(1)) {
-                logger.warning(
-                        format("Back pressure is enabled, but '%s' is too small. ",
-                                OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
+                logger.warning(format("Back pressure is enabled, but '%s' is too small. ",
+                        OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
             }
         } else {
-            logger.info("Backpressure is disabled");
+            logger.info("Backpressure on invocations is disabled");
+        }
+
+        if (asyncBackupOverloadCheckIntervalMs > 0) {
+            logger.fine("Backpressure on async backups is enabled.");
+        } else {
+            logger.warning("Backpressure on async backups is disabled!");
         }
     }
 
-    int syncCountDown() {
-        return syncCountdown.get();
+    private int getAsyncBackupOverloadCheckIntervalMs(HazelcastProperties properties) {
+        return properties.getInteger(BACKPRESSURE_ASYNCBACKUP_CHECKINTERVAL_MILLIS);
     }
 
-    private int getSyncWindow(HazelcastProperties props) {
-        int syncWindow = props.getInteger(BACKPRESSURE_SYNCWINDOW);
-        if (enabled && syncWindow <= 0) {
-            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
+    private int getAsyncBackupBackpressureWindowMs(HazelcastProperties properties) {
+        int window = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_WINDOW_MILLIS);
+        if (window < 1) {
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_ASYNCBACKUP_WINDOW_MILLIS
+                    + "' with a value smaller than 1");
         }
-        return syncWindow;
+        return window;
+    }
+
+    private int getAsyncBackupHighWaterMark(HazelcastProperties properties) {
+        int highWaterMark = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK);
+        if (highWaterMark < asyncBackupLowWaterMark) {
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_ASYNCBACKUP_HIGHWATERMARK
+                    + "' with a value smaller than the '" + BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK + "'");
+        }
+        return highWaterMark;
+    }
+
+    private int getAsyncBackupLowWaterMark(HazelcastProperties properties) {
+        int lowWaterMark = properties.getInteger(BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK);
+        if (lowWaterMark < 0) {
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_ASYNCBACKUP_LOWWATERMARK
+                    + "' with a value smaller than 0");
+        }
+        return lowWaterMark;
     }
 
     private int getBackoffTimeoutMs(HazelcastProperties props) {
@@ -143,6 +187,7 @@ class BackpressureRegulator {
         return enabled;
     }
 
+    // for testing only
     int getMaxConcurrentInvocations() {
         if (enabled) {
             return maxConcurrentInvocations;
@@ -165,10 +210,6 @@ class BackpressureRegulator {
      * @return {@code true} if a sync needs to be forced, {@code false} otherwise
      */
     boolean isSyncForced(BackupAwareOperation backupAwareOp) {
-        if (disabled) {
-            return false;
-        }
-
         // if there are no asynchronous backups, there is nothing to regulate.
         if (backupAwareOp.getAsyncBackupCount() == 0) {
             return false;
@@ -178,25 +219,93 @@ class BackpressureRegulator {
             return false;
         }
 
-        for (; ; ) {
-            int current = syncCountdown.decrementAndGet();
-            if (current > 0) {
-                return false;
-            }
+        if (currentTimeMillis() > timeoutMs) {
+            // no overload is detected.
+            return false;
+        }
 
-            if (syncCountdown.compareAndSet(current, randomSyncDelay())) {
-                return true;
-            }
+        return random.nextInt(HUNDRED) <= asyncToSyncBackupRatio;
+    }
+
+    public void start() {
+        if (asyncBackupOverloadCheckIntervalMs > 0) {
+            asyncBackupOverloadDetectionThread.start();
         }
     }
 
-    private int randomSyncDelay() {
-        if (syncWindow == 1) {
-            return 1;
+    public void shutdown() {
+        asyncBackupOverloadDetectionThread.shutdown();
+    }
+
+    private final class AsyncBackupOverloadDetectionThread extends Thread {
+        private volatile boolean stop;
+
+        private AsyncBackupOverloadDetectionThread(String hzName) {
+            super(createThreadName(hzName, "AsyncBackupOverloadDetectionThread"));
         }
 
-        Random random = ThreadLocalRandomProvider.get();
-        int randomSyncWindow = round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
-        return max(1, randomSyncWindow);
+        @Override
+        public void run() {
+            try {
+                while (!stop) {
+                    sleep();
+
+                    long startMs = System.currentTimeMillis();
+                    long maxBytesPending = maxBytesPending();
+                    if (maxBytesPending < asyncBackupLowWaterMark) {
+                        continue;
+                    }
+
+                    // overload detected.
+                    timeoutMs = Clock.currentTimeMillis() + asyncBackupBackpressureWindowMs;
+                    maxBytesPending = min(maxBytesPending, asyncBackupHighWaterMark);
+                    asyncToSyncBackupRatio = Math.round(HUNDRED * ((float) maxBytesPending) / asyncBackupHighWaterMark);
+                    long duration = System.currentTimeMillis() - startMs;
+                    logger.info("ratio:" + asyncToSyncBackupRatio + " max:" + maxBytesPending + " duration:" + duration + " ms");
+                }
+            } catch (Throwable t) {
+                logger.severe("Overload DetectionThread failed", t);
+            }
+        }
+
+        private void sleep() {
+            try {
+                Thread.sleep(asyncBackupOverloadCheckIntervalMs);
+            } catch (InterruptedException e) {
+                // we can ignore it since we check in a loop if this thread needs to be stopped.
+            }
+        }
+
+        private long maxBytesPending() {
+            long max = 0;
+            for (Iterator<Channel> it = node.networkingService.getNetworking().channels(); it.hasNext(); ) {
+                Channel channel = it.next();
+                TcpIpConnection c = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+                if (c.isClient()) {
+                    continue;
+                }
+
+                Queue<OutboundFrame> writeQueue = ((NioChannel) channel).outboundPipeline().writeQueue;
+                long pending = 0;
+                for (OutboundFrame frame : writeQueue) {
+                    if (frame instanceof Packet) {
+                        pending += frame.getFrameLength();
+                    }
+
+                    // if we exceed the high watermark for one of the connections, we are done. We don't need
+                    // to check the rest of the connections. Also we don't need to check the rest of the packets
+                    // of the current connection.
+                    if (pending > asyncBackupHighWaterMark) {
+                        return pending;
+                    }
+                }
+            }
+            return max;
+        }
+
+        private void shutdown() {
+            stop = true;
+            interrupt();
+        }
     }
 }

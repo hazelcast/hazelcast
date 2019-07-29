@@ -147,7 +147,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
         this.failOnIndeterminateOperationState = nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
 
         this.backpressureRegulator = new BackpressureRegulator(
-                node.getProperties(), node.getLogger(BackpressureRegulator.class));
+                node.getProperties(), node.getLogger(BackpressureRegulator.class), node);
 
         this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService,
                 node.getLogger(OutboundResponseHandler.class));
@@ -463,6 +463,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
         operationExecutor.start();
         inboundResponseHandlerSupplier.start();
         slowOperationDetector.start();
+        backpressureRegulator.start();
     }
 
     private void initInvocationContext() {
@@ -517,5 +518,6 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
 
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
+        backpressureRegulator.shutdown();
     }
 }

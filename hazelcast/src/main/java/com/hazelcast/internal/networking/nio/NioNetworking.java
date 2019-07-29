@@ -36,6 +36,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -204,6 +206,11 @@ public final class NioNetworking implements Networking {
         this.outputThreads = outThreads;
 
         startIOBalancer();
+    }
+
+    @Override
+    public Iterator<Channel> channels() {
+        return new HashSet<Channel>(channels).iterator();
     }
 
     private void startIOBalancer() {
