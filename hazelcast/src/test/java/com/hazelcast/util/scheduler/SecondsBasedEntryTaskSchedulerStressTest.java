@@ -18,7 +18,6 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -65,14 +64,9 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
     @Test
     public void test_forEach() {
-        test_forScheduleType(ScheduleType.FOR_EACH);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void test_forScheduleType(ScheduleType scheduleType) {
         final EventCountingEntryProcessor processor = new EventCountingEntryProcessor();
-        final SecondsBasedEntryTaskScheduler scheduler = new SecondsBasedEntryTaskScheduler(executorService, processor,
-                scheduleType);
+        final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler
+                = new SecondsBasedEntryTaskScheduler<>(executorService, processor, ScheduleType.FOR_EACH);
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
@@ -93,11 +87,8 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         }
 
         final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
         });
     }
 
@@ -105,13 +96,13 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     public void test_postpone() {
         final EntryStoringProcessor processor = new EntryStoringProcessor();
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler
-                = new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, processor, ScheduleType.POSTPONE);
+                = new SecondsBasedEntryTaskScheduler<>(executorService, processor, ScheduleType.POSTPONE);
 
         final int numberOfKeys = NUMBER_OF_THREADS;
         final Object[] locks = new Object[numberOfKeys];
         Arrays.fill(locks, new Object());
 
-        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<>();
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
@@ -137,31 +128,30 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
             thread.start();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(latestValues.size(), processor.values.size());
+        assertTrueEventually(() -> {
+            assertEquals(latestValues.size(), processor.values.size());
 
-                for (int key = 0; key < numberOfKeys; key++) {
-                    Integer expected = latestValues.get(key);
-                    Integer actual = processor.get(key);
+            for (int key = 0; key < numberOfKeys; key++) {
+                Integer expected = latestValues.get(key);
+                Integer actual = processor.get(key);
 
-                    if (expected == null) {
-                        assertNull(actual);
-                    } else {
-                        assertEquals(expected, actual);
-                    }
+                if (expected == null) {
+                    assertNull(actual);
+                } else {
+                    assertEquals(expected, actual);
                 }
             }
         });
     }
 
-    private static class EventCountingEntryProcessor implements ScheduledEntryProcessor {
+    private static class EventCountingEntryProcessor implements ScheduledEntryProcessor<Integer, Integer> {
         final AtomicInteger numberOfEvents = new AtomicInteger();
 
         @Override
-        public void process(EntryTaskScheduler scheduler, Collection collection) {
-            numberOfEvents.addAndGet(collection.size());
+        public void process(EntryTaskScheduler<Integer, Integer> scheduler,
+                            Collection<ScheduledEntry<Integer, Integer>> entries) {
+
+            numberOfEvents.addAndGet(entries.size());
         }
 
         long getNumberOfEvents() {
@@ -170,7 +160,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     }
 
     private static class EntryStoringProcessor implements ScheduledEntryProcessor<Integer, Integer> {
-        final Map<Integer, Integer> values = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> values = new ConcurrentHashMap<>();
 
         @Override
         public void process(EntryTaskScheduler<Integer, Integer> scheduler,

@@ -76,13 +76,12 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     /**
      * Map of keys to duration between this class being loaded and the time the key is scheduled
      */
-    private final Map<Object, Integer> secondsOfKeys = new HashMap<Object, Integer>(1000);
+    private final Map<Object, Integer> secondsOfKeys = new HashMap<>(1000);
     /**
      * Map from duration (see {@link #findRelativeSecond(long)} to scheduled key to scheduled entry map.
      */
-    private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries
-            = new HashMap<Integer, Map<Object, ScheduledEntry<K, V>>>(1000);
-    private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<Integer, ScheduledFuture>(1000);
+    private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries = new HashMap<>(1000);
+    private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<>(1000);
     private final AtomicLong uniqueIdGenerator = new AtomicLong();
     private final Object mutex = new Object();
 
@@ -119,7 +118,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
                 removeKeyFromSecond(key, existingSecond);
             }
             long id = uniqueIdGenerator.incrementAndGet();
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<>(key, value, delayMillis, delaySeconds, id);
             doSchedule(key, scheduledEntry, newSecond);
         }
         return true;
@@ -132,7 +131,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             long id = uniqueIdGenerator.incrementAndGet();
             Object compositeKey = new CompositeKey(key, id);
             secondsOfKeys.put(compositeKey, newSecond);
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<>(key, value, delayMillis, delaySeconds, id);
             doSchedule(compositeKey, scheduledEntry, newSecond);
         }
         return true;
@@ -142,7 +141,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
         Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
         boolean shouldSchedule = false;
         if (entries == null) {
-            entries = new HashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
+            entries = new HashMap<>(INITIAL_CAPACITY);
             scheduledEntries.put(second, entries);
 
             // we created the second
@@ -176,7 +175,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     @Override
     public int cancelIfExists(K key, V value) {
         synchronized (mutex) {
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0, 0);
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<>(key, value, 0, 0, 0);
 
             if (scheduleType.equals(ScheduleType.FOR_EACH)) {
                 return cancelByCompositeKey(key, scheduledEntry);
@@ -254,7 +253,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
      * Return all composite keys with the given {@code key}
      */
     private Set<CompositeKey> getCompositeKeys(K key) {
-        Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
+        Set<CompositeKey> candidateKeys = new HashSet<>();
         for (Object keyObj : secondsOfKeys.keySet()) {
             CompositeKey compositeKey = (CompositeKey) keyObj;
             if (compositeKey.getKey().equals(key)) {
@@ -267,7 +266,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     /**
      * Returns one scheduled entry for the given {@code key} with no guaranteed ordering
      */
-    public ScheduledEntry<K, V> getByCompositeKey(K key) {
+    private ScheduledEntry<K, V> getByCompositeKey(K key) {
         Set<CompositeKey> candidateKeys = getCompositeKeys(key);
         ScheduledEntry<K, V> result = null;
         for (CompositeKey compositeKey : candidateKeys) {
@@ -431,7 +430,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
                 if (entries == null || entries.isEmpty()) {
                     return;
                 }
-                values = new ArrayList<ScheduledEntry<K, V>>(entries.size());
+                values = new ArrayList<>(entries.size());
                 for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
                     Integer removed = secondsOfKeys.remove(entry.getKey());
                     if (removed != null) {

@@ -37,8 +37,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +67,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntry_postpone() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, POSTPONE);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, POSTPONE);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertNotNull(scheduler.get(1));
@@ -76,7 +76,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_rescheduleEntry_postpone() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, POSTPONE);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, POSTPONE);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertTrue(scheduler.schedule(10000, 1, 1));
@@ -86,7 +86,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test(timeout = 10000)
     public void test_doNotRescheduleEntryWithinSameSecond_postpone() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, POSTPONE);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, POSTPONE);
         final int delayMillis = 0;
         final int key = 1;
 
@@ -117,7 +117,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelEntry_postpone() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, POSTPONE);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, POSTPONE);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertEquals(1, scheduler.size());
@@ -127,7 +127,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntry_foreach() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertNotNull(scheduler.get(1));
@@ -136,7 +136,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntryMultipleTimes_foreach() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertTrue(scheduler.schedule(100, 1, 1));
@@ -146,7 +146,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExists_postpone() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, POSTPONE);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, POSTPONE);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertEquals(1, scheduler.cancelIfExists(1, 1));
@@ -154,7 +154,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExists_foreach() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertEquals(1, scheduler.cancelIfExists(1, 1));
@@ -162,7 +162,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExistsWithInvalidValue_foreach() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertEquals(0, scheduler.cancelIfExists(1, 0));
@@ -170,7 +170,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExistsMultiple_foreach() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertTrue(scheduler.schedule(100, 1, 2));
@@ -179,7 +179,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelAll() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertTrue(scheduler.schedule(100, 1, 2));
@@ -194,7 +194,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
         when(taskScheduler.schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
 
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertTrue(scheduler.schedule(100, 1, 1));
         assertEquals(1, scheduler.size());
@@ -207,7 +207,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_toString() {
-        scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(taskScheduler, entryProcessor, FOR_EACH);
+        scheduler = new SecondsBasedEntryTaskScheduler<>(taskScheduler, entryProcessor, FOR_EACH);
 
         assertNotNull(scheduler.toString());
     }
