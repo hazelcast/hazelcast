@@ -20,6 +20,7 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -139,7 +140,7 @@ public final class StripedExecutor implements Executor {
     }
 
     @Override
-    public void execute(Runnable task) {
+    public void execute(@Nonnull Runnable task) {
         checkNotNull(task, "task can't be null");
 
         if (!live) {

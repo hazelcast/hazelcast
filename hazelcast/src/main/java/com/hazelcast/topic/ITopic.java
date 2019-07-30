@@ -93,5 +93,5 @@ public interface ITopic<E> extends DistributedObject {
      *
      * @return statistics about this topic
      */
-    LocalTopicStats getLocalTopicStats();
+    @Nonnull LocalTopicStats getLocalTopicStats();
 }

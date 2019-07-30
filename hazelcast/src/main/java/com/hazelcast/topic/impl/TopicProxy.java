@@ -57,6 +57,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
         return removeMessageListenerInternal(registrationId);
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return getLocalTopicStatsInternal();

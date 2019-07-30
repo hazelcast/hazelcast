@@ -248,6 +248,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         ringbuffer.destroy();
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return localTopicStats;

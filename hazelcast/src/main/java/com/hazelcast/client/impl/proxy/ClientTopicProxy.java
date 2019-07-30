@@ -68,6 +68,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         return deregisterListener(registrationId);
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
