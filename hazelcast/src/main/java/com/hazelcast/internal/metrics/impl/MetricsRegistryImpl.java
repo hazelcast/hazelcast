@@ -179,21 +179,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        synchronized (lockStripe.getLock(source)) {
-            ProbeInstance probeInstance = probeInstances.get(name);
-            if (probeInstance == null) {
-                probeInstance = new ProbeInstance<S>(name, source, function);
-                probeInstances.put(name, probeInstance);
-            } else {
-                logOverwrite(probeInstance);
+        ProbeInstance probeInstance = probeInstances.putIfAbsent(name, new ProbeInstance<S>(name, source, function));
+        if (probeInstance != null) {
+            logOverwrite(probeInstance);
+            synchronized (lockStripe.getLock(source)) {
+                probeInstance.source = source;
+                probeInstance.function = function;
             }
+        }
 
-            if (logger.isFinestEnabled()) {
-                logger.finest("Registered probeInstance " + name);
-            }
-
-            probeInstance.source = source;
-            probeInstance.function = function;
+        if (logger.isFinestEnabled()) {
+            logger.finest("Registered probeInstance " + name);
         }
 
         incrementMod();
