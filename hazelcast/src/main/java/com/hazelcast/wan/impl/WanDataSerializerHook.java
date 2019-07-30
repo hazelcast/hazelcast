@@ -16,8 +16,6 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.internal.cluster.impl.operations.WanProtocolNegotiationOperation;
-import com.hazelcast.internal.cluster.impl.operations.WanProtocolNegotiationResponse;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
@@ -40,8 +38,6 @@ public class WanDataSerializerHook implements DataSerializerHook {
     public static final int MAP_REPLICATION_UPDATE = 1;
     public static final int MAP_REPLICATION_REMOVE = 2;
     public static final int WAN_MAP_ENTRY_VIEW = 3;
-    public static final int WAN_PROTOCOL_NEGOTIATION_OPERATION = 4;
-    public static final int WAN_PROTOCOL_NEGOTIATION_RESPONSE = 5;
 
     @Override
     public int getFactoryId() {
@@ -60,10 +56,6 @@ public class WanDataSerializerHook implements DataSerializerHook {
                     return new MapReplicationRemove();
                 case WAN_MAP_ENTRY_VIEW:
                     return new WanMapEntryView<>();
-                case WAN_PROTOCOL_NEGOTIATION_OPERATION:
-                    return new WanProtocolNegotiationOperation();
-                case WAN_PROTOCOL_NEGOTIATION_RESPONSE:
-                    return new WanProtocolNegotiationResponse();
                 default:
                     throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }
