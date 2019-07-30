@@ -895,7 +895,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void putNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
