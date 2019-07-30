@@ -87,8 +87,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     // returns a MergePolicyConfig based on given parameters if these exist, or the default MergePolicyConfig
     protected MergePolicyConfig mergePolicyConfig(boolean mergePolicyExist, String mergePolicy, int batchSize) {
         if (mergePolicyExist) {
-            MergePolicyConfig config = new MergePolicyConfig(mergePolicy, batchSize);
-            return config;
+            return new MergePolicyConfig(mergePolicy, batchSize);
         }
         return new MergePolicyConfig();
     }

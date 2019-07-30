@@ -135,7 +135,7 @@ import java.util.concurrent.TimeUnit;
  * will continue to use the primary or back-up version.
  * <p>
  * When the split heals, Hazelcast by default, performs a
- * {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
+ * {@link com.hazelcast.spi.merge.PutIfAbsentMergePolicy}.
  * Users can also decide to
  * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
  * specify their own map merge policies</a>, these policies when used in

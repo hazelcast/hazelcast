@@ -18,39 +18,39 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.LegacyMergeOperation;
+import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryMergedListener;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,9 +58,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -126,12 +128,13 @@ public class ClientListenersTest extends HazelcastTestSupport {
 
         Node node = getNode(server);
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         SerializationService serializationService = getSerializationService(server);
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
-        EntryView entryView = EntryViews.createSimpleEntryView(key, value, Mockito.mock(Record.class));
-        LegacyMergeOperation op = new LegacyMergeOperation(map.getName(), entryView, new PassThroughMergePolicy(), false);
+        SplitBrainMergeTypes.MapMergeTypes mergingEntry = createMergingEntry(serializationService, key, value, Mockito.mock(Record.class));
+        Operation op = new MergeOperation(map.getName(), Collections.singletonList(mergingEntry),
+                new PassThroughMergePolicy<>(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
 

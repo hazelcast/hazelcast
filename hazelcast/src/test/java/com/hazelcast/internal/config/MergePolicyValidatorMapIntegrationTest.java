@@ -22,7 +22,6 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.mergepolicies.ComplexCustomMergePolicy;
 import com.hazelcast.internal.config.mergepolicies.CustomMapMergePolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.merge.MergingCosts;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
@@ -197,15 +196,5 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
         HazelcastInstance hz = getHazelcastInstance("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable);
 
         hz.getMap("customMapNoTypeVariable");
-    }
-
-    @Test
-    public void testMap_withLegacyPutIfAbsentMergePolicy() {
-        MergePolicyConfig legacyMergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PutIfAbsentMapMergePolicy.class.getName());
-
-        HazelcastInstance hz = getHazelcastInstance("legacyPutIfAbsent", legacyMergePolicyConfig);
-
-        hz.getMap("legacyPutIfAbsent");
     }
 }

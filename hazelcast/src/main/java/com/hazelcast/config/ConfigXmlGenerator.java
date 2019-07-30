@@ -879,8 +879,10 @@ public class ConfigXmlGenerator {
                     .node("time-to-live-seconds", m.getTimeToLiveSeconds())
                     .node("max-idle-seconds", m.getMaxIdleSeconds())
                     .node("eviction-policy", m.getEvictionPolicy())
-                    .node("max-size", m.getMaxSizeConfig().getSize(), "policy", m.getMaxSizeConfig().getMaxSizePolicy())
-                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .node("max-size", m.getMaxSizeConfig().getSize(),
+                            "policy", m.getMaxSizeConfig().getMaxSizePolicy())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(),
+                            "batch-size", mergePolicyConfig.getBatchSize())
                     .node("quorum-ref", m.getQuorumName())
                     .node("read-backup-data", m.isReadBackupData())
                     .node("metadata-policy", m.getMetadataPolicy());
@@ -961,7 +963,7 @@ public class ConfigXmlGenerator {
             gen.node("quorum-ref", c.getQuorumName());
             cachePartitionLostListenerConfigXmlGenerator(gen, c.getPartitionLostListenerConfigs());
 
-            gen.node("merge-policy", c.getMergePolicy());
+            gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
             appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendHotRestartConfig(gen, c.getHotRestartConfig());
 

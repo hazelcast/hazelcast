@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
@@ -68,7 +67,6 @@ import com.hazelcast.map.impl.recordstore.JsonMetadataRecordStoreMutationObserve
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
@@ -137,7 +135,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final QueryCacheContext queryCacheContext;
     private final ExpirationManager expirationManager;
     private final PartitionScanRunner partitionScanRunner;
-    private final MergePolicyProvider mergePolicyProvider;
     private final MapNearCacheManager mapNearCacheManager;
     private final MapOperationProviders operationProviders;
     private final PartitionContainer[] partitionContainers;
@@ -172,7 +169,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.expirationManager = new ExpirationManager(clearExpiredRecordsTask, nodeEngine);
         this.mapNearCacheManager = createMapNearCacheManager();
         this.localMapStatsProvider = createLocalMapStatsProvider();
-        this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.eventJournal = createEventJournal();
         this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
@@ -491,18 +487,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public NodeEngine getNodeEngine() {
         return nodeEngine;
-    }
-
-    @Override
-    public MergePolicyProvider getMergePolicyProvider() {
-        return mergePolicyProvider;
-    }
-
-    @Override
-    public Object getMergePolicy(String name) {
-        MapContainer mapContainer = getMapContainer(name);
-        MergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
-        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     @Override

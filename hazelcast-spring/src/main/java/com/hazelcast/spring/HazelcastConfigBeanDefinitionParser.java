@@ -1459,11 +1459,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, cacheConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("eviction".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("eviction".equals(nodeName)) {
                     cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode, false));
                 } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
-                } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
+                } else if ("cache-entry-listeners".equals(nodeName)) {
                     ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
                     for (Node listenerNode : childElements(childNode)) {
                         BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(CacheSimpleEntryListenerConfig.class);
@@ -1471,18 +1472,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         listeners.add(listenerConfBuilder.getBeanDefinition());
                     }
                     cacheConfigBuilder.addPropertyValue("cacheEntryListeners", listeners);
-                } else if ("wan-replication-ref".equals(cleanNodeName(childNode))) {
+                } else if ("wan-replication-ref".equals(nodeName)) {
                     handleWanReplicationRef(cacheConfigBuilder, childNode);
-                } else if ("partition-lost-listeners".equals(cleanNodeName(childNode))) {
+                } else if ("partition-lost-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(cleanNodeName(childNode))) {
+                } else if ("quorum-ref".equals(nodeName)) {
                     cacheConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
-                } else if ("merge-policy".equals(cleanNodeName(childNode))) {
-                    cacheConfigBuilder.addPropertyValue("mergePolicy", getTextContent(childNode));
-                } else if ("hot-restart".equals(cleanNodeName(childNode))) {
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, cacheConfigBuilder);
+                } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(cacheConfigBuilder, childNode);
-                } else if ("event-journal".equals(cleanNodeName(childNode))) {
+                } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(cacheConfigBuilder, childNode);
                 }
             }

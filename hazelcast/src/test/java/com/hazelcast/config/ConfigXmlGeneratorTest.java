@@ -515,7 +515,7 @@ public class ConfigXmlGeneratorTest {
                         new CachePartitionLostListenerConfig("partitionLostListener")))
                 .setQuorumName("testQuorum");
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
         expectedConfig.setWanReplicationRef(wanReplicationRef());
 
@@ -543,7 +543,7 @@ public class ConfigXmlGeneratorTest {
                 .setPartitionLostListenerConfigs(singletonList(
                         new CachePartitionLostListenerConfig("partitionLostListener")));
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
 
         Config config = new Config()

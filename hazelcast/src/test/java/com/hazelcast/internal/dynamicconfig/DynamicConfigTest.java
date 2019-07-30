@@ -327,9 +327,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testReplicatedMapConfig_withListenerByClassName() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(name)
                 .setStatisticsEnabled(true)
-                .setMergePolicy("com.hazelcast.SomeMergePolicy")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .addEntryListenerConfig(new EntryListenerConfig(randomString(), true, false));
+        config.getMergePolicyConfig().setPolicy("com.hazelcast.SomeMergePolicy");
         config.setAsyncFillup(true);
 
         driver.getConfig().addReplicatedMapConfig(config);
@@ -341,9 +341,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testReplicatedMapConfig_withListenerByImplementation() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(name)
                 .setStatisticsEnabled(true)
-                .setMergePolicy("com.hazelcast.SomeMergePolicy")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .addEntryListenerConfig(new EntryListenerConfig(new SampleEntryListener(), false, true));
+        config.getMergePolicyConfig().setPolicy("com.hazelcast.SomeMergePolicy");
         config.setAsyncFillup(true);
 
         driver.getConfig().addReplicatedMapConfig(config);
@@ -815,7 +815,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
-        config.setMergePolicy("mergePolicy");
+        config.getMergePolicyConfig().setPolicy("mergePolicy");
         config.setDisablePerEntryInvalidationEvents(true);
         return config;
     }

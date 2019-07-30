@@ -424,11 +424,11 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
         quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                                          .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                          .withSuspicionThreshold(threshold)
-                                          .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                          .withMinStdDeviationMillis(minStdDeviation)
-                                          .withMaxSampleSize(maxSampleSize);
+                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                .withSuspicionThreshold(threshold)
+                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                .withMinStdDeviationMillis(minStdDeviation)
+                .withMaxSampleSize(maxSampleSize);
         return quorumConfigBuilder;
     }
 
@@ -1608,11 +1608,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("max-size".equals(nodeName)) {
                 handleMaxSizeConfig(mapConfig, node, value);
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value
-                ));
+                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
-                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value
-                ));
+                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value));
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -1643,12 +1641,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("attributes".equals(nodeName)) {
                 mapAttributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(node, new Function<EntryListenerConfig, Void>() {
-                    @Override
-                    public Void apply(EntryListenerConfig entryListenerConfig) {
-                        mapConfig.addEntryListenerConfig(entryListenerConfig);
-                        return null;
-                    }
+                handleEntryListeners(node, entryListenerConfig -> {
+                    mapConfig.addEntryListenerConfig(entryListenerConfig);
+                    return null;
                 });
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 mapPartitionLostListenerHandle(node, mapConfig);
@@ -1782,7 +1777,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
-                cacheConfig.setMergePolicy(value);
+                cacheConfig.setMergePolicyConfig(createMergePolicyConfig(n));
             } else if ("event-journal".equals(nodeName)) {
                 EventJournalConfig eventJournalConfig = new EventJournalConfig();
                 handleViaReflection(n, cacheConfig, eventJournalConfig);

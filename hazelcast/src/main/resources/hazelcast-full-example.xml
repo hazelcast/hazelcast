@@ -1081,15 +1081,15 @@
             Hazelcast Enterprise HD.
         * <merge-policy>:
         Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
-        split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
+        split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
         built-in policies are as follows:
-        - com.hazelcast.map.merge.PassThroughMergePolicy:
+        - com.hazelcast.spi.merge.PassThroughMergePolicy:
             Entry will be added if there is no existing entry for the key.
-        - com.hazelcast.map.merge.PutIfAbsentMapMergePolicy:
+        - com.hazelcast.spi.merge.PutIfAbsentMergePolicy:
             Entry will be added if the merging entry does not exist in the cluster.
-        - com.hazelcast.map.merge.HigherHitsMapMergePolicy:
+        - com.hazelcast.spi.merge.HigherHitsMergePolicy:
             Entry with the higher number of hits wins.
-        - com.hazelcast.map.merge.LatestUpdateMapMergePolicy:
+        - com.hazelcast.spi.merge.LatestUpdateMergePolicy:
             Entry with the latest update wins.
         * <read-backup-data>:
         Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
@@ -1231,22 +1231,22 @@
                 ICache are provided out-of-the-box.
 
                 IMap has the following merge policies:
-                com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.PutIfAbsentMergePolicy: Incoming entry merges from the
                 source map to the target map if it does not exist in the target map.
-                com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from the
                 source map to the target map if the source entry has more hits than the target one.
-                com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from the
                 source map to the target map unless the incoming entry is not null.
-                com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.LatestUpdateMergePolicy: Incoming entry merges from the
                 source map to the target map if the source entry has been updated more recently
                 than the target entry. Please note that this merge policy can only be used when the
                 clusters' clocks are in sync.
 
                 ICache has the following merge policies:
-                com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
                 the source cache to the target cache if the source entry has more hits than the
                 target one.
-                com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
                 the source cache to the target cache unless the incoming entry is not null.
         * <indexes>:
         You can define indexes for your map using this element's <index> sub-elements. Each <index> has
@@ -1308,7 +1308,7 @@
             <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         </near-cache>
         <wan-replication-ref name="my-wan-cluster-batch">
-            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+            <merge-policy>PassThroughMergePolicy</merge-policy>
             <filters>
                 <filter-impl>com.example.SampleFilter</filter-impl>
                 <filter-impl>com.example.SampleFilter2</filter-impl>
@@ -1566,10 +1566,10 @@
                 ICache are provided out-of-the-box.
 
                 ICache has the following merge policies:
-                com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
                 the source cache to the target cache if the source entry has more hits than the
                 target one.
-                com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
                 the source cache to the target cache unless the incoming entry is not null.
         * <quorum-ref>:
             Adds the quorum for this cache which you configure using the <quorum> element. You should set the
@@ -1579,10 +1579,10 @@
         * <merge-policy>:
             The following are the built-in merge policies for cache. You can either use their full class names or constant
             names (given in parentheses).
-        - com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
-        - com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
-        - com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
-        - com.hazelcast.cache.merge.LatestAccessCacheMergePolicy (LATEST_ACCESS)
+        - com.hazelcast.spi.merge.PassThroughMergePolicy (PASS_THROUGH)
+        - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
+        - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
+        - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
         * <hot-restart>:
         Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
         Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
@@ -1639,7 +1639,7 @@
         <async-backup-count>0</async-backup-count>
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         <wan-replication-ref name="my-wan-cluster-batch">
-            <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
+            <merge-policy>PassThroughMergePolicy</merge-policy>
             <republishing-enabled>true</republishing-enabled>
             <filters>
                 <filter-impl>com.example.SampleFilter</filter-impl>
@@ -1649,7 +1649,7 @@
         <partition-lost-listeners>
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
-        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
+        <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>

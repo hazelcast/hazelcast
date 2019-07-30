@@ -683,15 +683,15 @@ hazelcast:
       enabled: false
       factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
-         protocol: TLS
+        protocol: TLS
 
-         mutualAuthentication: REQUIRED
-         keyStore: /opt/hazelcast.keystore
-         keyStorePassword: secret.97531
-         keyStoreType: JKS
-         trustStore: /opt/hazelcast.truststore
-         trustStorePassword: changeit
-         trustStoreType: JKS
+        mutualAuthentication: REQUIRED
+        keyStore: /opt/hazelcast.keystore
+        keyStorePassword: secret.97531
+        keyStoreType: JKS
+        trustStore: /opt/hazelcast.truststore
+        trustStorePassword: changeit
+        trustStoreType: JKS
     socket-interceptor:
       enabled: false
     symmetric-encryption:
@@ -785,14 +785,12 @@ hazelcast:
     enabled: true
     group-type: CUSTOM
     member-group:
-      -
-        - 10.10.0.*
+      - - 10.10.0.*
         - 10.10.3.*
         - 10.10.5.*
-      -
-       - 10.10.10.10-100
-       - 10.10.1.*
-       - 10.10.2.*
+      - - 10.10.10.10-100
+        - 10.10.1.*
+        - 10.10.2.*
 
   #
   # ===== HAZELCAST EXECUTOR SERVICE CONFIGURATION =====
@@ -1067,15 +1065,15 @@ hazelcast:
   #     Hazelcast Enterprise HD.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
-  # split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
+  # split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
   # built-in policies are as follows:
-  # - com.hazelcast.map.merge.PassThroughMergePolicy:
+  # - com.hazelcast.spi.merge.PassThroughMergePolicy:
   #     Entry will be added if there is no existing entry for the key.
-  # - com.hazelcast.map.merge.PutIfAbsentMapMergePolicy:
+  # - com.hazelcast.spi.merge.PutIfAbsentMergePolicy:
   #     Entry will be added if the merging entry does not exist in the cluster.
-  # - com.hazelcast.map.merge.HigherHitsMapMergePolicy:
+  # - com.hazelcast.spi.merge.HigherHitsMergePolicy:
   #     Entry with the higher number of hits wins.
-  # - com.hazelcast.map.merge.LatestUpdateMapMergePolicy:
+  # - com.hazelcast.spi.merge.LatestUpdateMergePolicy:
   #     Entry with the latest update wins.
   # * "read-backup-data":
   # Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
@@ -1218,22 +1216,22 @@ hazelcast:
   #         ICache are provided out-of-the-box.
   #
   #         IMap has the following merge policies:
-  #         com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
+  #         com.hazelcast.spi.merge.PutIfAbsentMergePolicy: Incoming entry merges from the
   #         source map to the target map if it does not exist in the target map.
-  #         com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
+  #         com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from the
   #         source map to the target map if the source entry has more hits than the target one.
-  #         com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
+  #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from the
   #         source map to the target map unless the incoming entry is not null.
-  #         com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
+  #         com.hazelcast.spi.merge.LatestUpdateMergePolicy: Incoming entry merges from the
   #         source map to the target map if the source entry has been updated more recently
   #         than the target entry. Please note that this merge policy can only be used when the
   #         clusters' clocks are in sync.
   #
   #         ICache has the following merge policies:
-  #         com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+  #         com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
   #         the source cache to the target cache if the source entry has more hits than the
   #         target one.
-  #         com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+  #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
   # * "indexes":
   # You can define indexes for your map using this element's "index" sub-elements. Each "index" has
@@ -1303,16 +1301,16 @@ hazelcast:
           eviction-policy: LFU
       wan-replication-ref:
         my-wan-cluster-batch:
-         merge-policy: com.hazelcast.map.merge.PassThroughMergePolicy
-         filters:
-           - com.example.SampleFilter
-           - com.example.SampleFilter2
-         republishing-enabled: false
+          merge-policy: PassThroughMergePolicy
+          filters:
+            - com.example.SampleFilter
+            - com.example.SampleFilter2
+          republishing-enabled: false
       indexes:
-         name:
-           ordered: false
-         age:
-           ordered: true
+        name:
+          ordered: false
+        age:
+          ordered: true
       attributes:
         currency:
           extractor: com.bank.CurrencyExtractor
@@ -1564,10 +1562,10 @@ hazelcast:
   #         ICache are provided out-of-the-box.
   #
   #         ICache has the following merge policies:
-  #         com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+  #         com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
   #         the source cache to the target cache if the source entry has more hits than the
   #         target one.
-  #         com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+  #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
   # * "quorum-ref":
   #     Adds the quorum for this cache which you configure using the "quorum" element. You should set the
@@ -1577,10 +1575,10 @@ hazelcast:
   # * "merge-policy":
   #     The following are the built-in merge policies for cache. You can either use their full class names or constant
   #     names (given in parentheses).
-  # - com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
-  # - com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
-  # - com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
-  # - com.hazelcast.cache.merge.LatestAccessCacheMergePolicy (LATEST_ACCESS)
+  # - com.hazelcast.spi.merge.PassThroughMergePolicy (PASS_THROUGH)
+  # - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
+  # - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
+  # - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
   # * "hot-restart":
   # Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
@@ -1643,15 +1641,17 @@ hazelcast:
         max-size-policy: ENTRY_COUNT
         eviction-policy: LFU
       wan-replication-ref:
-         name: my-wan-cluster-batch
-         merge-policy: com.hazelcast.cache.merge.PassThroughCacheMergePolicy
-         republishing-enabled: true
-         filters:
-           - com.example.SampleFilter
+        name: my-wan-cluster-batch
+        merge-policy: PassThroughMergePolicy
+        republishing-enabled: true
+        filters:
+          - com.example.SampleFilter
       quorum-ref: quorumRuleWithThreeNodes
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
-      merge-policy: com.hazelcast.cache.merge.LatestAccessCacheMergePolicy
+      merge-policy:
+        batch-size: 100
+        class-name: LatestAccessMergePolicy
       hot-restart:
         enabled: false
         fsync: false
@@ -2004,12 +2004,12 @@ hazelcast:
   #     When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
   #
   flake-id-generator:
-     default:
-       prefetch-count: 100
-       prefetch-validity-millis: 600000
-       id-offset: 0
-       node-id-offset: 0
-       statistics-enabled: true
+    default:
+      prefetch-count: 100
+      prefetch-validity-millis: 600000
+      id-offset: 0
+      node-id-offset: 0
+      statistics-enabled: true
 
   #
   # ===== HAZELCAST ATOMIC LONG CONFIGURATION =====
@@ -2109,7 +2109,7 @@ hazelcast:
       - factory-id: 1
         class-name: com.hazelcast.examples.PortableFactory
     global-serializer:
-       class-name: com.hazelcast.examples.GlobalSerializerFactory
+      class-name: com.hazelcast.examples.GlobalSerializerFactory
     serializers:
       - type-class: com.hazelcast.examples.DummyType
         class-name: com.hazelcast.examples.SerializerFactory

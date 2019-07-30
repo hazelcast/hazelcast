@@ -23,7 +23,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

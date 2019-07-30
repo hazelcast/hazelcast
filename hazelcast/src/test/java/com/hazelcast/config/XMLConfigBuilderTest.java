@@ -2014,7 +2014,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <backup-count>1</backup-count>"
                 + "        <async-backup-count>0</async-backup-count>"
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
-                + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
+                + "        <merge-policy batch-size=\"111\">LatestAccessMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
                 + "        <event-journal enabled=\"true\">\n"
                 + "            <capacity>120</capacity>\n"
@@ -2057,7 +2057,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals("com.hazelcast.cache.merge.LatestAccessCacheMergePolicy", cacheConfig.getMergePolicy());
+        assertEquals("LatestAccessMergePolicy", cacheConfig.getMergePolicyConfig().getPolicy());
+        assertEquals(111, cacheConfig.getMergePolicyConfig().getBatchSize());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
@@ -2374,7 +2375,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2459,7 +2460,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("com.hazelcast.map.merge.PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

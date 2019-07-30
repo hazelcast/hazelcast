@@ -18,8 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.
@@ -27,19 +25,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 public final class EntryViews {
 
     private EntryViews() {
-    }
-
-    /**
-     * Creates a null entry view that has only key and no value.
-     *
-     * @param key the key object which will be wrapped in {@link com.hazelcast.core.EntryView}.
-     * @param <K> the type of key.
-     * @param <V> the type of value.
-     * @return returns  null entry view.
-     */
-    public static <K, V> EntryView<K, V> createLazyNullEntryView(K key,
-                                                                 SerializationService serializationService) {
-        return new LazyNullEntryView<>(key, serializationService);
     }
 
     public static <K, V> EntryView<K, V> createSimpleEntryView() {
@@ -58,37 +43,5 @@ public final class EntryViews {
                 .withCreationTime(record.getCreationTime())
                 .withExpirationTime(record.getExpirationTime())
                 .withLastStoredTime(record.getLastStoredTime());
-    }
-
-    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record,
-                                                             SerializationService serializationService,
-                                                             MapMergePolicy mergePolicy) {
-        return new LazyEntryView<>(key, value, serializationService, mergePolicy)
-                .setCost(record.getCost())
-                .setVersion(record.getVersion())
-                .setHits(record.getHits())
-                .setLastAccessTime(record.getLastAccessTime())
-                .setLastUpdateTime(record.getLastUpdateTime())
-                .setTtl(record.getTtl())
-                .setMaxIdle(record.getMaxIdle())
-                .setCreationTime(record.getCreationTime())
-                .setExpirationTime(record.getExpirationTime())
-                .setLastStoredTime(record.getLastStoredTime());
-    }
-
-    public static <K, V> EntryView<K, V> toLazyEntryView(EntryView<K, V> entryView,
-                                                         SerializationService serializationService,
-                                                         MapMergePolicy mergePolicy) {
-        return new LazyEntryView<>(entryView.getKey(), entryView.getValue(), serializationService, mergePolicy)
-                .setCost(entryView.getCost())
-                .setVersion(entryView.getVersion())
-                .setLastAccessTime(entryView.getLastAccessTime())
-                .setLastUpdateTime(entryView.getLastUpdateTime())
-                .setTtl(entryView.getTtl())
-                .setMaxIdle(entryView.getMaxIdle())
-                .setCreationTime(entryView.getCreationTime())
-                .setHits(entryView.getHits())
-                .setExpirationTime(entryView.getExpirationTime())
-                .setLastStoredTime(entryView.getLastStoredTime());
     }
 }

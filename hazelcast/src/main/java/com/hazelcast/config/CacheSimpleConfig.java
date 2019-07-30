@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -28,6 +27,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
@@ -64,11 +64,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
-    /**
-     * Default policy for merging
-     */
-    public static final String DEFAULT_CACHE_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
-
     private String name;
 
     private String keyType;
@@ -104,11 +99,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
-    private String mergePolicy = DEFAULT_CACHE_MERGE_POLICY;
-
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
@@ -138,9 +133,9 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
         this.partitionLostListenerConfigs =
-                new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
+                new ArrayList<>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
-        this.mergePolicy = cacheSimpleConfig.mergePolicy;
+        this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
@@ -627,22 +622,22 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     /**
-     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config.
+     * Gets the {@link MergePolicyConfig} for this map.
      *
-     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config
+     * @return the {@link MergePolicyConfig} for this map
      */
-    public String getMergePolicy() {
-        return mergePolicy;
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
     }
 
     /**
-     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to this cache config.
+     * Sets the {@link MergePolicyConfig} for this map.
      *
-     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation
-     *                    to be set to this cache config
+     * @return the updated map configuration
      */
-    public void setMergePolicy(String mergePolicy) {
-        this.mergePolicy = mergePolicy;
+    public CacheSimpleConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
+        return this;
     }
 
     @Override
@@ -742,7 +737,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         out.writeObject(wanReplicationRef);
         out.writeUTF(quorumName);
         writeNullableList(partitionLostListenerConfigs, out);
-        out.writeUTF(mergePolicy);
+        out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
     }
@@ -770,7 +765,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         wanReplicationRef = in.readObject();
         quorumName = in.readUTF();
         partitionLostListenerConfigs = readNullableList(in);
-        mergePolicy = in.readUTF();
+        mergePolicyConfig = in.readObject();
         hotRestartConfig = in.readObject();
         eventJournalConfig = in.readObject();
     }
@@ -811,62 +806,52 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         if (!name.equals(that.name)) {
             return false;
         }
-        if (keyType != null ? !keyType.equals(that.keyType) : that.keyType != null) {
+        if (!Objects.equals(keyType, that.keyType)) {
             return false;
         }
-        if (valueType != null ? !valueType.equals(that.valueType) : that.valueType != null) {
+        if (!Objects.equals(valueType, that.valueType)) {
             return false;
         }
-        if (cacheLoaderFactory != null
-                ? !cacheLoaderFactory.equals(that.cacheLoaderFactory) : that.cacheLoaderFactory != null) {
+        if (!Objects.equals(cacheLoaderFactory, that.cacheLoaderFactory)) {
             return false;
         }
-        if (cacheWriterFactory != null
-                ? !cacheWriterFactory.equals(that.cacheWriterFactory) : that.cacheWriterFactory != null) {
+        if (!Objects.equals(cacheWriterFactory, that.cacheWriterFactory)) {
             return false;
         }
-        if (cacheLoader != null ? !cacheLoader.equals(that.cacheLoader) : that.cacheLoader != null) {
+        if (!Objects.equals(cacheLoader, that.cacheLoader)) {
             return false;
         }
-        if (cacheWriter != null ? !cacheWriter.equals(that.cacheWriter) : that.cacheWriter != null) {
+        if (!Objects.equals(cacheWriter, that.cacheWriter)) {
             return false;
         }
-        if (expiryPolicyFactoryConfig != null
-                ? !expiryPolicyFactoryConfig.equals(that.expiryPolicyFactoryConfig)
-                : that.expiryPolicyFactoryConfig != null) {
+        if (!Objects.equals(expiryPolicyFactoryConfig, that.expiryPolicyFactoryConfig)) {
             return false;
         }
-        if (cacheEntryListeners != null ? !cacheEntryListeners.equals(that.cacheEntryListeners)
-                : that.cacheEntryListeners != null) {
+        if (!Objects.equals(cacheEntryListeners, that.cacheEntryListeners)) {
             return false;
         }
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+        if (!Objects.equals(evictionConfig, that.evictionConfig)) {
             return false;
         }
-        if (wanReplicationRef != null ? !wanReplicationRef.equals(that.wanReplicationRef)
-                : that.wanReplicationRef != null) {
+        if (!Objects.equals(wanReplicationRef, that.wanReplicationRef)) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (!Objects.equals(quorumName, that.quorumName)) {
             return false;
         }
-        if (partitionLostListenerConfigs != null
-                ? !partitionLostListenerConfigs.equals(that.partitionLostListenerConfigs)
-                : that.partitionLostListenerConfigs != null) {
+        if (!Objects.equals(partitionLostListenerConfigs, that.partitionLostListenerConfigs)) {
             return false;
         }
-        if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
-        if (eventJournalConfig != null
-                ? !eventJournalConfig.equals(that.eventJournalConfig)
-                : that.eventJournalConfig != null) {
+        if (!Objects.equals(eventJournalConfig, that.eventJournalConfig)) {
             return false;
         }
-        return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
+        return Objects.equals(hotRestartConfig, that.hotRestartConfig);
     }
 
     @Override
@@ -892,7 +877,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
-        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
         result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
@@ -922,7 +907,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", quorumName=" + quorumName
                 + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
-                + ", mergePolicy=" + mergePolicy
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", hotRestartConfig=" + hotRestartConfig
                 + ", eventJournal=" + eventJournalConfig
                 + '}';

@@ -36,6 +36,7 @@
         <org.springframework.version>4.3.23.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
         <hazelcast.latest.version>3.8</hazelcast.latest.version>
+        <hazelcast-hibernate5.version>1.4.0-SNAPSHOT</hazelcast-hibernate5.version>
     </properties>
 
     <build>
@@ -148,7 +149,7 @@
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate5</artifactId>
-                    <version>1.4.0-SNAPSHOT</version>
+                    <version>${hazelcast-hibernate5.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -210,6 +211,12 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${http.components.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-hibernate5</artifactId>
+            <version>${hazelcast-hibernate5.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

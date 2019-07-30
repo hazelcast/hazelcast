@@ -69,7 +69,8 @@ public class AddCacheConfigMessageTask
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
         config.setManagementEnabled(parameters.managementEnabled);
-        config.setMergePolicy(parameters.mergePolicy);
+        // TODO also set merge policy batch size
+        config.getMergePolicyConfig().setPolicy(parameters.mergePolicy);
         config.setName(parameters.name);
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)

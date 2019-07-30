@@ -114,7 +114,7 @@
             </hz:cache>
             <hz:cache name="cacheWithDefaultMergePolicy"/>
             <hz:cache name="cacheWithCustomMergePolicy">
-                <hz:merge-policy>MyDummyMergePolicy</hz:merge-policy>
+                <hz:merge-policy batch-size="100">MyDummyMergePolicy</hz:merge-policy>
             </hz:cache>
             <hz:cache name="cacheWithComparatorClassName">
                 <hz:eviction size="50" max-size-policy="ENTRY_COUNT"
