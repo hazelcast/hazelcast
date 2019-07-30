@@ -391,6 +391,14 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
         }
     }
 
+    // just for testing
+    public boolean isEmpty() {
+        synchronized (mutex) {
+            // check every collection for emptiness to make sure no memory is leaking
+            return secondsOfKeys.isEmpty() && scheduledEntries.isEmpty() && scheduledTaskMap.isEmpty();
+        }
+    }
+
     /**
      * Returns the duration in seconds between the time this class was loaded and now+{@code delayMillis}
      */

@@ -18,6 +18,7 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -87,8 +89,12 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         }
 
         final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
-        assertTrueEventually(() -> {
-            assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(scheduler.isEmpty());
+                assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
+            }
         });
     }
 
@@ -128,17 +134,21 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
             thread.start();
         }
 
-        assertTrueEventually(() -> {
-            assertEquals(latestValues.size(), processor.values.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(scheduler.isEmpty());
+                assertEquals(latestValues.size(), processor.values.size());
 
-            for (int key = 0; key < numberOfKeys; key++) {
-                Integer expected = latestValues.get(key);
-                Integer actual = processor.get(key);
+                for (int key = 0; key < numberOfKeys; key++) {
+                    Integer expected = latestValues.get(key);
+                    Integer actual = processor.get(key);
 
-                if (expected == null) {
-                    assertNull(actual);
-                } else {
-                    assertEquals(expected, actual);
+                    if (expected == null) {
+                        assertNull(actual);
+                    } else {
+                        assertEquals(expected, actual);
+                    }
                 }
             }
         });
