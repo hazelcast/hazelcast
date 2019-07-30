@@ -51,6 +51,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
     private boolean autoScaling = true;
     private boolean splitBrainProtectionEnabled;
+    private boolean enableMetrics = true;
     private List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
@@ -423,6 +424,23 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Sets whether metrics collection should be enabled for the job.
+     * It's enabled by default.
+     */
+    @Nonnull
+    public JobConfig setMetricsEnabled(boolean enabled) {
+        this.enableMetrics = enabled;
+        return this;
+    }
+
+    /**
+     * Returns if metrics collection is enabled for the job
+     */
+    public boolean isMetricsEnabled() {
+        return enableMetrics;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -443,6 +461,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeObject(resourceConfigs);
         out.writeObject(classLoaderFactory);
         out.writeUTF(initialSnapshotName);
+        out.writeBoolean(enableMetrics);
     }
 
     @Override
@@ -455,6 +474,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         resourceConfigs = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readUTF();
+        enableMetrics = in.readBoolean();
     }
 
     @Override
@@ -465,43 +485,22 @@ public class JobConfig implements IdentifiedDataSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         JobConfig jobConfig = (JobConfig) o;
-
-        if (snapshotIntervalMillis != jobConfig.snapshotIntervalMillis) {
-            return false;
-        }
-        if (autoScaling != jobConfig.autoScaling) {
-            return false;
-        }
-        if (splitBrainProtectionEnabled != jobConfig.splitBrainProtectionEnabled) {
-            return false;
-        }
-        if (!Objects.equals(name, jobConfig.name)) {
-            return false;
-        }
-        if (processingGuarantee != jobConfig.processingGuarantee) {
-            return false;
-        }
-        if (!Objects.equals(resourceConfigs, jobConfig.resourceConfigs)) {
-            return false;
-        }
-        if (!Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)) {
-            return false;
-        }
-        return Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis &&
+            autoScaling == jobConfig.autoScaling &&
+            splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled &&
+            enableMetrics == jobConfig.enableMetrics &&
+            Objects.equals(name, jobConfig.name) &&
+            processingGuarantee == jobConfig.processingGuarantee &&
+            Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
+            Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory) &&
+            Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
     }
 
     @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (processingGuarantee != null ? processingGuarantee.hashCode() : 0);
-        result = 31 * result + (int) (snapshotIntervalMillis ^ (snapshotIntervalMillis >>> 32));
-        result = 31 * result + (autoScaling ? 1 : 0);
-        result = 31 * result + (splitBrainProtectionEnabled ? 1 : 0);
-        result = 31 * result + (resourceConfigs != null ? resourceConfigs.hashCode() : 0);
-        result = 31 * result + (classLoaderFactory != null ? classLoaderFactory.hashCode() : 0);
-        result = 31 * result + (initialSnapshotName != null ? initialSnapshotName.hashCode() : 0);
-        return result;
+        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling,
+            splitBrainProtectionEnabled, enableMetrics, resourceConfigs, classLoaderFactory, initialSnapshotName
+        );
     }
 }

@@ -133,7 +133,8 @@ public class VertexDef_HigherPrioritySourceTest {
         Map<MemberInfo, ExecutionPlan> executionPlans =
                 createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0);
         ExecutionPlan plan = executionPlans.values().iterator().next();
-        plan.initialize(nodeEngineImpl, 0, 0, new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE));
+        SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
+        plan.initialize(nodeEngineImpl, 0, 0, ssContext, true);
         String actualHigherPriorityVertices = plan.getVertices().stream()
                 .filter(VertexDef::isHigherPrioritySource)
                 .map(VertexDef::name)
