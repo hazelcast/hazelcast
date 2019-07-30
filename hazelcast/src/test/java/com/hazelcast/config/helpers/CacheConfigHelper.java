@@ -69,7 +69,7 @@ public abstract class CacheConfigHelper {
                 "com.hazelcast.MergePolicy", Collections.singletonList("filter"), true));
         cacheConfig.addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration(
                 new CacheConfigTest.EntryListenerFactory(), null, false, true));
-        cacheConfig.setMergePolicy("mergePolicy");
+        cacheConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         cacheConfig.setStatisticsEnabled(true);
         cacheConfig.setManagementEnabled(true);
         cacheConfig.setDisablePerEntryInvalidationEvents(true);

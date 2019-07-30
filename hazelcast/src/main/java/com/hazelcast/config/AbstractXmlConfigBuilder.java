@@ -18,8 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -51,8 +49,6 @@ import static java.lang.String.format;
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
  */
 public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
-
-    private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigBuilder.class);
 
     private Properties properties = System.getProperties();
 

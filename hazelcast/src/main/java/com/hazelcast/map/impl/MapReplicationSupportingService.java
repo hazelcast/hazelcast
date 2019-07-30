@@ -16,20 +16,18 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 
@@ -46,7 +44,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.wanEventTypeCounters = nodeEngine.getWanReplicationService()
-                                              .getReceivedEventCounters(MapService.SERVICE_NAME);
+                .getReceivedEventCounters(MapService.SERVICE_NAME);
     }
 
     @Override
@@ -77,21 +75,16 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
-        Object mergePolicy = replicationUpdate.getMergePolicy();
+        SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getMapName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
-        MapOperation operation;
-        if (mergePolicy instanceof SplitBrainMergePolicy) {
-            SerializationService serializationService = nodeEngine.getSerializationService();
-            MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
-            //noinspection unchecked
-            operation = operationProvider.createMergeOperation(mapName, mergingEntry,
-                    (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
-        } else {
-            EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
-            operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
-        }
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
+        //noinspection unchecked
+        MapOperation operation = operationProvider.createMergeOperation(mapName, mergingEntry,
+                (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
+
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());
             Future future = nodeEngine.getOperationService()

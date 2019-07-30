@@ -538,7 +538,9 @@ hazelcast:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
       quorum-ref: DummyQuorum
-      merge-policy: DummyMergePolicy
+      merge-policy:
+        batch-size: 100
+        class-name: DummyMergePolicy
       partition-lost-listeners:
         - DummyListener
       hot-restart:

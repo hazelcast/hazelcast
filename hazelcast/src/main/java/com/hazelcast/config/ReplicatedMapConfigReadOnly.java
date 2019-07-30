@@ -74,11 +74,6 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw throwReadOnly();
     }

@@ -74,10 +74,13 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
+
         CacheSimpleEntryListenerConfig redEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         redEntryListenerConfig.setCacheEntryListenerFactory("red");
+
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
+
         EqualsVerifier.forClass(CacheSimpleConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
@@ -100,6 +103,9 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
                 .withPrefabValues(CachePartitionLostListenerConfig.class,
                         new CachePartitionLostListenerConfig("red"),
                         new CachePartitionLostListenerConfig("black"))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig("policy1", 1),
+                        new MergePolicyConfig("policy2", 2))
                 .verify();
     }
 }

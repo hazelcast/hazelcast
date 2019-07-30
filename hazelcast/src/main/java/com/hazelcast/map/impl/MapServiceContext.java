@@ -34,7 +34,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -139,10 +138,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     void setService(MapService mapService);
 
     NodeEngine getNodeEngine();
-
-    MergePolicyProvider getMergePolicyProvider();
-
-    Object getMergePolicy(String name);
 
     MapEventPublisher getMapEventPublisher();
 

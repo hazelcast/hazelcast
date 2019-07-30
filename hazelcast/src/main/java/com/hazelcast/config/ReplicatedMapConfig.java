@@ -338,28 +338,6 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     }
 
     /**
-     * Gets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
-     *
-     * @return the updated replicated map configuration
-     * @deprecated since 3.10, please use {@link #getMergePolicyConfig()} and {@link MergePolicyConfig#getPolicy()}
-     */
-    public String getMergePolicy() {
-        return mergePolicyConfig.getPolicy();
-    }
-
-    /**
-     * Sets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
-     *
-     * @param mergePolicy the replicated map merge policy to set
-     * @return the updated replicated map configuration
-     * @deprecated since 3.10, please use {@link #setMergePolicyConfig(MergePolicyConfig)}
-     */
-    public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
-        this.mergePolicyConfig.setPolicy(mergePolicy);
-        return this;
-    }
-
-    /**
      * Gets the {@link MergePolicyConfig} for this replicated map.
      *
      * @return the {@link MergePolicyConfig} for this replicated map

@@ -16,6 +16,8 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
@@ -23,8 +25,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -38,20 +38,20 @@ import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberExcepti
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
@@ -110,9 +110,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
     private final LocalReplicatedMapStatsProvider statsProvider;
+    private final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private ScheduledFuture antiEntropyFuture;
-    private MergePolicyProvider mergePolicyProvider;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -124,7 +124,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
         this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
         this.quorumService = nodeEngine.getQuorumService();
-        this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         this.statsProvider = new LocalReplicatedMapStatsProvider(config, partitionContainers);
     }
 

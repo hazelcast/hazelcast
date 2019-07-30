@@ -45,7 +45,7 @@ public class DiscardMergePolicyTest {
 
     @Before
     public void setup() {
-        mergePolicy = new DiscardMergePolicy<Data, MapMergeTypes>();
+        mergePolicy = new DiscardMergePolicy<>();
     }
 
     @Test

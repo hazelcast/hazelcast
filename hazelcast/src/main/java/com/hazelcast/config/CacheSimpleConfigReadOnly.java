@@ -147,7 +147,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     }
 
     @Override
-    public void setMergePolicy(String mergePolicy) {
+    public CacheSimpleConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

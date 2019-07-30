@@ -21,8 +21,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
@@ -32,16 +33,20 @@ import java.io.IOException;
  */
 public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
     private String mapName;
-    /** The policy how to merge the entry on the receiving cluster */
-    private Object mergePolicy;
-    /** The updated entry */
+    /**
+     * The policy how to merge the entry on the receiving cluster
+     */
+    private SplitBrainMergePolicy mergePolicy;
+    /**
+     * The updated entry
+     */
     private WanMapEntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
 
     public MapReplicationUpdate(String mapName,
-                                Object mergePolicy,
+                                SplitBrainMergePolicy mergePolicy,
                                 EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
@@ -60,11 +65,11 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         this.mapName = mapName;
     }
 
-    public Object getMergePolicy() {
+    public SplitBrainMergePolicy getMergePolicy() {
         return mergePolicy;
     }
 
-    public void setMergePolicy(Object mergePolicy) {
+    public void setMergePolicy(SplitBrainMergePolicy mergePolicy) {
         this.mergePolicy = mergePolicy;
     }
 

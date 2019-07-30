@@ -726,7 +726,7 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig());
         }

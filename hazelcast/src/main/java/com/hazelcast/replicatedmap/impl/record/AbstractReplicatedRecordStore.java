@@ -16,15 +16,14 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
-import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
@@ -373,54 +372,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             Data dataValue = serializationService.toData(newValue);
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
-        }
-        return true;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy mergePolicy) {
-        K marshalledKey = (K) marshall(key);
-        InternalReplicatedMapStorage<K, V> storage = getStorage();
-        ReplicatedRecord<K, V> existingRecord = storage.get(marshalledKey);
-        if (existingRecord == null) {
-            ReplicatedMapEntryView nullEntryView
-                    = new ReplicatedMapEntryView<Object, V>(serializationService).setKey(key);
-            V newValue = (V) mergePolicy.merge(name, mergingEntry, nullEntryView);
-            if (newValue == null) {
-                return false;
-            }
-            existingRecord = buildReplicatedRecord(marshalledKey, newValue, 0);
-            storage.put(marshalledKey, existingRecord);
-            storage.incrementVersion();
-            Data dataKey = serializationService.toData(marshalledKey);
-            Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-            sendReplicationOperation(false, name, dataKey, dataValue, existingRecord.getTtlMillis(), responsePair);
-        } else {
-            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView<Object, Object>(serializationService)
-                    .setKey(key)
-                    .setValue(existingRecord.getValueInternal())
-                    .setCreationTime(existingRecord.getCreationTime())
-                    .setLastUpdateTime(existingRecord.getUpdateTime())
-                    .setLastAccessTime(existingRecord.getLastAccessTime())
-                    .setHits(existingRecord.getHits())
-                    .setTtl(existingRecord.getTtlMillis());
-            V newValue = (V) mergePolicy.merge(name, mergingEntry, existingEntry);
-            if (newValue == null) {
-                storage.remove(marshalledKey, existingRecord);
-                storage.incrementVersion();
-                Data dataKey = serializationService.toData(marshalledKey);
-                VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-                sendReplicationOperation(true, name, dataKey, null, existingRecord.getTtlMillis(), responsePair);
-                return false;
-            }
-            existingRecord.setValueInternal(newValue, existingRecord.getTtlMillis());
-            storage.incrementVersion();
-            Data dataKey = serializationService.toData(marshalledKey);
-            Data dataValue = serializationService.toData(newValue);
-            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
-            sendReplicationOperation(false, name, dataKey, dataValue, existingRecord.getTtlMillis(), responsePair);
         }
         return true;
     }

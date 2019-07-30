@@ -49,6 +49,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
@@ -100,7 +101,7 @@ public class MapContainer {
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
-    protected Object wanMergePolicy;
+    protected SplitBrainMergePolicy wanMergePolicy;
     protected WanReplicationPublisher wanReplicationPublisher;
 
     protected volatile Evictor evictor;
@@ -251,7 +252,7 @@ public class MapContainer {
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
-        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
@@ -314,7 +315,7 @@ public class MapContainer {
         return wanReplicationPublisher;
     }
 
-    public Object getWanMergePolicy() {
+    public SplitBrainMergePolicy getWanMergePolicy() {
         return wanMergePolicy;
     }
 

@@ -35,7 +35,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  *
  * @see Accumulator#setHead
  */
-public class SetReadCursorOperation extends MapOperation implements PartitionAwareOperation {
+public class SetReadCursorOperation
+        extends MapOperation implements PartitionAwareOperation {
 
     private long sequence;
     private String cacheId;

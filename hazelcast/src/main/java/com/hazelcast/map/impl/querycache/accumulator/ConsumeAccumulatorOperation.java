@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.querycache.accumulator;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
-import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
-import com.hazelcast.map.impl.querycache.accumulator.AccumulatorHandler;
-import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.map.impl.querycache.publisher.EventPublisherAccumulatorProcessor;
 import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
@@ -46,15 +43,16 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Processes remaining items in {@link Accumulator} instances on a partition.
  * If the partition is not owned by this node, {@link Accumulator} will be removed.
  */
-public class AccumulatorConsumerOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public class ConsumeAccumulatorOperation extends Operation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     private int maxProcessableAccumulatorCount;
     private Queue<Accumulator> accumulators;
 
-    public AccumulatorConsumerOperation() {
+    public ConsumeAccumulatorOperation() {
     }
 
-    public AccumulatorConsumerOperation(Queue<Accumulator> accumulators, int maxProcessableAccumulatorCount) {
+    public ConsumeAccumulatorOperation(Queue<Accumulator> accumulators, int maxProcessableAccumulatorCount) {
         checkPositive(maxProcessableAccumulatorCount, "maxProcessableAccumulatorCount");
 
         this.accumulators = accumulators;

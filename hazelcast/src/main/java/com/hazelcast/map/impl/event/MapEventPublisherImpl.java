@@ -34,6 +34,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.wan.ReplicationEventObject;
@@ -98,7 +99,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Object wanMergePolicy = mapContainer.getWanMergePolicy();
+        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
         MapReplicationUpdate event = new MapReplicationUpdate(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }

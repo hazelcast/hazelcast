@@ -143,8 +143,9 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
                 mapConfig.getMaxIdleSeconds(), mapConfig.getEvictionPolicy().name(), mapConfig.isReadBackupData(),
-                mapConfig.getCacheDeserializedValues().name(), mapConfig.getMergePolicy(), mapConfig.getInMemoryFormat().name(),
-                listenerConfigs, partitionLostListenerConfigs, mapConfig.isStatisticsEnabled(), mapConfig.getQuorumName(),
+                mapConfig.getCacheDeserializedValues().name(), mapConfig.getMergePolicyConfig().getPolicy(),
+                mapConfig.getInMemoryFormat().name(), listenerConfigs, partitionLostListenerConfigs,
+                mapConfig.isStatisticsEnabled(), mapConfig.getQuorumName(),
                 serializationService.toData(mapConfig.getMapEvictionPolicy()),
                 mapConfig.getMaxSizeConfig().getMaxSizePolicy().name(), mapConfig.getMaxSizeConfig().getSize(),
                 MapStoreConfigHolder.of(mapConfig.getMapStoreConfig(), serializationService),
@@ -167,7 +168,10 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.isReadThrough(), cacheConfig.isWriteThrough(), cacheConfig.getCacheLoaderFactory(),
                 cacheConfig.getCacheWriterFactory(), cacheConfig.getCacheLoader(), cacheConfig.getCacheWriter(),
                 cacheConfig.getBackupCount(), cacheConfig.getAsyncBackupCount(), cacheConfig.getInMemoryFormat().name(),
-                cacheConfig.getQuorumName(), cacheConfig.getMergePolicy(), cacheConfig.isDisablePerEntryInvalidationEvents(),
+                cacheConfig.getQuorumName(),
+                // TODO add merge policy batch size
+                cacheConfig.getMergePolicyConfig().getPolicy(),
+                cacheConfig.isDisablePerEntryInvalidationEvents(),
                 partitionLostListenerConfigs,
                 cacheConfig.getExpiryPolicyFactoryConfig() == null ? null
                         : cacheConfig.getExpiryPolicyFactoryConfig().getClassName(),
@@ -1154,7 +1158,7 @@ public class ClientDynamicClusterConfig extends Config {
     private List<ListenerConfigHolder> adaptListenerConfigs(List<? extends ListenerConfig> listenerConfigs) {
         List<ListenerConfigHolder> listenerConfigHolders = null;
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-            listenerConfigHolders = new ArrayList<ListenerConfigHolder>();
+            listenerConfigHolders = new ArrayList<>();
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 listenerConfigHolders.add(ListenerConfigHolder.of(listenerConfig, serializationService));
             }

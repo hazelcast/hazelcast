@@ -82,11 +82,6 @@ public class ReplicatedMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetMergePolicy() {
-        getReadOnlyConfig().setMergePolicy("MyMergePolicy");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testSetMergePolicyConfig() {
         getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }

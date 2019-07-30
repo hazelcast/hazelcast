@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
@@ -25,7 +24,6 @@ import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -191,12 +189,6 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     @Override
     public MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {
         return new TxnSetOperation(name, dataKey, value, version, ttl);
-    }
-
-    @Override
-    public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry,
-                                                   MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return new LegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
     }
 
     @Override

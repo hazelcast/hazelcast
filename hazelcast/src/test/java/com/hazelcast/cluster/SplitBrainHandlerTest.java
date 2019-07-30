@@ -28,7 +28,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -281,7 +281,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
          * h4 to restart it will have to be notified by h3.
          */
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String>emptyList());
+        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.emptyList());
 
         assertTrue(latch.await(60, TimeUnit.SECONDS));
 
@@ -607,7 +607,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         JoinConfig join = networkConfig.getJoin();
         join.getMulticastConfig().setEnabled(true);
 
-        config.getMapConfig("default").setMergePolicy(PassThroughMergePolicy.class.getName());
+        config.getMapConfig("default")
+                .getMergePolicyConfig()
+                .setPolicy(PassThroughMergePolicy.class.getName());
 
         return config;
     }

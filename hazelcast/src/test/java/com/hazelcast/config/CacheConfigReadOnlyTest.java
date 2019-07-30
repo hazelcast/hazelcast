@@ -123,7 +123,7 @@ public class CacheConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMergePolicyOfReadOnlyCacheConfigShouldFail() {
-        getReadOnlyConfig().setMergePolicy("my-merge-policy");
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

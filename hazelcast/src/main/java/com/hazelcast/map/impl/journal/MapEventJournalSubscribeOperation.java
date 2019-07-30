@@ -30,7 +30,9 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
  *
  * @since 3.9
  */
-public class MapEventJournalSubscribeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapEventJournalSubscribeOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
+
     private EventJournalInitialSubscriberState response;
     private ObjectNamespace namespace;
 

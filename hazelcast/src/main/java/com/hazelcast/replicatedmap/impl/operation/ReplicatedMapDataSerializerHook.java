@@ -23,10 +23,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
@@ -47,29 +43,24 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int PUT = 6;
     public static final int REMOVE = 7;
     public static final int SIZE = 8;
-    public static final int LEGACY_MERGE = 9;
-    public static final int VERSION_RESPONSE_PAIR = 10;
-    public static final int GET = 11;
-    public static final int CHECK_REPLICA_VERSION = 12;
-    public static final int CONTAINS_KEY = 13;
-    public static final int CONTAINS_VALUE = 14;
-    public static final int ENTRY_SET = 15;
-    public static final int EVICTION = 16;
-    public static final int IS_EMPTY = 17;
-    public static final int KEY_SET = 18;
-    public static final int REPLICATION = 19;
-    public static final int REQUEST_MAP_DATA = 20;
-    public static final int SYNC_REPLICATED_DATA = 21;
-    public static final int VALUES = 22;
-    public static final int CLEAR_OP_FACTORY = 23;
-    public static final int PUT_ALL_OP_FACTORY = 24;
-    public static final int RECORD_MIGRATION_INFO = 25;
-    public static final int HIGHER_HITS_MERGE_POLICY = 26;
-    public static final int LATEST_UPDATE_MERGE_POLICY = 27;
-    public static final int PASS_THROUGH_MERGE_POLICY = 28;
-    public static final int PUT_IF_ABSENT_MERGE_POLICY = 29;
-    public static final int MERGE_FACTORY = 30;
-    public static final int MERGE = 31;
+    public static final int VERSION_RESPONSE_PAIR = 9;
+    public static final int GET = 10;
+    public static final int CHECK_REPLICA_VERSION = 11;
+    public static final int CONTAINS_KEY = 12;
+    public static final int CONTAINS_VALUE = 13;
+    public static final int ENTRY_SET = 14;
+    public static final int EVICTION = 15;
+    public static final int IS_EMPTY = 16;
+    public static final int KEY_SET = 17;
+    public static final int REPLICATION = 18;
+    public static final int REQUEST_MAP_DATA = 19;
+    public static final int SYNC_REPLICATED_DATA = 20;
+    public static final int VALUES = 21;
+    public static final int CLEAR_OP_FACTORY = 22;
+    public static final int PUT_ALL_OP_FACTORY = 23;
+    public static final int RECORD_MIGRATION_INFO = 24;
+    public static final int MERGE_FACTORY = 25;
+    public static final int MERGE = 26;
 
     private static final int LEN = MERGE + 1;
 
@@ -133,12 +124,6 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SizeOperation();
-            }
-        };
-        constructors[LEGACY_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LegacyMergeOperation();
             }
         };
         constructors[VERSION_RESPONSE_PAIR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -235,30 +220,6 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RecordMigrationInfo();
-            }
-        };
-        constructors[HIGHER_HITS_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return HigherHitsMapMergePolicy.INSTANCE;
-            }
-        };
-        constructors[LATEST_UPDATE_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return LatestUpdateMapMergePolicy.INSTANCE;
-            }
-        };
-        constructors[PASS_THROUGH_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return PassThroughMergePolicy.INSTANCE;
-            }
-        };
-        constructors[PUT_IF_ABSENT_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return PutIfAbsentMapMergePolicy.INSTANCE;
             }
         };
         constructors[MERGE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

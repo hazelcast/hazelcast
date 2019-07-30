@@ -393,7 +393,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 + "        <eviction-policy>LRU</eviction-policy>\n"
                 + "        <max-size policy=\"PER_NODE\">10</max-size>\n"
                 + "\n"
-                + "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "        <merge-policy>PassThroughMergePolicy</merge-policy>\n"
                 + "\n"
                 + "        <map-store enabled=\"true\">\n"
                 + "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n"
