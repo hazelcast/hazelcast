@@ -30,8 +30,10 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.createDefault;
 import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.createWithoutValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -65,6 +67,17 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void test_removeFirstOccurrence_whenSequenceNumberLower() throws Exception {
+        DelayedEntry<Data, Object> entry = newEntry(1, 10);
+        entry.setSequence(1);
+        queue.addLast(entry);
+        DelayedEntry<Data, Object> entry2 = newEntry(1, 10); // sequence is 0
+        assertFalse(queue.removeFirstOccurrence(entry2));
+
+        assertEquals(1, queue.size());
+    }
+
+    @Test
     public void test_contains() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
         queue.addLast(entry);
@@ -93,5 +106,9 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
 
     private DelayedEntry<Data, Object> newEntry(Object key) {
         return createWithoutValue(serializationService.toData(key));
+    }
+
+    private DelayedEntry<Data, Object> newEntry(Object key, Object value) {
+        return createDefault(serializationService.toData(key), value, 0L, 0);
     }
 }
