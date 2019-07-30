@@ -18,15 +18,50 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
+import java.util.Map;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class RingbufferStoreConfigHolderCodec {
-    public static void encode(ClientMessage clientMessage, RingbufferStoreConfigHolder configHolder) {
+    private static final int ENABLED_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
+    public static void encode(ClientMessage clientMessage, RingbufferStoreConfigHolder configHolder) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
+        clientMessage.addFrame(initialFrame);
+
+        CodecUtil.encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
+        MapCodec.encodeNullable(clientMessage, configHolder.getProperties().entrySet(), StringCodec::encode, StringCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static RingbufferStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+
+        String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Map<String, String> properties = MapCodec.decodeToNullableMap(iterator, StringCodec::decode, StringCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        return new RingbufferStoreConfigHolder(className, factoryClassName, implementation, factoryImplementation, properties, enabled);
     }
 }

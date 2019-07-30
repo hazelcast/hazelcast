@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT;
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT;
 
 public final class ClientMessageSplitter {
@@ -95,7 +94,7 @@ public final class ClientMessageSplitter {
     private static ClientMessage createFragment(long fragmentId) {
         ClientMessage fragment;
         fragment = ClientMessage.createForEncode();
-        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[Bits.LONG_SIZE_IN_BYTES], DEFAULT_FLAGS);
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[Bits.LONG_SIZE_IN_BYTES]);
         Bits.writeLongL(frame.content, ClientMessage.FRAGMENTATION_ID_OFFSET, fragmentId);
         fragment.addFrame(frame);
         return fragment;

@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFra
 public class ListMultiFrameCodec {
 
     public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
-            BiConsumer<ClientMessage, T> encodeFunction) {
+                                  BiConsumer<ClientMessage, T> encodeFunction) {
         clientMessage.addFrame(BEGIN_FRAME);
         for (T item : collection) {
             encodeFunction.accept(clientMessage, item);
@@ -43,7 +43,7 @@ public class ListMultiFrameCodec {
     }
 
     public static <T> void encodeNullable(ClientMessage clientMessage, Collection<T> collection,
-            BiConsumer<ClientMessage, T> encodeFunction) {
+                                          BiConsumer<ClientMessage, T> encodeFunction) {
         if (collection == null) {
             clientMessage.addFrame(NULL_FRAME);
         } else {
@@ -52,7 +52,7 @@ public class ListMultiFrameCodec {
     }
 
     public static <T> List<T> decode(ListIterator<ClientMessage.Frame> iterator,
-            Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+                                     Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
         List<T> result = new LinkedList<>();
         iterator.next();//begin frame, list
         while (!nextFrameIsDataStructureEndFrame(iterator)) {
@@ -63,9 +63,7 @@ public class ListMultiFrameCodec {
     }
 
     public static <T> List<T> decodeNullable(ListIterator<ClientMessage.Frame> iterator,
-            Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+                                             Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeFunction);
     }
-
-
 }

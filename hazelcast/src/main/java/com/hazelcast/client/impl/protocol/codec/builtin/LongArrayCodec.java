@@ -18,12 +18,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.List;
-
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
-import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
 public class LongArrayCodec {
 

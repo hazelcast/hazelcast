@@ -18,16 +18,81 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
 
-public class SimpleEntryViewCodec {
-    public static void encode(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
+public class SimpleEntryViewCodec {
+    private static final int COST_OFFSET = 0;
+    private static final int CREATION_TIME_OFFSET = COST_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int EXPIRATION_TIME_OFFSET = CREATION_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int HITS_OFFSET = EXPIRATION_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int LAST_ACCESS_TIME_OFFSET = HITS_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int LAST_STORED_TIME_OFFSET = LAST_ACCESS_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int LAST_UPDATE_TIME_OFFSET = LAST_STORED_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int VERSION_OFFSET = LAST_UPDATE_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int TTL_OFFSET = VERSION_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int MAX_IDLE_OFFSET = TTL_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = MAX_IDLE_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, COST_OFFSET, entryView.getCost());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, CREATION_TIME_OFFSET, entryView.getCreationTime());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET, entryView.getExpirationTime());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, HITS_OFFSET, entryView.getHits());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET, entryView.getLastAccessTime());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET, entryView.getLastStoredTime());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET, entryView.getLastUpdateTime());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, VERSION_OFFSET, entryView.getVersion());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, TTL_OFFSET, entryView.getTtl());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, MAX_IDLE_OFFSET, entryView.getMaxIdle());
+        clientMessage.addFrame(initialFrame);
+
+        DataCodec.encode(clientMessage, entryView.getKey());
+        DataCodec.encode(clientMessage, entryView.getValue());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static SimpleEntryView<Data, Data> decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+        ClientMessage.Frame initialFrame = iterator.next();
+
+        long cost = FixedSizeTypesCodec.decodeLong(initialFrame.content, COST_OFFSET);
+        long creationTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, CREATION_TIME_OFFSET);
+        long expirationTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET);
+        long hits = FixedSizeTypesCodec.decodeLong(initialFrame.content, HITS_OFFSET);
+        long lastAccessTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET);
+        long lastStoredTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET);
+        long lastUpdateTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET);
+        long version = FixedSizeTypesCodec.decodeLong(initialFrame.content, VERSION_OFFSET);
+        long ttl = FixedSizeTypesCodec.decodeLong(initialFrame.content, TTL_OFFSET);
+        long maxIdle = FixedSizeTypesCodec.decodeLong(initialFrame.content, MAX_IDLE_OFFSET);
+
+        Data key = DataCodec.decode(iterator);
+        Data value = DataCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        SimpleEntryView<Data, Data> entryView = new SimpleEntryView<>(key, value);
+        entryView.setCost(cost);
+        entryView.setCreationTime(creationTime);
+        entryView.setExpirationTime(expirationTime);
+        entryView.setHits(hits);
+        entryView.setLastAccessTime(lastAccessTime);
+        entryView.setLastStoredTime(lastStoredTime);
+        entryView.setLastUpdateTime(lastUpdateTime);
+        entryView.setVersion(version);
+        entryView.setTtl(ttl);
+        entryView.setMaxIdle(maxIdle);
+        return entryView;
     }
 }

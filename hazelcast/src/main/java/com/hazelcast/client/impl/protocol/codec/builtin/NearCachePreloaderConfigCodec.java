@@ -1,0 +1,52 @@
+package com.hazelcast.client.impl.protocol.codec.builtin;
+
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.nio.Bits;
+
+import java.util.ListIterator;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+
+public class NearCachePreloaderConfigCodec {
+    private static final int ENABLED_OFFSET = 0;
+    private static final int STORE_INITIAL_DELAY_SECONDS_OFFSET = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int STORE_INTERVAL_SECONDS_OFFSET = STORE_INITIAL_DELAY_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = STORE_INTERVAL_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, NearCachePreloaderConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, STORE_INITIAL_DELAY_SECONDS_OFFSET, config.getStoreInitialDelaySeconds());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, STORE_INTERVAL_SECONDS_OFFSET, config.getStoreIntervalSeconds());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, config.getDirectory());
+
+        clientMessage.addFrame(END_FRAME);
+    }
+
+    public static NearCachePreloaderConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        int storeInitialDelaySeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, STORE_INITIAL_DELAY_SECONDS_OFFSET);
+        int storeIntervalSeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, STORE_INTERVAL_SECONDS_OFFSET);
+
+        String directory = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        NearCachePreloaderConfig config = new NearCachePreloaderConfig();
+        config.setEnabled(enabled);
+        config.setStoreInitialDelaySeconds(storeInitialDelaySeconds);
+        config.setStoreIntervalSeconds(storeIntervalSeconds);
+        config.setDirectory(directory);
+        return config;
+    }
+}

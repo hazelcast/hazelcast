@@ -18,17 +18,50 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.nio.Bits;
 
-import java.util.Collection;
 import java.util.ListIterator;
-import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class CacheSimpleEntryListenerConfigCodec {
-    public static void encode(ClientMessage clientMessage, CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig) {
+    private static final int OLD_VALUE_REQUIRED_OFFSET = 0;
+    private static final int SYNCHRONOUS_OFFSET = OLD_VALUE_REQUIRED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = SYNCHRONOUS_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
+    public static void encode(ClientMessage clientMessage, CacheSimpleEntryListenerConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET, config.isOldValueRequired());
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET, config.isSynchronous());
+        clientMessage.addFrame(initialFrame);
+
+        CodecUtil.encodeNullable(clientMessage, config.getCacheEntryListenerFactory(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, config.getCacheEntryEventFilterFactory(), StringCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static CacheSimpleEntryListenerConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean oldValueRequired = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET);
+        boolean synchronous = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET);
+
+        String cacheEntryListenerFactory = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        String cacheEntryEventFilterFactory = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        CacheSimpleEntryListenerConfig config = new CacheSimpleEntryListenerConfig();
+        config.setOldValueRequired(oldValueRequired);
+        config.setSynchronous(synchronous);
+        config.setCacheEntryListenerFactory(cacheEntryListenerFactory);
+        config.setCacheEntryEventFilterFactory(cacheEntryEventFilterFactory);
+        return config;
     }
 }

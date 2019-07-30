@@ -18,15 +18,43 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
 
-public class RaftGroupIdCodec {
-    public static void encode(ClientMessage clientMessage, RaftGroupId groupId) {
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
+public class RaftGroupIdCodec {
+    private static final int SEED_OFFSET = 0;
+    private static final int COMMIT_INDEX_OFFSET = SEED_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = COMMIT_INDEX_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, RaftGroupId groupId) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, SEED_OFFSET, groupId.seed());
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, COMMIT_INDEX_OFFSET, groupId.id());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, groupId.name());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static RaftGroupId decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        long seed = FixedSizeTypesCodec.decodeLong(initialFrame.content, SEED_OFFSET);
+        long commitIndex = FixedSizeTypesCodec.decodeLong(initialFrame.content, COMMIT_INDEX_OFFSET);
+
+        String name = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        return new RaftGroupId(name, seed, commitIndex);
     }
 }

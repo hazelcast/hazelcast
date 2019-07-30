@@ -18,15 +18,46 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
+import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
 
-public class EvictionConfigHolderCodec {
-    public static void encode(ClientMessage clientMessage, EvictionConfigHolder configHolder) {
+import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
+public class EvictionConfigHolderCodec {
+    private static final int SIZE_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, EvictionConfigHolder configHolder) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, SIZE_OFFSET, configHolder.getSize());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, configHolder.getMaxSizePolicy());
+        StringCodec.encode(clientMessage, configHolder.getEvictionPolicy());
+        CodecUtil.encodeNullable(clientMessage, configHolder.getComparatorClassName(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, configHolder.getComparator(), DataCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static EvictionConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        int size = FixedSizeTypesCodec.decodeInt(initialFrame.content, SIZE_OFFSET);
+
+        String maxSizePolicy = StringCodec.decode(iterator);
+        String evictionPolicy = StringCodec.decode(iterator);
+        String comparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        Data comparator = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        return new EvictionConfigHolder(size, maxSizePolicy, evictionPolicy, comparatorClassName, comparator);
     }
 }

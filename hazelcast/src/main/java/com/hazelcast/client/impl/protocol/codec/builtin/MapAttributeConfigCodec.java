@@ -19,16 +19,30 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.MapAttributeConfig;
 
-import java.util.Collection;
 import java.util.ListIterator;
-import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class MapAttributeConfigCodec {
-    public static void encode(ClientMessage clientMessage, MapAttributeConfig mapAttributeConfig) {
+    public static void encode(ClientMessage clientMessage, MapAttributeConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
 
+        StringCodec.encode(clientMessage, config.getName());
+        StringCodec.encode(clientMessage, config.getExtractor());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static MapAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        String name = StringCodec.decode(iterator);
+        String extractor = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        return new MapAttributeConfig(name, extractor);
     }
 }

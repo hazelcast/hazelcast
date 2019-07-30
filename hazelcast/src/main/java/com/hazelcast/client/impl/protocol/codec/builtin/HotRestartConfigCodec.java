@@ -18,15 +18,42 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
 
-public class HotRestartConfigCodec {
-    public static void encode(ClientMessage clientMessage, HotRestartConfig hotRestartConfig) {
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
+public class HotRestartConfigCodec {
+    private static final int ENABLED_OFFSET = 0;
+    private static final int FSYNC_OFFSET = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = FSYNC_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, HotRestartConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, FSYNC_OFFSET, config.isFsync());
+        clientMessage.addFrame(initialFrame);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static HotRestartConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        boolean fsync = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, FSYNC_OFFSET);
+
+        fastForwardToEndFrame(iterator);
+
+        HotRestartConfig config = new HotRestartConfig();
+        config.setEnabled(enabled);
+        config.setFsync(fsync);
+        return config;
     }
 }

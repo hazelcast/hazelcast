@@ -20,12 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
-
 public class ByteArrayCodec {
 
     public static void encode(ClientMessage clientMessage, byte[] bytes) {
-        clientMessage.addFrame(new ClientMessage.Frame(bytes, DEFAULT_FLAGS));
+        clientMessage.addFrame(new ClientMessage.Frame(bytes));
     }
 
     public static byte[] decode(ClientMessage.Frame frame) {

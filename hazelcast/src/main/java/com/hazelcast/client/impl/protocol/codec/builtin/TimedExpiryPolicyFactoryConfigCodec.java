@@ -18,15 +18,47 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class TimedExpiryPolicyFactoryConfigCodec {
-    public static void encode(ClientMessage clientMessage, CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig config) {
+    private static final int DURATION_AMOUNT_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = DURATION_AMOUNT_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
+    public static void encode(ClientMessage clientMessage, TimedExpiryPolicyFactoryConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET, config.getDurationConfig().getDurationAmount());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, config.getExpiryPolicyType().name());
+        StringCodec.encode(clientMessage, config.getDurationConfig().getTimeUnit().name());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
-    public static CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+    public static TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        long durationAmount = FixedSizeTypesCodec.decodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET);
+
+        String expiryPolicyTypeName = StringCodec.decode(iterator);
+        String durationTimeUnitName = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        return new TimedExpiryPolicyFactoryConfig(
+                TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.valueOf(expiryPolicyTypeName),
+                new DurationConfig(durationAmount, TimeUnit.valueOf(durationTimeUnitName)));
     }
 }

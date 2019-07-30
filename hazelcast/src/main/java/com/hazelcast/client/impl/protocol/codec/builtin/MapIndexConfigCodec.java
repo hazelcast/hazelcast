@@ -18,17 +18,40 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.nio.Bits;
 
-import java.util.Collection;
 import java.util.ListIterator;
-import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class MapIndexConfigCodec {
-    public static void encode(ClientMessage clientMessage, MapIndexConfig mapIndexConfig) {
+    private static final int ORDERED_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = ORDERED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
+    public static void encode(ClientMessage clientMessage, MapIndexConfig config) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, config.getAttribute());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean ordered = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ORDERED_OFFSET);
+
+        String attribute = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        return new MapIndexConfig(attribute, ordered);
     }
 }

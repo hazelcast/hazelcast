@@ -19,16 +19,30 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.Collection;
 import java.util.ListIterator;
-import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class DistributedObjectInfoCodec {
-    public static void encode(ClientMessage clientMessage, DistributedObjectInfo distributedObjectInfo) {
+    public static void encode(ClientMessage clientMessage, DistributedObjectInfo info) {
+        clientMessage.addFrame(BEGIN_FRAME);
 
+        StringCodec.encode(clientMessage, info.getServiceName());
+        StringCodec.encode(clientMessage, info.getName());
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static DistributedObjectInfo decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        String serviceName = StringCodec.decode(iterator);
+        String name = StringCodec.decode(iterator);
+
+        fastForwardToEndFrame(iterator);
+
+        return new DistributedObjectInfo(serviceName, name);
     }
 }

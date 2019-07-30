@@ -22,11 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
-
 public class DataCodec {
     public static void encode(ClientMessage clientMessage, Data data) {
-        clientMessage.addFrame(new ClientMessage.Frame(data.toByteArray(), DEFAULT_FLAGS));
+        clientMessage.addFrame(new ClientMessage.Frame(data.toByteArray()));
     }
 
     public static Data decode(ClientMessage.Frame frame) {

@@ -17,21 +17,14 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
 public class CodecUtil {
-
     public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator){
         for (ClientMessage.Frame frame = iterator.next(); !frame.isDataStructureEndFrame(); frame = iterator.next()){
             //ignore frame content
@@ -69,5 +62,4 @@ public class CodecUtil {
             iterator.previous();
         }
     }
-
 }

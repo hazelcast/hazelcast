@@ -17,18 +17,64 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
-import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class NearCacheConfigHolderCodec {
-    public static void encode(ClientMessage clientMessage, NearCacheConfigHolder configHolder) {
+    private static final int SERIALIZE_KEYS_OFFSET = 0;
+    private static final int INVALIDATE_ON_CHANGE_OFFSET = SERIALIZE_KEYS_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int TIME_TO_LIVE_SECONDS_OFFSET = INVALIDATE_ON_CHANGE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int MAX_IDLE_SECONDS_OFFSET = TIME_TO_LIVE_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int CACHE_LOCAL_ENTRIES_OFFSET = MAX_IDLE_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = CACHE_LOCAL_ENTRIES_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
+    public static void encode(ClientMessage clientMessage, NearCacheConfigHolder configHolder) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, SERIALIZE_KEYS_OFFSET, configHolder.isSerializeKeys());
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, INVALIDATE_ON_CHANGE_OFFSET, configHolder.isInvalidateOnChange());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, TIME_TO_LIVE_SECONDS_OFFSET, configHolder.getTimeToLiveSeconds());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, MAX_IDLE_SECONDS_OFFSET, configHolder.getMaxIdleSeconds());
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, CACHE_LOCAL_ENTRIES_OFFSET, configHolder.isCacheLocalEntries());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, configHolder.getName());
+        StringCodec.encode(clientMessage, configHolder.getInMemoryFormat());
+        EvictionConfigHolderCodec.encode(clientMessage, configHolder.getEvictionConfigHolder());
+        StringCodec.encode(clientMessage, configHolder.getLocalUpdatePolicy());
+        CodecUtil.encodeNullable(clientMessage, configHolder.getPreloaderConfig(), NearCachePreloaderConfigCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static NearCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean serializeKeys = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, SERIALIZE_KEYS_OFFSET);
+        boolean invalidateOnChange = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, INVALIDATE_ON_CHANGE_OFFSET);
+        int timeToLiveSeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, TIME_TO_LIVE_SECONDS_OFFSET);
+        int maxIdleSeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, MAX_IDLE_SECONDS_OFFSET);
+        boolean cacheLocalEntries = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, CACHE_LOCAL_ENTRIES_OFFSET);
+
+        String name = StringCodec.decode(iterator);
+        String inMemoryFormat = StringCodec.decode(iterator);
+        EvictionConfigHolder evictionConfigHolder = EvictionConfigHolderCodec.decode(iterator);
+        String localUpdatePolicy = StringCodec.decode(iterator);
+        NearCachePreloaderConfig preloaderConfig = CodecUtil.decodeNullable(iterator, NearCachePreloaderConfigCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        return new NearCacheConfigHolder(name, inMemoryFormat, serializeKeys, invalidateOnChange, timeToLiveSeconds,
+                maxIdleSeconds, evictionConfigHolder, cacheLocalEntries, localUpdatePolicy, preloaderConfig);
     }
 }

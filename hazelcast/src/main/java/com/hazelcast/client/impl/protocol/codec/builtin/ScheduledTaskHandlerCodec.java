@@ -17,22 +17,50 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
-import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public class ScheduledTaskHandlerCodec {
+    private static final int PARTITION_ID_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = PARTITION_ID_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
-    public static void encode(ClientMessage clientMessage, ScheduledTaskHandler value) {
+    public static void encode(ClientMessage clientMessage, ScheduledTaskHandler handler) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, PARTITION_ID_OFFSET, handler.getPartitionId());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, handler.getSchedulerName());
+        StringCodec.encode(clientMessage, handler.getTaskName());
+        CodecUtil.encodeNullable(clientMessage, handler.getAddress(), AddressCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static ScheduledTaskHandler decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        int partitionId = FixedSizeTypesCodec.decodeInt(initialFrame.content, PARTITION_ID_OFFSET);
+
+        String schedulerName = StringCodec.decode(iterator);
+        String taskName = StringCodec.decode(iterator);
+        Address address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        if (address == null) {
+            return ScheduledTaskHandlerImpl.of(partitionId, schedulerName, taskName);
+        } else {
+            return ScheduledTaskHandlerImpl.of(address, schedulerName, taskName);
+        }
     }
-
-
 }

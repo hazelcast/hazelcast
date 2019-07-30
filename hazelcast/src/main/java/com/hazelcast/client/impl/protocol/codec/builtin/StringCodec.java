@@ -18,17 +18,13 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
-
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
-import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
 public class StringCodec {
 
     public static void encode(ClientMessage clientMessage, String value) {
-        clientMessage.addFrame(new ClientMessage.Frame(value.getBytes(Bits.UTF_8), DEFAULT_FLAGS));
+        clientMessage.addFrame(new ClientMessage.Frame(value.getBytes(Bits.UTF_8)));
     }
 
     public static String decode(ListIterator<ClientMessage.Frame> iterator) {

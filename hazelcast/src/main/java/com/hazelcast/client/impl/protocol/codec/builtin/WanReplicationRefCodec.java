@@ -18,15 +18,45 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.nio.Bits;
 
+import java.util.List;
 import java.util.ListIterator;
 
-public class WanReplicationRefCodec {
-    public static void encode(ClientMessage clientMessage, WanReplicationRef wanReplicationRef) {
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
+public class WanReplicationRefCodec {
+    private static final int REPUBLISHING_ENABLED_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = REPUBLISHING_ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    public static void encode(ClientMessage clientMessage, WanReplicationRef wanReplicationRef) {
+        clientMessage.addFrame(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET, wanReplicationRef.isRepublishingEnabled());
+        clientMessage.addFrame(initialFrame);
+
+        StringCodec.encode(clientMessage, wanReplicationRef.getName());
+        StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicy());
+        ListMultiFrameCodec.encodeNullable(clientMessage, wanReplicationRef.getFilters(), StringCodec::encode);
+
+        clientMessage.addFrame(END_FRAME);
     }
 
     public static WanReplicationRef decode(ListIterator<ClientMessage.Frame> iterator) {
-        return null;
+        iterator.next(); // begin frame
+
+        ClientMessage.Frame initialFrame = iterator.next();
+        boolean republishingEnabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET);
+
+        String name = StringCodec.decode(iterator);
+        String mergePolicy = StringCodec.decode(iterator);
+        List<String> filters = ListMultiFrameCodec.decodeNullable(iterator, StringCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+
+        return new WanReplicationRef(name, mergePolicy, filters, republishingEnabled);
     }
 }

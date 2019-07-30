@@ -23,11 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
-
-import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 
 public class ListLongCodec {
 
