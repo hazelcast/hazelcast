@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec;
@@ -31,7 +32,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
@@ -65,19 +65,11 @@ import static java.lang.String.format;
  */
 public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<E> {
 
-    private static final ClientMessageDecoder ADD_ASYNC_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return RingbufferAddCodec.decodeResponse(clientMessage).response;
-        }
-    };
+    private static final ClientMessageDecoder ADD_ASYNC_ASYNC_RESPONSE_DECODER =
+            clientMessage -> RingbufferAddCodec.decodeResponse(clientMessage).response;
 
-    private static final ClientMessageDecoder ADD_ALL_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return RingbufferAddAllCodec.decodeResponse(clientMessage).response;
-        }
-    };
+    private static final ClientMessageDecoder ADD_ALL_ASYNC_RESPONSE_DECODER =
+            clientMessage -> RingbufferAddAllCodec.decodeResponse(clientMessage).response;
 
     private ClientMessageDecoder readManyAsyncResponseDecoder;
 
@@ -93,17 +85,15 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         partitionId = getContext().getPartitionService().getPartitionId(partitionKey);
 
-        readManyAsyncResponseDecoder = new ClientMessageDecoder() {
-            @Override
-            public PortableReadResultSet decodeClientMessage(ClientMessage clientMessage) {
-                final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
-                final PortableReadResultSet readResultSet = new PortableReadResultSet(
-                        params.readCount, params.items, params.itemSeqs,
-                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
-                readResultSet.setSerializationService(getSerializationService());
-                return readResultSet;
-            }
-        };
+        readManyAsyncResponseDecoder =
+                clientMessage -> {
+                    RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
+                    PortableReadResultSet readResultSet = new PortableReadResultSet(
+                            params.readCount, params.items, params.itemSeqs,
+                            params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
+                    readResultSet.setSerializationService(getSerializationService());
+                    return readResultSet;
+                };
     }
 
     @Override
@@ -170,7 +160,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         try {
             ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<Long>(invocationFuture, getSerializationService(),
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
                     ADD_ASYNC_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
@@ -188,7 +178,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection, @Nonnull OverflowPolicy overflowPolicy) {
+    public ICompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
+                                                @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
         checkFalse(collection.isEmpty(), "collection can't be empty");
@@ -199,7 +190,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
         try {
             ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<Long>(invocationFuture, getSerializationService(), ADD_ALL_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), ADD_ALL_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -218,7 +209,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             //in case of exception return the exception via future to behave consistently to member
             e = new ExecutionException(e);
             ExecutorService userExecutor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<ReadResultSet<E>>(getSerializationService(), e, userExecutor);
+            return new CompletedFuture<>(getSerializationService(), e, userExecutor);
         }
 
         checkTrue(maxCount <= capacity, "the maxCount should be smaller than or equal to the capacity");
@@ -233,7 +224,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
         try {
             ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            return new ClientDelegatingFuture<ReadResultSet<E>>(invocationFuture, getSerializationService(),
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
                     readManyAsyncResponseDecoder);
         } catch (Exception e) {
             throw rethrow(e);
