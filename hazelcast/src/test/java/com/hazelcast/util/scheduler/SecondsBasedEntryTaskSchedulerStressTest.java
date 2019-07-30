@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -88,6 +89,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
         final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
         assertTrueEventually(() -> {
+            assertTrue(scheduler.isEmpty());
             assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
         });
     }
@@ -129,6 +131,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         }
 
         assertTrueEventually(() -> {
+            assertTrue(scheduler.isEmpty());
             assertEquals(latestValues.size(), processor.values.size());
 
             for (int key = 0; key < numberOfKeys; key++) {
