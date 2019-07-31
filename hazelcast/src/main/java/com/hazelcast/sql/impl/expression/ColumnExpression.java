@@ -16,16 +16,23 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 
+/**
+ * Column access expression.
+ */
 public class ColumnExpression<T> implements Expression<T> {
-
+    /** Index in the row. */
     private int idx;
+
+    /** Type of the returned value. */
+    private transient DataType type;
 
     public ColumnExpression() {
         // No-op.
@@ -37,7 +44,19 @@ public class ColumnExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override public T eval(QueryContext ctx, Row row) {
-        return (T)row.getColumn(idx);
+        Object res = row.getColumn(idx);
+
+        if (type == null)
+            type = DataType.resolveType(res);
+        else
+            type.forceSame(res);
+
+        return (T)res;
+    }
+
+    @Override
+    public DataType getType() {
+        return type;
     }
 
     @Override

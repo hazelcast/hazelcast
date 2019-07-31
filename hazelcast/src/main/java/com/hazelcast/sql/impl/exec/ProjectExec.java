@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.List;
 
@@ -30,6 +31,9 @@ import java.util.List;
 public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Projection expressions. */
     private final List<Expression> projections;
+
+    /** Data types. */
+    private final DataType[] types;
 
     /** Last upstream batch. */
     private RowBatch curBatch;
@@ -47,6 +51,8 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
         super(upstream);
 
         this.projections = projections;
+
+        types = new DataType[projections.size()];
     }
 
     @Override
@@ -98,7 +104,7 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
         Row upstreamRow = curBatch.getRow(curBatchPos);
 
-        HeapRow curRow0 = new HeapRow(projections.size());
+        HeapRow curRow0 = new HeapRow(projections.size(), types);
 
         int colIdx = 0;
 

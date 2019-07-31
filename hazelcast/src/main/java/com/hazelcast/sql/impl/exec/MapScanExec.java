@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
@@ -61,6 +62,9 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Projection expressions. */
     private final List<Expression> projections;
 
+    /** Data types. */
+    private final DataType[] types;
+
     /** Filter. */
     private final Predicate filter;
 
@@ -90,6 +94,8 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
         this.parts = parts;
         this.projections = expressions;
         this.filter = filter;
+
+        types = new DataType[projections.size()];
     }
 
     @Override
@@ -138,7 +144,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
                         continue;
 
                     // Create final row.
-                    HeapRow row = new HeapRow(projections.size());
+                    HeapRow row = new HeapRow(projections.size(), types);
 
                     for (int j = 0; j < projections.size(); j++) {
                         Object projectionRes = projections.get(j).eval(ctx, keyValueRow);

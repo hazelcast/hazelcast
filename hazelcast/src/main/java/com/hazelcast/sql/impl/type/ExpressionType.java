@@ -1,4 +1,4 @@
-package com.hazelcast.sql.impl.metadata;
+package com.hazelcast.sql.impl.type;
 
 import java.math.BigDecimal;
 

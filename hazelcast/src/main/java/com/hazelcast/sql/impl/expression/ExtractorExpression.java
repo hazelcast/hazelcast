@@ -16,11 +16,12 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.row.KeyValueRow;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.row.KeyValueRow;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
 
@@ -32,6 +33,9 @@ import java.io.IOException;
 public class ExtractorExpression<T> implements Expression<T> {
     /** Path for extractor. */
     private String path;
+
+    /** Type of the returned object. */
+    private transient DataType type = DataType.LATE;
 
     public ExtractorExpression() {
         // No-op.
@@ -48,7 +52,17 @@ public class ExtractorExpression<T> implements Expression<T> {
 
         KeyValueRow row0 = (KeyValueRow)row;
 
-        return (T)row0.extract(path);
+        Object res = (T)row0.extract(path);
+
+        if (type == DataType.LATE)
+            type = DataType.resolveType(res);
+
+        return (T)res;
+    }
+
+    @Override
+    public DataType getType() {
+        return type;
     }
 
     @Override

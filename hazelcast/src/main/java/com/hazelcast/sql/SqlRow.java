@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.sql.impl.type.DataType;
+
 /**
  * Single SQL row.
  */
@@ -32,4 +34,12 @@ public interface SqlRow {
      * @return Number of columns in a row.
      */
     int getColumnCount();
+
+    /**
+     * Get column's type.
+     *
+     * @param idx Index.
+     * @return Type.
+     */
+    DataType getType(int idx);
 }

@@ -11,10 +11,10 @@ import java.io.IOException;
  */
 public abstract class BiCallExpression<T> implements CallExpression<T> {
     /** First operand. */
-    private Expression operand1;
+    protected Expression operand1;
 
     /** Second operand. */
-    private Expression operand2;
+    protected Expression operand2;
 
     protected BiCallExpression() {
         // No-op.
@@ -23,14 +23,6 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
     protected BiCallExpression(Expression operand1, Expression operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
-    }
-
-    public Expression getOperand1() {
-        return operand1;
-    }
-
-    public Expression getOperand2() {
-        return operand2;
     }
 
     @Override

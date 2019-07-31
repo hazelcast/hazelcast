@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.serialization.DataSerializable;
 
@@ -34,4 +35,9 @@ public interface Expression<T> extends DataSerializable {
      * @return Result.
      */
     T eval(QueryContext ctx, Row row);
+
+    // TODO: Remove default!
+    default DataType getType() {
+        return DataType.LATE;
+    }
 }

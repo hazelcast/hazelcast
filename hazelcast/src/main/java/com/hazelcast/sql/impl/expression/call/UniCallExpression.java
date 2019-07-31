@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public abstract class UniCallExpression<T> implements Expression<T> {
     /** Operand. */
-    private Expression operand;
+    protected Expression operand;
 
     protected UniCallExpression() {
         // No-op.
