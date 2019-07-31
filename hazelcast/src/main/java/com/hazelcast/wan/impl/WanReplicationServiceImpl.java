@@ -213,7 +213,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public Collection<Version> getSupportedWanProtocolVersions() {
+    public List<Version> getSupportedWanProtocolVersions() {
         // EE WAN replication not supported in OS
         return Collections.emptyList();
     }
