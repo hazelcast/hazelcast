@@ -52,44 +52,29 @@ public class ClientMessageSplitAndBuildTest {
     private ClientMessage clientMessage1;
     private ClientMessage clientMessage2;
 
+    private ClientMessage createMessage() {
+        String username = generateRandomString(1000);
+        String password = generateRandomString(1000);
+        String uuid = generateRandomString(1000);
+        String ownerUuid = generateRandomString(1000);
+        boolean isOwnerConnection = false;
+        String clientType = generateRandomString(1000);
+        String clientSerializationVersion = generateRandomString(1000);
+        String clientName = generateRandomString(1000);
+        String clusterId = generateRandomString(1000);
+        LinkedList<String> labels = new LinkedList<>();
+        for (int i = 0; i < 10; i++) {
+            labels.add(generateRandomString(1000));
+        }
+
+        return ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
+                clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
+    }
+
     @Before
     public void setUp() throws Exception {
-        {
-            String username = generateRandomString(1000);
-            String password = generateRandomString(1000);
-            String uuid = generateRandomString(1000);
-            String ownerUuid = generateRandomString(1000);
-            boolean isOwnerConnection = false;
-            String clientType = generateRandomString(1000);
-            String clientSerializationVersion = generateRandomString(1000);
-            String clientName = generateRandomString(1000);
-            String clusterId = generateRandomString(1000);
-            LinkedList<String> labels = new LinkedList<>();
-            for (int i = 0; i < 10; i++) {
-                labels.add(generateRandomString(1000));
-            }
-
-            clientMessage1 = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
-                    clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
-        }
-        {
-            String username = generateRandomString(1000);
-            String password = generateRandomString(1000);
-            String uuid = generateRandomString(1000);
-            String ownerUuid = generateRandomString(1000);
-            boolean isOwnerConnection = false;
-            String clientType = generateRandomString(1000);
-            String clientSerializationVersion = generateRandomString(1000);
-            String clientName = generateRandomString(1000);
-            String clusterId = generateRandomString(1000);
-            LinkedList<String> labels = new LinkedList<>();
-            for (int i = 0; i < 10; i++) {
-                labels.add(generateRandomString(1000));
-            }
-
-            clientMessage2 = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
-                    clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
-        }
+        clientMessage1 = createMessage();
+        clientMessage2 = createMessage();
     }
 
     @Test

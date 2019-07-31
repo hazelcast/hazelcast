@@ -28,16 +28,21 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-public class MapPutTransientWithMaxIdleCodec {
+public final class MapPutTransientWithMaxIdleCodec {
+    //hex: 0x014B
+    public static final int REQUEST_MESSAGE_TYPE = 331;
+    //hex: 0x0069
+    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_THREAD_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 331;//hex: 0x014B,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 105;//hex: 0x0069,
+    private MapPutTransientWithMaxIdleCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -102,6 +107,7 @@ public class MapPutTransientWithMaxIdleCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -123,7 +129,8 @@ public class MapPutTransientWithMaxIdleCodec {
     public static MapPutTransientWithMaxIdleCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return response;
     }

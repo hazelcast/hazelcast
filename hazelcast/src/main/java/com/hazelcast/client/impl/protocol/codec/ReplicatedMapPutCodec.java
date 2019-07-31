@@ -29,14 +29,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-public class ReplicatedMapPutCodec {
+public final class ReplicatedMapPutCodec {
+    //hex: 0x0E01
+    public static final int REQUEST_MESSAGE_TYPE = 3585;
+    //hex: 0x0069
+    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    private static final int REQUEST_TTL_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_TTL_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 3585;//hex: 0x0E01,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 105;//hex: 0x0069,
+    private ReplicatedMapPutCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -86,6 +91,7 @@ public class ReplicatedMapPutCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -107,7 +113,8 @@ public class ReplicatedMapPutCodec {
     public static ReplicatedMapPutCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return response;
     }

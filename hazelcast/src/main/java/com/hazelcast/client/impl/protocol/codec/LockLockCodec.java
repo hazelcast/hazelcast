@@ -29,16 +29,21 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * available then the current thread becomes disabled for thread scheduling purposes and lies dormant until the lock
  * has been acquired.
  */
-public class LockLockCodec {
+public final class LockLockCodec {
+    //hex: 0x0705
+    public static final int REQUEST_MESSAGE_TYPE = 1797;
+    //hex: 0x0064
+    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    private static final int REQUEST_LEASE_TIME_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_LEASE_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_LEASE_TIME_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_LEASE_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 1797;//hex: 0x0705,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 100;//hex: 0x0064,
+    private LockLockCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -88,6 +93,7 @@ public class LockLockCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
     }
 
@@ -103,7 +109,8 @@ public class LockLockCodec {
     public static LockLockCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return response;
     }
 

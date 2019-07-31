@@ -735,11 +735,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             extends CacheAddInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private String clientUuid;
         private volatile RepairingHandler repairingHandler;
 
         private NearCacheInvalidationEventHandler() {
-            this.clientUuid = getContext().getClusterService().getLocalClient().getUuid();
         }
 
         @Override
@@ -752,49 +750,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         public void onListenerRegister() {
         }
 
-//        @Override
-//        public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid) {
-//            if (clientUuid.equals(sourceUuid)) {
-//                return;
-//            }
-//            if (key != null) {
-//                nearCache.invalidate(serializeKeys ? key : toObject(key));
-//            } else {
-//                nearCache.clear();
-//            }
-//        }
-//
         @Override
         public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid,
-                                                    UUID partitionUuid, long sequence) {
+                                                 UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
-//        @Override
-//        public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys,
-//                                                         Collection<String> sourceUuids) {
-//            if (sourceUuids != null && !sourceUuids.isEmpty()) {
-//                Iterator<Data> keysIt = keys.iterator();
-//                Iterator<String> sourceUuidsIt = sourceUuids.iterator();
-//                while (keysIt.hasNext() && sourceUuidsIt.hasNext()) {
-//                    Data key = keysIt.next();
-//                    String sourceUuid = sourceUuidsIt.next();
-//                    if (!clientUuid.equals(sourceUuid)) {
-//                        nearCache.invalidate(serializeKeys ? key : toObject(key));
-//                    }
-//                }
-//            } else {
-//                for (Data key : keys) {
-//                    nearCache.invalidate(serializeKeys ? key : toObject(key));
-//                }
-//            }
-//        }
-
         @Override
         public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys,
-                                                         Collection<String> sourceUuids,
-                                                         Collection<UUID> partitionUuids,
-                                                         Collection<Long> sequences) {
+                                                      Collection<String> sourceUuids,
+                                                      Collection<UUID> partitionUuids,
+                                                      Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
     }

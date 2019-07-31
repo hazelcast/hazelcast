@@ -27,13 +27,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-public class CPGroupCreateCPGroupCodec {
+public final class CPGroupCreateCPGroupCodec {
+    //hex: 0x2101
+    public static final int REQUEST_MESSAGE_TYPE = 8449;
+    //hex: 0x0080
+    public static final int RESPONSE_MESSAGE_TYPE = 128;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 8449;//hex: 0x2101,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 128;//hex: 0x0080,
+    private CPGroupCreateCPGroupCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -57,11 +62,13 @@ public class CPGroupCreateCPGroupCodec {
     public static CPGroupCreateCPGroupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         RequestParameters request = new RequestParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         request.proxyName = StringCodec.decode(iterator);
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -83,7 +90,8 @@ public class CPGroupCreateCPGroupCodec {
     public static CPGroupCreateCPGroupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.groupId = RaftGroupIdCodec.decode(iterator);
         return response;
     }

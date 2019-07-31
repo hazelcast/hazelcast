@@ -25,7 +25,11 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class MapAttributeConfigCodec {
+public final class MapAttributeConfigCodec {
+
+    private MapAttributeConfigCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, MapAttributeConfig config) {
         clientMessage.addFrame(BEGIN_FRAME);
 
@@ -36,7 +40,8 @@ public class MapAttributeConfigCodec {
     }
 
     public static MapAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         String name = StringCodec.decode(iterator);
         String extractor = StringCodec.decode(iterator);

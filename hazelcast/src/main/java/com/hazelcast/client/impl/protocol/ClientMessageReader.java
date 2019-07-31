@@ -26,7 +26,8 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAMELENG
 
 public class ClientMessageReader {
 
-    private int readIndex = 0;
+    private static final int INT_MASK = 0xffff;
+    private int readIndex;
     private int readOffset = -1;
     private LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
 
@@ -65,7 +66,7 @@ public class ClientMessageReader {
         if (readOffset == -1) {
             int frameLength = Bits.readIntL(src.array(), src.position());
             src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
-            int flags = Bits.readShortL(src.array(), src.position()) & 0xffff;
+            int flags = Bits.readShortL(src.array(), src.position()) & INT_MASK;
             src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAMELENGHT_AND_FLAGS;

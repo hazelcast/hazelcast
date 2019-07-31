@@ -24,27 +24,27 @@ import java.util.function.Function;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 
-public class CodecUtil {
-    public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator){
-        for (ClientMessage.Frame frame = iterator.next(); !frame.isDataStructureEndFrame(); frame = iterator.next()){
-            //ignore frame content
+public final class CodecUtil {
+
+    private CodecUtil() {
+    }
+
+    public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator) {
+        for (ClientMessage.Frame frame = iterator.next(); !frame.isDataStructureEndFrame(); ) {
+            frame = iterator.next();
         }
     }
 
     public static <T> void encodeNullable(ClientMessage clientMessage, T value, BiConsumer<ClientMessage, T> encode) {
-        if(value == null) {
+        if (value == null) {
             clientMessage.addFrame(NULL_FRAME);
         } else {
             encode.accept(clientMessage, value);
         }
     }
 
-//    public static <T> T decodeNullable(ClientMessage.Frame frame, Function<ClientMessage.Frame, T> decode) {
-//        return frame.isNullFrame() ? null: decode.apply(frame);
-//    }
-
     public static <T> T decodeNullable(ListIterator<ClientMessage.Frame> iterator, Function<ListIterator<ClientMessage.Frame>, T> decode) {
-        return nextFrameIsNullEndFrame(iterator) ? null: decode.apply(iterator);
+        return nextFrameIsNullEndFrame(iterator) ? null : decode.apply(iterator);
     }
 
     public static boolean nextFrameIsDataStructureEndFrame(ListIterator<ClientMessage.Frame> iterator) {
@@ -56,10 +56,10 @@ public class CodecUtil {
     }
 
     public static boolean nextFrameIsNullEndFrame(ListIterator<ClientMessage.Frame> iterator) {
-        try {
-            return iterator.next().isNullFrame();
-        } finally {
+        boolean isNull = iterator.next().isNullFrame();
+        if (!isNull) {
             iterator.previous();
         }
+        return isNull;
     }
 }

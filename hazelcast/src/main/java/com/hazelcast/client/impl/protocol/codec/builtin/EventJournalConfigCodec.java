@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
@@ -26,38 +26,44 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public final class HotRestartConfigCodec {
-    private static final int ENABLED_OFFSET = 0;
-    private static final int FSYNC_OFFSET = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = FSYNC_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+public final class EventJournalConfigCodec {
 
-    private HotRestartConfigCodec() {
+    private static final int ENABLED_OFFSET = 0;
+    private static final int CAPACITY_OFFSET = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int TTL_OFFSET = CAPACITY_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TTL_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private EventJournalConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, HotRestartConfig config) {
+    public static void encode(ClientMessage clientMessage, EventJournalConfig eventJournalConfig) {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, FSYNC_OFFSET, config.isFsync());
+        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, eventJournalConfig.isEnabled());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, CAPACITY_OFFSET, eventJournalConfig.getCapacity());
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, TTL_OFFSET, eventJournalConfig.getTimeToLiveSeconds());
         clientMessage.addFrame(initialFrame);
 
         clientMessage.addFrame(END_FRAME);
+
     }
 
-    public static HotRestartConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static EventJournalConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
-        boolean fsync = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, FSYNC_OFFSET);
+        int capacity = FixedSizeTypesCodec.decodeInt(initialFrame.content, CAPACITY_OFFSET);
+        int ttl = FixedSizeTypesCodec.decodeInt(initialFrame.content, TTL_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
-        HotRestartConfig config = new HotRestartConfig();
-        config.setEnabled(enabled);
-        config.setFsync(fsync);
-        return config;
+        EventJournalConfig eventJournalConfig = new EventJournalConfig();
+        eventJournalConfig.setEnabled(enabled);
+        eventJournalConfig.setCapacity(capacity);
+        eventJournalConfig.setTimeToLiveSeconds(ttl);
+        return eventJournalConfig;
     }
 }

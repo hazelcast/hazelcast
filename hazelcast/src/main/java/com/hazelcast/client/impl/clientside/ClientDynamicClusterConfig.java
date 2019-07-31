@@ -139,7 +139,6 @@ public class ClientDynamicClusterConfig extends Config {
         Data partitioningStrategy = mapConfig.getPartitioningStrategyConfig() == null
                 ? null : serializationService.toData(mapConfig.getPartitioningStrategyConfig().getPartitioningStrategy());
 
-        // todo add merkle tree and event journal config
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
                 mapConfig.getMaxIdleSeconds(), mapConfig.getEvictionPolicy().name(), mapConfig.isReadBackupData(),
@@ -152,6 +151,7 @@ public class ClientDynamicClusterConfig extends Config {
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
                 mapConfig.getWanReplicationRef(), mapConfig.getMapIndexConfigs(), mapConfig.getMapAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
+                mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(),
                 mapConfig.getMergePolicyConfig().getBatchSize(), mapConfig.getMetadataPolicy().getId());
         invoke(request);
         return this;
@@ -162,7 +162,6 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(cacheConfig.getPartitionLostListenerConfigs());
 
-        // todo add event journal config
         ClientMessage request = DynamicConfigAddCacheConfigCodec.encodeRequest(cacheConfig.getName(), cacheConfig.getKeyType(),
                 cacheConfig.getValueType(), cacheConfig.isStatisticsEnabled(), cacheConfig.isManagementEnabled(),
                 cacheConfig.isReadThrough(), cacheConfig.isWriteThrough(), cacheConfig.getCacheLoaderFactory(),
@@ -179,7 +178,7 @@ public class ClientDynamicClusterConfig extends Config {
                         : cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
-                cacheConfig.getWanReplicationRef(), cacheConfig.getHotRestartConfig());
+                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(), cacheConfig.getHotRestartConfig());
         invoke(request);
         return this;
     }

@@ -29,22 +29,27 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-public class ClientDeployClassesCodec {
+public final class ClientDeployClassesCodec {
+    //hex: 0x0011
+    public static final int REQUEST_MESSAGE_TYPE = 17;
+    //hex: 0x0064
+    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 17;//hex: 0x0011,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 100;//hex: 0x0064,
+    private ClientDeployClassesCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
          * list of class definitions
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String,byte[]>> classDefinitions;
+        public java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions;
     }
 
-    public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String,byte[]>> classDefinitions) {
+    public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -59,11 +64,13 @@ public class ClientDeployClassesCodec {
     public static ClientDeployClassesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         RequestParameters request = new RequestParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         request.classDefinitions = MapCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
     }
 
@@ -79,7 +86,8 @@ public class ClientDeployClassesCodec {
     public static ClientDeployClassesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return response;
     }
 

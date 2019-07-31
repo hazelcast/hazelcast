@@ -30,11 +30,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class MemberCodec {
+public final class MemberCodec {
 
     private static final int LITE_MEMBER_OFFSET = 0;
     private static final int UUID_OFFSET = LITE_MEMBER_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = UUID_OFFSET + FixedSizeTypesCodec.UUID_SIZE_IN_BYTES ;
+    private static final int INITIAL_FRAME_SIZE = UUID_OFFSET + FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
+
+    private MemberCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, Member member) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -51,7 +54,8 @@ public class MemberCodec {
     }
 
     public static Member decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next();//begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean isLiteMember = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, LITE_MEMBER_OFFSET);

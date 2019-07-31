@@ -31,17 +31,23 @@ import com.hazelcast.logging.Logger;
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-public class CacheAddPartitionLostListenerCodec {
+public final class CacheAddPartitionLostListenerCodec {
+    //hex: 0x151A
+    public static final int REQUEST_MESSAGE_TYPE = 5402;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D6
+    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 214;
 
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 5402;//hex: 0x151A,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 104;//hex: 0x00D6,
+    private CacheAddPartitionLostListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -78,6 +84,7 @@ public class CacheAddPartitionLostListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -99,7 +106,8 @@ public class CacheAddPartitionLostListenerCodec {
     public static CacheAddPartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -120,10 +128,9 @@ public class CacheAddPartitionLostListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int partitionId = decodeInt(frame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int partitionId = decodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
                 java.lang.String uuid = StringCodec.decode(iterator);
                 handleCachePartitionLostEvent(partitionId, uuid);
                 return;

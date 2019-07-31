@@ -24,9 +24,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.UUID;
 
-public class MapIntegerLongCodec {
+public final class MapIntegerLongCodec {
+
+    private MapIntegerLongCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Integer, Long>> collection) {
         List<Integer> keyList = new ArrayList<>(collection.size());
         List<Long> valueList = new ArrayList<>(collection.size());
@@ -43,7 +46,7 @@ public class MapIntegerLongCodec {
         List<Long> valueList = ListLongCodec.decode(iterator);
         int mapSize = keyList.size();
         List<Map.Entry<Integer, Long>> result = new ArrayList<>(mapSize);
-        for (int i = 0; i < mapSize; i++){
+        for (int i = 0; i < mapSize; i++) {
             result.add(new AbstractMap.SimpleEntry<>(keyList.get(i), valueList.get(i)));
         }
         return result;

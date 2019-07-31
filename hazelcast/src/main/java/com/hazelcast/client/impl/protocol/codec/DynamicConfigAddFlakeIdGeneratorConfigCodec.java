@@ -29,18 +29,23 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-public class DynamicConfigAddFlakeIdGeneratorConfigCodec {
+public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
+    //hex: 0x1E12
+    public static final int REQUEST_MESSAGE_TYPE = 7698;
+    //hex: 0x0064
+    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    private static final int REQUEST_PREFETCH_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET = REQUEST_PREFETCH_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_ID_OFFSET_FIELD_OFFSET = REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_NODE_ID_OFFSET_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NODE_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_PREFETCH_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET = REQUEST_PREFETCH_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_ID_OFFSET_FIELD_OFFSET = REQUEST_PREFETCH_VALIDITY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_ID_OFFSET_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_NODE_ID_OFFSET_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NODE_ID_OFFSET_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 7698;//hex: 0x1E12,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 100;//hex: 0x0064,
+    private DynamicConfigAddFlakeIdGeneratorConfigCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -104,6 +109,7 @@ public class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
     }
 
@@ -119,7 +125,8 @@ public class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     public static DynamicConfigAddFlakeIdGeneratorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return response;
     }
 

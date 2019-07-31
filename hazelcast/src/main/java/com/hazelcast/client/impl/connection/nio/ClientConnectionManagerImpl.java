@@ -120,7 +120,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final boolean failoverConfigProvided;
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
-    private volatile Integer clusterPartitionCount;
+    private volatile int clusterPartitionCount = -1;
     private volatile String clusterId;
     private volatile Address ownerConnectionAddress;
     private volatile CandidateClusterContext currentClusterContext;

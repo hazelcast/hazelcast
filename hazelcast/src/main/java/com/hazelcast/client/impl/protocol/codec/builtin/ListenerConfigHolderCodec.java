@@ -27,11 +27,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class ListenerConfigHolderCodec {
+public final class ListenerConfigHolderCodec {
     private static final int INCLUDE_VALUE_OFFSET = 0;
     private static final int LOCAL_OFFSET = INCLUDE_VALUE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int LISTENER_TYPE_OFFSET = LOCAL_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = LISTENER_TYPE_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private ListenerConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, ListenerConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -49,7 +52,8 @@ public class ListenerConfigHolderCodec {
     }
 
     public static ListenerConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean includeValue = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET);

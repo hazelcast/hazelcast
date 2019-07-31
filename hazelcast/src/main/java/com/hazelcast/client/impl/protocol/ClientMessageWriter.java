@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.nio.Bits;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAMELENGHT_AND_FLAGS;
@@ -26,12 +27,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAMELENG
 public class ClientMessageWriter {
 
     private transient int writeIndex;
-    private transient int writeOffset = -1; //-1 means length is not written yet
+    //-1 means length is not written yet
+    private transient int writeOffset = -1;
 
     public boolean writeTo(ByteBuffer dst, ClientMessage clientMessage) {
+        LinkedList<ClientMessage.Frame> frames = clientMessage.getFrames();
         for (; ; ) {
-            ClientMessage.Frame frame = clientMessage.frames.get(writeIndex);
-            boolean isLastFrame = writeIndex == clientMessage.frames.size() - 1;
+            ClientMessage.Frame frame = frames.get(writeIndex);
+            boolean isLastFrame = writeIndex == frames.size() - 1;
             if (writeFrame(dst, frame, isLastFrame)) {
                 writeOffset = -1;
                 if (isLastFrame) {

@@ -28,21 +28,28 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
  */
-public class MapAddNearCacheEntryListenerCodec {
+public final class MapAddNearCacheEntryListenerCodec {
+    //hex: 0x011D
+    public static final int REQUEST_MESSAGE_TYPE = 285;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    //hex: 0x00D7
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 215;
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D8
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 216;
 
-        private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 285;//hex: 0x011D,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-        private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 104;//hex: 0x00D7,
-        private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 104;//hex: 0x00D8,
+    private MapAddNearCacheEntryListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -85,6 +92,7 @@ public class MapAddNearCacheEntryListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -106,7 +114,8 @@ public class MapAddNearCacheEntryListenerCodec {
     public static MapAddNearCacheEntryListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -141,18 +150,18 @@ public class MapAddNearCacheEntryListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE) {
-                frame = iterator.next();
-                java.util.UUID partitionUuid = decodeUUID(frame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
-                long sequence = decodeLong(frame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                java.util.UUID partitionUuid = decodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
+                long sequence = decodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET);
                 com.hazelcast.nio.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 java.lang.String sourceUuid = StringCodec.decode(iterator);
                 handleIMapInvalidationEvent(key, sourceUuid, partitionUuid, sequence);
                 return;
             }
             if (messageType == EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE) {
-                frame = iterator.next();
+                //empty initial frame
+                iterator.next();
                 java.util.List<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
                 java.util.List<java.lang.String> sourceUuids = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
                 java.util.List<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);

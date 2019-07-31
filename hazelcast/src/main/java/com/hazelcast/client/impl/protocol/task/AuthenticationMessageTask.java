@@ -39,8 +39,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage() {
-        final ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
+    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
         final String uuid = parameters.uuid;
         final String ownerUuid = parameters.ownerUuid;
         if (uuid != null && uuid.length() > 0) {
@@ -57,11 +57,6 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientAuthenticationCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
     protected ClientMessage encodeResponse(Object response) {
         return (ClientMessage) response;
     }
@@ -69,8 +64,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
                                        List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
-                cleanedUpMembers, partitionCount, clusterId);
+        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version,
+                getMemberBuildInfo().getVersion(), cleanedUpMembers, partitionCount, clusterId);
     }
 
     @Override

@@ -33,18 +33,23 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-public class RingbufferReadManyCodec {
+public final class RingbufferReadManyCodec {
+    //hex: 0x190A
+    public static final int REQUEST_MESSAGE_TYPE = 6410;
+    //hex: 0x0073
+    public static final int RESPONSE_MESSAGE_TYPE = 115;
+    private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MIN_COUNT_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_COUNT_FIELD_OFFSET = REQUEST_MIN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQ_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_MIN_COUNT_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_MAX_COUNT_FIELD_OFFSET = REQUEST_MIN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 6410;//hex: 0x190A,
-        private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 115;//hex: 0x0073,
+    private RingbufferReadManyCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -101,6 +106,7 @@ public class RingbufferReadManyCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**

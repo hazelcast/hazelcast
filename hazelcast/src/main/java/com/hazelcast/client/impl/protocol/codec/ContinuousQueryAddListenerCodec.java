@@ -28,19 +28,26 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-public class ContinuousQueryAddListenerCodec {
+public final class ContinuousQueryAddListenerCodec {
+    //hex: 0x1804
+    public static final int REQUEST_MESSAGE_TYPE = 6148;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D4
+    private static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 212;
+    private static final int EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE = EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D5
+    private static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 213;
 
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 6148;//hex: 0x1804,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 104;//hex: 0x00D4,
-        private static final int EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE = EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 104;//hex: 0x00D5,
+    private ContinuousQueryAddListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -76,6 +83,7 @@ public class ContinuousQueryAddListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -97,7 +105,8 @@ public class ContinuousQueryAddListenerCodec {
     public static ContinuousQueryAddListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -128,16 +137,16 @@ public class ContinuousQueryAddListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE) {
-                frame = iterator.next();
+                //empty initial frame
+                iterator.next();
                 com.hazelcast.map.impl.querycache.event.QueryCacheEventData data = QueryCacheEventDataCodec.decode(iterator);
                 handleQueryCacheSingleEvent(data);
                 return;
             }
             if (messageType == EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int partitionId = decodeInt(frame.content, EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int partitionId = decodeInt(initialFrame.content, EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET);
                 java.util.List<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events = ListMultiFrameCodec.decode(iterator, QueryCacheEventDataCodec::decode);
                 java.lang.String source = StringCodec.decode(iterator);
                 handleQueryCacheBatchEvent(events, source, partitionId);

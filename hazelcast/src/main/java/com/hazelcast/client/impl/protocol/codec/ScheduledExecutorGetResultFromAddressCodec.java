@@ -28,13 +28,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-public class ScheduledExecutorGetResultFromAddressCodec {
+public final class ScheduledExecutorGetResultFromAddressCodec {
+    //hex: 0x1D10
+    public static final int REQUEST_MESSAGE_TYPE = 7440;
+    //hex: 0x0069
+    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 7440;//hex: 0x1D10,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 105;//hex: 0x0069,
+    private ScheduledExecutorGetResultFromAddressCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -70,13 +75,15 @@ public class ScheduledExecutorGetResultFromAddressCodec {
     public static ScheduledExecutorGetResultFromAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         RequestParameters request = new RequestParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
         request.address = AddressCodec.decode(iterator);
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -98,7 +105,8 @@ public class ScheduledExecutorGetResultFromAddressCodec {
     public static ScheduledExecutorGetResultFromAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return response;
     }

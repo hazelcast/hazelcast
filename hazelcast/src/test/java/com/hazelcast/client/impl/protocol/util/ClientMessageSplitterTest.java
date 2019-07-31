@@ -88,7 +88,8 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     private void assertFragments(List<ClientMessage> fragments, ListIterator<ClientMessage.Frame> originalIterator) {
         for (ClientMessage fragment : fragments) {
             ListIterator<ClientMessage.Frame> iterator = fragment.iterator();
-            iterator.next();//skip fragmentation header
+            //skip fragmentation header
+            iterator.next();
             while (iterator.hasNext()) {
                 ClientMessage.Frame actualFrame = iterator.next();
                 ClientMessage.Frame expectedFrame = originalIterator.next();

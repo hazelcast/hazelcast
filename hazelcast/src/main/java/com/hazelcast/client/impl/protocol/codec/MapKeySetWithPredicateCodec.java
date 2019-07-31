@@ -30,13 +30,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-public class MapKeySetWithPredicateCodec {
+public final class MapKeySetWithPredicateCodec {
+    //hex: 0x012A
+    public static final int REQUEST_MESSAGE_TYPE = 298;
+    //hex: 0x006A
+    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 298;//hex: 0x012A,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 106;//hex: 0x006A,
+    private MapKeySetWithPredicateCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -66,12 +71,14 @@ public class MapKeySetWithPredicateCodec {
     public static MapKeySetWithPredicateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         RequestParameters request = new RequestParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         request.name = StringCodec.decode(iterator);
         request.predicate = DataCodec.decode(iterator);
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -93,7 +100,8 @@ public class MapKeySetWithPredicateCodec {
     public static MapKeySetWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return response;
     }

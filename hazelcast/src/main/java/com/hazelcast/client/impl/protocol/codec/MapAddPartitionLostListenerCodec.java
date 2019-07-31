@@ -33,17 +33,23 @@ import com.hazelcast.logging.Logger;
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-public class MapAddPartitionLostListenerCodec {
+public final class MapAddPartitionLostListenerCodec {
+    //hex: 0x011F
+    public static final int REQUEST_MESSAGE_TYPE = 287;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MAP_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D1
+    private static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 209;
 
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 287;//hex: 0x011F,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_MAP_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 104;//hex: 0x00D1,
+    private MapAddPartitionLostListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -79,6 +85,7 @@ public class MapAddPartitionLostListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -100,7 +107,8 @@ public class MapAddPartitionLostListenerCodec {
     public static MapAddPartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -121,10 +129,9 @@ public class MapAddPartitionLostListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int partitionId = decodeInt(frame.content, EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int partitionId = decodeInt(initialFrame.content, EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
                 java.lang.String uuid = StringCodec.decode(iterator);
                 handleMapPartitionLostEvent(partitionId, uuid);
                 return;

@@ -28,13 +28,16 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class NearCacheConfigHolderCodec {
+public final class NearCacheConfigHolderCodec {
     private static final int SERIALIZE_KEYS_OFFSET = 0;
     private static final int INVALIDATE_ON_CHANGE_OFFSET = SERIALIZE_KEYS_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int TIME_TO_LIVE_SECONDS_OFFSET = INVALIDATE_ON_CHANGE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int MAX_IDLE_SECONDS_OFFSET = TIME_TO_LIVE_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int CACHE_LOCAL_ENTRIES_OFFSET = MAX_IDLE_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = CACHE_LOCAL_ENTRIES_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    private NearCacheConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, NearCacheConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -57,7 +60,8 @@ public class NearCacheConfigHolderCodec {
     }
 
     public static NearCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean serializeKeys = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, SERIALIZE_KEYS_OFFSET);

@@ -394,13 +394,6 @@
             <version>1.1.1</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.hazelcast</groupId>-->
-<!--            <artifactId>hazelcast-client-protocol</artifactId>-->
-<!--            <version>${client.protocol.version}</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-
         <dependency>
             <groupId>org.nanohttpd</groupId>
             <artifactId>nanohttpd</artifactId>

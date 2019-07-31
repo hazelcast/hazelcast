@@ -28,22 +28,30 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-public class ClientAddMembershipListenerCodec {
+public final class ClientAddMembershipListenerCodec {
+    //hex: 0x0004
+    public static final int REQUEST_MESSAGE_TYPE = 4;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MEMBER_INITIAL_FRAME_SIZE = EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00C8
+    private static final int EVENT_MEMBER_MESSAGE_TYPE = 200;
+    private static final int EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00C9
+    private static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 201;
+    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE = EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00CA
+    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 202;
 
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 4;//hex: 0x0004,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_MEMBER_INITIAL_FRAME_SIZE = EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_MEMBER_MESSAGE_TYPE = 104;//hex: 0x00C8,
-        private static final int EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 104;//hex: 0x00C9,
-        private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE = EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 104;//hex: 0x00CA,
+    private ClientAddMembershipListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -73,6 +81,7 @@ public class ClientAddMembershipListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -94,7 +103,8 @@ public class ClientAddMembershipListenerCodec {
     public static ClientAddMembershipListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -137,23 +147,23 @@ public class ClientAddMembershipListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_MEMBER_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int eventType = decodeInt(frame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int eventType = decodeInt(initialFrame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET);
                 com.hazelcast.cluster.Member member = MemberCodec.decode(iterator);
                 handleMemberEvent(member, eventType);
                 return;
             }
             if (messageType == EVENT_MEMBER_LIST_MESSAGE_TYPE) {
-                frame = iterator.next();
+                //empty initial frame
+                iterator.next();
                 java.util.List<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
                 handleMemberListEvent(members);
                 return;
             }
             if (messageType == EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int operationType = decodeInt(frame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int operationType = decodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET);
                 com.hazelcast.cluster.Member member = MemberCodec.decode(iterator);
                 java.util.List<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
                 java.lang.String key = StringCodec.decode(iterator);

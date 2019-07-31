@@ -26,9 +26,12 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class MapIndexConfigCodec {
+public final class MapIndexConfigCodec {
     private static final int ORDERED_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ORDERED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    private MapIndexConfigCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, MapIndexConfig config) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -43,7 +46,8 @@ public class MapIndexConfigCodec {
     }
 
     public static MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean ordered = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ORDERED_OFFSET);

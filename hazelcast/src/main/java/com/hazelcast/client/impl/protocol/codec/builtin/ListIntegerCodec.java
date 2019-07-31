@@ -24,7 +24,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class ListIntegerCodec {
+public final class ListIntegerCodec {
+
+    private ListIntegerCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, Collection<Integer> collection) {
         int itemCount = collection.size();

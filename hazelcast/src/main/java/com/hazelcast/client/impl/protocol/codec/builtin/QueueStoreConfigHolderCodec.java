@@ -28,9 +28,12 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class QueueStoreConfigHolderCodec {
+public final class QueueStoreConfigHolderCodec {
     private static final int ENABLED_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    private QueueStoreConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, QueueStoreConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -49,7 +52,8 @@ public class QueueStoreConfigHolderCodec {
     }
 
     public static QueueStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);

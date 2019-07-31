@@ -20,7 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.ListIterator;
 
-public class ByteArrayCodec {
+public final class ByteArrayCodec {
+
+    private ByteArrayCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, byte[] bytes) {
         clientMessage.addFrame(new ClientMessage.Frame(bytes));

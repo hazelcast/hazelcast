@@ -31,8 +31,13 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT;
 public final class ClientMessageSplitter {
 
     private static final CallIdSequenceWithoutBackpressure FRAGMENT_ID_SEQUENCE = new CallIdSequenceWithoutBackpressure();
-    private static int BEGINNING = 0; //0 means last fragment is added to client message, need to create new fragment
-    private static int MIDDLE = 1;//1 means at least a frame is added to current fragment
+
+    private enum ReadState {
+        //means last fragment is added to client message, need to create new fragment
+        BEGINNING,
+        //means at least a frame is added to current fragment
+        MIDDLE
+    }
 
     private ClientMessageSplitter() {
     }
@@ -52,7 +57,7 @@ public final class ClientMessageSplitter {
         LinkedList<ClientMessage> fragments = new LinkedList<>();
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
 
-        int state = BEGINNING;
+        ReadState state = ReadState.BEGINNING;
         int length = 0;
         ClientMessage fragment = null;
         while (iterator.hasNext()) {
@@ -61,29 +66,29 @@ public final class ClientMessageSplitter {
             length += frameSize;
 
             if (frameSize > maxFrameSize) {
-                if (state == MIDDLE) {
+                if (state == ReadState.MIDDLE) {
                     fragments.add(fragment);
                 }
                 fragment = createFragment(fragmentId);
                 fragment.addFrame(frame);
                 fragments.add(fragment);
-                state = BEGINNING;
+                state = ReadState.BEGINNING;
                 length = 0;
             } else if (length <= maxFrameSize) {
-                if (state == BEGINNING) {
+                if (state == ReadState.BEGINNING) {
                     fragment = createFragment(fragmentId);
                 }
                 fragment.addFrame(frame);
-                state = MIDDLE;
+                state = ReadState.MIDDLE;
             } else {
-                assert state == MIDDLE;
+                assert state == ReadState.MIDDLE;
                 fragments.add(fragment);
-                state = BEGINNING;
+                state = ReadState.BEGINNING;
                 length = 0;
                 iterator.previous();
             }
         }
-        if (state == MIDDLE) {
+        if (state == ReadState.MIDDLE) {
             fragments.add(fragment);
         }
         fragments.getFirst().getFrames().getFirst().flags |= BEGIN_FRAGMENT;

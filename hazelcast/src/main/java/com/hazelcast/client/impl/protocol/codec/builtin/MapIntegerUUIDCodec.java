@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,19 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
-import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+public final class MapIntegerUUIDCodec {
 
-public class MapIntegerUUIDCodec {
+    private MapIntegerUUIDCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Integer, UUID>> collection) {
         List<Integer> keyList = new ArrayList<>(collection.size());
         List<UUID> valueList = new ArrayList<>(collection.size());
@@ -40,7 +47,7 @@ public class MapIntegerUUIDCodec {
         List<UUID> valueList = ListUUIDCodec.decode(iterator);
         int mapSize = keyList.size();
         List<Map.Entry<Integer, UUID>> result = new ArrayList<>(mapSize);
-        for (int i = 0; i < mapSize; i++){
+        for (int i = 0; i < mapSize; i++) {
             result.add(new AbstractMap.SimpleEntry<>(keyList.get(i), valueList.get(i)));
         }
         return result;

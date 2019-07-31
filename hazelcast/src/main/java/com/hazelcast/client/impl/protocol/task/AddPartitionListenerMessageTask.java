@@ -52,11 +52,6 @@ public class AddPartitionListenerMessageTask
     }
 
     @Override
-    protected ClientAddPartitionListenerCodec.RequestParameters decodeClientMessage() {
-        return ClientAddPartitionListenerCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
     protected ClientAddPartitionListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ClientAddPartitionListenerCodec.decodeRequest(clientMessage);
     }

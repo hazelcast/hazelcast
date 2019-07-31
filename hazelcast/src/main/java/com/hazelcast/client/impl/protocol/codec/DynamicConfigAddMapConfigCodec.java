@@ -29,22 +29,27 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-public class DynamicConfigAddMapConfigCodec {
+public final class DynamicConfigAddMapConfigCodec {
+    //hex: 0x1E0E
+    public static final int REQUEST_MESSAGE_TYPE = 7694;
+    //hex: 0x0064
+    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_READ_BACKUP_DATA_FIELD_OFFSET = REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_METADATA_POLICY_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_METADATA_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-        private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_READ_BACKUP_DATA_FIELD_OFFSET = REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_METADATA_POLICY_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_METADATA_POLICY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 7694;//hex: 0x1E0E,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 100;//hex: 0x0064,
+    private DynamicConfigAddMapConfigCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -194,6 +199,16 @@ public class DynamicConfigAddMapConfigCodec {
         public com.hazelcast.config.HotRestartConfig hotRestartConfig;
 
         /**
+         * Event Journal configuration
+         */
+        public com.hazelcast.config.EventJournalConfig eventJournalConfig;
+
+        /**
+         * - merkle tree configuration
+         */
+        public com.hazelcast.config.MerkleTreeConfig merkleTreeConfig;
+
+        /**
          * TODO DOC
          */
         public int mergeBatchSize;
@@ -205,7 +220,7 @@ public class DynamicConfigAddMapConfigCodec {
         public int metadataPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, java.lang.String evictionPolicy, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, java.lang.String inMemoryFormat, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, java.lang.String quorumName, com.hazelcast.nio.serialization.Data mapEvictionPolicy, java.lang.String maxSizeConfigMaxSizePolicy, int maxSizeConfigSize, com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, java.util.Collection<com.hazelcast.config.MapIndexConfig> mapIndexConfigs, java.util.Collection<com.hazelcast.config.MapAttributeConfig> mapAttributeConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, java.lang.String partitioningStrategyClassName, com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, com.hazelcast.config.HotRestartConfig hotRestartConfig, int mergeBatchSize, int metadataPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, java.lang.String evictionPolicy, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, java.lang.String inMemoryFormat, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, java.lang.String quorumName, com.hazelcast.nio.serialization.Data mapEvictionPolicy, java.lang.String maxSizeConfigMaxSizePolicy, int maxSizeConfigSize, com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, java.util.Collection<com.hazelcast.config.MapIndexConfig> mapIndexConfigs, java.util.Collection<com.hazelcast.config.MapAttributeConfig> mapAttributeConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, java.lang.String partitioningStrategyClassName, com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, com.hazelcast.config.HotRestartConfig hotRestartConfig, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int mergeBatchSize, int metadataPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -241,6 +256,8 @@ public class DynamicConfigAddMapConfigCodec {
         CodecUtil.encodeNullable(clientMessage, partitioningStrategyClassName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, partitioningStrategyImplementation, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, hotRestartConfig, HotRestartConfigCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, eventJournalConfig, EventJournalConfigCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, merkleTreeConfig, MerkleTreeConfigCodec::encode);
         return clientMessage;
     }
 
@@ -276,9 +293,12 @@ public class DynamicConfigAddMapConfigCodec {
         request.partitioningStrategyClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.partitioningStrategyImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         request.hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
+        request.eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);
+        request.merkleTreeConfig = CodecUtil.decodeNullable(iterator, MerkleTreeConfigCodec::decode);
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
     }
 
@@ -294,7 +314,8 @@ public class DynamicConfigAddMapConfigCodec {
     public static DynamicConfigAddMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return response;
     }
 

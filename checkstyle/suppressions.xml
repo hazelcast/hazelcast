@@ -119,14 +119,17 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientAtomicReferenceProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientQueueProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientListProxy"/>
-    <suppress checks="MethodCount|ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientMultiMapProxy"/>
+    <suppress checks="MethodCount|ClassFanOutComplexity"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientMultiMapProxy"/>
     <suppress checks="FileLength|MethodCount|ClassFanOutComplexity"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientMapProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
-    <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
+    <suppress checks="ClassFanOutComplexity"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling|ExecutableStatementCount"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientInstanceImpl"/>
-    <suppress checks="MethodCount|VisibilityModifier" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientProxy"/>
+    <suppress checks="MethodCount|VisibilityModifier"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientProxy"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]proxy[\\/]ClientExecutorServiceProxy"/>
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
@@ -318,6 +321,10 @@
     <suppress
             checks="ExplicitInitialization|EqualsHashCode|MissingSwitchDefault|TrailingComment"
             files="[\\/]src[\\/]test[\\/]"/>
+    <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline"
+              files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
+    <suppress checks="ParameterNumber"
+              files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
 

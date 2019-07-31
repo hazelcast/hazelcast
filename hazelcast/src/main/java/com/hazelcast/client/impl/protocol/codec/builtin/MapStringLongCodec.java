@@ -18,12 +18,20 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 
-public class MapStringLongCodec {
+public final class MapStringLongCodec {
+
+    private MapStringLongCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<String, Long>> collection) {
         List<Long> valueList = new ArrayList<>(collection.size());

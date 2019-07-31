@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Adapter for using {@link com.hazelcast.config.RingbufferStoreConfig} in client protocol.

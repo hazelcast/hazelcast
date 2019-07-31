@@ -28,20 +28,27 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-public class CacheAddInvalidationListenerCodec {
+public final class CacheAddInvalidationListenerCodec {
+    //hex: 0x1502
+    public static final int REQUEST_MESSAGE_TYPE = 5378;
+    //hex: 0x0068
+    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    //hex: 0x00D0
+    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 208;
+    private static final int EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D3
+    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 211;
 
-        private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 5378;//hex: 0x1502,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 104;//hex: 0x0068,
-        private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-        private static final int EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 104;//hex: 0x00D0,
-        private static final int EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 104;//hex: 0x00D3,
+    private CacheAddInvalidationListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -77,6 +84,7 @@ public class CacheAddInvalidationListenerCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -98,7 +106,8 @@ public class CacheAddInvalidationListenerCodec {
     public static CacheAddInvalidationListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         response.response = StringCodec.decode(iterator);
         return response;
     }
@@ -135,11 +144,10 @@ public class CacheAddInvalidationListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_CACHE_INVALIDATION_MESSAGE_TYPE) {
-                frame = iterator.next();
-                java.util.UUID partitionUuid = decodeUUID(frame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
-                long sequence = decodeLong(frame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                java.util.UUID partitionUuid = decodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET);
+                long sequence = decodeLong(initialFrame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET);
                 java.lang.String name = StringCodec.decode(iterator);
                 com.hazelcast.nio.serialization.Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
                 java.lang.String sourceUuid = CodecUtil.decodeNullable(iterator, StringCodec::decode);
@@ -147,7 +155,8 @@ public class CacheAddInvalidationListenerCodec {
                 return;
             }
             if (messageType == EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE) {
-                frame = iterator.next();
+                //empty initial frame
+                iterator.next();
                 java.lang.String name = StringCodec.decode(iterator);
                 java.util.List<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
                 java.util.List<java.lang.String> sourceUuids = ListMultiFrameCodec.decodeNullable(iterator, StringCodec::decode);

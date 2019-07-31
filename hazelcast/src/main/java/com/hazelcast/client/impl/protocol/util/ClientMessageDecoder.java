@@ -71,7 +71,8 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                 if (ClientMessage.isFlagSet(flags, UNFRAGMENTED_MESSAGE)) {
                     handleMessage(activeReader);
                 } else {
-                    activeReader.getFrames().removeFirst();//remove the fragmentationFrame
+                    //remove the fragmentationFrame
+                    activeReader.getFrames().removeFirst();
                     long fragmentationId = Bits.readLongL(firstFrame.content, FRAGMENTATION_ID_OFFSET);
                     if (ClientMessage.isFlagSet(flags, BEGIN_FRAGMENT)) {
                         builderBySessionIdMap.put(fragmentationId, activeReader);

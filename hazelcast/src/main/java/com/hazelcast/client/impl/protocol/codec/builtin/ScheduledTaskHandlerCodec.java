@@ -24,12 +24,16 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class ScheduledTaskHandlerCodec {
+public final class ScheduledTaskHandlerCodec {
     private static final int PARTITION_ID_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PARTITION_ID_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private ScheduledTaskHandlerCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, ScheduledTaskHandler handler) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -46,7 +50,8 @@ public class ScheduledTaskHandlerCodec {
     }
 
     public static ScheduledTaskHandler decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         int partitionId = FixedSizeTypesCodec.decodeInt(initialFrame.content, PARTITION_ID_OFFSET);

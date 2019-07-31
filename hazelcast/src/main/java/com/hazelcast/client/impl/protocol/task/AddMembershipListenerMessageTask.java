@@ -56,11 +56,6 @@ public class AddMembershipListenerMessageTask
     }
 
     @Override
-    protected ClientAddMembershipListenerCodec.RequestParameters decodeClientMessage() {
-        return ClientAddMembershipListenerCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
     protected ClientAddMembershipListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ClientAddMembershipListenerCodec.decodeRequest(clientMessage);
     }
@@ -137,7 +132,8 @@ public class AddMembershipListenerMessageTask
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member), MembershipEvent.MEMBER_REMOVED);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                    MembershipEvent.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 

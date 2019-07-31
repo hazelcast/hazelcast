@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.ErrorCodec;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -144,7 +144,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             return;
         }
 
-        if (ErrorCodec.TYPE == message.getMessageType()) {
+        if (ErrorCodec.EXCEPTION == message.getMessageType()) {
             future.notifyException(client.getClientExceptionFactory().createException(message));
         } else {
             future.notify(message);

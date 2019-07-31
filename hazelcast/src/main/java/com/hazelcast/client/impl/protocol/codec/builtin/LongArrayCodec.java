@@ -20,7 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.ListIterator;
 
-public class LongArrayCodec {
+public final class LongArrayCodec {
+
+    private LongArrayCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, long[] array) {
         int itemCount = array.length;

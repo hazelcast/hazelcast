@@ -33,7 +33,10 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsNullEndFrame;
 
-public class MapCodec {
+public final class MapCodec {
+
+    private MapCodec() {
+    }
 
     public static <K, V> void encode(ClientMessage clientMessage, Collection<Map.Entry<K, V>> collection,
                                      BiConsumer<ClientMessage, K> encodeKeyFunc,

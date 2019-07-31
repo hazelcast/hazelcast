@@ -2096,11 +2096,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddCacheConfigMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec.REQUEST_MESSAGE_TYPE] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddEventJournalConfigMessageTask(clientMessage, node, connection);
-            }
-        };
         factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec.REQUEST_MESSAGE_TYPE] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddFlakeIdGeneratorConfigMessageTask(clientMessage, node, connection);

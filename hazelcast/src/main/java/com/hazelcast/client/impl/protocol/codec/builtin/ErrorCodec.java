@@ -17,10 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ParameterUtil;
-import com.hazelcast.nio.Bits;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * ExceptionResultParameters
@@ -40,7 +37,10 @@ public final class ErrorCodec {
     public int causeErrorCode;
     public String causeClassName;
 
-    private ErrorCodec(ClientMessage flyweight) {
+    private ErrorCodec() {
+    }
+
+    private ErrorCodec(ClientMessage clientMessage) {
 //        errorCode = flyweight.getInt();
 //        className = flyweight.getStringUtf8();
 //        boolean message_isNull = flyweight.getBoolean();
@@ -61,13 +61,13 @@ public final class ErrorCodec {
 //        }
     }
 
-    public static ErrorCodec decode(ClientMessage flyweight) {
-        return new ErrorCodec(flyweight);
+    public static ErrorCodec decode(ClientMessage clientMessage) {
+        return new ErrorCodec(clientMessage);
     }
 
     public static ClientMessage encode(int errorCode, String className, String message, StackTraceElement[] stackTrace,
-            int causeErrorCode, String causeClassName) {
-        throw new NotImplementedException();
+                                       int causeErrorCode, String causeClassName) {
+        throw new RuntimeException("Not implemented yet");
 //        int requiredDataSize = calculateDataSize(errorCode, className, message, stackTrace, causeErrorCode, causeClassName);
 //        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
 //        clientMessage.setMessageType(TYPE);
@@ -95,5 +95,4 @@ public final class ErrorCodec {
 //        clientMessage.updateFrameLength();
 //        return clientMessage;
     }
-
 }

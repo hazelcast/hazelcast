@@ -26,10 +26,13 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class RaftGroupIdCodec {
+public final class RaftGroupIdCodec {
     private static final int SEED_OFFSET = 0;
     private static final int COMMIT_INDEX_OFFSET = SEED_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = COMMIT_INDEX_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+
+    private RaftGroupIdCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, RaftGroupId groupId) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -45,7 +48,8 @@ public class RaftGroupIdCodec {
     }
 
     public static RaftGroupId decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         long seed = FixedSizeTypesCodec.decodeLong(initialFrame.content, SEED_OFFSET);

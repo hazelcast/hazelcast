@@ -23,12 +23,16 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class EvictionConfigHolderCodec {
+public final class EvictionConfigHolderCodec {
     private static final int SIZE_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private EvictionConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, EvictionConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -46,7 +50,8 @@ public class EvictionConfigHolderCodec {
     }
 
     public static EvictionConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         int size = FixedSizeTypesCodec.decodeInt(initialFrame.content, SIZE_OFFSET);

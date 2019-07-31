@@ -25,7 +25,11 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class DistributedObjectInfoCodec {
+public final class DistributedObjectInfoCodec {
+
+    private DistributedObjectInfoCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, DistributedObjectInfo info) {
         clientMessage.addFrame(BEGIN_FRAME);
 
@@ -36,7 +40,8 @@ public class DistributedObjectInfoCodec {
     }
 
     public static DistributedObjectInfo decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         String serviceName = StringCodec.decode(iterator);
         String name = StringCodec.decode(iterator);

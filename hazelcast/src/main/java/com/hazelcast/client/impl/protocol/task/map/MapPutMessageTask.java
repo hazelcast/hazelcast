@@ -44,11 +44,6 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutCodec.Req
     }
 
     @Override
-    protected MapPutCodec.RequestParameters decodeClientMessage() {
-        return MapPutCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
     protected MapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapPutCodec.decodeRequest(clientMessage);
     }

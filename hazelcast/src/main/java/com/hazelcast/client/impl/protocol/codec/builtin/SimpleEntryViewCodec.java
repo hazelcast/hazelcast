@@ -27,7 +27,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class SimpleEntryViewCodec {
+public final class SimpleEntryViewCodec {
     private static final int COST_OFFSET = 0;
     private static final int CREATION_TIME_OFFSET = COST_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int EXPIRATION_TIME_OFFSET = CREATION_TIME_OFFSET + Bits.LONG_SIZE_IN_BYTES;
@@ -39,6 +39,9 @@ public class SimpleEntryViewCodec {
     private static final int TTL_OFFSET = VERSION_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int MAX_IDLE_OFFSET = TTL_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = MAX_IDLE_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+
+    private SimpleEntryViewCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -63,7 +66,8 @@ public class SimpleEntryViewCodec {
     }
 
     public static SimpleEntryView<Data, Data> decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
         ClientMessage.Frame initialFrame = iterator.next();
 
         long cost = FixedSizeTypesCodec.decodeLong(initialFrame.content, COST_OFFSET);

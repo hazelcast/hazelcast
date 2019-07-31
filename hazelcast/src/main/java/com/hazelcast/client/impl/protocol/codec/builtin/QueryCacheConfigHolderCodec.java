@@ -27,10 +27,11 @@ import com.hazelcast.nio.Bits;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class QueryCacheConfigHolderCodec {
+public final class QueryCacheConfigHolderCodec {
     private static final int BATCH_SIZE_OFFSET = 0;
     private static final int BUFFER_SIZE_OFFSET = BATCH_SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int DELAY_SECONDS_OFFSET = BUFFER_SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
@@ -38,6 +39,9 @@ public class QueryCacheConfigHolderCodec {
     private static final int POPULATE_OFFSET = INCLUDE_VALUE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int COALESCE_OFFSET = POPULATE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = COALESCE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    private QueryCacheConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, QueryCacheConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -62,7 +66,8 @@ public class QueryCacheConfigHolderCodec {
     }
 
     public static QueryCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         int batchSize = FixedSizeTypesCodec.decodeInt(initialFrame.content, BATCH_SIZE_OFFSET);

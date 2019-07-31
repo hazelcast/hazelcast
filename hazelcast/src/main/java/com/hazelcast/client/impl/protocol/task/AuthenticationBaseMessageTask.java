@@ -57,7 +57,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     protected transient Set<String> labels;
     protected transient Credentials credentials;
     protected transient String clusterId;
-    protected transient Integer partitionCount;
+    protected transient int partitionCount;
     transient byte clientSerializationVersion;
     transient String clientVersion;
 
@@ -129,7 +129,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         } else if (credentials == null) {
             logger.severe("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
-        } else if (partitionCount != null && clientEngine.getPartitionService().getPartitionCount() != partitionCount) {
+        } else if (partitionCount != -1 && clientEngine.getPartitionService().getPartitionCount() != partitionCount) {
             logger.warning("Received auth from " + connection + " with principal " + principal
                     + ",  authentication rejected because client has a different partition count. "
                     + "Partition count client expects :" + partitionCount

@@ -35,17 +35,22 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-public class PNCounterAddCodec {
+public final class PNCounterAddCodec {
+    //hex: 0x2002
+    public static final int REQUEST_MESSAGE_TYPE = 8194;
+    //hex: 0x007F
+    public static final int RESPONSE_MESSAGE_TYPE = 127;
+    private static final int REQUEST_DELTA_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET = REQUEST_DELTA_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_VALUE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_REPLICA_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-        private static final int REQUEST_DELTA_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET = REQUEST_DELTA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-        private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 8194;//hex: 0x2002,
-        private static final int RESPONSE_VALUE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 127;//hex: 0x007F,
+    private PNCounterAddCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
@@ -76,7 +81,7 @@ public class PNCounterAddCodec {
         public com.hazelcast.nio.Address targetReplica;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.lang.String,java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -104,6 +109,7 @@ public class PNCounterAddCodec {
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
 
         /**
@@ -122,7 +128,7 @@ public class PNCounterAddCodec {
         public int replicaCount;
     }
 
-    public static ClientMessage encodeResponse(long value, java.util.Collection<java.util.Map.Entry<java.lang.String,java.lang.Long>> replicaTimestamps, int replicaCount) {
+    public static ClientMessage encodeResponse(long value, java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps, int replicaCount) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

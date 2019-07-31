@@ -28,12 +28,15 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class MapStoreConfigHolderCodec {
+public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_OFFSET = 0;
     private static final int WRITE_COALESCING_OFFSET = ENABLED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int WRITE_DELAY_SECONDS_OFFSET = WRITE_COALESCING_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int WRITE_BATCH_SIZE_OFFSET = WRITE_DELAY_SECONDS_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = WRITE_BATCH_SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private MapStoreConfigHolderCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, MapStoreConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -56,7 +59,8 @@ public class MapStoreConfigHolderCodec {
     }
 
     public static MapStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);

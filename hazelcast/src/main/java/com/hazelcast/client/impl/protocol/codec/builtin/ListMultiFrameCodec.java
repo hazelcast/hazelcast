@@ -31,7 +31,10 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsDataStructureEndFrame;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsNullEndFrame;
 
-public class ListMultiFrameCodec {
+public final class ListMultiFrameCodec {
+
+    private ListMultiFrameCodec() {
+    }
 
     public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
                                   BiConsumer<ClientMessage, T> encodeFunction) {
@@ -54,11 +57,13 @@ public class ListMultiFrameCodec {
     public static <T> List<T> decode(ListIterator<ClientMessage.Frame> iterator,
                                      Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
         List<T> result = new LinkedList<>();
-        iterator.next();//begin frame, list
+        //begin frame, list
+        iterator.next();
         while (!nextFrameIsDataStructureEndFrame(iterator)) {
             result.add(decodeFunction.apply(iterator));
         }
-        iterator.next();//end frame, list
+        //end frame, list
+        iterator.next();
         return result;
     }
 

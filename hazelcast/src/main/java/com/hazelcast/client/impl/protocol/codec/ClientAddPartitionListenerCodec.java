@@ -28,16 +28,22 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-public class ClientAddPartitionListenerCodec {
+public final class ClientAddPartitionListenerCodec {
+    //hex: 0x0012
+    public static final int REQUEST_MESSAGE_TYPE = 18;
+    //hex: 0x0064
+    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_PARTITIONS_INITIAL_FRAME_SIZE = EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x00D9
+    private static final int EVENT_PARTITIONS_MESSAGE_TYPE = 217;
 
-        private static final int REQUEST_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int REQUEST_MESSAGE_TYPE = 18;//hex: 0x0012,
-        private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-        public static final int RESPONSE_MESSAGE_TYPE = 100;//hex: 0x0064,
-        private static final int EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        private static final int EVENT_PARTITIONS_INITIAL_FRAME_SIZE = EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-        public static final int EVENT_PARTITIONS_MESSAGE_TYPE = 100;//hex: 0x00D9,
+    private ClientAddPartitionListenerCodec() {
+    }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
     }
 
@@ -55,10 +61,12 @@ public class ClientAddPartitionListenerCodec {
     public static ClientAddPartitionListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         RequestParameters request = new RequestParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return request;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
     }
 
@@ -74,11 +82,12 @@ public class ClientAddPartitionListenerCodec {
     public static ClientAddPartitionListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
         ResponseParameters response = new ResponseParameters();
-        iterator.next();//empty initial frame
+        //empty initial frame
+        iterator.next();
         return response;
     }
 
-    public static ClientMessage encodePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
+    public static ClientMessage encodePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT;
@@ -94,16 +103,15 @@ public class ClientAddPartitionListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
-            ClientMessage.Frame frame;
             if (messageType == EVENT_PARTITIONS_MESSAGE_TYPE) {
-                frame = iterator.next();
-                int partitionStateVersion = decodeInt(frame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET);
+                ClientMessage.Frame initialFrame = iterator.next();
+                int partitionStateVersion = decodeInt(initialFrame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET);
                 java.util.List<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions = MapCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
                 handlePartitionsEvent(partitions, partitionStateVersion);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
+        public abstract void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
     }
 }

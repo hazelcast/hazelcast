@@ -23,13 +23,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
-public class ListScheduledTaskHandlerCodec {
+public final class ListScheduledTaskHandlerCodec {
 
-    public static void encode(ClientMessage clientMessage, Collection<ScheduledTaskHandler> collection){
+    private ListScheduledTaskHandlerCodec() {
+    }
+
+    public static void encode(ClientMessage clientMessage, Collection<ScheduledTaskHandler> collection) {
         ListMultiFrameCodec.encode(clientMessage, collection, ScheduledTaskHandlerCodec::encode);
     }
 
-    public static List<ScheduledTaskHandler> decode(ListIterator<ClientMessage.Frame> iterator){
+    public static List<ScheduledTaskHandler> decode(ListIterator<ClientMessage.Frame> iterator) {
         return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
 }

@@ -47,8 +47,7 @@ public class GetPartitionsMessageTask
         int partitionStateVersion = partitionTableView.getVersion();
 
         Map<Address, List<Integer>> partitions = clientEngine.getPartitionListenerService().getPartitions(partitionTableView);
-        return null;
-//        return ClientGetPartitionsCodec.encodeResponse(partitions, partitionStateVersion);
+        return ClientGetPartitionsCodec.encodeResponse(partitions.entrySet(), partitionStateVersion);
     }
 
     @Override

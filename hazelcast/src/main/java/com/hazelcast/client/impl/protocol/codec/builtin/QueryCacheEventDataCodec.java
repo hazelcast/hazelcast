@@ -28,12 +28,15 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class QueryCacheEventDataCodec {
+public final class QueryCacheEventDataCodec {
 
     private static final int SEQUENCE_OFFSET = 0;
-    private static final int EVENT_TYPE_OFFSET  = SEQUENCE_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    private static final int EVENT_TYPE_OFFSET = SEQUENCE_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int PARTITION_ID_OFFSET = EVENT_TYPE_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = PARTITION_ID_OFFSET + Bits.INT_SIZE_IN_BYTES;
+
+    private QueryCacheEventDataCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, QueryCacheEventData eventData) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -51,7 +54,8 @@ public class QueryCacheEventDataCodec {
     }
 
     public static QueryCacheEventData decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         long sequence = FixedSizeTypesCodec.decodeLong(initialFrame.content, SEQUENCE_OFFSET);

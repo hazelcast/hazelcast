@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.List;
+import java.util.ListIterator;
 
-public class ListLongCodec {
+public final class ListLongCodec {
+
+    private ListLongCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, Collection<Long> collection) {
         int itemCount = collection.size();

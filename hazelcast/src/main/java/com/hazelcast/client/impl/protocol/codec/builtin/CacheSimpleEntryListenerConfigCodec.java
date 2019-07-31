@@ -26,10 +26,13 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class CacheSimpleEntryListenerConfigCodec {
+public final class CacheSimpleEntryListenerConfigCodec {
     private static final int OLD_VALUE_REQUIRED_OFFSET = 0;
     private static final int SYNCHRONOUS_OFFSET = OLD_VALUE_REQUIRED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = SYNCHRONOUS_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+
+    private CacheSimpleEntryListenerConfigCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, CacheSimpleEntryListenerConfig config) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -46,7 +49,8 @@ public class CacheSimpleEntryListenerConfigCodec {
     }
 
     public static CacheSimpleEntryListenerConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         boolean oldValueRequired = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET);

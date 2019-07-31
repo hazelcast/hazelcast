@@ -17,9 +17,8 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.CacheSimpleConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
@@ -29,9 +28,12 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class TimedExpiryPolicyFactoryConfigCodec {
+public final class TimedExpiryPolicyFactoryConfigCodec {
     private static final int DURATION_AMOUNT_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = DURATION_AMOUNT_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+
+    private TimedExpiryPolicyFactoryConfigCodec() {
+    }
 
     public static void encode(ClientMessage clientMessage, TimedExpiryPolicyFactoryConfig config) {
         clientMessage.addFrame(BEGIN_FRAME);
@@ -47,7 +49,8 @@ public class TimedExpiryPolicyFactoryConfigCodec {
     }
 
     public static TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {
-        iterator.next(); // begin frame
+        // begin frame
+        iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
         long durationAmount = FixedSizeTypesCodec.decodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET);
