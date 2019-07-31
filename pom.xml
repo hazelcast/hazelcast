@@ -556,5 +556,14 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>quick</id>
+            <properties>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
     </profiles>
 </project>
