@@ -20,10 +20,11 @@ import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.wan.impl.WanReplicationService;
 
-class WanServiceMockingNodeExtension extends DefaultNodeExtension {
+public class WanServiceMockingDefaultNodeExtension extends DefaultNodeExtension {
     private final WanReplicationService wanReplicationService;
 
-    WanServiceMockingNodeExtension(Node node, WanReplicationService wanReplicationService) {
+    public WanServiceMockingDefaultNodeExtension(Node node,
+                                                 WanReplicationService wanReplicationService) {
         super(node);
         this.wanReplicationService = wanReplicationService;
     }

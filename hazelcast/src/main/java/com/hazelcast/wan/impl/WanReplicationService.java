@@ -22,9 +22,11 @@ import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.WanReplicationPublisher;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -208,4 +210,10 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param dataStructureName the distributed object name
      */
     void removeWanEventCounters(String serviceName, String dataStructureName);
+
+    /**
+     * Returns an immutable collection of all WAN protocol versions supported by
+     * this instance.
+     */
+    List<Version> getSupportedWanProtocolVersions();
 }

@@ -27,11 +27,13 @@ import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -208,5 +210,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     public void removeWanEventCounters(String serviceName, String objectName) {
         receivedWanEventCounters.removeCounter(serviceName, objectName);
         sentWanEventCounters.removeCounter(serviceName, objectName);
+    }
+
+    @Override
+    public List<Version> getSupportedWanProtocolVersions() {
+        // EE WAN replication not supported in OS
+        return Collections.emptyList();
     }
 }
