@@ -2,31 +2,18 @@ package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.sql.HazelcastSqlException;
 
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_BIGINT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_BIT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_INT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_SMALLINT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_TINYINT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_UNLIMITED;
+import static com.hazelcast.sql.impl.type.TypeUtils.SCALE_UNLIMITED;
+
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
  */
 public class DataType {
-    /** Constant: unlimited precision. */
-    public static final int PRECISION_UNLIMITED = -1;
-
-    /** Constant: unlimited scale. */
-    public static final int SCALE_UNLIMITED = -1;
-
-    /** Precision of BOOLEAN. */
-    private static final int PRECISION_BIT = 1;
-
-    /** Precision of TINYINT. */
-    private static final int PRECISION_TINYINT = 4;
-
-    /** Precision of SMALLINT. */
-    private static final int PRECISION_SMALLINT = 7;
-
-    /** Precision of INT. */
-    private static final int PRECISION_INT = 11;
-
-    /** Precision of BIGINT */
-    private static final int PRECISION_BIGINT = 20;
-
     /** Late data type. */
     public static final DataType LATE = new DataType(BaseDataType.LATE, PRECISION_UNLIMITED, SCALE_UNLIMITED);
 
@@ -108,39 +95,7 @@ public class DataType {
         throw new HazelcastSqlException(-1, "Unsupported data type: " + clazz.getSimpleName());
     }
 
-    /**
-     * Get integer type for the given precision.
-     *
-     * @param precision Precision.
-     * @return Type.
-     */
-    public static DataType integerType(int precision) {
-        // TODO: Cache this in array.
-        if (precision == PRECISION_UNLIMITED)
-            return new DataType(BaseDataType.BIG_DECIMAL, PRECISION_UNLIMITED, 0);
-        else if (precision == PRECISION_BIT)
-            return DataType.BIT;
-        else if (precision < PRECISION_TINYINT)
-            return new DataType(BaseDataType.BYTE, precision, 0);
-        else if (precision == PRECISION_TINYINT)
-            return DataType.TINYINT;
-        else if (precision < PRECISION_SMALLINT)
-            return new DataType(BaseDataType.SHORT, precision, 0);
-        else if (precision == PRECISION_SMALLINT)
-            return DataType.SMALLINT;
-        else if (precision < PRECISION_INT)
-            return new DataType(BaseDataType.INTEGER, precision, 0);
-        else if (precision == PRECISION_INT)
-            return DataType.INT;
-        else if (precision < PRECISION_BIGINT)
-            return new DataType(BaseDataType.LONG, precision, 0);
-        else if (precision == PRECISION_BIGINT)
-            return DataType.BIGINT;
-        else
-            return new DataType(BaseDataType.BIG_DECIMAL, PRECISION_UNLIMITED, 0);
-    }
-
-    private DataType(BaseDataType baseType, int precision, int scale) {
+    public DataType(BaseDataType baseType, int precision, int scale) {
         this.baseType = baseType;
         this.precision = precision;
         this.scale = scale;
