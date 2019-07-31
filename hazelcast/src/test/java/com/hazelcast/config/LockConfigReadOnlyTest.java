@@ -37,7 +37,7 @@ public class LockConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setQuorumNameOnReadOnlyLockConfigShouldFail() {
-        getReadOnlyConfig().setQuorumName("anyName");
+    public void setSplitBrainProtectionNameOnReadOnlyLockConfigShouldFail() {
+        getReadOnlyConfig().setSplitBrainProtectionName("anyName");
     }
 }

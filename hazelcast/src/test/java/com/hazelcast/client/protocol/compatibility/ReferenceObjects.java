@@ -69,7 +69,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -139,7 +139,7 @@ import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConf
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_ITEM_LISTENER_CONFIG;
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_LISTENER_CONFIG;
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_QUORUM_LISTENER_CONFIG;
+import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG;
 
 public class ReferenceObjects {
 
@@ -711,7 +711,7 @@ public class ReferenceObjects {
         ListenerConfigHolder holder3 = new ListenerConfigHolder(TYPE_ENTRY_LISTENER_CONFIG, "listener.By.ClassName", true, true);
         ListenerConfigHolder holder4 = new ListenerConfigHolder(TYPE_ITEM_LISTENER_CONFIG, "listener.By.ClassName");
         ListenerConfigHolder holder5 = new ListenerConfigHolder(TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG, "listener.By.ClassName");
-        ListenerConfigHolder holder6 = new ListenerConfigHolder(TYPE_QUORUM_LISTENER_CONFIG, "listener.By.ClassName");
+        ListenerConfigHolder holder6 = new ListenerConfigHolder(TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG, "listener.By.ClassName");
         listenerConfigs.add(holder1);
         listenerConfigs.add(holder2);
         listenerConfigs.add(holder3);
@@ -807,7 +807,7 @@ public class ReferenceObjects {
             aString), new InvalidConfigurationException(aString), new MemberLeftException(
             aString), new NegativeArraySizeException(aString), new NoSuchElementException(aString), new NotSerializableException(
             aString), new NullPointerException(aString), new OperationTimeoutException(aString), new PartitionMigratingException(
-            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new QuorumException(
+            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new SplitBrainProtectionException(
             aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new ResponseAlreadySentException(
             aString), new RetryableHazelcastException(aString), new RetryableIOException(aString), new RuntimeException(
             aString), new SecurityException(aString), new SocketException(aString), new StaleSequenceException(aString,

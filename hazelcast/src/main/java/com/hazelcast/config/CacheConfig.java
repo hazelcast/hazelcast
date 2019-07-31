@@ -72,7 +72,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     private String uriString;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private WanReplicationRef wanReplicationRef;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     // Default value of eviction config is
@@ -121,7 +121,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 this.partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>(
                         config.partitionLostListenerConfigs);
             }
-            this.quorumName = config.quorumName;
+            this.splitBrainProtectionName = config.splitBrainProtectionName;
             this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
             this.serializationService = config.serializationService;
@@ -155,7 +155,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
         }
         copyListeners(simpleConfig);
-        this.quorumName = simpleConfig.getQuorumName();
+        this.splitBrainProtectionName = simpleConfig.getSplitBrainProtectionName();
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
@@ -438,22 +438,22 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     /**
-     * Gets the name of the associated quorum if any.
+     * Gets the name of the associated split brain protection if any.
      *
-     * @return the name of the associated quorum if any
+     * @return the name of the associated split brain protection if any
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Associates this cache configuration to a quorum.
+     * Associates this cache configuration to a split brain protection.
      *
-     * @param quorumName name of the desired quorum
+     * @param splitBrainProtectionName name of the desired split brain protection
      * @return the updated CacheConfig
      */
-    public CacheConfig<K, V> setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public CacheConfig<K, V> setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -526,7 +526,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
 
         out.writeBoolean(hasListenerConfiguration());
         if (hasListenerConfiguration()) {
@@ -567,7 +567,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             hotRestartConfig = in.readObject();
             eventJournalConfig = in.readObject();
 
-            quorumName = in.readUTF();
+            splitBrainProtectionName = in.readUTF();
 
             final boolean listNotEmpty = in.readBoolean();
             if (listNotEmpty) {
@@ -721,7 +721,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         target.setMergePolicyConfig(getMergePolicyConfig());
         target.setName(getName());
         target.setPartitionLostListenerConfigs(getPartitionLostListenerConfigs());
-        target.setQuorumName(getQuorumName());
+        target.setSplitBrainProtectionName(getSplitBrainProtectionName());
         target.setReadThrough(isReadThrough());
         target.setStatisticsEnabled(isStatisticsEnabled());
         target.setStoreByValue(isStoreByValue());

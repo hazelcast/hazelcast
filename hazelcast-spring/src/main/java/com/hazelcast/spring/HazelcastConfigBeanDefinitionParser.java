@@ -82,14 +82,11 @@ import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.PredicateConfig;
-import com.hazelcast.config.ProbabilisticQuorumConfigBuilder;
+import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.QuorumConfigBuilder;
-import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.config.RecentlyActiveQuorumConfigBuilder;
+import com.hazelcast.config.RecentlyActiveSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -106,6 +103,9 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
+import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
@@ -120,12 +120,12 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.util.ExceptionUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -215,7 +215,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> splitBrainProtectionManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
@@ -246,7 +246,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.cardinalityEstimatorManagedMap = createManagedMap("cardinalityEstimatorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
-            this.quorumManagedMap = createManagedMap("quorumConfigs");
+            this.splitBrainProtectionManagedMap = createManagedMap("splitBrainProtectionConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<EndpointQualifier, AbstractBeanDefinition>();
@@ -341,8 +341,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleServices(node);
                     } else if ("spring-aware".equals(nodeName)) {
                         handleSpringAware();
-                    } else if ("quorum".equals(nodeName)) {
-                        handleQuorum(node);
+                    } else if ("split-brain-protection".equals(nodeName)) {
+                        handleSplitBrainProtection(node);
                     } else if ("hot-restart-persistence".equals(nodeName)) {
                         handleHotRestartPersistence(node);
                     } else if ("flake-id-generator".equals(nodeName)) {
@@ -457,89 +457,96 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
-        private void handleQuorum(Node node) {
-            BeanDefinitionBuilder quorumConfigBuilder = createBeanBuilder(QuorumConfig.class);
-            AbstractBeanDefinition beanDefinition = quorumConfigBuilder.getBeanDefinition();
+        private void handleSplitBrainProtection(Node node) {
+            BeanDefinitionBuilder splitBrainProtectionBuilder = createBeanBuilder(SplitBrainProtectionConfig.class);
+            AbstractBeanDefinition beanDefinition = splitBrainProtectionBuilder.getBeanDefinition();
             String name = getAttribute(node, "name");
-            quorumConfigBuilder.addPropertyValue("name", name);
+            splitBrainProtectionBuilder.addPropertyValue("name", name);
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
             boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-            quorumConfigBuilder.addPropertyValue("enabled", enabled);
-            // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
-            QuorumConfigBuilder configBuilder = null;
-            // initialized to a placeholder value; we may need to use this value before actually parsing the quorum-size
-            // node; it will anyway have the proper value in the final quorum config.
-            int quorumSize = 3;
-            String quorumClassName = null;
+            splitBrainProtectionBuilder.addPropertyValue("enabled", enabled);
+            // probabilistic-split-brain-protection and recently-active-split-brain-protection split brain protection
+            // configs are constructed via SplitBrainProtectionConfigBuilder
+            SplitBrainProtectionConfigBuilder configBuilder = null;
+            // initialized to a placeholder value; we may need to use this value before actually parsing the minimum-cluster-size
+            // node; it will anyway have the proper value in the final split brain protection config.
+            int splitBrainProtectionSize = 3;
+            String splitBrainProtectionClassName = null;
 
             for (Node n : childElements(node)) {
                 String value = getTextContent(n).trim();
                 String nodeName = cleanNodeName(n);
-                if ("quorum-size".equals(nodeName)) {
-                    quorumConfigBuilder.addPropertyValue("size", getIntegerValue("quorum-size", value));
-                } else if ("quorum-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(n, QuorumListenerConfig.class);
-                    quorumConfigBuilder.addPropertyValue("listenerConfigs", listeners);
-                } else if ("quorum-type".equals(nodeName)) {
-                    quorumConfigBuilder.addPropertyValue("type", QuorumType.valueOf(value));
-                } else if ("quorum-function-class-name".equals(nodeName)) {
-                    quorumClassName = value;
-                    quorumConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
-                } else if ("recently-active-quorum".equals(nodeName)) {
-                    configBuilder = handleRecentlyActiveQuorum(name, n, quorumSize);
-                } else if ("probabilistic-quorum".equals(nodeName)) {
-                    configBuilder = handleProbabilisticQuorum(name, n, quorumSize);
+                if ("minimum-cluster-size".equals(nodeName)) {
+                    splitBrainProtectionBuilder.addPropertyValue("minimumClusterSize",
+                            getIntegerValue("minimum-cluster-size", value));
+                } else if ("listeners".equals(nodeName)) {
+                    ManagedList listeners = parseListeners(n, SplitBrainProtectionListenerConfig.class);
+                    splitBrainProtectionBuilder.addPropertyValue("listenerConfigs", listeners);
+                } else if ("protect-on".equals(nodeName)) {
+                    splitBrainProtectionBuilder.addPropertyValue("protectOn", SplitBrainProtectionOn.valueOf(value));
+                } else if ("function-class-name".equals(nodeName)) {
+                    splitBrainProtectionClassName = value;
+                    splitBrainProtectionBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
+                } else if ("recently-active-split-brain-protection".equals(nodeName)) {
+                    configBuilder = handleRecentlyActiveSplitBrainProtection(name, n, splitBrainProtectionSize);
+                } else if ("probabilistic-split-brain-protection".equals(nodeName)) {
+                    configBuilder = handleProbabilisticSplitBrainProtection(name, n, splitBrainProtectionSize);
                 }
             }
             if (configBuilder != null) {
-                boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumClassName);
-                if (quorumFunctionDefinedByClassName) {
-                    throw new InvalidConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
-                            + "recently-active-quorum and a quorum function class name.");
+                boolean splitBrainProtectionFunctionDefinedByClassName = !isNullOrEmpty(splitBrainProtectionClassName);
+                if (splitBrainProtectionFunctionDefinedByClassName) {
+                    throw new InvalidConfigurationException("A split brain protection"
+                            + " cannot simultaneously define probabilistic-split-brain-protection or "
+                            + "recently-active-split-brain-protection and a split brain protection function class name.");
                 }
-                QuorumConfig constructedConfig = configBuilder.build();
-                // set the constructed quorum function implementation in the bean definition
-                quorumConfigBuilder.addPropertyValue("quorumFunctionImplementation",
-                        constructedConfig.getQuorumFunctionImplementation());
+                SplitBrainProtectionConfig constructedConfig = configBuilder.build();
+                // set the constructed split brain protection function implementation in the bean definition
+                splitBrainProtectionBuilder.addPropertyValue("functionImplementation",
+                        constructedConfig.getFunctionImplementation());
             }
-            quorumManagedMap.put(name, beanDefinition);
+            splitBrainProtectionManagedMap.put(name, beanDefinition);
         }
 
-        private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
-            QuorumConfigBuilder quorumConfigBuilder;
+        private SplitBrainProtectionConfigBuilder handleRecentlyActiveSplitBrainProtection(String name, Node node,
+                                                                                           int splitBrainProtectionSize) {
+            SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder;
             int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
                     getAttribute(node, "heartbeat-tolerance-millis"),
-                    RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
-            quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
-                    quorumSize,
+                    RecentlyActiveSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+            splitBrainProtectionConfigBuilder = SplitBrainProtectionConfig.newRecentlyActiveSplitBrainProtectionConfigBuilder(
+                    name,
+                    splitBrainProtectionSize,
                     heartbeatToleranceMillis);
-            return quorumConfigBuilder;
+            return splitBrainProtectionConfigBuilder;
         }
 
-        private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
-            QuorumConfigBuilder quorumConfigBuilder;
+        private SplitBrainProtectionConfigBuilder handleProbabilisticSplitBrainProtection(String name, Node node,
+                                                                                          int splitBrainProtectionSize) {
+            SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder;
             long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
                     getAttribute(node, "acceptable-heartbeat-pause-millis"),
-                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+                    ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
             double threshold = getDoubleValue("suspicion-threshold",
                     getAttribute(node, "suspicion-threshold"),
-                    ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+                    ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD);
             int maxSampleSize = getIntegerValue("max-sample-size",
                     getAttribute(node, "max-sample-size"),
-                    ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+                    ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE);
             long minStdDeviation = getLongValue("min-std-deviation-millis",
                     getAttribute(node, "min-std-deviation-millis"),
-                    ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+                    ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
             long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
                     getAttribute(node, "heartbeat-interval-millis"),
-                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
-            quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
-                    .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                    .withSuspicionThreshold(threshold)
-                    .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                    .withMinStdDeviationMillis(minStdDeviation)
-                    .withMaxSampleSize(maxSampleSize);
-            return quorumConfigBuilder;
+                    ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+            splitBrainProtectionConfigBuilder =
+                    SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
+                            .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                            .withSuspicionThreshold(threshold)
+                            .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                            .withMinStdDeviationMillis(minStdDeviation)
+                            .withMaxSampleSize(maxSampleSize);
+            return splitBrainProtectionConfigBuilder;
         }
 
         private void handleMergePolicyConfig(Node node, BeanDefinitionBuilder builder) {
@@ -623,8 +630,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    replicatedMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    replicatedMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, replicatedMapConfigBuilder);
                 }
@@ -1067,8 +1074,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, builder);
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
-                if ("quorum-ref".equals(nodeName)) {
-                    builder.addPropertyValue("quorumName", getTextContent(childNode));
+                if ("split-brain-protection-ref".equals(nodeName)) {
+                    builder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 }
             }
             semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
@@ -1079,8 +1086,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, lockConfigBuilder);
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
-                if ("quorum-ref".equals(nodeName)) {
-                    lockConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                if ("split-brain-protection-ref".equals(nodeName)) {
+                    lockConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 }
             }
             lockManagedMap.put(getAttribute(node, "name"), lockConfigBuilder.getBeanDefinition());
@@ -1093,8 +1100,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(childNode);
                 if ("ringbuffer-store".equals(nodeName)) {
                     handleRingbufferStoreConfig(childNode, ringbufferConfigBuilder);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    ringbufferConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    ringbufferConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, ringbufferConfigBuilder);
                 }
@@ -1121,8 +1128,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(childNode);
                 if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, atomicLongConfigBuilder);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    atomicLongConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    atomicLongConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 }
             }
             atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
@@ -1135,8 +1142,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(childNode);
                 if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, atomicReferenceConfigBuilder);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    atomicReferenceConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    atomicReferenceConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 }
             }
             atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
@@ -1147,8 +1154,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, countDownLatchConfigBuilder);
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
-                if ("quorum-ref".equals(nodeName)) {
-                    countDownLatchConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                if ("split-brain-protection-ref".equals(nodeName)) {
+                    countDownLatchConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 }
             }
             countDownLatchManagedMap.put(getAttribute(node, "name"), countDownLatchConfigBuilder.getBeanDefinition());
@@ -1166,8 +1173,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("queue-store".equals(nodeName)) {
                     handleQueueStoreConfig(childNode, queueConfigBuilder);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    queueConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    queueConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, queueConfigBuilder);
                 }
@@ -1223,8 +1230,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("item-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    listConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    listConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, listConfigBuilder);
                 }
@@ -1242,8 +1249,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("item-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    setConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    setConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, setConfigBuilder);
                 }
@@ -1303,8 +1310,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    mapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    mapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, mapConfigBuilder);
                 } else if ("query-caches".equals(nodeName)) {
@@ -1477,8 +1484,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("partition-lost-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    cacheConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    cacheConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, cacheConfigBuilder);
                 } else if ("hot-restart".equals(nodeName)) {
@@ -1746,8 +1753,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
-                } else if ("quorum-ref".equals(nodeName)) {
-                    multiMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("split-brain-protection-ref".equals(nodeName)) {
+                    multiMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, multiMapConfigBuilder);
                 }

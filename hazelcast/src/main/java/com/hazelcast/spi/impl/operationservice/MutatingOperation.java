@@ -16,15 +16,18 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
+
 /**
  * Marker interface for operations that change state/data.
- * Used for quorum to reject operations if the quorum size not satisfied.
+ * Used for split brain protection to reject operations if
+ * the split brain protection size not satisfied.
  * <p>
  * Operations implementing {@link BackupOperation} should
  * not be marked with this interface.
  *
- * @see com.hazelcast.config.QuorumConfig
- * @see QuorumCheckAwareOperation
+ * @see SplitBrainProtectionConfig
+ * @see SplitBrainProtectionCheckAwareOperation
  * @see ReadonlyOperation
  */
 public interface MutatingOperation {

@@ -22,7 +22,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -73,10 +73,10 @@ public class ScheduledExecutorServiceProxy
         @Override
         public void handleException(Throwable throwable) {
             if (throwable != null) {
-                if (throwable instanceof QuorumException) {
+                if (throwable instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable);
                 }
-                if (throwable.getCause() instanceof QuorumException) {
+                if (throwable.getCause() instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable.getCause());
                 }
             }

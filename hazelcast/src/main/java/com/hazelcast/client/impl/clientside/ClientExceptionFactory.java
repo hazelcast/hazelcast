@@ -53,7 +53,7 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -370,10 +370,10 @@ public class ClientExceptionFactory {
                 return new QueryResultSizeExceededException(message);
             }
         });
-        register(ClientProtocolErrorCodes.QUORUM, QuorumException.class, new ExceptionFactory() {
+        register(ClientProtocolErrorCodes.SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new QuorumException(message);
+                return new SplitBrainProtectionException(message);
             }
         });
         register(ClientProtocolErrorCodes.REACHED_MAX_SIZE, ReachedMaxSizeException.class, new ExceptionFactory() {

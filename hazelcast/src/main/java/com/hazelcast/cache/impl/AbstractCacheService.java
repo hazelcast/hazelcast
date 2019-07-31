@@ -35,18 +35,18 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.services.QuorumAwareService;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
@@ -93,7 +93,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
+        PartitionAwareService, SplitBrainProtectionAwareService, SplitBrainHandlerService, ClusterStateListener {
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
 
@@ -758,19 +758,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     /**
-     * Gets the name of the quorum associated with specified cache
+     * Gets the name of the split brain protection associated with specified cache
      *
      * @param cacheName name of the cache
-     * @return name of the associated quorum
-     * null if there is no associated quorum
+     * @return name of the associated split brain protection
+     * null if there is no associated split brain protection
      */
     @Override
-    public String getQuorumName(String cacheName) {
+    public String getSplitBrainProtectionName(String cacheName) {
         CacheConfig cacheConfig = getCacheConfig(cacheName);
         if (cacheConfig == null) {
             return null;
         }
-        return cacheConfig.getQuorumName();
+        return cacheConfig.getSplitBrainProtectionName();
     }
 
     /**

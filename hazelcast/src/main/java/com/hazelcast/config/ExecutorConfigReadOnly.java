@@ -48,7 +48,7 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
     }
 
     @Override
-    public ExecutorConfig setQuorumName(String quorumName) {
+    public ExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
 }

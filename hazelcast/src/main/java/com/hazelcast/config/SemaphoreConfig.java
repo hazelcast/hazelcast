@@ -48,7 +48,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private transient SemaphoreConfigReadOnly readOnly;
 
-    private String quorumName;
+    private String splitBrainProtectionName;
 
     /**
      * Creates a default configured {@link SemaphoreConfig}.
@@ -68,7 +68,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         this.initialPermits = config.getInitialPermits();
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
-        this.quorumName = config.getQuorumName();
+        this.splitBrainProtectionName = config.getSplitBrainProtectionName();
     }
 
     /**
@@ -190,12 +190,12 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         return asyncBackupCount + backupCount;
     }
 
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
-    public SemaphoreConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public SemaphoreConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -206,7 +206,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
                 + ", initialPermits=" + initialPermits
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
 
@@ -226,7 +226,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         out.writeInt(initialPermits);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -235,7 +235,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         initialPermits = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -259,7 +259,8 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return name != null ? name.equals(that.name) : that.name == null;
@@ -271,7 +272,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         result = 31 * result + initialPermits;
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 }

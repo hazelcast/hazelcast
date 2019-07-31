@@ -67,7 +67,7 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -343,8 +343,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public QuorumService getQuorumService() {
-        return node.getNodeEngine().getQuorumService();
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
+        return node.getNodeEngine().getSplitBrainProtectionService();
     }
 
     @Override

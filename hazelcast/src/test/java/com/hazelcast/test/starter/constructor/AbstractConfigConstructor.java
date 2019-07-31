@@ -58,8 +58,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         }
 
         Class<?> otherConfigClass = classloader.loadClass(thisConfigClass.getName());
-        if (isQuorumFunctionImplementation(thisConfigClass)) {
-            return cloneQuorumFunctionImplementation(thisConfigObject, otherConfigClass);
+        if (isSplitBrainProtectionFunctionImplementation(thisConfigClass)) {
+            return cloneSplitBrainProtectionFunctionImplementation(thisConfigObject, otherConfigClass);
         }
 
         Object otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(), otherConfigClass.getName());
@@ -212,38 +212,38 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
     }
 
     /**
-     * Clones the built-in QuorumFunction implementations.
+     * Clones the built-in SplitBrainProtectionFunction implementations.
      */
-    private static Object cloneQuorumFunctionImplementation(Object quorumFunction, Class<?> targetClass) throws Exception {
-        if (targetClass.getName().equals("com.hazelcast.quorum.impl.ProbabilisticQuorumFunction")) {
-            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
-            double suspicionThreshold = (Double) getFieldValueReflectively(quorumFunction, "suspicionThreshold");
-            int maxSampleSize = (Integer) getFieldValueReflectively(quorumFunction, "maxSampleSize");
-            long minStdDeviationMillis = (Long) getFieldValueReflectively(quorumFunction, "minStdDeviationMillis");
-            long acceptableHeartbeatPauseMillis = (Long) getFieldValueReflectively(quorumFunction,
+    private static Object cloneSplitBrainProtectionFunctionImplementation(Object splitBrainProtectionFunction, Class<?> targetClass) throws Exception {
+        if (targetClass.getName().equals("com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction")) {
+            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "splitBrainProtectionSize");
+            double suspicionThreshold = (Double) getFieldValueReflectively(splitBrainProtectionFunction, "suspicionThreshold");
+            int maxSampleSize = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "maxSampleSize");
+            long minStdDeviationMillis = (Long) getFieldValueReflectively(splitBrainProtectionFunction, "minStdDeviationMillis");
+            long acceptableHeartbeatPauseMillis = (Long) getFieldValueReflectively(splitBrainProtectionFunction,
                     "acceptableHeartbeatPauseMillis");
-            long heartbeatIntervalMillis = (Long) getFieldValueReflectively(quorumFunction, "heartbeatIntervalMillis");
+            long heartbeatIntervalMillis = (Long) getFieldValueReflectively(splitBrainProtectionFunction, "heartbeatIntervalMillis");
 
             Constructor<?> constructor = targetClass.getConstructor(Integer.TYPE, Long.TYPE, Long.TYPE, Integer.TYPE, Long.TYPE,
                     Double.TYPE);
 
             return constructor.newInstance(size, heartbeatIntervalMillis, acceptableHeartbeatPauseMillis,
                     maxSampleSize, minStdDeviationMillis, suspicionThreshold);
-        } else if (targetClass.getName().equals("com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction")) {
-            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
-            int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(quorumFunction, "heartbeatToleranceMillis");
+        } else if (targetClass.getName().equals("com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction")) {
+            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "splitBrainProtectionSize");
+            int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "heartbeatToleranceMillis");
 
             Constructor<?> constructor = targetClass.getConstructor(Integer.TYPE, Integer.TYPE);
             return constructor.newInstance(size, heartbeatToleranceMillis);
         } else {
-            debug("Did not handle configured QuorumFunction implementation %s", targetClass.getName());
+            debug("Did not handle configured SplitBrainProtectionFunction implementation %s", targetClass.getName());
             return null;
         }
     }
 
-    private static boolean isQuorumFunctionImplementation(Class<?> klass) throws Exception {
+    private static boolean isSplitBrainProtectionFunctionImplementation(Class<?> klass) throws Exception {
         ClassLoader classLoader = klass.getClassLoader();
-        Class<?> quorumFunctionInterface = classLoader.loadClass("com.hazelcast.quorum.QuorumFunction");
-        return quorumFunctionInterface.isAssignableFrom(klass);
+        Class<?> splitBrainProtectionFunctionInterface = classLoader.loadClass("com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction");
+        return splitBrainProtectionFunctionInterface.isAssignableFrom(klass);
     }
 }

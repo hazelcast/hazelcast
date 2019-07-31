@@ -146,21 +146,21 @@ hazelcast:
       statistics-enabled: false
       pool-size: 16
       queue-capacity: 1000
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   durable-executor-service:
     dummy:
       pool-size: 10
       durability: 2
       capacity: 10
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   scheduled-executor-service:
     dummy:
       pool-size: 10
       durability: 2
       capacity: 50
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 10
         class-name: PutIfAbsentMergePolicy
@@ -169,7 +169,7 @@ hazelcast:
     dummy:
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 50
         class-name: HyperLogLogMergePolicy
@@ -198,7 +198,7 @@ hazelcast:
          properties:
            foo: bar
 
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -384,7 +384,7 @@ hazelcast:
         - include-value: true
           local: true
           class-name: com.hazelcast.examples.EntryListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -394,7 +394,7 @@ hazelcast:
       in-memory-format: BINARY
       async-fillup: false
       statistics-enabled: false
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -412,7 +412,7 @@ hazelcast:
       item-listeners:
         - include-value: true
           class-name: com.hazelcast.examples.ItemListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -426,7 +426,7 @@ hazelcast:
       item-listeners:
         - include-value: true
           class-name: com.hazelcast.examples.ItemListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -452,29 +452,29 @@ hazelcast:
       initial-permits: 10
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   lock:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   atomic-long:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
   atomic-reference:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
   count-down-latch:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   ringbuffer:
     default:
@@ -483,7 +483,7 @@ hazelcast:
       async-backup-count: 1
       time-to-live-seconds: 29
       in-memory-format: OBJECT
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -535,7 +535,7 @@ hazelcast:
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
-      quorum-ref: DummyQuorum
+      split-brain-protection-ref: DummySplitBrainProtection
       merge-policy:
         batch-size: 100
         class-name: DummyMergePolicy
@@ -769,35 +769,35 @@ hazelcast:
   pn-counter:
     pn-counter-1:
       replica-count: 100
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       statistics-enabled: false
 
-  quorum:
-    quorumRuleWithThreeMembers:
+  split-brain-protection:
+    splitBrainProtectionRuleWithThreeMembers:
       enabled: true
-      quorum-size: 3
-      quorum-type: READ_WRITE
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
 
-    member-count-quorum:
+    member-count-split-brain-protection:
       enabled: true
-      quorum-type: READ_WRITE
-      quorum-size: 3
-      member-count-quorum: {}
+      protect-on: READ_WRITE
+      minimum-cluster-size: 3
+      member-count-split-brain-protection: {}
 
-    probabilistic-quorum:
+    probabilistic-split-brain-protection:
       enabled: true
-      quorum-size: 3
-      quorum-type: READ_WRITE
-      probabilistic-quorum:
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
+      probabilistic-split-brain-protection:
         acceptable-heartbeat-pause-millis: 100
         max-sample-size: 20
         suspicion-threshold: 10
 
-    recently-active-quorum:
+    recently-active-split-brain-protection:
       enabled: true
-      quorum-size: 4
-      quorum-type: READ_WRITE
-      recently-active-quorum:
+      minimum-cluster-size: 4
+      protect-on: READ_WRITE
+      recently-active-split-brain-protection:
         heartbeat-tolerance-millis: 60000
 
   hot-restart-persistence:

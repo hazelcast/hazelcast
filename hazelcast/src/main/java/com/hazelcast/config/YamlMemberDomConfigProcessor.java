@@ -343,12 +343,12 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleQuorum(Node node) {
-        for (Node quorumNode : childElements(node)) {
-            QuorumConfig quorumConfig = new QuorumConfig();
-            String quorumName = quorumNode.getNodeName();
-            quorumConfig.setName(quorumName);
-            handleQuorumNode(quorumNode, quorumConfig, quorumName);
+    protected void handleSplitBrainProtection(Node node) {
+        for (Node splitBrainProtectionNode : childElements(node)) {
+            SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
+            String splitBrainProtectionName = splitBrainProtectionNode.getNodeName();
+            splitBrainProtectionConfig.setName(splitBrainProtectionName);
+            handleSplitBrainProtectionNode(splitBrainProtectionNode, splitBrainProtectionConfig, splitBrainProtectionName);
         }
     }
 
@@ -592,10 +592,10 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleQuorumListeners(QuorumConfig quorumConfig, Node n) {
+    protected void handleSplitBrainProtectionListeners(SplitBrainProtectionConfig splitBrainProtectionConfig, Node n) {
         for (Node listenerNode : childElements(n)) {
             String listenerClass = listenerNode.getNodeValue().trim();
-            quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
+            splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
         }
     }
 
