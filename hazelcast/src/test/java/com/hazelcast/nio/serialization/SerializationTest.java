@@ -296,6 +296,22 @@ public class SerializationTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testUTF8() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        String name = "Orhan";
+        Data data = ss.toData(name);
+        assertEquals(name, ss.toObject(data));
+    }
+
+    @Test
+    public void testDataSerializableObjectSerialization() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Person person = new Person(35, 180, 100, "Orhan", null);
+        Data data = ss.toData(person);
+        assertEquals(person, ss.toObject(data));
+    }
+
+    @Test
     public void testArrayListSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         ArrayList<Person> arrayList = new ArrayList<Person>();
