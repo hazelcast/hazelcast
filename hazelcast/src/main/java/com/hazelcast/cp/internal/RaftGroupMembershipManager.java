@@ -465,7 +465,7 @@ class RaftGroupMembershipManager {
             logger.info("REBALANCE -- Members: " + members);
             logger.info("REBALANCE -- Groups: " + groupIds);
 
-            int groupsPerMember = groupIds.size() / members.size();
+            final int groupsPerMember = groupIds.size() / members.size();
             logger.severe("REBALANCE -- groups per member: " + groupsPerMember);
             if (groupsPerMember <= 1) {
                 return;
@@ -486,21 +486,30 @@ class RaftGroupMembershipManager {
                 allGroups.add(group);
             }
 
-            // TODO: Transfer in loop or transfer at each task execution?
+            Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
+            for (; ; ) {
+                CPMember from = getEndpointWithMaxLeaderships(leaderships, groupsPerMember, handledMembers);
+                if (from == null) {
+                    // nothing to transfer
+                    return;
+                }
 
-            CPMember from = getEndpointWithMaxLeaderships(leaderships, groupsPerMember);
-            if (from == null) {
-                return;
+                Collection<CPGroupSummary> memberGroups = getGroupsOf(from, allGroups);
+
+                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
+                if (to.element1 == null) {
+                    // could not found target member to transfer membership
+                    // try to find next leader
+                    handledMembers.add(from);
+                    continue;
+                }
+
+                if (!transferLeadership(from, to.element1, to.element2)) {
+                    // could not transfer leadership
+                    // try next time
+                    return;
+                }
             }
-
-            Collection<CPGroupSummary> memberGroups = getGroupsOf(from, allGroups);
-
-            Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
-            if (to.element1 == null) {
-                return;
-            }
-
-            transferLeadership(from, to.element1, to.element2);
         }
 
         private Collection<CPGroupSummary> getGroupsOf(CPMember member, Collection<CPGroupSummary> groups) {
@@ -538,29 +547,34 @@ class RaftGroupMembershipManager {
         }
 
         private CPMember getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
-                int minLeaderships) {
+                int minLeaderships, Set<CPMember> excludeSet) {
             CPMember from = null;
             int max = minLeaderships;
             for (Entry<CPMember, Collection<CPGroupId>> entry : leaderships.entrySet()) {
-                if (entry.getValue().size() > max) {
+                if (excludeSet.contains(entry.getKey())) {
+                    continue;
+                }
+                int count = entry.getValue().size();
+                if (count > max) {
                     from = entry.getKey();
-                    max = entry.getValue().size();
+                    max = count;
                     logger.severe("REBALANCE -- FROM " + from + " has " + max + " leaderships.");
                 }
             }
             return from;
         }
 
-        private void transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
-            // TODO
+        private boolean transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
             logger.severe(groupId + " -- Transfer leadership :: " + from + " -> " + to);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnTarget(null, new TransferLeadershipOp(groupId, to), from.getAddress())
                         .join();
+                return true;
             } catch (Exception e) {
                 logger.warning(e);
             }
+            return false;
         }
 
         private Map<RaftEndpoint, CPMember> getMembers() {
