@@ -29,6 +29,7 @@ import java.util.Collections;
 /**
  * TODO
  */
+// TODO: rename!
 public class GetLeadershipGroupsOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable {
 
     private transient Collection<CPGroupId> groups = Collections.emptyList();

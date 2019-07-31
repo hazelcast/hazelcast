@@ -922,10 +922,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         stepDownRaftNode(groupId);
     }
 
+    // TODO: rename!
     public Collection<CPGroupId> getLeadershipGroups() {
         Collection<CPGroupId> groupIds = new ArrayList<CPGroupId>();
         RaftEndpoint localEndpoint = getLocalCPEndpoint();
         for (RaftNode raftNode : nodes.values()) {
+            if (CPGroup.METADATA_CP_GROUP_NAME.equals(raftNode.getGroupId().name())) {
+                // Ignore metadata group
+                continue;
+            }
             RaftEndpoint leader = raftNode.getLeader();
             if (leader != null && leader.equals(localEndpoint)) {
                 groupIds.add(raftNode.getGroupId());

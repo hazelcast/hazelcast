@@ -506,6 +506,10 @@ class RaftGroupMembershipManager {
         private Collection<CPGroupSummary> getGroupsOf(CPMember member, Collection<CPGroupSummary> groups) {
             List<CPGroupSummary> memberGroups = new ArrayList<CPGroupSummary>();
             for (CPGroupSummary group : groups) {
+                if (CPGroup.METADATA_CP_GROUP_NAME.equals(group.id().name())) {
+                    // ignore metadata group, we don't expect any significant load on metadata
+                    continue;
+                }
                 if (group.members().contains(member)) {
                     memberGroups.add(group);
                 }
