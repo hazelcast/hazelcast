@@ -25,6 +25,7 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
+import com.hazelcast.cp.internal.operation.TransferLeadershipOp;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
@@ -494,12 +495,12 @@ class RaftGroupMembershipManager {
 
             Collection<CPGroupSummary> memberGroups = getGroupsOf(from, allGroups);
 
-            CPMember to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
-            if (to == null) {
+            Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
+            if (to.element1 == null) {
                 return;
             }
 
-            transferLeadership(from, to);
+            transferLeadership(from, to.element1, to.element2);
         }
 
         private Collection<CPGroupSummary> getGroupsOf(CPMember member, Collection<CPGroupSummary> groups) {
@@ -512,9 +513,10 @@ class RaftGroupMembershipManager {
             return memberGroups;
         }
 
-        private CPMember getEndpointWithMinLeadershipsInGroups(Collection<CPGroupSummary> groups,
+        private Tuple2<CPMember, CPGroupId> getEndpointWithMinLeadershipsInGroups(Collection<CPGroupSummary> groups,
                 Map<CPMember, Collection<CPGroupId>> leaderships, int maxLeaderships) {
             CPMember to = null;
+            CPGroupId groupId = null;
             int min = maxLeaderships;
             for (CPGroupSummary group : groups) {
                 for (CPMember member : group.members()) {
@@ -523,11 +525,12 @@ class RaftGroupMembershipManager {
                     if (k < min) {
                         min = k;
                         to = member;
+                        groupId = group.id();
                         logger.severe("REBALANCE -- TO " + to + " has " + min + " leaderships.");
                     }
                 }
             }
-            return to;
+            return Tuple2.of(to, groupId);
         }
 
         private CPMember getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
@@ -544,9 +547,16 @@ class RaftGroupMembershipManager {
             return from;
         }
 
-        private void transferLeadership(CPMember from, CPMember to) {
+        private void transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
             // TODO
-            logger.severe("Transfer leadership :: " + from + " -> " + to);
+            logger.severe(groupId + " -- Transfer leadership :: " + from + " -> " + to);
+            try {
+                nodeEngine.getOperationService()
+                        .invokeOnTarget(null, new TransferLeadershipOp(groupId, to), from.getAddress())
+                        .join();
+            } catch (Exception e) {
+                logger.warning(e);
+            }
         }
 
         private Map<RaftEndpoint, CPMember> getMembers() {
