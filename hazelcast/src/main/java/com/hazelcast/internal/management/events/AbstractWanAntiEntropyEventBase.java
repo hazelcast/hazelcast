@@ -35,7 +35,7 @@ public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEventBa
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("uuid", uuid.toString());
+        json.add("uuid", uuid != null ? uuid.toString() : "null");
         return json;
     }
 }
