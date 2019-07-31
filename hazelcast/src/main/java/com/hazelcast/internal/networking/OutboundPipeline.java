@@ -22,7 +22,6 @@ package com.hazelcast.internal.networking;
  */
 public interface OutboundPipeline {
 
-
     /**
      * Adds the handlers at the end of the pipeline
      *
@@ -70,7 +69,7 @@ public interface OutboundPipeline {
      * Request to flush all data to flush from the handlers to
      * the network.
      *
-     * It will cause at least one processing of the outbound pipeline.
+     * It will cause at least one processing of the OutboundPipeline.
      *
      * This method is threadsafe and can safely be called from any thread.
      *
@@ -78,7 +77,7 @@ public interface OutboundPipeline {
      * apart from consuming cpu cycles.
      *
      * This can be used for example, with protocol or handshaking. So imagine
-     * there is a handshake decoder (e.g. protocol or tls), that as soon as it
+     * there is a handshake decoder (e.g. protocol or TLS), that as soon as it
      * has received some data like 'hello', it wants to send back a message to
      * the other side as part of the handshake. This can be done by looking up
      * the handshake encoder, queue the message on that encoder and then call

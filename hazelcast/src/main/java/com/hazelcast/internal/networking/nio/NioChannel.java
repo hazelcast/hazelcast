@@ -149,7 +149,7 @@ public final class NioChannel extends AbstractChannel {
     //  this toString implementation is very useful for debugging. Please don't remove it.
 //    @Override
 //    public String toString() {
-//        String local = getPort(localSocketAddress());it
+//        String local = getPort(localSocketAddress());
 //        String remote = getPort(remoteSocketAddress());
 //        String s = local + (isClientMode() ? "=>" : "->") + remote;
 //
