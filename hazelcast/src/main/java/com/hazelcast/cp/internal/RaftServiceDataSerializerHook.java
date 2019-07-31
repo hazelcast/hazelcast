@@ -20,8 +20,10 @@ import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChang
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
+import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.TransferLeadershipOp;
 import com.hazelcast.cp.internal.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.cp.internal.operation.integration.AppendRequestOp;
 import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
@@ -108,6 +110,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int GROUP_MEMBERSHIP_CHANGE = 41;
     public static final int CP_ENDPOINT = 42;
     public static final int CP_GROUP_SUMMARY = 43;
+    public static final int GET_LEADERSHIP_GROUPS_OP = 44;
+    public static final int TRANSFER_LEADERSHIP_OP = 45;
 
     @Override
     public int getFactoryId() {
@@ -206,6 +210,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                         return new RaftEndpointImpl();
                     case CP_GROUP_SUMMARY:
                         return new CPGroupSummary();
+                    case GET_LEADERSHIP_GROUPS_OP:
+                        return new GetLeadershipGroupsOp();
+                    case TRANSFER_LEADERSHIP_OP:
+                        return new TransferLeadershipOp();
                     default:
                         throw new IllegalArgumentException("Undefined type: " + typeId);
                 }

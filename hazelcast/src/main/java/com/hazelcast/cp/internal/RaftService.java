@@ -922,6 +922,26 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         stepDownRaftNode(groupId);
     }
 
+    public Collection<CPGroupId> getLeadershipGroups() {
+        Collection<CPGroupId> groupIds = new ArrayList<CPGroupId>();
+        RaftEndpoint localEndpoint = getLocalCPEndpoint();
+        for (RaftNode raftNode : nodes.values()) {
+            RaftEndpoint leader = raftNode.getLeader();
+            if (leader != null && leader.equals(localEndpoint)) {
+                groupIds.add(raftNode.getGroupId());
+            }
+        }
+        return groupIds;
+    }
+
+    public ICompletableFuture transferLeadership(CPGroupId groupId, CPMemberInfo to) {
+        RaftNode raftNode = getRaftNode(groupId);
+        if (raftNode == null) {
+            throw new IllegalStateException("RaftNode does not exist for group: " + groupId);
+        }
+        return raftNode.transferLeadership(to.toRaftEndpoint());
+    }
+
     private class InitializeRaftNodeTask implements Runnable {
         private final CPGroupId groupId;
 

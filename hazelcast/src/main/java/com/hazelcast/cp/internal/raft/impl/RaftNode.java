@@ -196,4 +196,5 @@ public interface RaftNode {
      */
     ICompletableFuture query(Object operation, QueryPolicy queryPolicy);
 
+    ICompletableFuture transferLeadership(RaftEndpoint endpoint);
 }
