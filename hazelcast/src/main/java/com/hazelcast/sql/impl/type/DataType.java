@@ -12,7 +12,7 @@ public class DataType {
     /** Constant: unlimited scale. */
     public static final int SCALE_UNLIMITED = -1;
 
-    /** Precision of BIT. */
+    /** Precision of BOOLEAN. */
     private static final int PRECISION_BIT = 1;
 
     /** Precision of TINYINT. */
@@ -30,8 +30,8 @@ public class DataType {
     /** Late data type. */
     public static final DataType LATE = new DataType(BaseDataType.LATE, PRECISION_UNLIMITED, SCALE_UNLIMITED);
 
-    /** BIT data type. */
-    public static final DataType BIT = new DataType(BaseDataType.BIT, PRECISION_BIT, 0);
+    /** BOOLEAN data type. */
+    public static final DataType BIT = new DataType(BaseDataType.BOOLEAN, PRECISION_BIT, 0);
 
     /** TINYINT data type. */
     public static final DataType TINYINT = new DataType(BaseDataType.BYTE, PRECISION_TINYINT, 0);
@@ -83,7 +83,7 @@ public class DataType {
 
         Class clazz = obj.getClass();
 
-        if (clazz == BaseDataType.BIT.getClazz())
+        if (clazz == BaseDataType.BOOLEAN.getClazz())
             return BIT;
         else if (clazz == BaseDataType.BYTE.getClazz())
             return TINYINT;

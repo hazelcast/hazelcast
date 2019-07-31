@@ -1,109 +1,112 @@
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.BigDecimalBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.BigIntegerBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.BooleanBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.ByteBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.DoubleBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.FloatBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.IntegerBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.LongBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.ShortBaseDataTypeAccessor;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BIG_DECIMAL;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BIG_INTEGER;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BOOLEAN;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BYTE;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_DOUBLE;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_FLOAT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_INTEGER;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_LATE;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_LONG;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_SHORT;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_STRING;
 
 /**
  * Base data type which is mapped to concrete Java class.
  */
-public class BaseDataType {
-    /** Precedence of LATE data type. */
-    public static final int PRECEDENCE_LATE = 0;
+public enum BaseDataType {
 
-    /** Precedence of BIT data type. */
-    public static final int PRECEDENCE_BIT = 1;
 
-    /** Precedence of BYTE data type. */
-    public static final int PRECEDENCE_BYTE = 2;
-
-    /** Precedence of SHORT data type. */
-    public static final int PRECEDENCE_SHORT = 3;
-
-    /** Precedence of INTEGER data type. */
-    public static final int PRECEDENCE_INTEGER = 4;
-
-    /** Precedence of LONG data type. */
-    public static final int PRECEDENCE_LONG = 5;
-
-    /** Precedence of BIG_INTEGER data type. */
-    public static final int PRECEDENCE_BIG_INTEGER = 6;
-
-    /** Precedence of BIG_DECIMAL data type. */
-    public static final int PRECEDENCE_BIG_DECIMAL = 7;
-
-    /** Precedence of FLOAT data type. */
-    public static final int PRECEDENCE_FLOAT = 8;
-
-    /** Precedence of DOUBLE data type. */
-    public static final int PRECEDENCE_DOUBLE = 9;
-
-    /** Precedence of STRING data type. */
-    public static final int PRECEDENCE_STRING = 1;
-
-    public static final BaseDataType LATE = new BaseDataType(
+    LATE(
         BaseDataTypeGroup.LATE,
         PRECEDENCE_LATE,
+        null,
         null
-    );
+    ),
 
-    public static final BaseDataType BIT = new BaseDataType(
+    BOOLEAN(
         BaseDataTypeGroup.NUMERIC,
-        PRECEDENCE_BIT,
-        Boolean.class
-    );
+        PRECEDENCE_BOOLEAN,
+        Boolean.class,
+        new BooleanBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType BYTE = new BaseDataType(
+    BYTE(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BYTE,
-        Byte.class
-    );
+        Byte.class,
+        new ByteBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType SHORT = new BaseDataType(
+    SHORT(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_SHORT,
-        Short.class
-    );
+        Short.class,
+        new ShortBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType INTEGER = new BaseDataType(
+    INTEGER(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_INTEGER,
-        Integer.class
-    );
+        Integer.class,
+        new IntegerBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType LONG = new BaseDataType(
+    LONG(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_LONG,
-        Long.class
-    );
+        Long.class,
+        new LongBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType BIG_INTEGER  = new BaseDataType(
+    BIG_INTEGER(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BIG_INTEGER,
-        BigInteger.class
-    );
+        BigInteger.class,
+        new BigIntegerBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType BIG_DECIMAL  = new BaseDataType(
+    BIG_DECIMAL(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BIG_DECIMAL,
-        BigDecimal.class
-    );
+        BigDecimal.class,
+        new BigDecimalBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType FLOAT  = new BaseDataType(
+    FLOAT(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_FLOAT,
-        Float.class
-    );
+        Float.class,
+        new FloatBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType DOUBLE = new BaseDataType(
+    DOUBLE(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_DOUBLE,
-        Double.class
-    );
+        Double.class,
+        new DoubleBaseDataTypeAccessor()
+    ),
 
-    public static final BaseDataType STRING = new BaseDataType(
+    STRING(
         BaseDataTypeGroup.STRING,
         PRECEDENCE_STRING,
-        String.class
+        String.class,
+        null
     );
 
     /** Data type group. */
@@ -115,10 +118,14 @@ public class BaseDataType {
     /** Underlying class. */
     private final Class clazz;
 
-    private BaseDataType(BaseDataTypeGroup group, int precedence, Class clazz) {
+    /** Accessor. */
+    private final BaseDataTypeAccessor accessor;
+
+    private BaseDataType(BaseDataTypeGroup group, int precedence, Class clazz, BaseDataTypeAccessor accessor) {
         this.group = group;
         this.precedence = precedence;
         this.clazz = clazz;
+        this.accessor = accessor;
     }
 
     public BaseDataTypeGroup getGroup() {
@@ -131,6 +138,10 @@ public class BaseDataType {
 
     public Class getClazz() {
         return clazz;
+    }
+
+    public BaseDataTypeAccessor getAccessor() {
+        return accessor;
     }
 
     /**
