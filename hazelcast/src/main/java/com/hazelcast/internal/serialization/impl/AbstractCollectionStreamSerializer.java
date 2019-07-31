@@ -32,11 +32,12 @@ import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 public abstract class AbstractCollectionStreamSerializer implements StreamSerializer<Collection> {
 
     @Override
-    public void write(ObjectDataOutput out, Collection linkedList) throws IOException {
-        int size = linkedList == null ? NULL_ARRAY_LENGTH : linkedList.size();
+    public void write(ObjectDataOutput out, Collection collection) throws IOException {
+        int size = collection == null ? NULL_ARRAY_LENGTH : collection.size();
         out.writeInt(size);
         if (size > 0) {
-            Iterator iterator = linkedList.iterator();
+            beforeSerializeEntries(out, collection);
+            Iterator iterator = collection.iterator();
             while (iterator.hasNext()) {
                 out.writeObject(iterator.next());
             }
@@ -46,19 +47,24 @@ public abstract class AbstractCollectionStreamSerializer implements StreamSerial
     @Override
     public Collection read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        Collection result = null;
+        Collection collection = null;
         if (size > NULL_ARRAY_LENGTH) {
-            result = createCollection(size);
+            collection = createCollection(size, in);
             for (int i = 0; i < size; i++) {
-                result.add(in.readObject());
+                collection.add(in.readObject());
             }
         }
-        return result;
+        return collection;
     }
 
     @Override
     public void destroy() {
     }
 
-    protected abstract Collection createCollection(int size);
+    protected abstract Collection createCollection(int size, ObjectDataInput in)
+            throws IOException;
+
+    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
+            throws IOException {
+    }
 }

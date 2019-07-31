@@ -16,16 +16,19 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
+import java.util.Collection;
 
 /**
  * The {@link java.util.ArrayList} serializer
  */
 public class ArrayListStreamSerializer extends AbstractCollectionStreamSerializer {
+
     @Override
-    protected List createCollection(int size) {
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
         return new ArrayList(size);
     }
 

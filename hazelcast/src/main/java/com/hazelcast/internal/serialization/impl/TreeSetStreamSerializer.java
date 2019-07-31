@@ -16,21 +16,35 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
 import java.util.Collection;
-import java.util.Set;
+import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
- * The {@link Set} serializer
+ * The {@link TreeSet} serializer
  */
 public class TreeSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
-        return new TreeSet();
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
+        Comparator comparator = in.readObject();
+        return new TreeSet(comparator);
     }
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_TREE_SET;
+    }
+
+    @Override
+    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
+            throws IOException {
+        TreeSet set = (TreeSet) collection;
+        out.writeObject(set.comparator());
     }
 }

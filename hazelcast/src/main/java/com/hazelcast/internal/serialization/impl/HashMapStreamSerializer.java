@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.util.MapUtil;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@link Map} serializer
+ * The {@link HashMap} serializer
+ *
+ * Important Note: The HashMap 'loadfactor' is not serialized.
+ *
  */
 public class HashMapStreamSerializer extends AbstractMapStreamSerializer {
     @Override
@@ -29,7 +35,7 @@ public class HashMapStreamSerializer extends AbstractMapStreamSerializer {
     }
 
     @Override
-    protected Map createMap(int size) {
-        return new HashMap(size);
+    protected Map createMap(ObjectDataInput in, int size) {
+        return MapUtil.createHashMap(size);
     }
 }

@@ -16,7 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -24,8 +29,17 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class ConcurrentSkipListSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
-        return new ConcurrentSkipListSet();
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
+        Comparator comparator = in.readObject();
+        return new ConcurrentSkipListSet(comparator);
+    }
+
+    @Override
+    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
+            throws IOException {
+        ConcurrentSkipListSet concurrentSkipListSet = (ConcurrentSkipListSet) collection;
+        out.writeObject(concurrentSkipListSet.comparator());
     }
 
     @Override

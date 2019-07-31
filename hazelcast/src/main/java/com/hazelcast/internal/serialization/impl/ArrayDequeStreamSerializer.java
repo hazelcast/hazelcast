@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 
@@ -24,7 +27,8 @@ import java.util.Collection;
  */
 public class ArrayDequeStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
         return new ArrayDeque(size);
     }
 

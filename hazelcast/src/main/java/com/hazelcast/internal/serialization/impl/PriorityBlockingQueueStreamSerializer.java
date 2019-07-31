@@ -16,7 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
@@ -24,12 +29,20 @@ import java.util.concurrent.PriorityBlockingQueue;
  */
 public class PriorityBlockingQueueStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
-        return new PriorityBlockingQueue(size);
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
+        Comparator comparator = in.readObject();
+        return new PriorityBlockingQueue(size, comparator);
     }
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_PRIORITY_BLOCKING_QUEUE;
+    }
+
+    @Override
+    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
+            throws IOException {
+        out.writeObject(((PriorityBlockingQueue) collection).comparator());
     }
 }

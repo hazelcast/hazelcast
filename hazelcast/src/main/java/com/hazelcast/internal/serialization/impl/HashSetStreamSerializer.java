@@ -16,18 +16,24 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
-
 
 /**
- * The {@link Set} serializer
+ * The {@link HashSet} serializer
+ *
+ * Important Note: The HashSet 'loadfactor' is not serialized.
+ *
  */
 public class HashSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
-        return new HashSet(size);
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
+        return SetUtil.createHashSet(size);
     }
 
     @Override

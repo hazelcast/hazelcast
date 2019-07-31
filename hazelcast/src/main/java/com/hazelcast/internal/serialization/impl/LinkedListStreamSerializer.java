@@ -16,15 +16,19 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+
+import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * The {@link java.util.LinkedList} serializer
  */
 public class LinkedListStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected List createCollection(int size) {
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
         return new LinkedList();
     }
 

@@ -16,11 +16,16 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * The {@link Map} serializer
+ * The {@link AbstractMapStreamSerializer} serializer
  */
 public class ConcurrentSkipListMapStreamSerializer extends AbstractMapStreamSerializer {
     @Override
@@ -29,7 +34,17 @@ public class ConcurrentSkipListMapStreamSerializer extends AbstractMapStreamSeri
     }
 
     @Override
-    protected Map createMap(int size) {
-        return new ConcurrentSkipListMap();
+    protected Map createMap(ObjectDataInput in, int size)
+            throws IOException {
+        Comparator comparator = in.readObject();
+        return new ConcurrentSkipListMap(comparator);
+    }
+
+    @Override
+    protected void beforeSerializeEntries(ObjectDataOutput out, Map map)
+            throws IOException {
+        ConcurrentSkipListMap concurrentSkipListMap = (ConcurrentSkipListMap) map;
+        Comparator comparator = concurrentSkipListMap.comparator();
+        out.writeObject(comparator);
     }
 }

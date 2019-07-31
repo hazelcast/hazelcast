@@ -16,17 +16,24 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
- * The {@link Set} serializer
+ * The {@link LinkedHashSet} serializer
+ *
+ * Important Note: The LinkedHashSet 'loadfactor' is not serialized.
+ *
  */
 public class LinkedHashSetStreamSerializer extends AbstractCollectionStreamSerializer {
     @Override
-    protected Collection createCollection(int size) {
-        return new LinkedHashSet(size);
+    protected Collection createCollection(int size, ObjectDataInput in)
+            throws IOException {
+        return SetUtil.createLinkedHashSet(size);
     }
 
     @Override

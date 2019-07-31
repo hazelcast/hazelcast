@@ -36,6 +36,8 @@ public abstract class AbstractMapStreamSerializer implements StreamSerializer<Ma
         int size = map == null ? NULL_ARRAY_LENGTH : map.size();
         out.writeInt(size);
         if (size > 0) {
+            beforeSerializeEntries(out, map);
+
             Iterator iterator = map.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry) iterator.next();
@@ -50,7 +52,7 @@ public abstract class AbstractMapStreamSerializer implements StreamSerializer<Ma
         int size = in.readInt();
         Map result = null;
         if (size > NULL_ARRAY_LENGTH) {
-            result = createMap(size);
+            result = createMap(in, size);
             for (int i = 0; i < size; i++) {
                 result.put(in.readObject(), in.readObject());
             }
@@ -62,5 +64,13 @@ public abstract class AbstractMapStreamSerializer implements StreamSerializer<Ma
     public void destroy() {
     }
 
-    protected abstract Map createMap(int size);
+    protected abstract Map createMap(ObjectDataInput in, int size)
+            throws IOException;
+
+    /**
+     * Any derived serializer can do any checks desired by overriding this method.
+     */
+    protected void beforeSerializeEntries(ObjectDataOutput out, Map map)
+            throws IOException {
+    }
 }
