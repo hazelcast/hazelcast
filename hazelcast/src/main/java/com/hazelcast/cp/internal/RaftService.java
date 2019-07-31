@@ -163,6 +163,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public void shutdown(boolean terminate) {
+        if (getCpPersistenceService().isEnabled()) {
+            for (RaftNode raftNode : nodes.values()) {
+                raftNode.forceSetTerminatedStatus();
+            }
+        }
     }
 
     @Override

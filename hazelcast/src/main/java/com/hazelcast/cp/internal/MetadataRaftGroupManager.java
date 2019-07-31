@@ -1179,7 +1179,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 discoveryCompleted.set(true);
                 try {
                     boolean marked = metadataStore.tryMarkAPMember();
-                    assert marked;
+                    assert marked || !raftService.getCpPersistenceService().isEnabled();
                 } catch (IOException e) {
                     throw new HazelcastException(e);
                 }
