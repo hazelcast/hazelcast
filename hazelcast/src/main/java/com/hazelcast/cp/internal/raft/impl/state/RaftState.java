@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
+import com.hazelcast.cp.internal.raft.impl.task.InitLeadershipTransferTask;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -129,16 +131,24 @@ public final class RaftState {
 
     /**
      * Candidate state maintained during pre-voting,
-     * becomes null when pre-voting ends by one of {@link #toCandidate()}, {@link #toLeader()} or {@link #toFollower(int)}.
+     * becomes null when pre-voting ends by one of {@link #toCandidate(boolean)}, {@link #toLeader()} or {@link #toFollower(int)}.
      */
     private CandidateState preCandidateState;
 
     /**
      * Candidate state maintained during leader election,
-     * initialized when this node becomes candidate via {@link #toCandidate()}
+     * initialized when this node becomes candidate via {@link #toCandidate(boolean)} )}
      * and becomes null when voting ends by one of {@link #toLeader()} or {@link #toFollower(int)}.
      */
     private CandidateState candidateState;
+
+    /**
+     * State maintained by the current leader during leadership transfer.
+     * Initialized when the leadership transfer process is started via
+     * {@link InitLeadershipTransferTask} and cleared when the local Raft node
+     * switches to a new term or the leadership transfer process times out.
+     */
+    private LeadershipTransferState leadershipTransferState;
 
     private RaftState(CPGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints, int logCapacity,
                       RaftStateStore store) {
@@ -277,7 +287,7 @@ public final class RaftState {
     }
 
     /**
-     * TODO: javadoc
+     * Returns the state store that persists changes on this Raft state
      */
     public RaftStateStore stateStore() {
         return store;
@@ -296,6 +306,20 @@ public final class RaftState {
      */
     public RaftEndpoint votedFor() {
         return votedFor;
+    }
+
+    /**
+     * Initializes the Raft state by initializing the state store
+     * and persisting the initial member list
+     *
+     * @see RaftStateStore#open()
+     * @see RaftStateStore#persistInitialMembers(RaftEndpoint, Collection)
+     *
+     * @throws IOException if an IO error occurs inside the state store
+     */
+    public void init() throws IOException {
+        store.open();
+        store.persistInitialMembers(localEndpoint, initialMembers);
     }
 
     /**
@@ -381,6 +405,10 @@ public final class RaftState {
         preCandidateState = null;
         leaderState = null;
         candidateState = null;
+        if (leadershipTransferState != null) {
+            assert leadershipTransferState.term() < term;
+            completeLeadershipTransfer(null);
+        }
         setTerm(term);
         persistTerm();
     }
@@ -391,7 +419,7 @@ public final class RaftState {
      *
      * @return vote request to sent to other members during leader election
      */
-    public VoteRequest toCandidate() {
+    public VoteRequest toCandidate(boolean disruptive) {
         role = RaftRole.CANDIDATE;
         preCandidateState = null;
         leaderState = null;
@@ -401,7 +429,7 @@ public final class RaftState {
         persistVote(term, localEndpoint);
         // no need to call persistTerm() since it is called in persistVote()
 
-        return new VoteRequest(localEndpoint, term, log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex());
+        return new VoteRequest(localEndpoint, term, log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex(), disruptive);
     }
 
     private void setTerm(int newTerm) {
@@ -528,16 +556,38 @@ public final class RaftState {
         }
     }
 
-    private void persistInitialMembers() {
-        try {
-            store.persistInitialMembers(localEndpoint, initialMembers);
-        } catch (IOException e) {
-            throw new HazelcastException(e);
+    /**
+     * Initializes the leadership transfer state, and returns {@code true}
+     * if the leadership transfer is triggered for the first time
+     * and returns {@code false} if there is an ongoing leadership transfer
+     * process.
+     *
+     * @return true if the leadership transfer is triggered for the first time,
+     *         false if there is an ongoing leadership transfer
+     */
+    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, SimpleCompletableFuture resultFuture) {
+        if (leadershipTransferState == null) {
+            leadershipTransferState = new LeadershipTransferState(term, targetEndpoint, resultFuture);
+            return true;
         }
+
+        leadershipTransferState.notify(targetEndpoint, resultFuture);
+        return false;
     }
 
-    public void init() throws IOException {
-        store.open();
-        persistInitialMembers();
+    /**
+     * Completes the current leadership transfer state with the given result
+     * and clears the state
+     */
+    public void completeLeadershipTransfer(Object result) {
+        leadershipTransferState.complete(result);
+        leadershipTransferState = null;
+    }
+
+    /**
+     * Returns the leadership transfer state
+     */
+    public LeadershipTransferState leadershipTransferState() {
+        return leadershipTransferState;
     }
 }

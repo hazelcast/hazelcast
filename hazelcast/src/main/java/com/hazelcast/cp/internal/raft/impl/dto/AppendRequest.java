@@ -53,7 +53,6 @@ public class AppendRequest implements IdentifiedDataSerializable {
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
             LogEntry[] entries, long queryRound) {
-        this.term = term;
         this.leader = leader;
         this.term = term;
         this.prevLogTerm = prevLogTerm;

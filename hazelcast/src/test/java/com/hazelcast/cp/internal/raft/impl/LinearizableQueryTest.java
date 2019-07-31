@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -25,6 +24,8 @@ import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.QueryRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
+import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,7 +40,6 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderQueryRound;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -172,7 +172,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
     @Test(timeout = 300_000)
     public void when_multipleQueryLimitIsReachedBeforeHeartbeatAcks_then_noNewQueryIsAccepted() throws Exception {
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setUncommittedEntryCountToRejectNewAppends(1);
-        group = newGroupWithService(5, config, true);
+        group = new LocalRaftGroupBuilder(5, config).setAppendNopEntryOnLeaderElection(true).build();
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -211,7 +211,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (int ix : split) {
-                Endpoint newLeader = getLeaderMember(group.getNode(ix));
+                RaftEndpoint newLeader = getLeaderMember(group.getNode(ix));
                 assertNotNull(newLeader);
                 assertNotEquals(oldLeader.getLocalMember(), newLeader);
             }
@@ -232,7 +232,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
     }
 
     private LocalRaftGroup newGroup() {
-        return newGroupWithService(5, new RaftAlgorithmConfig(), true);
+        return new LocalRaftGroupBuilder(5).setAppendNopEntryOnLeaderElection(true).build();
     }
 
 }

@@ -16,36 +16,37 @@
 
 package com.hazelcast.cp.internal.persistence;
 
-import com.hazelcast.cp.CPMember;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
+import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Used when CP Subsystem works transiently (its state is not persisted).
  */
-public final class NopCPMemberMetadataStore implements CPMemberMetadataStore {
+public final class NopCPPersistenceService implements CPPersistenceService {
 
-    public static final CPMemberMetadataStore INSTANCE = new NopCPMemberMetadataStore();
-
-    private NopCPMemberMetadataStore() {
-    }
+    public static final CPPersistenceService INSTANCE = new NopCPPersistenceService();
 
     @Override
-    public boolean isMarkedAPMember() {
+    public boolean isEnabled() {
         return false;
     }
 
     @Override
-    public boolean tryMarkAPMember() {
-        return false;
+    public CPMemberMetadataStore getCPMemberMetadataStore() {
+        return NopCPMemberMetadataStore.INSTANCE;
     }
 
     @Override
-    public void persistLocalMember(CPMember member) {
+    public RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure) {
+        return NopRaftStateStore.INSTANCE;
     }
 
     @Override
-    public CPMember readLocalMember(Address address) {
-        return null;
+    public void reset() {
     }
-
 }

@@ -180,4 +180,18 @@ public class RaftUtil {
         };
         return (T) readRaftState(node, task);
     }
+
+    public static long getLeaderQueryRound(final RaftNodeImpl leader) {
+        Callable<Long> task = new Callable<Long>() {
+            @Override
+            public Long call() {
+                LeaderState leaderState = leader.state().leaderState();
+                assertNotNull(leader.getLocalMember() + " has no leader state!", leaderState);
+                return leaderState.queryRound();
+            }
+        };
+
+        return readRaftState(leader, task);
+    }
+
 }

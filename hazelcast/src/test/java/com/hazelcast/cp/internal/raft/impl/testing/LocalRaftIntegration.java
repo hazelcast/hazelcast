@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -273,6 +274,21 @@ public class LocalRaftIntegration implements RaftIntegration {
         }
 
         node.handleInstallSnapshot(alterMessageIfNeeded(request, target));
+        return true;
+    }
+
+    @Override
+    public boolean send(TriggerLeaderElection request, RaftEndpoint target) {
+        assertNotEquals(localEndpoint, target);
+        RaftNodeImpl node = nodes.get(target);
+        if (node == null) {
+            return false;
+        }
+        if (shouldDrop(request, target)) {
+            return true;
+        }
+
+        node.handleTriggerLeaderElection(alterMessageIfNeeded(request, target));
         return true;
     }
 

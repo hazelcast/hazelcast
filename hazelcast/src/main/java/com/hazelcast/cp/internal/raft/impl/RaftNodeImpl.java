@@ -34,6 +34,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.handler.AppendFailureResponseHandlerTask;
@@ -42,6 +43,7 @@ import com.hazelcast.cp.internal.raft.impl.handler.AppendSuccessResponseHandlerT
 import com.hazelcast.cp.internal.raft.impl.handler.InstallSnapshotHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.PreVoteRequestHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.PreVoteResponseHandlerTask;
+import com.hazelcast.cp.internal.raft.impl.handler.TriggerLeaderElectionHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.VoteRequestHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.VoteResponseHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
@@ -55,6 +57,7 @@ import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.task.InitLeadershipTransferTask;
 import com.hazelcast.cp.internal.raft.impl.task.MembershipChangeTask;
 import com.hazelcast.cp.internal.raft.impl.task.PreVoteTask;
 import com.hazelcast.cp.internal.raft.impl.task.QueryTask;
@@ -166,12 +169,19 @@ public final class RaftNodeImpl implements RaftNode {
         this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
     }
 
+    /**
+     * Creates a new Raft node with an empty initial state.
+     */
     public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
                                            RaftAlgorithmConfig config, RaftIntegration integration) {
         return new RaftNodeImpl(groupId, checkNotNull(localMember), checkNotNull(members), NopRaftStateStore.INSTANCE, config,
                 integration);
     }
 
+    /**
+     * Creates a new Raft node with an empty initial state
+     * and a {@link RaftStateStore} to persist Raft state changes
+     */
     public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
                                            RaftAlgorithmConfig config, RaftIntegration integration,
                                            RaftStateStore raftStateStore) {
@@ -179,11 +189,18 @@ public final class RaftNodeImpl implements RaftNode {
                 integration);
     }
 
+    /**
+     * Creates a new Raft node with restored Raft state
+     */
     public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
                                                RaftIntegration integration) {
         return new RaftNodeImpl(groupId, restoredState, NopRaftStateStore.INSTANCE, config, integration);
     }
 
+    /**
+     * Creates a new Raft node with restored Raft state
+     * and a {@link RaftStateStore} to persist Raft state changes
+     */
     public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
                                                RaftIntegration integration, RaftStateStore raftStateStore) {
         return new RaftNodeImpl(groupId, restoredState, raftStateStore, config, integration);
@@ -204,15 +221,15 @@ public final class RaftNodeImpl implements RaftNode {
         return state.localEndpoint();
     }
 
-    // It reads the most recent write to the volatile leader field, however leader might be already changed.
     @Override
     public RaftEndpoint getLeader() {
+        // Reads the most recent write to the volatile leader field, however leader might be already changed.
         return state.leader();
     }
 
-    // It reads the volatile status field
     @Override
     public RaftNodeStatus getStatus() {
+        // Reads the volatile status field
         return status;
     }
 
@@ -332,6 +349,11 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     @Override
+    public void handleTriggerLeaderElection(TriggerLeaderElection request) {
+        execute(new TriggerLeaderElectionHandlerTask(this, request));
+    }
+
+    @Override
     public ICompletableFuture replicate(Object operation) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new ReplicateTask(this, operation, resultFuture));
@@ -360,9 +382,16 @@ public final class RaftNodeImpl implements RaftNode {
         return resultFuture;
     }
 
-    // It reads the volatile status field
+    @Override
+    public ICompletableFuture transferLeadership(RaftEndpoint endpoint) {
+        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+        raftIntegration.execute(new InitLeadershipTransferTask(this, endpoint, resultFuture));
+        return resultFuture;
+    }
+
     @Override
     public boolean isTerminatedOrSteppedDown() {
+        // Reads the volatile status field
         return status == TERMINATED || status == STEPPED_DOWN;
     }
 
@@ -395,8 +424,9 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     /**
-     * Returns true if a new entry with the operation is allowed to be replicated.
-     * This method can be invoked only when the local Raft node is the leader.
+     * Returns true if a new entry with the operation is currently allowed to
+     * be replicated. This method can be invoked only when the local Raft node
+     * is the leader.
      * <p>
      * Replication is not allowed, when;
      * <ul>
@@ -405,7 +435,8 @@ public final class RaftNodeImpl implements RaftNode {
      * See {@link RaftAlgorithmConfig#getUncommittedEntryCountToRejectNewAppends()}.</li>
      * <li>The operation is a {@link RaftGroupCmd} and there's an ongoing membership change in group.</li>
      * <li>The operation is a membership change operation and there's no committed entry in this term yet.
-     * See {@link RaftIntegration#getAppendedEntryOnLeaderElection()} ()}.</li>
+     * See {@link RaftIntegration#getAppendedEntryOnLeaderElection()}.</li>
+     * <li>There is an ongoing leadership transfer.</li>
      * </ul>
      */
     public boolean canReplicateNewEntry(Object operation) {
@@ -437,7 +468,7 @@ public final class RaftNodeImpl implements RaftNode {
             return lastCommittedEntry.term() == state.term();
         }
 
-        return true;
+        return state.leadershipTransferState() == null;
     }
 
     /**
@@ -528,6 +559,10 @@ public final class RaftNodeImpl implements RaftNode {
 
     public void send(AppendFailureResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
+    }
+
+    public void send(TriggerLeaderElection request, RaftEndpoint target) {
+        raftIntegration.send(request, target);
     }
 
     /**
@@ -848,6 +883,7 @@ public final class RaftNodeImpl implements RaftNode {
      * <p>
      * Snapshot is not created if the Raft group is being destroyed.
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private void takeSnapshotIfCommitIndexAdvanced() {
         long commitIndex = state.commitIndex();
         if ((commitIndex - state.log().snapshotIndex()) < commitIndexAdvanceCountToSnapshot) {
@@ -962,6 +998,10 @@ public final class RaftNodeImpl implements RaftNode {
             }
         }
 
+        applyRestoredRaftGroupCommands(snapshot);
+    }
+
+    private void applyRestoredRaftGroupCommands(SnapshotEntry snapshot) {
         // If there is a single Raft group command after the last snapshot,
         // here we cannot know if the that command is committed or not so we
         // just "pre-apply" that command without committing it.

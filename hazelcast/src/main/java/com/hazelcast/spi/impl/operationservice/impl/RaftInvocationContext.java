@@ -77,6 +77,10 @@ public class RaftInvocationContext {
         }
     }
 
+    int getCPGroupPartitionId(CPGroupId groupId) {
+        return raftService.getCPGroupPartitionId(groupId);
+    }
+
     public CPMemberInfo getCPMember(String leaderUuid) {
         if (leaderUuid == null) {
             return null;

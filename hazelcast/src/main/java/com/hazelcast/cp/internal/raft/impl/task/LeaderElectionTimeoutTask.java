@@ -37,6 +37,6 @@ public class LeaderElectionTimeoutTask extends RaftNodeStatusAwareTask implement
             return;
         }
         logger.warning("Leader election for term: " + raftNode.state().term() + " has timed out!");
-        new LeaderElectionTask(raftNode).run();
+        new LeaderElectionTask(raftNode, false).run();
     }
 }

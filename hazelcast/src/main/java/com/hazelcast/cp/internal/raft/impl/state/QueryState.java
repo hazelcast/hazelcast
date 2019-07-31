@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class QueryState {
      * The set of followers acknowledged the leader in the current heartbeat
      * round that is specified by {@link #queryRound}.
      */
-    private final Set<Endpoint> acks = new HashSet<>();
+    private final Set<RaftEndpoint> acks = new HashSet<>();
 
     /**
      * Adds the given query to the collection of queries and returns the number
@@ -102,7 +102,7 @@ public class QueryState {
      * waiting queries to be executed and the {@code queryRound} argument
      * matches to the current query round.
      */
-    public boolean tryAck(long queryRound, Endpoint follower) {
+    public boolean tryAck(long queryRound, RaftEndpoint follower) {
         // If there is no query waiting to be executed or the received ack
         // belongs to an earlier query round, we ignore it.
         if (operations.isEmpty() || this.queryRound > queryRound) {
@@ -118,7 +118,7 @@ public class QueryState {
     /**
      * Returns {@code true} if the given follower is removed from the ack list.
      */
-    public boolean removeAck(Endpoint follower) {
+    public boolean removeAck(RaftEndpoint follower) {
         return acks.remove(follower);
     }
 
@@ -150,7 +150,7 @@ public class QueryState {
         return operations.size() > 0 && majority <= ackCount();
     }
 
-    public boolean isAckNeeded(Endpoint follower, int majority) {
+    public boolean isAckNeeded(RaftEndpoint follower, int majority) {
         return !acks.contains(follower) && ackCount() < majority;
     }
 

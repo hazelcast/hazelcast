@@ -1074,6 +1074,13 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
 
     /**
+     * !!! ONLY FOR INTERNAL USAGE AND TESTING !!!
+     * Enables / disables the linearizable read optimization described in the Raft Dissertation Section 6.4.
+     */
+    public static final HazelcastProperty RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED
+            = new HazelcastProperty("raft.linearizable.read.optimization.enabled", true);
+
+    /**
      * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
      * </p>
      * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.

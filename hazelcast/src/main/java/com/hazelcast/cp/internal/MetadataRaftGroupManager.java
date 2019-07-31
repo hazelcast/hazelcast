@@ -37,6 +37,8 @@ import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -115,9 +117,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
-    private final ConcurrentMap<CPGroupId, CPGroupInfo> groups = new ConcurrentHashMap<>();
+    @Probe
+    private final ConcurrentMap<CPGroupId, CPGroupInfo> groups = new ConcurrentHashMap<CPGroupId, CPGroupInfo>();
     // activeMembers must be an ordered non-null collection
+    @Probe
     private volatile Collection<CPMemberInfo> activeMembers = Collections.emptySet();
+    @Probe
     private volatile long activeMembersCommitIndex;
     private volatile List<CPMemberInfo> initialCPMembers;
     private volatile MembershipChangeSchedule membershipChangeSchedule;
@@ -261,7 +266,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         if (groupId.equals(getMetadataGroupId())) {
             return;
         }
-        if (getMetadataGroupId().seed() != 0
+        if (getMetadataGroupId().getSeed() != 0
             || initializationStatus != MetadataRaftGroupInitStatus.IN_PROGRESS
             || !initializedCPMembers.isEmpty()
             || !groups.isEmpty()) {
@@ -313,6 +318,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         return null;
+    }
+
+    public void rebalanceGroupLeaderships() {
+        if (!isMetadataGroupLeader()) {
+            return;
+        }
+        membershipManager.rebalanceGroupLeaderships();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
@@ -1070,6 +1082,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
         }
 
+        @SuppressWarnings("checkstyle:npathcomplexity")
         @Override
         public void run() {
             state = DiscoveryTaskState.RUNNING;

@@ -78,8 +78,6 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             return;
         }
 
-        RaftLog raftLog = state.log();
-
         // Transform into follower if a newer term is seen or another node wins the election of the current term
         if (req.term() > state.term() || state.role() != FOLLOWER) {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
@@ -92,6 +90,8 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             logger.info("Setting leader: " + req.leader());
             raftNode.leader(req.leader());
         }
+
+        RaftLog raftLog = state.log();
 
         // Verify the last log entry
         if (req.prevLogIndex() > 0) {
