@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.impl.Transaction;
 
 /**
@@ -23,6 +24,7 @@ import com.hazelcast.transaction.impl.Transaction;
  *
  * @param <S> type of the {@link RemoteService}
  */
+@PrivateApi
 public abstract class TransactionalDistributedObject<S extends RemoteService> extends AbstractDistributedObject<S> {
 
     protected final Transaction tx;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.util.Properties;
 
 /**
@@ -26,6 +28,7 @@ import java.util.Properties;
  * <li>reset</li>
  * </ol>
  */
+@PrivateApi
 public interface ManagedService {
 
     /**

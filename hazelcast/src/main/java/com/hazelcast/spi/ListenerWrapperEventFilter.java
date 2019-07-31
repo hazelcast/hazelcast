@@ -16,9 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Contract point for {@link com.hazelcast.spi.EventFilter} instances these wrap listeners.
  */
+@PrivateApi
 public interface ListenerWrapperEventFilter extends EventFilter {
 
     /**

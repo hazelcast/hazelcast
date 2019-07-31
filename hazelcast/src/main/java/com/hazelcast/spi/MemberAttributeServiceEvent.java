@@ -16,12 +16,13 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Set;
 
@@ -30,6 +31,7 @@ import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PU
 /**
  * This service event is fired to inform services about a change in a member's attributes collection
  */
+@PrivateApi
 @SerializableByConvention(PUBLIC_API)
 public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 

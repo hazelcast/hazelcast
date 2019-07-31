@@ -16,11 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Contract point for event listeners to be notified by {@link com.hazelcast.spi.EventService}.
  *
  * @param <S> the type of the {@link com.hazelcast.spi.ManagedService}
  */
+@PrivateApi
 public interface NotifiableEventListener<S> {
 
     /**

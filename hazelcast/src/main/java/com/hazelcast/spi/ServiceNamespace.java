@@ -17,12 +17,14 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * {@code ServiceNamespace} is a namespace to group objects, structures, fragments within a service.
  *
  * @since 3.9
  */
+@PrivateApi
 public interface ServiceNamespace extends DataSerializable {
     /**
      * Name of the service

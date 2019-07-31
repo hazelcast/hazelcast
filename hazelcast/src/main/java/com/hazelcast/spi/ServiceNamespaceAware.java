@@ -16,9 +16,10 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 
 /**
  * An object which is aware of {@link ServiceNamespace} which object itself belongs to.
@@ -30,6 +31,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
  * @see FragmentedMigrationAwareService
  * @since 3.9
  */
+@PrivateApi
 public interface ServiceNamespaceAware {
     /**
      * Returns the {@link ServiceNamespace} which this object belongs to.

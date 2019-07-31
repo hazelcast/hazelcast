@@ -16,9 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Can be implemented by DistributedObject (proxies) to indicate that they want to be initialized.
  */
+@PrivateApi
 public interface InitializingObject {
 
     void initialize();

@@ -18,10 +18,12 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * The result of a Event Registration.
  */
+@PrivateApi
 public interface EventRegistration extends IdentifiedDataSerializable {
 
     /**

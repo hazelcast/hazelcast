@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.MapLoader;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * It also has functionality for scheduling tasks.
  */
+@PrivateApi
 public interface ExecutionService {
 
     /**

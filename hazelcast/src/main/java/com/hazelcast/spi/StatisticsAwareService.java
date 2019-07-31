@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.monitor.LocalInstanceStats;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import java.util.Map;
  *
  * @param <T> type of returned
  */
+@PrivateApi
 public interface StatisticsAwareService<T extends LocalInstanceStats> {
     /**
      * Return the service statistics for the local instance.

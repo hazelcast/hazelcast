@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * An interface that can be implemented by SPI-Services to give them the ability to create proxies to
@@ -24,6 +25,7 @@ import com.hazelcast.core.DistributedObject;
  *
  * @author mdogan 10/31/12
  */
+@PrivateApi
 public interface RemoteService {
 
     /**
