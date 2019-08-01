@@ -80,7 +80,6 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
         LeaderState leaderState = state.leaderState();
         FollowerState followerState = leaderState.getFollowerState(resp.follower());
 
-
         long nextIndex = followerState.nextIndex();
         long matchIndex = followerState.matchIndex();
 

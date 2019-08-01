@@ -70,7 +70,7 @@ public class PreVoteResponseHandlerTask extends AbstractResponseHandlerTask {
 
         if (preCandidateState.isMajorityGranted()) {
             logger.info("We have the majority during pre-vote phase. Let's start real election!");
-            new LeaderElectionTask(raftNode).run();
+            new LeaderElectionTask(raftNode, false).run();
         }
     }
 

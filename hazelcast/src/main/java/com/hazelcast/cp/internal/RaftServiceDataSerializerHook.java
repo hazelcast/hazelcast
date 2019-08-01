@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
 import com.hazelcast.cp.internal.operation.integration.InstallSnapshotOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteResponseOp;
+import com.hazelcast.cp.internal.operation.integration.TriggerLeaderElectionOp;
 import com.hazelcast.cp.internal.operation.integration.VoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.VoteResponseOp;
 import com.hazelcast.cp.internal.raftop.NotifyTermChangeOp;
@@ -112,6 +113,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int CP_GROUP_SUMMARY = 43;
     public static final int GET_LEADERSHIP_GROUPS_OP = 44;
     public static final int TRANSFER_LEADERSHIP_OP = 45;
+    public static final int TRIGGER_LEADER_ELECTION_OP = 46;
 
     @Override
     public int getFactoryId() {
@@ -214,6 +216,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                         return new GetLeadershipGroupsOp();
                     case TRANSFER_LEADERSHIP_OP:
                         return new TransferLeadershipOp();
+                    case TRIGGER_LEADER_ELECTION_OP:
+                        return new TriggerLeaderElectionOp();
                     default:
                         throw new IllegalArgumentException("Undefined type: " + typeId);
                 }

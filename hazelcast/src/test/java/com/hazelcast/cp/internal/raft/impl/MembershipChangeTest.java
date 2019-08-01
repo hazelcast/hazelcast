@@ -39,7 +39,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -69,10 +68,6 @@ import static org.junit.Assert.fail;
 public class MembershipChangeTest extends HazelcastTestSupport {
 
     private LocalRaftGroup group;
-
-    @Before
-    public void init() {
-    }
 
     @After
     public void destroy() {

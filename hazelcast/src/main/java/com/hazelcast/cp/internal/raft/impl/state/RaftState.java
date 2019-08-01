@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -139,6 +140,11 @@ public final class RaftState {
      * and becomes null when voting ends by one of {@link #toLeader()} or {@link #toFollower(int)}.
      */
     private CandidateState candidateState;
+
+    /**
+     * State maintained by the current leader during leadership transfer.
+     */
+    private LeadershipTransferState leadershipTransferState;
 
     private RaftState(CPGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints, int logCapacity,
                       RaftStateStore store) {
@@ -381,6 +387,10 @@ public final class RaftState {
         preCandidateState = null;
         leaderState = null;
         candidateState = null;
+        if (leadershipTransferState != null) {
+            assert leadershipTransferState.term() < term;
+            completeLeadershipTransfer(null);
+        }
         setTerm(term);
         persistTerm();
     }
@@ -391,7 +401,7 @@ public final class RaftState {
      *
      * @return vote request to sent to other members during leader election
      */
-    public VoteRequest toCandidate() {
+    public VoteRequest toCandidate(boolean disruptive) {
         role = RaftRole.CANDIDATE;
         preCandidateState = null;
         leaderState = null;
@@ -401,7 +411,7 @@ public final class RaftState {
         persistVote(term, localEndpoint);
         // no need to call persistTerm() since it is called in persistVote()
 
-        return new VoteRequest(localEndpoint, term, log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex());
+        return new VoteRequest(localEndpoint, term, log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex(), disruptive);
     }
 
     private void setTerm(int newTerm) {
@@ -539,5 +549,24 @@ public final class RaftState {
     public void init() throws IOException {
         store.open();
         persistInitialMembers();
+    }
+
+    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, final SimpleCompletableFuture resultFuture) {
+        if (leadershipTransferState == null) {
+            leadershipTransferState = new LeadershipTransferState(term,targetEndpoint, resultFuture);
+            return true;
+        }
+
+        leadershipTransferState.notify(targetEndpoint, resultFuture);
+        return false;
+    }
+
+    public LeadershipTransferState leadershipTransferState() {
+        return leadershipTransferState;
+    }
+
+    public void completeLeadershipTransfer(Object result) {
+        leadershipTransferState.complete(result);
+        leadershipTransferState = null;
     }
 }

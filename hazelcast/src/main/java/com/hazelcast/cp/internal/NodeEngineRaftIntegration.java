@@ -25,6 +25,7 @@ import com.hazelcast.cp.internal.operation.integration.AsyncRaftOp;
 import com.hazelcast.cp.internal.operation.integration.InstallSnapshotOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteResponseOp;
+import com.hazelcast.cp.internal.operation.integration.TriggerLeaderElectionOp;
 import com.hazelcast.cp.internal.operation.integration.VoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.VoteResponseOp;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
@@ -37,6 +38,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raftop.NotifyTermChangeOp;
@@ -180,6 +182,11 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     @Override
     public boolean send(InstallSnapshot request, RaftEndpoint target) {
         return send(new InstallSnapshotOp(groupId, request), target);
+    }
+
+    @Override
+    public boolean send(TriggerLeaderElection request, RaftEndpoint target) {
+        return send(new TriggerLeaderElectionOp(groupId, request), target);
     }
 
     @Override

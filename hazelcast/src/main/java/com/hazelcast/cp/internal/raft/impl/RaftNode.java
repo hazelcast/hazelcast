@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
@@ -27,6 +28,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 
@@ -145,6 +147,8 @@ public interface RaftNode {
      */
     void handleInstallSnapshot(InstallSnapshot request);
 
+    void handleTriggerLeaderElection(TriggerLeaderElection request);
+
     /**
      * Replicates the given operation to the Raft group.
      * Only the leader can process replicate requests.
@@ -197,9 +201,25 @@ public interface RaftNode {
     ICompletableFuture query(Object operation, QueryPolicy queryPolicy);
 
     /**
-     * TODO:
-     * @param endpoint
-     * @return
+     * Transfers group leadership to the given endpoint, if the local Raft node
+     * is the leader with ACTIVE status and the endpoint is a group member.
+     * <p>
+     * Leadership transfer is considered to be completed when the local Raft
+     * node moves to a term that is bigger than its current term, and there is
+     * no strict guarantee that the given endpoint will be the new leader.
+     * However, it is very likely that the given endpoint will become
+     * the new leader.
+     * <p>
+     * The local Raft node will not replicate any new entry during a leadership
+     * transfer and new calls to the {@link #replicate(Object)} method will
+     * fail with {@link CannotReplicateException}.
+     *
+     * @throws IllegalArgumentException if the endpoint is not a group member
+     * @throws IllegalStateException    if the local Raft node is not leader,
+     *                                  or the Raft node status is not ACTIVE,
+     *                                  or the leader transfer has timed out.
+     *
+     * @return future to get notified about result of the leadership transfer
      */
     ICompletableFuture transferLeadership(RaftEndpoint endpoint);
 }

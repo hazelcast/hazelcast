@@ -35,8 +35,11 @@ import com.hazelcast.cp.internal.raft.impl.state.RaftState;
  */
 public class LeaderElectionTask extends RaftNodeStatusAwareTask implements Runnable {
 
-    public LeaderElectionTask(RaftNodeImpl raftNode) {
+    private boolean disruptive;
+
+    public LeaderElectionTask(RaftNodeImpl raftNode, boolean disruptive) {
         super(raftNode);
+        this.disruptive = disruptive;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class LeaderElectionTask extends RaftNodeStatusAwareTask implements Runna
             return;
         }
 
-        VoteRequest request = state.toCandidate();
+        VoteRequest request = state.toCandidate(disruptive);
         logger.info("Leader election started for term: " + request.term() + ", last log index: " + request.lastLogIndex()
                 + ", last log term: " + request.lastLogTerm());
         raftNode.printMemberState();

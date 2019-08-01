@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,35 +25,30 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * Struct for VoteRequest RPC.
+ * Struct for the leadership transfer logic.
  * <p>
- * See <i>5.2 Leader election</i> section of
- * <i>In Search of an Understandable Consensus Algorithm</i>
- * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
- * <p>
- * Invoked by candidates to gather votes (§5.2).
+ * See <i>4.2.3 Disruptive servers</i> section
+ * of the Raft dissertation.
  */
-public class VoteRequest implements IdentifiedDataSerializable {
+public class TriggerLeaderElection implements IdentifiedDataSerializable {
 
-    private RaftEndpoint candidate;
+    private RaftEndpoint leader;
     private int term;
     private int lastLogTerm;
     private long lastLogIndex;
-    private boolean disruptive;
 
-    public VoteRequest() {
+    public TriggerLeaderElection() {
     }
 
-    public VoteRequest(RaftEndpoint candidate, int term, int lastLogTerm, long lastLogIndex, boolean disruptive) {
+    public TriggerLeaderElection(RaftEndpoint leader, int term, int lastLogTerm, long lastLogIndex) {
+        this.leader = leader;
         this.term = term;
-        this.candidate = candidate;
         this.lastLogTerm = lastLogTerm;
         this.lastLogIndex = lastLogIndex;
-        this.disruptive = disruptive;
     }
 
-    public RaftEndpoint candidate() {
-        return candidate;
+    public RaftEndpoint leader() {
+        return leader;
     }
 
     public int term() {
@@ -68,10 +63,6 @@ public class VoteRequest implements IdentifiedDataSerializable {
         return lastLogIndex;
     }
 
-    public boolean isDisruptive() {
-        return disruptive;
-    }
-
     @Override
     public int getFactoryId() {
         return RaftDataSerializerHook.F_ID;
@@ -79,31 +70,29 @@ public class VoteRequest implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return RaftDataSerializerHook.VOTE_REQUEST;
+        return RaftDataSerializerHook.TRIGGER_LEADER_ELECTION;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(leader);
         out.writeInt(term);
-        out.writeObject(candidate);
         out.writeInt(lastLogTerm);
         out.writeLong(lastLogIndex);
-        out.writeBoolean(disruptive);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        leader = in.readObject();
         term = in.readInt();
-        candidate = in.readObject();
         lastLogTerm = in.readInt();
         lastLogIndex = in.readLong();
-        disruptive = in.readBoolean();
     }
 
     @Override
     public String toString() {
-        return "VoteRequest{" + "candidate=" + candidate + ", term=" + term + ", lastLogTerm=" + lastLogTerm
-                + ", lastLogIndex=" + lastLogIndex + ", disruptive=" + disruptive + '}';
+        return "TriggerLeaderElection{" + "leader=" + leader + ", term=" + term + ", lastLogTerm=" + lastLogTerm
+                + ", lastLogIndex=" + lastLogIndex + '}';
     }
 
 }

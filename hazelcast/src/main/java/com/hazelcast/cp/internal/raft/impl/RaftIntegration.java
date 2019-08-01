@@ -23,6 +23,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
@@ -64,8 +65,8 @@ public interface RaftIntegration {
     boolean isReachable(RaftEndpoint endpoint);
 
     /**
-     * Sends the {@link PreVoteRequest} to target endpoint to be handled by
-     * its {@link RaftNode#handlePreVoteRequest(PreVoteRequest)}.
+     * Sends the given {@link PreVoteRequest} DTO to target endpoint
+     * to be handled by via {@link RaftNode#handlePreVoteRequest(PreVoteRequest)}.
      *
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
@@ -73,8 +74,8 @@ public interface RaftIntegration {
     boolean send(PreVoteRequest request, RaftEndpoint target);
 
     /**
-     * Sends the {@link PreVoteResponse} to target endpoint to be handled by
-     * its {@link RaftNode#handlePreVoteResponse(PreVoteResponse)}.
+     * Sends the given {@link PreVoteResponse} DTO to target endpoint
+     * to be handled via {@link RaftNode#handlePreVoteResponse(PreVoteResponse)}.
      *
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
@@ -82,8 +83,8 @@ public interface RaftIntegration {
     boolean send(PreVoteResponse response, RaftEndpoint target);
 
     /**
-     * Sends the {@link VoteRequest} to target endpoint to be handled by
-     * its {@link RaftNode#handleVoteRequest(VoteRequest)}.
+     * Sends the given {@link VoteRequest} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleVoteRequest(VoteRequest)}.
      *
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
@@ -91,8 +92,8 @@ public interface RaftIntegration {
     boolean send(VoteRequest request, RaftEndpoint target);
 
     /**
-     * Sends the {@link VoteResponse} to target endpoint to be handled by
-     * its {@link RaftNode#handleVoteResponse(VoteResponse)}.
+     * Sends the given {@link VoteResponse} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleVoteResponse(VoteResponse)}.
      *
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
@@ -100,8 +101,8 @@ public interface RaftIntegration {
     boolean send(VoteResponse response, RaftEndpoint target);
 
     /**
-     * Sends the {@link AppendRequest} to target endpoint to be handled by
-     * its {@link RaftNode#handleAppendRequest(AppendRequest)}.
+     * Sends the given {@link AppendRequest} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleAppendRequest(AppendRequest)}.
      *
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
@@ -109,8 +110,8 @@ public interface RaftIntegration {
     boolean send(AppendRequest request, RaftEndpoint target);
 
     /**
-     * Sends the {@link AppendSuccessResponse} to target endpoint to be handled
-     * by its {@link RaftNode#handleAppendResponse(AppendSuccessResponse)}.
+     * Sends the given {@link AppendSuccessResponse} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleAppendResponse(AppendSuccessResponse)}.
      *
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
@@ -118,8 +119,8 @@ public interface RaftIntegration {
     boolean send(AppendSuccessResponse response, RaftEndpoint target);
 
     /**
-     * Sends the {@link AppendFailureResponse} to target endpoint to be handled
-     * by its {@link RaftNode#handleAppendResponse(AppendFailureResponse)}.
+     * Sends the given {@link AppendFailureResponse} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleAppendResponse(AppendFailureResponse)}.
      *
      * @return true if response is sent or scheduled to be sent to target,
      *         false otherwise
@@ -127,13 +128,22 @@ public interface RaftIntegration {
     boolean send(AppendFailureResponse response, RaftEndpoint target);
 
     /**
-     * Sends the {@link InstallSnapshot} to target endpoint to be handled by
-     * its {@link RaftNode#handleInstallSnapshot(InstallSnapshot)}.
+     * Sends the given {@link InstallSnapshot} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleInstallSnapshot(InstallSnapshot)}.
      *
      * @return true if request is sent or scheduled to be sent to target,
      *         false otherwise
      */
     boolean send(InstallSnapshot request, RaftEndpoint target);
+
+    /**
+     * Sends the given {@link TriggerLeaderElection} DTO to target endpoint
+     * to be handled via {@link RaftNode#handleTriggerLeaderElection(TriggerLeaderElection)}.
+     *
+     * @return true if request is sent or scheduled to be sent to target,
+     *         false otherwise
+     */
+    boolean send(TriggerLeaderElection request, RaftEndpoint target);
 
     /**
      * Executes the operation on underlying operation execution mechanism

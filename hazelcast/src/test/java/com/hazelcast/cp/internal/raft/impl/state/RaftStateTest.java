@@ -129,7 +129,7 @@ public class RaftStateTest {
 
     @Test
     public void toFollower_fromCandidate() {
-        state.toCandidate();
+        state.toCandidate(false);
 
         int term = 23;
         state.toFollower(term);
@@ -160,7 +160,7 @@ public class RaftStateTest {
         int term = 23;
         state.toFollower(term);
 
-        state.toCandidate();
+        state.toCandidate(false);
         assertEquals(RaftRole.CANDIDATE, state.role());
         assertNull(state.leaderState());
         assertEquals(term + 1, state.term());
@@ -175,7 +175,7 @@ public class RaftStateTest {
 
     @Test
     public void toLeader_fromCandidate() {
-        state.toCandidate();
+        state.toCandidate(false);
 
         int term = state.term();
         RaftLog log = state.log();

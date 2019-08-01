@@ -34,6 +34,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.handler.AppendFailureResponseHandlerTask;
@@ -42,6 +43,7 @@ import com.hazelcast.cp.internal.raft.impl.handler.AppendSuccessResponseHandlerT
 import com.hazelcast.cp.internal.raft.impl.handler.InstallSnapshotHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.PreVoteRequestHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.PreVoteResponseHandlerTask;
+import com.hazelcast.cp.internal.raft.impl.handler.TriggerLeaderElectionHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.VoteRequestHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.handler.VoteResponseHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
@@ -54,6 +56,7 @@ import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.task.InitLeadershipTransferTask;
 import com.hazelcast.cp.internal.raft.impl.task.MembershipChangeTask;
 import com.hazelcast.cp.internal.raft.impl.task.PreVoteTask;
 import com.hazelcast.cp.internal.raft.impl.task.QueryTask;
@@ -61,7 +64,6 @@ import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.cp.internal.raft.impl.task.ReplicateTask;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
@@ -335,6 +337,11 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     @Override
+    public void handleTriggerLeaderElection(TriggerLeaderElection request) {
+        execute(new TriggerLeaderElectionHandlerTask(this, request));
+    }
+
+    @Override
     public ICompletableFuture replicate(Object operation) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new ReplicateTask(this, operation, resultFuture));
@@ -365,8 +372,9 @@ public final class RaftNodeImpl implements RaftNode {
 
     @Override
     public ICompletableFuture transferLeadership(RaftEndpoint endpoint) {
-        // TODO:
-        return new SimpleCompletedFuture(new UnsupportedOperationException());
+        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+        raftIntegration.execute(new InitLeadershipTransferTask(this, endpoint, resultFuture));
+        return resultFuture;
     }
 
     // It reads the volatile status field
@@ -453,7 +461,7 @@ public final class RaftNodeImpl implements RaftNode {
             return lastCommittedEntry.term() == state.term();
         }
 
-        return true;
+        return state.leadershipTransferState() == null;
     }
 
     /**
@@ -497,6 +505,10 @@ public final class RaftNodeImpl implements RaftNode {
 
     public void send(AppendFailureResponse response, RaftEndpoint target) {
         raftIntegration.send(response, target);
+    }
+
+    public void send(TriggerLeaderElection request, RaftEndpoint target) {
+        raftIntegration.send(request, target);
     }
 
     /**

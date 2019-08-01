@@ -43,6 +43,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
@@ -603,6 +604,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
         if (node != null) {
             node.handleInstallSnapshot(request);
+        }
+    }
+
+    public void handleTriggerLeaderElection(CPGroupId groupId, TriggerLeaderElection request, RaftEndpoint target) {
+        RaftNode node = getOrInitRaftNodeIfTargetLocalCPMember(groupId, request, target);
+        if (node != null) {
+            node.handleTriggerLeaderElection(request);
         }
     }
 
