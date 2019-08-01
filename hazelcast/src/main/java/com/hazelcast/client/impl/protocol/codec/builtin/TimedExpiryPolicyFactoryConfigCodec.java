@@ -38,16 +38,16 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, TimedExpiryPolicyFactoryConfig config) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET, config.getDurationConfig().getDurationAmount());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, config.getExpiryPolicyType().name());
         StringCodec.encode(clientMessage, config.getDurationConfig().getTimeUnit().name());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {

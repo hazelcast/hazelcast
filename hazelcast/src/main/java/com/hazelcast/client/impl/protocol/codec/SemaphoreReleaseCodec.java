@@ -63,13 +63,13 @@ public final class SemaphoreReleaseCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_PERMITS_FIELD_OFFSET, permits);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
     public static SemaphoreReleaseCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.permits = decodeInt(initialFrame.content, REQUEST_PERMITS_FIELD_OFFSET);
@@ -85,13 +85,13 @@ public final class SemaphoreReleaseCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
     public static SemaphoreReleaseCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

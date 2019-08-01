@@ -27,13 +27,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
@@ -53,7 +50,7 @@ public final class MapUUIDLongCodec {
             encodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
             encodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES, entry.getValue());
         }
-        clientMessage.addFrame(frame);
+        clientMessage.add(frame);
     }
 
     public static List<Map.Entry<UUID, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
@@ -62,7 +59,7 @@ public final class MapUUIDLongCodec {
         List<Map.Entry<UUID, Long>> result = new LinkedList<>();
         for (int i = 0; i < itemCount; i++) {
             UUID key = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES);
-            Long value = decodeLong(frame.content, i * i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES);
+            Long value = decodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         return result;

@@ -56,13 +56,13 @@ public final class ClientDeployClassesCodec {
         clientMessage.setOperationName("Client.DeployClasses");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         MapCodec.encode(clientMessage, classDefinitions, StringCodec::encode, ByteArrayCodec::encode);
         return clientMessage;
     }
 
     public static ClientDeployClassesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -78,13 +78,13 @@ public final class ClientDeployClassesCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
     public static ClientDeployClassesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

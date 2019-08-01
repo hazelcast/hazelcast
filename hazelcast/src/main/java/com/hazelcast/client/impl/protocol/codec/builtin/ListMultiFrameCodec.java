@@ -38,17 +38,30 @@ public final class ListMultiFrameCodec {
 
     public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
                                   BiConsumer<ClientMessage, T> encodeFunction) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
         for (T item : collection) {
             encodeFunction.accept(clientMessage, item);
         }
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
+    }
+
+    public static <T> void encodeContainsNullable(ClientMessage clientMessage, Collection<T> collection,
+                                                  BiConsumer<ClientMessage, T> encodeFunction) {
+        clientMessage.add(BEGIN_FRAME);
+        for (T item : collection) {
+            if (item == null) {
+                clientMessage.add(NULL_FRAME);
+            } else {
+                encodeFunction.accept(clientMessage, item);
+            }
+        }
+        clientMessage.add(END_FRAME);
     }
 
     public static <T> void encodeNullable(ClientMessage clientMessage, Collection<T> collection,
                                           BiConsumer<ClientMessage, T> encodeFunction) {
         if (collection == null) {
-            clientMessage.addFrame(NULL_FRAME);
+            clientMessage.add(NULL_FRAME);
         } else {
             encode(clientMessage, collection, encodeFunction);
         }
@@ -66,6 +79,20 @@ public final class ListMultiFrameCodec {
         iterator.next();
         return result;
     }
+
+    public static <T> List<T> decodeContainsNullable(ListIterator<ClientMessage.Frame> iterator,
+                                     Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+        List<T> result = new LinkedList<>();
+        //begin frame, list
+        iterator.next();
+        while (!nextFrameIsDataStructureEndFrame(iterator)) {
+            result.add(nextFrameIsNullEndFrame(iterator) ? null : decodeFunction.apply(iterator));
+        }
+        //end frame, list
+        iterator.next();
+        return result;
+    }
+
 
     public static <T> List<T> decodeNullable(ListIterator<ClientMessage.Frame> iterator,
                                              Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {

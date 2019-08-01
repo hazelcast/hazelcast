@@ -35,16 +35,14 @@ public final class MapStringLongCodec {
 
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<String, Long>> collection) {
         List<Long> valueList = new ArrayList<>(collection.size());
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
         for (Map.Entry<String, Long> entry : collection) {
             StringCodec.encode(clientMessage, entry.getKey());
             valueList.add(entry.getValue());
         }
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
 
-        clientMessage.addFrame(BEGIN_FRAME);
         ListLongCodec.encode(clientMessage, valueList);
-        clientMessage.addFrame(END_FRAME);
     }
 
     public static List<Map.Entry<String, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
@@ -53,7 +51,7 @@ public final class MapStringLongCodec {
 
         List<Map.Entry<String, Long>> result = new ArrayList<>(listK.size());
         for (int i = 0; i < listK.size(); i++) {
-            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(0)));
+            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(i)));
         }
         return result;
     }

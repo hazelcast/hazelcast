@@ -121,7 +121,7 @@ public final class ClientAuthenticationCodec {
         encodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET, isOwnerConnection);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, username);
         StringCodec.encode(clientMessage, password);
         CodecUtil.encodeNullable(clientMessage, uuid, StringCodec::encode);
@@ -135,7 +135,7 @@ public final class ClientAuthenticationCodec {
     }
 
     public static ClientAuthenticationCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.isOwnerConnection = decodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET);
@@ -209,7 +209,7 @@ public final class ClientAuthenticationCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeByte(initialFrame.content, RESPONSE_STATUS_FIELD_OFFSET, status);
         encodeByte(initialFrame.content, RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
@@ -224,7 +224,7 @@ public final class ClientAuthenticationCodec {
     }
 
     public static ClientAuthenticationCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.status = decodeByte(initialFrame.content, RESPONSE_STATUS_FIELD_OFFSET);

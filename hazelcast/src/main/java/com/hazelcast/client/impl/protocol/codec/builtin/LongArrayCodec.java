@@ -33,14 +33,14 @@ public final class LongArrayCodec {
         for (int i = 0; i < itemCount; i++) {
             encodeLong(frame.content, i * LONG_SIZE_IN_BYTES, array[i]);
         }
-        clientMessage.addFrame(frame);
+        clientMessage.add(frame);
     }
 
     public static long[] decode(ClientMessage.Frame frame) {
         int itemCount = frame.content.length / LONG_SIZE_IN_BYTES;
         long[] result = new long[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            decodeLong(frame.content, i * LONG_SIZE_IN_BYTES);
+            result[i] = decodeLong(frame.content, i * LONG_SIZE_IN_BYTES);
         }
         return result;
     }

@@ -49,7 +49,7 @@ public final class MapIntegerLongCodec {
             encodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
             encodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, entry.getValue());
         }
-        clientMessage.addFrame(frame);
+        clientMessage.add(frame);
     }
 
     public static List<Map.Entry<Integer, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
@@ -58,7 +58,7 @@ public final class MapIntegerLongCodec {
         List<Map.Entry<Integer, Long>> result = new LinkedList<>();
         for (int i = 0; i < itemCount; i++) {
             int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
-            long value = decodeLong(frame.content, i * i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
+            long value = decodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         return result;

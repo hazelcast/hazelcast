@@ -69,12 +69,12 @@ public final class ClientAddMembershipListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         return clientMessage;
     }
 
     public static ClientAddMembershipListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
@@ -94,14 +94,14 @@ public final class ClientAddMembershipListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     public static ClientAddMembershipListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
@@ -115,7 +115,7 @@ public final class ClientAddMembershipListenerCodec {
         initialFrame.flags |= ClientMessage.IS_EVENT;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET, eventType);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         MemberCodec.encode(clientMessage, member);
         return clientMessage;
     }
@@ -124,7 +124,7 @@ public final class ClientAddMembershipListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_LIST_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         ListMultiFrameCodec.encode(clientMessage, members, MemberCodec::encode);
         return clientMessage;
     }
@@ -134,7 +134,7 @@ public final class ClientAddMembershipListenerCodec {
         initialFrame.flags |= ClientMessage.IS_EVENT;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET, operationType);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         MemberCodec.encode(clientMessage, member);
         ListMultiFrameCodec.encode(clientMessage, members, MemberCodec::encode);
         StringCodec.encode(clientMessage, key);
@@ -146,7 +146,7 @@ public final class ClientAddMembershipListenerCodec {
 
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
-            ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+            ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
             if (messageType == EVENT_MEMBER_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int eventType = decodeInt(initialFrame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET);

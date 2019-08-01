@@ -41,15 +41,15 @@ public final class EventJournalConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, EventJournalConfig eventJournalConfig) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_OFFSET, eventJournalConfig.isEnabled());
         encodeInt(initialFrame.content, CAPACITY_OFFSET, eventJournalConfig.getCapacity());
         encodeInt(initialFrame.content, TTL_OFFSET, eventJournalConfig.getTimeToLiveSeconds());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
 
     }
 

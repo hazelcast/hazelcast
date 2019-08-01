@@ -55,7 +55,7 @@ public final class ClientMessageSplitter {
         }
         long fragmentId = FRAGMENT_ID_SEQUENCE.next();
         LinkedList<ClientMessage> fragments = new LinkedList<>();
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
 
         ReadState state = ReadState.BEGINNING;
         int length = 0;
@@ -70,7 +70,7 @@ public final class ClientMessageSplitter {
                     fragments.add(fragment);
                 }
                 fragment = createFragment(fragmentId);
-                fragment.addFrame(frame);
+                fragment.add(frame);
                 fragments.add(fragment);
                 state = ReadState.BEGINNING;
                 length = 0;
@@ -78,7 +78,7 @@ public final class ClientMessageSplitter {
                 if (state == ReadState.BEGINNING) {
                     fragment = createFragment(fragmentId);
                 }
-                fragment.addFrame(frame);
+                fragment.add(frame);
                 state = ReadState.MIDDLE;
             } else {
                 assert state == ReadState.MIDDLE;
@@ -91,8 +91,8 @@ public final class ClientMessageSplitter {
         if (state == ReadState.MIDDLE) {
             fragments.add(fragment);
         }
-        fragments.getFirst().getFrames().getFirst().flags |= BEGIN_FRAGMENT;
-        fragments.getLast().getFrames().getFirst().flags |= END_FRAGMENT;
+        fragments.getFirst().getFirst().flags |= BEGIN_FRAGMENT;
+        fragments.getLast().getFirst().flags |= END_FRAGMENT;
         return fragments;
     }
 
@@ -101,7 +101,7 @@ public final class ClientMessageSplitter {
         fragment = ClientMessage.createForEncode();
         ClientMessage.Frame frame = new ClientMessage.Frame(new byte[Bits.LONG_SIZE_IN_BYTES]);
         Bits.writeLongL(frame.content, ClientMessage.FRAGMENTATION_ID_OFFSET, fragmentId);
-        fragment.addFrame(frame);
+        fragment.add(frame);
         return fragment;
     }
 }

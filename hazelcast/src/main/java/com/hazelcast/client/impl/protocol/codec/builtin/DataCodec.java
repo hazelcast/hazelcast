@@ -28,7 +28,7 @@ public final class DataCodec {
     }
 
     public static void encode(ClientMessage clientMessage, Data data) {
-        clientMessage.addFrame(new ClientMessage.Frame(data.toByteArray()));
+        clientMessage.add(new ClientMessage.Frame(data.toByteArray()));
     }
 
     public static Data decode(ClientMessage.Frame frame) {

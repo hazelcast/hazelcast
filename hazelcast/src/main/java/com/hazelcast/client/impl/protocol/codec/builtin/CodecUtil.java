@@ -37,7 +37,7 @@ public final class CodecUtil {
 
     public static <T> void encodeNullable(ClientMessage clientMessage, T value, BiConsumer<ClientMessage, T> encode) {
         if (value == null) {
-            clientMessage.addFrame(NULL_FRAME);
+            clientMessage.add(NULL_FRAME);
         } else {
             encode.accept(clientMessage, value);
         }

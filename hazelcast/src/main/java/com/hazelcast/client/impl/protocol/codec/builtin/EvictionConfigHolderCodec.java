@@ -39,18 +39,18 @@ public final class EvictionConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, EvictionConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, SIZE_OFFSET, configHolder.getSize());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, configHolder.getMaxSizePolicy());
         StringCodec.encode(clientMessage, configHolder.getEvictionPolicy());
         encodeNullable(clientMessage, configHolder.getComparatorClassName(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getComparator(), DataCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static EvictionConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {

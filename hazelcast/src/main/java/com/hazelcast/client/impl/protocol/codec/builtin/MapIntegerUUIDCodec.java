@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -29,13 +28,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
 public final class MapIntegerUUIDCodec {
@@ -54,7 +50,7 @@ public final class MapIntegerUUIDCodec {
             encodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
             encodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, entry.getValue());
         }
-        clientMessage.addFrame(frame);
+        clientMessage.add(frame);
     }
 
     public static List<Map.Entry<Integer, UUID>> decode(ListIterator<ClientMessage.Frame> iterator) {
@@ -63,7 +59,7 @@ public final class MapIntegerUUIDCodec {
         List<Map.Entry<Integer, UUID>> result = new LinkedList<>();
         for (int i = 0; i < itemCount; i++) {
             int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
-            UUID value = decodeUUID(frame.content, i * i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
+            UUID value = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         return result;

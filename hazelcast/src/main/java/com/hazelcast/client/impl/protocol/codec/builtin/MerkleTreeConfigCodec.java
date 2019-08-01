@@ -40,14 +40,14 @@ public final class MerkleTreeConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, MerkleTreeConfig merkleTreeConfig) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_OFFSET, merkleTreeConfig.isEnabled());
         encodeInt(initialFrame.content, DEPTH_OFFSET, merkleTreeConfig.getDepth());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
 
     }
 

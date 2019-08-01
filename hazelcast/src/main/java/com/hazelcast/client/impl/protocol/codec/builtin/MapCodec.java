@@ -41,24 +41,24 @@ public final class MapCodec {
     public static <K, V> void encode(ClientMessage clientMessage, Collection<Map.Entry<K, V>> collection,
                                      BiConsumer<ClientMessage, K> encodeKeyFunc,
                                      BiConsumer<ClientMessage, V> encodeValueFunc) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
         for (Map.Entry<K, V> entry : collection) {
             encodeKeyFunc.accept(clientMessage, entry.getKey());
         }
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
 
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
         for (Map.Entry<K, V> entry : collection) {
             encodeValueFunc.accept(clientMessage, entry.getValue());
         }
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static <K, V> void encodeNullable(ClientMessage clientMessage, Collection<Map.Entry<K, V>> collection,
                                              BiConsumer<ClientMessage, K> encodeKeyFunc,
                                              BiConsumer<ClientMessage, V> encodeValueFunc) {
         if (collection == null) {
-            clientMessage.addFrame(NULL_FRAME);
+            clientMessage.add(NULL_FRAME);
         } else {
             encode(clientMessage, collection, encodeKeyFunc, encodeValueFunc);
         }
@@ -78,7 +78,7 @@ public final class MapCodec {
 
         List<Map.Entry<K, V>> result = new ArrayList<>(listK.size());
         for (int i = 0; i < listK.size(); i++) {
-            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(0)));
+            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(i)));
         }
         return result;
     }
@@ -97,7 +97,7 @@ public final class MapCodec {
 
         Map<K, V> result = new HashMap<>(listK.size());
         for (int i = 0; i < listK.size(); i++) {
-            result.put(listK.get(i), listV.get(0));
+            result.put(listK.get(i), listV.get(i));
         }
         return result;
     }

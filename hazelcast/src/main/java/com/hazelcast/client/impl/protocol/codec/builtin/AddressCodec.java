@@ -38,12 +38,12 @@ public final class AddressCodec {
     }
 
     public static void encode(ClientMessage clientMessage, Address address) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, PORT_OFFSET, address.getPort());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, address.getHost());
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static Address decode(ListIterator<ClientMessage.Frame> iterator) {

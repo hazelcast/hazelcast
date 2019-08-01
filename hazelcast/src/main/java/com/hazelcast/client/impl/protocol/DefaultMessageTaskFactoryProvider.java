@@ -1319,7 +1319,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.map.MapEntriesWithPagingPredicateMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec.REQUEST_MESSAGE_TYPE] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask(clientMessage, node, connection);
             }
@@ -2126,7 +2126,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
-
 
 
         factories[com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec.REQUEST_MESSAGE_TYPE] = new MessageTaskFactory() {

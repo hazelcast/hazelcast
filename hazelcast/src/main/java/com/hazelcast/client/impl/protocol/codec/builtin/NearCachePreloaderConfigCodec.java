@@ -40,17 +40,17 @@ public final class NearCachePreloaderConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, NearCachePreloaderConfig config) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
         encodeInt(initialFrame.content, STORE_INITIAL_DELAY_SECONDS_OFFSET, config.getStoreInitialDelaySeconds());
         encodeInt(initialFrame.content, STORE_INTERVAL_SECONDS_OFFSET, config.getStoreIntervalSeconds());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, config.getDirectory());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static NearCachePreloaderConfig decode(ListIterator<ClientMessage.Frame> iterator) {

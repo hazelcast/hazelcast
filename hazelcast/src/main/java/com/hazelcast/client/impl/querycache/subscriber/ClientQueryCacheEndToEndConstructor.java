@@ -28,6 +28,10 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructo
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Client-side implementation of {@code QueryCacheEndToEndConstructor}.
  *
@@ -46,7 +50,15 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage);
 
-        prepopulate(queryCache, response, info.isIncludeValue());
+        if (info.isIncludeValue()) {
+            Collection<Map.Entry<Data, Data>> result =
+                    ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response).response;
+            prepopulate(queryCache, result);
+        } else {
+            List<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
+            prepopulate(queryCache, result);
+        }
+
 
         if (info.isPopulate()) {
             madePublishable(info.getMapName(), info.getCacheId());
@@ -76,17 +88,23 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         context.getInvokerWrapper().invokeOnAllPartitions(request);
     }
 
-    private static void prepopulate(InternalQueryCache queryCache, ClientMessage clientMessage, boolean includeValue) {
-//        int responseSize = clientMessage.getInt();
-//        for (int responseIndex = 0; responseIndex < responseSize; ++responseIndex) {
-//            if (queryCache.reachedMaxCapacity()) {
-//                break;
-//            }
-//
-//            Data dataKey = clientMessage.getData();
-//            Data dataValue = includeValue ? clientMessage.getData() : null;
-//
-//            queryCache.prepopulate(dataKey, dataValue);
-//        }
+    private static void prepopulate(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {
+        for (Map.Entry<Data, Data> entry : result) {
+            if (queryCache.reachedMaxCapacity()) {
+                break;
+            }
+
+            queryCache.prepopulate(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private static void prepopulate(InternalQueryCache queryCache, List<Data> result) {
+        for (Data key : result) {
+            if (queryCache.reachedMaxCapacity()) {
+                break;
+            }
+
+            queryCache.prepopulate(key, null);
+        }
     }
 }

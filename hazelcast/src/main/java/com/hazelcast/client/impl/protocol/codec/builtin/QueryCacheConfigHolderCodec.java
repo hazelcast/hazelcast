@@ -48,7 +48,7 @@ public final class QueryCacheConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, QueryCacheConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, BATCH_SIZE_OFFSET, configHolder.getBatchSize());
@@ -57,7 +57,7 @@ public final class QueryCacheConfigHolderCodec {
         encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
         encodeBoolean(initialFrame.content, POPULATE_OFFSET, configHolder.isPopulate());
         encodeBoolean(initialFrame.content, COALESCE_OFFSET, configHolder.isCoalesce());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, configHolder.getInMemoryFormat());
         StringCodec.encode(clientMessage, configHolder.getName());
@@ -66,7 +66,7 @@ public final class QueryCacheConfigHolderCodec {
         ListMultiFrameCodec.encodeNullable(clientMessage, configHolder.getListenerConfigs(), ListenerConfigHolderCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, configHolder.getIndexConfigs(), MapIndexConfigCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static QueryCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
@@ -85,8 +85,8 @@ public final class QueryCacheConfigHolderCodec {
         String name = StringCodec.decode(iterator);
         PredicateConfigHolder predicateConfigHolder = PredicateConfigHolderCodec.decode(iterator);
         EvictionConfigHolder evictionConfigHolder = EvictionConfigHolderCodec.decode(iterator);
-        List<ListenerConfigHolder> listenerConfigs = ListMultiFrameCodec.decode(iterator, ListenerConfigHolderCodec::decode);
-        List<MapIndexConfig> indexConfigs = ListMultiFrameCodec.decode(iterator, MapIndexConfigCodec::decode);
+        List<ListenerConfigHolder> listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
+        List<MapIndexConfig> indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapIndexConfigCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

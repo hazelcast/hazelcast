@@ -229,7 +229,6 @@
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
-<!--                                    <include>com.hazelcast:hazelcast-client-protocol</include>-->
                                 </includes>
                             </artifactSet>
                             <relocations>

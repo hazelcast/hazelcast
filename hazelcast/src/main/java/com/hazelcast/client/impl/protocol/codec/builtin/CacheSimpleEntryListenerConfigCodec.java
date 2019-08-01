@@ -39,17 +39,17 @@ public final class CacheSimpleEntryListenerConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, CacheSimpleEntryListenerConfig config) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET, config.isOldValueRequired());
         encodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET, config.isSynchronous());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeNullable(clientMessage, config.getCacheEntryListenerFactory(), StringCodec::encode);
         encodeNullable(clientMessage, config.getCacheEntryEventFilterFactory(), StringCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static CacheSimpleEntryListenerConfig decode(ListIterator<ClientMessage.Frame> iterator) {

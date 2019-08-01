@@ -46,7 +46,7 @@ public final class SimpleEntryViewCodec {
     }
 
     public static void encode(ClientMessage clientMessage, SimpleEntryView<Data, Data> entryView) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, COST_OFFSET, entryView.getCost());
@@ -59,12 +59,12 @@ public final class SimpleEntryViewCodec {
         encodeLong(initialFrame.content, VERSION_OFFSET, entryView.getVersion());
         encodeLong(initialFrame.content, TTL_OFFSET, entryView.getTtl());
         encodeLong(initialFrame.content, MAX_IDLE_OFFSET, entryView.getMaxIdle());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         DataCodec.encode(clientMessage, entryView.getKey());
         DataCodec.encode(clientMessage, entryView.getValue());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static SimpleEntryView<Data, Data> decode(ListIterator<ClientMessage.Frame> iterator) {

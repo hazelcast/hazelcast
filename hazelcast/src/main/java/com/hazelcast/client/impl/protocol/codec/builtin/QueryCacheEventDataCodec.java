@@ -45,18 +45,18 @@ public final class QueryCacheEventDataCodec {
     }
 
     public static void encode(ClientMessage clientMessage, QueryCacheEventData eventData) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, SEQUENCE_OFFSET, eventData.getSequence());
         encodeInt(initialFrame.content, EVENT_TYPE_OFFSET, eventData.getEventType());
         encodeInt(initialFrame.content, PARTITION_ID_OFFSET, eventData.getPartitionId());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
         encodeNullable(clientMessage, eventData.getDataNewValue(), DataCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static QueryCacheEventData decode(ListIterator<ClientMessage.Frame> iterator) {

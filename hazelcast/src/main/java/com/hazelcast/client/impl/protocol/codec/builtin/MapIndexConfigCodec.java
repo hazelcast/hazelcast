@@ -36,15 +36,15 @@ public final class MapIndexConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, MapIndexConfig config) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, config.getAttribute());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {

@@ -78,7 +78,7 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
         DataCodec.encode(clientMessage, predicate);
@@ -86,7 +86,7 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
     }
 
     public static ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
@@ -109,14 +109,14 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     public static ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
@@ -131,7 +131,7 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_ENTRY_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET, eventType);
         encodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET, numberOfAffectedEntries);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);
@@ -144,7 +144,7 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
 
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
-            ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+            ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
             if (messageType == EVENT_ENTRY_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int eventType = decodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET);

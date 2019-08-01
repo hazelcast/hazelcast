@@ -40,17 +40,17 @@ public final class MemberCodec {
     }
 
     public static void encode(ClientMessage clientMessage, Member member) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         FixedSizeTypesCodec.encodeBoolean(initialFrame.content, LITE_MEMBER_OFFSET, member.isLiteMember());
         FixedSizeTypesCodec.encodeUUID(initialFrame.content, UUID_OFFSET, UUID.fromString(member.getUuid()));
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         AddressCodec.encode(clientMessage, member.getAddress());
         MapCodec.encode(clientMessage, member.getAttributes(), StringCodec::encode, StringCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static Member decode(ListIterator<ClientMessage.Frame> iterator) {

@@ -46,7 +46,7 @@ public final class NearCacheConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, NearCacheConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, SERIALIZE_KEYS_OFFSET, configHolder.isSerializeKeys());
@@ -54,7 +54,7 @@ public final class NearCacheConfigHolderCodec {
         encodeInt(initialFrame.content, TIME_TO_LIVE_SECONDS_OFFSET, configHolder.getTimeToLiveSeconds());
         encodeInt(initialFrame.content, MAX_IDLE_SECONDS_OFFSET, configHolder.getMaxIdleSeconds());
         encodeBoolean(initialFrame.content, CACHE_LOCAL_ENTRIES_OFFSET, configHolder.isCacheLocalEntries());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, configHolder.getName());
         StringCodec.encode(clientMessage, configHolder.getInMemoryFormat());
@@ -62,7 +62,7 @@ public final class NearCacheConfigHolderCodec {
         StringCodec.encode(clientMessage, configHolder.getLocalUpdatePolicy());
         encodeNullable(clientMessage, configHolder.getPreloaderConfig(), NearCachePreloaderConfigCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static NearCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {

@@ -100,7 +100,7 @@ public final class ContinuousQueryPublisherCreateCodec {
         encodeLong(initialFrame.content, REQUEST_DELAY_SECONDS_FIELD_OFFSET, delaySeconds);
         encodeBoolean(initialFrame.content, REQUEST_POPULATE_FIELD_OFFSET, populate);
         encodeBoolean(initialFrame.content, REQUEST_COALESCE_FIELD_OFFSET, coalesce);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
         StringCodec.encode(clientMessage, cacheName);
         DataCodec.encode(clientMessage, predicate);
@@ -108,7 +108,7 @@ public final class ContinuousQueryPublisherCreateCodec {
     }
 
     public static ContinuousQueryPublisherCreateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.batchSize = decodeInt(initialFrame.content, REQUEST_BATCH_SIZE_FIELD_OFFSET);
@@ -135,14 +135,14 @@ public final class ContinuousQueryPublisherCreateCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encode(clientMessage, response, DataCodec::encode);
         return clientMessage;
     }
 
     public static ContinuousQueryPublisherCreateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

@@ -17,82 +17,51 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
+import com.hazelcast.nio.Bits;
 
-/**
- * ExceptionResultParameters
- */
-@SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", justification = "fields may be needed for diagnostic")
+import java.util.List;
+import java.util.ListIterator;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+
 public final class ErrorCodec {
 
-    public static final int EXCEPTION = 109;
-    /**
-     * ClientMessageType of this message
-     */
-
-    public int errorCode;
-    public String className;
-    public String message;
-    public StackTraceElement[] stackTrace;
-    public int causeErrorCode;
-    public String causeClassName;
+    public static final short EXCEPTION = 109;
+    private static final int ERROR_CODE = 0;
+    private static final int INITIAL_FRAME_SIZE = ERROR_CODE + Bits.INT_SIZE_IN_BYTES;
 
     private ErrorCodec() {
     }
 
-    private ErrorCodec(ClientMessage clientMessage) {
-//        errorCode = flyweight.getInt();
-//        className = flyweight.getStringUtf8();
-//        boolean message_isNull = flyweight.getBoolean();
-//        if (!message_isNull) {
-//            message = flyweight.getStringUtf8();
-//        }
-//
-//        int stackTraceCount = flyweight.getInt();
-//        stackTrace = new StackTraceElement[stackTraceCount];
-//        for (int i = 0; i < stackTraceCount; i++) {
-//            stackTrace[i] = StackTraceElementCodec.decode(flyweight);
-//        }
-//
-//        causeErrorCode = flyweight.getInt();
-//        boolean causeClassName_isNull = flyweight.getBoolean();
-//        if (!causeClassName_isNull) {
-//            causeClassName = flyweight.getStringUtf8();
-//        }
+    public static void encode(ClientMessage clientMessage, ErrorHolder errorHolder) {
+        clientMessage.add(BEGIN_FRAME);
+
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        FixedSizeTypesCodec.encodeInt(initialFrame.content, ERROR_CODE, errorHolder.getErrorCode());
+        clientMessage.add(initialFrame);
+
+        StringCodec.encode(clientMessage, errorHolder.getClassName());
+        CodecUtil.encodeNullable(clientMessage, errorHolder.getMessage(), StringCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, errorHolder.getStackTraceElements(), StackTraceElementCodec::encode);
+
+        clientMessage.add(END_FRAME);
     }
 
-    public static ErrorCodec decode(ClientMessage clientMessage) {
-        return new ErrorCodec(clientMessage);
-    }
+    public static ErrorHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+        // begin frame
+        iterator.next();
 
-    public static ClientMessage encode(int errorCode, String className, String message, StackTraceElement[] stackTrace,
-                                       int causeErrorCode, String causeClassName) {
-        throw new RuntimeException("Not implemented yet");
-//        int requiredDataSize = calculateDataSize(errorCode, className, message, stackTrace, causeErrorCode, causeClassName);
-//        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-//        clientMessage.setMessageType(TYPE);
-//        clientMessage.set(errorCode);
-//        clientMessage.set(className);
-//        boolean message_isNull = message == null;
-//        clientMessage.set(message_isNull);
-//        if (!message_isNull) {
-//            clientMessage.set(message);
-//        }
-//
-//        clientMessage.set(stackTrace.length);
-//        for (StackTraceElement stackTraceElement : stackTrace) {
-//            StackTraceElementCodec.encode(stackTraceElement, clientMessage);
-//        }
-//
-//        clientMessage.set(causeErrorCode);
-//
-//        boolean causeClassName_isNull = causeClassName == null;
-//        clientMessage.set(causeClassName_isNull);
-//        if (!causeClassName_isNull) {
-//            clientMessage.set(causeClassName);
-//        }
-//
-//        clientMessage.updateFrameLength();
-//        return clientMessage;
+        ClientMessage.Frame initialFrame = iterator.next();
+        int errorCode = FixedSizeTypesCodec.decodeInt(initialFrame.content, ERROR_CODE);
+
+        String className = StringCodec.decode(iterator);
+        String message = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        List<StackTraceElement> stackTraceElements = ListMultiFrameCodec.decode(iterator, StackTraceElementCodec::decode);
+
+        fastForwardToEndFrame(iterator);
+        return new ErrorHolder(errorCode, className, message, stackTraceElements);
     }
 }

@@ -31,12 +31,12 @@ public final class MapAttributeConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, MapAttributeConfig config) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         StringCodec.encode(clientMessage, config.getName());
         StringCodec.encode(clientMessage, config.getExtractor());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static MapAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {

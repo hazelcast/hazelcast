@@ -19,10 +19,10 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 /**
  * Client Message is the carrier framed data as defined below.
@@ -30,7 +30,8 @@ import java.util.ListIterator;
  * the payload.
  */
 @SuppressWarnings("checkstyle:MagicNumber")
-public final class ClientMessage implements OutboundFrame, Iterable<ClientMessage.Frame> {
+@BinaryInterface
+public final class ClientMessage extends LinkedList<ClientMessage.Frame> implements OutboundFrame {
 
     public static final int TYPE_FIELD_OFFSET = 0;
     public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
@@ -52,12 +53,13 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
     public static final int IS_EVENT = 1 << 9;
 
     //frame length + flags
-    public static final int SIZE_OF_FRAMELENGHT_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
-    public static final Frame NULL_FRAME = new Frame(null, IS_NULL);
-    public static final Frame BEGIN_FRAME = new Frame(null, BEGIN_DATA_STRUCTURE);
-    public static final Frame END_FRAME = new Frame(null, END_DATA_STRUCTURE);
+    public static final int SIZE_OF_FRAME_LENGTH_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
+    public static final Frame NULL_FRAME = new Frame(new byte[0], IS_NULL);
+    public static final Frame BEGIN_FRAME = new Frame(new byte[0], BEGIN_DATA_STRUCTURE);
+    public static final Frame END_FRAME = new Frame(new byte[0], END_DATA_STRUCTURE);
 
-    private LinkedList<Frame> frames;
+    private static final long serialVersionUID = 1L;
+
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
@@ -67,59 +69,47 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
 
     }
 
-    public LinkedList<Frame> getFrames() {
-        return frames;
+    private ClientMessage(LinkedList<Frame> frames) {
+        super(frames);
     }
 
     public static ClientMessage createForEncode() {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.frames = new LinkedList<>();
-        return clientMessage;
+        return new ClientMessage();
     }
 
     public static ClientMessage createForDecode(LinkedList<Frame> frames) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.frames = frames;
-        return clientMessage;
+        return new ClientMessage(frames);
     }
 
     public short getMessageType() {
-        return Bits.readShortL(frames.get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
+        return Bits.readShortL(get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
     public ClientMessage setMessageType(short messageType) {
-        Bits.writeShortL(frames.get(0).content, TYPE_FIELD_OFFSET, messageType);
+        Bits.writeShortL(get(0).content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
     public long getCorrelationId() {
-        return Bits.readLongL(frames.get(0).content, CORRELATION_ID_FIELD_OFFSET);
+        return Bits.readLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setCorrelationId(long correlationId) {
-        Bits.writeLongL(frames.get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+        Bits.writeLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
     public int getPartitionId() {
-        return Bits.readIntL(frames.get(0).content, PARTITION_ID_FIELD_OFFSET);
+        return Bits.readIntL(get(0).content, PARTITION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setPartitionId(int partitionId) {
-        Bits.writeIntL(frames.get(0).content, PARTITION_ID_FIELD_OFFSET, partitionId);
+        Bits.writeIntL(get(0).content, PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
-    public ListIterator<Frame> iterator() {
-        return frames.listIterator();
-    }
-
-    public void addFrame(Frame frame) {
-        frames.add(frame);
-    }
-
     public int getHeaderFlags() {
-        return frames.get(0).flags;
+        return get(0).flags;
     }
 
     public boolean isRetryable() {
@@ -161,7 +151,7 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
 
     public int getFrameLength() {
         int frameLength = 0;
-        for (Frame frame : frames) {
+        for (Frame frame : this) {
             frameLength += frame.getSize();
         }
         return frameLength;
@@ -174,13 +164,13 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientMessage{");
-//        sb.append("connection=").append(connection);
+        sb.append("connection=").append(connection);
         sb.append(", length=").append(getFrameLength());
-//        sb.append(", correlationId=").append(getCorrelationId());
-//        sb.append(", operation=").append(operationName);
-//        sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
-//        sb.append(", isRetryable=").append(isRetryable());
-//        sb.append(", isEvent=").append(isFlagSet(frames.get(0).flags, IS_EVENT));
+        sb.append(", correlationId=").append(getCorrelationId());
+        sb.append(", operation=").append(getOperationName());
+        sb.append(", messageType=").append(getMessageType());
+        sb.append(", isRetryable=").append(isRetryable());
+        sb.append(", isEvent=").append(isFlagSet(get(0).flags, IS_EVENT));
         sb.append('}');
         return sb.toString();
     }
@@ -193,11 +183,10 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-        ClientMessage newMessage = new ClientMessage();
-        newMessage.frames = new LinkedList<>(frames);
+        ClientMessage newMessage = new ClientMessage(this);
 
-        Frame initialFrameCopy = newMessage.frames.get(0).copy();
-        newMessage.frames.set(0, initialFrameCopy);
+        Frame initialFrameCopy = newMessage.get(0).copy();
+        newMessage.set(0, initialFrameCopy);
 
         newMessage.setCorrelationId(correlationId);
 
@@ -220,6 +209,7 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
         }
 
         public Frame(byte[] content, int flags) {
+            assert content != null;
             this.content = content;
             this.flags = flags;
         }
@@ -239,9 +229,9 @@ public final class ClientMessage implements OutboundFrame, Iterable<ClientMessag
 
         public int getSize() {
             if (content == null) {
-                return SIZE_OF_FRAMELENGHT_AND_FLAGS;
+                return SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             } else {
-                return SIZE_OF_FRAMELENGHT_AND_FLAGS + content.length;
+                return SIZE_OF_FRAME_LENGTH_AND_FLAGS + content.length;
             }
         }
     }

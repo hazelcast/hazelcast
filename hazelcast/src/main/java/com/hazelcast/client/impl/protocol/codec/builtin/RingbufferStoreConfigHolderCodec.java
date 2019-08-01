@@ -40,11 +40,11 @@ public final class RingbufferStoreConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, RingbufferStoreConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
@@ -52,7 +52,7 @@ public final class RingbufferStoreConfigHolderCodec {
         encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
         MapCodec.encodeNullable(clientMessage, configHolder.getProperties().entrySet(), StringCodec::encode, StringCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static RingbufferStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {

@@ -59,14 +59,14 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         clientMessage.setOperationName("Cache.FetchNearCacheInvalidationMetadata");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         ListMultiFrameCodec.encode(clientMessage, names, StringCodec::encode);
         AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
     public static CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -93,7 +93,7 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         MapCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, MapIntegerLongCodec::encode);
         MapIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
@@ -101,7 +101,7 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
     }
 
     public static CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

@@ -224,7 +224,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
 
     // dynamically switches between direct processing on io thread and processing on
     // response thread based on if concurrency is detected
-    class DynamicResponseHandler  implements Consumer<ClientMessage> {
+    class DynamicResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
             if (concurrencyDetection.isDetected()) {

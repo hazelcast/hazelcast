@@ -37,16 +37,16 @@ public final class RaftGroupIdCodec {
     }
 
     public static void encode(ClientMessage clientMessage, RaftGroupId groupId) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, SEED_OFFSET, groupId.seed());
         encodeLong(initialFrame.content, COMMIT_INDEX_OFFSET, groupId.id());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, groupId.name());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static RaftGroupId decode(ListIterator<ClientMessage.Frame> iterator) {

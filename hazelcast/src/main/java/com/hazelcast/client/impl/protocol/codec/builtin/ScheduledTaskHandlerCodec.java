@@ -40,17 +40,17 @@ public final class ScheduledTaskHandlerCodec {
     }
 
     public static void encode(ClientMessage clientMessage, ScheduledTaskHandler handler) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, PARTITION_ID_OFFSET, handler.getPartitionId());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, handler.getSchedulerName());
         StringCodec.encode(clientMessage, handler.getTaskName());
         encodeNullable(clientMessage, handler.getAddress(), AddressCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static ScheduledTaskHandler decode(ListIterator<ClientMessage.Frame> iterator) {

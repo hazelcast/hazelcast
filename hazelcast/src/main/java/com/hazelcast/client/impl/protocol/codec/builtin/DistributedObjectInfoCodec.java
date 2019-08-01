@@ -31,12 +31,12 @@ public final class DistributedObjectInfoCodec {
     }
 
     public static void encode(ClientMessage clientMessage, DistributedObjectInfo info) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         StringCodec.encode(clientMessage, info.getServiceName());
         StringCodec.encode(clientMessage, info.getName());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static DistributedObjectInfo decode(ListIterator<ClientMessage.Frame> iterator) {

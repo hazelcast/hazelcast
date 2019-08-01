@@ -116,7 +116,7 @@ public final class ClientAuthenticationCustomCodec {
         encodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET, isOwnerConnection);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         DataCodec.encode(clientMessage, credentials);
         CodecUtil.encodeNullable(clientMessage, uuid, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, ownerUuid, StringCodec::encode);
@@ -129,7 +129,7 @@ public final class ClientAuthenticationCustomCodec {
     }
 
     public static ClientAuthenticationCustomCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.isOwnerConnection = decodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET);
@@ -202,7 +202,7 @@ public final class ClientAuthenticationCustomCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeByte(initialFrame.content, RESPONSE_STATUS_FIELD_OFFSET, status);
         encodeByte(initialFrame.content, RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
@@ -217,7 +217,7 @@ public final class ClientAuthenticationCustomCodec {
     }
 
     public static ClientAuthenticationCustomCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.status = decodeByte(initialFrame.content, RESPONSE_STATUS_FIELD_OFFSET);

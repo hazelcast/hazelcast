@@ -91,13 +91,13 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         encodeLong(initialFrame.content, REQUEST_ID_OFFSET_FIELD_OFFSET, idOffset);
         encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         encodeLong(initialFrame.content, REQUEST_NODE_ID_OFFSET_FIELD_OFFSET, nodeIdOffset);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
     public static DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.prefetchCount = decodeInt(initialFrame.content, REQUEST_PREFETCH_COUNT_FIELD_OFFSET);
@@ -117,13 +117,13 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
     public static DynamicConfigAddFlakeIdGeneratorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

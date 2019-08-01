@@ -43,18 +43,18 @@ public final class ListenerConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, ListenerConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
         encodeBoolean(initialFrame.content, LOCAL_OFFSET, configHolder.isLocal());
         encodeInt(initialFrame.content, LISTENER_TYPE_OFFSET, configHolder.getListenerType());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getListenerImplementation(), DataCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static ListenerConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {

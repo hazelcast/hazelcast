@@ -44,19 +44,19 @@ public final class CacheEventDataCodec {
     }
 
     public static void encode(ClientMessage clientMessage, CacheEventData eventData) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, CACHE_EVENT_TYPE_OFFSET, eventData.getCacheEventType().getType());
         encodeBoolean(initialFrame.content, IS_OLD_VALUE_AVAILABLE_OFFSET, eventData.isOldValueAvailable());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, eventData.getName());
         encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
         encodeNullable(clientMessage, eventData.getDataValue(), DataCodec::encode);
         encodeNullable(clientMessage, eventData.getDataOldValue(), DataCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static CacheEventData decode(ListIterator<ClientMessage.Frame> iterator) {

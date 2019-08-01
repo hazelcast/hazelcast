@@ -41,7 +41,7 @@ public final class ListUUIDCodec {
         for (int i = 0; i < itemCount; i++) {
             encodeUUID(frame.content, i * UUID_SIZE_IN_BYTES, iterator.next());
         }
-        clientMessage.addFrame(frame);
+        clientMessage.add(frame);
     }
 
     public static List<UUID> decode(ListIterator<ClientMessage.Frame> iterator) {

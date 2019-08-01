@@ -61,7 +61,6 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             return;
         }
 
-        //TODO SANCAR wrong usage needs to be fixed before 4.0
         int partitionId = clientMessage.getPartitionId();
         boolean invokedOnPartition = partitionId != -1;
         if (!invokedOnPartition) {

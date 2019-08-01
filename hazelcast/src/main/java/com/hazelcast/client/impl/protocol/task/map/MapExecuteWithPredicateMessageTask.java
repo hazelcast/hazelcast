@@ -68,7 +68,6 @@ public class MapExecuteWithPredicateMessageTask
 
     private Object invokeOnPartition(PartitionPredicate partitionPredicate,
                                      OperationServiceImpl operationService) {
-        //TODO SANCAR wrong usage needs to be fixed before 4.0
         int partitionId = clientMessage.getPartitionId();
         Predicate predicate = partitionPredicate.getTarget();
         OperationFactory factory = createOperationFactory(predicate);

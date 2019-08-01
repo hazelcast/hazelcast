@@ -37,17 +37,17 @@ public final class WanReplicationRefCodec {
     }
 
     public static void encode(ClientMessage clientMessage, WanReplicationRef wanReplicationRef) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET, wanReplicationRef.isRepublishingEnabled());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, wanReplicationRef.getName());
         StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicy());
         ListMultiFrameCodec.encodeNullable(clientMessage, wanReplicationRef.getFilters(), StringCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static WanReplicationRef decode(ListIterator<ClientMessage.Frame> iterator) {

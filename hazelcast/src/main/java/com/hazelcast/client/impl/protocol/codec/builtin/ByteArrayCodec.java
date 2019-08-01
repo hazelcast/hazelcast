@@ -26,7 +26,7 @@ public final class ByteArrayCodec {
     }
 
     public static void encode(ClientMessage clientMessage, byte[] bytes) {
-        clientMessage.addFrame(new ClientMessage.Frame(bytes));
+        clientMessage.add(new ClientMessage.Frame(bytes));
     }
 
     public static byte[] decode(ClientMessage.Frame frame) {

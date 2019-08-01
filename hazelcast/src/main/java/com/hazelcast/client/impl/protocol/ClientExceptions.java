@@ -18,7 +18,8 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.impl.StubAuthenticationException;
-import com.hazelcast.client.impl.protocol.codec.builtin.ErrorCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
+import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
@@ -85,10 +86,10 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -211,43 +212,21 @@ public class ClientExceptions {
     }
 
     public ClientMessage createExceptionMessage(Throwable throwable) {
-        int errorCode = getErrorCode(throwable);
-        String message = throwable.getMessage();
-
-        // Combine the stack traces of causes recursively into one long stack trace.
-        List<StackTraceElement> combinedStackTrace = new ArrayList<StackTraceElement>();
-        Throwable t = throwable;
-        while (t != null) {
-            combinedStackTrace.addAll(Arrays.asList(t.getStackTrace()));
-            t = t.getCause();
-            // add separator, if there is one more cause
-            if (t != null) {
-                // don't rely on Throwable.toString(), which contains the same logic, but rather use our own, as it might be overridden
-                String throwableToString = t.getClass().getName() + (t.getLocalizedMessage() != null ? ": " + t.getLocalizedMessage() : "");
-
-                combinedStackTrace.add(new StackTraceElement(CAUSED_BY_STACKTRACE_MARKER
-                        + " (" + getErrorCode(t) + ") " + throwableToString
-                        + " ------", "", null, -1));
-            }
-        }
-
-        final int causeErrorCode;
-        final String causeClassName;
-
+        List<ErrorHolder> errorHolders = new LinkedList<>();
+        errorHolders.add(convertToErrorHolder(throwable));
         Throwable cause = throwable.getCause();
-        if (cause != null) {
-            causeErrorCode = getErrorCode(cause);
-            causeClassName = cause.getClass().getName();
-        } else {
-            causeErrorCode = ClientProtocolErrorCodes.UNDEFINED;
-            causeClassName = null;
+        while (cause != null) {
+            errorHolders.add(convertToErrorHolder(cause));
+            cause = cause.getCause();
         }
 
-        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[combinedStackTrace.size()]);
-        return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTraceArray,
-                causeErrorCode, causeClassName);
+        return ErrorsCodec.encode(errorHolders);
     }
 
+    private ErrorHolder convertToErrorHolder(Throwable t) {
+        int errorCode = getErrorCode(t);
+        return new ErrorHolder(errorCode, t.getClass().getName(), t.getMessage(), Arrays.asList(t.getStackTrace()));
+    }
 
     public void register(int errorCode, Class clazz) {
         Integer currentCode = classToInt.get(clazz);

@@ -16,16 +16,14 @@
 
 package com.hazelcast.client.impl.querycache;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerRepetitionTask;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerTask;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,9 +42,6 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -128,40 +123,8 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testInvokerWrapper_invokeOnAllPartitions_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
-        ClientMessage request = mock(ClientMessage.class);
-        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
-        context.getInvokerWrapper().invokeOnAllPartitions(request);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testInvokerWrapper_invokeOnTarget_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
-        ClientMessage request = mock(ClientMessage.class);
-        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
-
-        Address address = new Address();
-
-        context.getInvokerWrapper().invokeOnTarget(request, address);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testInvokerWrapper_invokeOnTarget_whenRequestIsNull_thenThrowException() {
-        Address address = new Address();
-
-        context.getInvokerWrapper().invokeOnTarget(null, address);
-    }
-
-    @Test(expected = NullPointerException.class)
     public void testInvokerWrapper_invokeOnTarget_whenAddressIsNull_thenThrowException() {
         context.getInvokerWrapper().invokeOnTarget(new Object(), null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testInvokerWrapper_invoke_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
-        ClientMessage request = mock(ClientMessage.class);
-        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
-
-        context.getInvokerWrapper().invoke(request);
     }
 
     @Test(expected = UnsupportedOperationException.class)

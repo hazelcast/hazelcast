@@ -105,7 +105,7 @@ public class ClientMessageSplitAndBuildTest {
         decoder.src(buffer);
         decoder.onRead();
 
-        assertEquals(clientMessage1.getFrames().size(), resultingMessage.get().getFrames().size());
+        assertEquals(clientMessage1.size(), resultingMessage.get().size());
         assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
     }
 
@@ -144,8 +144,8 @@ public class ClientMessageSplitAndBuildTest {
         ClientMessage actualMessage1 = inputQueue.poll();
         ClientMessage actualMessage2 = inputQueue.poll();
 
-        assertMessageEquals(actualMessage1, clientMessage1);
-        assertMessageEquals(actualMessage2, clientMessage2);
+        assertMessageEquals(clientMessage1, actualMessage1);
+        assertMessageEquals(clientMessage2, actualMessage2);
     }
 
     @Test
@@ -183,12 +183,12 @@ public class ClientMessageSplitAndBuildTest {
         //these flags related to framing and can differ between two semantically equal messages
         int mask = ~(ClientMessage.UNFRAGMENTED_MESSAGE | ClientMessage.FINAL);
 
-        ListIterator<ClientMessage.Frame> actualIterator = actual.iterator();
+        ListIterator<ClientMessage.Frame> actualIterator = actual.listIterator();
         for (ClientMessage.Frame expectedFrame : expected) {
             ClientMessage.Frame actualFrame = actualIterator.next();
             assertEquals(actualFrame.getSize(), expectedFrame.getSize());
             assertEquals(actualFrame.flags & mask, expectedFrame.flags & mask);
-            Assert.assertArrayEquals(actualFrame.content, expectedFrame.content);
+            Assert.assertArrayEquals(expectedFrame.content, actualFrame.content);
         }
     }
 }

@@ -90,7 +90,7 @@ public final class PNCounterAddCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET, delta);
         encodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET, getBeforeUpdate);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         MapStringLongCodec.encode(clientMessage, replicaTimestamps);
         AddressCodec.encode(clientMessage, targetReplica);
@@ -98,7 +98,7 @@ public final class PNCounterAddCodec {
     }
 
     public static PNCounterAddCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.delta = decodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET);
@@ -132,7 +132,7 @@ public final class PNCounterAddCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET, value);
         encodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET, replicaCount);
@@ -141,7 +141,7 @@ public final class PNCounterAddCodec {
     }
 
     public static PNCounterAddCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.iterator();
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.value = decodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET);

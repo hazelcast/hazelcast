@@ -41,14 +41,14 @@ public final class MapStoreConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, MapStoreConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
-        encodeBoolean(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.isWriteCoalescing());
+        encodeBoolean(initialFrame.content, WRITE_COALESCING_OFFSET, configHolder.isWriteCoalescing());
         encodeInt(initialFrame.content, WRITE_DELAY_SECONDS_OFFSET, configHolder.getWriteDelaySeconds());
         encodeInt(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.getWriteBatchSize());
-        clientMessage.addFrame(initialFrame);
+        clientMessage.add(initialFrame);
 
         encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
@@ -57,7 +57,7 @@ public final class MapStoreConfigHolderCodec {
         MapCodec.encodeNullable(clientMessage, configHolder.getProperties().entrySet(), StringCodec::encode, StringCodec::encode);
         StringCodec.encode(clientMessage, configHolder.getInitialLoadMode());
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static MapStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {

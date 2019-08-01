@@ -67,8 +67,8 @@ public class AddMapConfigMessageTask
             config.setEntryListenerConfigs(
                     (List<EntryListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
-        // TODO add merkle tree config
-        // config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        config.setEventJournalConfig(parameters.eventJournalConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setMapAttributeConfigs(parameters.mapAttributeConfigs);
@@ -84,8 +84,8 @@ public class AddMapConfigMessageTask
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
         config.setMaxSizeConfig(new MaxSizeConfig(parameters.maxSizeConfigSize,
                 MaxSizeConfig.MaxSizePolicy.valueOf(parameters.maxSizeConfigMaxSizePolicy)));
-            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
-            config.setMergePolicyConfig(mergePolicyConfig);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         if (parameters.nearCacheConfig != null) {
             config.setNearCacheConfig(parameters.nearCacheConfig.asNearCacheConfig(serializationService));
         }

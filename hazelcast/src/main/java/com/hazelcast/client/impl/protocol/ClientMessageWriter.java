@@ -19,10 +19,9 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.nio.Bits;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAMELENGHT_AND_FLAGS;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
 public class ClientMessageWriter {
 
@@ -31,10 +30,9 @@ public class ClientMessageWriter {
     private transient int writeOffset = -1;
 
     public boolean writeTo(ByteBuffer dst, ClientMessage clientMessage) {
-        LinkedList<ClientMessage.Frame> frames = clientMessage.getFrames();
         for (; ; ) {
-            ClientMessage.Frame frame = frames.get(writeIndex);
-            boolean isLastFrame = writeIndex == frames.size() - 1;
+            ClientMessage.Frame frame = clientMessage.get(writeIndex);
+            boolean isLastFrame = writeIndex == clientMessage.size() - 1;
             if (writeFrame(dst, frame, isLastFrame)) {
                 writeOffset = -1;
                 if (isLastFrame) {
@@ -54,20 +52,19 @@ public class ClientMessageWriter {
         int frameContentLength = frame.content == null ? 0 : frame.content.length;
 
         //if write offset is -1 put the length and flags byte first
-        if (writeOffset == -1 && bytesWritable >= SIZE_OF_FRAMELENGHT_AND_FLAGS) {
-            Bits.writeIntL(dst.array(), dst.position(), frameContentLength + SIZE_OF_FRAMELENGHT_AND_FLAGS);
+        if (writeOffset == -1 && bytesWritable >= SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+            Bits.writeIntL(dst, dst.position(), frameContentLength + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
             dst.position(dst.position() + Bits.INT_SIZE_IN_BYTES);
 
             if (isLastFrame) {
-                Bits.writeShortL(dst.array(), dst.position(), (short) (frame.flags | FINAL));
+                Bits.writeShortL(dst, dst.position(), (short) (frame.flags | FINAL));
             } else {
-                Bits.writeShortL(dst.array(), dst.position(), (short) frame.flags);
+                Bits.writeShortL(dst, dst.position(), (short) frame.flags);
             }
             dst.position(dst.position() + Bits.SHORT_SIZE_IN_BYTES);
             writeOffset = 0;
-        } else {
-            return false;
         }
+        bytesWritable = dst.remaining();
 
         if (frame.content == null) {
             return true;

@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAMELENGHT_AND_FLAGS;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
 public class ClientMessageReader {
 
@@ -59,18 +59,18 @@ public class ClientMessageReader {
     private boolean readFrame(ByteBuffer src) {
         // init internal buffer
         int remaining = src.remaining();
-        if (remaining < SIZE_OF_FRAMELENGHT_AND_FLAGS) {
+        if (remaining < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
             // we don't have even the frame length and flags ready
             return false;
         }
         if (readOffset == -1) {
-            int frameLength = Bits.readIntL(src.array(), src.position());
+            int frameLength = Bits.readIntL(src, src.position());
             src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
-            int flags = Bits.readShortL(src.array(), src.position()) & INT_MASK;
+            int flags = Bits.readShortL(src, src.position()) & INT_MASK;
             src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
-            int size = frameLength - SIZE_OF_FRAMELENGHT_AND_FLAGS;
-            byte[] bytes = size == 0 ? null : new byte[size];
+            int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+            byte[] bytes = new byte[size];
             frames.add(new ClientMessage.Frame(bytes, flags));
             readOffset = 0;
             if (size == 0) {

@@ -27,7 +27,7 @@ public final class StringCodec {
     }
 
     public static void encode(ClientMessage clientMessage, String value) {
-        clientMessage.addFrame(new ClientMessage.Frame(value.getBytes(Bits.UTF_8)));
+        clientMessage.add(new ClientMessage.Frame(value.getBytes(Bits.UTF_8)));
     }
 
     public static String decode(ListIterator<ClientMessage.Frame> iterator) {

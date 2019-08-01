@@ -34,13 +34,13 @@ public final class PredicateConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, PredicateConfigHolder configHolder) {
-        clientMessage.addFrame(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME);
 
         encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getSql(), StringCodec::encode);
         encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
 
-        clientMessage.addFrame(END_FRAME);
+        clientMessage.add(END_FRAME);
     }
 
     public static PredicateConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
