@@ -462,11 +462,7 @@ class RaftGroupMembershipManager {
             Map<RaftEndpoint, CPMember> members = getMembers();
             Collection<CPGroupId> groupIds = getCpGroupIds();
 
-            logger.info("REBALANCE -- Members: " + members);
-            logger.info("REBALANCE -- Groups: " + groupIds);
-
             final int groupsPerMember = groupIds.size() / members.size();
-            logger.severe("REBALANCE -- groups per member: " + groupsPerMember);
             if (groupsPerMember <= 1) {
                 return;
             }
@@ -479,25 +475,21 @@ class RaftGroupMembershipManager {
 
             Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
             for (; ; ) {
-                Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
-                OperationService operationService = nodeEngine.getOperationService();
-                for (CPMember member : members.values()) {
-                    Collection<CPGroupId> g =
-                            operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
-                                    member.getAddress()).join();
-                    leaderships.put(member, g);
-                }
+                Map<CPMember, Collection<CPGroupId>> leaderships = getLeadershipsMap(members);
 
                 CPMember from = getEndpointWithMaxLeaderships(leaderships, groupsPerMember, handledMembers);
                 if (from == null) {
                     // nothing to transfer
+                    logger.info("CPGroup leadership balance is fine...");
                     return;
                 }
 
+                logger.info("Searching a candidate transfer leadership from " + from);
                 Collection<CPGroupSummary> memberGroups = getLeaderGroupsOf(from, leaderships.get(from), allGroups);
 
                 Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
                 if (to.element1 == null) {
+                    logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
                     // could not found target member to transfer membership
                     // try to find next leader
                     handledMembers.add(from);
@@ -510,6 +502,19 @@ class RaftGroupMembershipManager {
                     return;
                 }
             }
+        }
+
+        private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(Map<RaftEndpoint, CPMember> members) {
+            Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
+            OperationService operationService = nodeEngine.getOperationService();
+            for (CPMember member : members.values()) {
+                Collection<CPGroupId> groups =
+                        operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
+                                member.getAddress()).join();
+                leaderships.put(member, groups);
+                logger.info(member + " claims it's leader of " + groups.size() + " groups: " + groups);
+            }
+            return leaderships;
         }
 
         private Collection<CPGroupSummary> getLeaderGroupsOf(CPMember member, Collection<CPGroupId> leaderships,
@@ -543,7 +548,6 @@ class RaftGroupMembershipManager {
                         min = k;
                         to = member;
                         groupId = group.id();
-                        logger.severe("REBALANCE -- TO " + to + " has " + min + " leaderships.");
                     }
                 }
             }
@@ -562,14 +566,13 @@ class RaftGroupMembershipManager {
                 if (count > max) {
                     from = entry.getKey();
                     max = count;
-                    logger.severe("REBALANCE -- FROM " + from + " has " + max + " leaderships.");
                 }
             }
             return from;
         }
 
         private boolean transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
-            logger.severe(groupId + " -- Transfer leadership :: " + from + " -> " + to);
+            logger.warning("Transferring leadership " + from + " to " + to + " in " + groupId);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnTarget(null, new TransferLeadershipOp(groupId, to), from.getAddress())
