@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.util.concurrent.TimeUnit;
 
 /**
  * An interface that can be implemented by SPI services to participate in graceful shutdown process, such as moving
  * their internal data to another node or releasing their allocated resources gracefully.
  */
+@PrivateApi
 public interface GracefulShutdownAwareService {
 
     /**

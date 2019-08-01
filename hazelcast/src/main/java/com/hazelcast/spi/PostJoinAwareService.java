@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -23,6 +24,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
  * Marker interface for services that want to return operations to be executed on the cluster
  * members after a join has been finalized.
  */
+@PrivateApi
 public interface PostJoinAwareService {
 
     /**

@@ -16,15 +16,16 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -42,6 +43,7 @@ import java.util.Collection;
  * So if you are writing a custom SPI service, such as a stack-service, this service should probably implement
  * the {@link ManagedService} so you can get access to the services within the system.
  */
+@PrivateApi
 public interface NodeEngine {
 
     /**

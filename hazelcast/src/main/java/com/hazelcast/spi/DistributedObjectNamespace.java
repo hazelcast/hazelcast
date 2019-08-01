@@ -19,6 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.io.IOException;
  *
  * @since 3.9
  */
+@PrivateApi
 public final class DistributedObjectNamespace implements ObjectNamespace, IdentifiedDataSerializable {
 
     private String service;

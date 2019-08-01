@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Membership event fired when a new member is added
@@ -25,6 +26,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
  *
  * @see com.hazelcast.spi.MembershipAwareService
  */
+@PrivateApi
 public class MembershipServiceEvent extends MembershipEvent {
 
     public MembershipServiceEvent(MembershipEvent e) {

@@ -16,9 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * An ObjectNamespace that makes identification of object within a service possible.
  */
+@PrivateApi
 public interface ObjectNamespace extends ServiceNamespace {
 
     /**

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -28,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
  *
  * @since 3.9
  */
+@PrivateApi
 public interface PreJoinAwareService {
 
     /**

@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * An interface that can be implemented by a SPI service that needs to be notified members joining and leaving
  * the cluster.
  *
  * @author mdogan 9/5/12
  */
+@PrivateApi
 public interface MembershipAwareService {
 
     /**

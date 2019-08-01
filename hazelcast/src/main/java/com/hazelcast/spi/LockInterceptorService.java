@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Interface to be implemented by services that need to intercept lock operation
  * for distributed objects it manages.
  *
  * @param <T> type of key
  */
+@PrivateApi
 public interface LockInterceptorService<T> {
 
     void onBeforeLock(String distributedObjectName, T key);

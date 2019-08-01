@@ -17,10 +17,12 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * A 'capability' that can be implemented by object to get the Node injected.
  */
+@PrivateApi
 public interface NodeAware {
 
     void setNode(Node node);

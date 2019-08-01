@@ -16,10 +16,13 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Quorum service can ask for quorum information to the {@link QuorumAwareService}
  * to decide whether operation participates into a quorum or not.
  */
+@PrivateApi
 public interface QuorumAwareService {
 
     /**

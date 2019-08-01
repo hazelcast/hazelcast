@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.wan.WanReplicationEvent;
 
 /**
  * An interface that can be implemented by SPI services to give them the
  * ability to listen to WAN replication events.
  */
+@PrivateApi
 public interface ReplicationSupportingService {
 
     /**

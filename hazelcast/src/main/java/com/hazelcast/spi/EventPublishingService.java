@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * A service for publishing events. For example a Topic that receives an message (the event)
  * and dispatches it to a listener.
@@ -23,6 +25,7 @@ package com.hazelcast.spi;
  * @param <E> the event type
  * @param <T> the event listener type
  */
+@PrivateApi
 public interface EventPublishingService<E, T> {
 
     /**

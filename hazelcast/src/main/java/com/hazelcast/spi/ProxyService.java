@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 
@@ -26,6 +27,7 @@ import java.util.Collection;
  *
  * @author mdogan 1/14/13
  */
+@PrivateApi
 public interface ProxyService extends CoreService {
 
     int getProxyCount();

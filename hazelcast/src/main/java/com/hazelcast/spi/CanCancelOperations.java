@@ -17,10 +17,12 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Implemented by a service that can cancel its operations.
  */
+@PrivateApi
 public interface CanCancelOperations {
     /**
      * Notifies this service that an operation was requested to be cancelled. The caller is not aware which

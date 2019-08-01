@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
  * Component responsible for handling events like topic events or map.listener events. The events are divided into topics.
  */
+@PrivateApi
 public interface EventService {
 
     /**

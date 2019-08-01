@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 
 /**
  * An interface that can be implemented by SPI services that want to deal with transactions.
  */
+@PrivateApi
 public interface TransactionalService {
 
     <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction);

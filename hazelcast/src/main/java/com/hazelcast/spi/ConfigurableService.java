@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * A capability for SPI services. So if your SPI service needs to be configured, implement this method. It will get the
  * configured properties injected.
  *
  * @param <T>
  */
+@PrivateApi
 public interface ConfigurableService<T> {
 
     void configure(T configObject);

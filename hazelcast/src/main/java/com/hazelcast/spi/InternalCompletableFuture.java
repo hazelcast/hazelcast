@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * A {@link com.hazelcast.core.ICompletableFuture} with more functionality like getting
@@ -24,6 +25,7 @@ import com.hazelcast.core.ICompletableFuture;
  *
  * @param <E>
  */
+@PrivateApi
 public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
 
     /**

@@ -16,9 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * A predicate that can filter out events.
  */
+@PrivateApi
 public interface EventFilter {
 
     /**

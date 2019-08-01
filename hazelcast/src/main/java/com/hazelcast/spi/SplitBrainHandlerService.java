@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * An interface that can be implemented by SPI services that want to be able to resolve a split-brain.
  * <p>
  * When the two separate clusters merge, the {@link #prepareMergeRunnable()} method is called to return
  * a {@link Runnable}, that will merge the clusters.
  */
+@PrivateApi
 public interface SplitBrainHandlerService {
 
     /**
