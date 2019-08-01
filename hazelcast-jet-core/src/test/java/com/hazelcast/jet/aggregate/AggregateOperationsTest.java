@@ -600,7 +600,7 @@ public class AggregateOperationsTest {
 
         Tuple2<Double, Integer> result = stream
                 .boxed()
-                .collect(allOf(averageOp, maxOp).toCollector());
+                .collect(AggregateOperations.toCollector(allOf(averageOp, maxOp)));
 
         assertEquals((Double) 499.5d, result.f0());
         assertEquals((Integer) 999, result.f1());
