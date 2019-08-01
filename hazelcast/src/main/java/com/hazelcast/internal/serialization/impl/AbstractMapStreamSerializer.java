@@ -26,21 +26,22 @@ import java.util.Map;
 /**
  * The {@link Map} serializer
  */
-abstract class AbstractMapStreamSerializer<K, V> implements StreamSerializer<Map<K, V>> {
+abstract class AbstractMapStreamSerializer<MapType extends Map> implements StreamSerializer<MapType> {
 
     @Override
-    public void write(ObjectDataOutput out, Map<K, V> map) throws IOException {
+    public void write(ObjectDataOutput out, MapType map) throws IOException {
         int size = map.size();
         out.writeInt(size);
         if (size > 0) {
-            for (Map.Entry<K, V> entry : map.entrySet()) {
+            for (Object entryObject : map.entrySet()) {
+                Map.Entry entry = (Map.Entry) entryObject;
                 out.writeObject(entry.getKey());
                 out.writeObject(entry.getValue());
             }
         }
     }
 
-    Map<K, V> deserializeEntries(ObjectDataInput in, int size, Map<K, V> result) throws IOException {
+    MapType deserializeEntries(ObjectDataInput in, int size, MapType result) throws IOException {
         for (int i = 0; i < size; i++) {
             result.put(in.readObject(), in.readObject());
         }

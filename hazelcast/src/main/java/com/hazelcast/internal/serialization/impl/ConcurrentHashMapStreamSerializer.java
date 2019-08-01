@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,14 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Important Note: The ConcurrentHashMap 'loadfactor' is not serialized.
  *
  */
-public class ConcurrentHashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
+public class ConcurrentHashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<ConcurrentHashMap<K, V>> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_CONCURRENT_HASH_MAP;
     }
 
     @Override
-    public Map<K, V> read(ObjectDataInput in) throws IOException {
+    public ConcurrentHashMap<K, V> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
         ConcurrentHashMap<K, V> map = (ConcurrentHashMap<K, V>) MapUtil.createConcurrentHashMap(size);

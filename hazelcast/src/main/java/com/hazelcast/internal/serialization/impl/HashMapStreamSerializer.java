@@ -21,7 +21,6 @@ import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * The {@link HashMap} serializer
@@ -29,17 +28,17 @@ import java.util.Map;
  * Important Note: The HashMap 'loadfactor' is not serialized.
  *
  */
-public class HashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
+public class HashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<HashMap<K, V>> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_HASH_MAP;
     }
 
     @Override
-    public Map<K, V> read(ObjectDataInput in) throws IOException {
+    public HashMap<K, V> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
-        Map<K, V> map = MapUtil.createHashMap(size);
+        HashMap<K, V> map = (HashMap<K, V>) MapUtil.createHashMap(size);
 
         return deserializeEntries(in, size, map);
     }

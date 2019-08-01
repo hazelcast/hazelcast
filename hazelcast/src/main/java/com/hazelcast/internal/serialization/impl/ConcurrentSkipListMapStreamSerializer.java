@@ -21,20 +21,19 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * The {@link ConcurrentSkipListMap} serializer
  */
-public class ConcurrentSkipListMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
+public class ConcurrentSkipListMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<ConcurrentSkipListMap<K, V>> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_CONCURRENT_SKIP_LIST_MAP;
     }
 
     @Override
-    public void write(ObjectDataOutput out, Map<K, V> map) throws IOException {
+    public void write(ObjectDataOutput out, ConcurrentSkipListMap<K, V> map) throws IOException {
 
         out.writeObject(((ConcurrentSkipListMap) map).comparator());
 
@@ -42,10 +41,10 @@ public class ConcurrentSkipListMapStreamSerializer<K, V> extends AbstractMapStre
     }
 
     @Override
-    public Map<K, V> read(ObjectDataInput in) throws IOException {
+    public ConcurrentSkipListMap<K, V> read(ObjectDataInput in) throws IOException {
         Comparator<? super K> comparator = in.readObject();
 
-        Map<K, V> map = new ConcurrentSkipListMap<>(comparator);
+        ConcurrentSkipListMap<K, V> map = new ConcurrentSkipListMap<>(comparator);
 
         int size = in.readInt();
 

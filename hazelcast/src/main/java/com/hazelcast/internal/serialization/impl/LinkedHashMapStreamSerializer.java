@@ -21,7 +21,6 @@ import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * The {@link LinkedHashMap} serializer
@@ -29,17 +28,17 @@ import java.util.Map;
  * Important Note: The ConcurrentHashMap 'loadfactor' is not serialized.
  *
  */
-public class LinkedHashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
+public class LinkedHashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<LinkedHashMap<K, V>> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_HASH_MAP;
     }
 
     @Override
-    public Map<K, V> read(ObjectDataInput in) throws IOException {
+    public LinkedHashMap<K, V> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
-        Map<K, V> map = MapUtil.createLinkedHashMap(size);
+        LinkedHashMap<K, V> map = (LinkedHashMap<K, V>) MapUtil.createLinkedHashMap(size);
 
         return deserializeEntries(in, size, map);
     }
