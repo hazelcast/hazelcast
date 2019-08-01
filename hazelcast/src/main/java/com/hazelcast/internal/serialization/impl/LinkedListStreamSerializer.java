@@ -19,21 +19,24 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.LinkedList;
 
 /**
- * The {@link java.util.LinkedList} serializer
+ * The {@link LinkedList} serializer
  */
-public class LinkedListStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new LinkedList();
-    }
+public class LinkedListStreamSerializer<E> extends AbstractCollectionStreamSerializer<LinkedList<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
+    }
+
+    @Override
+    public LinkedList<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        LinkedList<E> collection = new LinkedList<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

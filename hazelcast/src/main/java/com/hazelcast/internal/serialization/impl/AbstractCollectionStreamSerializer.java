@@ -21,38 +21,29 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Collection;
-
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
  * The {@link Collection} serializer
  */
-public abstract class AbstractCollectionStreamSerializer implements StreamSerializer<Collection> {
+abstract class AbstractCollectionStreamSerializer<CollectionType extends Collection>
+        implements StreamSerializer<CollectionType> {
 
     @Override
-    public void write(ObjectDataOutput out, Collection collection) throws IOException {
-        int size = collection == null ? NULL_ARRAY_LENGTH : collection.size();
+    public void write(ObjectDataOutput out, CollectionType collection) throws IOException {
+        int size = collection.size();
         out.writeInt(size);
         if (size > 0) {
-            beforeSerializeEntries(out, collection);
-            Iterator iterator = collection.iterator();
-            while (iterator.hasNext()) {
-                out.writeObject(iterator.next());
+            for (Object o : collection) {
+                out.writeObject(o);
             }
         }
     }
 
-    @Override
-    public Collection read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        Collection collection = null;
-        if (size > NULL_ARRAY_LENGTH) {
-            collection = createCollection(size, in);
-            for (int i = 0; i < size; i++) {
-                collection.add(in.readObject());
-            }
+    CollectionType deserializeEntries(ObjectDataInput in, int size, CollectionType collection)
+            throws IOException {
+        for (int i = 0; i < size; i++) {
+            collection.add(in.readObject());
         }
         return collection;
     }
@@ -61,10 +52,4 @@ public abstract class AbstractCollectionStreamSerializer implements StreamSerial
     public void destroy() {
     }
 
-    protected abstract Collection createCollection(int size, ObjectDataInput in)
-            throws IOException;
-
-    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
-            throws IOException {
-    }
 }

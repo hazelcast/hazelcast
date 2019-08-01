@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -27,25 +28,29 @@ import java.util.TreeMap;
 /**
  * The {@link TreeMap} serializer
  */
-public class TreeMapStreamSerializer extends AbstractMapStreamSerializer {
+public class TreeMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_TREE_MAP;
     }
 
+    @SuppressFBWarnings(value = "BC_BAD_CAST_TO_CONCRETE_COLLECTION",
+            justification = "The map is guaranteed to be of type TreeMap when this nethod is called.")
     @Override
-    protected Map createMap(ObjectDataInput in, int size)
-            throws IOException {
-        Comparator comparator = in.readObject();
-        return new TreeMap(comparator);
+    public void write(ObjectDataOutput out, Map<K, V> map) throws IOException {
+        out.writeObject(((TreeMap<K, V>) map).comparator());
+
+        super.write(out, map);
     }
 
     @Override
-    protected void beforeSerializeEntries(ObjectDataOutput out, Map map)
-            throws IOException {
-        TreeMap concurrentSkipListMap = (TreeMap) map;
-        Comparator comparator = concurrentSkipListMap.comparator();
-        out.writeObject(comparator);
-    }
+    public Map<K, V> read(ObjectDataInput in) throws IOException {
+        Comparator<? super K> comparator = in.readObject();
 
+        Map<K, V> map = new TreeMap<>(comparator);
+
+        int size = in.readInt();
+
+        return deserializeEntries(in, size, map);
+    }
 }

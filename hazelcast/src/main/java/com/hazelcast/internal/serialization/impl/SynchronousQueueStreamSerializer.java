@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.SynchronousQueue;
 
 /**
@@ -28,15 +27,20 @@ import java.util.concurrent.SynchronousQueue;
  * Important Note: The `fair` boolean is not be serialized since there is no public way to access it.
  *
  */
-public class SynchronousQueueStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new SynchronousQueue();
-    }
+public class SynchronousQueueStreamSerializer<E> extends AbstractCollectionStreamSerializer<SynchronousQueue<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_SYNCHRONOUS_QUEUE;
+    }
+
+    @Override
+    public SynchronousQueue<E> read(ObjectDataInput in)
+            throws IOException {
+        int size = in.readInt();
+
+        SynchronousQueue<E> collection = new SynchronousQueue<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

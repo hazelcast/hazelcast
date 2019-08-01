@@ -20,8 +20,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The {@link HashSet} serializer
@@ -29,15 +29,19 @@ import java.util.HashSet;
  * Important Note: The HashSet 'loadfactor' is not serialized.
  *
  */
-public class HashSetStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return SetUtil.createHashSet(size);
-    }
+public class HashSetStreamSerializer<E> extends AbstractCollectionStreamSerializer<Set<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_HASH_SET;
+    }
+
+    @Override
+    public Set<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        Set<E> collection = SetUtil.createHashSet(size);
+
+        return deserializeEntries(in, size, collection);
     }
 }

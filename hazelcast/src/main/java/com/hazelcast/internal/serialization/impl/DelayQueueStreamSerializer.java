@@ -19,21 +19,25 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
 
 /**
  * The {@link DelayQueue} serializer
  */
-public class DelayQueueStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new DelayQueue();
-    }
+public class DelayQueueStreamSerializer<E extends Delayed> extends AbstractCollectionStreamSerializer<DelayQueue<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_DELAY_QUEUE;
+    }
+
+    @Override
+    public DelayQueue<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        DelayQueue<E> collection = new DelayQueue<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

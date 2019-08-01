@@ -20,20 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * The {@link PriorityBlockingQueue} serializer
  */
-public class PriorityBlockingQueueStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        Comparator comparator = in.readObject();
-        return new PriorityBlockingQueue(size, comparator);
-    }
+public class PriorityBlockingQueueStreamSerializer<E> extends AbstractCollectionStreamSerializer<PriorityBlockingQueue<E>> {
 
     @Override
     public int getTypeId() {
@@ -41,8 +34,20 @@ public class PriorityBlockingQueueStreamSerializer extends AbstractCollectionStr
     }
 
     @Override
-    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
-            throws IOException {
-        out.writeObject(((PriorityBlockingQueue) collection).comparator());
+    public void write(ObjectDataOutput out, PriorityBlockingQueue<E> collection) throws IOException {
+        out.writeObject(collection.comparator());
+
+        super.write(out, collection);
+    }
+
+    @Override
+    public PriorityBlockingQueue<E> read(ObjectDataInput in) throws IOException {
+        Comparator<E> comparator = in.readObject();
+
+        int size = in.readInt();
+
+        PriorityBlockingQueue<E> collection = new PriorityBlockingQueue<>(size, comparator);
+
+        return deserializeEntries(in, size, collection);
     }
 }

@@ -19,21 +19,24 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.LinkedTransferQueue;
 
 /**
  * The {@link LinkedTransferQueue} serializer
  */
-public class LinkedTransferQueueStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new LinkedTransferQueue();
-    }
+public class LinkedTransferQueueStreamSerializer<E> extends AbstractCollectionStreamSerializer<LinkedTransferQueue<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_TRANSFER_QUEUE;
+    }
+
+    @Override
+    public LinkedTransferQueue<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        LinkedTransferQueue<E> collection = new LinkedTransferQueue<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

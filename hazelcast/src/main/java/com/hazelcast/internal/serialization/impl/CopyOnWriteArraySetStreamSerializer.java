@@ -19,21 +19,24 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * The {@link CopyOnWriteArraySet} serializer
  */
-public class CopyOnWriteArraySetStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new CopyOnWriteArraySet();
-    }
+public class CopyOnWriteArraySetStreamSerializer<E> extends AbstractCollectionStreamSerializer<CopyOnWriteArraySet<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_COPY_ON_WRITE_ARRAY_SET;
+    }
+
+    @Override
+    public CopyOnWriteArraySet<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        CopyOnWriteArraySet<E> collection = new CopyOnWriteArraySet<>();
+
+        return deserializeEntries(in, size, collection);
     }
 }

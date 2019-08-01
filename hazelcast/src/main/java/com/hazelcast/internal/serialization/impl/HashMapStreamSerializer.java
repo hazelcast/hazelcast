@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.util.MapUtil;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,14 +29,18 @@ import java.util.Map;
  * Important Note: The HashMap 'loadfactor' is not serialized.
  *
  */
-public class HashMapStreamSerializer extends AbstractMapStreamSerializer {
+public class HashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_HASH_MAP;
     }
 
     @Override
-    protected Map createMap(ObjectDataInput in, int size) {
-        return MapUtil.createHashMap(size);
+    public Map<K, V> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        Map<K, V> map = MapUtil.createHashMap(size);
+
+        return deserializeEntries(in, size, map);
     }
 }

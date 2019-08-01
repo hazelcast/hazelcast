@@ -19,21 +19,23 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 
 /**
- * The {@link java.util.ArrayList} serializer
+ * The {@link ArrayList} serializer
  */
-public class ArrayListStreamSerializer extends AbstractCollectionStreamSerializer {
-
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new ArrayList(size);
-    }
+public class ArrayListStreamSerializer<E> extends AbstractCollectionStreamSerializer<ArrayList<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
+    }
+
+    @Override
+    public ArrayList<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        ArrayList<E> collection = new ArrayList<>(size);
+
+        return deserializeEntries(in, size, collection);
     }
 }

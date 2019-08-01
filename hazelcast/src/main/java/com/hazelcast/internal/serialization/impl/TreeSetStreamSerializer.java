@@ -18,33 +18,40 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.SetUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Comparator;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
  * The {@link TreeSet} serializer
  */
-public class TreeSetStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        Comparator comparator = in.readObject();
-        return new TreeSet(comparator);
-    }
+public class TreeSetStreamSerializer<E> extends AbstractCollectionStreamSerializer<Set<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_TREE_SET;
     }
 
+    @SuppressFBWarnings(value = "BC_BAD_CAST_TO_CONCRETE_COLLECTION",
+            justification = "The map is guaranteed to be of type TreeSet when this nethod is called.")
     @Override
-    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
-            throws IOException {
-        TreeSet set = (TreeSet) collection;
-        out.writeObject(set.comparator());
+    public void write(ObjectDataOutput out, Set<E> collection) throws IOException {
+        out.writeObject(((TreeSet<E>) collection).comparator());
+
+        super.write(out, collection);
+    }
+
+    @Override
+    public Set<E> read(ObjectDataInput in) throws IOException {
+        Comparator<E> comparator = in.readObject();
+
+        Set<E> collection = new TreeSet<>(comparator);
+
+        int size = in.readInt();
+
+        return deserializeEntries(in, size, collection);
     }
 }

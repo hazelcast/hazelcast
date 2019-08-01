@@ -20,26 +20,29 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * The {@link ConcurrentSkipListSet} serializer
  */
-public class ConcurrentSkipListSetStreamSerializer extends AbstractCollectionStreamSerializer {
+public class ConcurrentSkipListSetStreamSerializer<E> extends AbstractCollectionStreamSerializer<ConcurrentSkipListSet<E>> {
     @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        Comparator comparator = in.readObject();
-        return new ConcurrentSkipListSet(comparator);
+    public void write(ObjectDataOutput out, ConcurrentSkipListSet<E> collection) throws IOException {
+        out.writeObject(collection.comparator());
+
+        super.write(out, collection);
     }
 
     @Override
-    protected void beforeSerializeEntries(ObjectDataOutput out, Collection collection)
-            throws IOException {
-        ConcurrentSkipListSet concurrentSkipListSet = (ConcurrentSkipListSet) collection;
-        out.writeObject(concurrentSkipListSet.comparator());
+    public ConcurrentSkipListSet<E> read(ObjectDataInput in) throws IOException {
+        Comparator<E> comparator = in.readObject();
+
+        ConcurrentSkipListSet<E> collection = new ConcurrentSkipListSet<>(comparator);
+
+        int size = in.readInt();
+
+        return deserializeEntries(in, size, collection);
     }
 
     @Override

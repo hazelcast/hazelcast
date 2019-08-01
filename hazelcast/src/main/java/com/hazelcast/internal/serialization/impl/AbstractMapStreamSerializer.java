@@ -21,41 +21,28 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
-
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
  * The {@link Map} serializer
  */
-public abstract class AbstractMapStreamSerializer implements StreamSerializer<Map> {
+abstract class AbstractMapStreamSerializer<K, V> implements StreamSerializer<Map<K, V>> {
 
     @Override
-    public void write(ObjectDataOutput out, Map map) throws IOException {
-        int size = map == null ? NULL_ARRAY_LENGTH : map.size();
+    public void write(ObjectDataOutput out, Map<K, V> map) throws IOException {
+        int size = map.size();
         out.writeInt(size);
         if (size > 0) {
-            beforeSerializeEntries(out, map);
-
-            Iterator iterator = map.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry) iterator.next();
+            for (Map.Entry<K, V> entry : map.entrySet()) {
                 out.writeObject(entry.getKey());
                 out.writeObject(entry.getValue());
             }
         }
     }
 
-    @Override
-    public Map read(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        Map result = null;
-        if (size > NULL_ARRAY_LENGTH) {
-            result = createMap(in, size);
-            for (int i = 0; i < size; i++) {
-                result.put(in.readObject(), in.readObject());
-            }
+    Map<K, V> deserializeEntries(ObjectDataInput in, int size, Map<K, V> result) throws IOException {
+        for (int i = 0; i < size; i++) {
+            result.put(in.readObject(), in.readObject());
         }
         return result;
     }
@@ -64,13 +51,4 @@ public abstract class AbstractMapStreamSerializer implements StreamSerializer<Ma
     public void destroy() {
     }
 
-    protected abstract Map createMap(ObjectDataInput in, int size)
-            throws IOException;
-
-    /**
-     * Any derived serializer can do any checks desired by overriding this method.
-     */
-    protected void beforeSerializeEntries(ObjectDataOutput out, Map map)
-            throws IOException {
-    }
 }

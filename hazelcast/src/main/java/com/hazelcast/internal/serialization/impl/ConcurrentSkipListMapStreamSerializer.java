@@ -27,24 +27,28 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * The {@link ConcurrentSkipListMap} serializer
  */
-public class ConcurrentSkipListMapStreamSerializer extends AbstractMapStreamSerializer {
+public class ConcurrentSkipListMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<K, V> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_CONCURRENT_SKIP_LIST_MAP;
     }
 
     @Override
-    protected Map createMap(ObjectDataInput in, int size)
-            throws IOException {
-        Comparator comparator = in.readObject();
-        return new ConcurrentSkipListMap(comparator);
+    public void write(ObjectDataOutput out, Map<K, V> map) throws IOException {
+
+        out.writeObject(((ConcurrentSkipListMap) map).comparator());
+
+        super.write(out, map);
     }
 
     @Override
-    protected void beforeSerializeEntries(ObjectDataOutput out, Map map)
-            throws IOException {
-        ConcurrentSkipListMap concurrentSkipListMap = (ConcurrentSkipListMap) map;
-        Comparator comparator = concurrentSkipListMap.comparator();
-        out.writeObject(comparator);
+    public Map<K, V> read(ObjectDataInput in) throws IOException {
+        Comparator<? super K> comparator = in.readObject();
+
+        Map<K, V> map = new ConcurrentSkipListMap<>(comparator);
+
+        int size = in.readInt();
+
+        return deserializeEntries(in, size, map);
     }
 }

@@ -20,20 +20,23 @@ import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.Collection;
 
 /**
  * The {@link ArrayDeque} serializer
  */
-public class ArrayDequeStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new ArrayDeque(size);
-    }
+public class ArrayDequeStreamSerializer<E> extends AbstractCollectionStreamSerializer<ArrayDeque<E>> {
 
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_DEQUE;
+    }
+
+    @Override
+    public ArrayDeque<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        ArrayDeque<E> collection = new ArrayDeque<>(size);
+
+        return deserializeEntries(in, size, collection);
     }
 }

@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -28,15 +27,18 @@ import java.util.concurrent.ArrayBlockingQueue;
  * Important Note: The `fair` boolean is not be serialized since there is no public way to access it.
  *
  */
-public class ArrayBlockingQueueStreamSerializer extends AbstractCollectionStreamSerializer {
-    @Override
-    protected Collection createCollection(int size, ObjectDataInput in)
-            throws IOException {
-        return new ArrayBlockingQueue(size);
-    }
-
+public class ArrayBlockingQueueStreamSerializer<E> extends AbstractCollectionStreamSerializer<ArrayBlockingQueue<E>> {
     @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_BLOCKING_QUEUE;
+    }
+
+    @Override
+    public ArrayBlockingQueue<E> read(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        ArrayBlockingQueue<E> collection = new ArrayBlockingQueue<>(size);
+
+        return deserializeEntries(in, size, collection);
     }
 }
