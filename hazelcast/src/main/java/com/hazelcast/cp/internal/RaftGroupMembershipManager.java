@@ -471,15 +471,6 @@ class RaftGroupMembershipManager {
                 return;
             }
 
-            Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
-            OperationService operationService = nodeEngine.getOperationService();
-            for (CPMember member : members.values()) {
-                Collection<CPGroupId> g =
-                        operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
-                                member.getAddress()).join();
-                leaderships.put(member, g);
-            }
-
             Collection<CPGroupSummary> allGroups = new ArrayList<CPGroupSummary>(groupIds.size());
             for (CPGroupId groupId : groupIds) {
                 CPGroupSummary group = getCpGroup(groupId);
@@ -488,13 +479,22 @@ class RaftGroupMembershipManager {
 
             Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
             for (; ; ) {
+                Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
+                OperationService operationService = nodeEngine.getOperationService();
+                for (CPMember member : members.values()) {
+                    Collection<CPGroupId> g =
+                            operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
+                                    member.getAddress()).join();
+                    leaderships.put(member, g);
+                }
+
                 CPMember from = getEndpointWithMaxLeaderships(leaderships, groupsPerMember, handledMembers);
                 if (from == null) {
                     // nothing to transfer
                     return;
                 }
 
-                Collection<CPGroupSummary> memberGroups = getGroupsOf(from, allGroups);
+                Collection<CPGroupSummary> memberGroups = getLeaderGroupsOf(from, leaderships.get(from), allGroups);
 
                 Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
                 if (to.element1 == null) {
@@ -512,11 +512,15 @@ class RaftGroupMembershipManager {
             }
         }
 
-        private Collection<CPGroupSummary> getGroupsOf(CPMember member, Collection<CPGroupSummary> groups) {
+        private Collection<CPGroupSummary> getLeaderGroupsOf(CPMember member, Collection<CPGroupId> leaderships,
+                Collection<CPGroupSummary> groups) {
             List<CPGroupSummary> memberGroups = new ArrayList<CPGroupSummary>();
             for (CPGroupSummary group : groups) {
                 if (CPGroup.METADATA_CP_GROUP_NAME.equals(group.id().name())) {
                     // ignore metadata group, we don't expect any significant load on metadata
+                    continue;
+                }
+                if (!leaderships.contains(group.id())) {
                     continue;
                 }
                 if (group.members().contains(member)) {

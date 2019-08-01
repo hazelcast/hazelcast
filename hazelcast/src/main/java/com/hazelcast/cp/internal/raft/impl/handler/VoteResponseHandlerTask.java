@@ -22,8 +22,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftRole;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
-import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
-import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.CandidateState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 
@@ -82,19 +80,7 @@ public class VoteResponseHandlerTask extends AbstractResponseHandlerTask {
 
         if (candidateState.isMajorityGranted()) {
             logger.info("We are the LEADER!");
-            state.toLeader();
-            appendEntryAfterLeaderElection();
-            raftNode.printMemberState();
-            raftNode.scheduleHeartbeat();
-        }
-    }
-
-    private void appendEntryAfterLeaderElection() {
-        Object entry = raftNode.getAppendedEntryOnLeaderElection();
-        if (entry != null) {
-            RaftState state = raftNode.state();
-            RaftLog log = state.log();
-            log.appendEntries(new LogEntry(state.term(), log.lastLogOrSnapshotIndex() + 1, entry));
+            raftNode.toLeader();
         }
     }
 
