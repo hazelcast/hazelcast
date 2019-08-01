@@ -48,10 +48,10 @@ public class MapSerializationTest {
     public static Collection<Map> parameters() {
         return asList(
                 new HashMap(2),
-                new ConcurrentSkipListMap<>(new SerializationConcurrencyTest.PersonComparator()),
+                new ConcurrentSkipListMap<>(new SerializationConcurrencyTest.PortableIntegerComparator()),
                 new ConcurrentHashMap(2),
                 new LinkedHashMap(2),
-                new TreeMap<>(new SerializationConcurrencyTest.PersonComparator()));
+                new TreeMap<>(new SerializationConcurrencyTest.PortableIntegerComparator()));
     }
 
     @Parameterized.Parameter
@@ -61,7 +61,17 @@ public class MapSerializationTest {
 
     @Before
     public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
+        PortableFactory portableFactory = classId -> {
+            switch (classId) {
+                case 3:
+                    return new SerializationConcurrencyTest.PortableIntegerComparator();
+                default:
+                    throw new IllegalArgumentException();
+            }
+        };
+
+        serializationService = new DefaultSerializationServiceBuilder()
+                .addPortableFactory(SerializationConcurrencyTest.FACTORY_ID, portableFactory).build();
     }
 
     @After
@@ -71,11 +81,10 @@ public class MapSerializationTest {
 
     @Test
     public void testMapSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
         map.put(35, new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         map.put(12, new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
-        Data data = ss.toData(map);
-        Map deserialized = ss.toObject(data);
+        Data data = serializationService.toData(map);
+        Map deserialized = serializationService.toObject(data);
         assertEquals("Object classes are not identical!", map.getClass(), deserialized.getClass());
         assertEquals("Objects are not identical!", map, deserialized);
     }

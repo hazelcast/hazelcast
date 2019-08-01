@@ -265,15 +265,8 @@ public class SerializationConcurrencyTest {
         @Override
         public int compareTo(Delayed o) {
             Person other = (Person) o;
-            if (this.age < other.age) {
-                return 1;
-            }
 
-            if (this.age > other.age) {
-                return -1;
-            }
-
-            return 0;
+            return Integer.compare(age, other.age);
         }
 
         @Override
@@ -351,25 +344,65 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    public static class PersonComparator implements Comparator<Person> {
+    public static class PortablePersonComparator implements Comparator<PortablePerson>, Portable {
+        public static final int CLASS_ID = 4;
+
         @Override
-        public int compare(Person o1, Person o2) {
-            int age1 = o1.getAge();
-            int age2 = o2.getAge();
-            if (age1 > age2) {
-                return 1;
-            }
-
-            if (age1 < age2) {
-                return -1;
-            }
-
-            return 0;
+        public int getFactoryId() {
+            return FACTORY_ID;
         }
 
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer)
+                throws IOException {
+        }
+
+        @Override
+        public void readPortable(PortableReader reader)
+                throws IOException {
+        }
+
+        @Override
+        public int compare(PortablePerson o1, PortablePerson o2) {
+            return Integer.compare(o1.age, o2.age);
+        }
     }
 
-    public static class PortablePerson implements Portable {
+    public static class PortableIntegerComparator implements Comparator<Integer>, Portable {
+        public static final int CLASS_ID = 3;
+
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return o1.compareTo(o2);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer)
+                throws IOException {
+        }
+
+        @Override
+        public void readPortable(PortableReader reader)
+                throws IOException {
+        }
+    }
+
+    public static class PortablePerson implements Portable, Delayed {
 
         private int age;
 
@@ -449,6 +482,18 @@ public class SerializationConcurrencyTest {
         @Override
         public int getFactoryId() {
             return FACTORY_ID;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return 0;
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            PortablePerson other = (PortablePerson) o;
+
+            return Integer.compare(age, other.age);
         }
     }
 }

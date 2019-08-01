@@ -60,14 +60,14 @@ public class CollectionSerializationTest {
                 new LinkedList(),
                 new CopyOnWriteArrayList(),
                 new HashSet(),
-                new TreeSet<>(new SerializationConcurrencyTest.PersonComparator()),
+                new TreeSet<>(new SerializationConcurrencyTest.PortablePersonComparator()),
                 new LinkedHashSet(),
                 new CopyOnWriteArraySet(),
-                new ConcurrentSkipListSet<>(new SerializationConcurrencyTest.PersonComparator()),
+                new ConcurrentSkipListSet<>(new SerializationConcurrencyTest.PortablePersonComparator()),
                 new ArrayDeque(),
                 new LinkedBlockingQueue(),
                 new ArrayBlockingQueue(2),
-                new PriorityBlockingQueue<>(5, new SerializationConcurrencyTest.PersonComparator()),
+                new PriorityBlockingQueue<>(5, new SerializationConcurrencyTest.PortablePersonComparator()),
                 new DelayQueue(),
                 new LinkedTransferQueue());
     }
@@ -79,7 +79,21 @@ public class CollectionSerializationTest {
 
     @Before
     public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
+        PortableFactory portableFactory = classId -> {
+            switch (classId) {
+                case 1:
+                    return new SerializationConcurrencyTest.PortablePerson();
+                case 2:
+                    return new SerializationConcurrencyTest.PortableAddress();
+                case 4:
+                    return new SerializationConcurrencyTest.PortablePersonComparator();
+                default:
+                    throw new IllegalArgumentException();
+            }
+        };
+
+        serializationService = new DefaultSerializationServiceBuilder()
+                .addPortableFactory(SerializationConcurrencyTest.FACTORY_ID, portableFactory).build();
     }
 
     @After
@@ -89,11 +103,12 @@ public class CollectionSerializationTest {
 
     @Test
     public void testCollectionSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        collection.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
-        collection.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
-        Data data = ss.toData(collection);
-        Collection deserialized = ss.toObject(data);
+        collection.add(new SerializationConcurrencyTest.PortablePerson(12, 120, "Osman",
+                new SerializationConcurrencyTest.PortableAddress("Main street", 35)));
+        collection.add(new SerializationConcurrencyTest.PortablePerson(35, 120, "Orhan",
+                new SerializationConcurrencyTest.PortableAddress("2nd street", 40)));
+        Data data = serializationService.toData(collection);
+        Collection deserialized = serializationService.toObject(data);
         assertTrue("Collections are not identical!", collection.containsAll(deserialized));
         assertTrue("Collections are not identical!", deserialized.containsAll(collection));
         assertEquals("Collection classes are not identical!", collection.getClass(), deserialized.getClass());
