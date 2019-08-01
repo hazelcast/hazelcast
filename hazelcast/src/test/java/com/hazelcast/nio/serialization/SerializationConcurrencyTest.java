@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Delayed;
@@ -196,6 +197,10 @@ public class SerializationConcurrencyTest {
             this.address = address;
         }
 
+        public int getAge() {
+            return age;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(name);
@@ -344,6 +349,24 @@ public class SerializationConcurrencyTest {
         public int getFactoryId() {
             return FACTORY_ID;
         }
+    }
+
+    public static class PersonComparator implements Comparator<Person> {
+        @Override
+        public int compare(Person o1, Person o2) {
+            int age1 = o1.getAge();
+            int age2 = o2.getAge();
+            if (age1 > age2) {
+                return 1;
+            }
+
+            if (age1 < age2) {
+                return -1;
+            }
+
+            return 0;
+        }
+
     }
 
     public static class PortablePerson implements Portable {

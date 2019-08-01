@@ -60,15 +60,14 @@ public class CollectionSerializationTest {
                 new LinkedList(),
                 new CopyOnWriteArrayList(),
                 new HashSet(),
-                new TreeSet(),
+                new TreeSet<>(new SerializationConcurrencyTest.PersonComparator()),
                 new LinkedHashSet(),
                 new CopyOnWriteArraySet(),
-                new ConcurrentSkipListSet(),
+                new ConcurrentSkipListSet<>(new SerializationConcurrencyTest.PersonComparator()),
                 new ArrayDeque(),
                 new LinkedBlockingQueue(),
                 new ArrayBlockingQueue(2),
-                new PriorityBlockingQueue(),
-                new PriorityBlockingQueue(),
+                new PriorityBlockingQueue<>(5, new SerializationConcurrencyTest.PersonComparator()),
                 new DelayQueue(),
                 new LinkedTransferQueue());
     }

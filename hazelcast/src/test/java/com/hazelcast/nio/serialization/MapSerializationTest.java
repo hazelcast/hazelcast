@@ -48,10 +48,10 @@ public class MapSerializationTest {
     public static Collection<Map> parameters() {
         return asList(
                 new HashMap(2),
-                new ConcurrentSkipListMap(),
+                new ConcurrentSkipListMap<>(new SerializationConcurrencyTest.PersonComparator()),
                 new ConcurrentHashMap(2),
                 new LinkedHashMap(2),
-                new TreeMap());
+                new TreeMap<>(new SerializationConcurrencyTest.PersonComparator()));
     }
 
     @Parameterized.Parameter
