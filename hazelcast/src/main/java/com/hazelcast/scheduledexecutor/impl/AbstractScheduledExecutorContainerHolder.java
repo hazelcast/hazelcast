@@ -16,8 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -62,7 +61,7 @@ public abstract class AbstractScheduledExecutorContainerHolder
 
     public void destroy() {
         for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(container.getName());
+            nodeEngine.getExecutionService().shutdownScheduledDurableExecutor(container.getName());
         }
     }
 

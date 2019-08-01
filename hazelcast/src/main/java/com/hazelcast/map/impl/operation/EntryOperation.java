@@ -53,7 +53,7 @@ import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
-import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;

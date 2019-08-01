@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.BitSet;

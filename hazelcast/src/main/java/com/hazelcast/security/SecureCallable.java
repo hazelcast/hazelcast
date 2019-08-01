@@ -17,7 +17,7 @@
 package com.hazelcast.security;
 
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.internal.services.NodeAware;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;

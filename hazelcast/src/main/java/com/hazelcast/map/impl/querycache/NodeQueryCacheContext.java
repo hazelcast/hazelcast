@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
@@ -33,7 +34,7 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -79,7 +80,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
 
     /**
      * This is a best effort approach; there is no guarantee that events in publishers internal buffers will be fired,
-     * {@link com.hazelcast.spi.EventService} can drop them.
+     * {@link EventService} can drop them.
      */
     private void flushPublishersOnNodeShutdown() {
         Node node = ((NodeEngineImpl) this.nodeEngine).getNode();

@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.MemoryInfoAccessor;
 
 import java.util.concurrent.atomic.AtomicBoolean;

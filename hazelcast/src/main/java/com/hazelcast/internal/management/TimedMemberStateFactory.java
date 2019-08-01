@@ -63,7 +63,7 @@ import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;

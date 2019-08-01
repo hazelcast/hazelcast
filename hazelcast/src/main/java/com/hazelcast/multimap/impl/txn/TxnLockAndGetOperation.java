@@ -28,7 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;

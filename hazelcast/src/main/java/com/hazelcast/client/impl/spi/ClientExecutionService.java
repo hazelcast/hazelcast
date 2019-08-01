@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

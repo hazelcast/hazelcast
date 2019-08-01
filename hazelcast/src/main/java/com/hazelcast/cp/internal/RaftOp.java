@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 /**
  * Base operation class for operations to be replicated to and executed on

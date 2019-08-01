@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;

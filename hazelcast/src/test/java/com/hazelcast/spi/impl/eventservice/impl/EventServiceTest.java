@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -56,7 +56,7 @@ public class EventServiceTest extends HazelcastTestSupport {
 
         Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
-        InternalEventService eventService = getEventService(hz2);
+        EventService eventService = getEventService(hz2);
         Set<String> registrationIds = new HashSet<String>();
         Object listener = new Object();
         while (getClusterService(hz2).getSize() < 3) {
@@ -65,7 +65,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz3 = future.get();
-        InternalEventService eventService3 = getEventService(hz3);
+        EventService eventService3 = getEventService(hz3);
         Collection<EventRegistration> registrations = eventService3.getRegistrations(serviceName, topic);
 
         assertEquals(registrationIds.size(), registrations.size());
@@ -81,7 +81,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfigWithDummyService());
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfigWithDummyService());
 
-        InternalEventService eventService = getEventService(hz2);
+        EventService eventService = getEventService(hz2);
         Set<String> registrationIds = new HashSet<String>();
         Object listener = new Object();
         for (int i = 0; i < 500; i++) {
@@ -98,7 +98,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         assertThat(eventService.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
 
         HazelcastInstance hz3 = future.get();
-        InternalEventService eventService3 = getEventService(hz3);
+        EventService eventService3 = getEventService(hz3);
         assertThat(eventService3.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
     }
 
@@ -110,7 +110,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static InternalEventService getEventService(HazelcastInstance hz) {
+    private static EventService getEventService(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getEventService();
     }
 }

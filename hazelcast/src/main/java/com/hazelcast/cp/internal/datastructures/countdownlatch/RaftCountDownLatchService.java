@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.cp.internal.util.Tuple2;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
 import java.util.UUID;

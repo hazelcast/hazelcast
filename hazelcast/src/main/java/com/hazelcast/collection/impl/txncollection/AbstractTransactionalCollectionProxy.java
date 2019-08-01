@@ -23,10 +23,10 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveR
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.TransactionalDistributedObject;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.spi.impl.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;

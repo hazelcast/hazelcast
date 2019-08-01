@@ -29,7 +29,7 @@ import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;

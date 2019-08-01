@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractContainerCollector;
 
 import java.util.Collection;

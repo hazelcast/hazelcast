@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;

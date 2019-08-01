@@ -18,14 +18,14 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.QuorumAwareService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;

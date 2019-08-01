@@ -35,7 +35,7 @@ import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.lock.proxy.AbstractRaftFencedLockProxy;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;

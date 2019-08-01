@@ -24,8 +24,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 

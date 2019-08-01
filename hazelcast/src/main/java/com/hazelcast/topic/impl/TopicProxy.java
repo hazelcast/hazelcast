@@ -19,7 +19,7 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

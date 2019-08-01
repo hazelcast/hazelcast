@@ -33,7 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 

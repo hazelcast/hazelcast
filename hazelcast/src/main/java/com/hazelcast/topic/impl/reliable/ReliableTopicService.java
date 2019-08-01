@@ -20,10 +20,10 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
 

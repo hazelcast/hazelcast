@@ -113,7 +113,7 @@ import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

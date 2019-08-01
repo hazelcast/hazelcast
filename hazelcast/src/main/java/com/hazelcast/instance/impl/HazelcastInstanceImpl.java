@@ -74,7 +74,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;

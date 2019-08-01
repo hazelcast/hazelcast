@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 import com.hazelcast.test.HazelcastParallelClassRunner;

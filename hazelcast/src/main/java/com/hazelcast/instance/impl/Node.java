@@ -79,7 +79,7 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.spi.GracefulShutdownAwareService;
+import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;

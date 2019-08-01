@@ -16,7 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl;
 
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 

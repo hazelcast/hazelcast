@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledExcept
 import com.hazelcast.cp.internal.datastructures.lock.proxy.RaftFencedLockProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
 import java.util.UUID;

@@ -22,7 +22,7 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
@@ -507,7 +507,7 @@ public interface ICacheRecordStore {
     boolean isWanReplicationEnabled();
 
     /**
-     * Returns {@link com.hazelcast.spi.ObjectNamespace} associated with this record store.
+     * Returns {@link ObjectNamespace} associated with this record store.
      *
      * @return ObjectNamespace associated with this record store.
      */

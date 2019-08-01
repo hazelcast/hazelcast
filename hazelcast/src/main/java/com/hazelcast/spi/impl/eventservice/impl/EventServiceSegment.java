@@ -18,9 +18,9 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.ListenerWrapperEventFilter;
-import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.internal.services.ListenerWrapperEventFilter;
+import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 

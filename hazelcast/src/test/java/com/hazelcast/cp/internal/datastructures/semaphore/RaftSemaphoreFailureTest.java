@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;

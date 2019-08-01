@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;

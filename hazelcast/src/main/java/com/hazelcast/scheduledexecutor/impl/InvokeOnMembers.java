@@ -18,7 +18,7 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
