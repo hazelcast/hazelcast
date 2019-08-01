@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
+import com.hazelcast.cp.internal.raft.impl.task.InitLeadershipTransferTask;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.io.IOException;
@@ -143,6 +144,9 @@ public final class RaftState {
 
     /**
      * State maintained by the current leader during leadership transfer.
+     * Initialized when the leadership transfer process is started via
+     * {@link InitLeadershipTransferTask} and cleared when the local Raft node
+     * switches to a new term or the leadership transfer process times out.
      */
     private LeadershipTransferState leadershipTransferState;
 

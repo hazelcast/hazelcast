@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.raft.impl.task;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
@@ -29,7 +30,14 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**
- * TODO [basri] javadoc
+ * Sends a {@link TriggerLeaderElection} request to the endpoint given in
+ * {@link LeadershipTransferState#endpoint()}. Before sending this request,
+ * the append request backoff state of the endpoint is reset and
+ * an {@link AppendRequest} is also sent.
+ * <p>
+ * This task waits until all appended entries are committed in the current
+ * leader before starting the leadership transfer, and reschedules itself if
+ * the local Raft node is still leader or there are uncommitted log entries.
  */
 public class LeadershipTransferTask implements Runnable {
 
