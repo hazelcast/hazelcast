@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * The {@link AbstractMapStreamSerializer} serializer
+ * The {@link ConcurrentSkipListMap} serializer
  */
 public class ConcurrentSkipListMapStreamSerializer extends AbstractMapStreamSerializer {
     @Override
