@@ -26,7 +26,13 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class QueryCacheEventDataCodec {
 
@@ -42,13 +48,13 @@ public final class QueryCacheEventDataCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, SEQUENCE_OFFSET, eventData.getSequence());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, EVENT_TYPE_OFFSET, eventData.getEventType());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, PARTITION_ID_OFFSET, eventData.getPartitionId());
+        encodeLong(initialFrame.content, SEQUENCE_OFFSET, eventData.getSequence());
+        encodeInt(initialFrame.content, EVENT_TYPE_OFFSET, eventData.getEventType());
+        encodeInt(initialFrame.content, PARTITION_ID_OFFSET, eventData.getPartitionId());
         clientMessage.addFrame(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, eventData.getDataNewValue(), DataCodec::encode);
+        encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
+        encodeNullable(clientMessage, eventData.getDataNewValue(), DataCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -58,12 +64,12 @@ public final class QueryCacheEventDataCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        long sequence = FixedSizeTypesCodec.decodeLong(initialFrame.content, SEQUENCE_OFFSET);
-        int eventType = FixedSizeTypesCodec.decodeInt(initialFrame.content, EVENT_TYPE_OFFSET);
-        int partitionId = FixedSizeTypesCodec.decodeInt(initialFrame.content, PARTITION_ID_OFFSET);
+        long sequence = decodeLong(initialFrame.content, SEQUENCE_OFFSET);
+        int eventType = decodeInt(initialFrame.content, EVENT_TYPE_OFFSET);
+        int partitionId = decodeInt(initialFrame.content, PARTITION_ID_OFFSET);
 
-        Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data newValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data key = decodeNullable(iterator, DataCodec::decode);
+        Data newValue = decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

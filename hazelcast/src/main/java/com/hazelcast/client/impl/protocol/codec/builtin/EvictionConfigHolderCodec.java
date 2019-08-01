@@ -25,7 +25,11 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class EvictionConfigHolderCodec {
     private static final int SIZE_OFFSET = 0;
@@ -38,13 +42,13 @@ public final class EvictionConfigHolderCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, SIZE_OFFSET, configHolder.getSize());
+        encodeInt(initialFrame.content, SIZE_OFFSET, configHolder.getSize());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, configHolder.getMaxSizePolicy());
         StringCodec.encode(clientMessage, configHolder.getEvictionPolicy());
-        CodecUtil.encodeNullable(clientMessage, configHolder.getComparatorClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getComparator(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getComparatorClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getComparator(), DataCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -54,12 +58,12 @@ public final class EvictionConfigHolderCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int size = FixedSizeTypesCodec.decodeInt(initialFrame.content, SIZE_OFFSET);
+        int size = decodeInt(initialFrame.content, SIZE_OFFSET);
 
         String maxSizePolicy = StringCodec.decode(iterator);
         String evictionPolicy = StringCodec.decode(iterator);
-        String comparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data comparator = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String comparatorClassName = decodeNullable(iterator, StringCodec::decode);
+        Data comparator = decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

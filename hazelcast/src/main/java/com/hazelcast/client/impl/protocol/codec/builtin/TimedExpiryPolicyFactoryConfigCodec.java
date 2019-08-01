@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class TimedExpiryPolicyFactoryConfigCodec {
     private static final int DURATION_AMOUNT_OFFSET = 0;
@@ -39,7 +41,7 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET, config.getDurationConfig().getDurationAmount());
+        encodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET, config.getDurationConfig().getDurationAmount());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, config.getExpiryPolicyType().name());
@@ -53,7 +55,7 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        long durationAmount = FixedSizeTypesCodec.decodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET);
+        long durationAmount = decodeLong(initialFrame.content, DURATION_AMOUNT_OFFSET);
 
         String expiryPolicyTypeName = StringCodec.decode(iterator);
         String durationTimeUnitName = StringCodec.decode(iterator);

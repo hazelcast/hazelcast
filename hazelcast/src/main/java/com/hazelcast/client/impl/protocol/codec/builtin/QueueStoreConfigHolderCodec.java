@@ -26,7 +26,11 @@ import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
 public final class QueueStoreConfigHolderCodec {
     private static final int ENABLED_OFFSET = 0;
@@ -39,13 +43,13 @@ public final class QueueStoreConfigHolderCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
+        encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
         clientMessage.addFrame(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
         MapCodec.encodeNullable(clientMessage, configHolder.getProperties().entrySet(), StringCodec::encode, StringCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
@@ -56,12 +60,12 @@ public final class QueueStoreConfigHolderCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        boolean enabled = decodeBoolean(initialFrame.content, ENABLED_OFFSET);
 
-        String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String className = decodeNullable(iterator, StringCodec::decode);
+        Data implementation = decodeNullable(iterator, DataCodec::decode);
+        String factoryClassName = decodeNullable(iterator, StringCodec::decode);
+        Data factoryImplementation = decodeNullable(iterator, DataCodec::decode);
         Map<String, String> properties = MapCodec.decodeToNullableMap(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

@@ -20,6 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.ListIterator;
 
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+
 public final class LongArrayCodec {
 
     private LongArrayCodec() {
@@ -27,18 +29,18 @@ public final class LongArrayCodec {
 
     public static void encode(ClientMessage clientMessage, long[] array) {
         int itemCount = array.length;
-        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES]);
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * LONG_SIZE_IN_BYTES]);
         for (int i = 0; i < itemCount; i++) {
-            FixedSizeTypesCodec.encodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES, array[i]);
+            encodeLong(frame.content, i * LONG_SIZE_IN_BYTES, array[i]);
         }
         clientMessage.addFrame(frame);
     }
 
     public static long[] decode(ClientMessage.Frame frame) {
-        int itemCount = frame.content.length / FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+        int itemCount = frame.content.length / LONG_SIZE_IN_BYTES;
         long[] result = new long[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            FixedSizeTypesCodec.decodeLong(frame.content, i * FixedSizeTypesCodec.LONG_SIZE_IN_BYTES);
+            decodeLong(frame.content, i * LONG_SIZE_IN_BYTES);
         }
         return result;
     }

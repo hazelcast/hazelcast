@@ -26,7 +26,11 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class ScheduledTaskHandlerCodec {
     private static final int PARTITION_ID_OFFSET = 0;
@@ -39,12 +43,12 @@ public final class ScheduledTaskHandlerCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, PARTITION_ID_OFFSET, handler.getPartitionId());
+        encodeInt(initialFrame.content, PARTITION_ID_OFFSET, handler.getPartitionId());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, handler.getSchedulerName());
         StringCodec.encode(clientMessage, handler.getTaskName());
-        CodecUtil.encodeNullable(clientMessage, handler.getAddress(), AddressCodec::encode);
+        encodeNullable(clientMessage, handler.getAddress(), AddressCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -54,11 +58,11 @@ public final class ScheduledTaskHandlerCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int partitionId = FixedSizeTypesCodec.decodeInt(initialFrame.content, PARTITION_ID_OFFSET);
+        int partitionId = decodeInt(initialFrame.content, PARTITION_ID_OFFSET);
 
         String schedulerName = StringCodec.decode(iterator);
         String taskName = StringCodec.decode(iterator);
-        Address address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
+        Address address = decodeNullable(iterator, AddressCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

@@ -24,6 +24,8 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
 public final class PredicateConfigHolderCodec {
@@ -34,9 +36,9 @@ public final class PredicateConfigHolderCodec {
     public static void encode(ClientMessage clientMessage, PredicateConfigHolder configHolder) {
         clientMessage.addFrame(BEGIN_FRAME);
 
-        CodecUtil.encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getSql(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getSql(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -45,9 +47,9 @@ public final class PredicateConfigHolderCodec {
         // begin frame
         iterator.next();
 
-        String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        String sql = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String className = decodeNullable(iterator, StringCodec::decode);
+        String sql = decodeNullable(iterator, StringCodec::decode);
+        Data implementation = decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

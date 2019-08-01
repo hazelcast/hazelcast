@@ -24,7 +24,11 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
 public final class CacheSimpleEntryListenerConfigCodec {
     private static final int OLD_VALUE_REQUIRED_OFFSET = 0;
@@ -38,12 +42,12 @@ public final class CacheSimpleEntryListenerConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET, config.isOldValueRequired());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET, config.isSynchronous());
+        encodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET, config.isOldValueRequired());
+        encodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET, config.isSynchronous());
         clientMessage.addFrame(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, config.getCacheEntryListenerFactory(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, config.getCacheEntryEventFilterFactory(), StringCodec::encode);
+        encodeNullable(clientMessage, config.getCacheEntryListenerFactory(), StringCodec::encode);
+        encodeNullable(clientMessage, config.getCacheEntryEventFilterFactory(), StringCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -53,11 +57,11 @@ public final class CacheSimpleEntryListenerConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean oldValueRequired = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET);
-        boolean synchronous = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET);
+        boolean oldValueRequired = decodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_OFFSET);
+        boolean synchronous = decodeBoolean(initialFrame.content, SYNCHRONOUS_OFFSET);
 
-        String cacheEntryListenerFactory = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        String cacheEntryEventFilterFactory = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        String cacheEntryListenerFactory = decodeNullable(iterator, StringCodec::decode);
+        String cacheEntryEventFilterFactory = decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

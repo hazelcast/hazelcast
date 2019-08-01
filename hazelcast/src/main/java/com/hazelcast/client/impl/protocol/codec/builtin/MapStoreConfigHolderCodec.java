@@ -26,7 +26,9 @@ import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_OFFSET = 0;
@@ -42,16 +44,16 @@ public final class MapStoreConfigHolderCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.isWriteCoalescing());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, WRITE_DELAY_SECONDS_OFFSET, configHolder.getWriteDelaySeconds());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.getWriteBatchSize());
+        encodeBoolean(initialFrame.content, ENABLED_OFFSET, configHolder.isEnabled());
+        encodeBoolean(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.isWriteCoalescing());
+        encodeInt(initialFrame.content, WRITE_DELAY_SECONDS_OFFSET, configHolder.getWriteDelaySeconds());
+        encodeInt(initialFrame.content, WRITE_BATCH_SIZE_OFFSET, configHolder.getWriteBatchSize());
         clientMessage.addFrame(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getFactoryClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getFactoryImplementation(), DataCodec::encode);
         MapCodec.encodeNullable(clientMessage, configHolder.getProperties().entrySet(), StringCodec::encode, StringCodec::encode);
         StringCodec.encode(clientMessage, configHolder.getInitialLoadMode());
 
@@ -63,15 +65,15 @@ public final class MapStoreConfigHolderCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
-        boolean writeCoalescing = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, WRITE_COALESCING_OFFSET);
-        int writeDelaySeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, WRITE_DELAY_SECONDS_OFFSET);
-        int writeBatchSize = FixedSizeTypesCodec.decodeInt(initialFrame.content, WRITE_BATCH_SIZE_OFFSET);
+        boolean enabled = decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        boolean writeCoalescing = decodeBoolean(initialFrame.content, WRITE_COALESCING_OFFSET);
+        int writeDelaySeconds = decodeInt(initialFrame.content, WRITE_DELAY_SECONDS_OFFSET);
+        int writeBatchSize = decodeInt(initialFrame.content, WRITE_BATCH_SIZE_OFFSET);
 
-        String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String className = decodeNullable(iterator, StringCodec::decode);
+        String factoryClassName = decodeNullable(iterator, StringCodec::decode);
+        Data implementation = decodeNullable(iterator, DataCodec::decode);
+        Data factoryImplementation = decodeNullable(iterator, DataCodec::decode);
         Map<String, String> properties = MapCodec.decodeToNullableMap(iterator, StringCodec::decode, StringCodec::decode);
         String initialLoadMode = StringCodec.decode(iterator);
 

@@ -25,6 +25,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
 public final class HotRestartConfigCodec {
     private static final int ENABLED_OFFSET = 0;
@@ -38,8 +40,8 @@ public final class HotRestartConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, FSYNC_OFFSET, config.isFsync());
+        encodeBoolean(initialFrame.content, ENABLED_OFFSET, config.isEnabled());
+        encodeBoolean(initialFrame.content, FSYNC_OFFSET, config.isFsync());
         clientMessage.addFrame(initialFrame);
 
         clientMessage.addFrame(END_FRAME);
@@ -50,8 +52,8 @@ public final class HotRestartConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
-        boolean fsync = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, FSYNC_OFFSET);
+        boolean enabled = decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        boolean fsync = decodeBoolean(initialFrame.content, FSYNC_OFFSET);
 
         fastForwardToEndFrame(iterator);
 

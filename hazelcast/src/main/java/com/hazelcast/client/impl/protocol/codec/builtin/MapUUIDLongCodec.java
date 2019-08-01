@@ -25,40 +25,44 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
-public final class MapIntegerLongCodec {
+public final class MapUUIDLongCodec {
 
-    private static final int ENTRY_SIZE_IN_BYTES = INT_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES;
+    private static final int ENTRY_SIZE_IN_BYTES = UUID_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES;
 
-    private MapIntegerLongCodec() {
+    private MapUUIDLongCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Integer, Long>> collection) {
+    public static void encode(ClientMessage clientMessage, Collection<Map.Entry<UUID, Long>> collection) {
         int itemCount = collection.size();
         ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * ENTRY_SIZE_IN_BYTES]);
-        Iterator<Map.Entry<Integer, Long>> iterator = collection.iterator();
+        Iterator<Map.Entry<UUID, Long>> iterator = collection.iterator();
         for (int i = 0; i < itemCount; i++) {
-            Map.Entry<Integer, Long> entry = iterator.next();
-            encodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
-            encodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, entry.getValue());
+            Map.Entry<UUID, Long> entry = iterator.next();
+            encodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
+            encodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES, entry.getValue());
         }
         clientMessage.addFrame(frame);
     }
 
-    public static List<Map.Entry<Integer, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<Map.Entry<UUID, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
-        List<Map.Entry<Integer, Long>> result = new LinkedList<>();
+        List<Map.Entry<UUID, Long>> result = new LinkedList<>();
         for (int i = 0; i < itemCount; i++) {
-            int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
-            long value = decodeLong(frame.content, i * i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
+            UUID key = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES);
+            Long value = decodeLong(frame.content, i * i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         return result;

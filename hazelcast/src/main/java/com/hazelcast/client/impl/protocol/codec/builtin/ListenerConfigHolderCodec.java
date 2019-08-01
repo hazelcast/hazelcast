@@ -25,7 +25,13 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class ListenerConfigHolderCodec {
     private static final int INCLUDE_VALUE_OFFSET = 0;
@@ -40,13 +46,13 @@ public final class ListenerConfigHolderCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, LOCAL_OFFSET, configHolder.isLocal());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, LISTENER_TYPE_OFFSET, configHolder.getListenerType());
+        encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
+        encodeBoolean(initialFrame.content, LOCAL_OFFSET, configHolder.isLocal());
+        encodeInt(initialFrame.content, LISTENER_TYPE_OFFSET, configHolder.getListenerType());
         clientMessage.addFrame(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, configHolder.getListenerImplementation(), DataCodec::encode);
+        encodeNullable(clientMessage, configHolder.getClassName(), StringCodec::encode);
+        encodeNullable(clientMessage, configHolder.getListenerImplementation(), DataCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -56,12 +62,12 @@ public final class ListenerConfigHolderCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean includeValue = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET);
-        boolean local = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, LOCAL_OFFSET);
-        int listenerType = FixedSizeTypesCodec.decodeInt(initialFrame.content, LISTENER_TYPE_OFFSET);
+        boolean includeValue = decodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET);
+        boolean local = decodeBoolean(initialFrame.content, LOCAL_OFFSET);
+        int listenerType = decodeInt(initialFrame.content, LISTENER_TYPE_OFFSET);
 
-        String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        Data listenerImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        String className = decodeNullable(iterator, StringCodec::decode);
+        Data listenerImplementation = decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

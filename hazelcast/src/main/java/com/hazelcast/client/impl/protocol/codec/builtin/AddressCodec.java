@@ -27,6 +27,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class AddressCodec {
     private static final int PORT_OFFSET = 0;
@@ -37,27 +39,20 @@ public final class AddressCodec {
 
     public static void encode(ClientMessage clientMessage, Address address) {
         clientMessage.addFrame(BEGIN_FRAME);
-
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, PORT_OFFSET, address.getPort());
+        encodeInt(initialFrame.content, PORT_OFFSET, address.getPort());
         clientMessage.addFrame(initialFrame);
-
         StringCodec.encode(clientMessage, address.getHost());
-
         clientMessage.addFrame(END_FRAME);
     }
 
     public static Address decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
-
         ClientMessage.Frame initialFrame = iterator.next();
-        int port = FixedSizeTypesCodec.decodeInt(initialFrame.content, PORT_OFFSET);
-
+        int port = decodeInt(initialFrame.content, PORT_OFFSET);
         String host = StringCodec.decode(iterator);
-
         fastForwardToEndFrame(iterator);
-
         try {
             return new Address(host, port);
         } catch (UnknownHostException e) {

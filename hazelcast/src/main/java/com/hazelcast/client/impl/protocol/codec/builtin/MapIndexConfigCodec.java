@@ -25,6 +25,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
 public final class MapIndexConfigCodec {
     private static final int ORDERED_OFFSET = 0;
@@ -37,7 +39,7 @@ public final class MapIndexConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
+        encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, config.getAttribute());
@@ -50,7 +52,7 @@ public final class MapIndexConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean ordered = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ORDERED_OFFSET);
+        boolean ordered = decodeBoolean(initialFrame.content, ORDERED_OFFSET);
 
         String attribute = StringCodec.decode(iterator);
 

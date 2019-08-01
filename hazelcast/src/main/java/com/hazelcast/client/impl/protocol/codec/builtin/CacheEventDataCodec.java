@@ -27,7 +27,13 @@ import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.decodeNullable;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.encodeNullable;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_OFFSET = 0;
@@ -41,14 +47,14 @@ public final class CacheEventDataCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, CACHE_EVENT_TYPE_OFFSET, eventData.getCacheEventType().getType());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, IS_OLD_VALUE_AVAILABLE_OFFSET, eventData.isOldValueAvailable());
+        encodeInt(initialFrame.content, CACHE_EVENT_TYPE_OFFSET, eventData.getCacheEventType().getType());
+        encodeBoolean(initialFrame.content, IS_OLD_VALUE_AVAILABLE_OFFSET, eventData.isOldValueAvailable());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, eventData.getName());
-        CodecUtil.encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, eventData.getDataValue(), DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, eventData.getDataOldValue(), DataCodec::encode);
+        encodeNullable(clientMessage, eventData.getDataKey(), DataCodec::encode);
+        encodeNullable(clientMessage, eventData.getDataValue(), DataCodec::encode);
+        encodeNullable(clientMessage, eventData.getDataOldValue(), DataCodec::encode);
 
         clientMessage.addFrame(END_FRAME);
     }
@@ -58,13 +64,13 @@ public final class CacheEventDataCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int cacheEventType = FixedSizeTypesCodec.decodeInt(initialFrame.content, CACHE_EVENT_TYPE_OFFSET);
-        boolean isOldValueAvailable = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, IS_OLD_VALUE_AVAILABLE_OFFSET);
+        int cacheEventType = decodeInt(initialFrame.content, CACHE_EVENT_TYPE_OFFSET);
+        boolean isOldValueAvailable = decodeBoolean(initialFrame.content, IS_OLD_VALUE_AVAILABLE_OFFSET);
 
         String name = StringCodec.decode(iterator);
-        Data key = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        Data oldValue = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        Data key = decodeNullable(iterator, DataCodec::decode);
+        Data value = decodeNullable(iterator, DataCodec::decode);
+        Data oldValue = decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

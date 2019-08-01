@@ -25,6 +25,10 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class EventJournalConfigCodec {
 
@@ -40,9 +44,9 @@ public final class EventJournalConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, eventJournalConfig.isEnabled());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, CAPACITY_OFFSET, eventJournalConfig.getCapacity());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, TTL_OFFSET, eventJournalConfig.getTimeToLiveSeconds());
+        encodeBoolean(initialFrame.content, ENABLED_OFFSET, eventJournalConfig.isEnabled());
+        encodeInt(initialFrame.content, CAPACITY_OFFSET, eventJournalConfig.getCapacity());
+        encodeInt(initialFrame.content, TTL_OFFSET, eventJournalConfig.getTimeToLiveSeconds());
         clientMessage.addFrame(initialFrame);
 
         clientMessage.addFrame(END_FRAME);
@@ -54,9 +58,9 @@ public final class EventJournalConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
-        int capacity = FixedSizeTypesCodec.decodeInt(initialFrame.content, CAPACITY_OFFSET);
-        int ttl = FixedSizeTypesCodec.decodeInt(initialFrame.content, TTL_OFFSET);
+        boolean enabled = decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        int capacity = decodeInt(initialFrame.content, CAPACITY_OFFSET);
+        int ttl = decodeInt(initialFrame.content, TTL_OFFSET);
 
         fastForwardToEndFrame(iterator);
 

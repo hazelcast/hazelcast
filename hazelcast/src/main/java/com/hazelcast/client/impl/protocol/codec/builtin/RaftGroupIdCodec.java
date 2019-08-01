@@ -25,6 +25,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class RaftGroupIdCodec {
     private static final int SEED_OFFSET = 0;
@@ -38,8 +40,8 @@ public final class RaftGroupIdCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, SEED_OFFSET, groupId.seed());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, COMMIT_INDEX_OFFSET, groupId.id());
+        encodeLong(initialFrame.content, SEED_OFFSET, groupId.seed());
+        encodeLong(initialFrame.content, COMMIT_INDEX_OFFSET, groupId.id());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, groupId.name());
@@ -52,8 +54,8 @@ public final class RaftGroupIdCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        long seed = FixedSizeTypesCodec.decodeLong(initialFrame.content, SEED_OFFSET);
-        long commitIndex = FixedSizeTypesCodec.decodeLong(initialFrame.content, COMMIT_INDEX_OFFSET);
+        long seed = decodeLong(initialFrame.content, SEED_OFFSET);
+        long commitIndex = decodeLong(initialFrame.content, COMMIT_INDEX_OFFSET);
 
         String name = StringCodec.decode(iterator);
 

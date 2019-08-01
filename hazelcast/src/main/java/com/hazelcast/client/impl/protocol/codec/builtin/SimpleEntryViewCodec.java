@@ -26,6 +26,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class SimpleEntryViewCodec {
     private static final int COST_OFFSET = 0;
@@ -47,16 +49,16 @@ public final class SimpleEntryViewCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, COST_OFFSET, entryView.getCost());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, CREATION_TIME_OFFSET, entryView.getCreationTime());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET, entryView.getExpirationTime());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, HITS_OFFSET, entryView.getHits());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET, entryView.getLastAccessTime());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET, entryView.getLastStoredTime());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET, entryView.getLastUpdateTime());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, VERSION_OFFSET, entryView.getVersion());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, TTL_OFFSET, entryView.getTtl());
-        FixedSizeTypesCodec.encodeLong(initialFrame.content, MAX_IDLE_OFFSET, entryView.getMaxIdle());
+        encodeLong(initialFrame.content, COST_OFFSET, entryView.getCost());
+        encodeLong(initialFrame.content, CREATION_TIME_OFFSET, entryView.getCreationTime());
+        encodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET, entryView.getExpirationTime());
+        encodeLong(initialFrame.content, HITS_OFFSET, entryView.getHits());
+        encodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET, entryView.getLastAccessTime());
+        encodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET, entryView.getLastStoredTime());
+        encodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET, entryView.getLastUpdateTime());
+        encodeLong(initialFrame.content, VERSION_OFFSET, entryView.getVersion());
+        encodeLong(initialFrame.content, TTL_OFFSET, entryView.getTtl());
+        encodeLong(initialFrame.content, MAX_IDLE_OFFSET, entryView.getMaxIdle());
         clientMessage.addFrame(initialFrame);
 
         DataCodec.encode(clientMessage, entryView.getKey());
@@ -70,16 +72,16 @@ public final class SimpleEntryViewCodec {
         iterator.next();
         ClientMessage.Frame initialFrame = iterator.next();
 
-        long cost = FixedSizeTypesCodec.decodeLong(initialFrame.content, COST_OFFSET);
-        long creationTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, CREATION_TIME_OFFSET);
-        long expirationTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET);
-        long hits = FixedSizeTypesCodec.decodeLong(initialFrame.content, HITS_OFFSET);
-        long lastAccessTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET);
-        long lastStoredTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET);
-        long lastUpdateTime = FixedSizeTypesCodec.decodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET);
-        long version = FixedSizeTypesCodec.decodeLong(initialFrame.content, VERSION_OFFSET);
-        long ttl = FixedSizeTypesCodec.decodeLong(initialFrame.content, TTL_OFFSET);
-        long maxIdle = FixedSizeTypesCodec.decodeLong(initialFrame.content, MAX_IDLE_OFFSET);
+        long cost = decodeLong(initialFrame.content, COST_OFFSET);
+        long creationTime = decodeLong(initialFrame.content, CREATION_TIME_OFFSET);
+        long expirationTime = decodeLong(initialFrame.content, EXPIRATION_TIME_OFFSET);
+        long hits = decodeLong(initialFrame.content, HITS_OFFSET);
+        long lastAccessTime = decodeLong(initialFrame.content, LAST_ACCESS_TIME_OFFSET);
+        long lastStoredTime = decodeLong(initialFrame.content, LAST_STORED_TIME_OFFSET);
+        long lastUpdateTime = decodeLong(initialFrame.content, LAST_UPDATE_TIME_OFFSET);
+        long version = decodeLong(initialFrame.content, VERSION_OFFSET);
+        long ttl = decodeLong(initialFrame.content, TTL_OFFSET);
+        long maxIdle = decodeLong(initialFrame.content, MAX_IDLE_OFFSET);
 
         Data key = DataCodec.decode(iterator);
         Data value = DataCodec.decode(iterator);

@@ -30,6 +30,10 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class QueryCacheConfigHolderCodec {
     private static final int BATCH_SIZE_OFFSET = 0;
@@ -47,12 +51,12 @@ public final class QueryCacheConfigHolderCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, BATCH_SIZE_OFFSET, configHolder.getBatchSize());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, BUFFER_SIZE_OFFSET, configHolder.getBufferSize());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, DELAY_SECONDS_OFFSET, configHolder.getDelaySeconds());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, POPULATE_OFFSET, configHolder.isPopulate());
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, COALESCE_OFFSET, configHolder.isCoalesce());
+        encodeInt(initialFrame.content, BATCH_SIZE_OFFSET, configHolder.getBatchSize());
+        encodeInt(initialFrame.content, BUFFER_SIZE_OFFSET, configHolder.getBufferSize());
+        encodeInt(initialFrame.content, DELAY_SECONDS_OFFSET, configHolder.getDelaySeconds());
+        encodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET, configHolder.isIncludeValue());
+        encodeBoolean(initialFrame.content, POPULATE_OFFSET, configHolder.isPopulate());
+        encodeBoolean(initialFrame.content, COALESCE_OFFSET, configHolder.isCoalesce());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, configHolder.getInMemoryFormat());
@@ -70,12 +74,12 @@ public final class QueryCacheConfigHolderCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int batchSize = FixedSizeTypesCodec.decodeInt(initialFrame.content, BATCH_SIZE_OFFSET);
-        int bufferSize = FixedSizeTypesCodec.decodeInt(initialFrame.content, BUFFER_SIZE_OFFSET);
-        int delaySeconds = FixedSizeTypesCodec.decodeInt(initialFrame.content, DELAY_SECONDS_OFFSET);
-        boolean includeValue = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET);
-        boolean populate = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, POPULATE_OFFSET);
-        boolean coalesce = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, COALESCE_OFFSET);
+        int batchSize = decodeInt(initialFrame.content, BATCH_SIZE_OFFSET);
+        int bufferSize = decodeInt(initialFrame.content, BUFFER_SIZE_OFFSET);
+        int delaySeconds = decodeInt(initialFrame.content, DELAY_SECONDS_OFFSET);
+        boolean includeValue = decodeBoolean(initialFrame.content, INCLUDE_VALUE_OFFSET);
+        boolean populate = decodeBoolean(initialFrame.content, POPULATE_OFFSET);
+        boolean coalesce = decodeBoolean(initialFrame.content, COALESCE_OFFSET);
 
         String inMemoryFormat = StringCodec.decode(iterator);
         String name = StringCodec.decode(iterator);

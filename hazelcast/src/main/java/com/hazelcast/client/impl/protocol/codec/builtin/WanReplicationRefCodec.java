@@ -26,6 +26,8 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
 public final class WanReplicationRefCodec {
     private static final int REPUBLISHING_ENABLED_OFFSET = 0;
@@ -38,7 +40,7 @@ public final class WanReplicationRefCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET, wanReplicationRef.isRepublishingEnabled());
+        encodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET, wanReplicationRef.isRepublishingEnabled());
         clientMessage.addFrame(initialFrame);
 
         StringCodec.encode(clientMessage, wanReplicationRef.getName());
@@ -53,7 +55,7 @@ public final class WanReplicationRefCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean republishingEnabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET);
+        boolean republishingEnabled = decodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_OFFSET);
 
         String name = StringCodec.decode(iterator);
         String mergePolicy = StringCodec.decode(iterator);

@@ -25,6 +25,10 @@ import java.util.ListIterator;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class MerkleTreeConfigCodec {
 
@@ -39,8 +43,8 @@ public final class MerkleTreeConfigCodec {
         clientMessage.addFrame(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        FixedSizeTypesCodec.encodeBoolean(initialFrame.content, ENABLED_OFFSET, merkleTreeConfig.isEnabled());
-        FixedSizeTypesCodec.encodeInt(initialFrame.content, DEPTH_OFFSET, merkleTreeConfig.getDepth());
+        encodeBoolean(initialFrame.content, ENABLED_OFFSET, merkleTreeConfig.isEnabled());
+        encodeInt(initialFrame.content, DEPTH_OFFSET, merkleTreeConfig.getDepth());
         clientMessage.addFrame(initialFrame);
 
         clientMessage.addFrame(END_FRAME);
@@ -52,8 +56,8 @@ public final class MerkleTreeConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean enabled = FixedSizeTypesCodec.decodeBoolean(initialFrame.content, ENABLED_OFFSET);
-        int depth = FixedSizeTypesCodec.decodeInt(initialFrame.content, DEPTH_OFFSET);
+        boolean enabled = decodeBoolean(initialFrame.content, ENABLED_OFFSET);
+        int depth = decodeInt(initialFrame.content, DEPTH_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
