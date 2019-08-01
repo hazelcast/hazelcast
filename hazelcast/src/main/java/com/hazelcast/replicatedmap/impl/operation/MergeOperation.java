@@ -88,7 +88,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.readInternal(in);
         name = in.readUTF();
         int size = in.readInt();
-        mergingEntries = new ArrayList<ReplicatedMapMergeTypes>(size);
+        mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ReplicatedMapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);

@@ -402,8 +402,6 @@
 
     <replicatedmap name="dummy">
         <in-memory-format>BINARY</in-memory-format>
-        <concurrency-level>12</concurrency-level>
-        <replication-delay-millis>12</replication-delay-millis>
         <async-fillup>false</async-fillup>
         <statistics-enabled>false</statistics-enabled>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>

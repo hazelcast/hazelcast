@@ -1555,23 +1555,16 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            if ("concurrency-level".equals(nodeName)) {
-                replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level", value));
-            } else if ("in-memory-format".equals(nodeName)) {
+            if ("in-memory-format".equals(nodeName)) {
                 replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("replication-delay-millis".equals(nodeName)) {
-                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 replicatedMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(n, new Function<EntryListenerConfig, Void>() {
-                    @Override
-                    public Void apply(EntryListenerConfig entryListenerConfig) {
-                        replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
-                        return null;
-                    }
+                handleEntryListeners(n, entryListenerConfig -> {
+                    replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
+                    return null;
                 });
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);

@@ -577,8 +577,8 @@
                 </hz:message-listeners>
             </hz:topic>
 
-            <hz:replicatedmap name="replicatedMap" replication-delay-millis="200" async-fillup="false"
-                              concurrency-level="16" statistics-enabled="false" in-memory-format="OBJECT">
+            <hz:replicatedmap name="replicatedMap" async-fillup="false"
+                               statistics-enabled="false" in-memory-format="OBJECT">
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>

@@ -213,8 +213,6 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
             gen.open("replicatedmap", "name", r.getName())
                     .node("in-memory-format", r.getInMemoryFormat())
-                    .node("concurrency-level", r.getConcurrencyLevel())
-                    .node("replication-delay-millis", r.getReplicationDelayMillis())
                     .node("async-fillup", r.isAsyncFillup())
                     .node("statistics-enabled", r.isStatisticsEnabled())
                     .node("quorum-ref", r.getQuorumName())
