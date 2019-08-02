@@ -75,13 +75,14 @@ class RaftGroupMembershipManager {
 
     static final long MANAGEMENT_TASK_PERIOD_IN_MILLIS = SECONDS.toMillis(1);
     private static final long CHECK_LOCAL_RAFT_NODES_TASK_PERIOD = 10;
-    private static final long MEMBERSHIP_BALANCE_TASK_PERIOD = 5;
+    private static final long LEADERSHIP_BALANCE_TASK_PERIOD = 60;
 
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
     private final ILogger logger;
     private final RaftInvocationManager invocationManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
+    private final AtomicBoolean rebalanceTaskRunning = new AtomicBoolean();
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
@@ -103,12 +104,16 @@ class RaftGroupMembershipManager {
                 MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
         executionService.scheduleWithRepetition(new CheckLocalRaftNodesTask(), CHECK_LOCAL_RAFT_NODES_TASK_PERIOD,
                 CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
-        executionService.scheduleWithRepetition(new RaftGroupMembershipBalanceTask(), MEMBERSHIP_BALANCE_TASK_PERIOD,
-                MEMBERSHIP_BALANCE_TASK_PERIOD, SECONDS);
+        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(false), LEADERSHIP_BALANCE_TASK_PERIOD,
+                LEADERSHIP_BALANCE_TASK_PERIOD, SECONDS);
     }
 
     private boolean skipRunningTask() {
         return !raftService.getMetadataGroupManager().isMetadataGroupLeader();
+    }
+
+    void rebalanceGroupLeaderships() {
+        new RaftGroupLeadershipBalanceTask(true).run();
     }
 
     private class CheckLocalRaftNodesTask implements Runnable {
@@ -451,7 +456,13 @@ class RaftGroupMembershipManager {
         }
     }
 
-    private class RaftGroupMembershipBalanceTask implements Runnable {
+    private class RaftGroupLeadershipBalanceTask implements Runnable {
+
+        private final boolean awaitIfRunning;
+
+        private RaftGroupLeadershipBalanceTask(boolean awaitIfRunning) {
+            this.awaitIfRunning = awaitIfRunning;
+        }
 
         @Override
         public void run() {
@@ -459,8 +470,29 @@ class RaftGroupMembershipManager {
                 return;
             }
 
+            if (!rebalanceTaskRunning.compareAndSet(false, true)) {
+                while (awaitIfRunning && rebalanceTaskRunning.get()) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                return;
+            }
+
+            try {
+                innerRun();
+            } finally {
+                rebalanceTaskRunning.set(false);
+            }
+        }
+
+        private void innerRun() {
             Map<RaftEndpoint, CPMember> members = getMembers();
             Collection<CPGroupId> groupIds = getCpGroupIds();
+            groupIds.remove(raftService.getMetadataGroupId());
 
             final int groupsPerMember = groupIds.size() / members.size();
             if (groupsPerMember <= 1) {

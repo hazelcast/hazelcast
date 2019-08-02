@@ -25,6 +25,9 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
             invocationManager.createRaftGroup("group-" + i);
         }
 
-        sleepSeconds(30);
+        HazelcastInstance metadataLeader = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
+        getRaftService(metadataLeader).getMetadataGroupManager().rebalanceGroupLeaderships();
+
+
     }
 }

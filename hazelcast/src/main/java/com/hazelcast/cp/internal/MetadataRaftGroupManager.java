@@ -314,6 +314,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return null;
     }
 
+    public void rebalanceGroupLeaderships() {
+        if (!isMetadataGroupLeader()) {
+            return;
+        }
+        membershipManager.rebalanceGroupLeaderships();
+    }
+
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     public boolean initMetadataGroup(long commitIndex, CPMemberInfo callerCPMember, List<CPMemberInfo> discoveredCPMembers,
                                      long expectedGroupIdSeed) {
