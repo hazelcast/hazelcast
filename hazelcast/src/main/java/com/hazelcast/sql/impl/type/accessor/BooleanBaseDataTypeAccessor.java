@@ -2,18 +2,43 @@ package com.hazelcast.sql.impl.type.accessor;
 
 import java.math.BigDecimal;
 
-public class BooleanBaseDataTypeAccessor implements BaseDataTypeAccessor {
+public final class BooleanBaseDataTypeAccessor implements BaseDataTypeAccessor {
     @Override
-    public byte getByte(Object val) {
-        return convert(val) ? (byte)1 : (byte)0;
+    public final byte getByte(Object val) {
+        return convert(val);
     }
 
     @Override
-    public BigDecimal getDecimal(Object val) {
-        return convert(val) ? BigDecimal.ONE : BigDecimal.ZERO;
+    public final short getShort(Object val) {
+        return convert(val);
     }
 
-    private boolean convert(Object val) {
-        return (Boolean)val;
+    @Override
+    public final int getInt(Object val) {
+        return convert(val);
+    }
+
+    @Override
+    public final long getLong(Object val) {
+        return convert(val);
+    }
+
+    @Override
+    public final BigDecimal getDecimal(Object val) {
+        return convert(val) == 0 ? BigDecimal.ZERO : BigDecimal.ONE;
+    }
+
+    @Override
+    public final float getFloat(Object val) {
+        return convert(val);
+    }
+
+    @Override
+    public final double getDouble(Object val) {
+        return convert(val);
+    }
+
+    private byte convert(Object val) {
+        return (Boolean)val ? (byte)1 : (byte)0;
     }
 }

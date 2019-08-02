@@ -3,6 +3,8 @@ package com.hazelcast.sql.impl.expression.call;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 
@@ -16,6 +18,10 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
     /** Second operand. */
     protected Expression operand2;
 
+    /** Result type. */
+    // TODO: Refactor?
+    protected transient DataType resType;
+
     protected BiCallExpression() {
         // No-op.
     }
@@ -23,6 +29,11 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
     protected BiCallExpression(Expression operand1, Expression operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
+    }
+
+    @Override
+    public DataType getType() {
+        return TypeUtils.notNull(resType);
     }
 
     @Override

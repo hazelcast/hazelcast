@@ -30,8 +30,6 @@ import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_STRING;
  * Base data type which is mapped to concrete Java class.
  */
 public enum BaseDataType {
-
-
     LATE(
         BaseDataTypeGroup.LATE,
         PRECEDENCE_LATE,

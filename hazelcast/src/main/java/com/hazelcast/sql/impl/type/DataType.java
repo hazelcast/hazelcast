@@ -1,6 +1,7 @@
 package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_BIGINT;
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECISION_BIT;
@@ -92,7 +93,7 @@ public class DataType {
             return VARCHAR;
 
         // TODO: We will have to return "OBJECT" here instead for nested field access.
-        throw new HazelcastSqlException(-1, "Unsupported data type: " + clazz.getSimpleName());
+        throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported data type: " + clazz.getSimpleName());
     }
 
     public DataType(BaseDataType baseType, int precision, int scale) {
@@ -131,10 +132,15 @@ public class DataType {
 
     public void forceSame(Object val) {
         if (!isSame(val))
-            throw new HazelcastSqlException(-1, "Invalid type.");
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type.");
     }
 
     public boolean isNumeric() {
         return baseType.getGroup() == BaseDataTypeGroup.NUMERIC;
+    }
+
+    @Override
+    public String toString() {
+        return "DataType{base=" + baseType.name() + ", precision=" + precision + ", scale=" + scale + "}";
     }
 }

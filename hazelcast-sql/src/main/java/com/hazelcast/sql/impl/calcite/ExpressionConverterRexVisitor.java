@@ -1,8 +1,12 @@
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.expression.call.CallOperator;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.call.CallOperator;
+import com.hazelcast.sql.impl.expression.call.MinusBiCallExpression;
+import com.hazelcast.sql.impl.expression.call.MinusUniCallExpression;
 import com.hazelcast.sql.impl.expression.call.PlusBiCallExpression;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
@@ -20,7 +24,6 @@ import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.SqlFunction;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
@@ -78,13 +81,22 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             }
         }
 
-        if (convertedOperator == CallOperator.PLUS)
-            return new PlusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
-        else if (convertedOperator == CallOperator.CHAR_LENGTH)
-            return new CharLengthFunction(convertedOperands.get(0));
-        else
-            // TODO: Proper exception.
-            throw new UnsupportedOperationException("Operator is not supported: " + SqlKind.PLUS);
+        switch (convertedOperator) {
+            case CallOperator.PLUS:
+                return new PlusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
+
+            case CallOperator.MINUS:
+                return new MinusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
+
+            case CallOperator.UNARY_MINUS:
+                return new MinusUniCallExpression(convertedOperands.get(0));
+
+            case CallOperator.CHAR_LENGTH:
+                return new CharLengthFunction(convertedOperands.get(0));
+
+            default:
+                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
+        }
     }
 
     @Override
@@ -144,6 +156,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
         switch (operator.getKind()) {
             case PLUS:
                 return CallOperator.PLUS;
+
+            case MINUS:
+                return CallOperator.MINUS;
+
+            case MINUS_PREFIX:
+                return CallOperator.UNARY_MINUS;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

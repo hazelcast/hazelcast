@@ -1,6 +1,7 @@
 package com.hazelcast.sql.impl.expression.call.func;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
@@ -28,8 +29,7 @@ public class CharLengthFunction extends UniCallExpression<Integer> {
         }
 
         if (operand.getType() != DataType.VARCHAR)
-            // TODO: Proper SQLSTATE
-            throw new HazelcastSqlException(-1, "Illegal type: " + op1.getClass());
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Illegal type: " + op1.getClass());
 
         return ((String)op1).length();
     }
