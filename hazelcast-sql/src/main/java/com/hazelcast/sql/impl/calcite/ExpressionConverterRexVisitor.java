@@ -5,6 +5,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
+import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
@@ -98,6 +99,19 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.CHAR_LENGTH:
                 return new CharLengthFunction(convertedOperands.get(0));
 
+            case CallOperator.COS:
+            case CallOperator.SIN:
+            case CallOperator.TAN:
+            case CallOperator.COT:
+            case CallOperator.ACOS:
+            case CallOperator.ASIN:
+            case CallOperator.ATAN:
+            case CallOperator.SQRT:
+            case CallOperator.EXP:
+            case CallOperator.LN:
+            case CallOperator.LOG10:
+                return new DoubleFunction(convertedOperands.get(0), convertedOperator);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -172,6 +186,29 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;
+
+                if (function == SqlStdOperatorTable.COS)
+                    return CallOperator.COS;
+                else if (function == SqlStdOperatorTable.SIN)
+                    return CallOperator.SIN;
+                else if (function == SqlStdOperatorTable.TAN)
+                    return CallOperator.COT;
+                else if (function == SqlStdOperatorTable.COT)
+                    return CallOperator.COT;
+                else if (function == SqlStdOperatorTable.ACOS)
+                    return CallOperator.ACOS;
+                else if (function == SqlStdOperatorTable.ASIN)
+                    return CallOperator.ASIN;
+                else if (function == SqlStdOperatorTable.ATAN)
+                    return CallOperator.ATAN;
+                else if (function == SqlStdOperatorTable.SQRT)
+                    return CallOperator.SQRT;
+                else if (function == SqlStdOperatorTable.EXP)
+                    return CallOperator.EXP;
+                else if (function == SqlStdOperatorTable.LN)
+                    return CallOperator.LN;
+                else if (function == SqlStdOperatorTable.LOG10)
+                    return CallOperator.LOG10;
 
                 if (
                     function == SqlStdOperatorTable.CHAR_LENGTH ||

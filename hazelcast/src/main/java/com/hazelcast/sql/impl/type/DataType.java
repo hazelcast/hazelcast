@@ -148,6 +148,10 @@ public class DataType {
         return baseType.getGroup() == BaseDataTypeGroup.NUMERIC;
     }
 
+    public boolean isNumericInteger() {
+        return isNumeric() && scale == 0;
+    }
+
     @Override
     public String toString() {
         return "DataType{base=" + baseType.name() + ", precision=" + precision + ", scale=" + scale + "}";
