@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED;
 
 /**
  * The integration point of the Raft algorithm implementation and
@@ -81,6 +82,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     private final TaskScheduler taskScheduler;
     private final int partitionId;
     private final int threadId;
+    private final boolean linearizableReadOptimizationEnabled;
 
     NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, RaftEndpoint localCPMember, int partitionId) {
         this.nodeEngine = nodeEngine;
@@ -94,6 +96,8 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) operationService.getOperationExecutor();
         this.threadId = operationExecutor.toPartitionThreadIndex(partitionId);
         this.taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        this.linearizableReadOptimizationEnabled = nodeEngine.getProperties()
+                                                             .getBoolean(RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED);
     }
 
     @Override
@@ -126,6 +130,11 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     @Override
     public Object getAppendedEntryOnLeaderElection() {
         return new NotifyTermChangeOp();
+    }
+
+    @Override
+    public boolean isLinearizableReadOptimizationEnabled() {
+        return linearizableReadOptimizationEnabled;
     }
 
     @Override

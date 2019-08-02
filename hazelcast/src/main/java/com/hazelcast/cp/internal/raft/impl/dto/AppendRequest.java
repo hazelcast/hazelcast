@@ -45,19 +45,21 @@ public class AppendRequest implements IdentifiedDataSerializable {
     private long prevLogIndex;
     private long leaderCommitIndex;
     private LogEntry[] entries;
+    private long queryRound;
 
     public AppendRequest() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
-            LogEntry[] entries) {
-        this.term = term;
+            LogEntry[] entries, long queryRound) {
         this.leader = leader;
+        this.term = term;
         this.prevLogTerm = prevLogTerm;
         this.prevLogIndex = prevLogIndex;
         this.leaderCommitIndex = leaderCommitIndex;
         this.entries = entries;
+        this.queryRound = queryRound;
     }
 
     public RaftEndpoint leader() {
@@ -89,6 +91,10 @@ public class AppendRequest implements IdentifiedDataSerializable {
         return entries.length;
     }
 
+    public long queryRound() {
+        return queryRound;
+    }
+
     @Override
     public int getFactoryId() {
         return RaftDataSerializerHook.F_ID;
@@ -111,6 +117,8 @@ public class AppendRequest implements IdentifiedDataSerializable {
         for (LogEntry entry : entries) {
             out.writeObject(entry);
         }
+
+        out.writeLong(queryRound);
     }
 
     @Override
@@ -126,13 +134,15 @@ public class AppendRequest implements IdentifiedDataSerializable {
         for (int i = 0; i < len; i++) {
             entries[i] = in.readObject();
         }
+
+        queryRound = in.readLong();
     }
 
     @Override
     public String toString() {
         return "AppendRequest{" + "leader=" + leader + ", term=" + term + ", prevLogTerm=" + prevLogTerm
-                + ", prevLogIndex=" + prevLogIndex + ", leaderCommitIndex=" + leaderCommitIndex + ", entries=" + Arrays
-                .toString(entries) + '}';
+                + ", prevLogIndex=" + prevLogIndex + ", leaderCommitIndex=" + leaderCommitIndex + ", queryRound=" + queryRound
+                + ", entries=" + Arrays.toString(entries) + '}';
     }
 
 }

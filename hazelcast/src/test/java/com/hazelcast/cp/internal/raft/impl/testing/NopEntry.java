@@ -43,4 +43,10 @@ public class NopEntry implements RaftRunnable, DataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
     }
+
+    @Override
+    public String toString() {
+        return "NopEntry{}";
+    }
+
 }

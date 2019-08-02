@@ -39,14 +39,16 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
     private RaftEndpoint follower;
     private int term;
     private long lastLogIndex;
+    private long queryRound;
 
     public AppendSuccessResponse() {
     }
 
-    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex) {
+    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex, long queryRound) {
         this.follower = follower;
         this.term = term;
         this.lastLogIndex = lastLogIndex;
+        this.queryRound = queryRound;
     }
 
     public RaftEndpoint follower() {
@@ -59,6 +61,10 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
 
     public long lastLogIndex() {
         return lastLogIndex;
+    }
+
+    public long queryRound() {
+        return queryRound;
     }
 
     @Override
@@ -76,6 +82,7 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
         out.writeInt(term);
         out.writeObject(follower);
         out.writeLong(lastLogIndex);
+        out.writeLong(queryRound);
     }
 
     @Override
@@ -83,12 +90,13 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
         term = in.readInt();
         follower = in.readObject();
         lastLogIndex = in.readLong();
+        queryRound = in.readLong();
     }
 
     @Override
     public String toString() {
         return "AppendSuccessResponse{" + "follower=" + follower + ", term=" + term  + ", lastLogIndex="
-                + lastLogIndex + '}';
+                + lastLogIndex + ", queryRound=" + queryRound + '}';
     }
 
 }

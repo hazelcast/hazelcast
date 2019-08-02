@@ -16,14 +16,16 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
+import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
@@ -70,7 +72,7 @@ public class QueryTask implements Runnable {
                     handleAnyLocalRead();
                     break;
                 case LINEARIZABLE:
-                    new ReplicateTask(raftNode, operation, resultFuture).run();
+                    handleLinearizableRead();
                     break;
                 default:
                     resultFuture.setResult(new IllegalArgumentException("Invalid query policy: " + queryPolicy));
@@ -103,7 +105,36 @@ public class QueryTask implements Runnable {
 
         // TODO: We can reject the query, if follower have not received any heartbeat recently
 
-        raftNode.runQueryOperation(operation, resultFuture);
+        raftNode.runQuery(operation, resultFuture);
+    }
+
+    private void handleLinearizableRead() {
+        if (!raftNode.isLinearizableReadOptimizationEnabled()) {
+            new ReplicateTask(raftNode, operation, resultFuture).run();
+            return;
+        }
+
+        RaftState state = raftNode.state();
+        if (state.role() != LEADER) {
+            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
+            return;
+        }
+
+        if (!raftNode.canQueryLinearizable()) {
+            resultFuture.setResult(new CannotReplicateException(state.leader()));
+            return;
+        }
+
+        long commitIndex = state.commitIndex();
+        QueryState queryState = state.leaderState().queryState();
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Adding query at commit index: " + commitIndex + ", query round: " + queryState.queryRound());
+        }
+
+        if (queryState.addQuery(commitIndex, operation, resultFuture) == 1) {
+            raftNode.broadcastAppendRequest();
+        }
     }
 
     private boolean verifyOperation() {

@@ -1053,6 +1053,13 @@ public final class GroupProperty {
     public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
 
+    /**
+     * !!! ONLY FOR INTERNAL USAGE AND TESTING !!!
+     * Enables / disables the linearizable read optimization described in the Raft Dissertation Section 6.4.
+     */
+    public static final HazelcastProperty RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED
+            = new HazelcastProperty("raft.linearizable.read.optimization.enabled", true);
+
     private GroupProperty() {
     }
 }

@@ -31,6 +31,7 @@ import java.util.Map;
 public class LeaderState {
 
     private final Map<RaftEndpoint, FollowerState> followerStates = new HashMap<RaftEndpoint, FollowerState>();
+    private final QueryState queryState = new QueryState();
 
     LeaderState(Collection<RaftEndpoint> remoteMembers, long lastLogIndex) {
         for (RaftEndpoint follower : remoteMembers) {
@@ -53,6 +54,7 @@ public class LeaderState {
      */
     public void remove(RaftEndpoint follower) {
         FollowerState removed = followerStates.remove(follower);
+        queryState.removeAck(follower);
         assert removed != null : "Unknown follower " + follower;
     }
 
@@ -80,4 +82,13 @@ public class LeaderState {
     public Map<RaftEndpoint, FollowerState> getFollowerStates() {
         return followerStates;
     }
+
+    public QueryState queryState() {
+        return queryState;
+    }
+
+    public long queryRound() {
+        return queryState.queryRound();
+    }
+
 }

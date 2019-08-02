@@ -39,16 +39,17 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
 
     private RaftEndpoint leader;
     private int term;
-
     private SnapshotEntry snapshot;
+    private long queryRound;
 
     public InstallSnapshot() {
     }
 
-    public InstallSnapshot(RaftEndpoint leader, int term, SnapshotEntry snapshot) {
+    public InstallSnapshot(RaftEndpoint leader, int term, SnapshotEntry snapshot, long queryRound) {
         this.leader = leader;
         this.term = term;
         this.snapshot = snapshot;
+        this.queryRound = queryRound;
     }
 
     public RaftEndpoint leader() {
@@ -61,6 +62,10 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
 
     public SnapshotEntry snapshot() {
         return snapshot;
+    }
+
+    public long queryRound() {
+        return queryRound;
     }
 
     @Override
@@ -78,6 +83,7 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
         out.writeObject(leader);
         out.writeInt(term);
         out.writeObject(snapshot);
+        out.writeLong(queryRound);
     }
 
     @Override
@@ -85,11 +91,13 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
         leader = in.readObject();
         term = in.readInt();
         snapshot = in.readObject();
+        queryRound = in.readLong();
     }
 
     @Override
     public String toString() {
-        return "InstallSnapshot{" + "leader=" + leader + ", term=" + term + ", snapshot=" + snapshot + '}';
+        return "InstallSnapshot{" + "leader=" + leader + ", term=" + term + ", snapshot=" + snapshot + ", queryRound="
+                + queryRound + '}';
     }
 
 }
