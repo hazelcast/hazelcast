@@ -82,7 +82,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     private final int partitionId;
     private final int threadId;
 
-    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, RaftEndpoint localCPMember) {
+    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, RaftEndpoint localCPMember, int partitionId) {
         this.nodeEngine = nodeEngine;
         this.groupId = groupId;
         this.localCPMember = localCPMember;
@@ -90,7 +90,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.operationService = operationService;
         this.invocationManager = ((RaftService) nodeEngine.getService(RaftService.SERVICE_NAME)).getInvocationManager();
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
+        this.partitionId = partitionId;
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) operationService.getOperationExecutor();
         this.threadId = operationExecutor.toPartitionThreadIndex(partitionId);
         this.taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();

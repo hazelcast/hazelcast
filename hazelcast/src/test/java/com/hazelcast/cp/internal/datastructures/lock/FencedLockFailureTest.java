@@ -189,7 +189,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final int partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
+                final int partitionId = getRaftService(lockInstance).getCPGroupPartitionId(groupId);
                 final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
                 final boolean[] verified = new boolean[1];
                 final CountDownLatch latch = new CountDownLatch(1);
@@ -604,7 +604,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final int partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
+                final int partitionId = getRaftService(lockInstance).getCPGroupPartitionId(groupId);
                 final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
                 final boolean[] verified = new boolean[1];
                 final CountDownLatch latch = new CountDownLatch(1);

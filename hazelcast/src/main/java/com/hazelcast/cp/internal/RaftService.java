@@ -692,7 +692,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             steppedDownGroupIds.remove(groupId);
         }
 
-        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
+        int partitionId = getCPGroupPartitionId(groupId);
+        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember, partitionId);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
         RaftStateStore stateStore = getCpPersistenceService().createRaftStateStore((RaftGroupId) groupId, null);
         RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
@@ -714,7 +715,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public RaftNodeImpl restoreRaftNode(RaftGroupId groupId, RestoredRaftState restoredState, LogFileStructure logFileStructure) {
-        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, restoredState.localEndpoint());
+        int partitionId = getCPGroupPartitionId(groupId);
+        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId,
+                restoredState.localEndpoint(), partitionId);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
         RaftStateStore stateStore = getCpPersistenceService().createRaftStateStore(groupId, logFileStructure);
         RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(
@@ -928,6 +931,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Override
     public void onRaftNodeSteppedDown(CPGroupId groupId) {
         stepDownRaftNode(groupId);
+    }
+
+    public int getCPGroupPartitionId(CPGroupId groupId) {
+        assert groupId.id() >= 0 : "Invalid groupId: " + groupId;
+        return (int) (groupId.id() % nodeEngine.getPartitionService().getPartitionCount());
     }
 
     // TODO: rename!

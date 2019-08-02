@@ -20,6 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -44,14 +45,16 @@ public class RaftInvocationContext {
 
 
     private final ILogger logger;
+    private final RaftService raftService;
     private final ConcurrentMap<CPGroupId, CPMember> knownLeaders = new ConcurrentHashMap<CPGroupId, CPMember>();
     private final boolean failOnIndeterminateOperationState;
 
     private AtomicReference<CPMembersContainer> membersContainer = new AtomicReference<CPMembersContainer>(INITIAL_VALUE);
 
-    public RaftInvocationContext(ILogger logger, boolean failOnIndeterminateOperationState) {
+    public RaftInvocationContext(ILogger logger, RaftService raftService) {
         this.logger = logger;
-        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
+        this.failOnIndeterminateOperationState = raftService.getConfig().isFailOnIndeterminateOperationState();
+        this.raftService = raftService;
     }
 
     public void reset() {
@@ -72,6 +75,10 @@ public class RaftInvocationContext {
                 return false;
             }
         }
+    }
+
+    int getCPGroupPartitionId(CPGroupId groupId) {
+        return raftService.getCPGroupPartitionId(groupId);
     }
 
     public CPMemberInfo getCPMember(String leaderUuid) {
