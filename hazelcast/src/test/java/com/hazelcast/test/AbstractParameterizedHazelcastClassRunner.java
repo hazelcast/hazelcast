@@ -24,7 +24,6 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.List;
 
@@ -141,8 +140,4 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
         }
     }
 
-    @Override
-    protected Annotation[] getRunnerAnnotations() {
-        return new Annotation[0];
-    }
 }
