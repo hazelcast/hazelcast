@@ -170,6 +170,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.ABS:
                 return new AbsFunction(convertedOperands.get(0));
 
+            case CallOperator.PI:
+                return new ConstantExpression<>(Math.PI);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -271,6 +274,8 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.RAND;
                 else if (function == SqlStdOperatorTable.ABS)
                     return CallOperator.ABS;
+                else if (function == SqlStdOperatorTable.PI)
+                    return CallOperator.PI;
 
                 if (
                     function == SqlStdOperatorTable.CHAR_LENGTH ||

@@ -58,6 +58,9 @@ public class CallOperator {
     /** Type: ABS. */
     public static final int ABS = 22;
 
+    /** Type: PI. */
+    public static final int PI = 23;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 
