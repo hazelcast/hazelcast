@@ -32,7 +32,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -61,11 +60,11 @@ import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -285,41 +284,14 @@ public class SerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLinkedListSerialization() {
+    public void testSynchronousQueueSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        LinkedList<Person> linkedList = new LinkedList<Person>();
-        linkedList.add(new Person(35, 180, 100, "Orhan", null));
-        linkedList.add(new Person(12, 120, 60, "Osman", null));
-        Data data = ss.toData(linkedList);
-        LinkedList deserialized = ss.toObject(data);
-        assertTrue("Objects are not identical!", linkedList.equals(deserialized));
-    }
-
-    @Test
-    public void testUTF8() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        String name = "Orhan";
-        Data data = ss.toData(name);
-        assertEquals(name, ss.toObject(data));
-    }
-
-    @Test
-    public void testDataSerializableObjectSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        Person person = new Person(35, 180, 100, "Orhan", null);
-        Data data = ss.toData(person);
-        assertEquals(person, ss.toObject(data));
-    }
-
-    @Test
-    public void testArrayListSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        ArrayList<Person> arrayList = new ArrayList<Person>();
-        arrayList.add(new Person(35, 180, 100, "Orhan", null));
-        arrayList.add(new Person(12, 120, 60, "Osman", null));
-        Data data = ss.toData(arrayList);
-        ArrayList deserialized = ss.toObject(data);
-        assertTrue("Objects are not identical!", arrayList.equals(deserialized));
+        SynchronousQueue q = new SynchronousQueue();
+        Data data = ss.toData(q);
+        SynchronousQueue deserialized = ss.toObject(data);
+        assertTrue("Collections are not identical!", q.containsAll(deserialized));
+        assertTrue("Collections are not identical!", deserialized.containsAll(q));
+        assertEquals("Collection classes are not identical!", q.getClass(), deserialized.getClass());
     }
 
     @Test
