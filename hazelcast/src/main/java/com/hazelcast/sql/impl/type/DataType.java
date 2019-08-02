@@ -34,12 +34,7 @@ public class DataType {
     public static final DataType BIGINT = new DataType(BaseDataType.LONG, PRECISION_BIGINT, 0);
 
     /** DECIMAL data type. */
-    // TODO: No precision calculation because it is expensive.
     public static final DataType DECIMAL = new DataType(BaseDataType.BIG_DECIMAL, PRECISION_UNLIMITED, SCALE_UNLIMITED);
-
-    /** DECIMAL data type created from BigInteger instance. */
-    // TODO: No precision calculation because it is expensive.
-    public static final DataType DECIMAL_BIGINT = new DataType(BaseDataType.BIG_INTEGER, PRECISION_UNLIMITED, 0);
 
     /** REAL data type. */
     public static final DataType REAL = new DataType(BaseDataType.FLOAT, PRECISION_UNLIMITED, SCALE_UNLIMITED);
@@ -49,6 +44,20 @@ public class DataType {
 
     /** VARCHAR data type. */
     public static final DataType VARCHAR = new DataType(BaseDataType.STRING, PRECISION_UNLIMITED, SCALE_UNLIMITED);
+
+    /** DECIMAL data type created from BigInteger instance. */
+    public static final DataType DECIMAL_INTEGER_BIGINT = new DataType(
+        BaseDataType.BIG_INTEGER,
+        PRECISION_UNLIMITED,
+        0
+    );
+
+    /** DECIMAL data type with zero scale created from BigDecimal instance. */
+    public static final DataType DECIMAL_INTEGER_DECIMAL = new DataType(
+        BaseDataType.BIG_DECIMAL,
+        PRECISION_UNLIMITED,
+        0
+    );
 
     /** Underlying Java type. */
     private final BaseDataType baseType;
@@ -82,7 +91,7 @@ public class DataType {
         else if (clazz == BaseDataType.LONG.getClazz())
             return BIGINT;
         else if (clazz == BaseDataType.BIG_INTEGER.getClazz())
-            return DECIMAL_BIGINT;
+            return DECIMAL_INTEGER_BIGINT;
         else if (clazz == BaseDataType.BIG_DECIMAL.getClazz())
             return DECIMAL;
         else if (clazz == BaseDataType.FLOAT.getClazz())

@@ -11,22 +11,24 @@ import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 import java.math.BigDecimal;
 
-public class MinusBiCallExpression<T> extends BiCallExpression<T> {
+/**
+ * Plus expression.
+ */
+public class PlusFunction<T> extends BiCallExpression<T> {
     /** Accessor for the first argument. */
     private transient BaseDataTypeAccessor accessor1;
 
     /** Accessor for the second argument. */
     private transient BaseDataTypeAccessor accessor2;
 
-    public MinusBiCallExpression() {
+    public PlusFunction() {
         // No-op.
     }
 
-    public MinusBiCallExpression(Expression operand1, Expression operand2) {
+    public PlusFunction(Expression operand1, Expression operand2) {
         super(operand1, operand2);
     }
 
-    // TODO: Remove duplication (merge with plus?)
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
@@ -53,44 +55,43 @@ public class MinusBiCallExpression<T> extends BiCallExpression<T> {
         }
 
         // Execute.
-        return (T)doMinus(op1, op2, accessor1, accessor2, resType);
+        return (T)doSum(op1, op2, accessor1, accessor2, resType);
     }
 
     @SuppressWarnings("unchecked")
-    private static Object doMinus(Object op1, Object op2, BaseDataTypeAccessor accessor1, BaseDataTypeAccessor accessor2,
+    private static Object doSum(Object op1, Object op2, BaseDataTypeAccessor accessor1, BaseDataTypeAccessor accessor2,
         DataType resType) {
         switch (resType.getBaseType()) {
             case BYTE:
-                return accessor1.getByte(op1) - accessor2.getByte(op2);
+                return accessor1.getByte(op1) + accessor2.getByte(op2);
 
             case SHORT:
-                return accessor1.getShort(op1) - accessor2.getShort(op2);
+                return accessor1.getShort(op1) + accessor2.getShort(op2);
 
             case INTEGER:
-                return accessor1.getInt(op1) - accessor2.getInt(op2);
+                return accessor1.getInt(op1) + accessor2.getInt(op2);
 
             case LONG:
-                return accessor1.getLong(op1) - accessor2.getLong(op2);
+                return accessor1.getLong(op1) + accessor2.getLong(op2);
 
             case BIG_DECIMAL:
                 BigDecimal op1Decimal = accessor1.getDecimal(op1);
                 BigDecimal op2Decimal = accessor2.getDecimal(op2);
 
-                return op1Decimal.subtract(op2Decimal);
+                return op1Decimal.add(op2Decimal);
 
             case FLOAT:
-                return accessor1.getFloat(op1) - accessor2.getFloat(op2);
+                return accessor1.getFloat(op1) + accessor2.getFloat(op2);
 
             case DOUBLE:
-                return accessor1.getDouble(op1) - accessor2.getDouble(op2);
+                return accessor1.getDouble(op1) + accessor2.getDouble(op2);
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);
         }
     }
 
-    @Override
-    public int operator() {
-        return CallOperator.MINUS;
+    @Override public int operator() {
+        return CallOperator.PLUS;
     }
 }

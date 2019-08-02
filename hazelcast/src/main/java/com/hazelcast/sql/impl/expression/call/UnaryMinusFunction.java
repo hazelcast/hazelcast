@@ -14,15 +14,15 @@ import java.math.BigDecimal;
 /**
  * Unary minus operation.
  */
-public class MinusUniCallExpression<T> extends UniCallExpression<T> {
+public class UnaryMinusFunction<T> extends UniCallExpression<T> {
     /** Accessor for the argument. */
     private transient BaseDataTypeAccessor accessor;
 
-    public MinusUniCallExpression() {
+    public UnaryMinusFunction() {
         // No-op.
     }
 
-    public MinusUniCallExpression(Expression operand) {
+    public UnaryMinusFunction(Expression operand) {
         super(operand);
     }
 
@@ -49,10 +49,10 @@ public class MinusUniCallExpression<T> extends UniCallExpression<T> {
     private static Object doMinus(Object op, BaseDataTypeAccessor accessor, DataType resType) {
         switch (resType.getBaseType()) {
             case BYTE:
-                return -accessor.getByte(op);
+                return (byte)(-accessor.getByte(op));
 
             case SHORT:
-                return -accessor.getShort(op);
+                return (short)(-accessor.getShort(op));
 
             case INTEGER:
                 return -accessor.getInt(op);

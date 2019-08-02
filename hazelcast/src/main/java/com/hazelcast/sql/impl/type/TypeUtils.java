@@ -60,6 +60,34 @@ public class TypeUtils {
     /** Precedence of STRING data type. */
     public static final int PRECEDENCE_STRING = 1;
 
+    /** Common cached integer data types. */
+    private static DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
+
+    static {
+        for (int i = 1; i < PRECISION_BIGINT; i++) {
+            DataType type;
+
+            if (i == PRECISION_BIT)
+                type = DataType.BIT;
+            else if (i < PRECISION_TINYINT)
+                type = new DataType(BaseDataType.BYTE, i, 0);
+            else if (i == PRECISION_TINYINT)
+                type = DataType.TINYINT;
+            else if (i < PRECISION_SMALLINT)
+                type = new DataType(BaseDataType.SHORT, i, 0);
+            else if (i == PRECISION_SMALLINT)
+                type = DataType.SMALLINT;
+            else if (i < PRECISION_INT)
+                type = new DataType(BaseDataType.INTEGER, i, 0);
+            else if (i == PRECISION_INT)
+                type = DataType.INT;
+            else
+                type = new DataType(BaseDataType.LONG, i, 0);
+
+            INTEGER_TYPES[i] = type;
+        }
+    }
+
     /**
      * Make sure that the type is numeric.
      *
@@ -109,6 +137,40 @@ public class TypeUtils {
     }
 
     /**
+     * Infer result type for multiplication operation.
+     *
+     * @param type1 Type 1.
+     * @param type2 Type 2.
+     * @return Result type.
+     */
+    public static DataType inferForMultiply(DataType type1, DataType type2) {
+        ensureNumeric(type1, type2);
+
+        // Precision is expanded to accomodate all numbers: 99 * 99 = 9801;
+        int precision = calculatePrecision(
+            type1.getPrecision(),
+            type2.getPrecision(),
+            false,
+            (p1, p2) -> p1 + p2);
+
+        // We have only unlimited or zero scales.
+        int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
+
+        if (scale == 0)
+            return integerType(precision);
+        else {
+            DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
+
+            BaseDataType baseType = biggerType.getBaseType();
+
+            if (baseType == BaseDataType.FLOAT)
+                return DataType.DOUBLE; // REAL -> DOUBLE
+            else
+                return biggerType;      // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+        }
+    }
+
+    /**
      * Infer result type for plus or minus operation.
      *
      * @param type1 Type 1.
@@ -125,19 +187,12 @@ public class TypeUtils {
             false,
             (p1, p2) -> Math.max(p1, p2) + 1);
 
-        // Use maximum available scale.
-        int scale = calculateScale(
-            type1.getScale(),
-            type2.getScale(),
-            false,
-            Math::max
-        );
+        // We have only unlimited or zero scales.
+        int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
 
         if (scale == 0)
-            return integerType(precision); // Integer result.
+            return integerType(precision);
         else {
-            assert scale == SCALE_UNLIMITED;
-
             DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
 
             BaseDataType baseType = biggerType.getBaseType();
@@ -156,29 +211,14 @@ public class TypeUtils {
      * @return Type.
      */
     private static DataType integerType(int precision) {
-        // TODO: Cache this in array.
+        assert precision != 0;
+
         if (precision == PRECISION_UNLIMITED)
-            return new DataType(BaseDataType.BIG_DECIMAL, PRECISION_UNLIMITED, 0);
-        else if (precision == PRECISION_BIT)
-            return DataType.BIT;
-        else if (precision < PRECISION_TINYINT)
-            return new DataType(BaseDataType.BYTE, precision, 0);
-        else if (precision == PRECISION_TINYINT)
-            return DataType.TINYINT;
-        else if (precision < PRECISION_SMALLINT)
-            return new DataType(BaseDataType.SHORT, precision, 0);
-        else if (precision == PRECISION_SMALLINT)
-            return DataType.SMALLINT;
-        else if (precision < PRECISION_INT)
-            return new DataType(BaseDataType.INTEGER, precision, 0);
-        else if (precision == PRECISION_INT)
-            return DataType.INT;
+            return DataType.DECIMAL_INTEGER_DECIMAL;
         else if (precision < PRECISION_BIGINT)
-            return new DataType(BaseDataType.LONG, precision, 0);
-        else if (precision == PRECISION_BIGINT)
-            return DataType.BIGINT;
+            return INTEGER_TYPES[precision];
         else
-            return new DataType(BaseDataType.BIG_DECIMAL, PRECISION_UNLIMITED, 0);
+            return new DataType(BaseDataType.BIG_DECIMAL, precision, 0);
     }
 
     private static int calculatePrecision(

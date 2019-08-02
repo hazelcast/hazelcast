@@ -5,9 +5,10 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
-import com.hazelcast.sql.impl.expression.call.MinusBiCallExpression;
-import com.hazelcast.sql.impl.expression.call.MinusUniCallExpression;
-import com.hazelcast.sql.impl.expression.call.PlusBiCallExpression;
+import com.hazelcast.sql.impl.expression.call.MinusFunction;
+import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.call.PlusFunction;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -83,13 +84,16 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
         switch (convertedOperator) {
             case CallOperator.PLUS:
-                return new PlusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
+                return new PlusFunction(convertedOperands.get(0), convertedOperands.get(1));
 
             case CallOperator.MINUS:
-                return new MinusBiCallExpression(convertedOperands.get(0), convertedOperands.get(1));
+                return new MinusFunction(convertedOperands.get(0), convertedOperands.get(1));
+
+            case CallOperator.MULTIPLY:
+                return new MultiplyFunction(convertedOperands.get(0), convertedOperands.get(1));
 
             case CallOperator.UNARY_MINUS:
-                return new MinusUniCallExpression(convertedOperands.get(0));
+                return new UnaryMinusFunction(convertedOperands.get(0));
 
             case CallOperator.CHAR_LENGTH:
                 return new CharLengthFunction(convertedOperands.get(0));
@@ -159,6 +163,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case MINUS:
                 return CallOperator.MINUS;
+
+            case TIMES:
+                return CallOperator.MULTIPLY;
 
             case MINUS_PREFIX:
                 return CallOperator.UNARY_MINUS;
