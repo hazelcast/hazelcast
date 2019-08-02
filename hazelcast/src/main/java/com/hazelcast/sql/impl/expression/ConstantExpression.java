@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 
@@ -32,6 +34,9 @@ public class ConstantExpression<T> implements Expression<T> {
     /** Value. */
     private T val;
 
+    /** Return type. */
+    private transient DataType type;
+
     public ConstantExpression() {
         // No-op.
     }
@@ -42,7 +47,15 @@ public class ConstantExpression<T> implements Expression<T> {
 
     @Override
     public T eval(QueryContext ctx, Row row) {
+        if (type == null)
+            type = DataType.resolveType(val);
+
         return val;
+    }
+
+    @Override
+    public DataType getType() {
+        return TypeUtils.notNull(type);
     }
 
     @Override

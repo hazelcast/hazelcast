@@ -36,8 +36,8 @@ public interface Expression<T> extends DataSerializable {
      */
     T eval(QueryContext ctx, Row row);
 
-    // TODO: Remove default!
-    default DataType getType() {
-        return DataType.LATE;
-    }
+    /**
+     * @return Return type of the expression.
+     */
+    DataType getType();
 }

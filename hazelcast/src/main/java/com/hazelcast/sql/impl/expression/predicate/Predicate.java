@@ -17,10 +17,14 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.type.DataType;
 
 /**
  * Predicate: specialized type of {@link Expression} which returns boolean value.
  */
 public interface Predicate extends Expression<Boolean> {
-    // No-op.
+    @Override
+    default DataType getType() {
+        return DataType.BIT;
+    }
 }

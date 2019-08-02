@@ -3,13 +3,14 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
-import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.call.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -29,6 +30,7 @@ import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,8 +57,50 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
     @Override
     public Expression visitLiteral(RexLiteral literal) {
-        // TODO
-        throw new UnsupportedOperationException();
+        Object convertedLiteral = convertLiteral(literal);
+
+        return new ConstantExpression<>(convertedLiteral);
+    }
+
+    /**
+     * Convert literal to simple object.
+     *
+     * @param literal Literal.
+     * @return Object.
+     */
+    private Object convertLiteral(RexLiteral literal) {
+        switch (literal.getType().getSqlTypeName()) {
+            case BOOLEAN:
+                return literal.getValueAs(Boolean.class);
+
+            case TINYINT:
+                return literal.getValueAs(Byte.class);
+
+            case SMALLINT:
+                return literal.getValueAs(Short.class);
+
+            case INTEGER:
+                return literal.getValueAs(Integer.class);
+
+            case BIGINT:
+                return literal.getValueAs(Long.class);
+
+            case DECIMAL:
+                return literal.getValueAs(BigDecimal.class);
+
+            case REAL:
+                return literal.getValueAs(Float.class);
+
+            case FLOAT:
+            case DOUBLE:
+                return literal.getValueAs(Double.class);
+
+            case CHAR:
+            case VARCHAR:
+                return literal.getValueAs(String.class);
+        }
+
+        throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
     }
 
     @Override

@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 
@@ -32,6 +34,9 @@ public class ArgumentExpression<T> implements Expression<T> {
     /** Index. */
     private int idx;
 
+    /** Return type. */
+    private transient DataType type;
+
     public ArgumentExpression() {
         // No-op.
     }
@@ -43,7 +48,17 @@ public class ArgumentExpression<T> implements Expression<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        return (T)ctx.getArgument(idx);
+        Object res = ctx.getArgument(idx);
+
+        if (type == null)
+            type = DataType.resolveType(res);
+
+        return (T)res;
+    }
+
+    @Override
+    public DataType getType() {
+        return TypeUtils.notNull(type);
     }
 
     @Override
