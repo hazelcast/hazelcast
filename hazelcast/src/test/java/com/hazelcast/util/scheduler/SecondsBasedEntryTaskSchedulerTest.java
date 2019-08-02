@@ -189,7 +189,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
         assertTrue(scheduler.schedule(100, "k", "x"));
         assertEquals(0, scheduler.cancelIfExists("k", "y"));
-        // assertEquals("x", scheduler.get("k").getValue()); fixme: incorrect behaviour of cancel if exists in FOR_EACH
+        assertEquals("x", scheduler.get("k").getValue());
     }
 
     @Test
@@ -199,7 +199,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
         assertTrue(scheduler.schedule(100, "k", "x"));
         assertTrue(scheduler.schedule(100, "k", "y"));
         assertEquals(1, scheduler.cancelIfExists("k", "y"));
-        // assertEquals("x", scheduler.get("k").getValue()); fixme: incorrect behaviour of cancel if exists in FOR_EACH
+        assertEquals("x", scheduler.get("k").getValue());
     }
 
     @Test
