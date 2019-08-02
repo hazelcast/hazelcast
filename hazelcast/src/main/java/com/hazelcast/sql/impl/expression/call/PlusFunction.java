@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 /**
  * Plus expression.
  */
-public class PlusFunction<T> extends BiCallExpression<T> {
+public class PlusFunction<T> extends BiCallExpressionWithType<T> {
     /** Accessor for the first argument. */
     private transient BaseDataTypeAccessor accessor1;
 

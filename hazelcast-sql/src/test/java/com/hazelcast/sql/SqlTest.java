@@ -29,11 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,7 +38,7 @@ public class SqlTest extends HazelcastTestSupport {
 
 //    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
 //    private static final String QUERY = "select height + age from persons order by name";
-    private static final String QUERY = "select height * 2 from persons order by name";
+    private static final String QUERY = "select abs(-RAND()), abs(-5.4) from persons order by name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -52,7 +48,7 @@ public class SqlTest extends HazelcastTestSupport {
         Config cfg = new Config();
 
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance member2 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
 
         // Add some data.
         for (int i = 0; i < 100; i++)
@@ -62,42 +58,18 @@ public class SqlTest extends HazelcastTestSupport {
         SqlCursor cursor = member1.getSqlService().query(QUERY);
 
         List<SqlRow> res = new ArrayList<>();
-        Set<Object> setRes = new TreeSet<>();
-        Set<Object> dupSetRes = new TreeSet<>();
 
-        Iterator<SqlRow> iter = cursor.iterator();
-
-        while (iter.hasNext()) {
-            SqlRow row = iter.next();
-
+        for (SqlRow row : cursor)
             res.add(row);
 
-            if (!setRes.add(row.getColumn(0)))
-                dupSetRes.add(row.getColumn(0));
-        }
-
-        System.out.println(">>> RES SIZE: " + res.size());
-        System.out.println(">>> RES: " + res);
-        System.out.println();
-        System.out.println(">>> SET RES SIZE: " + setRes.size());
-        System.out.println(">>>     SET RES: " + setRes);
-        System.out.println(">>> DUP SET RES: " + dupSetRes);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> List<T> asList(T... elems) {
-        if (elems == null || elems.length == 0)
-            return Collections.emptyList();
-
-        ArrayList<T> res = new ArrayList<>(elems.length);
-
-        Collections.addAll(res, elems);
-
-        return res;
+        System.out.println(">>> SIZE: " + res.size());
+        System.out.println(">>> RES:  " + res);
     }
 
     @SuppressWarnings("WeakerAccess")
     public static class Person implements Serializable {
+        private static final long serialVersionUID = -221704179714350820L;
+
         public final int __key;
         public final String name;
         public final int age;

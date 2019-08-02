@@ -15,21 +15,12 @@ public abstract class UniCallExpression<T> implements Expression<T> {
     /** Operand. */
     protected Expression operand;
 
-    /** Result type. */
-    // TODO: Bad idea to store the data type here. E.g. it is not needed in trigonometric function.
-    protected transient DataType resType;
-
     protected UniCallExpression() {
         // No-op.
     }
 
     protected UniCallExpression(Expression operand) {
         this.operand = operand;
-    }
-
-    @Override
-    public DataType getType() {
-        return TypeUtils.notNull(resType);
     }
 
     /**

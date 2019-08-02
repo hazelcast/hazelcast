@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 /**
  * Unary minus operation.
  */
-public class UnaryMinusFunction<T> extends UniCallExpression<T> {
+public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     /** Accessor for the argument. */
     private transient BaseDataTypeAccessor accessor;
 

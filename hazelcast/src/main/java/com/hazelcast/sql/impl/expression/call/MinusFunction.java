@@ -11,7 +11,7 @@ import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 import java.math.BigDecimal;
 
-public class MinusFunction<T> extends BiCallExpression<T> {
+public class MinusFunction<T> extends BiCallExpressionWithType<T> {
     /** Accessor for the first argument. */
     private transient BaseDataTypeAccessor accessor1;
 

@@ -52,6 +52,12 @@ public class CallOperator {
     /** Type: LOG10. */
     public static final int LOG10 = 20;
 
+    /** Type: RAND. */
+    public static final int RAND = 21;
+
+    /** Type: ABS. */
+    public static final int ABS = 22;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 

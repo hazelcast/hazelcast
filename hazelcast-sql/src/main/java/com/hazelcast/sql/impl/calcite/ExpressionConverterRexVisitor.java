@@ -5,11 +5,13 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.call.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
@@ -156,6 +158,18 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LOG10:
                 return new DoubleFunction(convertedOperands.get(0), convertedOperator);
 
+            case CallOperator.RAND:
+                if (convertedOperands.isEmpty())
+                    return new RandomFunction();
+                else {
+                    assert convertedOperands.size() == 1;
+
+                    return new RandomFunction(convertedOperands.get(0));
+                }
+
+            case CallOperator.ABS:
+                return new AbsFunction(convertedOperands.get(0));
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -253,6 +267,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.LN;
                 else if (function == SqlStdOperatorTable.LOG10)
                     return CallOperator.LOG10;
+                else if (function == SqlStdOperatorTable.RAND)
+                    return CallOperator.RAND;
+                else if (function == SqlStdOperatorTable.ABS)
+                    return CallOperator.ABS;
 
                 if (
                     function == SqlStdOperatorTable.CHAR_LENGTH ||

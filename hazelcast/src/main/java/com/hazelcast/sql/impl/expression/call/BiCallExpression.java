@@ -18,10 +18,6 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
     /** Second operand. */
     protected Expression operand2;
 
-    /** Result type. */
-    // TODO: Refactor?
-    protected transient DataType resType;
-
     protected BiCallExpression() {
         // No-op.
     }
@@ -29,11 +25,6 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
     protected BiCallExpression(Expression operand1, Expression operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
-    }
-
-    @Override
-    public DataType getType() {
-        return TypeUtils.notNull(resType);
     }
 
     @Override
