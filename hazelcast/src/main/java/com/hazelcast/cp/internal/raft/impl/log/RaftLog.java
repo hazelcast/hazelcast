@@ -192,8 +192,8 @@ public final class RaftLog {
         }
 
         long startSequence = toSequence(entryIndex);
-        assert startSequence >= logs.headSequence() :
-                "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
+        assert startSequence >= logs.headSequence()
+                : "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
 
         List<LogEntry> truncated = new ArrayList<LogEntry>();
         for (long ix = startSequence; ix <= logs.tailSequence(); ix++) {

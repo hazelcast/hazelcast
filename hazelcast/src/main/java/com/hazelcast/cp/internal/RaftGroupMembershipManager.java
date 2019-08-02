@@ -456,7 +456,7 @@ class RaftGroupMembershipManager {
         }
     }
 
-    private class RaftGroupLeadershipBalanceTask implements Runnable {
+    private final class RaftGroupLeadershipBalanceTask implements Runnable {
 
         private final boolean awaitIfRunning;
 
@@ -473,7 +473,7 @@ class RaftGroupMembershipManager {
             if (!rebalanceTaskRunning.compareAndSet(false, true)) {
                 while (awaitIfRunning && rebalanceTaskRunning.get()) {
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(MANAGEMENT_TASK_PERIOD_IN_MILLIS);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
@@ -519,7 +519,7 @@ class RaftGroupMembershipManager {
                 logger.info("Searching a candidate transfer leadership from " + from);
                 Collection<CPGroupSummary> memberGroups = getLeaderGroupsOf(from, leaderships.get(from), allGroups);
 
-                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeadershipsInGroups(memberGroups, leaderships, groupsPerMember);
+                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(memberGroups, leaderships, groupsPerMember);
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
                     // could not found target member to transfer membership
@@ -567,8 +567,9 @@ class RaftGroupMembershipManager {
             return memberGroups;
         }
 
-        private Tuple2<CPMember, CPGroupId> getEndpointWithMinLeadershipsInGroups(Collection<CPGroupSummary> groups,
-                Map<CPMember, Collection<CPGroupId>> leaderships, int maxLeaderships) {
+        private Tuple2<CPMember, CPGroupId> getEndpointWithMinLeaderships(Collection<CPGroupSummary> groups,
+                                                                          Map<CPMember, Collection<CPGroupId>> leaderships,
+                                                                          int maxLeaderships) {
             CPMember to = null;
             CPGroupId groupId = null;
             int min = maxLeaderships;

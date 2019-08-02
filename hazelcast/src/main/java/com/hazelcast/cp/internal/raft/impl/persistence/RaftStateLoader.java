@@ -20,11 +20,16 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Defines the contract of restoring persisted Raft state from storage layer
  */
 public interface RaftStateLoader {
 
+    /**
+     * Restores the persisted Raft state from the storage layer and returns
+     * a fully initialized {@link RestoredRaftState} object.
+     *
+     * @throws IOException if any IO error occurs while reading from storage
+     */
     @Nonnull
     RestoredRaftState load() throws IOException;
 }

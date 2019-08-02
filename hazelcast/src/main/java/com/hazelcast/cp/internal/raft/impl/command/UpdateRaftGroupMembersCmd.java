@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.command;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;

@@ -86,7 +86,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Maintains the CP subsystem metadata, such as CP groups, active CP members,
  * leaving and joining CP members, etc.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRaftGroupSnapshot>  {
 
     public static final RaftGroupId INITIAL_METADATA_GROUP_ID = new RaftGroupId(METADATA_CP_GROUP_NAME, 0, 0);
@@ -1068,6 +1068,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
         }
 
+        @SuppressWarnings("checkstyle:npathcomplexity")
         @Override
         public void run() {
             if (shouldRescheduleOrSkip()) {

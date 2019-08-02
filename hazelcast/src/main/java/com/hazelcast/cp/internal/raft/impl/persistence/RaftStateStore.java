@@ -33,10 +33,9 @@ import java.util.Collection;
 public interface RaftStateStore extends Closeable {
 
     /**
-     * Initializes the store before starting to persist Raft state. Hazelcast
-     * calls this method before any other method in this interface. After this
-     * method returns, the state store must be ready to accept all other method
-     * calls.
+     * Initializes the store before starting to persist Raft state. This method
+     * is called before any other method in this interface. After this method
+     * returns, the state store must be ready to accept all other method calls.
      */
     void open() throws IOException;
 

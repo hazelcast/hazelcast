@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
 import java.util.Collection;

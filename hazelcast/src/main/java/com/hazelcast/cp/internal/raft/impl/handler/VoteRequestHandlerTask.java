@@ -60,8 +60,8 @@ public class VoteRequestHandlerTask extends RaftNodeStatusAwareTask implements R
         // (Raft thesis - Section 4.2.3) This check conflicts with the leadership transfer mechanism,
         // in which a server legitimately starts an election without waiting an election timeout.
         // Those VoteRequest objects are marked with a special flag ("disruptive") to bypass leader stickiness.
-        if (!req.isDisruptive() &&
-                raftNode.lastAppendEntriesTimestamp() > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {
+        if (!req.isDisruptive() && raftNode.lastAppendEntriesTimestamp()
+                > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {
             logger.info("Rejecting " + req + " since received append entries recently.");
             raftNode.send(new VoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;

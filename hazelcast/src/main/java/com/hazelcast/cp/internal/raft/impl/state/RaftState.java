@@ -287,7 +287,7 @@ public final class RaftState {
     }
 
     /**
-     * TODO: javadoc
+     * Returns the state store that persists changes on this Raft state
      */
     public RaftStateStore stateStore() {
         return store;
@@ -306,6 +306,20 @@ public final class RaftState {
      */
     public RaftEndpoint votedFor() {
         return votedFor;
+    }
+
+    /**
+     * Initializes the Raft state by initializing the state store
+     * and persisting the initial member list
+     *
+     * @see RaftStateStore#open()
+     * @see RaftStateStore#persistInitialMembers(RaftEndpoint, Collection)
+     *
+     * @throws IOException if an IO error occurs inside the state store
+     */
+    public void init() throws IOException {
+        store.open();
+        store.persistInitialMembers(localEndpoint, initialMembers);
     }
 
     /**
@@ -542,22 +556,18 @@ public final class RaftState {
         }
     }
 
-    private void persistInitialMembers() {
-        try {
-            store.persistInitialMembers(localEndpoint, initialMembers);
-        } catch (IOException e) {
-            throw new HazelcastException(e);
-        }
-    }
-
-    public void init() throws IOException {
-        store.open();
-        persistInitialMembers();
-    }
-
-    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, final SimpleCompletableFuture resultFuture) {
+    /**
+     * Initializes the leadership transfer state, and returns {@code true}
+     * if the leadership transfer is triggered for the first time
+     * and returns {@code false} if there is an ongoing leadership transfer
+     * process.
+     *
+     * @return true if the leadership transfer is triggered for the first time,
+     *         false if there is an ongoing leadership transfer
+     */
+    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, SimpleCompletableFuture resultFuture) {
         if (leadershipTransferState == null) {
-            leadershipTransferState = new LeadershipTransferState(term,targetEndpoint, resultFuture);
+            leadershipTransferState = new LeadershipTransferState(term, targetEndpoint, resultFuture);
             return true;
         }
 
@@ -565,12 +575,19 @@ public final class RaftState {
         return false;
     }
 
-    public LeadershipTransferState leadershipTransferState() {
-        return leadershipTransferState;
-    }
-
+    /**
+     * Completes the current leadership transfer state with the given result
+     * and clears the state
+     */
     public void completeLeadershipTransfer(Object result) {
         leadershipTransferState.complete(result);
         leadershipTransferState = null;
+    }
+
+    /**
+     * Returns the leadership transfer state
+     */
+    public LeadershipTransferState leadershipTransferState() {
+        return leadershipTransferState;
     }
 }

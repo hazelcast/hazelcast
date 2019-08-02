@@ -166,12 +166,19 @@ public final class RaftNodeImpl implements RaftNode {
         this.appendRequestBackoffResetTask = new AppendRequestBackoffResetTask();
     }
 
+    /**
+     * Creates a new Raft node with an empty initial state.
+     */
     public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
                                            RaftAlgorithmConfig config, RaftIntegration integration) {
         return new RaftNodeImpl(groupId, checkNotNull(localMember), checkNotNull(members), NopRaftStateStore.INSTANCE, config,
                 integration);
     }
 
+    /**
+     * Creates a new Raft node with an empty initial state
+     * and a {@link RaftStateStore} to persist Raft state changes
+     */
     public static RaftNodeImpl newRaftNode(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members,
                                            RaftAlgorithmConfig config, RaftIntegration integration,
                                            RaftStateStore raftStateStore) {
@@ -179,11 +186,18 @@ public final class RaftNodeImpl implements RaftNode {
                 integration);
     }
 
+    /**
+     * Creates a new Raft node with restored Raft state
+     */
     public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
                                                RaftIntegration integration) {
         return new RaftNodeImpl(groupId, restoredState, NopRaftStateStore.INSTANCE, config, integration);
     }
 
+    /**
+     * Creates a new Raft node with restored Raft state
+     * and a {@link RaftStateStore} to persist Raft state changes
+     */
     public static RaftNodeImpl restoreRaftNode(CPGroupId groupId, RestoredRaftState restoredState, RaftAlgorithmConfig config,
                                                RaftIntegration integration, RaftStateStore raftStateStore) {
         return new RaftNodeImpl(groupId, restoredState, raftStateStore, config, integration);
@@ -204,15 +218,15 @@ public final class RaftNodeImpl implements RaftNode {
         return state.localEndpoint();
     }
 
-    // It reads the most recent write to the volatile leader field, however leader might be already changed.
     @Override
     public RaftEndpoint getLeader() {
+        // Reads the most recent write to the volatile leader field, however leader might be already changed.
         return state.leader();
     }
 
-    // It reads the volatile status field
     @Override
     public RaftNodeStatus getStatus() {
+        // Reads the volatile status field
         return status;
     }
 
@@ -377,9 +391,9 @@ public final class RaftNodeImpl implements RaftNode {
         return resultFuture;
     }
 
-    // It reads the volatile status field
     @Override
     public boolean isTerminatedOrSteppedDown() {
+        // Reads the volatile status field
         return status == TERMINATED || status == STEPPED_DOWN;
     }
 
@@ -409,13 +423,6 @@ public final class RaftNodeImpl implements RaftNode {
      */
     public long getLeaderElectionTimeoutInMillis() {
         return RandomPicker.getInt(leaderElectionTimeout, leaderElectionTimeout + LEADER_ELECTION_TIMEOUT_RANGE);
-    }
-
-    /**
-     * Returns the entry to be appended if the no-op entry append on leader election feature is enabled.
-     */
-    public Object getAppendedEntryOnLeaderElection() {
-        return raftIntegration.getAppendedEntryOnLeaderElection();
     }
 
     /**
@@ -474,7 +481,7 @@ public final class RaftNodeImpl implements RaftNode {
     /**
      * Schedules periodic heartbeat task when a new leader is elected.
      */
-    public void scheduleHeartbeat() {
+    private void scheduleHeartbeat() {
         broadcastAppendRequest();
         schedule(new HeartbeatTask(), heartbeatPeriodInMillis);
     }
@@ -828,6 +835,7 @@ public final class RaftNodeImpl implements RaftNode {
      * <p>
      * Snapshot is not created if the Raft group is being destroyed.
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private void takeSnapshotIfCommitIndexAdvanced() {
         long commitIndex = state.commitIndex();
         if ((commitIndex - state.log().snapshotIndex()) < commitIndexAdvanceCountToSnapshot) {
@@ -945,6 +953,10 @@ public final class RaftNodeImpl implements RaftNode {
             }
         }
 
+        applyRestoredRaftGroupCommands(snapshot);
+    }
+
+    private void applyRestoredRaftGroupCommands(SnapshotEntry snapshot) {
         // If there is a single Raft group command after the last snapshot,
         // here we cannot know if the that command is committed or not so we
         // just "pre-apply" that command without committing it.
