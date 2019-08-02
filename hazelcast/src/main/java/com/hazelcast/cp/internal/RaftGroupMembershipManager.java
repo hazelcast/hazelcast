@@ -483,13 +483,13 @@ class RaftGroupMembershipManager {
             }
 
             try {
-                innerRun();
+                rebalanceLeaderships();
             } finally {
                 rebalanceTaskRunning.set(false);
             }
         }
 
-        private void innerRun() {
+        private void rebalanceLeaderships() {
             Map<RaftEndpoint, CPMember> members = getMembers();
             Collection<CPGroupId> groupIds = getCpGroupIds();
             groupIds.remove(raftService.getMetadataGroupId());
@@ -605,7 +605,7 @@ class RaftGroupMembershipManager {
         }
 
         private boolean transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
-            logger.warning("Transferring leadership " + from + " to " + to + " in " + groupId);
+            logger.info("Transferring leadership from " + from + " to " + to + " in " + groupId);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnTarget(null, new TransferLeadershipOp(groupId, to), from.getAddress())
