@@ -33,6 +33,8 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.util.InvocationUtil.CALLER_RUNS_EXECUTOR;
+
 /**
  * The base class that replicates the given {@link RaftOp}
  * to the target Raft group
@@ -69,7 +71,7 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             return;
         }
 
-        replicate(raftNode).andThen(this);
+        replicate(raftNode).andThen(this, CALLER_RUNS_EXECUTOR);
     }
 
     protected abstract ICompletableFuture replicate(RaftNode raftNode);
