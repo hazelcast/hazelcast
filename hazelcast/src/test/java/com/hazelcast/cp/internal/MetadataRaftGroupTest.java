@@ -46,11 +46,11 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -69,6 +69,7 @@ import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.sort;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
@@ -223,19 +224,20 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
             raftMembers.add(instances[i].getCluster().getLocalMember());
         }
 
-        Collections.sort(raftMembers, new Comparator<Member>() {
+        sort(raftMembers, new Comparator<Member>() {
             @Override
             public int compare(Member o1, Member o2) {
-                return o1.getUuid().compareTo(o2.getUuid());
+                return UUID.fromString(o1.getUuid()).compareTo(UUID.fromString(o2.getUuid()));
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (Member member : raftMembers.subList(0, metadataGroupSize)) {
+                List<Member> metadataMembers = raftMembers.subList(0, metadataGroupSize);
+                for (Member member : metadataMembers) {
                     HazelcastInstance instance = factory.getInstance(member.getAddress());
-                    assertNotNull(getRaftNode(instance, getMetadataGroupId(instance)));
+                    assertNotNull(member + " has no Metadata Raft node!", getRaftNode(instance, getMetadataGroupId(instance)));
                 }
             }
         });
