@@ -12,6 +12,7 @@ import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.PowerFunction;
 import com.hazelcast.sql.impl.expression.call.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.SignFunction;
 import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
@@ -183,6 +184,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.ATAN2:
                 return new Atan2Function(convertedOperands.get(0), convertedOperands.get(1));
 
+            case CallOperator.POWER:
+                return new PowerFunction(convertedOperands.get(0), convertedOperands.get(1));
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -290,6 +294,8 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.SIGN;
                 else if (function == SqlStdOperatorTable.ATAN2)
                     return CallOperator.ATAN2;
+                else if (function == SqlStdOperatorTable.POWER)
+                    return CallOperator.POWER;
                 else if (function == SqlStdOperatorTable.DEGREES)
                     return CallOperator.DEGREES;
                 else if (function == SqlStdOperatorTable.RADIANS)

@@ -73,6 +73,9 @@ public class CallOperator {
     /** Type: RADIANS. */
     public static final int RADIANS = 27;
 
+    /** Type: POWER. */
+    public static final int POWER = 28;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 
