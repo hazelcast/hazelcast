@@ -2,6 +2,8 @@ package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 import java.util.function.BiFunction;
 
@@ -110,6 +112,24 @@ public class TypeUtils {
 
         if (!type2.isNumeric())
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+    }
+
+    public static BaseDataTypeAccessor numericAccessor(Expression expr) {
+        DataType type = expr.getType();
+
+        if (!type.isNumeric())
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + type);
+
+        return type.getBaseType().getAccessor();
+    }
+
+    public static BaseDataTypeAccessor numericAccessor(Expression expr, int operandPos) {
+        DataType type = expr.getType();
+
+        if (!type.isNumeric())
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand " + operandPos + " is not numeric: " + type);
+
+        return type.getBaseType().getAccessor();
     }
 
     /**

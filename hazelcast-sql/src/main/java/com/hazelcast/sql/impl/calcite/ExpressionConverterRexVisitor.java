@@ -6,12 +6,14 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.AbsFunction;
+import com.hazelcast.sql.impl.expression.call.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.PlusFunction;
 import com.hazelcast.sql.impl.expression.call.RandomFunction;
+import com.hazelcast.sql.impl.expression.call.SignFunction;
 import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
 import org.apache.calcite.rex.RexCall;
@@ -156,6 +158,8 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.EXP:
             case CallOperator.LN:
             case CallOperator.LOG10:
+            case CallOperator.DEGREES:
+            case CallOperator.RADIANS:
                 return new DoubleFunction(convertedOperands.get(0), convertedOperator);
 
             case CallOperator.RAND:
@@ -172,6 +176,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case CallOperator.PI:
                 return new ConstantExpression<>(Math.PI);
+
+            case CallOperator.SIGN:
+                return new SignFunction(convertedOperands.get(0));
+
+            case CallOperator.ATAN2:
+                return new Atan2Function(convertedOperands.get(0), convertedOperands.get(1));
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
@@ -276,6 +286,14 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.ABS;
                 else if (function == SqlStdOperatorTable.PI)
                     return CallOperator.PI;
+                else if (function == SqlStdOperatorTable.SIGN)
+                    return CallOperator.SIGN;
+                else if (function == SqlStdOperatorTable.ATAN2)
+                    return CallOperator.ATAN2;
+                else if (function == SqlStdOperatorTable.DEGREES)
+                    return CallOperator.DEGREES;
+                else if (function == SqlStdOperatorTable.RADIANS)
+                    return CallOperator.RADIANS;
 
                 if (
                     function == SqlStdOperatorTable.CHAR_LENGTH ||

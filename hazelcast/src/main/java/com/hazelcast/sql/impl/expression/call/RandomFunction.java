@@ -46,6 +46,7 @@ public class RandomFunction extends UniCallExpression<Double> {
             Object seedRes0 = seedExp.eval(ctx, row);
 
             if (seedRes0 != null) {
+                // TODO: Common pattern.
                 if (seedAccessor == null) {
                     DataType seedType = seedExp.getType();
 

@@ -61,6 +61,18 @@ public class CallOperator {
     /** Type: PI. */
     public static final int PI = 23;
 
+    /** Type: SIGN. */
+    public static final int SIGN = 24;
+
+    /** Type: ATAN2. */
+    public static final int ATAN2 = 25;
+
+    /** Type: DEGREES. */
+    public static final int DEGREES = 26;
+
+    /** Type: RADIANS. */
+    public static final int RADIANS = 27;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 

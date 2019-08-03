@@ -7,6 +7,7 @@ import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.TypeUtils;
 import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 import java.io.IOException;
@@ -37,15 +38,8 @@ public class DoubleFunction extends UniCallExpression<Double> {
 
         if (res == null)
             return null;
-
-        if (accessor == null) {
-            DataType type = operand.getType();
-
-            if (!type.isNumeric())
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + type);
-
-            accessor = type.getBaseType().getAccessor();
-        }
+        else if (accessor == null)
+            accessor = TypeUtils.numericAccessor(operand);
 
         double res0 = accessor.getDouble(res);
 
@@ -82,6 +76,12 @@ public class DoubleFunction extends UniCallExpression<Double> {
 
             case CallOperator.LOG10:
                 return Math.log10(res0);
+
+            case CallOperator.DEGREES:
+                return Math.toDegrees(res0);
+
+            case CallOperator.RADIANS:
+                return Math.toRadians(res0);
         }
 
         throw new HazelcastSqlException(-1, "Unsupported double operator: " + operator);
