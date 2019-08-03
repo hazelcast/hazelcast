@@ -14,6 +14,9 @@ public class TypeUtils {
     /** Constant: unlimited scale. */
     public static final int SCALE_UNLIMITED = -1;
 
+    /** Scale for division. */
+    public static final int SCALE_DIVIDE = 38;
+
     /** Precision of BOOLEAN. */
     public static final int PRECISION_BIT = 1;
 
@@ -157,6 +160,40 @@ public class TypeUtils {
     }
 
     /**
+     * Infer result type for plus or minus operation.
+     *
+     * @param type1 Type 1.
+     * @param type2 Type 2.
+     * @return Result type.
+     */
+    public static DataType inferForPlusMinus(DataType type1, DataType type2) {
+        ensureNumeric(type1, type2);
+
+        // Precision is expanded by 1 to handle overflow: 9 + 1 = 10
+        int precision = calculatePrecision(
+            type1.getPrecision(),
+            type2.getPrecision(),
+            false,
+            (p1, p2) -> Math.max(p1, p2) + 1);
+
+        // We have only unlimited or zero scales.
+        int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
+
+        if (scale == 0)
+            return integerType(precision);
+        else {
+            DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
+
+            BaseDataType baseType = biggerType.getBaseType();
+
+            if (baseType == BaseDataType.FLOAT)
+                return DataType.DOUBLE; // REAL -> DOUBLE
+            else
+                return biggerType; // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+        }
+    }
+
+    /**
      * Infer result type for multiplication operation.
      *
      * @param type1 Type 1.
@@ -191,36 +228,44 @@ public class TypeUtils {
     }
 
     /**
-     * Infer result type for plus or minus operation.
+     * Infer result type for division.
      *
      * @param type1 Type 1.
      * @param type2 Type 2.
      * @return Result type.
      */
-    public static DataType inferForPlusMinus(DataType type1, DataType type2) {
+    public static DataType inferForDivide(DataType type1, DataType type2) {
         ensureNumeric(type1, type2);
 
-        // Precision is expanded by 1 to handle overflow: 9 + 1 = 10
-        int precision = calculatePrecision(
-            type1.getPrecision(),
-            type2.getPrecision(),
-            false,
-            (p1, p2) -> Math.max(p1, p2) + 1);
+        if (type1.getBaseType() == BaseDataType.BOOLEAN)
+            throw new HazelcastSqlException(-1, "Boolean operand cannot be used as dividend: " + type1);
 
-        // We have only unlimited or zero scales.
-        int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
+        if (type2.getBaseType() == BaseDataType.BOOLEAN)
+            throw new HazelcastSqlException(-1, "Boolean operand cannot be used as divisor: " + type2);
 
-        if (scale == 0)
-            return integerType(precision);
-        else {
-            DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
+        DataType higherType = type1.getPrecedence() > type2.getPrecedence() ? type1 : type2;
 
-            BaseDataType baseType = biggerType.getBaseType();
+        switch (higherType.getBaseType()) {
+            case BYTE:
+                return DataType.TINYINT;
 
-            if (baseType == BaseDataType.FLOAT)
-                return DataType.DOUBLE; // REAL -> DOUBLE
-            else
-                return biggerType; // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+            case SHORT:
+                return DataType.SMALLINT;
+
+            case INTEGER:
+                return DataType.INT;
+
+            case LONG:
+                return DataType.BIGINT;
+
+            case FLOAT:
+                return DataType.REAL;
+
+            case DOUBLE:
+                return DataType.DOUBLE;
+
+            default:
+                return DataType.DECIMAL;
         }
     }
 

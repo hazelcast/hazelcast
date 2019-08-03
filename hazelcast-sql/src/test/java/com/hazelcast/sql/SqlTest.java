@@ -38,7 +38,7 @@ public class SqlTest extends HazelcastTestSupport {
 
 //    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
 //    private static final String QUERY = "select height + age from persons order by name";
-    private static final String QUERY = "select floor(2.5), ceil(2.5) from persons order by name";
+    private static final String QUERY = "select 1/0 from persons order by name";
 
     @Test
     public void testSimpleQuery() throws Exception {

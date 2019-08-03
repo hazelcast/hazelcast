@@ -8,6 +8,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
+import com.hazelcast.sql.impl.expression.call.DivideFunction;
 import com.hazelcast.sql.impl.expression.call.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
@@ -143,6 +144,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.MULTIPLY:
                 return new MultiplyFunction(convertedOperands.get(0), convertedOperands.get(1));
 
+            case CallOperator.DIVIDE:
+                return new DivideFunction(convertedOperands.get(0), convertedOperands.get(1));
+
             case CallOperator.UNARY_MINUS:
                 return new UnaryMinusFunction(convertedOperands.get(0));
 
@@ -262,6 +266,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case TIMES:
                 return CallOperator.MULTIPLY;
+
+            case DIVIDE:
+                return CallOperator.DIVIDE;
 
             case MINUS_PREFIX:
                 return CallOperator.UNARY_MINUS;
