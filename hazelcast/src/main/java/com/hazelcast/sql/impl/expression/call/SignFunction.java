@@ -39,6 +39,8 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
                 case INTEGER:
                     resType = DataType.INT;
 
+                    break;
+
                 case BIG_DECIMAL:
                     resType = DataType.DECIMAL_INTEGER_DECIMAL;
 

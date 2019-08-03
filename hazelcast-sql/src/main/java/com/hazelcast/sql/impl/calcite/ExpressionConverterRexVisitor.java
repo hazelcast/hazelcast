@@ -9,6 +9,7 @@ import com.hazelcast.sql.impl.expression.call.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.DoubleFunction;
+import com.hazelcast.sql.impl.expression.call.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.call.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.PlusFunction;
@@ -163,6 +164,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.RADIANS:
                 return new DoubleFunction(convertedOperands.get(0), convertedOperator);
 
+            case CallOperator.FLOOR:
+                return new FloorCeilFunction(convertedOperands.get(0), false);
+
+            case CallOperator.CEIL:
+                return new FloorCeilFunction(convertedOperands.get(0), true);
+
             case CallOperator.RAND:
                 if (convertedOperands.isEmpty())
                     return new RandomFunction();
@@ -258,6 +265,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case MINUS_PREFIX:
                 return CallOperator.UNARY_MINUS;
+
+            case FLOOR:
+                return CallOperator.FLOOR;
+
+            case CEIL:
+                return CallOperator.CEIL;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

@@ -76,6 +76,12 @@ public class CallOperator {
     /** Type: POWER. */
     public static final int POWER = 28;
 
+    /** Type: FLOOR. */
+    public static final int FLOOR = 29;
+
+    /** Type: CEIL. */
+    public static final int CEIL = 30;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 
