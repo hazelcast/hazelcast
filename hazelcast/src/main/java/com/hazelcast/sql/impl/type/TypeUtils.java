@@ -234,7 +234,7 @@ public class TypeUtils {
      * @param type2 Type 2.
      * @return Result type.
      */
-    public static DataType inferForDivide(DataType type1, DataType type2) {
+    public static DataType inferForDivideRemainder(DataType type1, DataType type2) {
         ensureNumeric(type1, type2);
 
         if (type1.getBaseType() == BaseDataType.BOOLEAN)

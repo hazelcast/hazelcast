@@ -10,26 +10,26 @@ import com.hazelcast.sql.impl.type.TypeUtils;
 import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
- * Divide expression.
+ * Remainder expression.
  */
-public class DivideFunction<T> extends BiCallExpressionWithType<T> {
+public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
     /** Accessor for the first argument. */
     private transient BaseDataTypeAccessor accessor1;
 
     /** Accessor for the second argument. */
     private transient BaseDataTypeAccessor accessor2;
 
-    public DivideFunction() {
+    public RemainderFunction() {
         // No-op.
     }
 
-    public DivideFunction(Expression operand1, Expression operand2) {
+    public RemainderFunction(Expression operand1, Expression operand2) {
         super(operand1, operand2);
     }
 
+    // TODO: Duplicates remainder.
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
@@ -70,25 +70,25 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
         try {
             switch (resType.getBaseType()) {
                 case BYTE:
-                    return (byte)(accessor1.getByte(op1) / accessor2.getByte(op2));
+                    return (byte)(accessor1.getByte(op1) % accessor2.getByte(op2));
 
                 case SHORT:
-                    return (short)(accessor1.getShort(op1) / accessor2.getShort(op2));
+                    return (short)(accessor1.getShort(op1) % accessor2.getShort(op2));
 
                 case INTEGER:
-                    return accessor1.getInt(op1) / accessor2.getInt(op2);
+                    return accessor1.getInt(op1) % accessor2.getInt(op2);
 
                 case LONG:
-                    return accessor1.getLong(op1) / accessor2.getLong(op2);
+                    return accessor1.getLong(op1) % accessor2.getLong(op2);
 
                 case BIG_DECIMAL:
                     BigDecimal op1Decimal = accessor1.getDecimal(op1);
                     BigDecimal op2Decimal = accessor2.getDecimal(op2);
 
-                    return op1Decimal.divide(op2Decimal, TypeUtils.SCALE_DIVIDE, RoundingMode.FLOOR);
+                    return op1Decimal.remainder(op2Decimal);
 
                 case FLOAT: {
-                    float res = accessor1.getFloat(op1) / accessor2.getFloat(op2);
+                    float res = accessor1.getFloat(op1) % accessor2.getFloat(op2);
 
                     if (Float.isInfinite(res))
                         throw new HazelcastSqlException(-1, "Division by zero.");
@@ -97,7 +97,7 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
                 }
 
                 case DOUBLE: {
-                    double res = accessor1.getDouble(op1) / accessor2.getDouble(op2);
+                    double res = accessor1.getDouble(op1) % accessor2.getDouble(op2);
 
                     if (Double.isInfinite(res))
                         throw new HazelcastSqlException(-1, "Division by zero.");
@@ -115,6 +115,6 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
     }
 
     @Override public int operator() {
-        return CallOperator.DIVIDE;
+        return CallOperator.REMAINDER;
     }
 }

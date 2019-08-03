@@ -82,6 +82,9 @@ public class CallOperator {
     /** Type: CEIL. */
     public static final int CEIL = 30;
 
+    /** Divide function: A % B  or MOD(A, B). */
+    public static final int REMAINDER = 31;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 

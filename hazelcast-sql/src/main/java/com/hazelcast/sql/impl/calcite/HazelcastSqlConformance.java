@@ -70,4 +70,16 @@ public class HazelcastSqlConformance extends SqlDelegatingConformance {
         // Support "MINUS" in addition to "EXCEPT".
         return true;
     }
+
+    @Override
+    public boolean isPercentRemainderAllowed() {
+        // Allow "A % B".
+        return true;
+    }
+
+    @Override
+    public boolean allowNiladicParentheses() {
+        // Allow CURRENT_DATE() in addition to CURRENT_DATE.
+        return true;
+    }
 }

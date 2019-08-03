@@ -97,6 +97,6 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
     }
 
     @Override public int operator() {
-        return CallOperator.PLUS;
+        return CallOperator.MULTIPLY;
     }
 }
