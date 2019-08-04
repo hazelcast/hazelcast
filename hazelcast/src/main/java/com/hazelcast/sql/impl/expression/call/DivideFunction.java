@@ -85,7 +85,7 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
                     BigDecimal op1Decimal = accessor1.getDecimal(op1);
                     BigDecimal op2Decimal = accessor2.getDecimal(op2);
 
-                    return op1Decimal.divide(op2Decimal, TypeUtils.SCALE_DIVIDE, RoundingMode.FLOOR);
+                    return op1Decimal.divide(op2Decimal, TypeUtils.SCALE_DIVIDE, RoundingMode.HALF_DOWN);
 
                 case FLOAT: {
                     float res = accessor1.getFloat(op1) / accessor2.getFloat(op2);

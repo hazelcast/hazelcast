@@ -85,6 +85,12 @@ public class CallOperator {
     /** Divide function: A % B  or MOD(A, B). */
     public static final int REMAINDER = 31;
 
+    /** Type: ROUND. */
+    public static final int ROUND = 32;
+
+    /** Type: TRUNCATE. */
+    public static final int TRUNCATE = 33;
+
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 

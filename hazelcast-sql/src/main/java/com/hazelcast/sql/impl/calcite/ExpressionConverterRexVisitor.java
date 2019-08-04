@@ -17,6 +17,7 @@ import com.hazelcast.sql.impl.expression.call.PlusFunction;
 import com.hazelcast.sql.impl.expression.call.PowerFunction;
 import com.hazelcast.sql.impl.expression.call.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.RemainderFunction;
+import com.hazelcast.sql.impl.expression.call.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.call.SignFunction;
 import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
@@ -178,6 +179,18 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.CEIL:
                 return new FloorCeilFunction(convertedOperands.get(0), true);
 
+            case CallOperator.ROUND:
+                if (convertedOperands.size() == 1)
+                    return new RoundTruncateFunction(convertedOperands.get(0), null, false);
+                else
+                    return new RoundTruncateFunction(convertedOperands.get(0), convertedOperands.get(1), false);
+
+            case CallOperator.TRUNCATE:
+                if (convertedOperands.size() == 1)
+                    return new RoundTruncateFunction(convertedOperands.get(0), null, true);
+                else
+                    return new RoundTruncateFunction(convertedOperands.get(0), convertedOperands.get(1), true);
+
             case CallOperator.RAND:
                 if (convertedOperands.isEmpty())
                     return new RandomFunction();
@@ -327,6 +340,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.DEGREES;
                 else if (function == SqlStdOperatorTable.RADIANS)
                     return CallOperator.RADIANS;
+                else if (function == SqlStdOperatorTable.ROUND)
+                    return CallOperator.ROUND;
+                else if (function == SqlStdOperatorTable.TRUNCATE)
+                    return CallOperator.TRUNCATE;
 
                 if (
                     function == SqlStdOperatorTable.CHAR_LENGTH ||
