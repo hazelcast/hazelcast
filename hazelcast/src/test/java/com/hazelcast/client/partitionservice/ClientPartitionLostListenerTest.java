@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionLostListenerStressTest.EventCollectingPartitionLostListener;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.PortablePartitionLostEvent;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -148,14 +148,11 @@ public class ClientPartitionLostListenerTest {
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final int size) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
-
-                final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+            public void run() throws Exception {
+                final EventService eventService = getNode(instance).getNodeEngine().getEventService();
                 final Collection<EventRegistration> registrations = eventService
                         .getRegistrations(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC);
                 assertEquals(size, registrations.size());
-
             }
         });
     }

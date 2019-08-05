@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermi
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
 

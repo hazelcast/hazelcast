@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.concurrent.Executor;
@@ -112,7 +113,7 @@ public class ClientReliableTopicConfig {
     /**
      * Gets the Executor that is going to process the events.
      *
-     * If no Executor is selected, then the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} is used.
+     * If no Executor is selected, then the {@link ExecutionService#ASYNC_EXECUTOR} is used.
      *
      * @return the Executor used to process events.
      * @see #setExecutor(Executor)
@@ -130,7 +131,7 @@ public class ClientReliableTopicConfig {
      * A single Executor can be shared between multiple Reliable topics, although it could take more time to process a message.
      * If a single Executor is not shared with other reliable topics, then the Executor only needs to have a single thread.
      *
-     * @param executor the Executor. if the executor is null, the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will
+     * @param executor the Executor. if the executor is null, the {@link ExecutionService#ASYNC_EXECUTOR} will
      *                 be used to process the event.
      * @return the updated config.
      */

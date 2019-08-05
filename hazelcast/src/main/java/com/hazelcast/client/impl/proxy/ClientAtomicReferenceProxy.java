@@ -31,7 +31,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 

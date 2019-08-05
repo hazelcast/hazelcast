@@ -28,8 +28,8 @@ import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
@@ -181,7 +181,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
 
     private static void assertRegistrationEventually(final HazelcastInstance instance, final String mapName,
                                                      final boolean shouldBeRegistered) {
-        final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

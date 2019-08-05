@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 /**
  * Factory for EntryTaskSchedulers.

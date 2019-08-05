@@ -25,8 +25,8 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -43,7 +43,7 @@ import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOADER_EXECUTOR;
 
 /**
  * Responsible for loading keys from configured map store for a single partition.

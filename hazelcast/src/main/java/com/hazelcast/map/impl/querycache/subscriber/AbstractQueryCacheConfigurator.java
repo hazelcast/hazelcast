@@ -27,7 +27,7 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.EventListener;

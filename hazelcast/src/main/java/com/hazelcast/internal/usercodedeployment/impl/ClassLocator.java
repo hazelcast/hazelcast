@@ -25,7 +25,7 @@ import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderO
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.ContextMutexFactory;
 

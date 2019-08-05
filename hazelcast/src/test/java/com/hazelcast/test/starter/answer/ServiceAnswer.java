@@ -22,7 +22,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.lang.reflect.Method;

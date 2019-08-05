@@ -19,13 +19,12 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
@@ -232,7 +231,7 @@ public final class ProxyRegistry {
             throw rethrow(e);
         }
 
-        InternalEventService eventService = proxyService.nodeEngine.getEventService();
+        EventService eventService = proxyService.nodeEngine.getEventService();
         ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName,
                 name, proxy);
         eventService.executeEventCallback(callback);
@@ -263,7 +262,7 @@ public final class ProxyRegistry {
                     + t.getClass().getName() + ": " + t.getMessage());
             return;
         }
-        InternalEventService eventService = proxyService.nodeEngine.getEventService();
+        EventService eventService = proxyService.nodeEngine.getEventService();
         ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName,
                 name, proxy);
         eventService.executeEventCallback(callback);

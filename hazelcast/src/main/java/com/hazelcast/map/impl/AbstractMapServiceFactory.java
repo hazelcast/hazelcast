@@ -16,19 +16,19 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.ClientAwareService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.PartitionAwareService;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.QuorumAwareService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -45,7 +45,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link ManagedService} for {@link MapService}.
      *
      * @return Creates a new {@link ManagedService} implementation.
-     * @see com.hazelcast.spi.ManagedService
+     * @see ManagedService
      */
     abstract ManagedService createManagedService();
 
@@ -61,7 +61,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link TransactionalService} for {@link MapService}.
      *
      * @return Creates a new {@link TransactionalService} implementation.
-     * @see com.hazelcast.spi.TransactionalService
+     * @see TransactionalService
      */
     abstract TransactionalService createTransactionalService();
 
@@ -69,7 +69,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link RemoteService} for {@link MapService}.
      *
      * @return Creates a new {@link RemoteService} implementation.
-     * @see com.hazelcast.spi.RemoteService
+     * @see RemoteService
      */
     abstract RemoteService createRemoteService();
 
@@ -77,7 +77,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link EventPublishingService} for {@link MapService}.
      *
      * @return Creates a new {@link EventPublishingService} implementation.
-     * @see com.hazelcast.spi.EventPublishingService
+     * @see EventPublishingService
      */
     abstract EventPublishingService createEventPublishingService();
 
@@ -85,7 +85,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link PostJoinAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link PostJoinAwareService} implementation.
-     * @see com.hazelcast.spi.PostJoinAwareService
+     * @see PostJoinAwareService
      */
     abstract PostJoinAwareService createPostJoinAwareService();
 
@@ -93,7 +93,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link SplitBrainHandlerService} for {@link MapService}.
      *
      * @return Creates a new {@link SplitBrainHandlerService} implementation.
-     * @see com.hazelcast.spi.SplitBrainHandlerService
+     * @see SplitBrainHandlerService
      */
     abstract SplitBrainHandlerService createSplitBrainHandlerService();
 
@@ -101,7 +101,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link ReplicationSupportingService} for {@link MapService}.
      *
      * @return Creates a new {@link ReplicationSupportingService} implementation.
-     * @see com.hazelcast.spi.ReplicationSupportingService
+     * @see ReplicationSupportingService
      */
     abstract ReplicationSupportingService createReplicationSupportingService();
 
@@ -109,7 +109,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link StatisticsAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link StatisticsAwareService} implementation.
-     * @see com.hazelcast.spi.StatisticsAwareService
+     * @see StatisticsAwareService
      */
     abstract StatisticsAwareService createStatisticsAwareService();
 
@@ -126,7 +126,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * Creates a new {@link ClientAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link ClientAwareService} implementation.
-     * @see com.hazelcast.spi.ClientAwareService
+     * @see ClientAwareService
      */
     abstract ClientAwareService createClientAwareService();
 

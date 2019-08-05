@@ -16,11 +16,11 @@
 
 package com.hazelcast.quorum.impl;
 
-import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.quorum.HeartbeatAware;
 import com.hazelcast.quorum.PingAware;
@@ -30,12 +30,12 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.QuorumCheckAwareOperation;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.Collection;
 
@@ -62,7 +62,7 @@ public class QuorumImpl implements Quorum {
     private final String quorumName;
     private final int size;
     private final QuorumConfig config;
-    private final InternalEventService eventService;
+    private final EventService eventService;
     private final QuorumFunction quorumFunction;
     private final boolean heartbeatAwareQuorumFunction;
     private final boolean pingAwareQuorumFunction;

@@ -17,7 +17,7 @@
 package com.hazelcast.journal;
 
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.Map;
 import java.util.Set;

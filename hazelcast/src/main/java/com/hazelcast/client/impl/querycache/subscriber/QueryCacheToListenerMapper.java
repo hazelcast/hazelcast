@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.ListenerAdapter;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
