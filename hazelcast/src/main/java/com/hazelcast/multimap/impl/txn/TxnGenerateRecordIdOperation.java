@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 public class TxnGenerateRecordIdOperation extends AbstractKeyBasedMultiMapOperation {
 

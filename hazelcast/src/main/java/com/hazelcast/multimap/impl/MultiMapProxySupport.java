@@ -29,7 +29,7 @@ import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.multimap.impl.operations.RemoveOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngine;

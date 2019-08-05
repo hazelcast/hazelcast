@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.PartitionIndexesStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;

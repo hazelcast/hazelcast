@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.serialization.Data;
+
 /**
  * Represents a payload to can be written to a {@link Channel}
  *
@@ -31,7 +33,7 @@ package com.hazelcast.internal.networking;
  *
  * There is no need for an InboundFrame interface.
  *
- * @see com.hazelcast.nio.serialization.Data
+ * @see Data
  * @see Channel#write(OutboundFrame)
  */
 public interface OutboundFrame {

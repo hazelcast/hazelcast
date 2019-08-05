@@ -30,7 +30,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;

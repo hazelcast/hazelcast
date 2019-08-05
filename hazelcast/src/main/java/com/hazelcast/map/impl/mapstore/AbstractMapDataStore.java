@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.util.Clock;
 

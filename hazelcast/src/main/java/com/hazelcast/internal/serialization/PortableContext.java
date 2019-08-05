@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.Portable;
 

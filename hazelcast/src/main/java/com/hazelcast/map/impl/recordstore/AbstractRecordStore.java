@@ -33,7 +33,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;

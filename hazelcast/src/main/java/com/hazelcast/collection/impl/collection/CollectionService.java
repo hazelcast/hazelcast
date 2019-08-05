@@ -25,7 +25,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.internal.services.ManagedService;

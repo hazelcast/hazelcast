@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;

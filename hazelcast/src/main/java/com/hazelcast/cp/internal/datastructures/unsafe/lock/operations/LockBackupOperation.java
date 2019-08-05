@@ -20,7 +20,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHo
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.internal.services.ObjectNamespace;
 

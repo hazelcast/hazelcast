@@ -50,7 +50,7 @@ import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

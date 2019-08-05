@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;

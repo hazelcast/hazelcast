@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.Collections;

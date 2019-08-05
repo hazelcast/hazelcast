@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
  * <p>Operation to call the record store's functionality. Backup is also triggered by this operation
  * if a record is removed.</p>
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(com.hazelcast.nio.serialization.Data, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(Data, String, int)
  */
 public class CacheGetAndRemoveOperation extends MutatingCacheOperation {
 

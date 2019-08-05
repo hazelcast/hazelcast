@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -154,11 +154,11 @@ public interface RecordStore<R extends Record> {
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
      * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
      * <p>
-     * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
+     * Returns corresponding value for key as {@link Data}.
      * This adds an extra serialization step. For the reason of this behaviour please see issue 1292 on github.
      *
      * @param key key to be accessed
-     * @return value as {@link com.hazelcast.nio.serialization.Data}
+     * @return value as {@link Data}
      * independent of {@link com.hazelcast.config.InMemoryFormat}
      */
     Data readBackupData(Data key);

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
 import javax.cache.configuration.Factory;

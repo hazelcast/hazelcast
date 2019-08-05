@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
 import java.util.Set;

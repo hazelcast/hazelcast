@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.atomicreference;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 public class AtomicReferenceContainer {
 

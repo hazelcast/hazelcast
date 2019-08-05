@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.LockAware;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**

@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 class TransactionRecordKey {
 

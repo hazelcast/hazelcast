@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.cp.CPGroupId;
 
 /**

@@ -16,7 +16,7 @@
 package com.hazelcast.security;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * {@link Credentials} type for custom authentication (token based).

@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

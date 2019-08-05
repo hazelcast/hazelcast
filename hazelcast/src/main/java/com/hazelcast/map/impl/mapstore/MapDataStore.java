@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 
@@ -61,7 +62,7 @@ public interface MapDataStore<K, V> {
 
     /**
      * Removes keys from map store.
-     * It also handles {@link com.hazelcast.nio.serialization.Data} to object conversions of keys.
+     * It also handles {@link Data} to object conversions of keys.
      *
      * @param keys to be removed
      */

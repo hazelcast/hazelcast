@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicRef
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations.GetOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicReferencePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;

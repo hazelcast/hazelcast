@@ -34,7 +34,7 @@ import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

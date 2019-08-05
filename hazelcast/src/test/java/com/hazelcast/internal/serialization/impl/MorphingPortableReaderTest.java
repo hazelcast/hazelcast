@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.MorphingBasePortable;
 import com.hazelcast.nio.serialization.MorphingPortable;
 import com.hazelcast.nio.serialization.Portable;

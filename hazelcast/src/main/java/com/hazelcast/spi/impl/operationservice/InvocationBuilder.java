@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -107,7 +108,7 @@ public abstract class InvocationBuilder {
 
     /**
      * Checks if the Future should automatically deserialize the result. In most cases, you don't want
-     * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
+     * {@link Data} to be returned, but the deserialized object. But in some
      * cases, you want to get the raw Data object.
      * <p>
      * Defaults to true.

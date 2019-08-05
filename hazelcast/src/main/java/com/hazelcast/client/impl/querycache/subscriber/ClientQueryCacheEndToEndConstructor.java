@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndCo
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Client-side implementation of {@code QueryCacheEndToEndConstructor}.

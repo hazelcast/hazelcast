@@ -18,7 +18,7 @@ package com.hazelcast.spi.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * SPI to serialize user objects to {@link Data} and back to Object

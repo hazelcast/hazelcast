@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;

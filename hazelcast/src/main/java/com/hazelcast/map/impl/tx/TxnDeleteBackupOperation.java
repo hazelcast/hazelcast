@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 public class TxnDeleteBackupOperation extends RemoveBackupOperation {
 

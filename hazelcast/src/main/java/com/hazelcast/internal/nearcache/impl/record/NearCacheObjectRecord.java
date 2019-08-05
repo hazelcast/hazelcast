@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.nearcache.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
+
 /**
  * Implementation of {@link com.hazelcast.internal.nearcache.NearCacheRecord} to store
- * any object type except {@link com.hazelcast.nio.serialization.Data}.
+ * any object type except {@link Data}.
  *
  * @param <V> type of object instances to store.
  */

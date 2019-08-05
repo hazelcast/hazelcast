@@ -22,7 +22,7 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.ClassNameFilter;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.ByteArrayOutputStream;

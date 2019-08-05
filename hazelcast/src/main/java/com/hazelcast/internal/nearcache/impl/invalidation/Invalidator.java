@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;

@@ -27,7 +27,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.OperationService;

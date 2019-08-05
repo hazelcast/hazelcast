@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveA
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveRemoveOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.services.RemoteService;

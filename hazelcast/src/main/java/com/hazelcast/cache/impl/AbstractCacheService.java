@@ -39,7 +39,7 @@ import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -801,7 +801,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * from mentioned source with <code>sourceUuid</code>.
      *
      * @param cacheNameWithPrefix the name of the cache that invalidation event is sent for
-     * @param key                 the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param key                 the {@link Data} represents the invalidation event
      * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override

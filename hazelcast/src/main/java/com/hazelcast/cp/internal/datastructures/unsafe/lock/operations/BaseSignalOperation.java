@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock.operations;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.io.IOException;

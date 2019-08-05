@@ -26,7 +26,7 @@ import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
