@@ -67,7 +67,7 @@ public final class PNCounterGetCodec {
         /**
          * last observed replica timestamps (vector clock)
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps;
+        public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
 
         /**
          * the target replica
@@ -75,7 +75,7 @@ public final class PNCounterGetCodec {
         public com.hazelcast.nio.Address targetReplica;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -84,7 +84,7 @@ public final class PNCounterGetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapStringLongCodec.encode(clientMessage, replicaTimestamps);
+        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         AddressCodec.encode(clientMessage, targetReplica);
         return clientMessage;
     }
@@ -95,7 +95,7 @@ public final class PNCounterGetCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.replicaTimestamps = MapStringLongCodec.decode(iterator);
+        request.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
         request.targetReplica = AddressCodec.decode(iterator);
         return request;
     }
@@ -111,7 +111,7 @@ public final class PNCounterGetCodec {
         /**
          * last observed replica timestamps (vector clock)
          */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps;
+        public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
 
         /**
          * TODO DOC
@@ -119,7 +119,7 @@ public final class PNCounterGetCodec {
         public int replicaCount;
     }
 
-    public static ClientMessage encodeResponse(long value, java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.Long>> replicaTimestamps, int replicaCount) {
+    public static ClientMessage encodeResponse(long value, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, int replicaCount) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -127,7 +127,7 @@ public final class PNCounterGetCodec {
 
         encodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET, value);
         encodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET, replicaCount);
-        MapStringLongCodec.encode(clientMessage, replicaTimestamps);
+        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         return clientMessage;
     }
 
@@ -137,7 +137,7 @@ public final class PNCounterGetCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         response.value = decodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET);
         response.replicaCount = decodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET);
-        response.replicaTimestamps = MapStringLongCodec.decode(iterator);
+        response.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
         return response;
     }
 

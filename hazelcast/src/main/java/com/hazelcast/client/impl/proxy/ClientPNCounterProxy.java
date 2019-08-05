@@ -22,10 +22,10 @@ import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -210,9 +211,9 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      * @param replicaLogicalTimestamps the logical timestamps
      * @return a vector clock instance
      */
-    private VectorClock toVectorClock(List<Entry<String, Long>> replicaLogicalTimestamps) {
+    private VectorClock toVectorClock(List<Entry<UUID, Long>> replicaLogicalTimestamps) {
         final VectorClock timestamps = new VectorClock();
-        for (Entry<String, Long> replicaTimestamp : replicaLogicalTimestamps) {
+        for (Entry<UUID, Long> replicaTimestamp : replicaLogicalTimestamps) {
             timestamps.setReplicaTimestamp(replicaTimestamp.getKey(), replicaTimestamp.getValue());
         }
         return timestamps;
@@ -260,7 +261,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
             logger.fine("Unable to provide session guarantees when sending operations to " + target
                     + ", choosing different target");
             if (excludedAddresses == EMPTY_ADDRESS_LIST) {
-                excludedAddresses = new ArrayList<Address>();
+                excludedAddresses = new ArrayList<>();
             }
             excludedAddresses.add(target);
             final Address newTarget = getCRDTOperationTarget(excludedAddresses);
@@ -301,7 +302,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
         } catch (HazelcastException e) {
             logger.fine("Exception occurred while invoking operation on target " + target + ", choosing different target", e);
             if (excludedAddresses == EMPTY_ADDRESS_LIST) {
-                excludedAddresses = new ArrayList<Address>();
+                excludedAddresses = new ArrayList<>();
             }
             excludedAddresses.add(target);
             final Address newTarget = getCRDTOperationTarget(excludedAddresses);
@@ -370,7 +371,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
                                                            .getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
         final int maxConfiguredReplicaCount = getMaxConfiguredReplicaCount();
         final int currentReplicaCount = Math.min(maxConfiguredReplicaCount, dataMembers.size());
-        final ArrayList<Address> replicaAddresses = new ArrayList<Address>(currentReplicaCount);
+        final ArrayList<Address> replicaAddresses = new ArrayList<>(currentReplicaCount);
         final Iterator<Member> dataMemberIterator = dataMembers.iterator();
 
         for (int i = 0; i < currentReplicaCount; i++) {
@@ -410,7 +411,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      *
      * @param receivedLogicalTimestamps logical timestamps received from a replica state read
      */
-    private void updateObservedReplicaTimestamps(List<Entry<String, Long>> receivedLogicalTimestamps) {
+    private void updateObservedReplicaTimestamps(List<Entry<UUID, Long>> receivedLogicalTimestamps) {
         final VectorClock received = toVectorClock(receivedLogicalTimestamps);
         for (; ; ) {
             final VectorClock currentClock = this.observedClock;

@@ -18,6 +18,7 @@ package com.hazelcast.internal.crdt.pncounter;
 
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.core.ConsistencyLostException;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.crdt.CRDT;
 import com.hazelcast.internal.crdt.CRDTDataSerializerHook;
 import com.hazelcast.crdt.MutationDisallowedException;
@@ -30,6 +31,7 @@ import com.hazelcast.internal.util.MapUtil;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -40,11 +42,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * a String.
  */
 public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSerializable {
-    private String localReplicaId;
+    private UUID localReplicaId;
     /** Name of this PN counter */
     private String name;
     /** The PN counter state */
-    private Map<String, long[]> state = new ConcurrentHashMap<String, long[]>();
+    private Map<UUID, long[]> state = new ConcurrentHashMap<>();
     /** Vector clock of updates reflected in the state of this replica */
     private VectorClock stateVectorClock = new VectorClock();
     /** Flag marking this CRDT as migrated. No updates are allowed to a migrated CRDT */
@@ -54,7 +56,7 @@ public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSeriali
     private final Lock stateReadLock = stateReadWriteLock.readLock();
     private final Lock stateWriteLock = stateReadWriteLock.writeLock();
 
-    PNCounterImpl(String localReplicaId, String name) {
+    PNCounterImpl(UUID localReplicaId, String name) {
         this.localReplicaId = localReplicaId;
         this.stateVectorClock.setReplicaTimestamp(localReplicaId, Long.MIN_VALUE);
         this.name = name;
@@ -283,8 +285,8 @@ public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSeriali
         stateWriteLock.lock();
         try {
             checkNotMigrated();
-            for (Entry<String, long[]> pnCounterEntry : other.state.entrySet()) {
-                final String replicaId = pnCounterEntry.getKey();
+            for (Entry<UUID, long[]> pnCounterEntry : other.state.entrySet()) {
+                final UUID replicaId = pnCounterEntry.getKey();
 
                 final long[] pnOtherValues = pnCounterEntry.getValue();
                 final long[] pnValues = state.containsKey(replicaId) ? state.get(replicaId) : new long[]{0, 0};
@@ -319,10 +321,10 @@ public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSeriali
         try {
             out.writeObject(stateVectorClock);
             out.writeInt(state.size());
-            for (Entry<String, long[]> replicaState : state.entrySet()) {
-                final String replicaID = replicaState.getKey();
+            for (Entry<UUID, long[]> replicaState : state.entrySet()) {
+                final UUID replicaID = replicaState.getKey();
                 final long[] replicaCounts = replicaState.getValue();
-                out.writeUTF(replicaID);
+                UUIDSerializationUtil.writeUUID(out, replicaID);
                 out.writeLong(replicaCounts[0]);
                 out.writeLong(replicaCounts[1]);
             }
@@ -339,7 +341,7 @@ public class PNCounterImpl implements CRDT<PNCounterImpl>, IdentifiedDataSeriali
             final int stateSize = in.readInt();
             state = MapUtil.createHashMap(stateSize);
             for (int i = 0; i < stateSize; i++) {
-                final String replicaID = in.readUTF();
+                final UUID replicaID = UUIDSerializationUtil.readUUID(in);
                 final long[] replicaCounts = {in.readLong(), in.readLong()};
                 state.put(replicaID, replicaCounts);
             }

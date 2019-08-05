@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * concurrent updates.
  */
 public class VectorClock implements IdentifiedDataSerializable {
-    private final Map<String, Long> replicaTimestamps = new ConcurrentHashMap<String, Long>();
+    private final Map<UUID, Long> replicaTimestamps = new ConcurrentHashMap<>();
 
     public VectorClock() {
     }
@@ -52,7 +54,7 @@ public class VectorClock implements IdentifiedDataSerializable {
      * @param replicaId the replica id.
      * @return logical timestamp for given {@code replicaId}.
      */
-    public Long getTimestampForReplica(String replicaId) {
+    public Long getTimestampForReplica(UUID replicaId) {
         return replicaTimestamps.get(replicaId);
     }
 
@@ -63,7 +65,7 @@ public class VectorClock implements IdentifiedDataSerializable {
      * @param replicaId the replica id.
      * @param timestamp the timestamp.
      */
-    public void setReplicaTimestamp(String replicaId, long timestamp) {
+    public void setReplicaTimestamp(UUID replicaId, long timestamp) {
         replicaTimestamps.put(replicaId, timestamp);
     }
 
@@ -75,8 +77,8 @@ public class VectorClock implements IdentifiedDataSerializable {
      * @param other the vector clock to merge into this one.
      */
     public void merge(VectorClock other) {
-        for (Entry<String, Long> entry : other.replicaTimestamps.entrySet()) {
-            final String replicaId = entry.getKey();
+        for (Entry<UUID, Long> entry : other.replicaTimestamps.entrySet()) {
+            final UUID replicaId = entry.getKey();
             final long mergingTimestamp = entry.getValue();
             final long localTimestamp = replicaTimestamps.containsKey(replicaId)
                     ? replicaTimestamps.get(replicaId)
@@ -97,8 +99,8 @@ public class VectorClock implements IdentifiedDataSerializable {
      */
     public boolean isAfter(VectorClock other) {
         boolean anyTimestampGreater = false;
-        for (Entry<String, Long> otherEntry : other.replicaTimestamps.entrySet()) {
-            final String replicaId = otherEntry.getKey();
+        for (Entry<UUID, Long> otherEntry : other.replicaTimestamps.entrySet()) {
+            final UUID replicaId = otherEntry.getKey();
             final Long otherReplicaTimestamp = otherEntry.getValue();
             final Long localReplicaTimestamp = this.getTimestampForReplica(replicaId);
 
@@ -127,17 +129,17 @@ public class VectorClock implements IdentifiedDataSerializable {
      * Returns a set of replica logical timestamps for this vector clock.
      * @return a set of replica logical timestamps.
      */
-    public Set<Entry<String, Long>> entrySet() {
+    public Set<Entry<UUID, Long>> entrySet() {
         return replicaTimestamps.entrySet();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(replicaTimestamps.size());
-        for (Entry<String, Long> timestampEntry : replicaTimestamps.entrySet()) {
-            final String replicaId = timestampEntry.getKey();
+        for (Entry<UUID, Long> timestampEntry : replicaTimestamps.entrySet()) {
+            final UUID replicaId = timestampEntry.getKey();
             final Long timestamp = timestampEntry.getValue();
-            out.writeUTF(replicaId);
+            UUIDSerializationUtil.writeUUID(out, replicaId);
             out.writeLong(timestamp);
         }
     }
@@ -146,7 +148,7 @@ public class VectorClock implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         final int stateSize = in.readInt();
         for (int i = 0; i < stateSize; i++) {
-            final String replicaId = in.readUTF();
+            final UUID replicaId = UUIDSerializationUtil.readUUID(in);
             final long timestamp = in.readLong();
             replicaTimestamps.put(replicaId, timestamp);
         }
