@@ -37,7 +37,7 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheFactory;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberRegistry;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;

@@ -36,7 +36,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;

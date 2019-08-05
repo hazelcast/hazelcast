@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.serialization;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitioningStrategy;

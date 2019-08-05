@@ -28,7 +28,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;

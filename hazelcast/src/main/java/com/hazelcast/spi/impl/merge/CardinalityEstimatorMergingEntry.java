@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Implementation of {@link CardinalityEstimatorMergeTypes}.

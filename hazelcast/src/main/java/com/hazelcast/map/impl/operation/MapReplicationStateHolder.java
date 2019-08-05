@@ -37,7 +37,7 @@ import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadUtil;
 

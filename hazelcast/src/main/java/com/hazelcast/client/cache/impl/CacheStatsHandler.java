@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Helper class which contains specific statistic calculations per context

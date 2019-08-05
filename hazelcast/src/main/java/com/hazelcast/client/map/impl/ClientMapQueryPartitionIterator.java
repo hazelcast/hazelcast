@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Iterator;

@@ -18,7 +18,7 @@ package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

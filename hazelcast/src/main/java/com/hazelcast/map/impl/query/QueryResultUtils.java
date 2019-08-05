@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.ArrayList;

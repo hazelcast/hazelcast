@@ -19,7 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.ExecutionException;

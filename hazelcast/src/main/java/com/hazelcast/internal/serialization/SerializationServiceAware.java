@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.serialization;
+
 /**
- * Contains SPI related to serialization
+ * Used to get a {@link SerializationService} reference injected.
  */
-package com.hazelcast.spi.serialization;
+public interface SerializationServiceAware {
+
+    /**
+     * Gets the SerializationService reference injected.
+     *
+     * @param serializationService the SerializationService reference
+     */
+    void setSerializationService(SerializationService serializationService);
+}

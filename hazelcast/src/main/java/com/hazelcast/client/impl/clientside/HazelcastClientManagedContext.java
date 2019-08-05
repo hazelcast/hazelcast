@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 final class HazelcastClientManagedContext implements ManagedContext {
 
