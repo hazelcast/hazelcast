@@ -75,7 +75,7 @@ class RaftGroupMembershipManager {
 
     static final long MANAGEMENT_TASK_PERIOD_IN_MILLIS = SECONDS.toMillis(1);
     private static final long CHECK_LOCAL_RAFT_NODES_TASK_PERIOD = 10;
-    private static final long LEADERSHIP_BALANCE_TASK_PERIOD = 60;
+    private static final long LEADERSHIP_BALANCE_TASK_PERIOD = Integer.getInteger("hazelcast.raft.leadership.rebalance.period", 60);
 
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
