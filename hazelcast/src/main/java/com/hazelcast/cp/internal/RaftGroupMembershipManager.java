@@ -494,10 +494,7 @@ class RaftGroupMembershipManager {
             Collection<CPGroupId> groupIds = getCpGroupIds();
             groupIds.remove(raftService.getMetadataGroupId());
 
-            final int groupsPerMember = groupIds.size() / members.size();
-            if (groupsPerMember <= 1) {
-                return;
-            }
+            final int avgGroupsPerMember = groupIds.size() / members.size();
 
             Collection<CPGroupSummary> allGroups = new ArrayList<CPGroupSummary>(groupIds.size());
             for (CPGroupId groupId : groupIds) {
@@ -505,47 +502,63 @@ class RaftGroupMembershipManager {
                 allGroups.add(group);
             }
 
-            Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
-            for (; ; ) {
-                Map<CPMember, Collection<CPGroupId>> leaderships = getLeadershipsMap(members);
+            logger.info("Searching for leadership imbalance in " + groupIds.size() + " CPGroups, "
+                    + "average groups per member is " + avgGroupsPerMember);
 
-                CPMember from = getEndpointWithMaxLeaderships(leaderships, groupsPerMember, handledMembers);
-                if (from == null) {
+            Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
+            Map<CPMember, Collection<CPGroupId>> leaderships = getLeadershipsMap(members);
+
+            for (; ; ) {
+                Tuple2<CPMember, Integer> from = getEndpointWithMaxLeaderships(leaderships, avgGroupsPerMember, handledMembers);
+                if (from.element1 == null) {
                     // nothing to transfer
-                    logger.info("CPGroup leadership balance is fine...");
+                    logger.info("CPGroup leadership balance is fine, cannot rebalance further...");
                     return;
                 }
 
-                logger.info("Searching a candidate transfer leadership from " + from);
-                Collection<CPGroupSummary> memberGroups = getLeaderGroupsOf(from, leaderships.get(from), allGroups);
+                logger.info("Searching a candidate transfer leadership from " + from + " with " + from.element2 + " leaderships.");
+                Collection<CPGroupSummary> groups = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), allGroups);
 
-                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(memberGroups, leaderships, groupsPerMember);
+                // - When from-member has more than (avg + 1), then leadership can be transferred to any member
+                // which has leaderships equal to or less than avg.
+                // - When from-member has equal to (avg + 1), then leadership can be transferred to only members
+                // which have leaderships less than avg.
+                int maxLeaderships = from.element2 > (avgGroupsPerMember + 1) ? avgGroupsPerMember : (avgGroupsPerMember - 1);
+                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships - 1);
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
                     // could not found target member to transfer membership
                     // try to find next leader
-                    handledMembers.add(from);
+                    handledMembers.add(from.element1);
                     continue;
                 }
 
-                if (!transferLeadership(from, to.element1, to.element2)) {
+                if (!transferLeadership(from.element1, to.element1, to.element2)) {
                     // could not transfer leadership
                     // try next time
                     return;
                 }
+                leaderships = getLeadershipsMap(members);
             }
         }
 
         private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(Map<RaftEndpoint, CPMember> members) {
             Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
             OperationService operationService = nodeEngine.getOperationService();
+            StringBuilder s = new StringBuilder("Current leadership claims:");
             for (CPMember member : members.values()) {
                 Collection<CPGroupId> groups =
                         operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
                                 member.getAddress()).join();
                 leaderships.put(member, groups);
-                logger.info(member + " claims it's leader of " + groups.size() + " groups: " + groups);
+                if (logger.isFineEnabled()) {
+                    logger.fine(member + " claims it's leader of " + groups.size() + " groups: " + groups);
+                }
+                s.append('\n').append('\t').append(member).append(" has ").append(groups.size()).append(",");
             }
+            s.setLength(s.length() - 1);
+            s.append(" leaderships.");
+            logger.info(s.toString());
             return leaderships;
         }
 
@@ -587,7 +600,7 @@ class RaftGroupMembershipManager {
             return Tuple2.of(to, groupId);
         }
 
-        private CPMember getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
+        private Tuple2<CPMember, Integer> getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
                 int minLeaderships, Set<CPMember> excludeSet) {
             CPMember from = null;
             int max = minLeaderships;
@@ -601,7 +614,7 @@ class RaftGroupMembershipManager {
                     max = count;
                 }
             }
-            return from;
+            return Tuple2.of(from, max);
         }
 
         private boolean transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
@@ -634,7 +647,9 @@ class RaftGroupMembershipManager {
 
         private Collection<CPGroupId> getCpGroupIds() {
             InternalCompletableFuture<Collection<CPGroupId>> future = queryMetadata(new GetActiveRaftGroupIdsOp());
-            return future.join();
+            Collection<CPGroupId> groupIds = future.join();
+            groupIds.remove(raftService.getMetadataGroupId());
+            return groupIds;
         }
     }
 

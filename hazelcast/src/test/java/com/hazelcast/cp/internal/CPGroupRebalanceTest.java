@@ -6,8 +6,10 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,6 +23,10 @@ import java.util.Map.Entry;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
+
+    @ClassRule
+    public static final OverridePropertyRule raftLeadershipRebalanceRule
+            = OverridePropertyRule.set("hazelcast.raft.leadership.rebalance.period", String.valueOf(Integer.MAX_VALUE));
 
     @Test
     public void test() throws Exception {
