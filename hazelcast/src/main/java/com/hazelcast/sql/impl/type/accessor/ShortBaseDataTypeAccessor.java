@@ -38,6 +38,11 @@ public class ShortBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Short.toString(convert(val));
+    }
+
     private short convert(Object val) {
         return (short)val;
     }

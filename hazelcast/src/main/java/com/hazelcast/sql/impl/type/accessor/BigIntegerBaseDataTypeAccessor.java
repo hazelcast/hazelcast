@@ -39,6 +39,11 @@ public final class BigIntegerBaseDataTypeAccessor implements BaseDataTypeAccesso
         return convert(val).doubleValue();
     }
 
+    @Override
+    public final String getString(Object val) {
+        return convert(val).toString();
+    }
+
     private BigInteger convert(Object val) {
         return (BigInteger)val;
     }

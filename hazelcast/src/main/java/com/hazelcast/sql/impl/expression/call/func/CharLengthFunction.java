@@ -8,8 +8,11 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 public class CharLengthFunction extends UniCallExpression<Integer> {
+    /** Accessor. */
+    private transient BaseDataTypeAccessor accessor;
 
     public CharLengthFunction() {
         // No-op.
@@ -21,17 +24,15 @@ public class CharLengthFunction extends UniCallExpression<Integer> {
 
     @Override
     public Integer eval(QueryContext ctx, Row row) {
-        Object op1 = operand.eval(ctx, row);
+        Object op = operand.eval(ctx, row);
 
-        if (op1 == null) {
-            // TODO: How is this handled? See spec.
+        if (op == null)
             return null;
-        }
 
-        if (operand.getType() != DataType.VARCHAR)
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Illegal type: " + op1.getClass());
+        if (accessor == null)
+            accessor = operand.getType().getBaseType().getAccessor();
 
-        return ((String)op1).length();
+        return accessor.getString(op).length();
     }
 
     @Override

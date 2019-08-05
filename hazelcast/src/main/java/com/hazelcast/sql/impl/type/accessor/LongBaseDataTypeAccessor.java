@@ -38,6 +38,11 @@ public final class LongBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Long.toString(convert(val));
+    }
+
     private long convert(Object val) {
         return (long)val;
     }

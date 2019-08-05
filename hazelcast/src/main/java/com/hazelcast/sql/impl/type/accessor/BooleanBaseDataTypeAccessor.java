@@ -38,6 +38,11 @@ public final class BooleanBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Byte.toString(convert(val));
+    }
+
     private byte convert(Object val) {
         return (Boolean)val ? (byte)1 : (byte)0;
     }

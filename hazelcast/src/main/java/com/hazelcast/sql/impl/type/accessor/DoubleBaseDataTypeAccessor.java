@@ -38,6 +38,11 @@ public final class DoubleBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Double.toString(convert(val));
+    }
+
     private double convert(Object val) {
         return (double)val;
     }

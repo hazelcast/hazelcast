@@ -38,6 +38,11 @@ public final class IntegerBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Integer.toString(convert(val));
+    }
+
     private int convert(Object val) {
         return (int)val;
     }

@@ -38,6 +38,11 @@ public final class FloatBaseDataTypeAccessor implements BaseDataTypeAccessor {
         return convert(val);
     }
 
+    @Override
+    public final String getString(Object val) {
+        return Float.toString(convert(val));
+    }
+
     private float convert(Object val) {
         return (float)val;
     }

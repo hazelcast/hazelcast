@@ -5,22 +5,23 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.call.AbsFunction;
-import com.hazelcast.sql.impl.expression.call.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
-import com.hazelcast.sql.impl.expression.call.DivideFunction;
-import com.hazelcast.sql.impl.expression.call.DoubleFunction;
-import com.hazelcast.sql.impl.expression.call.FloorCeilFunction;
-import com.hazelcast.sql.impl.expression.call.MinusFunction;
-import com.hazelcast.sql.impl.expression.call.MultiplyFunction;
-import com.hazelcast.sql.impl.expression.call.PlusFunction;
-import com.hazelcast.sql.impl.expression.call.PowerFunction;
-import com.hazelcast.sql.impl.expression.call.RandomFunction;
-import com.hazelcast.sql.impl.expression.call.RemainderFunction;
-import com.hazelcast.sql.impl.expression.call.RoundTruncateFunction;
-import com.hazelcast.sql.impl.expression.call.SignFunction;
-import com.hazelcast.sql.impl.expression.call.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
+import com.hazelcast.sql.impl.expression.call.func.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
+import com.hazelcast.sql.impl.expression.call.func.DivideFunction;
+import com.hazelcast.sql.impl.expression.call.func.DoubleFunction;
+import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
+import com.hazelcast.sql.impl.expression.call.func.MinusFunction;
+import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.call.func.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.func.PowerFunction;
+import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
+import com.hazelcast.sql.impl.expression.call.func.RemainderFunction;
+import com.hazelcast.sql.impl.expression.call.func.RoundTruncateFunction;
+import com.hazelcast.sql.impl.expression.call.func.SignFunction;
+import com.hazelcast.sql.impl.expression.call.func.StringStringFunction;
+import com.hazelcast.sql.impl.expression.call.func.UnaryMinusFunction;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -157,6 +158,11 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case CallOperator.CHAR_LENGTH:
                 return new CharLengthFunction(convertedOperands.get(0));
+
+            case CallOperator.UPPER:
+            case CallOperator.LOWER:
+            case CallOperator.INITCAP:
+                return new StringStringFunction(convertedOperands.get(0), convertedOperator);
 
             case CallOperator.COS:
             case CallOperator.SIN:
@@ -351,6 +357,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     function == HazelcastSqlOperatorTable.LENGTH
                 )
                     return CallOperator.CHAR_LENGTH;
+                else if (function == SqlStdOperatorTable.UPPER)
+                    return CallOperator.UPPER;
+                else if (function == SqlStdOperatorTable.LOWER)
+                    return CallOperator.LOWER;
+                else if (function == SqlStdOperatorTable.INITCAP)
+                    return CallOperator.INITCAP;
             }
 
             default:

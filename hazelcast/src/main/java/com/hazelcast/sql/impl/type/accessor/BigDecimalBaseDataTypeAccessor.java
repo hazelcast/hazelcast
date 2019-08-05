@@ -38,6 +38,11 @@ public final class BigDecimalBaseDataTypeAccessor implements BaseDataTypeAccesso
         return convert(val).doubleValue();
     }
 
+    @Override
+    public final String getString(Object val) {
+        return convert(val).toString();
+    }
+
     private BigDecimal convert(Object val) {
         return (BigDecimal)val;
     }

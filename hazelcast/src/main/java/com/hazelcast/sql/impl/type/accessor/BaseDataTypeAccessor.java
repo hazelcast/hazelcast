@@ -10,4 +10,5 @@ public interface BaseDataTypeAccessor {
     BigDecimal getDecimal(Object val);
     float getFloat(Object val);
     double getDouble(Object val);
+    String getString(Object val);
 }

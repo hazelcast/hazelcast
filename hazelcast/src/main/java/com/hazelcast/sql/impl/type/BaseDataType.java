@@ -10,6 +10,7 @@ import com.hazelcast.sql.impl.type.accessor.FloatBaseDataTypeAccessor;
 import com.hazelcast.sql.impl.type.accessor.IntegerBaseDataTypeAccessor;
 import com.hazelcast.sql.impl.type.accessor.LongBaseDataTypeAccessor;
 import com.hazelcast.sql.impl.type.accessor.ShortBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.StringBaseDataTypeAccessor;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -104,7 +105,7 @@ public enum BaseDataType {
         BaseDataTypeGroup.STRING,
         PRECEDENCE_STRING,
         String.class,
-        null
+        new StringBaseDataTypeAccessor()
     );
 
     /** Data type group. */

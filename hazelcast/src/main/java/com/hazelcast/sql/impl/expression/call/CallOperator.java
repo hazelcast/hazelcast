@@ -94,6 +94,15 @@ public class CallOperator {
     /** Character length. */
     public static final int CHAR_LENGTH = 101;
 
+    /** UPPER function. */
+    public static final int UPPER = 102;
+
+    /** LOWER function. */
+    public static final int LOWER = 103;
+
+    /** INITCAP function. */
+    public static final int INITCAP = 104;
+
     private CallOperator() {
         // No-op.
     }
