@@ -15,6 +15,7 @@ import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.call.func.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.func.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
 import com.hazelcast.sql.impl.expression.call.func.PowerFunction;
 import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.func.RemainderFunction;
@@ -119,55 +120,61 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
         // Convert operator.
         SqlOperator operator = call.getOperator();
 
-        int convertedOperator = convertOperator(operator);
+        int hzOperator = convertOperator(operator);
 
         // Convert operands.
         List<RexNode> operands = call.getOperands();
 
-        List<Expression> convertedOperands;
+        List<Expression> hzOperands;
 
         if (operands == null || operands.isEmpty())
-            convertedOperands = Collections.emptyList();
+            hzOperands = Collections.emptyList();
         else {
-            convertedOperands = new ArrayList<>(operands.size());
+            hzOperands = new ArrayList<>(operands.size());
 
             for (RexNode operand : operands) {
                 Expression convertedOperand = operand.accept(this);
 
-                convertedOperands.add(convertedOperand);
+                hzOperands.add(convertedOperand);
             }
         }
 
-        switch (convertedOperator) {
+        switch (hzOperator) {
             case CallOperator.PLUS:
-                return new PlusFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new PlusFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.MINUS:
-                return new MinusFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new MinusFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.MULTIPLY:
-                return new MultiplyFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new MultiplyFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.DIVIDE:
-                return new DivideFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new DivideFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.REMAINDER:
-                return new RemainderFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new RemainderFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.UNARY_MINUS:
-                return new UnaryMinusFunction(convertedOperands.get(0));
+                return new UnaryMinusFunction(hzOperands.get(0));
 
             case CallOperator.CHAR_LENGTH:
             case CallOperator.ASCII:
-                return new StringRetIntFunction(convertedOperands.get(0), convertedOperator);
+                return new StringRetIntFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.UPPER:
             case CallOperator.LOWER:
             case CallOperator.INITCAP:
-                return new StringRetStringFunction(convertedOperands.get(0), convertedOperator);
+                return new StringRetStringFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.CONCAT:
-                return new ConcatFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new ConcatFunction(hzOperands.get(0), hzOperands.get(1));
+
+            case CallOperator.POSITION:
+                if (hzOperands.size() == 2)
+                    return new PositionFunction(hzOperands.get(0), hzOperands.get(1), null);
+                else
+                    return new PositionFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
 
             case CallOperator.COS:
             case CallOperator.SIN:
@@ -182,49 +189,49 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LOG10:
             case CallOperator.DEGREES:
             case CallOperator.RADIANS:
-                return new DoubleFunction(convertedOperands.get(0), convertedOperator);
+                return new DoubleFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.FLOOR:
-                return new FloorCeilFunction(convertedOperands.get(0), false);
+                return new FloorCeilFunction(hzOperands.get(0), false);
 
             case CallOperator.CEIL:
-                return new FloorCeilFunction(convertedOperands.get(0), true);
+                return new FloorCeilFunction(hzOperands.get(0), true);
 
             case CallOperator.ROUND:
-                if (convertedOperands.size() == 1)
-                    return new RoundTruncateFunction(convertedOperands.get(0), null, false);
+                if (hzOperands.size() == 1)
+                    return new RoundTruncateFunction(hzOperands.get(0), null, false);
                 else
-                    return new RoundTruncateFunction(convertedOperands.get(0), convertedOperands.get(1), false);
+                    return new RoundTruncateFunction(hzOperands.get(0), hzOperands.get(1), false);
 
             case CallOperator.TRUNCATE:
-                if (convertedOperands.size() == 1)
-                    return new RoundTruncateFunction(convertedOperands.get(0), null, true);
+                if (hzOperands.size() == 1)
+                    return new RoundTruncateFunction(hzOperands.get(0), null, true);
                 else
-                    return new RoundTruncateFunction(convertedOperands.get(0), convertedOperands.get(1), true);
+                    return new RoundTruncateFunction(hzOperands.get(0), hzOperands.get(1), true);
 
             case CallOperator.RAND:
-                if (convertedOperands.isEmpty())
+                if (hzOperands.isEmpty())
                     return new RandomFunction();
                 else {
-                    assert convertedOperands.size() == 1;
+                    assert hzOperands.size() == 1;
 
-                    return new RandomFunction(convertedOperands.get(0));
+                    return new RandomFunction(hzOperands.get(0));
                 }
 
             case CallOperator.ABS:
-                return new AbsFunction(convertedOperands.get(0));
+                return new AbsFunction(hzOperands.get(0));
 
             case CallOperator.PI:
                 return new ConstantExpression<>(Math.PI);
 
             case CallOperator.SIGN:
-                return new SignFunction(convertedOperands.get(0));
+                return new SignFunction(hzOperands.get(0));
 
             case CallOperator.ATAN2:
-                return new Atan2Function(convertedOperands.get(0), convertedOperands.get(1));
+                return new Atan2Function(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.POWER:
-                return new PowerFunction(convertedOperands.get(0), convertedOperands.get(1));
+                return new PowerFunction(hzOperands.get(0), hzOperands.get(1));
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
@@ -310,6 +317,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CEIL:
                 return CallOperator.CEIL;
 
+            case POSITION:
+                return CallOperator.POSITION;
+
             case OTHER:
                 if (operator == SqlStdOperatorTable.CONCAT)
                     return CallOperator.CONCAT;
@@ -374,8 +384,6 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.INITCAP;
                 else if (function == SqlStdOperatorTable.ASCII)
                     return CallOperator.ASCII;
-//                else if (function == SqlStdOperatorTable.CONCAT)
-//                    return CallOperator.CONCAT;
             }
 
             default:

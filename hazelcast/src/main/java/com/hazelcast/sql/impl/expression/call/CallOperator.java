@@ -109,6 +109,9 @@ public class CallOperator {
     /** CONCAT function. */
     public static final int CONCAT = 106;
 
+    /** POSITION function. */
+    public static final int POSITION = 107;
+
     private CallOperator() {
         // No-op.
     }
