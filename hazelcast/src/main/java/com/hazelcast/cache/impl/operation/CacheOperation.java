@@ -98,6 +98,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         if (recordStore != null && recordStore.isWanReplicationEnabled()) {
             wanEventPublisher = cacheService.getCacheWanEventPublisher();
+            cacheService.checkWanReplicationQueues(name);
         }
 
         beforeRunInternal();

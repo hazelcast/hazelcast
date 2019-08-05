@@ -157,6 +157,11 @@ public class CacheService extends AbstractCacheService {
         throw new UnsupportedOperationException("WAN replication is not supported");
     }
 
+    @Override
+    public void checkWanReplicationQueues(String cacheName) {
+        // NOP intentionally
+    }
+
     public static ObjectNamespace getObjectNamespace(String cacheName) {
         return new DistributedObjectNamespace(SERVICE_NAME, cacheName);
     }
