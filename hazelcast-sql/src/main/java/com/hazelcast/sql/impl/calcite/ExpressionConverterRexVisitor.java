@@ -19,6 +19,7 @@ import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
 import com.hazelcast.sql.impl.expression.call.func.PowerFunction;
 import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.func.RemainderFunction;
+import com.hazelcast.sql.impl.expression.call.func.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.call.func.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.call.func.SignFunction;
 import com.hazelcast.sql.impl.expression.call.func.StringRetIntFunction;
@@ -175,6 +176,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return new PositionFunction(hzOperands.get(0), hzOperands.get(1), null);
                 else
                     return new PositionFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
+
+            case CallOperator.REPLACE:
+                return new ReplaceFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
 
             case CallOperator.COS:
             case CallOperator.SIN:
@@ -384,11 +388,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.INITCAP;
                 else if (function == SqlStdOperatorTable.ASCII)
                     return CallOperator.ASCII;
+                else if (function == SqlStdOperatorTable.REPLACE)
+                    return CallOperator.REPLACE;
             }
 
             default:
-                // TODO: Proper exception.
-                throw new UnsupportedOperationException("Unsupported operator: " + operator);
+                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
         }
     }
 

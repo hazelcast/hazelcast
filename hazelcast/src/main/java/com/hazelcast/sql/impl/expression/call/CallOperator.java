@@ -112,6 +112,9 @@ public class CallOperator {
     /** POSITION function. */
     public static final int POSITION = 107;
 
+    /** REPLACE function. */
+    public static final int REPLACE = 108;
+
     private CallOperator() {
         // No-op.
     }
