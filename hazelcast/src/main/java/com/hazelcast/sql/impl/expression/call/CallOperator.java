@@ -103,6 +103,12 @@ public class CallOperator {
     /** INITCAP function. */
     public static final int INITCAP = 104;
 
+    /** ASCII function. */
+    public static final int ASCII = 105;
+
+    /** CONCAT function. */
+    public static final int CONCAT = 106;
+
     private CallOperator() {
         // No-op.
     }

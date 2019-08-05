@@ -15,27 +15,27 @@ import java.io.IOException;
 import java.util.Locale;
 
 /**
- * A function which accepts a string, and return another string.
+ * A function which accepts a string, and return an integer.
  */
-public class StringStringFunction extends UniCallExpression<String> {
+public class StringRetIntFunction extends UniCallExpression<Integer> {
     /** Operator. */
     private int operator;
 
     /** Accessor. */
     private transient BaseDataTypeAccessor accessor;
 
-    public StringStringFunction() {
+    public StringRetIntFunction() {
         // No-op.
     }
 
-    public StringStringFunction(Expression operand, int operator) {
+    public StringRetIntFunction(Expression operand, int operator) {
         super(operand);
 
         this.operator = operator;
     }
 
     @Override
-    public String eval(QueryContext ctx, Row row) {
+    public Integer eval(QueryContext ctx, Row row) {
         Object op = operand.eval(ctx, row);
 
         if (op == null)
@@ -47,53 +47,20 @@ public class StringStringFunction extends UniCallExpression<String> {
         String res = accessor.getString(op);
 
         switch (operator) {
-            case CallOperator.UPPER:
-                return res.toUpperCase(Locale.ROOT);
+            case CallOperator.CHAR_LENGTH:
+                return res.length();
 
-            case CallOperator.LOWER:
-                return res.toLowerCase(Locale.ROOT);
-
-            case CallOperator.INITCAP:
-                return capitalize(res);
+            case CallOperator.ASCII:
+                return res.isEmpty() ? 0 : res.codePointAt(0);
 
             default:
                 throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
         }
     }
 
-    private static String capitalize(String str) {
-        if (str.length() == 0)
-            return str;
-
-        int strLen = str.length();
-
-        StringBuilder res = new StringBuilder(strLen);
-
-        boolean capitalizeNext = true;
-
-        for (int i = 0; i < strLen; i++) {
-            char c = str.charAt(i);
-
-            if (Character.isWhitespace(c)) {
-                res.append(c);
-
-                capitalizeNext = true;
-            }
-            else if (capitalizeNext) {
-                res.append(Character.toTitleCase(c));
-
-                capitalizeNext = false;
-            }
-            else
-                res.append(c);
-        }
-
-        return res.toString();
-    }
-
     @Override
     public DataType getType() {
-        return DataType.VARCHAR;
+        return DataType.INT;
     }
 
     @Override

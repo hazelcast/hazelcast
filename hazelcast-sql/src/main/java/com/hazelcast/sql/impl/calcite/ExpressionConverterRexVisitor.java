@@ -8,7 +8,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.Atan2Function;
-import com.hazelcast.sql.impl.expression.call.func.CharLengthFunction;
+import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
 import com.hazelcast.sql.impl.expression.call.func.DivideFunction;
 import com.hazelcast.sql.impl.expression.call.func.DoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
@@ -20,7 +20,8 @@ import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
 import com.hazelcast.sql.impl.expression.call.func.RemainderFunction;
 import com.hazelcast.sql.impl.expression.call.func.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.call.func.SignFunction;
-import com.hazelcast.sql.impl.expression.call.func.StringStringFunction;
+import com.hazelcast.sql.impl.expression.call.func.StringRetIntFunction;
+import com.hazelcast.sql.impl.expression.call.func.StringRetStringFunction;
 import com.hazelcast.sql.impl.expression.call.func.UnaryMinusFunction;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -157,12 +158,16 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return new UnaryMinusFunction(convertedOperands.get(0));
 
             case CallOperator.CHAR_LENGTH:
-                return new CharLengthFunction(convertedOperands.get(0));
+            case CallOperator.ASCII:
+                return new StringRetIntFunction(convertedOperands.get(0), convertedOperator);
 
             case CallOperator.UPPER:
             case CallOperator.LOWER:
             case CallOperator.INITCAP:
-                return new StringStringFunction(convertedOperands.get(0), convertedOperator);
+                return new StringRetStringFunction(convertedOperands.get(0), convertedOperator);
+
+            case CallOperator.CONCAT:
+                return new ConcatFunction(convertedOperands.get(0), convertedOperands.get(1));
 
             case CallOperator.COS:
             case CallOperator.SIN:
@@ -305,6 +310,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CEIL:
                 return CallOperator.CEIL;
 
+            case OTHER:
+                if (operator == SqlStdOperatorTable.CONCAT)
+                    return CallOperator.CONCAT;
+
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;
 
@@ -363,6 +372,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.LOWER;
                 else if (function == SqlStdOperatorTable.INITCAP)
                     return CallOperator.INITCAP;
+                else if (function == SqlStdOperatorTable.ASCII)
+                    return CallOperator.ASCII;
+//                else if (function == SqlStdOperatorTable.CONCAT)
+//                    return CallOperator.CONCAT;
             }
 
             default:
