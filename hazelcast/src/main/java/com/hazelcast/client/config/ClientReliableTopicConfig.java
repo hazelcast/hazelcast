@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.config.NamedConfig;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.concurrent.Executor;
@@ -31,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  *
  * @see ClientReliableTopicProxy
  */
-public class ClientReliableTopicConfig {
+public class ClientReliableTopicConfig implements NamedConfig {
     /**
      * The default read batch size.
      */
@@ -84,8 +85,9 @@ public class ClientReliableTopicConfig {
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link ClientConfig}.
      */
-    public void setName(String name) {
+    public ClientReliableTopicConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
