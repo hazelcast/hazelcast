@@ -114,7 +114,7 @@ public final class ContinuousQueryAddListenerCodec {
     public static ClientMessage encodeQueryCacheSingleEvent(com.hazelcast.map.impl.querycache.event.QueryCacheEventData data) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         QueryCacheEventDataCodec.encode(clientMessage, data);
@@ -123,7 +123,7 @@ public final class ContinuousQueryAddListenerCodec {
     public static ClientMessage encodeQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET, partitionId);
         clientMessage.add(initialFrame);

@@ -112,7 +112,7 @@ public final class ClientAddMembershipListenerCodec {
     public static ClientMessage encodeMemberEvent(com.hazelcast.cluster.Member member, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBER_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);
@@ -122,7 +122,7 @@ public final class ClientAddMembershipListenerCodec {
     public static ClientMessage encodeMemberListEvent(java.util.Collection<com.hazelcast.cluster.Member> members) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_LIST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         ListMultiFrameCodec.encode(clientMessage, members, MemberCodec::encode);
@@ -131,7 +131,7 @@ public final class ClientAddMembershipListenerCodec {
     public static ClientMessage encodeMemberAttributeChangeEvent(com.hazelcast.cluster.Member member, java.util.Collection<com.hazelcast.cluster.Member> members, java.lang.String key, int operationType, java.lang.String value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET, operationType);
         clientMessage.add(initialFrame);

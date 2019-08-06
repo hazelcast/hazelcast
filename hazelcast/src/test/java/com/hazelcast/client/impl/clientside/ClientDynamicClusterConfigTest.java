@@ -39,11 +39,6 @@ public class ClientDynamicClusterConfigTest extends DynamicConfigTest {
     }
 
     @Override
-    public void testMapConfig_withEntryListenerClassName() {
-        super.testMapConfig_withEntryListenerClassName();
-    }
-
-    @Override
     protected HazelcastInstance getDriver() {
         return factory.newHazelcastClient();
     }

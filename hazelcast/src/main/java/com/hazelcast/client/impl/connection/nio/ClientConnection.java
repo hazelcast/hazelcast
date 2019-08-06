@@ -237,7 +237,7 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT)) {
+        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
             listenerService.handleClientMessage(message);
         } else {

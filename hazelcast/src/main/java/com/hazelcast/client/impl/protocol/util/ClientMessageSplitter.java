@@ -25,8 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT;
-import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT;
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT_FLAG;
 
 public final class ClientMessageSplitter {
 
@@ -91,8 +91,8 @@ public final class ClientMessageSplitter {
         if (state == ReadState.MIDDLE) {
             fragments.add(fragment);
         }
-        fragments.getFirst().getFirst().flags |= BEGIN_FRAGMENT;
-        fragments.getLast().getFirst().flags |= END_FRAGMENT;
+        fragments.getFirst().getFirst().flags |= BEGIN_FRAGMENT_FLAG;
+        fragments.getLast().getFirst().flags |= END_FRAGMENT_FLAG;
         return fragments;
     }
 

@@ -21,7 +21,7 @@ import com.hazelcast.nio.Bits;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
 public class ClientMessageReader {
@@ -34,7 +34,7 @@ public class ClientMessageReader {
     public boolean readFrom(ByteBuffer src) {
         for (; ; ) {
             if (readFrame(src)) {
-                if (isFlagSet(frames.get(readIndex).flags, FINAL)) {
+                if (ClientMessage.isFlagSet(frames.get(readIndex).flags, IS_FINAL_FLAG)) {
                     return true;
                 }
                 readIndex++;
@@ -80,11 +80,6 @@ public class ClientMessageReader {
 
         ClientMessage.Frame frame = frames.get(readIndex);
         return accumulate(src, frame.content, frame.content.length - readOffset);
-    }
-
-    public boolean isFlagSet(int flags, int flagMask) {
-        int i = flags & flagMask;
-        return i == flagMask;
     }
 
     private boolean accumulate(ByteBuffer src, byte[] dest, int length) {

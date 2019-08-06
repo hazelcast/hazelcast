@@ -17,13 +17,24 @@
 package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.builtin.DataCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
+import com.hazelcast.logging.Logger;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 /**
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
@@ -112,7 +123,7 @@ public final class TopicAddMessageListenerCodec {
     public static ClientMessage encodeTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.lang.String uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_TOPIC_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_TOPIC_MESSAGE_TYPE);
         encodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET, publishTime);
         clientMessage.add(initialFrame);

@@ -115,7 +115,7 @@ public final class CacheAddPartitionLostListenerCodec {
     public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.lang.String uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
         clientMessage.add(initialFrame);

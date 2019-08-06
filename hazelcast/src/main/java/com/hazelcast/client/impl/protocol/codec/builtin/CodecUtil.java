@@ -30,7 +30,7 @@ public final class CodecUtil {
     }
 
     public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator) {
-        for (ClientMessage.Frame frame = iterator.next(); !frame.isDataStructureEndFrame(); ) {
+        for (ClientMessage.Frame frame = iterator.next(); !frame.isEndFrame(); ) {
             frame = iterator.next();
         }
     }
@@ -49,7 +49,7 @@ public final class CodecUtil {
 
     public static boolean nextFrameIsDataStructureEndFrame(ListIterator<ClientMessage.Frame> iterator) {
         try {
-            return iterator.next().isDataStructureEndFrame();
+            return iterator.next().isEndFrame();
         } finally {
             iterator.previous();
         }

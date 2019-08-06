@@ -18,9 +18,11 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -41,7 +43,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertArrayEquals;
@@ -51,11 +53,10 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
-
     @Test
     public void test() {
         ClientMessage message = ClientMessage.createForEncode();
-        message.add(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | FINAL));
+        message.add(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | IS_FINAL_FLAG));
         message.setMessageType((short) MapPutCodec.REQUEST_MESSAGE_TYPE);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
@@ -81,6 +82,9 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         decoder.onRead();
 
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
+        assertEquals(message.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(message.getHeaderFlags(), resultingMessage.get().getHeaderFlags());
+        assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
     }
 
     @Test
@@ -111,6 +115,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         decoder.onRead();
 
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
+        assertEquals(message.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(message.getHeaderFlags(), resultingMessage.get().getHeaderFlags());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
         MapPutCodec.RequestParameters parameters = MapPutCodec.decodeRequest(resultingMessage.get());
@@ -152,6 +158,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         decoder.onRead();
 
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
+        assertEquals(message.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(message.getHeaderFlags(), resultingMessage.get().getHeaderFlags());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(resultingMessage.get());
@@ -207,6 +215,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         decoder.onRead();
 
         assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
+        assertEquals(message.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(message.getHeaderFlags(), resultingMessage.get().getHeaderFlags());
         assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
 
         ClientAuthenticationCodec.ResponseParameters parameters = ClientAuthenticationCodec.decodeResponse(resultingMessage.get());
@@ -222,4 +232,64 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("3.13", parameters.clusterId);
     }
 
+    class EventHandler extends ClientAddMembershipListenerCodec.AbstractEventHandler {
+
+        Member member;
+        int eventType;
+
+        @Override
+        public void handleMemberEvent(Member member, int eventType) {
+            this.member = member;
+            this.eventType = eventType;
+        }
+
+        @Override
+        public void handleMemberListEvent(Collection<Member> members) {
+        }
+
+        @Override
+        public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key,
+                                                     int operationType, String value) {
+        }
+    }
+
+    @Test
+    public void testEvent() throws UnknownHostException {
+        Address address = new Address("127.0.0.1", 5703);
+        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.12"), UUID.randomUUID().toString());
+
+        ClientMessage message = ClientAddMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_ADDED);
+        AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
+
+        ClientMessageEncoder encoder = new ClientMessageEncoder();
+        encoder.src(() -> reference.getAndSet(null));
+
+        ByteBuffer buffer = ByteBuffer.allocate(1000);
+        buffer.flip();
+        encoder.dst(buffer);
+
+        HandlerStatus result = encoder.onWrite();
+
+        assertEquals(CLEAN, result);
+
+        AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        decoder.setNormalPacketsRead(SwCounter.newSwCounter());
+
+        buffer.position(buffer.limit());
+
+        decoder.src(buffer);
+        decoder.onRead();
+
+        assertEquals(message.getMessageType(), resultingMessage.get().getMessageType());
+        assertEquals(message.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(message.getHeaderFlags(), resultingMessage.get().getHeaderFlags());
+        assertEquals(message.getPartitionId(), resultingMessage.get().getPartitionId());
+
+        EventHandler eventHandler = new EventHandler();
+        eventHandler.handle(resultingMessage.get());
+
+        assertEquals(MembershipEvent.MEMBER_ADDED, eventHandler.eventType);
+        assertEquals(member, eventHandler.member);
+    }
 }

@@ -115,7 +115,7 @@ public final class CacheAddInvalidationListenerCodec {
     public static ClientMessage encodeCacheInvalidationEvent(java.lang.String name, com.hazelcast.nio.serialization.Data key, java.lang.String sourceUuid, java.util.UUID partitionUuid, long sequence) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_INVALIDATION_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET, partitionUuid);
         encodeLong(initialFrame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
@@ -128,7 +128,7 @@ public final class CacheAddInvalidationListenerCodec {
     public static ClientMessage encodeCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.lang.String> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

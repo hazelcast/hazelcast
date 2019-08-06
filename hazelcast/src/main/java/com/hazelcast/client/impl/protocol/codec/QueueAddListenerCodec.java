@@ -119,7 +119,7 @@ public final class QueueAddListenerCodec {
     public static ClientMessage encodeItemEvent(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_ITEM_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);

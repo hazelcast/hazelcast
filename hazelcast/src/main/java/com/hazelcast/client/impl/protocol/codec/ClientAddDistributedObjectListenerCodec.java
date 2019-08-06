@@ -104,7 +104,7 @@ public final class ClientAddDistributedObjectListenerCodec {
     public static ClientMessage encodeDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

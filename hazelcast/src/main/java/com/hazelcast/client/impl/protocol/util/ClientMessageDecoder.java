@@ -28,8 +28,8 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT;
-import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT;
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.FRAGMENTATION_ID_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
@@ -74,9 +74,9 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                     //remove the fragmentationFrame
                     activeReader.getFrames().removeFirst();
                     long fragmentationId = Bits.readLongL(firstFrame.content, FRAGMENTATION_ID_OFFSET);
-                    if (ClientMessage.isFlagSet(flags, BEGIN_FRAGMENT)) {
+                    if (ClientMessage.isFlagSet(flags, BEGIN_FRAGMENT_FLAG)) {
                         builderBySessionIdMap.put(fragmentationId, activeReader);
-                    } else if (ClientMessage.isFlagSet(flags, END_FRAGMENT)) {
+                    } else if (ClientMessage.isFlagSet(flags, END_FRAGMENT_FLAG)) {
                         ClientMessageReader messageReader = builderBySessionIdMap.get(fragmentationId);
                         LinkedList<ClientMessage.Frame> frames = messageReader.getFrames();
                         frames.addAll(activeReader.getFrames());

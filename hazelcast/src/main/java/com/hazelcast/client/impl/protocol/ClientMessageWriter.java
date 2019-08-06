@@ -20,7 +20,7 @@ import com.hazelcast.nio.Bits;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.FINAL;
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
 public class ClientMessageWriter {
@@ -57,7 +57,7 @@ public class ClientMessageWriter {
             dst.position(dst.position() + Bits.INT_SIZE_IN_BYTES);
 
             if (isLastFrame) {
-                Bits.writeShortL(dst, dst.position(), (short) (frame.flags | FINAL));
+                Bits.writeShortL(dst, dst.position(), (short) (frame.flags | IS_FINAL_FLAG));
             } else {
                 Bits.writeShortL(dst, dst.position(), (short) frame.flags);
             }

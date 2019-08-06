@@ -90,7 +90,7 @@ public final class ClientAddPartitionListenerCodec {
     public static ClientMessage encodePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_PARTITIONS_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
         clientMessage.add(initialFrame);

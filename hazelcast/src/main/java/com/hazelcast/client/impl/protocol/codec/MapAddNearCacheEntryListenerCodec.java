@@ -123,7 +123,7 @@ public final class MapAddNearCacheEntryListenerCodec {
     public static ClientMessage encodeIMapInvalidationEvent(com.hazelcast.nio.serialization.Data key, java.lang.String sourceUuid, java.util.UUID partitionUuid, long sequence) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET, partitionUuid);
         encodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
@@ -135,7 +135,7 @@ public final class MapAddNearCacheEntryListenerCodec {
     public static ClientMessage encodeIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.lang.String> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT;
+        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
