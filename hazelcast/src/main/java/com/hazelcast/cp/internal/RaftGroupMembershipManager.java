@@ -495,6 +495,7 @@ class RaftGroupMembershipManager {
             groupIds.remove(raftService.getMetadataGroupId());
 
             final int avgGroupsPerMember = groupIds.size() / members.size();
+            final boolean overAvgAllowed = groupIds.size() % members.size() != 0;
 
             Collection<CPGroupSummary> allGroups = new ArrayList<CPGroupSummary>(groupIds.size());
             for (CPGroupId groupId : groupIds) {
@@ -519,12 +520,21 @@ class RaftGroupMembershipManager {
                 logger.info("Searching a candidate transfer leadership from " + from + " with " + from.element2 + " leaderships.");
                 Collection<CPGroupSummary> groups = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), allGroups);
 
-                // - When from-member has more than (avg + 1), then leadership can be transferred to any member
-                // which has leaderships equal to or less than avg.
-                // - When from-member has equal to (avg + 1), then leadership can be transferred to only members
-                // which have leaderships less than avg.
-                int maxLeaderships = from.element2 > (avgGroupsPerMember + 1) ? avgGroupsPerMember : (avgGroupsPerMember - 1);
-                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships - 1);
+                int maxLeaderships;
+                if (overAvgAllowed) {
+                    // - When from-member has more than (avg + 1), then leadership can be transferred to any member
+                    // which has leaderships equal to or less than avg.
+                    // - When from-member has equal to (avg + 1), then leadership can be transferred to only members
+                    // which have leaderships less than avg.
+                    if (from.element2 > avgGroupsPerMember + 1) {
+                        maxLeaderships = avgGroupsPerMember;
+                    } else {
+                        maxLeaderships = avgGroupsPerMember - 1;
+                    }
+                } else {
+                    maxLeaderships = avgGroupsPerMember;
+                }
+                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
                     // could not found target member to transfer membership
