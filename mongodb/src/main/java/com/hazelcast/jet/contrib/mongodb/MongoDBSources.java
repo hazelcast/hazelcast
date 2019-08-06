@@ -100,6 +100,12 @@ public final class MongoDBSources {
      * collection. The source applies the given {@code filter} and {@code
      * projection} on the change stream documents.
      * <p>
+     * Change stream is available for replica sets and sharded clusters that
+     * use WiredTiger storage engine and replica set protocol version 1 (pv1).
+     * Change streams can also be used on deployments which employ MongoDB's
+     * encryption-at-rest feature. You cannot watch on system collections and
+     * collections in admin, local and config databases.
+     * <p>
      * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
      * <p>
      * Here's an example which streams inserts on a collection having the

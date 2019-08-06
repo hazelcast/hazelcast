@@ -154,7 +154,7 @@ public final class MongoDBSinkBuilder<T> {
         final ConsumerEx<MongoClient> destroyFn;
         final InsertManyOptions insertManyOptions;
 
-        List<T> documents;
+        final List<T> documents;
 
         MongoSinkContext(
                 MongoClient client,
@@ -179,7 +179,7 @@ public final class MongoDBSinkBuilder<T> {
 
         void flush() {
             collection.insertMany(documents, insertManyOptions);
-            documents = new ArrayList<>();
+            documents.clear();
         }
 
         void close() {

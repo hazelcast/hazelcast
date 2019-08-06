@@ -133,6 +133,12 @@ public final class MongoDBSourceBuilder<T> {
      * databases instead of on a single collection thus trying to set {@code
      * collectionFn} and {@code databaseFn} will result in an exception.
      * <p>
+     * Change stream is available for replica sets and sharded clusters that
+     * use WiredTiger storage engine and replica set protocol version 1 (pv1).
+     * Change streams can also be used on deployments which employ MongoDB's
+     * encryption-at-rest feature. You cannot watch on system collections and
+     * collections in admin, local and config databases.
+     * <p>
      * Here's an example that builds a simple source which watches all changes
      * on all collections across all the databases and emits the full document
      * of the change.
@@ -167,6 +173,12 @@ public final class MongoDBSourceBuilder<T> {
      * The source watches the changes on all the collections in the database
      * instead of on a single collection thus trying to set {@code
      * collectionFn} will result in an exception.
+     * <p>
+     * Change stream is available for replica sets and sharded clusters that
+     * use WiredTiger storage engine and replica set protocol version 1 (pv1).
+     * Change streams can also be used on deployments which employ MongoDB's
+     * encryption-at-rest feature. You cannot watch on system collections and
+     * collections in admin, local and config databases.
      * <p>
      * Here's an example that builds a simple source which watches all changes
      * on all collections in the database and emits the full document of the
@@ -224,6 +236,12 @@ public final class MongoDBSourceBuilder<T> {
      * {@code destroyFn} destroys the client. It will be called upon completion
      * to release any resource. This component is optional.
      * </li></ol>
+     * <p>
+     * Change stream is available for replica sets and sharded clusters that
+     * use WiredTiger storage engine and replica set protocol version 1 (pv1).
+     * Change streams can also be used on deployments which employ MongoDB's
+     * encryption-at-rest feature. You cannot watch on system collections and
+     * collections in admin, local and config databases.
      * <p>
      * Here's an example that builds a simple source which watches all changes
      * on a collection and emits the full document of the change.

@@ -78,6 +78,18 @@ MongoDB stream source (`MongoDBSources.streamMongodb()`) watches the changes to
 documents in a collection and emits these changes as they arrive. Source uses 
 ( `ChangeStreamDocument.getClusterTime()` ) as native timestamp.
 
+Change stream is available for replica sets and sharded clusters that use 
+WiredTiger storage engine and replica set protocol version 1 (pv1). Change streams
+can also be used on deployments which employ MongoDB's encryption-at-rest feature.
+Without enabling change streams, the source will not work. 
+See [MongoDB Change Streams](https://docs.mongodb.com/manual/changeStreams/) for
+more information. 
+
+You can watch the changes on a single collection,
+on all the collections in a single database or on all collections across all
+databases. You cannot watch on system collections and collections in admin,
+local and config databases.
+
 Following is an example pipeline which watches changes on `myCollection`.
 Source filters the changes so that only `insert`s which has the `val` field
 greater than or equal to `10` will be fetched, applies the projection so that
