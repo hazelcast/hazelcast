@@ -16,11 +16,13 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
  * Exception thrown when a write-behind {@link MapStore} rejects to accept a new element.
  * Used when {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} is set to {@code false}.
  */
-public class ReachedMaxSizeException extends RuntimeException {
+public class ReachedMaxSizeException extends HazelcastException {
 
     private static final long serialVersionUID = -2352370861668557606L;
 

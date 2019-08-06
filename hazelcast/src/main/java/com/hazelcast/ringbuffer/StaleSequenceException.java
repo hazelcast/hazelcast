@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.exception.SilentException;
 
 /**
@@ -23,7 +24,7 @@ import com.hazelcast.spi.exception.SilentException;
  * than the current head sequence and that the ringbuffer store is disabled. This means that the item isn't available in the
  * ringbuffer and it cannot be loaded from the store either, thus being completely unavailable.
  */
-public class StaleSequenceException extends RuntimeException implements SilentException {
+public class StaleSequenceException extends HazelcastException implements SilentException {
 
     private final long headSeq;
 

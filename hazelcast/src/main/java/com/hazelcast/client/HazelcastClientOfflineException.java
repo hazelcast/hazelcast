@@ -16,10 +16,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
  * Thrown when Hazelcast client is offline during an invocation.
  */
-public class HazelcastClientOfflineException extends IllegalStateException {
+public class HazelcastClientOfflineException extends HazelcastException {
 
     public HazelcastClientOfflineException(String message) {
         super(message);

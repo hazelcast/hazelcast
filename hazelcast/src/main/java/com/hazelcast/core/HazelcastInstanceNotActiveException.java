@@ -19,7 +19,7 @@ package com.hazelcast.core;
 /**
  * Thrown when HazelcastInstance is not active during an invocation.
  */
-public class HazelcastInstanceNotActiveException extends IllegalStateException {
+public class HazelcastInstanceNotActiveException extends HazelcastException {
 
     public HazelcastInstanceNotActiveException() {
         super("Hazelcast instance is not active!");

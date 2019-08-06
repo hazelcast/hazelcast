@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
  * A {@link IllegalArgumentException} that indicates that a requested client service doesn't exist.
  *
@@ -24,7 +26,7 @@ package com.hazelcast.client.impl.spi.impl;
  * Therefore, for keeping backward compatibility throwing exception is still an {@link IllegalArgumentException}
  * by extending {@link ClientServiceNotFoundException} from {@link IllegalArgumentException}.
  */
-public class ClientServiceNotFoundException extends IllegalArgumentException {
+public class ClientServiceNotFoundException extends HazelcastException {
 
     public ClientServiceNotFoundException(String message) {
         super(message);
