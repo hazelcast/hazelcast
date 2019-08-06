@@ -131,13 +131,13 @@ public final class RaftState {
 
     /**
      * Candidate state maintained during pre-voting,
-     * becomes null when pre-voting ends by one of {@link #toCandidate()}, {@link #toLeader()} or {@link #toFollower(int)}.
+     * becomes null when pre-voting ends by one of {@link #toCandidate(boolean)}, {@link #toLeader()} or {@link #toFollower(int)}.
      */
     private CandidateState preCandidateState;
 
     /**
      * Candidate state maintained during leader election,
-     * initialized when this node becomes candidate via {@link #toCandidate()}
+     * initialized when this node becomes candidate via {@link #toCandidate(boolean)} )}
      * and becomes null when voting ends by one of {@link #toLeader()} or {@link #toFollower(int)}.
      */
     private CandidateState candidateState;

@@ -20,13 +20,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.test.OverridePropertyRule.set;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
 
     @ClassRule
     public static final OverridePropertyRule raftLeadershipRebalanceRule
-            = OverridePropertyRule.set("hazelcast.raft.leadership.rebalance.period", String.valueOf(Integer.MAX_VALUE));
+            = set("hazelcast.raft.leadership.rebalance.period", String.valueOf(Integer.MAX_VALUE));
 
     @Test
     public void test() throws Exception {
