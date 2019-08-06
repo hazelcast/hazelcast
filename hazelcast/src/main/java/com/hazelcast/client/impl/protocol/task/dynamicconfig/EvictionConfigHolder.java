@@ -20,7 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Client protocol adapter for (@link {@link com.hazelcast.config.EvictionConfig}

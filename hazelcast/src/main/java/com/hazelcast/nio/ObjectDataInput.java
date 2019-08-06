@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.DataInput;
@@ -95,7 +96,7 @@ public interface ObjectDataInput extends DataInput, VersionAware {
      * The reason this method exists is that in some cases {@link Data} is stored on serialization, but on deserialization
      * the actual object instance is needed. Getting access to the {@link Data} is easy by calling the {@link #readData()}
      * method. But de-serializing the {@link Data} to an object instance is impossible because there is no reference to the
-     * {@link com.hazelcast.spi.serialization.SerializationService}.
+     * {@link SerializationService}.
      *
      * @param <T> type of the object to be read
      * @return the read Object

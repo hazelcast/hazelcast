@@ -33,6 +33,7 @@ import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
@@ -47,7 +48,7 @@ import java.util.Map;
 
 /**
  * Node extension that instantiates a {@link SamplingSerializationService} when asked to create
- * {@link com.hazelcast.spi.serialization.SerializationService} instance.
+ * {@link SerializationService} instance.
  */
 public class SamplingNodeExtension implements NodeExtension {
 

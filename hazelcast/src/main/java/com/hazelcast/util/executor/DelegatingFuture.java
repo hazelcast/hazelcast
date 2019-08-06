@@ -21,7 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;

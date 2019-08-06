@@ -23,7 +23,7 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>

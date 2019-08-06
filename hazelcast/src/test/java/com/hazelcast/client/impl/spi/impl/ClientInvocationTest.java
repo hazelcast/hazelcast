@@ -29,7 +29,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

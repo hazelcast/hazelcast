@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.comparators;
 
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Comparator contract for stored values.

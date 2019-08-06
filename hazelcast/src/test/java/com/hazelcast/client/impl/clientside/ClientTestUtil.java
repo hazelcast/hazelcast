@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 public final class ClientTestUtil {
 

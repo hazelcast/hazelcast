@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;

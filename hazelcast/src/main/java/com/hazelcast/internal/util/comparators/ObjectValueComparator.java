@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util.comparators;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Comparator for {@link com.hazelcast.config.InMemoryFormat#OBJECT} backed

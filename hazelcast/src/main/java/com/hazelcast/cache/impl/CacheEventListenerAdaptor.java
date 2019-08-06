@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
