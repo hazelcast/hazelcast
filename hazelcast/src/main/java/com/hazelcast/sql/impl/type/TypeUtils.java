@@ -99,7 +99,7 @@ public class TypeUtils {
      * @param type Type.
      */
     private static void ensureNumeric(DataType type) {
-        if (!type.isNumeric())
+        if (!type.isNumeric() && type.getBaseType() != BaseDataType.STRING)
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
     }
 
@@ -110,17 +110,17 @@ public class TypeUtils {
      * @param type2 Type 2.
      */
     private static void ensureNumeric(DataType type1, DataType type2) {
-        if (!type1.isNumeric())
+        if (!type1.isNumeric() && type1.getBaseType() != BaseDataType.STRING)
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
 
-        if (!type2.isNumeric())
+        if (!type2.isNumeric() && type2.getBaseType() != BaseDataType.STRING)
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
     }
 
     public static BaseDataTypeAccessor numericAccessor(Expression expr) {
         DataType type = expr.getType();
 
-        if (!type.isNumeric())
+        if (!type.isNumeric() && type.getBaseType() != BaseDataType.STRING)
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + type);
 
         return type.getBaseType().getAccessor();
@@ -129,7 +129,7 @@ public class TypeUtils {
     public static BaseDataTypeAccessor numericAccessor(Expression expr, int operandPos) {
         DataType type = expr.getType();
 
-        if (!type.isNumeric())
+        if (!type.isNumeric() && type.getBaseType() != BaseDataType.STRING)
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand " + operandPos + " is not numeric: " + type);
 
         return type.getBaseType().getAccessor();
@@ -143,6 +143,9 @@ public class TypeUtils {
      */
     public static DataType inferForUnaryMinus(DataType type) {
         ensureNumeric(type);
+
+        if (type.getBaseType() == BaseDataType.STRING)
+            type = DataType.DECIMAL;
 
         if (type.getScale() == 0) {
             // Integer type.
@@ -168,6 +171,12 @@ public class TypeUtils {
      */
     public static DataType inferForPlusMinus(DataType type1, DataType type2) {
         ensureNumeric(type1, type2);
+
+        if (type1.getBaseType() == BaseDataType.STRING)
+            type1 = DataType.DECIMAL;
+
+        if (type2.getBaseType() == BaseDataType.STRING)
+            type2 = DataType.DECIMAL;
 
         // Precision is expanded by 1 to handle overflow: 9 + 1 = 10
         int precision = calculatePrecision(
@@ -203,6 +212,12 @@ public class TypeUtils {
     public static DataType inferForMultiply(DataType type1, DataType type2) {
         ensureNumeric(type1, type2);
 
+        if (type1.getBaseType() == BaseDataType.STRING)
+            type1 = DataType.DECIMAL;
+
+        if (type2.getBaseType() == BaseDataType.STRING)
+            type2 = DataType.DECIMAL;
+
         // Precision is expanded to accomodate all numbers: 99 * 99 = 9801;
         int precision = calculatePrecision(
             type1.getPrecision(),
@@ -236,6 +251,12 @@ public class TypeUtils {
      */
     public static DataType inferForDivideRemainder(DataType type1, DataType type2) {
         ensureNumeric(type1, type2);
+
+        if (type1.getBaseType() == BaseDataType.STRING)
+            type1 = DataType.DECIMAL;
+
+        if (type2.getBaseType() == BaseDataType.STRING)
+            type2 = DataType.DECIMAL;
 
         if (type1.getBaseType() == BaseDataType.BOOLEAN)
             throw new HazelcastSqlException(-1, "Boolean operand cannot be used as dividend: " + type1);

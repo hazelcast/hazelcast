@@ -38,7 +38,7 @@ public class SqlTest extends HazelcastTestSupport {
 
 //    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
 //    private static final String QUERY = "select height + age from persons order by name";
-    private static final String QUERY = "select REPLACE(name, 'Per', 'Rep') FROM persons ORDER BY name";
+    private static final String QUERY = "select 2 + keyStr FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -71,6 +71,7 @@ public class SqlTest extends HazelcastTestSupport {
         private static final long serialVersionUID = -221704179714350820L;
 
         public final int __key;
+        public final String keyStr;
         public final String name;
         public final int age;
         public final double height;
@@ -78,6 +79,7 @@ public class SqlTest extends HazelcastTestSupport {
 
         public Person(int key) {
             this.__key = key;
+            keyStr = Integer.toString(__key);
             this.name = "Person " + key;
             this.age = ThreadLocalRandom.current().nextInt(100);
             this.height = ThreadLocalRandom.current().nextDouble(170);

@@ -11,6 +11,9 @@ import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
 
 public class AbsFunction extends UniCallExpressionWithType<Number> {
+    /** Accessor. */
+    private transient BaseDataTypeAccessor accessor;
+
     public AbsFunction() {
         // No-op.
     }
@@ -34,24 +37,25 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
 
             if (operandType.getBaseType() == BaseDataType.BIG_INTEGER)
                 resType = DataType.DECIMAL_INTEGER_DECIMAL;
+            else if (operandType.getBaseType() == BaseDataType.STRING)
+                resType = DataType.DECIMAL;
             else
                 resType = operandType;
+
+            accessor = operandType.getBaseType().getAccessor();
         }
 
-        return abs(val, resType.getBaseType());
+        return abs(val);
     }
 
     /**
      * Get absolute value.
      *
      * @param val Value.
-     * @param type Type.
      * @return Absolute value of the target.
      */
-    private static Number abs(Object val, BaseDataType type) {
-        BaseDataTypeAccessor accessor = type.getAccessor();
-
-        switch (type) {
+    private Number abs(Object val) {
+        switch (resType.getBaseType()) {
             case BYTE:
                 return (byte)Math.abs(accessor.getByte(val));
 
@@ -74,7 +78,7 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
                 return Math.abs(accessor.getDouble(val));
         }
 
-        throw new HazelcastSqlException(-1, "Unexpected type: " + type);
+        throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
     }
 
     @Override
