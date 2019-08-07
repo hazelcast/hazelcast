@@ -39,7 +39,7 @@ public class ClientEndPointDTO implements JsonSerializable {
     public String uuid;
 
     /**
-     * Client's socket address as "hostname : port"
+     * Client's socket address as "hostname:port"
      */
     public String address;
     public String clientType;
