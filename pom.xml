@@ -37,7 +37,6 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>2.0.0-3</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>8</jdk.version>
@@ -797,7 +796,7 @@
                             <excludePackageNames>
                                 *.impl:*.internal:*.operations:*.proxy:*.util:com.hazelcast.aws.security:
                                 *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
-                                *.client.protocol.generator:*.cluster.client:*.concurrent:*.collection:
+                                *.cluster.client:*.concurrent:*.collection:
                                 *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
                                 *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
                             </excludePackageNames>

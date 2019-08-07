@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.ErrorCodec;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -138,13 +138,13 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private void handleResponse(ClientMessage message) {
         long correlationId = message.getCorrelationId();
 
-        ClientInvocation future = invocationService.deRegisterCallId(correlationId);
+        ClientInvocation future = invocationService.deregisterInvocation(correlationId);
         if (future == null) {
             logger.warning("No call for callId: " + correlationId + ", response: " + message);
             return;
         }
 
-        if (ErrorCodec.TYPE == message.getMessageType()) {
+        if (ErrorCodec.EXCEPTION == message.getMessageType()) {
             future.notifyException(client.getClientExceptionFactory().createException(message));
         } else {
             future.notify(message);
@@ -224,7 +224,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
 
     // dynamically switches between direct processing on io thread and processing on
     // response thread based on if concurrency is detected
-    class DynamicResponseHandler  implements Consumer<ClientMessage> {
+    class DynamicResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
             if (concurrencyDetection.isDetected()) {

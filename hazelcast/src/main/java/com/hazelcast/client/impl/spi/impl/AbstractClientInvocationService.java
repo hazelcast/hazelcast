@@ -145,13 +145,13 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!writeToConnection(connection, clientMessage)) {
-            final long callId = clientMessage.getCorrelationId();
-            ClientInvocation clientInvocation = deRegisterCallId(callId);
+            long correlationId = clientMessage.getCorrelationId();
+            ClientInvocation clientInvocation = deregisterInvocation(correlationId);
             if (clientInvocation != null) {
                 throw new IOException("Packet not sent to " + connection.getEndPoint());
             } else {
                 if (invocationLogger.isFinestEnabled()) {
-                    invocationLogger.finest("Invocation not found to deregister for call ID " + callId);
+                    invocationLogger.finest("Invocation not found to deregister for correlation id " + correlationId);
                 }
                 return;
             }
@@ -161,15 +161,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
-        clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         return connection.write(clientMessage);
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
-        short protocolVersion = client.getProtocolVersion();
 
         ClientMessage clientMessage = clientInvocation.getClientMessage();
-        clientMessage.setVersion(protocolVersion);
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
@@ -178,8 +175,8 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         }
     }
 
-    ClientInvocation deRegisterCallId(long callId) {
-        return invocations.remove(callId);
+    ClientInvocation deregisterInvocation(long correlationId) {
+        return invocations.remove(correlationId);
     }
 
     public boolean isShutdown() {

@@ -85,15 +85,13 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         partitionId = getContext().getPartitionService().getPartitionId(partitionKey);
 
-        readManyAsyncResponseDecoder =
-                clientMessage -> {
-                    RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
-                    PortableReadResultSet readResultSet = new PortableReadResultSet(
-                            params.readCount, params.items, params.itemSeqs,
-                            params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
-                    readResultSet.setSerializationService(getSerializationService());
-                    return readResultSet;
-                };
+        readManyAsyncResponseDecoder = clientMessage -> {
+            final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
+            final PortableReadResultSet readResultSet = new PortableReadResultSet(
+                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
+            readResultSet.setSerializationService(getSerializationService());
+            return readResultSet;
+        };
     }
 
     @Override

@@ -172,7 +172,6 @@ import static java.lang.System.currentTimeMillis;
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
-    private static final short PROTOCOL_VERSION = ClientMessage.VERSION;
 
     private final ConcurrencyDetection concurrencyDetection;
     private final HazelcastProperties properties;
@@ -791,10 +790,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientExtension getClientExtension() {
         return clientExtension;
-    }
-
-    public short getProtocolVersion() {
-        return PROTOCOL_VERSION;
     }
 
     @Override

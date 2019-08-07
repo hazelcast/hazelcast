@@ -57,24 +57,24 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.impl.listener.LazyDistributedObjectEvent;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
+import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -495,7 +495,7 @@ public final class ProxyManager {
         }
 
         @Override
-        public void handleDistributedObjectEventV10(String name, String serviceName, String eventTypeName) {
+        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName) {
             final ObjectNamespace ns = new DistributedObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();

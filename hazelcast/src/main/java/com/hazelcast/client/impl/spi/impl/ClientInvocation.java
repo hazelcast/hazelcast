@@ -180,13 +180,13 @@ public class ClientInvocation implements Runnable {
     }
 
     private void retry() {
-        // retry modifies the client message and should not reuse the client message.
-        // It could be the case that it is in write queue of the connection.
-        clientMessage = clientMessage.copy();
         // first we force a new invocation slot because we are going to return our old invocation slot immediately after
         // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
+        long correlationId = callIdSequence.forceNext();
+        // retry modifies the client message and should not reuse the client message.
+        // It could be the case that it is in write queue of the connection.
         // through that takes our slot!
-        clientMessage.setCorrelationId(callIdSequence.forceNext());
+        clientMessage = clientMessage.copyWithNewCorrelationId(correlationId);
         //we release the old slot
         callIdSequence.complete();
 

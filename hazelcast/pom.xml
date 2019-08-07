@@ -229,7 +229,6 @@
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
-                                    <include>com.hazelcast:hazelcast-client-protocol</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -392,13 +391,6 @@
             <artifactId>geronimo-jta_1.1_spec</artifactId>
             <scope>test</scope>
             <version>1.1.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client-protocol</artifactId>
-            <version>${client.protocol.version}</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>

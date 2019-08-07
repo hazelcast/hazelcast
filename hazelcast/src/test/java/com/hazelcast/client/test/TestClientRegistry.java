@@ -248,7 +248,9 @@ class TestClientRegistry {
         }
 
         private ClientMessage readFromPacket(ClientMessage packet) {
-            return ClientMessage.createForDecode(packet.buffer(), 0);
+            //Since frames are read, there should be no need to re-read to client message
+            //return ClientMessage.createForDecode(packet.buffer(), 0);
+            return packet;
         }
 
         @Override
@@ -386,7 +388,9 @@ class TestClientRegistry {
         }
 
         private ClientMessage readFromPacket(ClientMessage packet) {
-            return ClientMessage.createForDecode(packet.buffer(), 0);
+            //Since frames are read, there should be no need to re-read to client message
+            //return ClientMessage.createForDecode(packet.buffer(), 0);
+            return packet;
         }
 
         @Override

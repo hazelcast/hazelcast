@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
@@ -29,7 +29,6 @@ import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -37,6 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
@@ -143,8 +143,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 ClientGetPartitionsCodec.ResponseParameters response =
                         ClientGetPartitionsCodec.decodeResponse(responseMessage);
                 Connection connection = responseMessage.getConnection();
-                processPartitionResponse(connection, response.partitions,
-                        response.partitionStateVersion, response.partitionStateVersionExist);
+                processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     logger.warning("Error while fetching cluster partition table!", e);
@@ -171,12 +170,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
      * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
      */
     private void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
-                                          int partitionStateVersion,
-                                          boolean partitionStateVersionExist) {
+                                          int partitionStateVersion) {
 
         while (true) {
             PartitionTable current = this.partitionTable.get();
-            if (!shouldBeApplied(connection, partitions, partitionStateVersion, partitionStateVersionExist, current)) {
+            if (!shouldBeApplied(connection, partitions, partitionStateVersion, current)) {
                 return;
             }
             Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
@@ -188,8 +186,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                     partitionCount = newPartitions.size();
                 }
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Processed partition response. partitionStateVersion : "
-                            + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable")
+                    logger.finest("Processed partition response. partitionStateVersion : " + partitionStateVersion
                             + ", partitionCount :" + newPartitions.size() + ", connection : " + connection);
                 }
                 return;
@@ -199,24 +196,24 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
-                                    int partitionStateVersion, boolean partitionStateVersionExist, PartitionTable current) {
+                                    int partitionStateVersion, PartitionTable current) {
         if (partitions.isEmpty()) {
             if (logger.isFinestEnabled()) {
-                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                logFailure(connection, partitionStateVersion, current,
                         "response is empty");
             }
             return false;
         }
         if (!connection.equals(current.connection)) {
             if (logger.isFinestEnabled()) {
-                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                logFailure(connection, partitionStateVersion, current,
                         "response is from old connection");
             }
             return false;
         }
-        if (partitionStateVersionExist && partitionStateVersion <= current.partitionSateVersion) {
+        if (partitionStateVersion <= current.partitionSateVersion) {
             if (logger.isFinestEnabled()) {
-                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                logFailure(connection, partitionStateVersion, current,
                         "response state version is old");
             }
             return false;
@@ -224,14 +221,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return true;
     }
 
-    private void logFailure(Connection connection, int partitionStateVersion,
-                            boolean partitionStateVersionExist, PartitionTable current, String cause) {
+    private void logFailure(Connection connection, int partitionStateVersion, PartitionTable current, String cause) {
 
         logger.finest(" We will not apply the response, since " + cause + " . Response is from " + connection
                 + ". Current connection " + current.connection
-                + " response state version:"
-                + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable"
-                + ". Current state version: " + current.partitionSateVersion));
+                + " response state version:" + partitionStateVersion
+                + ". Current state version: " + current.partitionSateVersion);
     }
 
     private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
@@ -325,11 +320,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
 
         @Override
-        public void handlePartitionsEventV15(Collection<Map.Entry<Address, List<Integer>>> response, int stateVersion) {
-            processPartitionResponse(clientConnection, response, stateVersion, true);
-        }
-
-        @Override
         public void beforeListenerRegister() {
 
         }
@@ -337,6 +327,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public void onListenerRegister() {
 
+        }
+
+        @Override
+        public void handlePartitionsEvent(Collection<Map.Entry<Address, List<Integer>>> partitions, int partitionStateVersion) {
+            processPartitionResponse(clientConnection, partitions, partitionStateVersion);
         }
     }
 
@@ -373,8 +368,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             }
             Connection connection = responseMessage.getConnection();
             ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
-            processPartitionResponse(connection, response.partitions,
-                    response.partitionStateVersion, response.partitionStateVersionExist);
+            processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
         }
 
         @Override

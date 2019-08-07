@@ -19,155 +19,176 @@ package com.hazelcast.client.protocol;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageSplitter;
-import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.ListIterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
+import static groovy.util.GroovyTestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMessageSplitAndBuildTest {
 
-    private SwCounter readCounter;
+    private ClientMessage clientMessage1;
+    private ClientMessage clientMessage2;
+
+    private ClientMessage createMessage() {
+        String username = generateRandomString(1000);
+        String password = generateRandomString(1000);
+        String uuid = generateRandomString(1000);
+        String ownerUuid = generateRandomString(1000);
+        boolean isOwnerConnection = false;
+        String clientType = generateRandomString(1000);
+        String clientSerializationVersion = generateRandomString(1000);
+        String clientName = generateRandomString(1000);
+        String clusterId = generateRandomString(1000);
+        LinkedList<String> labels = new LinkedList<>();
+        for (int i = 0; i < 10; i++) {
+            labels.add(generateRandomString(1000));
+        }
+
+        return ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
+                clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
+    }
 
     @Before
-    public void before() {
-        readCounter = SwCounter.newSwCounter();
+    public void setUp() throws Exception {
+        clientMessage1 = createMessage();
+        clientMessage2 = createMessage();
     }
 
     @Test
     public void splitAndBuild() {
-        int FRAME_SIZE = 50;
-        String s = UUID.randomUUID().toString();
-        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
-        expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
-        ClientMessageDecoder decoder = new ClientMessageDecoder(
-                mock(Connection.class),
-                new Consumer<ClientMessage>() {
-                    @Override
-                    public void accept(ClientMessage message) {
-                        message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-                        assertEquals(expectedClientMessage, message);
-                    }
-                });
-        decoder.setNormalPacketsRead(readCounter);
-
-        for (ClientMessage subFrame : subFrames) {
-            ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
-            src.flip();
-            decoder.src(src);
-            decoder.onRead();
+        Queue<ClientMessage> outputQueue = new ConcurrentLinkedQueue<>();
+        List<ClientMessage> fragments = getFragments(128, clientMessage1);
+        for (ClientMessage fragment : fragments) {
+            outputQueue.offer(fragment);
         }
 
+        ClientMessageEncoder encoder = new ClientMessageEncoder();
+        encoder.src(outputQueue::poll);
+
+        ByteBuffer buffer = ByteBuffer.allocate(100000);
+        buffer.flip();
+        encoder.dst(buffer);
+
+        HandlerStatus result = encoder.onWrite();
+
+        Assert.assertEquals(CLEAN, result);
+
+        AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        decoder.setNormalPacketsRead(SwCounter.newSwCounter());
+
+        buffer.position(buffer.limit());
+
+        decoder.src(buffer);
         decoder.onRead();
+
+        assertEquals(clientMessage1.size(), resultingMessage.get().size());
+        assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
     }
 
-    @Test
-    public void splitTest_checkSize() {
-        int FRAME_SIZE = 50;
-        String s = UUID.randomUUID().toString();
-        ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
-        clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, clientMessage);
-
-        for (int i = 0; i < subFrames.size() - 1; i++) {
-            assertEquals(FRAME_SIZE, subFrames.get(i).getFrameLength());
-        }
-        assertTrue(subFrames.get(subFrames.size() - 1).getFrameLength() <= FRAME_SIZE);
-    }
 
     @Test
     public void splitAndBuild_multipleMessages() {
-        int FRAME_SIZE = 50;
-        int NUMBER_OF_MESSAGES = 5;
-
-        List<List<ClientMessage>> framedClientMessages = new ArrayList<List<ClientMessage>>(NUMBER_OF_MESSAGES);
-        final List<ClientMessage> expectedClientMessages = new ArrayList<ClientMessage>();
-
-        for (int id = 0; id < NUMBER_OF_MESSAGES; id++) {
-            String s = UUID.randomUUID().toString();
-            ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                    BuildInfoProvider.getBuildInfo().getVersion());
-            expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-            expectedClientMessage.setCorrelationId(id);
-
-            expectedClientMessages.add(expectedClientMessage);
-            framedClientMessages.add(ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage));
+        Queue<ClientMessage> outputQueue = new ConcurrentLinkedQueue<>();
+        List<ClientMessage> fragments1 = getFragments(128, clientMessage1);
+        List<ClientMessage> fragments2 = getFragments(128, clientMessage2);
+        Iterator<ClientMessage> iterator = fragments2.iterator();
+        for (ClientMessage fragment : fragments1) {
+            outputQueue.offer(fragment);
+            outputQueue.offer(iterator.next());
         }
 
-        ClientMessageDecoder decoder = new ClientMessageDecoder(
-                mock(Connection.class),
-                new Consumer<ClientMessage>() {
-                    @Override
-                    public void accept(ClientMessage message) {
-                        int correlationId = (int) message.getCorrelationId();
-                        message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-                        assertEquals(expectedClientMessages.get(correlationId), message);
-                    }
-                });
-        decoder.setNormalPacketsRead(readCounter);
+        ClientMessageEncoder encoder = new ClientMessageEncoder();
+        encoder.src(outputQueue::poll);
 
-        int[] currentFrameIndex = new int[NUMBER_OF_MESSAGES];
-        for (int nFinishedMessages = 0; nFinishedMessages < NUMBER_OF_MESSAGES; ) {
-            for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
-                List<ClientMessage> clientMessageFrames = framedClientMessages.get(i);
-                if (currentFrameIndex[i] >= clientMessageFrames.size()) {
-                    nFinishedMessages++;
-                    break;
-                }
-                ClientMessage subFrame = clientMessageFrames.get(currentFrameIndex[i]);
+        ByteBuffer buffer = ByteBuffer.allocate(100000);
+        buffer.flip();
+        encoder.dst(buffer);
 
-                ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
-                src.flip();
-                decoder.src(src);
-                currentFrameIndex[i]++;
-            }
-        }
+        HandlerStatus result = encoder.onWrite();
+
+        Assert.assertEquals(CLEAN, result);
+
+        Queue<ClientMessage> inputQueue = new ConcurrentLinkedQueue<>();
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, inputQueue::offer);
+        decoder.setNormalPacketsRead(SwCounter.newSwCounter());
+
+        buffer.position(buffer.limit());
+
+        decoder.src(buffer);
+        decoder.onRead();
+
+        ClientMessage actualMessage1 = inputQueue.poll();
+        ClientMessage actualMessage2 = inputQueue.poll();
+
+        assertMessageEquals(clientMessage1, actualMessage1);
+        assertMessageEquals(clientMessage2, actualMessage2);
     }
 
     @Test
     public void splitAndBuild_whenMessageIsAlreadySmallerThanFrameSize() {
-        String s = UUID.randomUUID().toString();
-        final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
-        expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(
-                expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
-        ClientMessageDecoder decoder = new ClientMessageDecoder(
-                mock(Connection.class),
-                new Consumer<ClientMessage>() {
-                    @Override
-                    public void accept(ClientMessage message) {
-                        message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-                        assertEquals(expectedClientMessage, message);
-                    }
-                });
-        decoder.setNormalPacketsRead(readCounter);
-        for (ClientMessage subFrame : subFrames) {
-            ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
-            src.flip();
-            decoder.src(src);
-            decoder.onRead();
+        Queue<ClientMessage> outputQueue = new ConcurrentLinkedQueue<>();
+        List<ClientMessage> fragments = getFragments(100000, clientMessage1);
+        for (ClientMessage fragment : fragments) {
+            outputQueue.offer(fragment);
+        }
+
+        ClientMessageEncoder encoder = new ClientMessageEncoder();
+        encoder.src(outputQueue::poll);
+
+        ByteBuffer buffer = ByteBuffer.allocate(100000);
+        buffer.flip();
+        encoder.dst(buffer);
+
+        HandlerStatus result = encoder.onWrite();
+
+        Assert.assertEquals(CLEAN, result);
+
+        AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        decoder.setNormalPacketsRead(SwCounter.newSwCounter());
+
+        buffer.position(buffer.limit());
+
+        decoder.src(buffer);
+        decoder.onRead();
+
+        assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
+    }
+
+    private void assertMessageEquals(ClientMessage expected, ClientMessage actual) {
+        //these flags related to framing and can differ between two semantically equal messages
+        int mask = ~(ClientMessage.UNFRAGMENTED_MESSAGE | ClientMessage.IS_FINAL_FLAG);
+
+        ListIterator<ClientMessage.Frame> actualIterator = actual.listIterator();
+        for (ClientMessage.Frame expectedFrame : expected) {
+            ClientMessage.Frame actualFrame = actualIterator.next();
+            assertEquals(actualFrame.getSize(), expectedFrame.getSize());
+            assertEquals(actualFrame.flags & mask, expectedFrame.flags & mask);
+            Assert.assertArrayEquals(expectedFrame.content, actualFrame.content);
         }
     }
 }

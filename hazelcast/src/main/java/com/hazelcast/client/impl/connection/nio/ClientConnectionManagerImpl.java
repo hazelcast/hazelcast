@@ -21,13 +21,13 @@ import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -120,7 +120,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final boolean failoverConfigProvided;
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
-    private volatile Integer clusterPartitionCount;
+    private volatile int clusterPartitionCount = -1;
     private volatile String clusterId;
     private volatile Address ownerConnectionAddress;
     private volatile CandidateClusterContext currentClusterContext;
@@ -617,11 +617,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
-                return ClientAuthenticationCodec
-                        .encodeRequest(cr.getName(), cr.getPassword(), uuid, ownerUuid,
-                                asOwner, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                labels, clusterPartitionCount, resolvedClusterId);
+                return ClientAuthenticationCodec.encodeRequest(cr.getName(), cr.getPassword(), uuid, ownerUuid,
+                        asOwner, ClientTypes.JAVA,
+                        serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
+                        labels, clusterPartitionCount, resolvedClusterId);
             } else {
                 Data data;
                 if (credentials instanceof TokenCredentials) {
@@ -708,15 +707,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
-            if (result.partitionCountExist) {
-                clusterPartitionCount = result.partitionCount;
-            }
-            if (result.clusterIdExist) {
-                clusterId = result.clusterId;
-            }
-            if (result.serverHazelcastVersionExist) {
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-            }
+            clusterPartitionCount = result.partitionCount;
+            clusterId = result.clusterId;
+            connection.setConnectedServerVersion(result.serverHazelcastVersion);
+
             connection.setRemoteEndpoint(result.address);
             if (asOwner) {
                 connection.setIsAuthenticatedAsOwner();
@@ -736,8 +730,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return true;
             }
 
-            if (!result.serverHazelcastVersionExist
-                    || BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
+            if (BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
                 //this means that server is too old and failover not supported
                 //IllegalStateException will cause client to give up trying on this cluster
                 onFailure(new ClientNotAllowedInClusterException("Cluster does not support failover. "

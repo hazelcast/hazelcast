@@ -45,8 +45,7 @@ public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
         }
 
         ClientMessage exceptionMessage = exceptions.createExceptionMessage(new MyException());
-        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
-        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
+        Throwable resurrectedThrowable = exceptionFactory.createException(exceptionMessage);
         assertEquals(UndefinedErrorCodeException.class, resurrectedThrowable.getClass());
     }
 }

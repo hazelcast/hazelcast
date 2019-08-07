@@ -461,7 +461,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
 
         @Override
-        public void handleEntryEventV10(Data key, Data value, Data oldValue, Data mergingValue,
+        public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
                                         int eventType, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             final IMapEvent iMapEvent = createIMapEvent(key, value, oldValue,

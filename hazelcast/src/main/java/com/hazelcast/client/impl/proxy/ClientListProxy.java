@@ -333,7 +333,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         }
 
         @Override
-        public void handleItemEventV10(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

@@ -531,8 +531,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
         }
         ClientMessage response = invoke(request, keyData);
-        MapPutCodec.ResponseParameters resultParameters = MapPutCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        MapPutCodec.ResponseParameters putResponse = MapPutCodec.decodeResponse(response);
+        return toObject(putResponse.response);
     }
 
     @Override
@@ -1844,8 +1844,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return new ClientDelegatingFuture<>(fut, ss, message -> {
             MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
             PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
-                    params.readCount, params.items, params.itemSeqs,
-                    params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
+                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;
         });
@@ -1907,7 +1906,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handleEntryEventV10(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
+        public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
                                         int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             listenerAdapter.onEvent(createIMapEvent(key, value, oldValue, mergingValue, eventType, numberOfAffectedEntries,
@@ -1973,7 +1972,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handleMapPartitionLostEventV10(int partitionId, String uuid) {
+        public void handleMapPartitionLostEvent(int partitionId, String uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
         }
