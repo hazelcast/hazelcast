@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;

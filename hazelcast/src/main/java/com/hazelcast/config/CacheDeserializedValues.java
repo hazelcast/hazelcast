@@ -28,7 +28,7 @@ import java.util.Arrays;
  * passed to user-code where they could be accidentally mutated. Users will always get a fresh object,
  * which they are free to mutate.
  *
- * It does not have any effect when {@link com.hazelcast.nio.serialization.Portable} serialization or
+ * It does not have any effect when {@link com.hazelcast.serialization.Portable} serialization or
  * {@link InMemoryFormat#OBJECT} format is used.
  *
  * @since 3.6

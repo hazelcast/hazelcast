@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractMap;

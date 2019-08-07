@@ -28,8 +28,8 @@ import com.hazelcast.durableexecutor.impl.operations.TaskBackupOperation;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.DURABLE_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.DURABLE_EXECUTOR_DS_FACTORY_ID;

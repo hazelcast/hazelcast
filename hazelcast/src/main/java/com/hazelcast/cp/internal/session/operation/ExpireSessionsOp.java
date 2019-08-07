@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.session.operation;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;

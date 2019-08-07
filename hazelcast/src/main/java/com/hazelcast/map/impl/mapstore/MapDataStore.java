@@ -61,7 +61,7 @@ public interface MapDataStore<K, V> {
 
     /**
      * Removes keys from map store.
-     * It also handles {@link com.hazelcast.nio.serialization.Data} to object conversions of keys.
+     * It also handles {@link com.hazelcast.serialization.Data} to object conversions of keys.
      *
      * @param keys to be removed
      */

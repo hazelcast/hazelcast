@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.event;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * Helper methods for publishing events related to map

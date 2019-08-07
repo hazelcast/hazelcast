@@ -27,7 +27,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -212,7 +212,7 @@ public interface NodeEngine {
      *
      * @param object the object to serialize
      * @return the serialized object
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when serialization fails
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when serialization fails
      */
     Data toData(Object object);
 
@@ -226,7 +226,7 @@ public interface NodeEngine {
      *
      * @param object the object to deserialize
      * @return the deserialized object
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when deserialization fails
      */
     <T> T toObject(Object object);
 
@@ -241,7 +241,7 @@ public interface NodeEngine {
      * @param object the object to deserialize
      * @param klazz  The class to instantiate when deserializing the object
      * @return the deserialized object
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when deserialization fails
      */
     <T> T toObject(Object object, Class klazz);
 

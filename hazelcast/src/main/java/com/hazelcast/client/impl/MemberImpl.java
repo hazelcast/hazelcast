@@ -20,14 +20,14 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.serialization.DataSerializable;
+import com.hazelcast.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.INHERITANCE;
+import static com.hazelcast.serialization.SerializableByConvention.Reason.INHERITANCE;
 import static java.util.Collections.singletonMap;
 
 /**

@@ -33,7 +33,7 @@ import com.hazelcast.internal.nearcache.NearCacheSerializationCountConfigBuilder
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.serialization.Serializer;
 
 /**
  * Contains the serialization configuration for a particular class.
@@ -76,7 +76,7 @@ public class SerializerConfig {
      * Returns the implementation of the serializer class.
      *
      * @return the implementation of the serializer class
-     * @see com.hazelcast.config.SerializerConfig#setImplementation(com.hazelcast.nio.serialization.Serializer)
+     * @see com.hazelcast.config.SerializerConfig#setImplementation(com.hazelcast.serialization.Serializer)
      */
     public Serializer getImplementation() {
         return implementation;
@@ -85,8 +85,8 @@ public class SerializerConfig {
     /**
      * Sets the serializer implementation instance.
      * <br>
-     * Serializer must be instance of either {@link com.hazelcast.nio.serialization.StreamSerializer}
-     * or {@link com.hazelcast.nio.serialization.ByteArraySerializer}.
+     * Serializer must be instance of either {@link com.hazelcast.serialization.StreamSerializer}
+     * or {@link com.hazelcast.serialization.ByteArraySerializer}.
      *
      * @param implementation the serializer instance
      * @return SerializerConfig

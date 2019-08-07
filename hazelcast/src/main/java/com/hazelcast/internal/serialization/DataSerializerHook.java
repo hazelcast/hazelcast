@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 public interface DataSerializerHook {
 

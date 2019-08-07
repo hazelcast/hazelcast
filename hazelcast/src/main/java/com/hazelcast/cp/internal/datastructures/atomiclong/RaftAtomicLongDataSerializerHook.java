@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndSetOp
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftAtomicLongDataSerializerHook implements DataSerializerHook {

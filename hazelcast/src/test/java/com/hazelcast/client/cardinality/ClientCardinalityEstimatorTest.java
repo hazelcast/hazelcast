@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -126,7 +126,7 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
         assertEquals(1L, estimator.estimateAsync().get().longValue());
     }
 
-    @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
+    @Test(expected = com.hazelcast.serialization.HazelcastSerializationException.class)
     public void addCustomObject() {
         estimator = client.getCardinalityEstimator("aggregateCustomObject");
         estimator.add(new CustomObject(1, 2));

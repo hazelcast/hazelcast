@@ -54,7 +54,7 @@ import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftServiceDataSerializerHook implements DataSerializerHook {

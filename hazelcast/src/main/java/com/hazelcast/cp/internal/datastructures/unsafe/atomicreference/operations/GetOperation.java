@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations;
 
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class GetOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {

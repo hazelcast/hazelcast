@@ -22,7 +22,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.eventservice.EventFilter;

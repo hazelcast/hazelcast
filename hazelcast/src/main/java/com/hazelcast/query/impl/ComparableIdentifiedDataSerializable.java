@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 /**
  * Defines a contract of objects that are simultaneously {@link Comparable} and

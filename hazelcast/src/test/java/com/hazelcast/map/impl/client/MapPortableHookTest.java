@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.PortableFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 

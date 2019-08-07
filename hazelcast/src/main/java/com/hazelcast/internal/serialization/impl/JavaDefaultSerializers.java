@@ -19,11 +19,11 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.ClassNameFilter;
+import com.hazelcast.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.StreamSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Externalizable;

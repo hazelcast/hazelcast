@@ -16,10 +16,10 @@
 
 package com.hazelcast.query.impl.extractor.specification;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableFactory;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.PortableWriter;
 import com.hazelcast.test.ObjectTestUtils;
 
 import java.io.IOException;

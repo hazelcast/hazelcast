@@ -38,7 +38,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.executor.CompletedFuture;

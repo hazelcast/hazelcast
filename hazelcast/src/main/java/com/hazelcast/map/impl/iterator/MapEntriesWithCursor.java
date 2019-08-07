@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.iterator;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import java.io.IOException;
 import java.util.AbstractMap;

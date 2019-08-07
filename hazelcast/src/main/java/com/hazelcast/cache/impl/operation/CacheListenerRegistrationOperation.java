@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;

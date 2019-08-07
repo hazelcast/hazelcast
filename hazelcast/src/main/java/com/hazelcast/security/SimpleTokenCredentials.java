@@ -21,10 +21,10 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.util.Arrays;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.serialization.BinaryInterface;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.PortableWriter;
 import com.hazelcast.spi.impl.SpiPortableHook;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

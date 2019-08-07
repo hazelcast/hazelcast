@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorC
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public class AddDurableExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddDurableExecutorConfigCodec.RequestParameters> {

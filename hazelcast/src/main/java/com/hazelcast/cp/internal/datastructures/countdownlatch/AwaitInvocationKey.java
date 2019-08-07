@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKey;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.serialization.BinaryInterface;
 
 import java.util.Comparator;
 import java.util.Map;

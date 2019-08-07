@@ -20,7 +20,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.AwaitOper
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.BeforeAwaitOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.SignalOperation;
 import com.hazelcast.cp.lock.ICondition;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;

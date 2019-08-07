@@ -21,8 +21,8 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderOperation;
 import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.USER_CODE_DEPLOYMENT_DS_FACTORY;

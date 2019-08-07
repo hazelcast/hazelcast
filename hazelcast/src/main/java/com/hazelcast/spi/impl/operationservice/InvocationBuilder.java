@@ -107,7 +107,7 @@ public abstract class InvocationBuilder {
 
     /**
      * Checks if the Future should automatically deserialize the result. In most cases, you don't want
-     * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
+     * {@link com.hazelcast.serialization.Data} to be returned, but the deserialized object. But in some
      * cases, you want to get the raw Data object.
      * <p>
      * Defaults to true.

@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.util.Tuple2;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.util.Collection;
 import java.util.Map.Entry;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.PortableWriter;
+import com.hazelcast.serialization.Serializer;
+import com.hazelcast.serialization.VersionedPortable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

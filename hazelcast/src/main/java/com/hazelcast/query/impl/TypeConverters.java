@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.serialization.Portable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.serialization.BinaryInterface;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;

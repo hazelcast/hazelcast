@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.serialization.FieldType;
 
 import java.io.IOException;
 import java.util.LinkedList;

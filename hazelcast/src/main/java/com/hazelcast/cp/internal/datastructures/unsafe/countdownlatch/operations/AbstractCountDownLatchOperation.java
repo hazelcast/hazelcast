@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operation
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.LatchKey;
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.serialization.Serializer;
 /**
  * Contains the configuration for global serializer.
  */

@@ -17,7 +17,7 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
 /**

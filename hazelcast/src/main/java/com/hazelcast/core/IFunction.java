@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.serialization.BinaryInterface;
 
 import java.io.Serializable;
 

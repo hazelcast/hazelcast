@@ -18,8 +18,8 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.PortableFactory;
 
 import java.util.Collection;
 

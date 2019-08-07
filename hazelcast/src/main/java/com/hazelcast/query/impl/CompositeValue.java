@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

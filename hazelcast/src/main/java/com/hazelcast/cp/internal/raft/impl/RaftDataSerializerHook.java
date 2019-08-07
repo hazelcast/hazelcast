@@ -30,7 +30,7 @@ import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftDataSerializerHook implements DataSerializerHook {

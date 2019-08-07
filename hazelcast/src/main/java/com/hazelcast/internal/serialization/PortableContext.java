@@ -17,10 +17,10 @@
 package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.FieldDefinition;
+import com.hazelcast.serialization.Portable;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

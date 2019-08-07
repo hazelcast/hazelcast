@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.atomicreference;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations.MergeOperation;
 import com.hazelcast.config.AtomicReferenceConfig;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.partition.MigrationAwareService;

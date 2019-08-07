@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 

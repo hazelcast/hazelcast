@@ -17,8 +17,8 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**

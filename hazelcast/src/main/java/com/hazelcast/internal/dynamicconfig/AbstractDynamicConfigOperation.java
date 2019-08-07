@@ -17,7 +17,7 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.ConfigDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public abstract class AbstractDynamicConfigOperation extends Operation implements IdentifiedDataSerializable {

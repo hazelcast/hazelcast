@@ -18,8 +18,8 @@ package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public class TestDataFactory implements DataSerializableFactory {
     public static final int FACTORY_ID = 1;

@@ -20,16 +20,16 @@
 
 package com.hazelcast.client.test;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.PortableWriter;
 
 import java.io.IOException;
 
 /**
  * This class is for Non-java clients. Please do not remove or modify.
  */
-public class PortableFactory implements com.hazelcast.nio.serialization.PortableFactory {
+public class PortableFactory implements com.hazelcast.serialization.PortableFactory {
     public static final int FACTORY_ID = 666;
 
     class SampleRunnableTask implements Portable, Runnable {

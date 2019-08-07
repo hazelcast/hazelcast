@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.function;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.serialization.BinaryInterface;
 
 final class ComparatorsEx {
 

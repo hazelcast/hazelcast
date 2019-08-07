@@ -28,7 +28,7 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastTestSupport;

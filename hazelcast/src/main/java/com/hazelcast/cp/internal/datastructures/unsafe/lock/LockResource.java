@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * A lock for a specific key in a specific namespace. It contains the details of a single lock in the system.

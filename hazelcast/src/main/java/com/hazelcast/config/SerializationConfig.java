@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.PortableFactory;
 
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -152,7 +152,7 @@ public class SerializationConfig {
 
     /**
      * @return map of factory ID and corresponding factory class names
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public Map<Integer, String> getDataSerializableFactoryClasses() {
         return dataSerializableFactoryClasses;
@@ -161,7 +161,7 @@ public class SerializationConfig {
     /**
      * @param dataSerializableFactoryClasses map of factory ID and corresponding factory class names
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public SerializationConfig setDataSerializableFactoryClasses(Map<Integer, String> dataSerializableFactoryClasses) {
         isNotNull(dataSerializableFactoryClasses, "dataSerializableFactoryClasses");
@@ -174,7 +174,7 @@ public class SerializationConfig {
      * @param factoryId                    factory ID of dataSerializableFactory to be registered
      * @param dataSerializableFactoryClass name of dataSerializableFactory class to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public SerializationConfig addDataSerializableFactoryClass(int factoryId, String dataSerializableFactoryClass) {
         getDataSerializableFactoryClasses().put(factoryId, dataSerializableFactoryClass);
@@ -185,7 +185,7 @@ public class SerializationConfig {
      * @param factoryId                    factory ID of dataSerializableFactory to be registered
      * @param dataSerializableFactoryClass dataSerializableFactory class to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public SerializationConfig addDataSerializableFactoryClass(int factoryId, Class<?
             extends DataSerializableFactory> dataSerializableFactoryClass) {
@@ -195,7 +195,7 @@ public class SerializationConfig {
 
     /**
      * @return map of factory ID and corresponding dataSerializable factories
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public Map<Integer, DataSerializableFactory> getDataSerializableFactories() {
         return dataSerializableFactories;
@@ -204,7 +204,7 @@ public class SerializationConfig {
     /**
      * @param dataSerializableFactories map of factory ID and corresponding dataSerializable objects
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public SerializationConfig setDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
         isNotNull(dataSerializableFactories, "dataSerializableFactories");
@@ -217,7 +217,7 @@ public class SerializationConfig {
      * @param factoryId               factory ID of DataSerializableFactory to be registered
      * @param dataSerializableFactory DataSerializableFactory object to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.DataSerializableFactory
+     * @see com.hazelcast.serialization.DataSerializableFactory
      */
     public SerializationConfig addDataSerializableFactory(int factoryId, DataSerializableFactory dataSerializableFactory) {
         getDataSerializableFactories().put(factoryId, dataSerializableFactory);
@@ -226,7 +226,7 @@ public class SerializationConfig {
 
     /**
      * @return map of factory ID and corresponding portable factory names
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public Map<Integer, String> getPortableFactoryClasses() {
         return portableFactoryClasses;
@@ -235,7 +235,7 @@ public class SerializationConfig {
     /**
      * @param portableFactoryClasses map of factory ID and corresponding factory class names
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public SerializationConfig setPortableFactoryClasses(Map<Integer, String> portableFactoryClasses) {
         isNotNull(portableFactoryClasses, "portableFactoryClasses");
@@ -248,7 +248,7 @@ public class SerializationConfig {
      * @param factoryId            factory ID of portableFactory to be registered
      * @param portableFactoryClass portableFactory class to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public SerializationConfig addPortableFactoryClass(int factoryId, Class<? extends PortableFactory> portableFactoryClass) {
         String portableFactoryClassName = isNotNull(portableFactoryClass, "portableFactoryClass").getName();
@@ -259,7 +259,7 @@ public class SerializationConfig {
      * @param factoryId            factory ID of portableFactory to be registered
      * @param portableFactoryClass name of the portableFactory class to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public SerializationConfig addPortableFactoryClass(int factoryId, String portableFactoryClass) {
         getPortableFactoryClasses().put(factoryId, portableFactoryClass);
@@ -268,7 +268,7 @@ public class SerializationConfig {
 
     /**
      * @return map of factory ID and corresponding portable factories
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public Map<Integer, PortableFactory> getPortableFactories() {
         return portableFactories;
@@ -277,7 +277,7 @@ public class SerializationConfig {
     /**
      * @param portableFactories map of factory ID and corresponding factory objects
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public SerializationConfig setPortableFactories(Map<Integer, PortableFactory> portableFactories) {
         isNotNull(portableFactories, "portableFactories");
@@ -290,7 +290,7 @@ public class SerializationConfig {
      * @param factoryId       factory ID of portableFactory to be registered
      * @param portableFactory portableFactory object to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see com.hazelcast.nio.serialization.PortableFactory
+     * @see com.hazelcast.serialization.PortableFactory
      */
     public SerializationConfig addPortableFactory(int factoryId, PortableFactory portableFactory) {
         getPortableFactories().put(factoryId, portableFactory);

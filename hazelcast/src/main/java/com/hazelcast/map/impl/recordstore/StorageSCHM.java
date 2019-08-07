@@ -18,8 +18,8 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 

@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operatio
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 
 public class AlterOperation extends AbstractAlterOperation {

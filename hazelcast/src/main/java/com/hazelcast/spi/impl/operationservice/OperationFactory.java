@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 /**
  * A Factory for creating {@link Operation} instances.

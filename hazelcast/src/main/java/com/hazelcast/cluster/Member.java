@@ -18,7 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.DataSerializable;
 import com.hazelcast.version.MemberVersion;
 
 import java.net.InetSocketAddress;

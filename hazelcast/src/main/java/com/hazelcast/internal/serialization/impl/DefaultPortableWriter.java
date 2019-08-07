@@ -18,12 +18,12 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.FieldDefinition;
+import com.hazelcast.serialization.FieldType;
+import com.hazelcast.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.util.Set;

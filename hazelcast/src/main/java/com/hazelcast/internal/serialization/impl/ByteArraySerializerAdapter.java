@@ -18,10 +18,10 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.TypedByteArrayDeserializer;
+import com.hazelcast.serialization.ByteArraySerializer;
+import com.hazelcast.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.Serializer;
+import com.hazelcast.serialization.TypedByteArrayDeserializer;
 
 import java.io.IOException;
 

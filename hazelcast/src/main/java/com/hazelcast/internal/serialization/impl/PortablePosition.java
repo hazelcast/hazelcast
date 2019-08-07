@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.serialization.FieldType;
 
 import javax.annotation.Nullable;
 import java.util.List;

@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 /**
  * Internal event data wrapper used during publishing and dispatching events.

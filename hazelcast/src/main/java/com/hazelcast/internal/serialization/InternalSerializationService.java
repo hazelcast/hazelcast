@@ -23,9 +23,9 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataType;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.DataType;
+import com.hazelcast.serialization.PortableReader;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

@@ -19,13 +19,13 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
- * Wrapper for {@link com.hazelcast.nio.serialization.Data} value objects with version information.
+ * Wrapper for {@link com.hazelcast.serialization.Data} value objects with version information.
  */
 public class VersionedValue implements IdentifiedDataSerializable {
 

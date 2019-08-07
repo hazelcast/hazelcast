@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;

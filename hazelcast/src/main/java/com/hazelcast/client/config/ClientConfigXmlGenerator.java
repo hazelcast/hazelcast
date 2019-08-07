@@ -41,8 +41,8 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.PortableFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Preconditions;
 

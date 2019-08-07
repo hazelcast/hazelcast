@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalListSizeCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.transaction.TransactionalList;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.util.Preconditions;
 
 import static com.hazelcast.util.ThreadUtil.getThreadId;

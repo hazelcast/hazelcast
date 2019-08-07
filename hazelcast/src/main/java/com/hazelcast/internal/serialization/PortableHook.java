@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.PortableFactory;
 
 import java.util.Collection;
 

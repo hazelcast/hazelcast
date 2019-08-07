@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * Abstraction over member and client partition services to provide commonly useful methods.

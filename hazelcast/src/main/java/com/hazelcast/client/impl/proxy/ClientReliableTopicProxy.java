@@ -24,7 +24,7 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.internal.serialization.SerializationService;

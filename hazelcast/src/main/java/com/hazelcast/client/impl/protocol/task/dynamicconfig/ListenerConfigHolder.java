@@ -26,8 +26,8 @@ import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.HazelcastSerializationException;
 import com.hazelcast.quorum.QuorumListener;
 import com.hazelcast.internal.serialization.SerializationService;
 

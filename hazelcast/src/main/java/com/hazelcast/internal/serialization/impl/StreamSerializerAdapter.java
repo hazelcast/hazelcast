@@ -20,10 +20,10 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.nio.serialization.TypedStreamDeserializer;
+import com.hazelcast.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.Serializer;
+import com.hazelcast.serialization.StreamSerializer;
+import com.hazelcast.serialization.TypedStreamDeserializer;
 
 import java.io.IOException;
 

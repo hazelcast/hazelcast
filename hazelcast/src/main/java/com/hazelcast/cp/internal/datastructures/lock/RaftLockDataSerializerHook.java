@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.datastructures.lock.operation.TryLockOp;
 import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftLockDataSerializerHook implements DataSerializerHook {

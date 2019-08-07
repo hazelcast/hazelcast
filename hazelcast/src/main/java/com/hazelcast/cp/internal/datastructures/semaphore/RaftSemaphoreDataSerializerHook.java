@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.operation.InitSemaphor
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermitsOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftSemaphoreDataSerializerHook implements DataSerializerHook {

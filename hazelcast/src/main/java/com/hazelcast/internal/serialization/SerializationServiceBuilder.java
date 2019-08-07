@@ -20,9 +20,9 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.PortableFactory;
 
 import java.nio.ByteOrder;
 import java.util.function.Supplier;

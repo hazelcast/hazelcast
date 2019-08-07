@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig.search;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 

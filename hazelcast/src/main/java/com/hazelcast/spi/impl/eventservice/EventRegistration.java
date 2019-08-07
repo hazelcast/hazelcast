@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 /**
  * The result of a Event Registration.

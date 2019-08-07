@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * Interface for all WAN replication messages

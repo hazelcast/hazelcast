@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.util.Map;

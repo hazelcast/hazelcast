@@ -27,7 +27,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.HazelcastSerializationException;
 import com.hazelcast.util.ByteArrayProcessor;
 
 import java.io.EOFException;

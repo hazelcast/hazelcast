@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicRef
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 

@@ -20,7 +20,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.util.Map.Entry;
 import java.util.UUID;

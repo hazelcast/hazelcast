@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import java.util.Map;
 import java.util.Set;

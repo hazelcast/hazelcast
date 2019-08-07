@@ -87,7 +87,7 @@ public class ClientConfigTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         SerializationConfig serializationConfig = client.getConfig().getSerializationConfig();
-        Map<Integer, com.hazelcast.nio.serialization.PortableFactory> factories = serializationConfig.getPortableFactories();
+        Map<Integer, com.hazelcast.serialization.PortableFactory> factories = serializationConfig.getPortableFactories();
         assertEquals(1, factories.size());
         assertEquals(factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId(), Employee.CLASS_ID);
     }

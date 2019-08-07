@@ -18,8 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;

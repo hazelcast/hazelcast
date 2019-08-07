@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * SPI to serialize user objects to {@link Data} and back to Object
@@ -35,7 +35,7 @@ public interface SerializationService {
      *
      * @param obj the object to serialize.
      * @return the serialized object.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when serialization fails.
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when serialization fails.
      */
     <B extends Data> B toData(Object obj);
 
@@ -49,7 +49,7 @@ public interface SerializationService {
      * @param obj      the object to serialize.
      * @param strategy strategy is used to calculate partition ID of the resulting data see {@link PartitioningStrategy}
      * @return the serialized object.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when serialization fails.
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when serialization fails.
      */
     <B extends Data> B toData(Object obj, PartitioningStrategy strategy);
 
@@ -63,7 +63,7 @@ public interface SerializationService {
      *
      * @param data the data to deserialize.
      * @return the deserialized object.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails.
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when deserialization fails.
      */
     <T> T toObject(Object data);
 
@@ -78,7 +78,7 @@ public interface SerializationService {
      * @param data  the data to deserialize.
      * @param klazz The class to instantiate when deserializing the object.
      * @return the deserialized object.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when deserialization fails.
+     * @throws com.hazelcast.serialization.HazelcastSerializationException when deserialization fails.
      */
     <T> T toObject(Object data, Class klazz);
 

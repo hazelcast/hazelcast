@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public class AddSemaphoreConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddSemaphoreConfigCodec.RequestParameters> {

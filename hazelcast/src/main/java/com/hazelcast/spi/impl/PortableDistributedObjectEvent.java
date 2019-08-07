@@ -17,9 +17,9 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.PortableWriter;
 
 import java.io.IOException;
 

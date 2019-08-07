@@ -24,8 +24,8 @@ import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY_ID;

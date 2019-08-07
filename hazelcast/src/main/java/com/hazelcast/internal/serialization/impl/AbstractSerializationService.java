@@ -31,11 +31,11 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.DataSerializable;
+import com.hazelcast.serialization.HazelcastSerializationException;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.Serializer;
 
 import java.io.Externalizable;
 import java.io.Serializable;

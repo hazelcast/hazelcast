@@ -18,8 +18,8 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.impl.operations.AddAllBackupOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddBackupOperation;

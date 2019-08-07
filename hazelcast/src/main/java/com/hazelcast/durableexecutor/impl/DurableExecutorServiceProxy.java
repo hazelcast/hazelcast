@@ -29,7 +29,7 @@ import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;

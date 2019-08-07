@@ -17,13 +17,13 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.MorphingBasePortable;
-import com.hazelcast.nio.serialization.MorphingPortable;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.TestSerializationConstants;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.MorphingBasePortable;
+import com.hazelcast.serialization.MorphingPortable;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableFactory;
+import com.hazelcast.serialization.PortableReader;
+import com.hazelcast.serialization.TestSerializationConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

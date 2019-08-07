@@ -45,7 +45,7 @@ import com.hazelcast.internal.partition.operation.PartitionStateVersionCheckOper
 import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionEvent;
 import com.hazelcast.internal.partition.PartitionEventListener;

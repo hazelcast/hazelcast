@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -108,7 +108,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         assertEquals(4L, estimator.estimateAsync().get().longValue());
     }
 
-    @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
+    @Test(expected = com.hazelcast.serialization.HazelcastSerializationException.class)
     public void addCustomObject() {
         assumeTrue(config == null);
 

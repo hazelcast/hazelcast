@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 public class TxnSetBackupOperation extends PutBackupOperation {
 

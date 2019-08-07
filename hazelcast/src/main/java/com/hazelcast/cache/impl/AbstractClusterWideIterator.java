@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import javax.cache.Cache;
 import java.util.Iterator;

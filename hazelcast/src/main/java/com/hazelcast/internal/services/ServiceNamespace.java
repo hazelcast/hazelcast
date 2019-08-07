@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.services;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.DataSerializable;
 
 /**
  * {@code ServiceNamespace} is a namespace to group objects, structures, fragments within a service.

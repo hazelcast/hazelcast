@@ -22,7 +22,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public class AddCardinalityEstimatorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddCardinalityEstimatorConfigCodec.RequestParameters> {

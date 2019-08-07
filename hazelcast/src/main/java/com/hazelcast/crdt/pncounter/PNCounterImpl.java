@@ -24,7 +24,7 @@ import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;

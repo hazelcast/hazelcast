@@ -19,7 +19,7 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 
 import java.io.IOException;

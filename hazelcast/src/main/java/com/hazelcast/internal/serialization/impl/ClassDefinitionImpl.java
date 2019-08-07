@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.FieldDefinition;
+import com.hazelcast.serialization.FieldType;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;

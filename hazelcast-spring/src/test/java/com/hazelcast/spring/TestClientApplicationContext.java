@@ -238,8 +238,8 @@ public class TestClientApplicationContext {
 
         SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertNotNull(serializerConfig);
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
+        assertEquals("com.hazelcast.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
+        assertEquals("com.hazelcast.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
 
         List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
         assertNotNull(proxyFactoryConfigs);

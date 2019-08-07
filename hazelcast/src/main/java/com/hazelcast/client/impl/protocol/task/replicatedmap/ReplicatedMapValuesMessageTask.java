@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
 import com.hazelcast.replicatedmap.impl.operation.ValuesOperation;

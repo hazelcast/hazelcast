@@ -18,8 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.PortableFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 

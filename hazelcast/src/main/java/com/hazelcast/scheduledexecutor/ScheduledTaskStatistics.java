@@ -16,7 +16,7 @@
 
 package com.hazelcast.scheduledexecutor;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.util.concurrent.TimeUnit;
 

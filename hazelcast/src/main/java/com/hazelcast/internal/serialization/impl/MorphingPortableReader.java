@@ -17,33 +17,33 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.FieldDefinition;
+import com.hazelcast.serialization.FieldType;
+import com.hazelcast.serialization.Portable;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.BYTE;
-import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.CHAR;
-import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.INT;
-import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.LONG;
-import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
-import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.SHORT;
-import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.UTF;
-import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static com.hazelcast.serialization.FieldType.BOOLEAN;
+import static com.hazelcast.serialization.FieldType.BOOLEAN_ARRAY;
+import static com.hazelcast.serialization.FieldType.BYTE;
+import static com.hazelcast.serialization.FieldType.BYTE_ARRAY;
+import static com.hazelcast.serialization.FieldType.CHAR;
+import static com.hazelcast.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.serialization.FieldType.DOUBLE;
+import static com.hazelcast.serialization.FieldType.DOUBLE_ARRAY;
+import static com.hazelcast.serialization.FieldType.FLOAT;
+import static com.hazelcast.serialization.FieldType.FLOAT_ARRAY;
+import static com.hazelcast.serialization.FieldType.INT;
+import static com.hazelcast.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.serialization.FieldType.LONG;
+import static com.hazelcast.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.serialization.FieldType.PORTABLE;
+import static com.hazelcast.serialization.FieldType.PORTABLE_ARRAY;
+import static com.hazelcast.serialization.FieldType.SHORT;
+import static com.hazelcast.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.serialization.FieldType.UTF;
+import static com.hazelcast.serialization.FieldType.UTF_ARRAY;
 
 /**
  * Enables reading from a portable byte stream if the portableVersion from the classDefinition is different than

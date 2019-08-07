@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOpe
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.spi.partition.FragmentedMigrationAwareService;

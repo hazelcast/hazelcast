@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.util.executor.StripedRunnable;
 

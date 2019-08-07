@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.session.operation.GetSessionsOp;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftSessionServiceDataSerializerHook implements DataSerializerHook {

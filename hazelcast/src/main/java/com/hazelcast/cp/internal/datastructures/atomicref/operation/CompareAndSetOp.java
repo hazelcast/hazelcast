@@ -21,8 +21,8 @@ import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRef;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.Data;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.CPGroupId;
 
 import java.io.IOException;

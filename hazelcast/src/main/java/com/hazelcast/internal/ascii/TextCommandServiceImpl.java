@@ -42,7 +42,7 @@ import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.ascii.TextEncoder;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

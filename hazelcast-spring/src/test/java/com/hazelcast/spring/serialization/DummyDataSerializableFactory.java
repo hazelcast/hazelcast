@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring.serialization;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 public class DummyDataSerializableFactory implements DataSerializableFactory {
 

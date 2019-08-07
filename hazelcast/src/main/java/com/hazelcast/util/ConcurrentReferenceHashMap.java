@@ -22,7 +22,7 @@ package com.hazelcast.util;
  * http://creativecommons.org/licenses/publicdomain
  */
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;

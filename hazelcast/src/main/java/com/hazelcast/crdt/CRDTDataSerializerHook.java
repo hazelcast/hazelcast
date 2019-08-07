@@ -23,8 +23,8 @@ import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY_ID;

@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
 import java.util.Collections;

@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import java.io.DataInput;
 import java.io.IOException;

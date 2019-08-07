@@ -20,7 +20,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
  * Extended bind message, conveying information about all kinds of public
  * addresses per protocol type. Used as a replacement of the older
  * {@link BindMessage}. It is the first message exchanged on a new connection
- * so {@link com.hazelcast.nio.serialization.impl.Versioned Versioned}
+ * so {@link com.hazelcast.serialization.impl.Versioned Versioned}
  * serialization cannot be used as there may be no cluster version
  * established yet. The {@code ExtendedBindMessage} itself includes a
  * schema version so it can be extended in future versions without having

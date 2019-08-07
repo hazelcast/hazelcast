@@ -31,7 +31,7 @@ package com.hazelcast.internal.networking;
  *
  * There is no need for an InboundFrame interface.
  *
- * @see com.hazelcast.nio.serialization.Data
+ * @see com.hazelcast.serialization.Data
  * @see Channel#write(OutboundFrame)
  */
 public interface OutboundFrame {

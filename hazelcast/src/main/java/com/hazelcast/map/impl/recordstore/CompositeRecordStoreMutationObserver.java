@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import java.util.Collection;
 import java.util.LinkedList;

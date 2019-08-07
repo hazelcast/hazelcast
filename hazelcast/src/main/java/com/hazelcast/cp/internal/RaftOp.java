@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.DataSerializable;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.spi.impl.NodeEngine;
 

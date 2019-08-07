@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownL
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;

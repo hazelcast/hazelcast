@@ -1534,7 +1534,8 @@
                             maxOccurs="unbounded">
                     <xs:annotation>
                         <xs:documentation>
-                            Custom classes implementing com.hazelcast.nio.serialization.DataSerializableFactory to be registered.
+                            Custom classes implementing com.hazelcast.serialization.DataSerializableFactory to be
+                            registered.
                             These can be used to speed up serialization/deserialization of objects.
                         </xs:documentation>
                     </xs:annotation>

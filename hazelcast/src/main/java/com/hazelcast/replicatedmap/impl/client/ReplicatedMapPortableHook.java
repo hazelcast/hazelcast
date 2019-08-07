@@ -18,9 +18,9 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.ClassDefinition;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableFactory;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;

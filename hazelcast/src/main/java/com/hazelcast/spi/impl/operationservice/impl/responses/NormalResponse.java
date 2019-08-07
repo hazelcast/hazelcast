@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 import java.io.IOException;
 

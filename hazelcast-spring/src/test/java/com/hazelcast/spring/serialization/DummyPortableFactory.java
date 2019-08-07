@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring.serialization;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.serialization.Portable;
+import com.hazelcast.serialization.PortableFactory;
 
 public class DummyPortableFactory implements PortableFactory {
 

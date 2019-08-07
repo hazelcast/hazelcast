@@ -30,7 +30,7 @@ import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;

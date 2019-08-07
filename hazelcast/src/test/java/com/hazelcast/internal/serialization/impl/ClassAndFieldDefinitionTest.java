@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.serialization.ClassDefinitionBuilder;
+import com.hazelcast.serialization.FieldDefinition;
+import com.hazelcast.serialization.FieldType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

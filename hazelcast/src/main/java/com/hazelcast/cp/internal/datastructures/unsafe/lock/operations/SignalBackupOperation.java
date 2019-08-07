@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.unsafe.lock.operations;
 
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.internal.services.ObjectNamespace;
 

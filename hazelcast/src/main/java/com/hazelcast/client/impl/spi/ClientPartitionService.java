@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.partition.Partition;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 
 /**
  * Partition service for Hazelcast clients.

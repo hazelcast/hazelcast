@@ -20,7 +20,7 @@ import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.UUID;

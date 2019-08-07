@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.serialization.BinaryInterface;
+import com.hazelcast.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;

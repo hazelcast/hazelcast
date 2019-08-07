@@ -29,7 +29,7 @@ public interface OperationResponseHandler<O extends Operation> {
      *
      * @param op       the operation that got executed.
      * @param response the response of the operation that got executed.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if response is not serializable or
+     * @throws com.hazelcast.serialization.HazelcastSerializationException if response is not serializable or
      *                                                                         contains non serializable object
      *                                                                         inside NormalResponse
      */

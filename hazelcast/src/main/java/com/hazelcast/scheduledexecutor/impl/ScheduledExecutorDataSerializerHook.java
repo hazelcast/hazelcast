@@ -18,8 +18,8 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.serialization.DataSerializableFactory;
+import com.hazelcast.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.DisposeBackupTaskOperation;

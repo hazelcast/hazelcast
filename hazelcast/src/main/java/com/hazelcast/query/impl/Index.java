@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.serialization.Data;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.predicates.PredicateUtils;
 
