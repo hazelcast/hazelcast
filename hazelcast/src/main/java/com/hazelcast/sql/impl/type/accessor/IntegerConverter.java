@@ -34,7 +34,7 @@ public final class IntegerConverter extends Converter {
 
     @Override
     public GenericType getGenericType() {
-        return null;
+        return GenericType.INT;
     }
 
     @Override

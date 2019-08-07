@@ -115,6 +115,9 @@ public class CallOperator {
     /** REPLACE function. */
     public static final int REPLACE = 108;
 
+    /** EXTRACT function. */
+    public static final int EXTRACT = 201;
+
     private CallOperator() {
         // No-op.
     }

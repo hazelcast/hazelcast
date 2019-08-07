@@ -57,6 +57,10 @@ public class ConstantExpression<T> implements Expression<T> {
         return DataType.notNullOrLate(type);
     }
 
+    public T getValue() {
+        return val;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(val);

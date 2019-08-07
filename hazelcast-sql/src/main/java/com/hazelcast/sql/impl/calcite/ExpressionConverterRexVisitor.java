@@ -10,6 +10,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
+import com.hazelcast.sql.impl.expression.call.func.DatePartFunction;
+import com.hazelcast.sql.impl.expression.call.func.DatePartUnit;
 import com.hazelcast.sql.impl.expression.call.func.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.call.func.DoubleDoubleRetDoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.DoubleRetDoubleFunction;
@@ -24,6 +26,7 @@ import com.hazelcast.sql.impl.expression.call.func.SignFunction;
 import com.hazelcast.sql.impl.expression.call.func.StringRetIntFunction;
 import com.hazelcast.sql.impl.expression.call.func.StringRetStringFunction;
 import com.hazelcast.sql.impl.expression.call.func.UnaryMinusFunction;
+import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -111,6 +114,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case VARCHAR:
                 return literal.getValueAs(String.class);
 
+            case SYMBOL:
+                return convertSymbol(literal);
+
             // TODO: More conversions.
 
             case INTERVAL_YEAR:
@@ -126,6 +132,49 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
         throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
     }
 
+    private Object convertSymbol(RexLiteral literal) {
+        Object literalValue = literal.getValue();
+
+        if (literalValue instanceof TimeUnitRange) {
+            TimeUnitRange unit = (TimeUnitRange)literalValue;
+
+            switch (unit) {
+                case YEAR:
+                    return DatePartUnit.YEAR;
+
+                case QUARTER:
+                    return DatePartUnit.QUARTER;
+
+                case MONTH:
+                    return DatePartUnit.MONTH;
+
+                case WEEK:
+                    return DatePartUnit.WEEK;
+
+                case DOY:
+                    return DatePartUnit.DAYOFYEAR;
+
+                case DOW:
+                    return DatePartUnit.DAYOFWEEK;
+
+                case DAY:
+                    return DatePartUnit.DAYOFMONTH;
+
+                case HOUR:
+                    return DatePartUnit.HOUR;
+
+                case MINUTE:
+                    return DatePartUnit.MINUTE;
+
+                case SECOND:
+                    return DatePartUnit.SECOND;
+            }
+        }
+
+        throw new HazelcastSqlException(-1, "Unsupported literal symbol: " + literal);
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public Expression visitCall(RexCall call) {
         // Convert operator.
@@ -245,6 +294,11 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.POWER:
                 return new DoubleDoubleRetDoubleFunction(hzOperands.get(0), hzOperands.get(1), hzOperator);
 
+            case CallOperator.EXTRACT:
+                DatePartUnit unit = ((ConstantExpression<DatePartUnit>)hzOperands.get(0)).getValue();
+
+                return new DatePartFunction(hzOperands.get(1), unit);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -335,6 +389,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case OTHER:
                 if (operator == SqlStdOperatorTable.CONCAT)
                     return CallOperator.CONCAT;
+
+            case EXTRACT:
+                return CallOperator.EXTRACT;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

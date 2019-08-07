@@ -28,8 +28,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -37,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select name + (interval '-15-11' year(3) to month), (interval '155' month(5)) FROM persons ORDER BY name";
+    private static final String QUERY = "select HOUR(birthDateString) FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -77,6 +81,7 @@ public class SqlTest extends HazelcastTestSupport {
         public final int age;
         public final double height;
         public final boolean active;
+        public final String birthDateString;
 
         public Person(int key) {
             this.__key = key;
@@ -85,6 +90,8 @@ public class SqlTest extends HazelcastTestSupport {
             this.age = ThreadLocalRandom.current().nextInt(100);
             this.height = ThreadLocalRandom.current().nextDouble(170);
             this.active = ThreadLocalRandom.current().nextBoolean();
+
+            birthDateString = LocalDateTime.now().toString();
         }
 
     }
