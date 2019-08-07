@@ -249,12 +249,14 @@ public class CPSubsystemConfig {
     private RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig();
 
     /**
-     * TODO
+     * Flag to denote whether or not CP persistence is enabled.
      */
     private boolean persistenceEnabled;
 
     /**
-     * TODO
+     * Base directory to store all CP persistence data when {@link #persistenceEnabled}
+     * is true. This directory can be shared between multiple members.
+     * Each member will create a unique directory under {@code baseDir} for itself.
      */
     private File baseDir = new File(CP_BASE_DIR_DEFAULT);
 
@@ -460,19 +462,37 @@ public class CPSubsystemConfig {
         return this;
     }
 
+    /**
+     * Returns whether CP persistence enabled on this member.
+     *
+     * @return true if CP persistence is enabled, false otherwise
+     */
     public boolean isPersistenceEnabled() {
         return persistenceEnabled;
     }
 
+    /**
+     * Sets whether CP persistence is enabled on this member.
+     */
     public CPSubsystemConfig setPersistenceEnabled(boolean persistenceEnabled) {
         this.persistenceEnabled = persistenceEnabled;
         return this;
     }
 
+    /**
+     * Base directory for all CP persistence data.
+     * Can be an absolute or relative path to the node startup directory.
+     */
     public File getBaseDir() {
         return baseDir;
     }
 
+    /**
+     * Sets base directory for all CP persistence.
+     * Can be an absolute or relative path to the node startup directory.
+     *
+     * @param baseDir base directory
+     */
     public CPSubsystemConfig setBaseDir(File baseDir) {
         this.baseDir = baseDir;
         return this;
