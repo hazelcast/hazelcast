@@ -75,9 +75,9 @@ public class TestSourcesTest extends PipelineTestSupport {
          .window(WindowDefinition.tumbling(1000))
          .aggregate(AggregateOperations.counting())
          .apply(assertCollectedEventually(10, windowResults -> {
-             assertTrue("sink list should contain some items", windowResults.size() > 1);
-             // first window may be incomplete, subsequent windows should have 10 items
-             assertEquals(10L, (long) windowResults.get(1).result());
+             // find any window that has 10 items, some may be incomplete due to hiccups
+             boolean matched = windowResults.stream().anyMatch(r -> r.result() == itemsPerSecond);
+             assertTrue("Did not find any window with 10 items: " + windowResults, matched);
          }));
 
         expectedException.expect(AssertionCompletedException.class);
