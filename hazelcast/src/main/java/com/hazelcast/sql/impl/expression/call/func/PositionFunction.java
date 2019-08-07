@@ -7,20 +7,19 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * POSITION(seek IN string FROM integer)}.
  */
 public class PositionFunction extends TriCallExpression<Integer> {
-    /** Accessor of operand 1. */
-    private transient Converter accessor1;
+    /** Seek type. */
+    private transient DataType seekType;
 
-    /** Accessor of operand 2. */
-    private transient Converter accessor2;
+    /** Source type. */
+    private transient DataType sourceType;
 
-    /** Accessor of operand 3. */
-    private transient Converter accessor3;
+    /** Position type. */
+    private transient DataType posType;
 
     public PositionFunction() {
         // No-op.
@@ -37,15 +36,15 @@ public class PositionFunction extends TriCallExpression<Integer> {
         int pos;
 
         // Get seek operand.
-        Object op1 = operand1.eval(ctx, row);
+        Object seekValue = operand1.eval(ctx, row);
 
-        if (op1 == null)
+        if (seekValue == null)
             return null;
 
-        if (accessor1 == null)
-            accessor1 = operand1.getType().getBaseType().getAccessor();
+        if (seekType == null)
+            seekType = operand1.getType();
 
-        seek = accessor1.asVarchar(op1);
+        seek = seekType.getConverter().asVarchar(seekValue);
 
         // Get source operand.
         Object op2 = operand2.eval(ctx, row);
@@ -53,10 +52,10 @@ public class PositionFunction extends TriCallExpression<Integer> {
         if (op2 == null)
             return null;
 
-        if (accessor2 == null)
-            accessor2 = operand2.getType().getBaseType().getAccessor();
+        if (sourceType == null)
+            sourceType = operand2.getType();
 
-        source = accessor2.asVarchar(op2);
+        source = sourceType.getConverter().asVarchar(op2);
 
         // Get "FROM"
         if (operand3 == null)
@@ -67,16 +66,16 @@ public class PositionFunction extends TriCallExpression<Integer> {
             if (op3 == null)
                 pos = 0;
             else {
-                if (accessor3 == null) {
+                if (posType == null) {
                     DataType type = operand3.getType();
 
-                    if (!type.isNumericInteger())
+                    if (!type.isCanConvertToNumeric() || type.getScale() != 0)
                         throw new HazelcastSqlException(-1, "Unsupported data type: " + type);
 
-                    accessor3 = type.getBaseType().getAccessor();
+                    posType = type;
                 }
 
-                pos = accessor3.asInt(op3);
+                pos = posType.getConverter().asInt(op3);
             }
         }
 

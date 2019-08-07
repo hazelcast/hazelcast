@@ -9,7 +9,6 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 
@@ -21,7 +20,7 @@ public class StringRetIntFunction extends UniCallExpression<Integer> {
     private int operator;
 
     /** Accessor. */
-    private transient Converter accessor;
+    private transient DataType operandType;
 
     public StringRetIntFunction() {
         // No-op.
@@ -35,22 +34,22 @@ public class StringRetIntFunction extends UniCallExpression<Integer> {
 
     @Override
     public Integer eval(QueryContext ctx, Row row) {
-        Object op = operand.eval(ctx, row);
+        Object operandValue = operand.eval(ctx, row);
 
-        if (op == null)
+        if (operandValue == null)
             return null;
 
-        if (accessor == null)
-            accessor = operand.getType().getBaseType().getAccessor();
+        if (operandType == null)
+            operandType = operand.getType();
 
-        String res = accessor.asVarchar(op);
+        String operandValueString = operandType.getConverter().asVarchar(operandValue);
 
         switch (operator) {
             case CallOperator.CHAR_LENGTH:
-                return res.length();
+                return operandValueString.length();
 
             case CallOperator.ASCII:
-                return res.isEmpty() ? 0 : res.codePointAt(0);
+                return operandValueString.isEmpty() ? 0 : operandValueString.codePointAt(0);
 
             default:
                 throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);

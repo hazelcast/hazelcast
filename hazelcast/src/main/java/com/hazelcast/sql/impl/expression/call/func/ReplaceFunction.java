@@ -7,20 +7,19 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * POSITION(seek IN string FROM integer)}.
  */
 public class ReplaceFunction extends TriCallExpression<String> {
-    /** Accessor of operand 1. */
-    private transient Converter accessor1;
+    /** Source type. */
+    private transient DataType sourceType;
 
-    /** Accessor of operand 2. */
-    private transient Converter accessor2;
+    /** Search type. */
+    private transient DataType searchType;
 
-    /** Accessor of operand 3. */
-    private transient Converter accessor3;
+    /** Replacement type. */
+    private transient DataType replacementType;
 
     public ReplaceFunction() {
         // No-op.
@@ -37,40 +36,40 @@ public class ReplaceFunction extends TriCallExpression<String> {
         String replacement;
 
         // Get source operand.
-        Object op1 = operand1.eval(ctx, row);
+        Object sourceValue = operand1.eval(ctx, row);
 
-        if (op1 == null)
+        if (sourceValue == null)
             return null;
 
-        if (accessor1 == null)
-            accessor1 = operand1.getType().getBaseType().getAccessor();
+        if (sourceType == null)
+            sourceType = operand1.getType();
 
-        source = accessor1.asVarchar(op1);
+        source = sourceType.getConverter().asVarchar(sourceValue);
 
         // Get search operand.
-        Object op2 = operand2.eval(ctx, row);
+        Object searchValue = operand2.eval(ctx, row);
 
-        if (op2 == null)
+        if (searchValue == null)
             return null;
 
-        if (accessor2 == null)
-            accessor2 = operand2.getType().getBaseType().getAccessor();
+        if (searchType == null)
+            searchType = operand2.getType();
 
-        search = accessor2.asVarchar(op2);
+        search = searchType.getConverter().asVarchar(searchValue);
 
         if (search.isEmpty())
             throw new HazelcastSqlException(-1, "Invalid operand: search cannot be empty.");
 
         // Get replacement operand.
-        Object op3 = operand3.eval(ctx, row);
+        Object replacementValue = operand3.eval(ctx, row);
 
-        if (op3 == null)
+        if (replacementValue == null)
             return null;
 
-        if (accessor3 == null)
-            accessor3 = operand3.getType().getBaseType().getAccessor();
+        if (replacementType == null)
+            replacementType = operand3.getType();
 
-        replacement = accessor3.asVarchar(op3);
+        replacement = replacementType.getConverter().asVarchar(replacementValue);
 
         // Process.
         return source.replace(search, replacement);

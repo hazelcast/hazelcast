@@ -8,9 +8,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -23,21 +21,14 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     /** Truncate function. */
     private boolean truncate;
 
-    /** Value accessor. */
-    private transient Converter valAccessor;
+    /** Value data type. */
+    private transient DataType valType;
 
-    /** Length accessor. */
-    private transient Converter lenAccessor;
-
-    /** Rounding mode. */
-    private transient RoundingMode roundingMode;
+    /** Length data type. */
+    private transient DataType lenType;
 
     public RoundTruncateFunction() {
         // No-op.
-    }
-
-    public RoundTruncateFunction(Expression operand1, boolean truncate) {
-        this(operand1, null, truncate);
     }
 
     public RoundTruncateFunction(Expression operand1, Expression operand2, boolean truncate) {
@@ -49,34 +40,51 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
+        Object val = getValue(ctx, row);
+
+        if (val == null)
+            return null;
+
+        int len = getLength(ctx, row);
+
+        return (T)(doRoundTruncate(val, len));
+    }
+
+    /**
+     * Get value.
+     *
+     * @param ctx Context.
+     * @param row Row.
+     * @return Value.
+     */
+    public Object getValue(QueryContext ctx, Row row) {
         Object val = operand1.eval(ctx, row);
 
         if (val == null)
             return null;
 
         if (resType == null) {
-            BaseDataType type = operand1.getType().getBaseType();
+            DataType type = operand1.getType();
 
-            switch (type) {
-                case BYTE:
-                case SHORT:
-                case INTEGER:
+            switch (type.getType()) {
+                case TINYINT:
+                case SMALLINT:
+                case INT:
                     resType = DataType.INT;
 
                     break;
 
-                case LONG:
+                case BIGINT:
                     resType = DataType.BIGINT;
 
                     break;
 
-                case BIG_INTEGER:
-                case BIG_DECIMAL:
+                case DECIMAL:
                     resType = DataType.DECIMAL;
 
                     break;
 
-                case FLOAT:
+                case REAL:
                 case DOUBLE:
                     resType = DataType.DOUBLE;
 
@@ -86,52 +94,10 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
                     throw new HazelcastSqlException(-1, "Unsupported type of the first operand: " + operand1.getType());
             }
 
-            valAccessor = type.getAccessor();
-
-            roundingMode = truncate ? RoundingMode.DOWN : RoundingMode.HALF_UP;
+            valType = type;
         }
 
-        int len = getLength(ctx, row);
-
-        return (T)(round(val, len));
-    }
-
-    /**
-     * Perform actual round/truncate.
-     *
-     * @param val Value.
-     * @param len Length.
-     * @return Rounded value.
-     */
-    private Object round(Object val, int len) {
-        BigDecimal res = valAccessor.asDecimal(val);
-
-        if (len == 0)
-            res = res.setScale(0, roundingMode);
-        else
-            res = res.movePointRight(len).setScale(0, roundingMode).movePointLeft(len);
-
-        try {
-            switch (resType.getBaseType()) {
-                case INTEGER:
-                    return res.intValueExact();
-
-                case LONG:
-                    return res.longValueExact();
-
-                case BIG_DECIMAL:
-                    return res;
-
-                case DOUBLE:
-                    return res.doubleValue();
-
-                default:
-                    throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
-            }
-        }
-        catch (ArithmeticException e) {
-            throw new HazelcastSqlException(-1, "Data overflow.");
-        }
+        return val;
     }
 
     /**
@@ -147,14 +113,16 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
         if (len == null)
             return 0;
 
-        if (lenAccessor == null) {
-            BaseDataType type = operand2.getType().getBaseType();
+        if (lenType == null) {
+            DataType type = operand2.getType();
 
-            switch (type) {
-                case BYTE:
-                case SHORT:
-                case INTEGER:
-                    lenAccessor = type.getAccessor();
+            switch (type.getType()) {
+                case BIT:
+                case TINYINT:
+                case SMALLINT:
+                case INT:
+                case BIGINT:
+                    lenType = type;
 
                     break;
 
@@ -164,7 +132,47 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
             }
         }
 
-        return lenAccessor.asInt(len);
+        return lenType.getConverter().asInt(len);
+    }
+
+    /**
+     * Perform actual round/truncate.
+     *
+     * @param val Value.
+     * @param len Length.
+     * @return Rounded value.
+     */
+    private Object doRoundTruncate(Object val, int len) {
+        BigDecimal res = valType.getConverter().asDecimal(val);
+
+        RoundingMode roundingMode = truncate ? RoundingMode.DOWN : RoundingMode.HALF_UP;
+
+        if (len == 0)
+            res = res.setScale(0, roundingMode);
+        else
+            res = res.movePointRight(len).setScale(0, roundingMode).movePointLeft(len);
+
+        try {
+            switch (resType.getType()) {
+                case INT:
+                    return res.intValueExact();
+
+                case BIGINT:
+                    return res.longValueExact();
+
+                case DECIMAL:
+                    return res;
+
+                case DOUBLE:
+                    return res.doubleValue();
+
+                default:
+                    throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
+            }
+        }
+        catch (ArithmeticException e) {
+            throw new HazelcastSqlException(-1, "Data overflow.");
+        }
     }
 
     @Override

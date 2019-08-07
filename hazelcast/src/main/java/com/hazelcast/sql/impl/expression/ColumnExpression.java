@@ -49,7 +49,7 @@ public class ColumnExpression<T> implements Expression<T> {
         if (type == null)
             type = DataType.resolveType(res);
         else
-            type.forceSame(res);
+            type.ensureSame(res);
 
         return (T)res;
     }

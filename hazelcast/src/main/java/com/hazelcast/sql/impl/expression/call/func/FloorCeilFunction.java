@@ -8,7 +8,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
@@ -23,6 +22,9 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
     /** If this is the CEIL call. */
     private boolean ceil;
 
+    /** Operand type. */
+    private transient DataType operandType;
+
     public FloorCeilFunction() {
         // No-op.
     }
@@ -36,55 +38,56 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        Object op = operand.eval(ctx, row);
+        Object operandValue = operand.eval(ctx, row);
 
-        if (op == null)
+        if (operandValue == null)
             return null;
 
         if (resType == null) {
-            DataType opType = operand.getType();
+            DataType type = operand.getType();
 
-            if (!opType.isNumeric())
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + opType);
+            if (!type.isCanConvertToNumeric())
+                throw new HazelcastSqlException(-1, "Operand is not numeric: " + type);
 
-            switch (opType.getBaseType()) {
-                case BOOLEAN:
-                    throw new HazelcastSqlException(-1, "BIT type is not supported for FLOOR/CEIL operations.");
-
-                case BIG_INTEGER:
-                    resType = DataType.DECIMAL_INTEGER_DECIMAL;
+            switch (type.getType()) {
+                case BIT:
+                    resType = DataType.TINYINT;
 
                     break;
 
-                case FLOAT:
+                case REAL:
                     resType = DataType.DOUBLE;
 
+                    break;
+
                 default:
-                    resType = opType;
+                    resType = type;
             }
+
+            operandType = type;
         }
 
-        return (T)floorCeil(op, resType.getBaseType(), ceil);
+        return (T)floorCeil(operandValue, operandType, resType, ceil);
     }
 
-    private static Object floorCeil(Object operand, BaseDataType type, boolean ceil) {
-        Converter accessor = type.getAccessor();
+    private static Object floorCeil(Object operand, DataType operandType, DataType resType, boolean ceil) {
+        Converter operandConverter = operandType.getConverter();
 
-        switch (type) {
-            case BYTE:
-                return accessor.asTinyInt(operand);
+        switch (resType.getType()) {
+            case TINYINT:
+                return operandConverter.asTinyInt(operand);
 
-            case SHORT:
-                return accessor.asSmallInt(operand);
+            case SMALLINT:
+                return operandConverter.asSmallInt(operand);
 
-            case INTEGER:
-                return accessor.asInt(operand);
+            case INT:
+                return operandConverter.asInt(operand);
 
-            case LONG:
-                return accessor.asBigInt(operand);
+            case BIGINT:
+                return operandConverter.asBigInt(operand);
 
-            case BIG_DECIMAL: {
-                BigDecimal operand0 = accessor.asDecimal(operand);
+            case DECIMAL: {
+                BigDecimal operand0 = operandConverter.asDecimal(operand);
 
                 RoundingMode roundingMode = ceil ? RoundingMode.CEILING : RoundingMode.FLOOR;
 
@@ -92,13 +95,13 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
             }
 
             case DOUBLE: {
-                double operand0 = accessor.asDouble(operand);
+                double operand0 = operandConverter.asDouble(operand);
 
                 return ceil ? Math.ceil(operand0) : Math.floor(operand0);
             }
         }
 
-        throw new HazelcastSqlException(-1, "Unexpected type: " + type);
+        throw new HazelcastSqlException(-1, "Unexpected type: " + resType);
     }
 
     @Override

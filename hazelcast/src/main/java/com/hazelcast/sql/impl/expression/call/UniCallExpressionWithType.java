@@ -2,7 +2,6 @@ package com.hazelcast.sql.impl.expression.call;
 
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 
 /**
  * Expression with result type field.
@@ -21,6 +20,6 @@ public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> 
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNullOrLate(resType);
+        return DataType.notNullOrLate(resType);
     }
 }

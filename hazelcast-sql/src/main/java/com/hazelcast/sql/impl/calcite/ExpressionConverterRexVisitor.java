@@ -9,18 +9,15 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
-import com.hazelcast.sql.impl.expression.call.func.Atan2Function;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
-import com.hazelcast.sql.impl.expression.call.func.DivideFunction;
-import com.hazelcast.sql.impl.expression.call.func.DoubleFunction;
+import com.hazelcast.sql.impl.expression.call.func.DivideRemainderFunction;
+import com.hazelcast.sql.impl.expression.call.func.DoubleDoubleRetDoubleFunction;
+import com.hazelcast.sql.impl.expression.call.func.DoubleRetDoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
-import com.hazelcast.sql.impl.expression.call.func.MinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
-import com.hazelcast.sql.impl.expression.call.func.PlusFunction;
+import com.hazelcast.sql.impl.expression.call.func.PlusMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
-import com.hazelcast.sql.impl.expression.call.func.PowerFunction;
 import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
-import com.hazelcast.sql.impl.expression.call.func.RemainderFunction;
 import com.hazelcast.sql.impl.expression.call.func.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.call.func.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.call.func.SignFunction;
@@ -155,19 +152,19 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
         switch (hzOperator) {
             case CallOperator.PLUS:
-                return new PlusFunction(hzOperands.get(0), hzOperands.get(1));
+                return new PlusMinusFunction(hzOperands.get(0), hzOperands.get(1), false);
 
             case CallOperator.MINUS:
-                return new MinusFunction(hzOperands.get(0), hzOperands.get(1));
+                return new PlusMinusFunction(hzOperands.get(0), hzOperands.get(1), true);
 
             case CallOperator.MULTIPLY:
                 return new MultiplyFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.DIVIDE:
-                return new DivideFunction(hzOperands.get(0), hzOperands.get(1));
+                return new DivideRemainderFunction(hzOperands.get(0), hzOperands.get(1), false);
 
             case CallOperator.REMAINDER:
-                return new RemainderFunction(hzOperands.get(0), hzOperands.get(1));
+                return new DivideRemainderFunction(hzOperands.get(0), hzOperands.get(1), true);
 
             case CallOperator.UNARY_MINUS:
                 return new UnaryMinusFunction(hzOperands.get(0));
@@ -206,7 +203,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LOG10:
             case CallOperator.DEGREES:
             case CallOperator.RADIANS:
-                return new DoubleFunction(hzOperands.get(0), hzOperator);
+                return new DoubleRetDoubleFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.FLOOR:
                 return new FloorCeilFunction(hzOperands.get(0), false);
@@ -245,10 +242,8 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return new SignFunction(hzOperands.get(0));
 
             case CallOperator.ATAN2:
-                return new Atan2Function(hzOperands.get(0), hzOperands.get(1));
-
             case CallOperator.POWER:
-                return new PowerFunction(hzOperands.get(0), hzOperands.get(1));
+                return new DoubleDoubleRetDoubleFunction(hzOperands.get(0), hzOperands.get(1), hzOperator);
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);

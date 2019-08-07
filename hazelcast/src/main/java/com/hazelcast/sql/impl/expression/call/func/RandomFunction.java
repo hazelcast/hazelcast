@@ -7,7 +7,6 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,8 +15,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * Random function implementation.
  */
 public class RandomFunction extends UniCallExpression<Double> {
-    /** Seed value accessor. */
-    private transient Converter seedAccessor;
+    /** Seed value type. */
+    private transient DataType seedType;
 
     public RandomFunction() {
         // No-op.
@@ -48,17 +47,16 @@ public class RandomFunction extends UniCallExpression<Double> {
             Object seedRes0 = seedExp.eval(ctx, row);
 
             if (seedRes0 != null) {
-                // TODO: Common pattern.
-                if (seedAccessor == null) {
-                    DataType seedType = seedExp.getType();
+                if (seedType == null) {
+                    DataType type = seedExp.getType();
 
-                    if (!seedType.isNumeric())
+                    if (!type.isCanConvertToNumeric())
                         throw new HazelcastSqlException(-1, "Seed is not numeric: " + seedExp);
                     
-                    seedAccessor = seedType.getBaseType().getAccessor();
+                    seedType = type;
                 }
 
-                int seedRes = seedAccessor.asInt(seedRes0);
+                int seedRes = seedType.getConverter().asInt(seedRes0);
 
                 return new Random(seedRes);
             }

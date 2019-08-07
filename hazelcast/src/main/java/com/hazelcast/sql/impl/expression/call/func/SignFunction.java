@@ -6,11 +6,13 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class SignFunction extends UniCallExpressionWithType<Number> {
+    /** Operand type. */
+    private transient DataType operandType;
+
     public SignFunction() {
         // No-op.
     }
@@ -21,69 +23,70 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
 
     @Override
     public Number eval(QueryContext ctx, Row row) {
-        Object val = operand.eval(ctx, row);
+        Object operandValue = operand.eval(ctx, row);
 
-        if (val == null)
+        if (operandValue == null)
             return null;
 
         if (resType == null) {
-            DataType operandType = operand.getType();
+            operandType = operand.getType();
 
-            if (!operandType.isNumeric())
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + val);
-
-            switch (operandType.getBaseType()) {
-                case BOOLEAN:
-                    throw new HazelcastSqlException(-1, "SIGN operation is not supported for BIT data type.");
-
-                case BYTE:
-                case SHORT:
-                case INTEGER:
-                    resType = DataType.INT;
-
-                    break;
-
-                case BIG_DECIMAL:
-                    resType = DataType.DECIMAL_INTEGER_DECIMAL;
-
-                    break;
-
-                default:
-                    resType = operandType;
-            }
+            resType = inferResultType(operandType);
         }
 
-        return sign(val, resType.getBaseType());
+        return doSign(operandValue, operandType, resType);
+    }
+
+    /**
+     * Infer result type.
+     *
+     * @param operandType Operand type.
+     * @return Result type.
+     */
+    private DataType inferResultType(DataType operandType) {
+        if (!operandType.isCanConvertToNumeric())
+            throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+
+        switch (operandType.getType()) {
+            case TINYINT:
+            case INT:
+            case SMALLINT:
+                return DataType.INT;
+
+            default:
+                return operandType;
+        }
     }
 
     /**
      * Get absolute value.
      *
-     * @param val Value.
-     * @param type Type.
+     * @param operandValue Value.
+     * @param operandType Operand type.
+     * @param resType Type.
      * @return Absolute value of the target.
      */
-    private static Number sign(Object val, BaseDataType type) {
-        Converter accessor = type.getAccessor();
+    private static Number doSign(Object operandValue, DataType operandType, DataType resType) {
+        Converter operandConverter = operandType.getConverter();
 
-        switch (type) {
-            case INTEGER:
-                return Integer.signum(accessor.asInt(val));
+        switch (resType.getType()) {
+            case INT:
+                return Integer.signum(operandConverter.asInt(operandValue));
 
-            case LONG:
-                return Long.signum(accessor.asBigInt(val));
+            case BIGINT:
+                return Long.signum(operandConverter.asBigInt(operandValue));
 
-            case BIG_DECIMAL:
-                return accessor.asDecimal(val).signum();
+            case DECIMAL:
+                return operandConverter.asDecimal(operandValue).signum();
 
-            case FLOAT:
-                return Math.signum(accessor.asReal(val));
+            case REAL:
+                return Math.signum(operandConverter.asReal(operandValue));
 
             case DOUBLE:
-                return Math.signum(accessor.asDouble(val));
+                return Math.signum(operandConverter.asDouble(operandValue));
         }
 
-        throw new HazelcastSqlException(-1, "Unexpected type: " + type);
+        throw new HazelcastSqlException(-1, "Unexpected type: " + resType);
     }
 
     @Override

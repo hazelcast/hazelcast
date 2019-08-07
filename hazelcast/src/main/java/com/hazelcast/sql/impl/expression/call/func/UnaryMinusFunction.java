@@ -8,17 +8,18 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.math.BigDecimal;
+
+import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
 
 /**
  * Unary minus operation.
  */
 public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
-    /** Accessor for the argument. */
-    private transient Converter accessor;
+    /** Operand type. */
+    private transient DataType operandType;
 
     public UnaryMinusFunction() {
         // No-op.
@@ -31,47 +32,83 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        Object op = operand.eval(ctx, row);
+        Object operandValue = operand.eval(ctx, row);
 
-        if (op == null)
+        if (operandValue == null)
             return null;
 
         if (resType == null) {
-            DataType type = operand.getType();
+            operandType = operand.getType();
 
-            resType = TypeUtils.inferForUnaryMinus(type);
-
-            accessor = type.getBaseType().getAccessor();
+            resType = inferResultType(operandType);
         }
 
-        return (T)doMinus(op, accessor, resType);
+        return (T)doMinus(operandValue, operandType, resType);
     }
 
+    /**
+     * Infer result type.
+     *
+     * @param operandType Operand type.
+     * @return Result type.
+     */
+    private DataType inferResultType(DataType operandType) {
+        if (!operandType.isCanConvertToNumeric())
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+
+        if (operandType == DataType.VARCHAR)
+            operandType = DataType.DECIMAL;
+
+        if (operandType.getScale() == 0) {
+            // Integer type.
+            int precision = operandType.getPrecision();
+
+            if (precision != PRECISION_UNLIMITED)
+                precision++;
+
+            return DataType.integerType(precision);
+        }
+        else {
+            // DECIMAL, REAL or DOUBLE. REAL is expanded to DOUBLE. DECIMAL and DOUBLE are already the widest.
+            return operandType == DataType.REAL ? DataType.DOUBLE : operandType;
+        }
+    }
+
+    /**
+     * Execute unary minus operation.
+     *
+     * @param operandValue Operand value.
+     * @param operandType Operand type.
+     * @param resType Result type.
+     * @return Result.
+     */
     @SuppressWarnings("unchecked")
-    private static Object doMinus(Object op, Converter accessor, DataType resType) {
-        switch (resType.getBaseType()) {
-            case BYTE:
-                return (byte)(-accessor.asTinyInt(op));
+    private static Object doMinus(Object operandValue, DataType operandType, DataType resType) {
+        Converter operandConverter = operandType.getConverter();
 
-            case SHORT:
-                return (short)(-accessor.asSmallInt(op));
+        switch (resType.getType()) {
+            case TINYINT:
+                return (byte)(-operandConverter.asTinyInt(operandValue));
 
-            case INTEGER:
-                return -accessor.asInt(op);
+            case SMALLINT:
+                return (short)(-operandConverter.asSmallInt(operandValue));
 
-            case LONG:
-                return -accessor.asBigInt(op);
+            case INT:
+                return -operandConverter.asInt(operandValue);
 
-            case BIG_DECIMAL:
-                BigDecimal opDecimal = accessor.asDecimal(op);
+            case BIGINT:
+                return -operandConverter.asBigInt(operandValue);
+
+            case DECIMAL:
+                BigDecimal opDecimal = operandConverter.asDecimal(operandValue);
 
                 return opDecimal.negate();
 
-            case FLOAT:
-                return -accessor.asReal(op);
+            case REAL:
+                return -operandConverter.asReal(operandValue);
 
             case DOUBLE:
-                return -accessor.asDouble(op);
+                return -operandConverter.asDouble(operandValue);
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);

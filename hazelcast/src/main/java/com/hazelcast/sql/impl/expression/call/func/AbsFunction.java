@@ -6,13 +6,12 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class AbsFunction extends UniCallExpressionWithType<Number> {
-    /** Accessor. */
-    private transient Converter accessor;
+    /** Operand type. */
+    private transient DataType operandType;
 
     public AbsFunction() {
         // No-op.
@@ -24,58 +23,64 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
 
     @Override
     public Number eval(QueryContext ctx, Row row) {
-        Object val = operand.eval(ctx, row);
+        Object operandValue = operand.eval(ctx, row);
 
-        if (val == null)
+        if (operandValue == null)
             return null;
 
         if (resType == null) {
-            DataType operandType = operand.getType();
+            DataType type = operand.getType();
 
-            if (!operandType.isNumeric())
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + val);
+            if (!type.isCanConvertToNumeric())
+                throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandValue);
 
-            if (operandType.getBaseType() == BaseDataType.BIG_INTEGER)
-                resType = DataType.DECIMAL_INTEGER_DECIMAL;
-            else if (operandType.getBaseType() == BaseDataType.STRING)
+            if (type == DataType.BIT)
+                resType = DataType.TINYINT;
+            if (type == DataType.DECIMAL_SCALE_0_BIG_INTEGER)
+                resType = DataType.DECIMAL_SCALE_0_BIG_DECIMAL;
+            else if (type == DataType.VARCHAR)
                 resType = DataType.DECIMAL;
             else
-                resType = operandType;
+                resType = type;
 
-            accessor = operandType.getBaseType().getAccessor();
+            operandType = type;
         }
 
-        return abs(val);
+        return abs(operandValue, operandType, resType);
     }
 
     /**
      * Get absolute value.
      *
-     * @param val Value.
+     * @param operand Value.
+     * @param operandType Type of the operand.
+     * @param resType Result type.
      * @return Absolute value of the target.
      */
-    private Number abs(Object val) {
-        switch (resType.getBaseType()) {
-            case BYTE:
-                return (byte)Math.abs(accessor.asTinyInt(val));
+    private Number abs(Object operand, DataType operandType, DataType resType) {
+        Converter operandConverter = operandType.getConverter();
 
-            case SHORT:
-                return (short)Math.abs(accessor.asSmallInt(val));
+        switch (resType.getType()) {
+            case TINYINT:
+                return (byte)Math.abs(operandConverter.asTinyInt(operand));
 
-            case INTEGER:
-                return Math.abs(accessor.asInt(val));
+            case SMALLINT:
+                return (short)Math.abs(operandConverter.asSmallInt(operand));
 
-            case LONG:
-                return Math.abs(accessor.asBigInt(val));
+            case INT:
+                return Math.abs(operandConverter.asInt(operand));
 
-            case BIG_DECIMAL:
-                return accessor.asDecimal(val).abs();
+            case BIGINT:
+                return Math.abs(operandConverter.asBigInt(operand));
 
-            case FLOAT:
-                return Math.abs(accessor.asReal(val));
+            case DECIMAL:
+                return operandConverter.asDecimal(operand).abs();
+
+            case REAL:
+                return Math.abs(operandConverter.asReal(operand));
 
             case DOUBLE:
-                return Math.abs(accessor.asDouble(val));
+                return Math.abs(operandConverter.asDouble(operand));
         }
 
         throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);

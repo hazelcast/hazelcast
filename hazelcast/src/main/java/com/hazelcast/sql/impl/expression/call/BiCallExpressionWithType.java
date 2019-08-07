@@ -2,7 +2,6 @@ package com.hazelcast.sql.impl.expression.call;
 
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 
 public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
     /** Result type. */
@@ -19,6 +18,6 @@ public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNullOrLate(resType);
+        return DataType.notNullOrLate(resType);
     }
 }

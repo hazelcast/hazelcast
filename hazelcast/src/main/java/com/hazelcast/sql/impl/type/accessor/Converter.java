@@ -24,16 +24,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Interface to convert an item from one type to another.
  */
 public abstract class Converter {
-
+    /**
+     * @return Class of the input.
+     */
     public abstract Class getClazz();
 
+    /**
+     * @return Matching generic type.
+     */
     public abstract GenericType getGenericType();
 
     public boolean asBit(Object val) {

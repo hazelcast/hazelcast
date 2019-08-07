@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -59,7 +58,7 @@ public class HeapRow implements Row, DataSerializable {
     public DataType getType(int idx) {
         DataType res = types[idx];
 
-        return TypeUtils.notNullOrLate(res);
+        return DataType.notNullOrLate(res);
     }
 
     public void set(int idx, Object val) {
@@ -69,7 +68,7 @@ public class HeapRow implements Row, DataSerializable {
             if (type == null)
                 types[idx] = DataType.resolveType(val);
             else
-                type.forceSame(val);
+                type.ensureSame(val);
         }
 
         values[idx] = val;

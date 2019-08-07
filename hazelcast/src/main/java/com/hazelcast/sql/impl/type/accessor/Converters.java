@@ -2,6 +2,9 @@ package com.hazelcast.sql.impl.type.accessor;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -91,6 +94,37 @@ public class Converters {
             return CalendarConverter.INSTANCE;
 
         return null;
+    }
+
+    /**
+     * Get numeric converter for the given expression.
+     *
+     * @param expr Expression.
+     * @return Converter.
+     */
+    public static Converter numericConverter(Expression expr) {
+        DataType type = expr.getType();
+
+        if (!type.isCanConvertToNumeric())
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + type);
+
+        return type.getConverter();
+    }
+
+    /**
+     * Get numeric converter for the given expression.
+     *
+     * @param expr Expression.
+     * @param operandPos Position of the operand.
+     * @return Converter.
+     */
+    public static Converter numericConverter(Expression expr, int operandPos) {
+        DataType type = expr.getType();
+
+        if (!type.isCanConvertToNumeric())
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand " + operandPos + " is not numeric: " + type);
+
+        return type.getConverter();
     }
 
     private Converters() {

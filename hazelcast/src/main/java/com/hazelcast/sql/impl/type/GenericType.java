@@ -1,33 +1,27 @@
 package com.hazelcast.sql.impl.type;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
-
 public enum GenericType {
-    BIT(Boolean.class),
-    TINYINT(Byte.class),
-    SMALLINT(Short.class),
-    INT(Integer.class),
-    BIGINT(Long.class),
-    DECIMAL(BigDecimal.class),
-    REAL(Float.class),
-    DOUBLE(Double.class),
-    VARCHAR(String.class),
-    DATE(LocalDate.class),
-    TIME(LocalTime.class),
-    TIMESTAMP(LocalDateTime.class),
-    TIMESTAMP_WITH_TIMEZONE(ZonedDateTime.class);
+    BIT(true),
+    TINYINT(true),
+    SMALLINT(true),
+    INT(true),
+    BIGINT(true),
+    DECIMAL(true),
+    REAL(true),
+    DOUBLE(true),
+    VARCHAR(true),
+    DATE(false),
+    TIME(false),
+    TIMESTAMP(false),
+    TIMESTAMP_WITH_TIMEZONE(false);
 
-    private final Class clazz;
+    private final boolean convertToNumeric;
 
-    GenericType(Class clazz) {
-        this.clazz = clazz;
+    GenericType(boolean convertToNumeric) {
+        this.convertToNumeric = convertToNumeric;
     }
 
-    public Class getClazz() {
-        return clazz;
+    public boolean isConvertToNumeric() {
+        return convertToNumeric;
     }
 }

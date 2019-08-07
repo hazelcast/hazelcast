@@ -6,17 +6,16 @@ import com.hazelcast.sql.impl.expression.call.BiCallExpression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * A function which accepts a string, and return another string.
  */
 public class ConcatFunction extends BiCallExpression<String> {
-    /** Accessor of operand 1. */
-    private transient Converter accessor1;
+    /** Type of operand 1. */
+    private transient DataType operand1Type;
 
-    /** Accessor of operand 2. */
-    private transient Converter accessor2;
+    /** Type of operand 2. */
+    private transient DataType operand2Type;
 
     public ConcatFunction() {
         // No-op.
@@ -28,26 +27,28 @@ public class ConcatFunction extends BiCallExpression<String> {
 
     @Override
     public String eval(QueryContext ctx, Row row) {
-        Object op1 = operand1.eval(ctx, row);
-        Object op2 = operand2.eval(ctx, row);
+        Object operand1Value = operand1.eval(ctx, row);
+        Object operand2Value = operand2.eval(ctx, row);
 
-        if (op1 != null && accessor1 == null)
-            accessor1 = operand1.getType().getBaseType().getAccessor();
+        if (operand1Value != null && operand1Type == null)
+            operand1Type = operand1.getType();
 
-        if (op2 != null && accessor2 == null)
-            accessor2 = operand2.getType().getBaseType().getAccessor();
+        if (operand2Value != null && operand2Type == null)
+            operand2Type = operand2.getType();
 
-        if (op1 == null) {
-            if (op2 == null)
+        if (operand1Value == null) {
+            if (operand2Value == null)
                 return "";
             else
-                return accessor2.asVarchar(op2);
+                return operand2Type.getConverter().asVarchar(operand2Value);
         }
         else {
-            if (op2 == null)
-                return accessor1.asVarchar(op1);
-            else
-                return accessor1.asVarchar(op1) + accessor2.asVarchar(op2);
+            if (operand2Value == null)
+                return operand1Type.getConverter().asVarchar(operand1Value);
+            else {
+                return operand1Type.getConverter().asVarchar(operand1Value) +
+                    operand2Type.getConverter().asVarchar(operand2Value);
+            }
         }
     }
 

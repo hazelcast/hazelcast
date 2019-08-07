@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 
@@ -55,7 +54,7 @@ public class ConstantExpression<T> implements Expression<T> {
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNullOrLate(type);
+        return DataType.notNullOrLate(type);
     }
 
     @Override
