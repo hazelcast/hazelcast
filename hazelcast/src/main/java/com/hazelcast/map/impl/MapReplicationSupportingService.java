@@ -16,18 +16,19 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.internal.services.ReplicationSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ReplicationSupportingService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.ReplicationEventObject;
 
 import java.util.concurrent.Future;
 
@@ -48,12 +49,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent replicationEvent) {
-        Object eventObject = replicationEvent.getEventObject();
-        if (eventObject instanceof MapReplicationUpdate) {
-            handleUpdate((MapReplicationUpdate) eventObject);
-        } else if (eventObject instanceof MapReplicationRemove) {
-            handleRemove((MapReplicationRemove) eventObject);
+    public void onReplicationEvent(ReplicationEventObject event, WanAcknowledgeType acknowledgeType) {
+        if (event instanceof MapReplicationUpdate) {
+            handleUpdate((MapReplicationUpdate) event);
+        } else if (event instanceof MapReplicationRemove) {
+            handleRemove((MapReplicationRemove) event);
         }
     }
 

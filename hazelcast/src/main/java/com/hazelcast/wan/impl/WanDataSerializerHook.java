@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.wan.WanReplicationEvent;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY_ID;
@@ -34,10 +33,9 @@ public class WanDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
 
-    public static final int WAN_REPLICATION_EVENT = 0;
-    public static final int MAP_REPLICATION_UPDATE = 1;
-    public static final int MAP_REPLICATION_REMOVE = 2;
-    public static final int WAN_MAP_ENTRY_VIEW = 3;
+    public static final int MAP_REPLICATION_UPDATE = 0;
+    public static final int MAP_REPLICATION_REMOVE = 1;
+    public static final int WAN_MAP_ENTRY_VIEW = 2;
 
     @Override
     public int getFactoryId() {
@@ -48,8 +46,6 @@ public class WanDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {
-                case WAN_REPLICATION_EVENT:
-                    return new WanReplicationEvent();
                 case MAP_REPLICATION_UPDATE:
                     return new MapReplicationUpdate();
                 case MAP_REPLICATION_REMOVE:

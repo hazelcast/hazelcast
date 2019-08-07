@@ -17,27 +17,15 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
-import com.hazelcast.map.impl.event.MapEventPublishingService;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.spi.impl.eventservice.EventPublishingService;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.services.LockInterceptorService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.spi.partition.PartitionAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.QuorumAwareService;
 import com.hazelcast.internal.services.RemoteService;
@@ -46,11 +34,24 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.map.impl.event.MapEventPublishingService;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.ReplicationEventObject;
 
 import java.util.Collection;
 import java.util.Map;
@@ -173,8 +174,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent replicationEvent) {
-        replicationSupportingService.onReplicationEvent(replicationEvent);
+    public void onReplicationEvent(ReplicationEventObject event, WanAcknowledgeType acknowledgeType) {
+        replicationSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
     @Override

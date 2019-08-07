@@ -21,14 +21,13 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationEndpoint;
-import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 class DummyWanReplication implements WanReplicationEndpoint {
 
-    Queue<WanReplicationEvent> eventQueue = new ConcurrentLinkedQueue<WanReplicationEvent>();
+    Queue<ReplicationEventObject> eventQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public void init(Node node, WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig wanPublisherConfig) {
@@ -39,25 +38,24 @@ class DummyWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
-        WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
-        eventQueue.add(replicationEvent);
+    public void publishReplicationEvent(ReplicationEventObject event) {
+        eventQueue.add(event);
     }
 
     @Override
-    public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
+    public void publishReplicationEventBackup(ReplicationEventObject event) {
     }
 
     @Override
-    public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
-        publishReplicationEvent(wanReplicationEvent.getServiceName(), wanReplicationEvent.getEventObject());
+    public void republishReplicationEvent(ReplicationEventObject event) {
+        publishReplicationEvent(event);
     }
 
     @Override
     public void checkWanReplicationQueues() {
     }
 
-    Queue<WanReplicationEvent> getEventQueue() {
+    Queue<ReplicationEventObject> getEventQueue() {
         return eventQueue;
     }
 }

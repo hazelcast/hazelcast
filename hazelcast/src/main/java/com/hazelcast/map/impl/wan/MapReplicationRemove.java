@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.wan;
 
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,6 +50,11 @@ public class MapReplicationRemove implements ReplicationEventObject, IdentifiedD
     @Override
     public Data getKey() {
         return key;
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     public void setKey(Data key) {

@@ -33,4 +33,11 @@ public interface ReplicationEventObject {
      * Returns the key for the entry on which the event occurred.
      */
     Data getKey();
+
+    /**
+     * Returns the service name on which this event occurred.
+     *
+     * @return the service name
+     */
+    String getServiceName();
 }
