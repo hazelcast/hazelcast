@@ -144,9 +144,9 @@ public class Measurement implements IdentifiedDataSerializable {
         StringBuilder sb = new StringBuilder();
 
         sb.append(String.format("%,5d", value))
-                .append("  ")
+                .append(" ")
                 .append(Util.toLocalTime(timestamp))
-                .append("  [");
+                .append(" [");
 
         String tags = this.tags.entrySet().stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))

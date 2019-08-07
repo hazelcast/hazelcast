@@ -33,15 +33,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 /**
  * An immutable collection of job-specific metrics, pairs of metric names
@@ -53,11 +50,8 @@ public final class JobMetrics implements IdentifiedDataSerializable {
 
     private static final JobMetrics EMPTY = new JobMetrics(Collections.emptyMap());
 
-    private static final Collector<Measurement, ?, TreeMap<String, List<Measurement>>> COLLECTOR = Collectors.groupingBy(
-            measurement -> measurement.getTag(MetricTags.METRIC),
-            TreeMap::new,
-            Collectors.mapping(identity(), toList())
-    );
+    private static final Collector<Measurement, ?, Map<String, List<Measurement>>> COLLECTOR =
+        Collectors.groupingBy(measurement -> measurement.getTag(MetricTags.METRIC));
 
     private Map<String, List<Measurement>> metrics; //metric name -> set of measurements
 
@@ -82,7 +76,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
      * map should be well formed metric descriptors and the values
      * associated with them are {@code long} numbers.
      * <p>
-     * Descriptors are {@code String}s structured as a comma separated lists
+     * Descriptors are {@code String}s structured as a comma-separated lists
      * of tag=value pairs, enclosed in square brackets. An example of a
      * valid metric descriptor would be:
      * <pre>{@code
@@ -168,10 +162,11 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     public JobMetrics filter(@Nonnull Predicate<Measurement> predicate) {
         Objects.requireNonNull(predicate, "predicate");
 
-        Map<String, List<Measurement>> filteredMetrics = metrics.values().stream()
-                .flatMap(Collection::stream)
-                .filter(predicate)
-                .collect(COLLECTOR);
+        Map<String, List<Measurement>> filteredMetrics =
+            metrics.values().stream()
+                   .flatMap(List::stream)
+                   .filter(predicate)
+                   .collect(COLLECTOR);
         return new JobMetrics(filteredMetrics);
     }
 
@@ -179,8 +174,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
      * Merges the current instance of {@link JobMetrics} with the provided
      * one and returns the result as a new {@link JobMetrics} object. The
      * returned object will contain all metric names from both sources and
-     * a union of all their
-     * {@link Measurement}s.
+     * a union of all their {@link Measurement}s.
      */
     @Nonnull
     public JobMetrics merge(@Nonnull JobMetrics that) {
@@ -188,22 +182,6 @@ public final class JobMetrics implements IdentifiedDataSerializable {
         Stream<Measurement> thisMeasurements = this.metrics.values().stream().flatMap(Collection::stream);
         Stream<Measurement> thatMeasurements = that.metrics.values().stream().flatMap(Collection::stream);
         return new JobMetrics(Stream.concat(thisMeasurements, thatMeasurements).collect(COLLECTOR));
-    }
-
-    /**
-     * Prints out a multi-line, user friendly version of the content.
-     */
-    public String prettyPrint() {
-        StringBuilder sb = new StringBuilder();
-        for (Entry<String, List<Measurement>> entry : metrics.entrySet()) {
-            sb.append("\n").append(entry.getKey());
-
-            List<Measurement> measurements = entry.getValue();
-            for (Measurement measurement : measurements) {
-                sb.append("\n\t").append(measurement);
-            }
-        }
-        return sb.toString();
     }
 
     @Override
@@ -248,27 +226,22 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         metrics.entrySet().stream()
-                .sorted(Comparator.comparing(Entry::getKey))
-                .forEach(mainEntry -> {
-                    sb.append(mainEntry.getKey()).append(":\n");
-                    mainEntry.getValue().stream()
-                            .collect(
-                                    groupingBy(m -> {
-                                                String vertex = m.getTag(MetricTags.VERTEX);
-                                                return vertex == null ? "" : vertex;
-                                            }
-                                    )
-                            )
-                            .entrySet().stream()
-                            .sorted(Comparator.comparing(Map.Entry::getKey))
-                            .forEach(
-                                    e -> {
-                                        String vertexName = e.getKey();
-                                        sb.append("  ").append(vertexName).append(":\n");
-                                        e.getValue().forEach(m -> sb.append("    ").append(m).append("\n"));
-                                    }
-                            );
-                });
+            .sorted(Comparator.comparing(Entry::getKey))
+            .forEach(mainEntry -> {
+                sb.append(mainEntry.getKey()).append(":\n");
+                mainEntry.getValue().stream()
+                    .collect(groupingBy(m -> {
+                        String vertex = m.getTag(MetricTags.VERTEX);
+                        return vertex == null ? "" : vertex;
+                    }))
+                    .entrySet().stream()
+                    .sorted(Comparator.comparing(Map.Entry::getKey))
+                    .forEach(e -> {
+                        String vertexName = e.getKey();
+                        sb.append("  ").append(vertexName).append(":\n");
+                        e.getValue().forEach(m -> sb.append("    ").append(m).append("\n"));
+                    });
+            });
         return sb.toString();
     }
 }
