@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
@@ -70,6 +71,7 @@ import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -78,7 +80,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
@@ -366,7 +367,7 @@ public class JobCoordinationService {
                 return jobResult.getJobStatus();
             }
 
-            // check if there a master context for running job
+            // check if there is a master context for running job
             MasterContext currentMasterContext = masterContexts.get(jobId);
             if (currentMasterContext != null) {
                 JobStatus jobStatus = currentMasterContext.jobStatus();
@@ -390,6 +391,50 @@ public class JobCoordinationService {
                 throw new JobNotFoundException(jobId);
             }
         });
+    }
+
+    /**
+     * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
+     * if the requested job is not found.
+     */
+    public CompletableFuture<JobMetrics> getJobMetrics(long jobId) {
+        CompletableFuture<JobMetrics> cf = new CompletableFuture<>();
+        submitToCoordinatorThread(
+                () -> {
+                    // first check if there is a job result present.
+                    // this map is updated first during completion.
+                    JobResult jobResult = jobRepository.getJobResult(jobId);
+                    if (jobResult != null) {
+                        cf.complete(jobResult.getJobMetrics());
+                        return;
+                    }
+
+                    // check if there is a master context for the running job
+                    MasterContext mc = masterContexts.get(jobId);
+                    if (mc != null) {
+                        mc.jobContext().collectMetrics(cf);
+                        return;
+                    }
+
+                    // no master context found, job might be just submitted
+                    JobExecutionRecord jobExecutionRecord = jobRepository.getJobExecutionRecord(jobId);
+                    if (jobExecutionRecord != null) {
+                        cf.complete(JobMetrics.empty());
+                        return;
+                    } else {
+                        // no job record found, but check job results again
+                        // since job might have been completed meanwhile.
+                        jobResult = jobRepository.getJobResult(jobId);
+                        if (jobResult != null) {
+                            cf.complete(jobResult.getJobMetrics());
+                            return;
+                        }
+                    }
+
+                    cf.completeExceptionally(new JobNotFoundException(jobId));
+                }
+        );
+        return cf;
     }
 
     /**
@@ -520,7 +565,7 @@ public class JobCoordinationService {
      * causes the method to return {@code false}.
      */
     private boolean allMembersHaveSameState(ClusterState clusterState) {
-        // TODO remove once the issue is fixed on the imdg side
+        // TODO remove once the issue is fixed on the IMDG side
         try {
             Set<Member> members = nodeEngine.getClusterService().getMembers();
             List<Future<ClusterMetadata>> futures =
@@ -593,8 +638,9 @@ public class JobCoordinationService {
             // the order of operations is important.
 
             long jobId = masterContext.jobId();
+            JobMetrics jobMetrics = masterContext.jobContext().jobMetrics();
             String coordinator = nodeEngine.getNode().getThisUuid();
-            jobRepository.completeJob(jobId, coordinator, completionTime, error);
+            jobRepository.completeJob(jobId, jobMetrics, coordinator, completionTime, error);
             if (masterContexts.remove(masterContext.jobId(), masterContext)) {
                 logger.fine(masterContext.jobIdString() + " is completed");
             } else {

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
@@ -30,6 +31,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -168,7 +170,7 @@ class MasterSnapshotContext {
     }
 
     private void onSnapshotCompleted(
-            Collection<Object> responses,
+            Collection<Map.Entry<MemberInfo, Object>> responses,
             long executionId,
             long snapshotId,
             String snapshotMapName,
@@ -180,8 +182,9 @@ class MasterSnapshotContext {
         // We only wait for snapshot completion if the job completed with a terminal snapshot and the job
         // was successful.
         SnapshotOperationResult mergedResult = new SnapshotOperationResult();
-        for (Object response : responses) {
+        for (Map.Entry<MemberInfo, Object> entry : responses) {
             // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
+            Object response = entry.getValue();
             if (response instanceof Throwable) {
                 response = new SnapshotOperationResult(0, 0, 0, (Throwable) response);
             }

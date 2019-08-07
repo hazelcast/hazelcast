@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.jet.Job;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -139,8 +140,11 @@ public class MetricsConfig {
 
     /**
      * Sets the metrics collection interval in seconds. The same interval is
-     * used for collection for Management Center and for JMX publisher. By default,
-     * metrics are collected every 5 seconds.
+     * used for Management Center, for JMX and for metrics returned by {@link
+     * Job#getMetrics}.
+     * <p>
+     * By default, metrics are collected every {@value
+     * MetricsConfig#DEFAULT_METRICS_COLLECTION_SECONDS} seconds.
      */
     @Nonnull
     public MetricsConfig setCollectionIntervalSeconds(int intervalSeconds) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.metrics.management;
 
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
@@ -38,15 +38,15 @@ public class ReadMetricsOperation extends Operation implements ReadonlyOperation
 
     @Override
     public void beforeRun() {
-        JetMetricsService service = getService();
-        service.getLiveOperationRegistry().register(this);
+        JetService service = getService();
+        service.getMetricsService().getLiveOperationRegistry().register(this);
     }
 
     @Override
     public void run() {
         ILogger logger = getNodeEngine().getLogger(getClass());
-        JetMetricsService service = getService();
-        CompletableFuture<RingbufferSlice<Entry<Long, byte[]>>> future = service.readMetrics(offset);
+        JetService service = getService();
+        CompletableFuture<RingbufferSlice<Entry<Long, byte[]>>> future = service.getMetricsService().readMetrics(offset);
         future.whenComplete(withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? peel(error) : slice)));
     }
 
@@ -62,15 +62,15 @@ public class ReadMetricsOperation extends Operation implements ReadonlyOperation
 
     @Override
     public String getServiceName() {
-        return JetMetricsService.SERVICE_NAME;
+        return JetService.SERVICE_NAME;
     }
 
     private void doSendResponse(Object value) {
         try {
             sendResponse(value);
         } finally {
-            final JetMetricsService service = getService();
-            service.getLiveOperationRegistry().deregister(this);
+            final JetService service = getService();
+            service.getMetricsService().getLiveOperationRegistry().deregister(this);
         }
     }
 }

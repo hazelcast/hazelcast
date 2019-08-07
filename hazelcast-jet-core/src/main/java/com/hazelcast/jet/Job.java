@@ -17,9 +17,11 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
@@ -81,6 +83,32 @@ public interface Job {
      */
     @Nonnull
     JobStatus getStatus();
+
+    /**
+     * Returns a snapshot of the current values of all job-specific metrics.
+     * <p>
+     * While the job is running the metric values are updated periodically
+     * (see {@link MetricsConfig#setCollectionIntervalSeconds}).
+     * <p>
+     * Once a job stops executing (successfully, after a failure, cancellation,
+     * or temporarily while suspended) the metrics will have their most
+     * recent values (i.e. the last metric values from the moment before the
+     * job completed).
+     * <p>
+     * When a job is restarted (or resumed after being previously suspended)
+     * the metrics are reset too, their values will reflect only updates
+     * from the latest execution of the job.
+     * <p>
+     * The method returns empty metrics if metrics collection is {@link
+     * MetricsConfig#setEnabled disabled} or until the first collection takes
+     * place. Also keep in mind that the collections may occur at different times on
+     * each member, metrics from various members aren't from the same instant
+     * of time.
+     *
+     * @since 3.2
+     */
+    @Nonnull
+    JobMetrics getMetrics();
 
     /**
      * Gets the future associated with the job. The returned future is

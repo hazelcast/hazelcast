@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -67,7 +67,7 @@ public class JetReadMetricsMessageTask extends AbstractInvocationMessageTask<Req
 
     @Override
     public String getServiceName() {
-        return JetMetricsService.SERVICE_NAME;
+        return JetService.SERVICE_NAME;
     }
 
     @Override

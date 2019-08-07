@@ -21,23 +21,25 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.config.MetricsConfig;
+import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.jet.impl.LiveOperationRegistry;
 import com.hazelcast.jet.impl.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.jet.impl.metrics.management.ManagementCenterPublisher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,9 +54,7 @@ import static java.util.stream.Collectors.joining;
  * A service to render metrics at regular intervals and store them in a
  * ringbuffer from which the clients can read.
  */
-public class JetMetricsService implements ManagedService, ConfigurableService<MetricsConfig>, LiveOperationsTracker {
-
-    public static final String SERVICE_NAME = "hz:impl:jetMetricsService";
+public class JetMetricsService implements LiveOperationsTracker {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -74,23 +74,27 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
     private List<MetricsPublisher> publishers;
 
-    // pauses the collection service for testing
-    private volatile boolean paused;
-
     public JetMetricsService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
     }
 
-    @Override
-    public void configure(MetricsConfig config) {
-        this.config = config;
+    // apply MetricsConfig to HZ properties
+    // these properties need to be set here so that the metrics get applied from startup
+    public static void applyMetricsConfig(Config hzConfig, MetricsConfig metricsConfig) {
+        if (metricsConfig.isEnabled()) {
+            hzConfig.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
+            if (metricsConfig.isMetricsForDataStructuresEnabled()) {
+                hzConfig.setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
+            }
+        }
     }
 
-    @Override
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        this.publishers = getPublishers();
+    public void init(NodeEngine nodeEngine, JobExecutionService jobExecutionService, MetricsConfig config) {
+        this.config = config;
+
+        this.publishers = getPublishers(nodeEngine, jobExecutionService);
 
         if (publishers.isEmpty()) {
             return;
@@ -102,10 +106,6 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
 
         ProbeRenderer renderer = new PublisherProbeRenderer();
         scheduledFuture = nodeEngine.getExecutionService().scheduleWithRepetition("MetricsPublisher", () -> {
-            if (paused) {
-                logger.fine("Metrics not collected, service is paused.");
-                return;
-            }
             this.nodeEngine.getMetricsRegistry().render(renderer);
             for (MetricsPublisher publisher : publishers) {
                 try {
@@ -158,12 +158,10 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
         }
     }
 
-    @Override
     public void reset() {
     }
 
-    @Override
-    public void shutdown(boolean terminate) {
+    public void shutdown() {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
         }
@@ -177,18 +175,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
         }
     }
 
-    // apply MetricsConfig to HZ properties
-    // these properties need to be set here so that the metrics get applied from startup
-    public static void applyMetricsConfig(Config hzConfig, MetricsConfig metricsConfig) {
-        if (metricsConfig.isEnabled()) {
-            hzConfig.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
-            if (metricsConfig.isMetricsForDataStructuresEnabled()) {
-                hzConfig.setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
-            }
-        }
-    }
-
-    private List<MetricsPublisher> getPublishers() {
+    private List<MetricsPublisher> getPublishers(NodeEngine nodeEngine, JobExecutionService jobExecutionService) {
         List<MetricsPublisher> publishers = new ArrayList<>();
         if (config.isEnabled()) {
             int journalSize = Math.max(
@@ -202,6 +189,8 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
                 }
             );
             publishers.add(publisher);
+
+            publishers.add(new InternalJobMetricsPublisher(jobExecutionService));
         }
         if (config.isJmxEnabled()) {
             publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
@@ -210,17 +199,43 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     }
 
     /**
-     * Pause collection of metrics for testing
+     * Internal publisher which notifies the {@link JobExecutionService} about
+     * the latest metric values.
      */
-    void pauseCollection() {
-        this.paused = true;
-    }
+    public static class InternalJobMetricsPublisher implements MetricsPublisher {
 
-    /**
-     * Resume collection of metrics for testing
-     */
-    void resumeCollection() {
-        this.paused = false;
+        private final JobExecutionService jobExecutionService;
+        private final Map<Long, Map<String, Long>> metrics = new HashMap<>();
+
+        InternalJobMetricsPublisher(@Nonnull JobExecutionService jobExecutionService) {
+            Objects.requireNonNull(jobExecutionService, "jobExecutionService");
+            this.jobExecutionService = jobExecutionService;
+        }
+
+        @Override
+        public void publishLong(String name, long value) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+            if (executionId != null) {
+                metrics.computeIfAbsent(executionId, x -> new HashMap<>())
+                        .put(name, value);
+            }
+        }
+
+        @Override
+        public void publishDouble(String name, double value) {
+            publishLong(name, JobMetricsUtil.toLongMetricValue(value));
+        }
+
+        @Override
+        public void whenComplete() {
+            jobExecutionService.updateMetrics(System.currentTimeMillis(), metrics);
+            metrics.clear();
+        }
+
+        @Override
+        public String name() {
+            return "Internal Publisher";
+        }
     }
 
     /**

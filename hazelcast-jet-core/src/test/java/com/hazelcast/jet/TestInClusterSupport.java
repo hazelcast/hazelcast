@@ -48,11 +48,11 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
     protected static final int MEMBER_COUNT = 2;
 
-    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    protected static JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private static JetInstance[] allJetInstances;
 
     protected static JetInstance member;
-    private static JetInstance client;
+    protected static JetInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
@@ -68,6 +68,11 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     @BeforeClass
     public static void setupCluster() {
+        member = createCluster(MEMBER_COUNT, prepareConfig());
+        client = factory.newClient();
+    }
+
+    protected static JetConfig prepareConfig() {
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
@@ -79,8 +84,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hzConfig.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
         hzConfig.getCacheEventJournalConfig(JOURNALED_CACHE_PREFIX + '*').setEnabled(true);
-        member = createCluster(MEMBER_COUNT, config);
-        client = factory.newClient();
+        return config;
     }
 
     @AfterClass

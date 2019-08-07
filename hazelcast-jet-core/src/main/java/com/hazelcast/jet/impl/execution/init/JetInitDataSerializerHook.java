@@ -33,9 +33,11 @@ import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
+import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
@@ -95,6 +97,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int CLUSTER_METADATA = 36;
     public static final int GET_CLUSTER_METADATA_OP = 37;
     public static final int AGGREGATE_OP_AGGREGATOR = 38;
+    public static final int GET_JOB_METRICS_OP = 39;
+    public static final int GET_LOCAL_JOB_METRICS_OP = 40;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -185,6 +189,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetClusterMetadataOperation();
                 case AGGREGATE_OP_AGGREGATOR:
                     return new AggregateOpAggregator<>();
+                case GET_JOB_METRICS_OP:
+                    return new GetJobMetricsOperation();
+                case GET_LOCAL_JOB_METRICS_OP:
+                    return new GetLocalJobMetricsOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

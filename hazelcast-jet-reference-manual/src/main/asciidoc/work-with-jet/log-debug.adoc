@@ -123,8 +123,9 @@ or using `JetConfig` object:
 
 [source]
 ----
-include::{javasource}/integration/JmxIntegration.java[tag=s1]
+include::{javasource}/integration/Metrics.java[tag=s1]
 ----
+See {jet-javadoc}/config/MetricsConfig.html[MetricsConfig API docs] for available methods.
 
 === Exposed JMX MBeans
 
@@ -218,5 +219,39 @@ available and are observable as MBeans under the node
 `com.hazelcast/Metrics/<instanceName>/`.
 
 For further information on the IMDG metrics pleaso consult the
-{hz-refman}[Hazelcast IMDG Reference Manual]
-.
+{hz-refman}[Hazelcast IMDG Reference Manual].
+
+=== Job Metrics
+Since Jet 3.2 there is an alternative to JMX for monitoring metrics, albeit only
+the job-specific ones. `Job` objects have a `getMetrics()` method, which
+returns `JobMetrics` instances and those contain the latest known metric values
+for their source jobs.
+
+This functionality has been developed primarily for giving access to metrics of
+finished jobs, but can in fact be used for jobs with any {jet-javadoc}/core/JobStatus.html[status].
+
+While the job is running the metric values are updated periodically (see
+{jet-javadoc}/config/MetricsConfig.html#setCollectionIntervalSeconds-int-[MetricsConfig.setCollectionIntervalSeconds]).
+
+Once a job stops executing (successfully, after a failure, cancellation,
+or temporarily while suspended) the metrics will have their most
+recent values (i.e. the last metric values from the moment before the
+job completed).
+
+When a job is restarted (or resumed after being previously suspended) the metrics
+are reset too, their values will reflect only updates from the latest execution of the job.
+
+The method returns empty metrics if metrics collection is disabled  or until the
+first collection takes place. Also keep in mind that the collections may occur at
+different times on each member, metrics from various members aren't from the same
+instant of time.
+
+For details on how to use and filter the metric values provided by `JobMetrics` consult
+the {jet-javadoc}/core/metrics/JobMetrics.html[API docs]. A simple example for
+computing the number of data items emitted by a certain vertex (let's call it `filter`),
+excluding saved snapshots, would look like this:
+
+[source]
+----
+include::{javasource}/integration/Metrics.java[tag=s2]
+----

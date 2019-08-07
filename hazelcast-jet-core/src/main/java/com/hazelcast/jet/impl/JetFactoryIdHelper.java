@@ -37,6 +37,8 @@ public final class JetFactoryIdHelper {
     public static final String JET_CONFIG_DS_FACTORY = "hazelcast.serialization.ds.jet.config";
     public static final int JET_CONFIG_DS_FACTORY_ID = -10004;
 
+    public static final String JET_JOB_METRICS_DS_FACTORY = "hazelcast.serialization.ds.jet.job_metrics";
+    public static final int JET_JOB_METRICS_DS_FACTORY_ID = -10005;
 
     private JetFactoryIdHelper() {
     }

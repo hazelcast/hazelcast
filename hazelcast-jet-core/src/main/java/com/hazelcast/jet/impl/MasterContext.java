@@ -22,7 +22,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -41,6 +40,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -191,6 +191,7 @@ public class MasterContext {
     void setExecutionPlanMap(Map<MemberInfo, ExecutionPlan> executionPlans) {
         executionPlanMap = executionPlans;
     }
+
     void updateQuorumSize(int newQuorumSize) {
         // This method can be called in parallel if multiple members are added. We don't synchronize here,
         // but the worst that can happen is that we write the JobRecord out unnecessarily.
@@ -215,65 +216,68 @@ public class MasterContext {
     }
 
     /**
-     * @param completionCallback a consumer that will receive a list of
-     *                           responses, one for each member, after all have
-     *                           been received. The value will be either the
-     *                           response (including a null response) or an
-     *                           exception thrown from the operation; size will
-     *                           be equal to participant count
-     * @param errorCallback A callback that will be called after each a
-     *                     failure of each individual operation
+     * @param completionCallback      a consumer that will receive a collection
+     *                                of member-response pairs, one for each
+     *                                member, after all have been received. The
+     *                                response value will be either the response
+     *                                (including a null response) or an
+     *                                exception thrown from the operation (the
+     *                                pairs themselves will never be null); size
+     *                                will be equal to participant count
+     * @param errorCallback           A callback that will be called after each
+     *                                failure of each individual operation
      * @param retryOnTimeoutException if true, operations that threw {@link
-     *      com.hazelcast.core.OperationTimeoutException} will be retried
+     *                                com.hazelcast.core.OperationTimeoutException}
+     *                                will be retried
      */
     void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
-            @Nullable Consumer<Collection<Object>> completionCallback,
+            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
             boolean retryOnTimeoutException
     ) {
-        ConcurrentMap<Address, Object> responses = new ConcurrentHashMap<>();
+        ConcurrentMap<MemberInfo, Object> responses = new ConcurrentHashMap<>();
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
         for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
-            Address address = entry.getKey().getAddress();
+            MemberInfo memberInfo = entry.getKey();
             Operation op = operationCtor.apply(entry.getValue());
-            invokeOnParticipant(address, op, completionCallback, errorCallback, retryOnTimeoutException, responses,
+            invokeOnParticipant(memberInfo, op, completionCallback, errorCallback, retryOnTimeoutException, responses,
                     remainingCount);
         }
     }
 
     private void invokeOnParticipant(
-            Address address,
+            MemberInfo memberInfo,
             Operation op,
-            @Nullable Consumer<Collection<Object>> completionCallback,
+            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
             boolean retryOnTimeoutException,
-            ConcurrentMap<Address, Object> collectedResponses,
+            ConcurrentMap<MemberInfo, Object> collectedResponses,
             AtomicInteger remainingCount
     ) {
         InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                                                             .createInvocationBuilder(JetService.SERVICE_NAME, op, address)
-                                                             .invoke();
+                .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                .invoke();
 
         future.andThen(callbackOf((r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
             if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
                 logger.warning("Retrying " + op.getClass().getSimpleName() + " that failed with "
                         + OperationTimeoutException.class.getSimpleName() + " in " + jobIdString());
-                invokeOnParticipant(address, op, completionCallback, errorCallback, retryOnTimeoutException,
+                invokeOnParticipant(memberInfo, op, completionCallback, errorCallback, retryOnTimeoutException,
                         collectedResponses, remainingCount);
                 return;
             }
             if (errorCallback != null && throwable != null) {
                 errorCallback.accept(throwable);
             }
-            Object oldResponse = collectedResponses.put(address, response);
+            Object oldResponse = collectedResponses.put(memberInfo, response);
             assert oldResponse == null :
-                    "Duplicate response for " + address + ". Old=" + oldResponse + ", new=" + response;
+                    "Duplicate response for " + memberInfo.getAddress() + ". Old=" + oldResponse + ", new=" + response;
             if (remainingCount.decrementAndGet() == 0 && completionCallback != null) {
-                completionCallback.accept(collectedResponses.values().stream()
-                                                            .map(o -> o == NULL_OBJECT ? null : o)
-                                                            .collect(Collectors.toList()));
+                completionCallback.accept(collectedResponses.entrySet().stream()
+                        .map(e -> e.getValue() == NULL_OBJECT ? entry(e.getKey(), null) : e)
+                        .collect(Collectors.toList()));
             }
         }));
     }

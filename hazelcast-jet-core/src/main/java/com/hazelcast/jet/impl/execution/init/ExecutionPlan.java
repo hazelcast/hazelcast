@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
@@ -75,6 +76,10 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_BYTES_IN;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_BYTES_OUT;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_ITEMS_IN;
+import static com.hazelcast.jet.core.metrics.MetricNames.DISTRIBUTED_ITEMS_OUT;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
@@ -190,23 +195,23 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ProbeBuilder processorProbeBuilder = null;
                 if (registerMetrics) {
                     probeBuilder = this.nodeEngine.getMetricsRegistry().newProbeBuilder()
-                                                               .withTag("module", "jet")
-                                                               .withTag("job", idToString(jobId))
-                                                               .withTag("exec", idToString(executionId))
-                                                               .withTag("vertex", vertex.name());
+                                                               .withTag(MetricTags.MODULE, "jet")
+                                                               .withTag(MetricTags.JOB, idToString(jobId))
+                                                               .withTag(MetricTags.EXECUTION, idToString(executionId))
+                                                               .withTag(MetricTags.VERTEX, vertex.name());
                     // ignore vertices which are only used for snapshot restore and do not
                     // consider snapshot restore edges for determining source tag
                     if (vertex.inboundEdges().stream().allMatch(EdgeDef::isSnapshotRestoreEdge)
                         && !vertex.isSnapshotVertex()) {
-                        probeBuilder = probeBuilder.withTag("source", "true");
+                        probeBuilder = probeBuilder.withTag(MetricTags.SOURCE, "true");
                     }
                     if (vertex.outboundEdges().size() == 0) {
-                        probeBuilder = probeBuilder.withTag("sink", "true");
+                        probeBuilder = probeBuilder.withTag(MetricTags.SINK, "true");
                     }
                     processorProbeBuilder = probeBuilder
-                        .withTag("proc", String.valueOf(globalProcessorIndex));
+                        .withTag(MetricTags.PROCESSOR, String.valueOf(globalProcessorIndex));
                     processorProbeBuilder
-                        .withTag("procType", processor.getClass().getSimpleName())
+                        .withTag(MetricTags.PROCESSOR_TYPE, processor.getClass().getSimpleName())
                         .scanAndRegister(processor);
                 }
 
@@ -375,7 +380,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (EdgeDef edge : srcVertex.outboundEdges()) {
             ProbeBuilder builder = null;
             if (probeBuilder != null) {
-                builder = probeBuilder.withTag("ordinal", String.valueOf(edge.sourceOrdinal()));
+                builder = probeBuilder.withTag(MetricTags.ORDINAL, String.valueOf(edge.sourceOrdinal()));
             }
             Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap = null;
             if (edge.isDistributed()) {
@@ -426,9 +431,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             // and don't use the reference to source, but we use the source to deregister the metrics when the job
             // finishes.
             if (probeBuilder != null && firstTasklet != null) {
-                probeBuilder.register(firstTasklet, "distributedBytesOut", ProbeLevel.INFO, ProbeUnit.BYTES,
+                probeBuilder.register(firstTasklet, DISTRIBUTED_BYTES_OUT, ProbeLevel.INFO, ProbeUnit.BYTES,
                         addCountersProbeFunction(bytesCounters));
-                probeBuilder.register(firstTasklet, "distributedItemsOut", ProbeLevel.INFO, ProbeUnit.BYTES,
+                probeBuilder.register(firstTasklet, DISTRIBUTED_ITEMS_OUT, ProbeLevel.INFO, ProbeUnit.BYTES,
                         addCountersProbeFunction(itemsCounters));
             }
             return addrToConveyor;
@@ -582,9 +587,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            // We register the metrics to the first tasklet. The metrics itself aggregate counters from
                            // all tasklets and don't use the reference to source, but we use the source to deregister
                            // the metrics when the job finishes.
-                           probeBuilder.register(firstTasklet, "distributedItemsIn", ProbeLevel.INFO, ProbeUnit.COUNT,
+                           probeBuilder.register(firstTasklet, DISTRIBUTED_ITEMS_IN, ProbeLevel.INFO, ProbeUnit.COUNT,
                                    addCountersProbeFunction(itemCounters));
-                           probeBuilder.register(firstTasklet, "distributedBytesIn", ProbeLevel.INFO, ProbeUnit.COUNT,
+                           probeBuilder.register(firstTasklet, DISTRIBUTED_BYTES_IN, ProbeLevel.INFO, ProbeUnit.COUNT,
                                    addCountersProbeFunction(bytesCounters));
                        }
                        return addrToTasklet;

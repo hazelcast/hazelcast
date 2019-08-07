@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.metrics.management;
 
+import com.hazelcast.jet.impl.metrics.JetMetricsDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -120,7 +120,8 @@ public class ConcurrentArrayRingbuffer<E> {
         return (int) (sequence % ringItems.length);
     }
 
-    public static final class RingbufferSlice<E> implements Serializable, IdentifiedDataSerializable {
+    public static final class RingbufferSlice<E> implements IdentifiedDataSerializable {
+
         // we use Object[] (instead of E[]) because jet contains only serializer for Object[], not for
         // subtypes.
         private Object[] elements;

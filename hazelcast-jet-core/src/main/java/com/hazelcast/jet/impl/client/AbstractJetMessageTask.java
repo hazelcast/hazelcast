@@ -71,6 +71,10 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
         return nodeEngine.getSerializationService().toObject(data);
     }
 
+    protected <V> Data toData(V v) {
+        return nodeEngine.getSerializationService().toData(v);
+    }
+
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
         return nodeEngine.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,

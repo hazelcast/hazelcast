@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -69,6 +71,18 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[parameters.response];
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Nonnull @Override
+    public JobMetrics getMetrics() {
+        ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
+        try {
+            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
+            return serializationService().toObject(parameters.response);
         } catch (Exception e) {
             throw rethrow(e);
         }

@@ -25,9 +25,10 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.core.JobNotFoundException;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.core.JetProperties;
+import com.hazelcast.jet.core.JobNotFoundException;
+import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -269,7 +270,7 @@ public class JobRepository {
      * @throws JobNotFoundException if the JobRecord is not found
      * @throws IllegalStateException if the JobResult is already present
      */
-    void completeJob(long jobId, String coordinator, long completionTime, Throwable error) {
+    void completeJob(long jobId, JobMetrics terminalMetrics, String coordinator, long completionTime, Throwable error) {
         JobRecord jobRecord = getJobRecord(jobId);
         if (jobRecord == null) {
             throw new JobNotFoundException(jobId);
@@ -277,7 +278,7 @@ public class JobRepository {
 
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
+        JobResult jobResult = new JobResult(jobId, terminalMetrics, config, coordinator, creationTime, completionTime,
                 error != null ? error.toString() : null);
 
         JobResult prev = jobResults.putIfAbsent(jobId, jobResult);

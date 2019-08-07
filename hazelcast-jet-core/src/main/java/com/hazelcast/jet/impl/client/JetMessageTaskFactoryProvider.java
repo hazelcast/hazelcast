@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
@@ -54,6 +55,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories[JetSubmitJobCodec.RequestParameters.TYPE.id()] = toFactory(JetSubmitJobMessageTask::new);
         factories[JetTerminateJobCodec.RequestParameters.TYPE.id()] = toFactory(JetTerminateJobMessageTask::new);
         factories[JetGetJobStatusCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobStatusMessageTask::new);
+        factories[JetGetJobMetricsCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobMetricsMessageTask::new);
         factories[JetGetJobIdsCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobIdsMessageTask::new);
         factories[JetJoinSubmittedJobCodec.RequestParameters.TYPE.id()] = toFactory(JetJoinSubmittedJobMessageTask::new);
         factories[JetGetJobIdsByNameCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobIdsByNameMessageTask::new);

@@ -35,7 +35,6 @@ import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetNodeContext;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
@@ -185,12 +184,7 @@ public final class Jet {
                         .setEnabled(false)
                         .setName(JetService.SERVICE_NAME)
                         .setClassName(JetService.class.getName())
-                        .setConfigObject(jetConfig))
-                .addServiceConfig(new ServiceConfig()
-                        .setEnabled(true)
-                        .setName(JetMetricsService.SERVICE_NAME)
-                        .setClassName(JetMetricsService.class.getName())
-                        .setConfigObject(jetConfig.getMetricsConfig()));
+                        .setConfigObject(jetConfig));
 
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())

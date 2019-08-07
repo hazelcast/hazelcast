@@ -14,18 +14,9 @@
  * limitations under the License.
  */
 
-package integration;
-
-import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.MetricsConfig;
-
-public class JmxIntegration {
-
-    static void s1() {
-        //tag::s1[]
-        JetConfig jetConfig = new JetConfig();
-        // use set-methods on this object
-        MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
-        //end::s1[]
-    }
-}
+/**
+ * Jet's Job Metric API.
+ *
+ * @since 3.2
+ */
+package com.hazelcast.jet.core.metrics;

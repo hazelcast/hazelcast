@@ -27,6 +27,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
+import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -80,6 +81,7 @@ public class JetService
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
     private JobExecutionService jobExecutionService;
+    private JetMetricsService jetMetricsService;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
 
@@ -104,6 +106,10 @@ public class JetService
         jobRepository = new JobRepository(jetInstance);
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
+
+        jetMetricsService = new JetMetricsService(nodeEngine);
+        jetMetricsService.init(nodeEngine, jobExecutionService, config.getMetricsConfig());
+
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
@@ -163,6 +169,7 @@ public class JetService
             Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
         }
 
+        jetMetricsService.shutdown();
         jobExecutionService.shutdown();
         taskletExecutionService.shutdown();
         taskletExecutionService.awaitWorkerTermination();
@@ -171,6 +178,7 @@ public class JetService
 
     @Override
     public void reset() {
+        jetMetricsService.reset();
         jobExecutionService.reset();
         jobCoordinationService.reset();
     }
@@ -209,6 +217,10 @@ public class JetService
 
     public JobExecutionService getJobExecutionService() {
         return jobExecutionService;
+    }
+
+    public JetMetricsService getMetricsService() {
+        return jetMetricsService;
     }
 
     /**

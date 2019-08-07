@@ -28,7 +28,6 @@ package com.hazelcast.jet;
  * {@link JetInstance}, in order to allow frameworks that make
  * use of reflection and/or dynamic proxies (e.g. Mockito, Spring etc)
  * to operate on {@link JetInstance} when JCache is not on the classpath.
- * </p>
  *
  * @since 3.0
  */
