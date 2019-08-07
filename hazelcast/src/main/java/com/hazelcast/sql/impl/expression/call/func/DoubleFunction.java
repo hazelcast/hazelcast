@@ -10,7 +10,7 @@ import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.TypeUtils;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ public class DoubleFunction extends UniCallExpression<Double> {
     private int operator;
 
     /** Operand accessor. */
-    private transient BaseDataTypeAccessor accessor;
+    private transient Converter accessor;
 
     public DoubleFunction() {
         // No-op.
@@ -43,7 +43,7 @@ public class DoubleFunction extends UniCallExpression<Double> {
         else if (accessor == null)
             accessor = TypeUtils.numericAccessor(operand);
 
-        double res0 = accessor.getDouble(res);
+        double res0 = accessor.asDouble(res);
 
         switch (operator) {
             case CallOperator.COS:

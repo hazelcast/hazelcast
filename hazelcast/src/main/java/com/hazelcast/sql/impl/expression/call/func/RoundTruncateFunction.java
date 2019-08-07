@@ -10,7 +10,7 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -24,10 +24,10 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     private boolean truncate;
 
     /** Value accessor. */
-    private transient BaseDataTypeAccessor valAccessor;
+    private transient Converter valAccessor;
 
     /** Length accessor. */
-    private transient BaseDataTypeAccessor lenAccessor;
+    private transient Converter lenAccessor;
 
     /** Rounding mode. */
     private transient RoundingMode roundingMode;
@@ -104,7 +104,7 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
      * @return Rounded value.
      */
     private Object round(Object val, int len) {
-        BigDecimal res = valAccessor.getDecimal(val);
+        BigDecimal res = valAccessor.asDecimal(val);
 
         if (len == 0)
             res = res.setScale(0, roundingMode);
@@ -164,7 +164,7 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
             }
         }
 
-        return lenAccessor.getInt(len);
+        return lenAccessor.asInt(len);
     }
 
     @Override

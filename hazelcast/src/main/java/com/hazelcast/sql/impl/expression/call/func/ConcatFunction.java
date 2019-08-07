@@ -1,25 +1,22 @@
 package com.hazelcast.sql.impl.expression.call.func;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.BiCallExpression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
-
-import java.util.Locale;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * A function which accepts a string, and return another string.
  */
 public class ConcatFunction extends BiCallExpression<String> {
     /** Accessor of operand 1. */
-    private transient BaseDataTypeAccessor accessor1;
+    private transient Converter accessor1;
 
     /** Accessor of operand 2. */
-    private transient BaseDataTypeAccessor accessor2;
+    private transient Converter accessor2;
 
     public ConcatFunction() {
         // No-op.
@@ -44,13 +41,13 @@ public class ConcatFunction extends BiCallExpression<String> {
             if (op2 == null)
                 return "";
             else
-                return accessor2.getString(op2);
+                return accessor2.asVarchar(op2);
         }
         else {
             if (op2 == null)
-                return accessor1.getString(op1);
+                return accessor1.asVarchar(op1);
             else
-                return accessor1.getString(op1) + accessor2.getString(op2);
+                return accessor1.asVarchar(op1) + accessor2.asVarchar(op2);
         }
     }
 

@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,12 +37,12 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-//    private static final String QUERY = "SELECT __key FROM persons ORDER BY name";
-//    private static final String QUERY = "select height + age from persons order by name";
-    private static final String QUERY = "select 2 + keyStr FROM persons ORDER BY name";
+    private static final String QUERY = "select name + (interval '-15-11' year(3) to month), (interval '155' month(5)) FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
+        Period p = Period.of(10, 4, 31);
+
         // Start several members.
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 

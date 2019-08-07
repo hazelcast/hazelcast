@@ -7,7 +7,7 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class RandomFunction extends UniCallExpression<Double> {
     /** Seed value accessor. */
-    private transient BaseDataTypeAccessor seedAccessor;
+    private transient Converter seedAccessor;
 
     public RandomFunction() {
         // No-op.
@@ -58,7 +58,7 @@ public class RandomFunction extends UniCallExpression<Double> {
                     seedAccessor = seedType.getBaseType().getAccessor();
                 }
 
-                int seedRes = seedAccessor.getInt(seedRes0);
+                int seedRes = seedAccessor.asInt(seedRes0);
 
                 return new Random(seedRes);
             }

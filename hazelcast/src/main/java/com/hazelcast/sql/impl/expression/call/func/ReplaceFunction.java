@@ -7,20 +7,20 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * POSITION(seek IN string FROM integer)}.
  */
 public class ReplaceFunction extends TriCallExpression<String> {
     /** Accessor of operand 1. */
-    private transient BaseDataTypeAccessor accessor1;
+    private transient Converter accessor1;
 
     /** Accessor of operand 2. */
-    private transient BaseDataTypeAccessor accessor2;
+    private transient Converter accessor2;
 
     /** Accessor of operand 3. */
-    private transient BaseDataTypeAccessor accessor3;
+    private transient Converter accessor3;
 
     public ReplaceFunction() {
         // No-op.
@@ -45,7 +45,7 @@ public class ReplaceFunction extends TriCallExpression<String> {
         if (accessor1 == null)
             accessor1 = operand1.getType().getBaseType().getAccessor();
 
-        source = accessor1.getString(op1);
+        source = accessor1.asVarchar(op1);
 
         // Get search operand.
         Object op2 = operand2.eval(ctx, row);
@@ -56,7 +56,7 @@ public class ReplaceFunction extends TriCallExpression<String> {
         if (accessor2 == null)
             accessor2 = operand2.getType().getBaseType().getAccessor();
 
-        search = accessor2.getString(op2);
+        search = accessor2.asVarchar(op2);
 
         if (search.isEmpty())
             throw new HazelcastSqlException(-1, "Invalid operand: search cannot be empty.");
@@ -70,7 +70,7 @@ public class ReplaceFunction extends TriCallExpression<String> {
         if (accessor3 == null)
             accessor3 = operand3.getType().getBaseType().getAccessor();
 
-        replacement = accessor3.getString(op3);
+        replacement = accessor3.asVarchar(op3);
 
         // Process.
         return source.replace(search, replacement);

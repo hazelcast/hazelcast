@@ -3,9 +3,7 @@ package com.hazelcast.sql.impl.type;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
-
-import java.util.function.BiFunction;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class TypeUtils {
     /** Constant: unlimited precision. */
@@ -35,35 +33,38 @@ public class TypeUtils {
     /** Precedence of LATE data type. */
     public static final int PRECEDENCE_LATE = 0;
 
-    /** Precedence of BOOLEAN data type. */
-    public static final int PRECEDENCE_BOOLEAN = 1;
-
-    /** Precedence of BYTE data type. */
-    public static final int PRECEDENCE_BYTE = 2;
-
-    /** Precedence of SHORT data type. */
-    public static final int PRECEDENCE_SHORT = 3;
-
-    /** Precedence of INTEGER data type. */
-    public static final int PRECEDENCE_INTEGER = 4;
-
-    /** Precedence of LONG data type. */
-    public static final int PRECEDENCE_LONG = 5;
-
-    /** Precedence of BIG_INTEGER data type. */
-    public static final int PRECEDENCE_BIG_INTEGER = 6;
-
-    /** Precedence of BIG_DECIMAL data type. */
-    public static final int PRECEDENCE_BIG_DECIMAL = 7;
-
-    /** Precedence of FLOAT data type. */
-    public static final int PRECEDENCE_FLOAT = 8;
-
-    /** Precedence of DOUBLE data type. */
-    public static final int PRECEDENCE_DOUBLE = 9;
-
     /** Precedence of STRING data type. */
     public static final int PRECEDENCE_STRING = 1;
+
+    /** Precedence of BOOLEAN data type. */
+    public static final int PRECEDENCE_BOOLEAN = 2;
+
+    /** Precedence of BYTE data type. */
+    public static final int PRECEDENCE_BYTE = 3;
+
+    /** Precedence of SHORT data type. */
+    public static final int PRECEDENCE_SHORT = 4;
+
+    /** Precedence of INTEGER data type. */
+    public static final int PRECEDENCE_INTEGER = 5;
+
+    /** Precedence of LONG data type. */
+    public static final int PRECEDENCE_LONG = 6;
+
+    /** Precedence of BIG_INTEGER data type. */
+    public static final int PRECEDENCE_BIG_INTEGER = 7;
+
+    /** Precedence of BIG_DECIMAL data type. */
+    public static final int PRECEDENCE_BIG_DECIMAL = 8;
+
+    /** Precedence of FLOAT data type. */
+    public static final int PRECEDENCE_FLOAT = 9;
+
+    /** Precedence of DOUBLE data type. */
+    public static final int PRECEDENCE_DOUBLE = 10;
+
+    /** Precedence of temporal data types. */
+    public static final int PRECEDENCE_TIMESTAMP = 11;
 
     /** Common cached integer data types. */
     private static DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
@@ -117,7 +118,7 @@ public class TypeUtils {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
     }
 
-    public static BaseDataTypeAccessor numericAccessor(Expression expr) {
+    public static Converter numericAccessor(Expression expr) {
         DataType type = expr.getType();
 
         if (!type.isNumeric() && type.getBaseType() != BaseDataType.STRING)
@@ -126,7 +127,7 @@ public class TypeUtils {
         return type.getBaseType().getAccessor();
     }
 
-    public static BaseDataTypeAccessor numericAccessor(Expression expr, int operandPos) {
+    public static Converter numericAccessor(Expression expr, int operandPos) {
         DataType type = expr.getType();
 
         if (!type.isNumeric() && type.getBaseType() != BaseDataType.STRING)
@@ -179,11 +180,8 @@ public class TypeUtils {
             type2 = DataType.DECIMAL;
 
         // Precision is expanded by 1 to handle overflow: 9 + 1 = 10
-        int precision = calculatePrecision(
-            type1.getPrecision(),
-            type2.getPrecision(),
-            false,
-            (p1, p2) -> Math.max(p1, p2) + 1);
+        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED ?
+            PRECISION_UNLIMITED : Math.max(type1.getPrecision(), type2.getPrecision()) + 1;
 
         // We have only unlimited or zero scales.
         int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
@@ -218,14 +216,10 @@ public class TypeUtils {
         if (type2.getBaseType() == BaseDataType.STRING)
             type2 = DataType.DECIMAL;
 
-        // Precision is expanded to accomodate all numbers: 99 * 99 = 9801;
-        int precision = calculatePrecision(
-            type1.getPrecision(),
-            type2.getPrecision(),
-            false,
-            (p1, p2) -> p1 + p2);
+        // Precision is expanded to accommodate all numbers: 99 * 99 = 9801;
+        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED ?
+            PRECISION_UNLIMITED : type1.getPrecision() + type2.getPrecision();
 
-        // We have only unlimited or zero scales.
         int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
 
         if (scale == 0)
@@ -307,31 +301,13 @@ public class TypeUtils {
             return new DataType(BaseDataType.BIG_DECIMAL, precision, 0);
     }
 
-    private static int calculatePrecision(
-        int precision1,
-        int precision2,
-        boolean ignoreUnlimited,
-        BiFunction<Integer, Integer, Integer> func
-    ) {
-        if (!ignoreUnlimited && (precision1 == PRECISION_UNLIMITED || precision2 == PRECISION_UNLIMITED))
-            return PRECISION_UNLIMITED;
-
-        return func.apply(precision1, precision2);
-    }
-
-    private static int calculateScale(
-        int scale1,
-        int scale2,
-        boolean ignoreUnlimited,
-        BiFunction<Integer, Integer, Integer> func
-    ) {
-        if (!ignoreUnlimited && (scale1 == SCALE_UNLIMITED || scale2 == SCALE_UNLIMITED))
-            return SCALE_UNLIMITED;
-
-        return func.apply(scale1, scale2);
-    }
-
-    public static DataType notNull(DataType type) {
+    /**
+     * Return passed data type or {@link DataType#LATE} if the argument is {@code null}.
+     *
+     * @param type Type.
+     * @return Same type or {@link DataType#LATE}.
+     */
+    public static DataType notNullOrLate(DataType type) {
         return type != null ? type : DataType.LATE;
     }
 

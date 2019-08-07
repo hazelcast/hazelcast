@@ -8,11 +8,11 @@ import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class AbsFunction extends UniCallExpressionWithType<Number> {
     /** Accessor. */
-    private transient BaseDataTypeAccessor accessor;
+    private transient Converter accessor;
 
     public AbsFunction() {
         // No-op.
@@ -57,25 +57,25 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
     private Number abs(Object val) {
         switch (resType.getBaseType()) {
             case BYTE:
-                return (byte)Math.abs(accessor.getByte(val));
+                return (byte)Math.abs(accessor.asTinyInt(val));
 
             case SHORT:
-                return (short)Math.abs(accessor.getShort(val));
+                return (short)Math.abs(accessor.asSmallInt(val));
 
             case INTEGER:
-                return Math.abs(accessor.getInt(val));
+                return Math.abs(accessor.asInt(val));
 
             case LONG:
-                return Math.abs(accessor.getLong(val));
+                return Math.abs(accessor.asBigInt(val));
 
             case BIG_DECIMAL:
-                return accessor.getDecimal(val).abs();
+                return accessor.asDecimal(val).abs();
 
             case FLOAT:
-                return Math.abs(accessor.getFloat(val));
+                return Math.abs(accessor.asReal(val));
 
             case DOUBLE:
-                return Math.abs(accessor.getDouble(val));
+                return Math.abs(accessor.asDouble(val));
         }
 
         throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);

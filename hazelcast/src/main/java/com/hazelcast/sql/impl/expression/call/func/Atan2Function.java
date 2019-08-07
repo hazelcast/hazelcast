@@ -7,14 +7,14 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.TypeUtils;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class Atan2Function extends BiCallExpression<Double> {
     /** Accessor for the first argument. */
-    private transient BaseDataTypeAccessor accessor1;
+    private transient Converter accessor1;
 
     /** Accessor for the second argument. */
-    private transient BaseDataTypeAccessor accessor2;
+    private transient Converter accessor2;
 
     public Atan2Function() {
         // No-op.
@@ -40,7 +40,7 @@ public class Atan2Function extends BiCallExpression<Double> {
         else if (accessor1 == null)
             accessor2 = TypeUtils.numericAccessor(operand2, 2);
 
-        return Math.atan2(accessor1.getDouble(op1), accessor2.getDouble(op2));
+        return Math.atan2(accessor1.asDouble(op1), accessor2.asDouble(op2));
     }
 
     @Override

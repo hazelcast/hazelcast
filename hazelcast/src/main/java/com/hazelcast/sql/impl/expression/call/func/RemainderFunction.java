@@ -9,7 +9,7 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.TypeUtils;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.math.BigDecimal;
 
@@ -18,10 +18,10 @@ import java.math.BigDecimal;
  */
 public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
     /** Accessor for the first argument. */
-    private transient BaseDataTypeAccessor accessor1;
+    private transient Converter accessor1;
 
     /** Accessor for the second argument. */
-    private transient BaseDataTypeAccessor accessor2;
+    private transient Converter accessor2;
 
     public RemainderFunction() {
         // No-op.
@@ -65,32 +65,32 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
     private static Object doDivide(
         Object op1,
         Object op2,
-        BaseDataTypeAccessor accessor1,
-        BaseDataTypeAccessor accessor2,
+        Converter accessor1,
+        Converter accessor2,
         DataType resType
     ) {
         try {
             switch (resType.getBaseType()) {
                 case BYTE:
-                    return (byte)(accessor1.getByte(op1) % accessor2.getByte(op2));
+                    return (byte)(accessor1.asTinyInt(op1) % accessor2.asTinyInt(op2));
 
                 case SHORT:
-                    return (short)(accessor1.getShort(op1) % accessor2.getShort(op2));
+                    return (short)(accessor1.asSmallInt(op1) % accessor2.asSmallInt(op2));
 
                 case INTEGER:
-                    return accessor1.getInt(op1) % accessor2.getInt(op2);
+                    return accessor1.asInt(op1) % accessor2.asInt(op2);
 
                 case LONG:
-                    return accessor1.getLong(op1) % accessor2.getLong(op2);
+                    return accessor1.asBigInt(op1) % accessor2.asBigInt(op2);
 
                 case BIG_DECIMAL:
-                    BigDecimal op1Decimal = accessor1.getDecimal(op1);
-                    BigDecimal op2Decimal = accessor2.getDecimal(op2);
+                    BigDecimal op1Decimal = accessor1.asDecimal(op1);
+                    BigDecimal op2Decimal = accessor2.asDecimal(op2);
 
                     return op1Decimal.remainder(op2Decimal);
 
                 case FLOAT: {
-                    float res = accessor1.getFloat(op1) % accessor2.getFloat(op2);
+                    float res = accessor1.asReal(op1) % accessor2.asReal(op2);
 
                     if (Float.isInfinite(res))
                         throw new HazelcastSqlException(-1, "Division by zero.");
@@ -99,7 +99,7 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
                 }
 
                 case DOUBLE: {
-                    double res = accessor1.getDouble(op1) % accessor2.getDouble(op2);
+                    double res = accessor1.asDouble(op1) % accessor2.asDouble(op2);
 
                     if (Double.isInfinite(res))
                         throw new HazelcastSqlException(-1, "Division by zero.");

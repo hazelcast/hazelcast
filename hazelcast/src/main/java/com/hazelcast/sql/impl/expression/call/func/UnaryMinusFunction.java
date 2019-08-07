@@ -9,7 +9,7 @@ import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.TypeUtils;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.math.BigDecimal;
 
@@ -18,7 +18,7 @@ import java.math.BigDecimal;
  */
 public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     /** Accessor for the argument. */
-    private transient BaseDataTypeAccessor accessor;
+    private transient Converter accessor;
 
     public UnaryMinusFunction() {
         // No-op.
@@ -48,30 +48,30 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object doMinus(Object op, BaseDataTypeAccessor accessor, DataType resType) {
+    private static Object doMinus(Object op, Converter accessor, DataType resType) {
         switch (resType.getBaseType()) {
             case BYTE:
-                return (byte)(-accessor.getByte(op));
+                return (byte)(-accessor.asTinyInt(op));
 
             case SHORT:
-                return (short)(-accessor.getShort(op));
+                return (short)(-accessor.asSmallInt(op));
 
             case INTEGER:
-                return -accessor.getInt(op);
+                return -accessor.asInt(op);
 
             case LONG:
-                return -accessor.getLong(op);
+                return -accessor.asBigInt(op);
 
             case BIG_DECIMAL:
-                BigDecimal opDecimal = accessor.getDecimal(op);
+                BigDecimal opDecimal = accessor.asDecimal(op);
 
                 return opDecimal.negate();
 
             case FLOAT:
-                return -accessor.getFloat(op);
+                return -accessor.asReal(op);
 
             case DOUBLE:
-                return -accessor.getDouble(op);
+                return -accessor.asDouble(op);
 
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);

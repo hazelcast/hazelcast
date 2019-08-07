@@ -9,7 +9,7 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -22,7 +22,7 @@ public class StringRetStringFunction extends UniCallExpression<String> {
     private int operator;
 
     /** Accessor. */
-    private transient BaseDataTypeAccessor accessor;
+    private transient Converter accessor;
 
     public StringRetStringFunction() {
         // No-op.
@@ -44,7 +44,7 @@ public class StringRetStringFunction extends UniCallExpression<String> {
         if (accessor == null)
             accessor = operand.getType().getBaseType().getAccessor();
 
-        String res = accessor.getString(op);
+        String res = accessor.asVarchar(op);
 
         switch (operator) {
             case CallOperator.UPPER:

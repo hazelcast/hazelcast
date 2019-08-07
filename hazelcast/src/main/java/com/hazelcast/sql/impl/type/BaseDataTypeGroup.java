@@ -6,5 +6,7 @@ package com.hazelcast.sql.impl.type;
 public enum BaseDataTypeGroup {
     LATE,
     NUMERIC,
-    STRING
+    STRING,
+    DATETIME,
+    INTERVAL
 }

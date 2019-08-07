@@ -8,7 +8,7 @@ import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 public class SignFunction extends UniCallExpressionWithType<Number> {
     public SignFunction() {
@@ -64,23 +64,23 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
      * @return Absolute value of the target.
      */
     private static Number sign(Object val, BaseDataType type) {
-        BaseDataTypeAccessor accessor = type.getAccessor();
+        Converter accessor = type.getAccessor();
 
         switch (type) {
             case INTEGER:
-                return Integer.signum(accessor.getInt(val));
+                return Integer.signum(accessor.asInt(val));
 
             case LONG:
-                return Long.signum(accessor.getLong(val));
+                return Long.signum(accessor.asBigInt(val));
 
             case BIG_DECIMAL:
-                return accessor.getDecimal(val).signum();
+                return accessor.asDecimal(val).signum();
 
             case FLOAT:
-                return Math.signum(accessor.getFloat(val));
+                return Math.signum(accessor.asReal(val));
 
             case DOUBLE:
-                return Math.signum(accessor.getDouble(val));
+                return Math.signum(accessor.asDouble(val));
         }
 
         throw new HazelcastSqlException(-1, "Unexpected type: " + type);

@@ -7,20 +7,20 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 /**
  * POSITION(seek IN string FROM integer)}.
  */
 public class PositionFunction extends TriCallExpression<Integer> {
     /** Accessor of operand 1. */
-    private transient BaseDataTypeAccessor accessor1;
+    private transient Converter accessor1;
 
     /** Accessor of operand 2. */
-    private transient BaseDataTypeAccessor accessor2;
+    private transient Converter accessor2;
 
     /** Accessor of operand 3. */
-    private transient BaseDataTypeAccessor accessor3;
+    private transient Converter accessor3;
 
     public PositionFunction() {
         // No-op.
@@ -45,7 +45,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
         if (accessor1 == null)
             accessor1 = operand1.getType().getBaseType().getAccessor();
 
-        seek = accessor1.getString(op1);
+        seek = accessor1.asVarchar(op1);
 
         // Get source operand.
         Object op2 = operand2.eval(ctx, row);
@@ -56,7 +56,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
         if (accessor2 == null)
             accessor2 = operand2.getType().getBaseType().getAccessor();
 
-        source = accessor2.getString(op2);
+        source = accessor2.asVarchar(op2);
 
         // Get "FROM"
         if (operand3 == null)
@@ -76,7 +76,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
                     accessor3 = type.getBaseType().getAccessor();
                 }
 
-                pos = accessor3.getInt(op3);
+                pos = accessor3.asInt(op3);
             }
         }
 

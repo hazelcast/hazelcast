@@ -19,6 +19,6 @@ public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNull(resType);
+        return TypeUtils.notNullOrLate(resType);
     }
 }

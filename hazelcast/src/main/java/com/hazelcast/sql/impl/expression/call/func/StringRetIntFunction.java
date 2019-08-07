@@ -9,10 +9,9 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
-import java.util.Locale;
 
 /**
  * A function which accepts a string, and return an integer.
@@ -22,7 +21,7 @@ public class StringRetIntFunction extends UniCallExpression<Integer> {
     private int operator;
 
     /** Accessor. */
-    private transient BaseDataTypeAccessor accessor;
+    private transient Converter accessor;
 
     public StringRetIntFunction() {
         // No-op.
@@ -44,7 +43,7 @@ public class StringRetIntFunction extends UniCallExpression<Integer> {
         if (accessor == null)
             accessor = operand.getType().getBaseType().getAccessor();
 
-        String res = accessor.getString(op);
+        String res = accessor.asVarchar(op);
 
         switch (operator) {
             case CallOperator.CHAR_LENGTH:

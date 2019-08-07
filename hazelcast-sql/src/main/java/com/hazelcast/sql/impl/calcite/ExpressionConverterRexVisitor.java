@@ -2,6 +2,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlYearMonthInterval;
+import com.hazelcast.sql.SqlYearMonthIntervalType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -111,6 +113,17 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CHAR:
             case VARCHAR:
                 return literal.getValueAs(String.class);
+
+            // TODO: More conversions.
+
+            case INTERVAL_YEAR:
+                return new SqlYearMonthInterval(SqlYearMonthIntervalType.YEAR, literal.getValueAs(Integer.class));
+
+            case INTERVAL_MONTH:
+                return new SqlYearMonthInterval(SqlYearMonthIntervalType.MONTH, literal.getValueAs(Integer.class));
+
+            case INTERVAL_YEAR_MONTH:
+                return new SqlYearMonthInterval(SqlYearMonthIntervalType.YEAR_TO_MONTH, literal.getValueAs(Integer.class));
         }
 
         throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);

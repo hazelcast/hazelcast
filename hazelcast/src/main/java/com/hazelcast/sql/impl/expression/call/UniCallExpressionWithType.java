@@ -21,6 +21,6 @@ public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> 
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNull(resType);
+        return TypeUtils.notNullOrLate(resType);
     }
 }

@@ -1,19 +1,21 @@
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.BigDecimalBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.BigIntegerBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.BooleanBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.ByteBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.DoubleBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.FloatBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.IntegerBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.LongBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.ShortBaseDataTypeAccessor;
-import com.hazelcast.sql.impl.type.accessor.StringBaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.accessor.BigDecimalConverter;
+import com.hazelcast.sql.impl.type.accessor.BigIntegerConverter;
+import com.hazelcast.sql.impl.type.accessor.BooleanConverter;
+import com.hazelcast.sql.impl.type.accessor.ByteConverter;
+import com.hazelcast.sql.impl.type.accessor.DoubleConverter;
+import com.hazelcast.sql.impl.type.accessor.FloatConverter;
+import com.hazelcast.sql.impl.type.accessor.IntegerConverter;
+import com.hazelcast.sql.impl.type.accessor.LongConverter;
+import com.hazelcast.sql.impl.type.accessor.ShortConverter;
+import com.hazelcast.sql.impl.type.accessor.StringConverter;
+import com.hazelcast.sql.impl.type.accessor.TimestampBaseDataTypeAccessor;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Date;
 
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BIG_DECIMAL;
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_BIG_INTEGER;
@@ -26,6 +28,7 @@ import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_LATE;
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_LONG;
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_SHORT;
 import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_STRING;
+import static com.hazelcast.sql.impl.type.TypeUtils.PRECEDENCE_TIMESTAMP;
 
 /**
  * Base data type which is mapped to concrete Java class.
@@ -42,70 +45,77 @@ public enum BaseDataType {
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BOOLEAN,
         Boolean.class,
-        new BooleanBaseDataTypeAccessor()
+        new BooleanConverter()
     ),
 
     BYTE(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BYTE,
         Byte.class,
-        new ByteBaseDataTypeAccessor()
+        new ByteConverter()
     ),
 
     SHORT(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_SHORT,
         Short.class,
-        new ShortBaseDataTypeAccessor()
+        new ShortConverter()
     ),
 
     INTEGER(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_INTEGER,
         Integer.class,
-        new IntegerBaseDataTypeAccessor()
+        new IntegerConverter()
     ),
 
     LONG(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_LONG,
         Long.class,
-        new LongBaseDataTypeAccessor()
+        new LongConverter()
     ),
 
     BIG_INTEGER(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BIG_INTEGER,
         BigInteger.class,
-        new BigIntegerBaseDataTypeAccessor()
+        new BigIntegerConverter()
     ),
 
     BIG_DECIMAL(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_BIG_DECIMAL,
         BigDecimal.class,
-        new BigDecimalBaseDataTypeAccessor()
+        new BigDecimalConverter()
     ),
 
     FLOAT(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_FLOAT,
         Float.class,
-        new FloatBaseDataTypeAccessor()
+        new FloatConverter()
     ),
 
     DOUBLE(
         BaseDataTypeGroup.NUMERIC,
         PRECEDENCE_DOUBLE,
         Double.class,
-        new DoubleBaseDataTypeAccessor()
+        new DoubleConverter()
     ),
 
     STRING(
         BaseDataTypeGroup.STRING,
         PRECEDENCE_STRING,
         String.class,
-        new StringBaseDataTypeAccessor()
+        new StringConverter()
+    ),
+
+    TIMESTAMP(
+        BaseDataTypeGroup.DATETIME,
+        PRECEDENCE_TIMESTAMP,
+        Date.class,
+        new TimestampBaseDataTypeAccessor()
     );
 
     /** Data type group. */
@@ -118,9 +128,9 @@ public enum BaseDataType {
     private final Class clazz;
 
     /** Accessor. */
-    private final BaseDataTypeAccessor accessor;
+    private final Converter accessor;
 
-    private BaseDataType(BaseDataTypeGroup group, int precedence, Class clazz, BaseDataTypeAccessor accessor) {
+    BaseDataType(BaseDataTypeGroup group, int precedence, Class clazz, Converter accessor) {
         this.group = group;
         this.precedence = precedence;
         this.clazz = clazz;
@@ -139,7 +149,7 @@ public enum BaseDataType {
         return clazz;
     }
 
-    public BaseDataTypeAccessor getAccessor() {
+    public Converter getAccessor() {
         return accessor;
     }
 

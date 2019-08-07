@@ -55,7 +55,7 @@ public class ConstantExpression<T> implements Expression<T> {
 
     @Override
     public DataType getType() {
-        return TypeUtils.notNull(type);
+        return TypeUtils.notNullOrLate(type);
     }
 
     @Override

@@ -10,7 +10,7 @@ import com.hazelcast.sql.impl.expression.call.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.BaseDataType;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.BaseDataTypeAccessor;
+import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -68,23 +68,23 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
     }
 
     private static Object floorCeil(Object operand, BaseDataType type, boolean ceil) {
-        BaseDataTypeAccessor accessor = type.getAccessor();
+        Converter accessor = type.getAccessor();
 
         switch (type) {
             case BYTE:
-                return accessor.getByte(operand);
+                return accessor.asTinyInt(operand);
 
             case SHORT:
-                return accessor.getShort(operand);
+                return accessor.asSmallInt(operand);
 
             case INTEGER:
-                return accessor.getInt(operand);
+                return accessor.asInt(operand);
 
             case LONG:
-                return accessor.getLong(operand);
+                return accessor.asBigInt(operand);
 
             case BIG_DECIMAL: {
-                BigDecimal operand0 = accessor.getDecimal(operand);
+                BigDecimal operand0 = accessor.asDecimal(operand);
 
                 RoundingMode roundingMode = ceil ? RoundingMode.CEILING : RoundingMode.FLOOR;
 
@@ -92,7 +92,7 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
             }
 
             case DOUBLE: {
-                double operand0 = accessor.getDouble(operand);
+                double operand0 = accessor.asDouble(operand);
 
                 return ceil ? Math.ceil(operand0) : Math.floor(operand0);
             }
