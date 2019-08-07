@@ -37,11 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 @Generated("76f1e5e87331e87590799b73d4f3c38c")
 public final class ExecutorServiceCancelOnAddressCodec {
-    //hex: 0x090400
-    public static final int REQUEST_MESSAGE_TYPE = 590848;
-    //hex: 0x090401
-    public static final int RESPONSE_MESSAGE_TYPE = 590849;
-    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x0904
+    public static final int REQUEST_MESSAGE_TYPE = 2308;
+    //hex: 0x0065
+    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERRUPT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -55,7 +56,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         /**
          * Unique id for the execution.
          */
-        public java.lang.String uuid;
+        public java.util.UUID uuid;
 
         /**
          * Address of the host to execute the request on.
@@ -68,16 +69,16 @@ public final class ExecutorServiceCancelOnAddressCodec {
         public boolean interrupt;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String uuid, com.hazelcast.nio.Address address, boolean interrupt) {
+    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.nio.Address address, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.CancelOnAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET, interrupt);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, uuid);
         AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
@@ -86,8 +87,8 @@ public final class ExecutorServiceCancelOnAddressCodec {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.interrupt = decodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET);
-        request.uuid = StringCodec.decode(iterator);
         request.address = AddressCodec.decode(iterator);
         return request;
     }
@@ -96,7 +97,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
     public static class ResponseParameters {
 
         /**
-         * True if cancelled successfully, false otherwise.
+         * TODO DOC
          */
         public boolean response;
     }

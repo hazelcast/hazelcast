@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.impl.operations;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,18 +27,19 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public final class CancellationOperation extends Operation implements NamedOperation, MutatingOperation,
         IdentifiedDataSerializable {
 
-    private String uuid;
+    private UUID uuid;
     private boolean interrupt;
     private boolean response;
 
     public CancellationOperation() {
     }
 
-    public CancellationOperation(String uuid, boolean interrupt) {
+    public CancellationOperation(UUID uuid, boolean interrupt) {
         this.uuid = uuid;
         this.interrupt = interrupt;
     }
@@ -66,13 +68,13 @@ public final class CancellationOperation extends Operation implements NamedOpera
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(interrupt);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         interrupt = in.readBoolean();
     }
 

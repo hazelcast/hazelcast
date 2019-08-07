@@ -53,7 +53,7 @@ public class SerializationServiceV1Test {
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUUID(), true);
         operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
 

@@ -17,6 +17,7 @@
 package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,17 +30,18 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 abstract class AbstractCallableTaskOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
 
     protected String name;
-    protected String uuid;
+    protected UUID uuid;
     private Data callableData;
 
     AbstractCallableTaskOperation() {
     }
 
-    AbstractCallableTaskOperation(String name, String uuid, Data callableData) {
+    AbstractCallableTaskOperation(String name, UUID uuid, Data callableData) {
         this.name = name;
         this.uuid = uuid;
         this.callableData = callableData;
@@ -63,14 +65,14 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeData(callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         callableData = in.readData();
     }
 
