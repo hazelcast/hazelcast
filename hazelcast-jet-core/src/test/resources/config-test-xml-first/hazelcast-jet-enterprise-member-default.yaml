@@ -1,0 +1,5 @@
+hazelcast:
+  group:
+    name: enterprise-member-default
+    password: ${enterprise-member-default.pass}
+  instance-name: ${enterprise-member-default.instance.name}
