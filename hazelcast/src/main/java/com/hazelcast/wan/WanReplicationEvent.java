@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 /**
  * Interface for all WAN replication messages
  */
-public interface ReplicationEventObject {
+public interface WanReplicationEvent {
     /**
      * Increments the count for the related event in the {@code counters}
      *

@@ -30,7 +30,7 @@ public interface WanReplicationPublisher {
      *
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(ReplicationEventObject eventObject);
+    void publishReplicationEvent(WanReplicationEvent eventObject);
 
     /**
      * Publish the {@code eventObject} WAN replication event backup. The event
@@ -38,7 +38,7 @@ public interface WanReplicationPublisher {
      *
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(ReplicationEventObject eventObject);
+    void publishReplicationEventBackup(WanReplicationEvent eventObject);
 
     /**
      * Publishes the {@code wanReplicationEvent} on this publisher. This can be
@@ -46,7 +46,7 @@ public interface WanReplicationPublisher {
      *
      * @param wanReplicationEvent the WAN event to publish
      */
-    void republishReplicationEvent(ReplicationEventObject wanReplicationEvent);
+    void republishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
     /**
      * Checks the size of the WAN replication queue and throws an

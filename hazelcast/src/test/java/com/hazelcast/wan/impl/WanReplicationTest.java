@@ -45,7 +45,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -315,8 +315,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
             impl2 = getWanReplicationImpl(instance2);
         }
 
-        final Queue<ReplicationEventObject> eventQueue1 = impl1.eventQueue;
-        final Queue<ReplicationEventObject> eventQueue2 = impl2.eventQueue;
+        final Queue<WanReplicationEvent> eventQueue1 = impl1.eventQueue;
+        final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
         assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
     }
 

@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.io.IOException;
 /**
  * WAN replication object for map update operations.
  */
-public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
+public class MapReplicationUpdate implements WanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster

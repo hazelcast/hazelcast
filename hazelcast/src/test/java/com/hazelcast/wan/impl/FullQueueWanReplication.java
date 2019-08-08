@@ -19,7 +19,7 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 import com.hazelcast.wan.WanReplicationEndpoint;
 
@@ -36,15 +36,15 @@ public class FullQueueWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void publishReplicationEvent(ReplicationEventObject event) {
+    public void publishReplicationEvent(WanReplicationEvent event) {
     }
 
     @Override
-    public void publishReplicationEventBackup(ReplicationEventObject event) {
+    public void publishReplicationEventBackup(WanReplicationEvent event) {
     }
 
     @Override
-    public void republishReplicationEvent(ReplicationEventObject event) {
+    public void republishReplicationEvent(WanReplicationEvent event) {
     }
 
     @Override

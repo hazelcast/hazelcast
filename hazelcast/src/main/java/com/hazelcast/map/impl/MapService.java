@@ -51,7 +51,7 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Collection;
 import java.util.Map;
@@ -174,7 +174,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onReplicationEvent(ReplicationEventObject event, WanAcknowledgeType acknowledgeType) {
+    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
         replicationSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 

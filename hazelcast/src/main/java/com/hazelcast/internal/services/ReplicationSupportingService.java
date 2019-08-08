@@ -17,7 +17,7 @@
 package com.hazelcast.internal.services;
 
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 
 /**
  * An interface that can be implemented by SPI services to give them the
@@ -26,9 +26,12 @@ import com.hazelcast.wan.ReplicationEventObject;
 public interface ReplicationSupportingService {
 
     /**
-     * Processes a WAN replication event
+     * Processes a WAN replication event.
      *
-     * @param event the event
+     * @param event           the event
+     * @param acknowledgeType determines should this method wait for the event to be processed fully
+     *                        or should it return after the event has been dispatched to the
+     *                        appropriate member
      */
-    void onReplicationEvent(ReplicationEventObject event, WanAcknowledgeType acknowledgeType);
+    void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType);
 }

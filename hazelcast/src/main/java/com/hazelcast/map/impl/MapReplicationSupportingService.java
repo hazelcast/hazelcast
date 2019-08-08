@@ -28,7 +28,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 
@@ -49,7 +49,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     @Override
-    public void onReplicationEvent(ReplicationEventObject event, WanAcknowledgeType acknowledgeType) {
+    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
         if (event instanceof MapReplicationUpdate) {
             handleUpdate((MapReplicationUpdate) event);
         } else if (event instanceof MapReplicationRemove) {
