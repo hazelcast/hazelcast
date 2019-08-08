@@ -32,8 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * is supported.
  * <p>
  * The encryption key is expected to be stored at the specified secret path and represented
- * as a single key/value pair under the specified secret path. The key/value pair is
- * expected to be in the following format:
+ * as a single key/value pair in the following format:
  * <pre>
  * name=Base64-encoded-data
  * </pre>

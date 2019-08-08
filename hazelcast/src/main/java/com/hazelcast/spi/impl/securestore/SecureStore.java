@@ -22,7 +22,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * A Secure Store abstraction.
+ * A Secure Store abstraction for interacting with systems that manage symmetric
+ * encryption keys.
  */
 public interface SecureStore extends Disposable {
 
