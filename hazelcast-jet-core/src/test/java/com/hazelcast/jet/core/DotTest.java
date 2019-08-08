@@ -42,10 +42,13 @@ public class DotTest {
     @Test
     public void when_dagToDotString() {
         DAG dag = new DAG();
-        Vertex a = dag.newVertex("a", noopP());
+        Vertex a = dag.newVertex("a", noopP())
+                      .localParallelism(1);
         Vertex b = dag.newVertex("b", noopP());
-        Vertex c = dag.newVertex("c", noopP());
-        Vertex d = dag.newVertex("d", noopP());
+        Vertex c = dag.newVertex("c", noopP())
+                      .localParallelism(1);
+        Vertex d = dag.newVertex("d", noopP())
+                      .localParallelism(1);
 
         dag.edge(from(a, 0).to(c, 0).partitioned(wholeItem()));
         dag.edge(from(a, 1).to(b, 0).broadcast().distributed());
@@ -54,11 +57,13 @@ public class DotTest {
         System.out.println(actual);
         // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
         assertTrue(actual.startsWith("digraph DAG {"));
-        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\"];"));
-        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\"]"));
-        assertTrue(actual.contains("\"d\";"));
+        assertTrue(actual.contains("\"a\" [tooltip=\"local-parallelism=1\"];"));
+        assertTrue(actual.contains("\"b\" [tooltip=\"local-parallelism=default\"];"));
+        assertTrue(actual.contains("\"c\" [tooltip=\"local-parallelism=1\"];"));
+        assertTrue(actual.contains("\"d\" [tooltip=\"local-parallelism=1\"];"));
+        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\", taillabel=0];"));
+        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\", taillabel=1]"));
         assertTrue(actual.endsWith("\n}"));
-        assertEquals(101, actual.length());
     }
 
     @Test
@@ -67,16 +72,16 @@ public class DotTest {
         BatchStage<Entry> source = p.drawFrom(Sources.map("source1"));
 
         source
-                .groupingKey(Entry::getKey)
-                .aggregate(AggregateOperations.counting())
-                .setName("aggregateToCount")
-                .drainTo(Sinks.logger());
+            .groupingKey(Entry::getKey)
+            .aggregate(AggregateOperations.counting())
+            .setName("aggregateToCount")
+            .drainTo(Sinks.logger());
 
         source
-                .groupingKey(Entry::getKey)
-                .aggregate(AggregateOperations.toSet())
-                .setName("aggregateToSet")
-                .drainTo(Sinks.logger());
+            .groupingKey(Entry::getKey)
+            .aggregate(AggregateOperations.toSet())
+            .setName("aggregateToSet")
+            .drainTo(Sinks.logger());
 
         source.filter(alwaysTrue())
               .drainTo(Sinks.logger());
@@ -95,11 +100,12 @@ public class DotTest {
         System.out.println(actualDag);
         // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
         assertTrue(actualDag.startsWith("digraph DAG {"));
+
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                + "\" [label=\"partitioned\"];"));
-        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\";"));
+                + "\" [label=\"partitioned\", taillabel=0];"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\" [taillabel=2];"));
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                + "\" [label=\"partitioned\"];"));
+                + "\" [label=\"partitioned\", taillabel=1];"));
         assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
                 "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
                         + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\"];\n" +
@@ -134,13 +140,15 @@ public class DotTest {
                 "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "}", p.toDotString());
         assertEquals("digraph DAG {\n" +
-                "\t\"mapSource(source1\\\")\" -> \"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                        + "\" [label=\"partitioned\"];\n" +
-                "\tsubgraph cluster_0 {\n" +
-                "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                        + "\" -> \"aggregateToCount\" [label=\"distributed-partitioned\"];\n" +
-                "\t}\n" +
-                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
-                "}", p.toDag().toDotString());
+            "\t\"mapSource(source1\\\")\" [tooltip=\"local-parallelism=2\"];\n" +
+            "\t\"aggregateToCount-prepare\" [tooltip=\"local-parallelism=default\"];\n" +
+            "\t\"aggregateToCount\" [tooltip=\"local-parallelism=default\"];\n" +
+            "\t\"loggerSink\" [tooltip=\"local-parallelism=1\"];\n" +
+            "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\"];\n" +
+            "\tsubgraph cluster_0 {\n" +
+            "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" [label=\"distributed-partitioned\"];\n" +
+            "\t}\n" +
+            "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
+            "}", p.toDag().toDotString());
     }
 }

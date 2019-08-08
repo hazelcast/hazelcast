@@ -113,6 +113,7 @@ public class MasterJobContext {
 
     private final MasterContext mc;
     private final ILogger logger;
+    private final int defaultParallelism;
 
     private volatile long executionStartTime = System.nanoTime();
     private volatile ExecutionFailureCallback executionFailureCallback;
@@ -147,6 +148,8 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
+        this.defaultParallelism = mc.getJetService().getJetInstance().getConfig()
+              .getInstanceConfig().getCooperativeThreadCount();
     }
 
     public CompletableFuture<Void> jobCompletionFuture() {
@@ -183,7 +186,8 @@ public class MasterJobContext {
             }
             DAG dag = dagAndClassloader.f0();
             ClassLoader classLoader = dagAndClassloader.f1();
-            String dotRepresentation = dag.toDotString(); // must call this before rewriteDagWithSnapshotRestore()
+            // must call this before rewriteDagWithSnapshotRestore()
+            String dotRepresentation = dag.toDotString(defaultParallelism);
             long snapshotId = jobExecRec.snapshotId();
             String snapshotName = mc.jobConfig().getInitialSnapshotName();
             String mapName =
