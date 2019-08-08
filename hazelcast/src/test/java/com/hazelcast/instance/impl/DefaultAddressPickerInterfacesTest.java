@@ -43,11 +43,10 @@ import java.util.List;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
-import static com.hazelcast.instance.impl.DefaultAddressPickerInterfacesTest.NetworkInterfaceOptions.builder;
+import static com.hazelcast.instance.impl.NetworkInterfaceMockingOptions.builder;
 import static com.hazelcast.instance.impl.TestUtil.setSystemProperty;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.enumeration;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -339,8 +338,8 @@ public class DefaultAddressPickerInterfacesTest {
     /**
      * Creates a mocked NetworkInterface instance with given configuration.
      */
-    private NetworkInterface createNetworkConfig(NetworkInterfaceOptions.Builder builder) throws IOException {
-        NetworkInterfaceOptions networkConfigOptions = builder.build();
+    private NetworkInterface createNetworkConfig(NetworkInterfaceMockingOptions.Builder builder) throws IOException {
+        NetworkInterfaceMockingOptions networkConfigOptions = builder.build();
         NetworkInterface networkInterface = mock(NetworkInterface.class);
         when(networkInterface.getName()).thenReturn(networkConfigOptions.name);
         when(networkInterface.isUp()).thenReturn(networkConfigOptions.up);
@@ -361,77 +360,4 @@ public class DefaultAddressPickerInterfacesTest {
         return enumeration(inetAddresses);
     }
 
-    /**
-     * Configuration object for {@link NetworkInterface} mocking.
-     */
-    public static class NetworkInterfaceOptions {
-
-        private final String name;
-        private final boolean up;
-        private final boolean loopback;
-        private final boolean virtual;
-        private final String[] addresses;
-
-        private NetworkInterfaceOptions(Builder builder) {
-            this.name = checkNotNull(builder.name);
-            this.up = builder.up;
-            this.loopback = builder.loopback;
-            this.virtual = builder.virtual;
-            this.addresses = checkNotNull(builder.addresses);
-        }
-
-        /**
-         * Creates builder to build {@link NetworkInterfaceOptions}.
-         *
-         * @return created builder
-         */
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        /**
-         * Builder to build {@link NetworkInterfaceOptions}.
-         */
-        @SuppressWarnings("SameParameterValue")
-        public static final class Builder {
-
-            private String name;
-            private boolean up = true;
-            private boolean loopback = false;
-            private boolean virtual = false;
-            private String[] addresses = {};
-
-            private Builder() {
-            }
-
-            Builder withName(String name) {
-                this.name = name;
-                return this;
-            }
-
-            Builder withUp(boolean up) {
-                this.up = up;
-                return this;
-            }
-
-            Builder withLoopback(boolean loopback) {
-                this.loopback = loopback;
-                return this;
-            }
-
-            Builder withVirtual(boolean virtual) {
-                this.virtual = virtual;
-                return this;
-            }
-
-            Builder withAddresses(String... addresses) {
-                this.addresses = addresses;
-                return this;
-            }
-
-            NetworkInterfaceOptions build() {
-                return new NetworkInterfaceOptions(this);
-            }
-        }
-    }
 }
