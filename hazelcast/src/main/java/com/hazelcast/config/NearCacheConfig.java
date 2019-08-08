@@ -96,7 +96,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     public NearCacheConfig(String name) {
-        this.name = name;
+        setName(name);
     }
 
     public NearCacheConfig(NearCacheConfig config) {
