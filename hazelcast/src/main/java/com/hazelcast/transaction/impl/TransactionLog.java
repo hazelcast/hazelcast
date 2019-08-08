@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -47,7 +48,7 @@ public class TransactionLog {
     public TransactionLog() {
     }
 
-    public TransactionLog(List<TransactionLogRecord> transactionLog) {
+    public TransactionLog(Collection<TransactionLogRecord> transactionLog) {
         for (TransactionLogRecord record : transactionLog) {
             add(record);
         }
@@ -65,8 +66,8 @@ public class TransactionLog {
         return recordMap.get(key);
     }
 
-    public List<TransactionLogRecord> getRecordList() {
-        return new ArrayList<>(recordMap.values());
+    public Collection<TransactionLogRecord> getRecords() {
+        return recordMap.values();
     }
 
     public void remove(Object key) {
@@ -102,7 +103,8 @@ public class TransactionLog {
 
     public List<Future> rollback(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        ListIterator<TransactionLogRecord> iterator = getRecordList().listIterator(size());
+        List<TransactionLogRecord> records = new ArrayList<>(recordMap.values());
+        ListIterator<TransactionLogRecord> iterator = records.listIterator(size());
         while (iterator.hasPrevious()) {
             TransactionLogRecord record = iterator.previous();
             Future future = invoke(nodeEngine, record, record.newRollbackOperation());
