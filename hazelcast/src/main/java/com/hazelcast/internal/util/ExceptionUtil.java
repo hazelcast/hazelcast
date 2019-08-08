@@ -34,14 +34,11 @@ public final class ExceptionUtil {
 
     private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
     private static final String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
-    private static final RuntimeExceptionFactory HAZELCAST_EXCEPTION_FACTORY = new RuntimeExceptionFactory() {
-        @Override
-        public RuntimeException create(Throwable throwable, String message) {
-            if (message != null) {
-                return new HazelcastException(message, throwable);
-            } else {
-                return new HazelcastException(throwable);
-            }
+    private static final RuntimeExceptionFactory HAZELCAST_EXCEPTION_FACTORY = (throwable, message) -> {
+        if (message != null) {
+            return new HazelcastException(message, throwable);
+        } else {
+            return new HazelcastException(throwable);
         }
     };
 
@@ -155,7 +152,7 @@ public final class ExceptionUtil {
         }
     }
 
-    private static void rethrowIfError(final Throwable t) {
+    public static void rethrowIfError(final Throwable t) {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);

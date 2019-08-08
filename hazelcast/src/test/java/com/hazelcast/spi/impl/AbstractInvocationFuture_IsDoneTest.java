@@ -72,7 +72,7 @@ public class AbstractInvocationFuture_IsDoneTest extends AbstractInvocationFutur
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(AbstractInvocationFuture.VOID, future.getState());
+                assertNotSame(AbstractInvocationFuture.UNRESOLVED, future.getState());
             }
         });
 

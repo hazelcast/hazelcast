@@ -22,6 +22,7 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.BitSet;
 import java.util.Collection;
@@ -129,7 +130,7 @@ public interface OperationService {
      */
     <E> InternalCompletableFuture<E> invokeOnPartition(Operation op);
 
-    <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
+    <E> InvocationFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 

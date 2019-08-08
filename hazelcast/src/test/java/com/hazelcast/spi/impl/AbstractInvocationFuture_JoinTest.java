@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.impl.AbstractInvocationFuture.VOID;
+import static com.hazelcast.spi.impl.AbstractInvocationFuture.UNRESOLVED;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -124,7 +124,7 @@ public class AbstractInvocationFuture_JoinTest extends AbstractInvocationFuture_
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 

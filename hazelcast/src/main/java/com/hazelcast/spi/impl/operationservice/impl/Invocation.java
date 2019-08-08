@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.client.impl.ClientBackupAwareResponse;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
@@ -40,6 +41,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AbstractInvocationFuture.ExceptionalResult;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -324,7 +326,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
         switch (onException(cause)) {
             case THROW_EXCEPTION:
-                notifyNormalResponse(cause, 0);
+                notifyThrowable(cause, 0);
                 break;
             case RETRY_INVOCATION:
                 if (invokeCount < tryCount) {
@@ -332,7 +334,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     handleRetry(cause);
                 } else {
                     // we can't retry anymore, so lets send the cause to the future.
-                    notifyNormalResponse(cause, 0);
+                    notifyThrowable(cause, 0);
                 }
                 break;
             default:
@@ -353,6 +355,34 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             return;
         }
         notifyResponse(value, expectedBackups);
+    }
+
+    protected void notifyThrowable(Throwable cause, int expectedBackups) {
+        // if a regular response comes and there are backups, we need to wait for the backups
+        // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+
+        if (expectedBackups > backupsAcksReceived) {
+            // so the invocation has backups and since not all backups have completed, we need to wait
+            // (it could be that backups arrive earlier than the response)
+
+            this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
+
+            this.backupsAcksExpected = expectedBackups;
+
+            // it is very important that the response is set after the backupsAcksExpected is set, else the system
+            // can assume the invocation is complete because there is a response and no backups need to respond
+            this.pendingResponse = new ExceptionalResult(cause);
+
+            if (backupsAcksReceived != expectedBackups) {
+                // we are done since not all backups have completed. Therefor we should not notify the future
+                return;
+            }
+        }
+
+        // we are going to notify the future that a response is available; this can happen when:
+        // - we had a regular operation (so no backups we need to wait for) that completed
+        // - we had a backup-aware operation that has completed, but also all its backups have completed
+        completeExceptionally(cause);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -612,8 +642,17 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     // This is an idempotent operation
     // because both invocationRegistry.deregister() and future.complete() are idempotent.
+    @Override
     protected void complete(Object value) {
         future.complete(value);
+        if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
+            context.asyncExecutor.execute(taskDoneCallback);
+        }
+    }
+
+    @Override
+    protected void completeExceptionally(Throwable t) {
+        future.completeExceptionallyInternal(t);
         if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
             context.asyncExecutor.execute(taskDoneCallback);
         }
@@ -652,7 +691,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (context.logger.isFinestEnabled()) {
             context.logger.finest(e);
         }
-        complete(new HazelcastInstanceNotActiveException(e.getMessage()));
+        completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
 
     private void resetAndReInvoke() {

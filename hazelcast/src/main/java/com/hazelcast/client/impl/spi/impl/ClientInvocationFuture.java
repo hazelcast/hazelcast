@@ -39,11 +39,10 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     private final CallIdSequence callIdSequence;
 
     public ClientInvocationFuture(ClientInvocation invocation,
-                                  Executor internalExecutor,
                                   ClientMessage request,
                                   ILogger logger,
                                   CallIdSequence callIdSequence) {
-        super(internalExecutor, logger);
+        super(logger);
         this.request = request;
         this.invocation = invocation;
         this.callIdSequence = callIdSequence;
@@ -55,24 +54,25 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    protected void onInterruptDetected() {
-        complete(new InterruptedException());
-    }
-
-    @Override
     protected TimeoutException newTimeoutException(long timeout, TimeUnit unit) {
         return new TimeoutException();
     }
 
     @Override
-    protected Throwable unwrap(Throwable throwable) {
-        return throwable;
+    protected Throwable unwrap(ExceptionalResult result) {
+        return result.getCause();
+    }
+
+    @Override
+    protected void onInterruptDetected() {
+        completeExceptionallyInternal(new InterruptedException());
     }
 
     @Override
     protected Object resolve(Object value) {
         if (value instanceof Throwable) {
-            return new ExecutionException((Throwable) value);
+            // todo master returns new ExecutionException((Throwable) value)
+            return new ExceptionalResult((Throwable) value);
         }
         return value;
     }
@@ -102,6 +102,9 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
+        if (response instanceof ExceptionalResult) {
+            response = ((ExceptionalResult) response).getCause();
+        }
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {

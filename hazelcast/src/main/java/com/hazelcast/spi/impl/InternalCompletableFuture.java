@@ -40,4 +40,12 @@ public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
      * @return {@code true} if this invocation caused this InternalCompletableFuture to complete, else {@code false}
      */
     boolean complete(Object value);
+
+    /**
+     * Transitional method, just for the purpose of this PR. Will be removed.
+     * @return
+     */
+    default E joinInternal() {
+        return this.join();
+    }
 }

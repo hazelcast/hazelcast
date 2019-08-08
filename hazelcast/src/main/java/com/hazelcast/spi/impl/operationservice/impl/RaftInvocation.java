@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.LocalMemberResetException;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -27,10 +27,10 @@ import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext.MemberCursor;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
@@ -80,9 +80,7 @@ public class RaftInvocation extends Invocation<CPMember> {
 
     @Override
     void notifyNormalResponse(Object value, int expectedBackups) {
-        if (!(value instanceof IndeterminateOperationState) && indeterminateException != null && isRetryable(value)) {
-            value = indeterminateException;
-        }
+        assert !(value instanceof Throwable) : "Throwable value " + value + " not allowed";
 
         super.notifyNormalResponse(value, expectedBackups);
         // TODO [basri] maybe we should update known leader only if the result is not an exception?
@@ -97,6 +95,14 @@ public class RaftInvocation extends Invocation<CPMember> {
             return;
         }
         super.notifyError(error);
+    }
+
+    @Override
+    protected void notifyThrowable(Throwable cause, int expectedBackups) {
+        if (!(cause instanceof IndeterminateOperationState) && indeterminateException != null && isRetryable(cause)) {
+            cause = indeterminateException;
+        }
+        super.notifyThrowable(cause, expectedBackups);
     }
 
     @Override
