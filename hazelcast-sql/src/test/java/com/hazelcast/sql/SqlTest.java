@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select HOUR(birthDateString) FROM persons ORDER BY name";
+    private static final String QUERY = "select LOCALTIME(1), LOCALTIMESTAMP(0), HOUR(birthDateString) FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {

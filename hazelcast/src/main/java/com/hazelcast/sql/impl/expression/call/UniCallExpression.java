@@ -3,8 +3,6 @@ package com.hazelcast.sql.impl.expression.call;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.TypeUtils;
 
 import java.io.IOException;
 

@@ -10,6 +10,21 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 
 public class TemporalUtils {
+    /** Defautl timestamp precision (nanos). */
+    public static final int NANO_PRECISION = 9;
+
+    private static int[] PRECISION_DIVISORS = new int[NANO_PRECISION + 1];
+
+    static {
+        int divisor = 1;
+
+        for (int i = NANO_PRECISION; i >=0 ; i--) {
+            PRECISION_DIVISORS[i] = divisor;
+
+            divisor *= 10;
+        }
+    }
+
     /**
      * Convert provided string to any supported date/time object.
      *
@@ -47,6 +62,12 @@ public class TemporalUtils {
         catch (DateTimeParseException ignore) {
             throw new HazelcastSqlException(-1, "Failed to parse a string to DATE/TIME: " + input);
         }
+    }
+
+    public static int getDivisorForPrecision(int precision) {
+        assert precision >= 0 && precision <= NANO_PRECISION;
+
+        return PRECISION_DIVISORS[precision];
     }
 
     private TemporalUtils() {

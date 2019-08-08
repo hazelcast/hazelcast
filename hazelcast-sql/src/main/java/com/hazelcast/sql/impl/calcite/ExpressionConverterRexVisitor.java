@@ -10,6 +10,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
+import com.hazelcast.sql.impl.expression.call.func.CurrentDateFunction;
+import com.hazelcast.sql.impl.expression.call.func.GetTimestampFunction;
 import com.hazelcast.sql.impl.expression.call.func.DatePartFunction;
 import com.hazelcast.sql.impl.expression.call.func.DatePartUnit;
 import com.hazelcast.sql.impl.expression.call.func.DivideRemainderFunction;
@@ -299,6 +301,14 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
                 return new DatePartFunction(hzOperands.get(1), unit);
 
+            case CallOperator.CURRENT_DATE:
+                return new CurrentDateFunction();
+
+            case CallOperator.CURRENT_TIMESTAMP:
+            case CallOperator.LOCAL_TIMESTAMP:
+            case CallOperator.LOCAL_TIME:
+                return new GetTimestampFunction(hzOperands.isEmpty() ? null : hzOperands.get(0), hzOperator);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -455,6 +465,15 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.ASCII;
                 else if (function == SqlStdOperatorTable.REPLACE)
                     return CallOperator.REPLACE;
+                else if (function == SqlStdOperatorTable.CURRENT_DATE)
+                    return CallOperator.CURRENT_DATE;
+                else if (function == SqlStdOperatorTable.CURRENT_TIMESTAMP)
+                    return CallOperator.CURRENT_TIMESTAMP;
+                else if (function == SqlStdOperatorTable.LOCALTIMESTAMP)
+                    return CallOperator.LOCAL_TIMESTAMP;
+                else if (function == SqlStdOperatorTable.LOCALTIME)
+                    return CallOperator.LOCAL_TIME;
+
             }
 
             default:

@@ -118,6 +118,18 @@ public class CallOperator {
     /** EXTRACT function. */
     public static final int EXTRACT = 201;
 
+    /** CURRENT_DATE function. */
+    public static final int CURRENT_DATE = 202;
+
+    /** CURRENT_TIMESTAMP function. */
+    public static final int CURRENT_TIMESTAMP = 203;
+
+    /** LOCAL_TIMESTAMP function. */
+    public static final int LOCAL_TIMESTAMP = 204;
+
+    /** LOCAL_TIME function. */
+    public static final int LOCAL_TIME = 205;
+
     private CallOperator() {
         // No-op.
     }
