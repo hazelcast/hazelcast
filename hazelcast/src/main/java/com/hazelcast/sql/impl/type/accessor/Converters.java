@@ -49,6 +49,9 @@ public class Converters {
         converters.add(LocalDateTimeConverter.INSTANCE);
         converters.add(OffsetDateTimeConverter.INSTANCE);
 
+        converters.add(SqlYearMonthIntervalConverter.INSTANCE);
+        converters.add(SqlDaySecondIntervalConverter.INSTANCE);
+
         CLASS_TO_CONVERTER = new HashMap<>();
 
         for (Converter converter : converters) {

@@ -28,12 +28,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -41,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select LOCALTIME(1), LOCALTIMESTAMP(0), HOUR(birthDateString) FROM persons ORDER BY name";
+    private static final String QUERY = "select TIMESTAMPADD(MICROSECOND, 20, birthDate) FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -81,6 +78,7 @@ public class SqlTest extends HazelcastTestSupport {
         public final int age;
         public final double height;
         public final boolean active;
+        public final LocalDateTime birthDate = LocalDateTime.now();
         public final String birthDateString;
 
         public Person(int key) {

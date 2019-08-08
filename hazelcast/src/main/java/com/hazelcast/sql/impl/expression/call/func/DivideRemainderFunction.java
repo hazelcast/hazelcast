@@ -3,7 +3,9 @@ package com.hazelcast.sql.impl.expression.call.func;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.BiCallExpressionWithType;
@@ -11,6 +13,8 @@ import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.accessor.SqlDaySecondIntervalConverter;
+import com.hazelcast.sql.impl.type.accessor.SqlYearMonthIntervalConverter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -120,6 +124,43 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                     return res;
                 }
 
+                case INTERVAL_YEAR_MONTH: {
+                    SqlYearMonthInterval interval;
+                    int divisor;
+
+                    if (operand1Converter == SqlYearMonthIntervalConverter.INSTANCE) {
+                        interval = (SqlYearMonthInterval)operand1;
+                        divisor = operand2Converter.asInt(operand2);
+                    }
+                    else {
+                        interval = (SqlYearMonthInterval)operand2;
+                        divisor = operand1Converter.asInt(operand1);
+                    }
+
+                    return new SqlYearMonthInterval(interval.getType(), interval.value() / divisor);
+                }
+
+                case INTERVAL_DAY_SECOND: {
+                    SqlDaySecondInterval interval;
+                    long divisor;
+
+                    if (operand1Converter == SqlDaySecondIntervalConverter.INSTANCE) {
+                        interval = (SqlDaySecondInterval)operand1;
+                        divisor = operand2Converter.asBigInt(operand2);
+                    }
+                    else {
+                        interval = (SqlDaySecondInterval)operand2;
+                        divisor = operand1Converter.asBigInt(operand1);
+                    }
+
+                    long totalNanos = (interval.value() * 1_000_000_000 + interval.nanos()) / divisor;
+
+                    long newValue = totalNanos / 1_000_000_000;
+                    int newNanos = (int)(totalNanos % 1_000_000_000);
+
+                    return new SqlDaySecondInterval(interval.getType(), newValue, newNanos);
+                }
+
                 default:
                     throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);
             }
@@ -195,6 +236,12 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
      * @return Result type.
      */
     private static DataType inferResultType(DataType type1, DataType type2) {
+        if (type1 == DataType.INTERVAL_DAY_SECOND || type2 == DataType.INTERVAL_DAY_SECOND)
+            return DataType.INTERVAL_DAY_SECOND;
+
+        if (type1 == DataType.INTERVAL_YEAR_MONTH || type2 == DataType.INTERVAL_YEAR_MONTH)
+            return DataType.INTERVAL_YEAR_MONTH;
+
         if (!type1.isCanConvertToNumeric())
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
 

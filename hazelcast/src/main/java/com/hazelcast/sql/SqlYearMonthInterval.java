@@ -22,9 +22,7 @@ public class SqlYearMonthInterval implements DataSerializable {
 
     public SqlYearMonthInterval(SqlYearMonthIntervalType type, int val) {
         this.type = type;
-
-        // TODO: Careful with minus sign.
-        this.val = type == SqlYearMonthIntervalType.YEAR ? val - val % 12 : val;
+        this.val = val;
     }
 
     public SqlYearMonthIntervalType getType() {
@@ -45,6 +43,10 @@ public class SqlYearMonthInterval implements DataSerializable {
         int val0 = Math.abs(val);
 
         return type == SqlYearMonthIntervalType.MONTH ? val0 : val0 % 12;
+    }
+
+    public int value() {
+        return val;
     }
 
     @Override

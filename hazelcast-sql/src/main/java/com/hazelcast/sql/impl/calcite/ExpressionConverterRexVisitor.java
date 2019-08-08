@@ -1,12 +1,15 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlDaySecondInterval;
+import com.hazelcast.sql.SqlDaySecondIntervalType;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.SqlYearMonthIntervalType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.TemporalUtils;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
@@ -119,19 +122,64 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case SYMBOL:
                 return convertSymbol(literal);
 
-            // TODO: More conversions.
-
             case INTERVAL_YEAR:
-                return new SqlYearMonthInterval(SqlYearMonthIntervalType.YEAR, literal.getValueAs(Integer.class));
+                return convertYearMonthInterval(SqlYearMonthIntervalType.YEAR, literal);
 
             case INTERVAL_MONTH:
-                return new SqlYearMonthInterval(SqlYearMonthIntervalType.MONTH, literal.getValueAs(Integer.class));
+                return convertYearMonthInterval(SqlYearMonthIntervalType.MONTH, literal);
 
             case INTERVAL_YEAR_MONTH:
-                return new SqlYearMonthInterval(SqlYearMonthIntervalType.YEAR_TO_MONTH, literal.getValueAs(Integer.class));
+                return convertYearMonthInterval(SqlYearMonthIntervalType.YEAR_TO_MONTH, literal);
+
+            case INTERVAL_DAY:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY, literal);
+
+            case INTERVAL_DAY_HOUR:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_HOUR, literal);
+
+            case INTERVAL_DAY_MINUTE:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_MINUTE, literal);
+
+            case INTERVAL_DAY_SECOND:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_SECOND, literal);
+
+            case INTERVAL_HOUR:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR, literal);
+
+            case INTERVAL_HOUR_MINUTE:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR_TO_MINUTE, literal);
+
+            case INTERVAL_HOUR_SECOND:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR_TO_SECOND, literal);
+
+            case INTERVAL_MINUTE:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.MINUTE, literal);
+
+            case INTERVAL_MINUTE_SECOND:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.MINUTE_TO_SECOND, literal);
+
+            case INTERVAL_SECOND:
+                return convertDaySecondInterval(SqlDaySecondIntervalType.SECOND, literal);
         }
 
         throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
+    }
+
+    private SqlYearMonthInterval convertYearMonthInterval(SqlYearMonthIntervalType type, RexLiteral literal) {
+        long val = literal.getValueAs(Long.class);
+
+        int days = (int)(val / TemporalUtils.SECONDS_IN_DAY);
+
+        return new SqlYearMonthInterval(type, days);
+    }
+
+    private SqlDaySecondInterval convertDaySecondInterval(SqlDaySecondIntervalType type, RexLiteral literal) {
+        long val = literal.getValueAs(Long.class);
+
+        long sec = val / 1_000;
+        int nano = (int)(val % 1_000) * 1_000_000;
+
+        return new SqlDaySecondInterval(type, sec, nano);
     }
 
     private Object convertSymbol(RexLiteral literal) {
@@ -301,6 +349,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
                 return new DatePartFunction(hzOperands.get(1), unit);
 
+            case CallOperator.TIMESTAMP_ADD:
+                return null;
+
             case CallOperator.CURRENT_DATE:
                 return new CurrentDateFunction();
 
@@ -402,6 +453,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case EXTRACT:
                 return CallOperator.EXTRACT;
+
+            case TIMESTAMP_ADD:
+                return CallOperator.TIMESTAMP_ADD;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

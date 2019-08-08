@@ -23,13 +23,21 @@ public class SqlDaySecondInterval implements DataSerializable {
         // No-op.
     }
 
-    public SqlDaySecondInterval(SqlDaySecondIntervalType type, int val, int nano, boolean negative) {
+    public SqlDaySecondInterval(SqlDaySecondIntervalType type, long val, int nano) {
         this.type = type;
         this.val = val;
         this.nano = nano;
     }
 
-    public long nanos() {
+    public SqlDaySecondIntervalType getType() {
+        return type;
+    }
+
+    public long value() {
+        return val;
+    }
+
+    public int nanos() {
         return nano;
     }
 

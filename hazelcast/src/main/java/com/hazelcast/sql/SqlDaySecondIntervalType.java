@@ -5,15 +5,15 @@ package com.hazelcast.sql;
  */
 public enum SqlDaySecondIntervalType {
     DAY(0),
-    HOUR(1),
-    MINUTE(2),
-    SECOND(3),
-    DAY_TO_HOUR(4),
-    DAY_TO_MINUTE(5),
-    DAY_TO_SECOND(6),
-    HOUR_TO_MINUTE(7),
-    HOUR_TO_SECOND(8),
-    MINUTE_TO_SECOND(9);
+    DAY_TO_HOUR(1),
+    DAY_TO_MINUTE(2),
+    DAY_TO_SECOND(3),
+    HOUR(4),
+    HOUR_TO_MINUTE(5),
+    HOUR_TO_SECOND(6),
+    MINUTE(7),
+    MINUTE_TO_SECOND(8),
+    SECOND(9);
 
     private final int order;
 

@@ -44,12 +44,12 @@ public final class IntegerConverter extends Converter {
 
     @Override
     public final byte asTinyInt(Object val) {
-        return (byte) cast(val);
+        return (byte)cast(val);
     }
 
     @Override
     public final short asSmallInt(Object val) {
-        return (short) cast(val);
+        return (short)cast(val);
     }
 
     @Override

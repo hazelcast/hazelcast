@@ -3,7 +3,9 @@ package com.hazelcast.sql.impl.expression.call.func;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.call.BiCallExpressionWithType;
@@ -14,6 +16,10 @@ import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
 import static com.hazelcast.sql.impl.type.DataType.SCALE_UNLIMITED;
@@ -70,17 +76,19 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         if (minus)
             return (T)doMinus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
         else
-            return (T)doSum(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+            return (T)doPlus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
     }
 
-    @SuppressWarnings("unchecked")
-    private static Object doSum(
+    private static Object doPlus(
         Object operand1,
         DataType operand1Type,
         Object operand2,
         DataType operand2Type,
         DataType resType
     ) {
+        if (resType.isTemporal())
+            return doPlusTemporal(operand1, operand1Type, operand2, operand2Type, resType);
+
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
@@ -114,6 +122,81 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         }
     }
 
+    private static Object doPlusTemporal(
+        Object operand1,
+        DataType operand1Type,
+        Object operand2,
+        DataType operand2Type,
+        DataType resType
+    ) {
+        Object temporalOperand;
+        DataType temporalOperandType;
+        Object intervalOperand;
+
+        if (operand1Type.isTemporal()) {
+            temporalOperand = operand1;
+            temporalOperandType = operand1Type;
+            intervalOperand = operand2;
+        }
+        else {
+            temporalOperand = operand2;
+            temporalOperandType = operand2Type;
+            intervalOperand = operand1;
+        }
+
+        switch (resType.getType()) {
+            case DATE: {
+                LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return date.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return date.atStartOfDay().plusSeconds(interval.value()).plusNanos(interval.nanos()).toLocalDate();
+                }
+            }
+
+            case TIME: {
+                LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return time;
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return time.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                }
+            }
+
+            case TIMESTAMP: {
+                LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return ts.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                }
+            }
+
+            case TIMESTAMP_WITH_TIMEZONE: {
+                OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return ts.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                }
+            }
+        }
+
+        throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
+    }
+
     private static Object doMinus(
         Object operand1,
         DataType operand1Type,
@@ -121,6 +204,9 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         DataType operand2Type,
         DataType resType
     ) {
+        if (resType.isTemporal())
+            return doMinusTemporal(operand1, operand1Type, operand2, operand2Type, resType);
+
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
@@ -154,6 +240,81 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         }
     }
 
+    private static Object doMinusTemporal(
+        Object operand1,
+        DataType operand1Type,
+        Object operand2,
+        DataType operand2Type,
+        DataType resType
+    ) {
+        Object temporalOperand;
+        DataType temporalOperandType;
+        Object intervalOperand;
+
+        if (operand1Type.isTemporal()) {
+            temporalOperand = operand1;
+            temporalOperandType = operand1Type;
+            intervalOperand = operand2;
+        }
+        else {
+            temporalOperand = operand2;
+            temporalOperandType = operand2Type;
+            intervalOperand = operand1;
+        }
+
+        switch (resType.getType()) {
+            case DATE: {
+                LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return date.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return date.atStartOfDay().minusSeconds(interval.value()).minusNanos(interval.nanos()).toLocalDate();
+                }
+            }
+
+            case TIME: {
+                LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return time;
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return time.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                }
+            }
+
+            case TIMESTAMP: {
+                LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return ts.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                }
+            }
+
+            case TIMESTAMP_WITH_TIMEZONE: {
+                OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
+
+                if (intervalOperand instanceof SqlYearMonthInterval)
+                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+
+                    return ts.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                }
+            }
+        }
+
+        throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
+    }
+
     /**
      * Infer result type.
      *
@@ -162,6 +323,9 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
      * @return Result type.
      */
     private static DataType inferResultType(DataType type1, DataType type2) {
+        if (type1.isTemporal() || type2.isTemporal())
+            return inferResultTypeTemporal(type1, type2);
+
         if (!type1.isCanConvertToNumeric())
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
 
@@ -191,6 +355,23 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             else
                 return biggerType;      // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
         }
+    }
+
+    /**
+     * Infer result type for temporal arguments.
+     *
+     * @param type1 Type 1.
+     * @param type2 Type 2.
+     * @return Result type.
+     */
+    private static DataType inferResultTypeTemporal(DataType type1, DataType type2) {
+        DataType temporalType = type1.isTemporal() ? type1 : type2;
+        DataType intervalType = type1.isTemporal() ? type2 : type1;
+
+        if (intervalType != DataType.INTERVAL_DAY_SECOND && intervalType != DataType.INTERVAL_YEAR_MONTH)
+            throw new HazelcastSqlException(-1, "Data type is not interval: " + intervalType);
+
+        return temporalType;
     }
 
     @Override public int operator() {

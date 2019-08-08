@@ -130,6 +130,9 @@ public class CallOperator {
     /** LOCAL_TIME function. */
     public static final int LOCAL_TIME = 205;
 
+    /** TIMESTAMPADD function. */
+    public static final int TIMESTAMP_ADD = 206;
+
     private CallOperator() {
         // No-op.
     }

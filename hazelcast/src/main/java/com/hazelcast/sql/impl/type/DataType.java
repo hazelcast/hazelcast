@@ -35,6 +35,8 @@ import com.hazelcast.sql.impl.type.accessor.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.LongConverter;
 import com.hazelcast.sql.impl.type.accessor.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.ShortConverter;
+import com.hazelcast.sql.impl.type.accessor.SqlDaySecondIntervalConverter;
+import com.hazelcast.sql.impl.type.accessor.SqlYearMonthIntervalConverter;
 import com.hazelcast.sql.impl.type.accessor.StringConverter;
 
 /**
@@ -78,10 +80,12 @@ public class DataType {
     public static final int PRECEDENCE_DECIMAL = 700;
     public static final int PRECEDENCE_REAL = 800;
     public static final int PRECEDENCE_DOUBLE = 900;
-    public static final int PRECEDENCE_TIME = 1000;
-    public static final int PRECEDENCE_DATE = 1100;
-    public static final int PRECEDENCE_TIMESTAMP = 1200;
-    public static final int PRECEDENCE_TIMESTAMP_WITH_TIMEZONE = 1300;
+    public static final int PRECEDENCE_INTERVAL_YEAR_MONTH = 1000;
+    public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 1100;
+    public static final int PRECEDENCE_TIME = 1200;
+    public static final int PRECEDENCE_DATE = 1300;
+    public static final int PRECEDENCE_TIMESTAMP = 1400;
+    public static final int PRECEDENCE_TIMESTAMP_WITH_TIMEZONE = 1500;
 
     /** LATE (unresolved) data type. */
     public static final DataType LATE = new DataType(
@@ -245,6 +249,24 @@ public class DataType {
         PRECEDENCE_TIMESTAMP_WITH_TIMEZONE
     );
 
+    /** Interval year-month. */
+    public static final DataType INTERVAL_YEAR_MONTH = new DataType(
+        GenericType.INTERVAL_YEAR_MONTH,
+        SqlYearMonthIntervalConverter.INSTANCE,
+        PRECISION_UNLIMITED,
+        SCALE_UNLIMITED,
+        PRECEDENCE_INTERVAL_YEAR_MONTH
+    );
+
+    /** Interval day-second. */
+    public static final DataType INTERVAL_DAY_SECOND = new DataType(
+        GenericType.INTERVAL_DAY_SECOND,
+        SqlDaySecondIntervalConverter.INSTANCE,
+        PRECISION_UNLIMITED,
+        SCALE_UNLIMITED,
+        PRECEDENCE_INTERVAL_DAY_SECOND
+    );
+
     /** Common cached integer data types. */
     private static DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
 
@@ -366,6 +388,12 @@ public class DataType {
                     return DataType.TIMESTAMP_WITH_TIMEZONE_OFFSET_DATE_TIME;
 
                 break;
+
+            case INTERVAL_YEAR_MONTH:
+                return DataType.INTERVAL_YEAR_MONTH;
+
+            case INTERVAL_DAY_SECOND:
+                return DataType.INTERVAL_DAY_SECOND;
         }
 
         throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported class: " + obj.getClass().getName());
@@ -453,6 +481,10 @@ public class DataType {
 
     public boolean isCanConvertToNumeric() {
         return type.isConvertToNumeric();
+    }
+
+    public boolean isTemporal() {
+        return type.isTemporal();
     }
 
     @Override
