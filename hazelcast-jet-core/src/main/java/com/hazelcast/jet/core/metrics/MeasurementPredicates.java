@@ -60,7 +60,7 @@ public final class MeasurementPredicates {
     public static Predicate<Measurement> tagValueMatches(String tag, String valueRegexp) {
         return measurement -> {
             String value = measurement.getTag(tag);
-            return value == null || Pattern.compile(valueRegexp).matcher(value).matches();
+            return value != null && Pattern.compile(valueRegexp).matcher(value).matches();
         };
     }
 }
