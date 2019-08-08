@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
@@ -29,7 +28,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -65,8 +65,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class BindHandlerTest {
 
     // client side socket address of the new connection
@@ -117,6 +117,8 @@ public class BindHandlerTest {
     @Parameter(4)
     public List<Address> expectedAddresses;
 
+    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+
     private InternalSerializationService serializationService;
     private BindHandler bindHandler;
 
@@ -152,12 +154,12 @@ public class BindHandlerTest {
 
     @Before
     public void setup() throws IllegalAccessException {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfig());
+        HazelcastInstance hz = factory.newHazelcastInstance(createConfig());
         serializationService = getSerializationService(hz);
         Node node = getNode(hz);
         endpointManager = TcpIpEndpointManager.class.cast(
                 node.getEndpointManager(EndpointQualifier.resolve(protocolType, "wan")));
-        bindHandler = (BindHandler) getFieldValueReflectively(endpointManager, "bindHandler");
+        bindHandler = getFieldValueReflectively(endpointManager, "bindHandler");
 
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
@@ -172,7 +174,7 @@ public class BindHandlerTest {
 
     @After
     public void tearDown() {
-        Hazelcast.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test
@@ -184,8 +186,7 @@ public class BindHandlerTest {
     private void assertExpectedAddressesRegistered()
             throws IllegalAccessException {
         // inspect connections in TcpIpEndpointManager
-        ConcurrentHashMap<Address, TcpIpConnection> connectionsMap =
-                (ConcurrentHashMap<Address, TcpIpConnection>) getFieldValueReflectively(endpointManager, "connectionsMap");
+        ConcurrentHashMap<Address, TcpIpConnection> connectionsMap = getFieldValueReflectively(endpointManager, "connectionsMap");
         try {
             for (Address address : expectedAddresses) {
                 assertTrue(connectionsMap.containsKey(address));
