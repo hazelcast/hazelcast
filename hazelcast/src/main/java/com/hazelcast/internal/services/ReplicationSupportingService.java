@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.services;
 
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.wan.WanReplicationEvent;
 
 /**
@@ -25,9 +26,12 @@ import com.hazelcast.wan.WanReplicationEvent;
 public interface ReplicationSupportingService {
 
     /**
-     * Processes a WAN replication event
+     * Processes a WAN replication event.
      *
-     * @param replicationEvent the event
+     * @param event           the event
+     * @param acknowledgeType determines should this method wait for the event to be processed fully
+     *                        or should it return after the event has been dispatched to the
+     *                        appropriate member
      */
-    void onReplicationEvent(WanReplicationEvent replicationEvent);
+    void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType);
 }

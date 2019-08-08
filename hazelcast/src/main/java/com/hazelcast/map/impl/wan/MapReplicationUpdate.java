@@ -17,13 +17,14 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.io.IOException;
 /**
  * WAN replication object for map update operations.
  */
-public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
+public class MapReplicationUpdate implements WanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster
@@ -113,5 +114,10 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     @Override
     public Data getKey() {
         return entryView.getKey();
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 }
