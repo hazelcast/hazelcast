@@ -29,7 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 
-import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -63,7 +64,7 @@ public class TransactionLogTest {
         log.add(record);
 
         assertEquals(1, log.size());
-        assertEquals(asList(record), log.getRecordList());
+        assertThat(log.getRecords(), contains(record));
     }
 
     @Test
