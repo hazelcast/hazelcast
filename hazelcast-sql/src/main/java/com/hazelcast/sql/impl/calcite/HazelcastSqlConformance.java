@@ -82,4 +82,10 @@ public class HazelcastSqlConformance extends SqlDelegatingConformance {
         // Allow CURRENT_DATE() in addition to CURRENT_DATE.
         return true;
     }
+
+    @Override
+    public boolean isBangEqualAllowed() {
+        // Allow "A != B" in addition to "A <> B".
+        return true;
+    }
 }

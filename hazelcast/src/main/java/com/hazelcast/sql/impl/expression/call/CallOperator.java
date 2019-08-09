@@ -133,6 +133,30 @@ public class CallOperator {
     /** TIMESTAMPADD function. */
     public static final int TIMESTAMP_ADD = 206;
 
+    /** IS NULL operator. */
+    public static final int IS_NULL = 207;
+
+    /** IS NOT NULL operator. */
+    public static final int IS_NOT_NULL = 208;
+
+    /** IS FALSE operator. */
+    public static final int IS_FALSE = 209;
+
+    /** IS NOT FALSE operator. */
+    public static final int IS_NOT_FALSE = 210;
+
+    /** IS TRUE operator. */
+    public static final int IS_TRUE = 211;
+
+    /** IS NOT TRUE operator. */
+    public static final int IS_NOT_TRUE = 212;
+
+    /** AND operator. */
+    public static final int AND = 213;
+
+    /** OR operator. */
+    public static final int OR = 214;
+
     private CallOperator() {
         // No-op.
     }

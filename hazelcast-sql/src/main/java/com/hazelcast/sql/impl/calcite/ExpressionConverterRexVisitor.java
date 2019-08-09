@@ -12,6 +12,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TemporalUtils;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
+import com.hazelcast.sql.impl.expression.call.func.AndOrPredicate;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
 import com.hazelcast.sql.impl.expression.call.func.CurrentDateFunction;
 import com.hazelcast.sql.impl.expression.call.func.GetTimestampFunction;
@@ -22,6 +23,7 @@ import com.hazelcast.sql.impl.expression.call.func.DoubleDoubleRetDoubleFunction
 import com.hazelcast.sql.impl.expression.call.func.DoubleRetDoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.call.func.IsPredicate;
 import com.hazelcast.sql.impl.expression.call.func.PlusMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
 import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
@@ -360,6 +362,20 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LOCAL_TIME:
                 return new GetTimestampFunction(hzOperands.isEmpty() ? null : hzOperands.get(0), hzOperator);
 
+            case CallOperator.IS_NULL:
+            case CallOperator.IS_NOT_NULL:
+            case CallOperator.IS_FALSE:
+            case CallOperator.IS_NOT_FALSE:
+            case CallOperator.IS_TRUE:
+            case CallOperator.IS_NOT_TRUE:
+                return new IsPredicate(hzOperands.get(0), hzOperator);
+
+            case CallOperator.AND:
+                return new AndOrPredicate(hzOperands.get(0), hzOperands.get(1), false);
+
+            case CallOperator.OR:
+                return new AndOrPredicate(hzOperands.get(0), hzOperands.get(1), true);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -457,6 +473,30 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case TIMESTAMP_ADD:
                 return CallOperator.TIMESTAMP_ADD;
 
+            case IS_NULL:
+                return CallOperator.IS_NULL;
+
+            case IS_NOT_NULL:
+                return CallOperator.IS_NOT_NULL;
+
+            case IS_FALSE:
+                return CallOperator.IS_FALSE;
+
+            case IS_NOT_FALSE:
+                return CallOperator.IS_NOT_FALSE;
+
+            case IS_TRUE:
+                return CallOperator.IS_TRUE;
+
+            case IS_NOT_TRUE:
+                return CallOperator.IS_NOT_TRUE;
+
+            case AND:
+                return CallOperator.AND;
+
+            case OR:
+                return CallOperator.OR;
+
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;
 
@@ -527,7 +567,6 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                     return CallOperator.LOCAL_TIMESTAMP;
                 else if (function == SqlStdOperatorTable.LOCALTIME)
                     return CallOperator.LOCAL_TIME;
-
             }
 
             default:
