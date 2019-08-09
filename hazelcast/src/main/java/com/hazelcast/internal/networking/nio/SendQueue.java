@@ -28,8 +28,8 @@ import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
  */
 public class SendQueue implements Supplier<OutboundFrame> {
 
-    public enum Owner{
-        TRUE,FALSE
+    public enum Owner {
+        TRUE, FALSE
     }
 
     public enum State {
@@ -121,14 +121,21 @@ public class SendQueue implements Supplier<OutboundFrame> {
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
             long bytesPending = next.bytesOffered - bytesWritten.get();
-// todo: be careful with backing of a fat packet because it could be the queue is empty.
-            //            if(bytesPending>10mb){
-//                //do backoff.
-//                ...
-//                /// trye again
-//                continue;
-//            }
+            // todo: be careful with backing of a fat packet because it could be the queue is empty.
+            //if(bytesPending>10mb){
+            //      do backoff.
+            //      ...
+            //      //try again
+            //      continue;
+            //}
             switch (prev.state) {
+                case UNSCHEDULED:
+                    next.state = SCHEDULED_DATA_ONLY;
+                    if (putStack.compareAndSet(prev, next)) {
+                        // we need to schedule since it was unscheduled.
+                        return true;
+                    }
+                    break;
                 case BLOCKED:
                     next.state = BLOCKED;
                     if (putStack.compareAndSet(prev, next)) {
@@ -151,13 +158,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
                         return false;
                     }
                     break;
-                case UNSCHEDULED:
-                    next.state = SCHEDULED_DATA_ONLY;
-                    if (putStack.compareAndSet(prev, next)) {
-                        // we need to schedule since it was unscheduled.
-                        return true;
-                    }
-                    break;
+
                 default:
                     throw new IllegalStateException();
             }
