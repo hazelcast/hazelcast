@@ -175,6 +175,9 @@ public class CallOperator {
     /** "<=" operator. */
     public static final int LESS_THAN_EQUAL = 314;
 
+    /** CASE ... WHEN expression. */
+    public static final int CASE = 315;
+
     private CallOperator() {
         // No-op.
     }

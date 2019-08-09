@@ -7,10 +7,10 @@ import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.TemporalUtils;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.call.func.CaseExpression;
 import com.hazelcast.sql.impl.expression.call.func.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
 import com.hazelcast.sql.impl.expression.call.func.CurrentDateFunction;
@@ -359,6 +359,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LESS_THAN_EQUAL:
                 return new ComparisonPredicate(hzOperands.get(0), hzOperands.get(1), hzOperator);
 
+            case CallOperator.CASE:
+                return new CaseExpression(hzOperands);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -497,6 +500,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case LESS_THAN_OR_EQUAL:
                 return CallOperator.LESS_THAN_EQUAL;
+
+            case CASE:
+                return CallOperator.CASE;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

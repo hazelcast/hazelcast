@@ -38,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select TIMESTAMPADD(YEAR, 2, birthDate) > birthDate FROM persons ORDER BY name";
+    private static final String QUERY = "select COALESCE(age, name, birthDate) FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
