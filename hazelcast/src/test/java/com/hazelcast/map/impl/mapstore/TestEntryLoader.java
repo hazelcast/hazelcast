@@ -21,6 +21,8 @@ import com.hazelcast.map.EntryLoader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,11 +34,13 @@ public class TestEntryLoader implements EntryLoader<String, String> {
     private AtomicInteger loadedEntryCount = new AtomicInteger();
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();
+    private Set<String> loadUniqueKeys = ConcurrentHashMap.newKeySet();
     private AtomicInteger loadKeysCallCount = new AtomicInteger();
 
     @Override
     public MetadataAwareValue<String> load(String key) {
         loadCallCount.incrementAndGet();
+        loadUniqueKeys.add(key);
         if (NULL_RETURNING_KEY.equals(key)) {
             return null;
         }
@@ -84,6 +88,10 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     public int getLoadCallCount() {
         return loadCallCount.get();
+    }
+
+    public int getLoadUniqueKeysCount() {
+        return loadUniqueKeys.size();
     }
 
     public int getLoadAllCallCount() {
