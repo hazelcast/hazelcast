@@ -68,7 +68,7 @@ public final class NioOutboundPipeline
     private long normalFramesWrittenLastPublish;
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
-    private SendQueue sendQueue = new SendQueue();
+    private SendQueue sendQueue = new SendQueue(bytesWritten);
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,

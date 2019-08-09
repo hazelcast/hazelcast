@@ -1,6 +1,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.util.counters.SwCounter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,10 +20,12 @@ import static org.mockito.Mockito.when;
 public class SendQueueTest {
 
     private SendQueue q;
+    private SwCounter bytesWritten;
 
     @Before
     public void before() {
-        q = new SendQueue();
+        bytesWritten = SwCounter.newSwCounter();
+        q = new SendQueue(bytesWritten);
     }
 
     @Test
@@ -34,8 +37,6 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenNewQueue() {
-        q = new SendQueue();
-
         boolean schedule = q.offer(newFrame());
 
         // should not be scheduled since pipeline is blocked.
@@ -45,7 +46,6 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenBlocked() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.get();
         q.block();
@@ -59,7 +59,6 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenAlreadyScheduled() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.prepare();
         q.get();
@@ -76,7 +75,6 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenUnscheduled() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.prepare();
         q.get();
@@ -92,8 +90,6 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenNewQueue() {
-        q = new SendQueue();
-
         Runnable task = mock(Runnable.class);
         boolean wakeup = q.execute(task);
 
@@ -104,7 +100,6 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenBlocked() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.get();
         q.block();
@@ -119,8 +114,6 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenScheduled() {
-        q = new SendQueue();
-
         q.execute(() -> {
         });
 
@@ -137,8 +130,6 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenUnscheduled() {
-        q = new SendQueue();
-
         q.execute(() -> { });
         q.prepare();
         q.get();
@@ -157,7 +148,6 @@ public class SendQueueTest {
 
     @Test(expected = IllegalStateException.class)
     public void block_whenUnscheduled() {
-        q = new SendQueue();
         q.execute(() -> { });
         q.prepare();
         q.get();
@@ -167,7 +157,6 @@ public class SendQueueTest {
 
     @Test
     public void block_whenScheduled() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.get();
 
@@ -178,7 +167,6 @@ public class SendQueueTest {
 
     @Test
     public void block_whenBlocked() {
-        q = new SendQueue();
         q.offer(newFrame());
         q.get();
         q.block();
@@ -192,7 +180,6 @@ public class SendQueueTest {
 
     @Test
     public void get_whenBlocked() {
-        q = new SendQueue();
         OutboundFrame f1 = newFrame();
         OutboundFrame f2 = newFrame();
         q.offer(f1);
@@ -208,7 +195,6 @@ public class SendQueueTest {
 
     @Test
     public void get_whenScheduledAndEmpty() {
-        q = new SendQueue();
         q.execute(() -> {
         });
 

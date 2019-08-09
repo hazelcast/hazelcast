@@ -1,6 +1,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.util.function.Supplier;
 
@@ -26,6 +27,10 @@ import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
  * to be notified.
  */
 public class SendQueue implements Supplier<OutboundFrame> {
+
+    public enum Owner{
+        TRUE,FALSE
+    }
 
     public enum State {
 
@@ -59,10 +64,14 @@ public class SendQueue implements Supplier<OutboundFrame> {
     // Therefor no synchronization is needed.
     private Node takeStackOldest;
     private Node takeStackYoungest;
+    private long lowWaterMark;
+    private long highWatermark;
+    private final SwCounter bytesWritten;
 
     final PaddedAtomicReference<Node> putStack = new PaddedAtomicReference<>(new Node(BLOCKED));
 
-    public SendQueue() {
+    public SendQueue(SwCounter bytesWritten) {
+        this.bytesWritten = bytesWritten;
     }
 
     public long bytesPending() {
@@ -96,7 +105,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * This method can be used in combination with the write-through. When an frame is added,
      * it atomically tries to set the scheduled flag. If this is successfully set, it doesn't
      * matter which thread is actually doing to socket write, the main thing is that only 1
-     * thread is granted.
+     * thread is granted access to writing (needed for write through vs IO thread)
      *
      * This method is thread-safe.
      *
@@ -111,12 +120,20 @@ public class SendQueue implements Supplier<OutboundFrame> {
             Node prev = putStack.get();
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
-
+            long bytesPending = next.bytesOffered - bytesWritten.get();
+// todo: be careful with backing of a fat packet because it could be the queue is empty.
+            //            if(bytesPending>10mb){
+//                //do backoff.
+//                ...
+//                /// trye again
+//                continue;
+//            }
             switch (prev.state) {
                 case BLOCKED:
                     next.state = BLOCKED;
                     if (putStack.compareAndSet(prev, next)) {
-                        // we don't need to schedule since it is blocked
+                        // we don't need to schedule since it is blocked and a blocked pipeline
+                        // should not woken up when data gets offered.
                         return false;
                     }
                     break;
@@ -150,7 +167,8 @@ public class SendQueue implements Supplier<OutboundFrame> {
     /**
      * Executes a task by offering it to the SendQueue. Wakes up the SendQueue if needed.
      *
-     * The task will not immediately be executed, it will be executed when the {@link #get()} is called.
+     * The task will not immediately be executed, it will be executed when the {@link #prepare()} is called by
+     * the thread that is 'owning' the pipeline.
      *
      * If the SendQueue is blocked or unscheduled, it will be woken up.
      * todo: guarantee if wakeup always gets processed.
@@ -215,6 +233,8 @@ public class SendQueue implements Supplier<OutboundFrame> {
                     }
                     break;
                 case SCHEDULED_WITH_TASK:
+                    // todo: why don't we process the task?
+
                     // we can't block, there is a task pending.
                     // return true to indicate that rescheduling is needed to get the task processed.
                     return true;
