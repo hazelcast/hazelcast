@@ -392,7 +392,8 @@ public class Config {
      *
      * @param name name of the map config
      * @return the map configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -415,7 +416,8 @@ public class Config {
      *
      * @param name name of the map config
      * @return the map configuration or {@code null} if none was found
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -447,7 +449,8 @@ public class Config {
      *
      * @param name name of the map config
      * @return the map configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -507,7 +510,8 @@ public class Config {
      *
      * @param name name of the cardinality estimator config
      * @return the cache configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -528,7 +532,8 @@ public class Config {
      *
      * @param name name of the cache config
      * @return the cache configuration or {@code null} if none was found
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -560,7 +565,8 @@ public class Config {
      *
      * @param name name of the cache config
      * @return the cache configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -621,7 +627,8 @@ public class Config {
      *
      * @param name name of the queue config
      * @return the queue configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -658,7 +665,8 @@ public class Config {
      *
      * @param name name of the queue config
      * @return the queue configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -719,7 +727,8 @@ public class Config {
      *
      * @param name name of the lock config
      * @return the lock configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -756,7 +765,8 @@ public class Config {
      *
      * @param name name of the lock config
      * @return the lock configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -817,7 +827,8 @@ public class Config {
      *
      * @param name name of the list config
      * @return the list configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -854,7 +865,8 @@ public class Config {
      *
      * @param name name of the list config
      * @return the list configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -915,7 +927,8 @@ public class Config {
      *
      * @param name name of the set config
      * @return the set configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -952,7 +965,8 @@ public class Config {
      *
      * @param name name of the set config
      * @return the set configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1013,7 +1027,8 @@ public class Config {
      *
      * @param name name of the multimap config
      * @return the multimap configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1050,7 +1065,8 @@ public class Config {
      *
      * @param name name of the multimap config
      * @return the multimap configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1111,7 +1127,8 @@ public class Config {
      *
      * @param name name of the replicated map config
      * @return the replicated map configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1149,7 +1166,8 @@ public class Config {
      *
      * @param name name of the replicated map config
      * @return the replicated map configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1210,7 +1228,8 @@ public class Config {
      *
      * @param name name of the ringbuffer config
      * @return the ringbuffer configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1248,7 +1267,8 @@ public class Config {
      *
      * @param name name of the ringbuffer config
      * @return the ringbuffer configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1308,7 +1328,8 @@ public class Config {
      *
      * @param name name of the AtomicLong config
      * @return the AtomicLong configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1344,7 +1365,8 @@ public class Config {
      *
      * @param name name of the AtomicLong config
      * @return the AtomicLong configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1402,7 +1424,8 @@ public class Config {
      *
      * @param name name of the AtomicReference config
      * @return the AtomicReference configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1438,7 +1461,8 @@ public class Config {
      *
      * @param name name of the AtomicReference config
      * @return the AtomicReference configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1496,7 +1520,8 @@ public class Config {
      *
      * @param name name of the CountDownLatch config
      * @return the CountDownLatch configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1532,7 +1557,8 @@ public class Config {
      *
      * @param name name of the CountDownLatch config
      * @return the CountDownLatch configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1591,7 +1617,8 @@ public class Config {
      *
      * @param name name of the topic config
      * @return the topic configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1628,7 +1655,8 @@ public class Config {
      *
      * @param name name of the topic config
      * @return the topic configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1660,7 +1688,8 @@ public class Config {
      *
      * @param name name of the reliable topic config
      * @return the reliable topic configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1698,7 +1727,8 @@ public class Config {
      *
      * @param name name of the reliable topic config
      * @return the reliable topic configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1786,7 +1816,8 @@ public class Config {
      *
      * @param name name of the executor config
      * @return the executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1811,7 +1842,8 @@ public class Config {
      *
      * @param name name of the durable executor config
      * @return the durable executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1836,7 +1868,8 @@ public class Config {
      *
      * @param name name of the scheduled executor config
      * @return the scheduled executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1862,7 +1895,8 @@ public class Config {
      *
      * @param name name of the cardinality estimator config
      * @return the cardinality estimator configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1888,7 +1922,8 @@ public class Config {
      *
      * @param name name of the PN counter config
      * @return the PN counter configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1925,7 +1960,8 @@ public class Config {
      *
      * @param name name of the executor config
      * @return the executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1957,7 +1993,8 @@ public class Config {
      *
      * @param name name of the durable executor config
      * @return the durable executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -1989,7 +2026,8 @@ public class Config {
      *
      * @param name name of the scheduled executor config
      * @return the scheduled executor configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2021,7 +2059,8 @@ public class Config {
      *
      * @param name name of the cardinality estimator config
      * @return the cardinality estimator configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2053,7 +2092,8 @@ public class Config {
      *
      * @param name name of the PN counter config
      * @return the PN counter configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2280,7 +2320,8 @@ public class Config {
      *
      * @param name name of the semaphore config
      * @return the semaphore configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2318,7 +2359,8 @@ public class Config {
      *
      * @param name name of the semaphore config
      * @return the semaphore configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2459,7 +2501,8 @@ public class Config {
      *
      * @param name name of the split-brain protection config
      * @return the split-brain protection configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2479,7 +2522,8 @@ public class Config {
      *
      * @param name name of the split-brain protection config
      * @return the split-brain protection configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2650,7 +2694,8 @@ public class Config {
      *
      * @param name name of the flake ID generator config
      * @return the flake ID generator configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
@@ -2686,7 +2731,8 @@ public class Config {
      *
      * @param name name of the flake ID generator config
      * @return the cache configuration
-     * @throws ConfigurationException if ambiguous configurations are found
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
      * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()

@@ -148,7 +148,7 @@ public class CacheServiceTest {
         try {
             cacheService.putCacheConfigIfAbsent(newCacheConfig());
             // ensure the exception was not swallowed
-            fail("ConfigurationException should have been thrown");
+            fail("InvalidConfigurationException should have been thrown");
         } catch (InvalidConfigurationException e) {
             // assert the CacheConfigFuture was not put in the configs map
             assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
