@@ -18,8 +18,6 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -31,13 +29,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.predicate.Predicate;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -66,7 +65,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     private final DataType[] types;
 
     /** Filter. */
-    private final Predicate filter;
+    private final Expression<Boolean> filter;
 
     /** Map service context. */
     private MapServiceContext mapServiceContext;
@@ -89,7 +88,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Row to get data with extractors. */
     private KeyValueRow keyValueRow;
 
-    public MapScanExec(String mapName, PartitionIdSet parts, List<Expression> expressions, Predicate filter) {
+    public MapScanExec(String mapName, PartitionIdSet parts, List<Expression> expressions, Expression<Boolean> filter) {
         this.mapName = mapName;
         this.parts = parts;
         this.projections = expressions;

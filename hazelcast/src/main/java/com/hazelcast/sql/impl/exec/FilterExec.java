@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.expression.predicate.Predicate;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public class FilterExec extends AbstractUpstreamAwareExec {
     /** Filter. */
-    private final Predicate filter;
+    private final Expression<Boolean> filter;
 
     /** Last upstream batch. */
     private RowBatch curBatch;
@@ -40,7 +40,7 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     /** Current row. */
     private RowBatch curRow;
 
-    public FilterExec(Exec upstream, Predicate filter) {
+    public FilterExec(Exec upstream, Expression<Boolean> filter) {
         super(upstream);
 
         this.filter = filter;

@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
-import com.hazelcast.sql.impl.expression.predicate.Predicate;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
@@ -218,6 +217,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(projectNode);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onFilter(FilterPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
@@ -225,9 +225,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         RexNode condition = rel.getCondition();
         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
 
-        assert convertedCondition instanceof Predicate;
-
-        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Predicate)convertedCondition);
+        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Expression<Boolean>)convertedCondition);
 
         pushUpstream(filterNode);
     }

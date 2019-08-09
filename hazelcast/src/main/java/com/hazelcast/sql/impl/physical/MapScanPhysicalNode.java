@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.physical;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.predicate.Predicate;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,13 +34,13 @@ public class MapScanPhysicalNode implements PhysicalNode {
     private List<Expression> projections;
 
     /** Filter. */
-    private Predicate filter;
+    private Expression<Boolean> filter;
 
     public MapScanPhysicalNode() {
         // No-op.
     }
 
-    public MapScanPhysicalNode(String mapName, List<Expression> projections, Predicate filter) {
+    public MapScanPhysicalNode(String mapName, List<Expression> projections, Expression<Boolean> filter) {
         this.mapName = mapName;
         this.projections = projections;
         this.filter = filter;
@@ -55,7 +54,7 @@ public class MapScanPhysicalNode implements PhysicalNode {
         return projections;
     }
 
-    public Predicate getFilter() {
+    public Expression<Boolean> getFilter() {
         return filter;
     }
 

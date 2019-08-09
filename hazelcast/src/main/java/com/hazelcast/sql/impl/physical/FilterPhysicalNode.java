@@ -2,7 +2,7 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.predicate.Predicate;
+import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 
@@ -14,13 +14,13 @@ public class FilterPhysicalNode implements PhysicalNode {
     private PhysicalNode upstream;
 
     /** Condition. */
-    private Predicate condition;
+    private Expression<Boolean> condition;
 
     public FilterPhysicalNode() {
         // No-op.
     }
 
-    public FilterPhysicalNode(PhysicalNode upstream, Predicate condition) {
+    public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> condition) {
         this.upstream = upstream;
         this.condition = condition;
     }
@@ -29,7 +29,7 @@ public class FilterPhysicalNode implements PhysicalNode {
         return upstream;
     }
 
-    public Predicate getCondition() {
+    public Expression<Boolean> getCondition() {
         return condition;
     }
 
