@@ -137,7 +137,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, -1));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -170,7 +170,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, -1));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -201,7 +201,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 100));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -234,7 +234,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 100));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -265,7 +265,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 0));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -298,7 +298,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 0));
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -331,7 +331,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -366,7 +366,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }
@@ -398,7 +398,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         semaphore.drainPermits();
 
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (WaitKeyCancelledException ignored) {
         }

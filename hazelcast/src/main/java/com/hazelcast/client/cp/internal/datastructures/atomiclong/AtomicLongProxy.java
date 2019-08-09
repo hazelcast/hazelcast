@@ -109,67 +109,67 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public long addAndGet(long delta) {
-        return addAndGetAsync(delta).join();
+        return addAndGetAsync(delta).joinInternal();
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return compareAndSetAsync(expect, update).join();
+        return compareAndSetAsync(expect, update).joinInternal();
     }
 
     @Override
     public long decrementAndGet() {
-        return decrementAndGetAsync().join();
+        return decrementAndGetAsync().joinInternal();
     }
 
     @Override
     public long get() {
-        return getAsync().join();
+        return getAsync().joinInternal();
     }
 
     @Override
     public long getAndAdd(long delta) {
-        return getAndAddAsync(delta).join();
+        return getAndAddAsync(delta).joinInternal();
     }
 
     @Override
     public long getAndSet(long newValue) {
-        return getAndSetAsync(newValue).join();
+        return getAndSetAsync(newValue).joinInternal();
     }
 
     @Override
     public long incrementAndGet() {
-        return incrementAndGetAsync().join();
+        return incrementAndGetAsync().joinInternal();
     }
 
     @Override
     public long getAndIncrement() {
-        return getAndIncrementAsync().join();
+        return getAndIncrementAsync().joinInternal();
     }
 
     @Override
     public void set(long newValue) {
-        setAsync(newValue).join();
+        setAsync(newValue).joinInternal();
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
-        alterAsync(function).join();
+        alterAsync(function).joinInternal();
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
-        return alterAndGetAsync(function).join();
+        return alterAndGetAsync(function).joinInternal();
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
-        return getAndAlterAsync(function).join();
+        return getAndAlterAsync(function).joinInternal();
     }
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        return applyAsync(function).join();
+        return applyAsync(function).joinInternal();
     }
 
     @Override
@@ -264,7 +264,7 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public void onDestroy() {
         ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), objectName);
-        new ClientInvocation(getClient(), request, name).invoke().join();
+        new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
     public CPGroupId getGroupId() {

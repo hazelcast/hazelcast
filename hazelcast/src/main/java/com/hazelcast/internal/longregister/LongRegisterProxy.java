@@ -58,7 +58,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long addAndGet(long delta) {
-        return addAndGetAsync(delta).join();
+        return addAndGetAsync(delta).joinInternal();
     }
 
     @Override
@@ -79,7 +79,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public void set(long newValue) {
-        setAsync(newValue).join();
+        setAsync(newValue).joinInternal();
     }
 
     @Override
@@ -91,7 +91,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long getAndSet(long newValue) {
-        return getAndSetAsync(newValue).join();
+        return getAndSetAsync(newValue).joinInternal();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long getAndAdd(long delta) {
-        return getAndAddAsync(delta).join();
+        return getAndAddAsync(delta).joinInternal();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long decrementAndGet() {
-        return decrementAndGetAsync().join();
+        return decrementAndGetAsync().joinInternal();
     }
 
     @Override
@@ -125,7 +125,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long get() {
-        return getAsync().join();
+        return getAsync().joinInternal();
     }
 
     @Override
@@ -137,7 +137,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long incrementAndGet() {
-        return incrementAndGetAsync().join();
+        return incrementAndGetAsync().joinInternal();
     }
 
     @Override
@@ -147,7 +147,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
 
     @Override
     public long getAndIncrement() {
-        return getAndIncrementAsync().join();
+        return getAndIncrementAsync().joinInternal();
     }
 
     @Override

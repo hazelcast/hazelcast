@@ -306,7 +306,7 @@ public class PartitionReplicaStateChecker {
                 .invoke();
 
         try {
-            return future.join();
+            return future.joinInternal();
         } catch (Exception e) {
             logger.log(level, "Could not get a response from master about migrations! -> " + e.toString());
         }

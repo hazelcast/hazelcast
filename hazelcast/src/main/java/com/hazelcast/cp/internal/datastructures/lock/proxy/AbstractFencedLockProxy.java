@@ -119,7 +119,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
             verifyLockedSessionIdIfPresent(threadId, sessionId, true);
 
             try {
-                long fence = doLock(sessionId, threadId, invocationUid).join();
+                long fence = doLock(sessionId, threadId, invocationUid).joinInternal();
                 if (fence != INVALID_FENCE) {
                     lockedSessionIds.put(threadId, sessionId);
                     return fence;
@@ -167,7 +167,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
             verifyLockedSessionIdIfPresent(threadId, sessionId, true);
 
             try {
-                long fence = doTryLock(sessionId, threadId, invocationUid, timeoutMillis).join();
+                long fence = doTryLock(sessionId, threadId, invocationUid, timeoutMillis).joinInternal();
                 if (fence != INVALID_FENCE) {
                     lockedSessionIds.put(threadId, sessionId);
                 } else {
@@ -204,7 +204,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
         }
 
         try {
-            boolean stillLockedByCurrentThread = doUnlock(sessionId, threadId, newUnsecureUUID()).join();
+            boolean stillLockedByCurrentThread = doUnlock(sessionId, threadId, newUnsecureUUID()).joinInternal();
             if (stillLockedByCurrentThread) {
                 lockedSessionIds.put(threadId, sessionId);
             } else {
@@ -241,7 +241,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
             throw newIllegalMonitorStateException();
         }
 
-        LockOwnershipState ownership = doGetLockOwnershipState().join();
+        LockOwnershipState ownership = doGetLockOwnershipState().joinInternal();
         if (ownership.isLockedBy(sessionId, threadId)) {
             lockedSessionIds.put(threadId, sessionId);
             return ownership.getFence();
@@ -258,7 +258,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
 
         verifyLockedSessionIdIfPresent(threadId, sessionId, false);
 
-        LockOwnershipState ownership = doGetLockOwnershipState().join();
+        LockOwnershipState ownership = doGetLockOwnershipState().joinInternal();
         if (ownership.isLockedBy(sessionId, threadId)) {
             lockedSessionIds.put(threadId, sessionId);
             return true;
@@ -276,7 +276,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
 
         verifyLockedSessionIdIfPresent(threadId, sessionId, false);
 
-        LockOwnershipState ownership = doGetLockOwnershipState().join();
+        LockOwnershipState ownership = doGetLockOwnershipState().joinInternal();
         boolean lockedByCurrentThread = ownership.isLockedBy(sessionId, threadId);
         if (lockedByCurrentThread) {
             lockedSessionIds.put(threadId, sessionId);
@@ -294,7 +294,7 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
 
         verifyLockedSessionIdIfPresent(threadId, sessionId, false);
 
-        LockOwnershipState ownership = doGetLockOwnershipState().join();
+        LockOwnershipState ownership = doGetLockOwnershipState().joinInternal();
         if (ownership.isLockedBy(sessionId, threadId)) {
             lockedSessionIds.put(threadId, sessionId);
         } else {

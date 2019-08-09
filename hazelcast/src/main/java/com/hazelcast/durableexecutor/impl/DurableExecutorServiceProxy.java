@@ -110,7 +110,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         int sequence = Bits.extractInt(uniqueId, true);
         Operation op = new DisposeResultOperation(name, sequence).setPartitionId(partitionId);
         InternalCompletableFuture<?> future = invokeOnPartition(op);
-        future.join();
+        future.joinInternal();
     }
 
     @Override

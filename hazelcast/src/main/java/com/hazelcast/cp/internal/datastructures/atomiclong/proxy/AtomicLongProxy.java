@@ -66,7 +66,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public long addAndGet(long delta) {
-        return addAndGetAsync(delta).join();
+        return addAndGetAsync(delta).joinInternal();
     }
 
     @Override
@@ -81,12 +81,12 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return compareAndSetAsync(expect, update).join();
+        return compareAndSetAsync(expect, update).joinInternal();
     }
 
     @Override
     public long getAndAdd(long delta) {
-        return getAndAddAsync(delta).join();
+        return getAndAddAsync(delta).joinInternal();
     }
 
     @Override
@@ -101,7 +101,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public long getAndSet(long newValue) {
-        return getAndSetAsync(newValue).join();
+        return getAndSetAsync(newValue).joinInternal();
     }
 
     @Override
@@ -172,7 +172,7 @@ public class AtomicLongProxy implements IAtomicLong {
     }
 
     private long doAlter(IFunction<Long, Long> function, AlterResultType alterResultType) {
-        return doAlterAsync(function, alterResultType).join();
+        return doAlterAsync(function, alterResultType).joinInternal();
     }
 
     private InternalCompletableFuture<Long> doAlterAsync(IFunction<Long, Long> function, AlterResultType alterResultType) {
@@ -181,7 +181,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        return applyAsync(function).join();
+        return applyAsync(function).joinInternal();
     }
 
     @Override
@@ -260,7 +260,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
     }
 
     public CPGroupId getGroupId() {

@@ -73,7 +73,7 @@ public class MapExecuteWithPredicateMessageTask
         OperationFactory factory = createOperationFactory(predicate);
         InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(getServiceName(),
                 factory.createOperation(), partitionId);
-        Object result = invocationBuilder.invoke().join();
+        Object result = invocationBuilder.invoke().joinInternal();
         return reduce(Collections.singletonMap(partitionId, result));
     }
 

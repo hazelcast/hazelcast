@@ -19,14 +19,14 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.RootCauseMatcher;
@@ -840,7 +840,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         });
 
         InternalCompletableFuture f = (InternalCompletableFuture) ringbuffer.readManyAsync(0, 1, 1, null);
-        f.join();
+        f.joinInternal();
     }
     // ===================== misc ==========================
 

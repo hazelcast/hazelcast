@@ -94,7 +94,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        future.join();
+        future.joinInternal();
     }
 
     @Test
@@ -114,7 +114,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        future.join();
+        future.joinInternal();
     }
 
     @Test

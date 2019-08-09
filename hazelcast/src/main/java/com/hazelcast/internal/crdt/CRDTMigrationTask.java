@@ -98,7 +98,7 @@ class CRDTMigrationTask implements Runnable {
         }
         try {
             logger.finest("Migrating " + service.getName() + " to " + target);
-            operationService.invokeOnTarget(null, migrationOperation.getOperation(), target.getAddress()).join();
+            operationService.invokeOnTarget(null, migrationOperation.getOperation(), target.getAddress()).joinInternal();
             final boolean allMigrated = service.clearCRDTState(migrationOperation.getVectorClocks());
             if (!allMigrated) {
                 logger.fine(service.getName() + " CRDTs have been mutated since migrated to target " + target

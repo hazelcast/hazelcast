@@ -244,9 +244,7 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(future2.isDone());
         });
         boolean exceptionalCompletion = invocation1.throwsException || invocation2.throwsException;
-        assertTrueEventually(() -> {
-            assertTrue(combinedFuture.isDone());
-        });
+        assertTrueEventually(() -> assertTrue(combinedFuture.isDone()));
         if (exceptionalCompletion) {
             expected.expect(CompletionException.class);
             expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));

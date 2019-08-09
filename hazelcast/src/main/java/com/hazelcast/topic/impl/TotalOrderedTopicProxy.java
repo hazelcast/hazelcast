@@ -42,6 +42,6 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
         Operation operation = new PublishOperation(getName(), toData(message))
                 .setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);
-        f.join();
+        f.joinInternal();
     }
 }

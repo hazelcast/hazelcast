@@ -206,7 +206,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -222,7 +222,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation_withNormalResponseWrapper(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     private static class NonSerializableResponse {

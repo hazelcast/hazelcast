@@ -73,7 +73,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
     private ResultSegment invoke(Operation operation) {
         final InternalCompletableFuture<ResultSegment> future =
                 mapProxy.getOperationService().invokeOnPartition(mapProxy.getServiceName(), operation, partitionId);
-        return future.join();
+        return future.joinInternal();
     }
 
     @Override

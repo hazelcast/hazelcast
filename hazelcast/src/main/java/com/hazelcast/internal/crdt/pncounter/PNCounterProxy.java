@@ -193,7 +193,7 @@ public class PNCounterProxy extends AbstractDistributedObject<PNCounterService> 
                 builder.setTryCount(operationTryCount);
             }
             final InternalCompletableFuture<CRDTTimestampedLong> future = builder.invoke();
-            final CRDTTimestampedLong result = future.join();
+            final CRDTTimestampedLong result = future.joinInternal();
             updateObservedReplicaTimestamps(result.getVectorClock());
             return result.getValue();
         } catch (HazelcastException e) {

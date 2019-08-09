@@ -433,7 +433,7 @@ abstract class CacheProxySupport<K, V>
             OperationService operationService = getNodeEngine().getOperationService();
             int partitionId = getPartitionId(keyData);
             InternalCompletableFuture<T> future = operationService.invokeOnPartition(getServiceName(), op, partitionId);
-            T safely = future.join();
+            T safely = future.joinInternal();
             listenerCompleter.waitCompletionLatch(completionId);
             return safely;
         } catch (CacheException ce) {

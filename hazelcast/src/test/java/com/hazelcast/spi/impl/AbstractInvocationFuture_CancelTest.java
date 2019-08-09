@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,6 +27,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -70,12 +72,13 @@ public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFutur
     }
 
     @Test
-    public void whenCancelled_thenJoinThrowsCancelled() {
+    public void whenCancelled_thenJoinThrowsCancelled_inCompletionException() {
         // Given
         future.cancel(true);
 
         // Then
-        exceptionRule.expect(CancellationException.class);
+        exceptionRule.expect(CompletionException.class);
+        exceptionRule.expect(new RootCauseMatcher(CancellationException.class));
 
         // When
         future.join();
@@ -90,7 +93,8 @@ public class AbstractInvocationFuture_CancelTest extends AbstractInvocationFutur
         future.complete(value);
 
         // Then
-        exceptionRule.expect(CancellationException.class);
+        exceptionRule.expect(CompletionException.class);
+        exceptionRule.expect(new RootCauseMatcher(CancellationException.class));
         future.join();
     }
 }

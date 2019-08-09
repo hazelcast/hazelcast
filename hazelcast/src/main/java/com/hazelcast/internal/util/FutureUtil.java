@@ -374,7 +374,7 @@ public final class FutureUtil {
             throws ExecutionException, InterruptedException {
 
         if (future instanceof InternalCompletableFuture) {
-            return ((InternalCompletableFuture<V>) future).join();
+            return ((InternalCompletableFuture<V>) future).joinInternal();
         }
 
         return future.get();

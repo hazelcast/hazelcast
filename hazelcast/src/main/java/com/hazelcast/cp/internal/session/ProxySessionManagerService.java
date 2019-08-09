@@ -64,7 +64,7 @@ public class ProxySessionManagerService extends AbstractProxySessionManager impl
 
     @Override
     protected long generateThreadId(RaftGroupId groupId) {
-        return getInvocationManager().<Long>invoke(groupId, new GenerateThreadIdOp()).join();
+        return getInvocationManager().<Long>invoke(groupId, new GenerateThreadIdOp()).joinInternal();
     }
 
     @Override

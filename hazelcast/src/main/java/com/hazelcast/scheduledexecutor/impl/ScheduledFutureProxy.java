@@ -84,7 +84,7 @@ public final class ScheduledFutureProxy<V>
 
         Operation op = new GetStatisticsOperation(handler);
 
-        return this.<ScheduledTaskStatistics>invoke(op).join();
+        return this.<ScheduledTaskStatistics>invoke(op).joinInternal();
     }
 
     @Override
@@ -94,7 +94,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new GetDelayOperation(handler, unit);
-        return this.<Long>invoke(op).join();
+        return this.<Long>invoke(op).joinInternal();
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
     @Override
@@ -124,7 +124,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new IsCanceledOperation(handler);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
     @Override
@@ -133,7 +133,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new IsDoneOperation(handler);
-        return this.<Boolean>invoke(op).join();
+        return this.<Boolean>invoke(op).joinInternal();
     }
 
     private InternalCompletableFuture<V> get0() {
@@ -172,7 +172,7 @@ public final class ScheduledFutureProxy<V>
         Operation op = new DisposeTaskOperation(handler);
         InternalCompletableFuture future = invoke(op);
         handler = null;
-        future.join();
+        future.joinInternal();
     }
 
     void notifyMemberLost(MembershipEvent event) {

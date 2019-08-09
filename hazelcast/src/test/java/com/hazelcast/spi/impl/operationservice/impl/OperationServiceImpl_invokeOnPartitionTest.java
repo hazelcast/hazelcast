@@ -77,7 +77,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
                 null, operation, getPartitionId(remote));
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

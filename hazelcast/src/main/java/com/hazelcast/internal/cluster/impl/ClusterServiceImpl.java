@@ -1036,7 +1036,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         InternalCompletableFuture<MembersView> future =
                 nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, master.getAddress());
-        MembersView view = future.join();
+        MembersView view = future.joinInternal();
 
         lock.lock();
         try {

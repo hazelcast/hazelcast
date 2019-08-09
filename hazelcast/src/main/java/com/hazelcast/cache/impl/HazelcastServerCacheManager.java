@@ -167,7 +167,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         InternalCompletableFuture<CacheConfig<K, V>> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override

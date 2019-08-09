@@ -137,7 +137,7 @@ public class FlakeIdGeneratorProxy
             InternalCompletableFuture<Long> future = getNodeEngine().getOperationService()
                                                                     .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
-                long base = future.join();
+                long base = future.joinInternal();
                 return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), 0);
             } catch (NodeIdOutOfRangeException e) {
                 outOfRangeMembers.add(target.getUuid());

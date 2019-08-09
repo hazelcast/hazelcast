@@ -137,7 +137,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             });
         } else {
             try {
-                future.join();
+                future.joinInternal();
                 fail("Should throw OperationTimeoutException!");
             } catch (OperationTimeoutException ignored) {
                 latch.countDown();

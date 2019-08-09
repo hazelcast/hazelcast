@@ -101,7 +101,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         Operation op = new GenericOperation(name, OPERATION_SIZE)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Long> f = invokeOnPartition(op);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         Operation op = new GenericOperation(name, OPERATION_TAIL)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Long> f = invokeOnPartition(op);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override
@@ -117,7 +117,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         Operation op = new GenericOperation(name, OPERATION_HEAD)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Long> f = invokeOnPartition(op);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override
@@ -132,7 +132,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         Operation op = new GenericOperation(name, OPERATION_REMAINING_CAPACITY)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Long> f = invokeOnPartition(op);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override
@@ -142,7 +142,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         Operation op = new AddOperation(name, toData(item), OVERWRITE)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Long> f = invokeOnPartition(op);
-        return f.join();
+        return f.joinInternal();
     }
 
     @Override

@@ -75,7 +75,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
     @Override
     public boolean init(int permits) {
         checkNotNegative(permits, "Permits must be non-negative!");
-        return invocationManager.<Boolean>invoke(groupId, new InitSemaphoreOp(objectName, permits)).join();
+        return invocationManager.<Boolean>invoke(groupId, new InitSemaphoreOp(objectName, permits)).joinInternal();
     }
 
     @Override
@@ -92,7 +92,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
             long sessionId = acquireSession(permits);
             RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, -1L);
             try {
-                invocationManager.invoke(groupId, op).join();
+                invocationManager.invoke(groupId, op).joinInternal();
                 return;
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
@@ -128,7 +128,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
             RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, timeoutMs);
             try {
                 InternalCompletableFuture<Boolean> f = invocationManager.invoke(groupId, op);
-                boolean acquired = f.join();
+                boolean acquired = f.joinInternal();
                 if (!acquired) {
                     releaseSession(sessionId, permits);
                 }
@@ -160,7 +160,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         UUID invocationUid = newUnsecureUUID();
         RaftOp op = new ReleasePermitsOp(objectName, sessionId, threadId, invocationUid, permits);
         try {
-            invocationManager.invoke(groupId, op).join();
+            invocationManager.invoke(groupId, op).joinInternal();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
             throw newIllegalStateException(e);
@@ -171,7 +171,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
 
     @Override
     public int availablePermits() {
-        return invocationManager.<Integer>query(groupId, new AvailablePermitsOp(objectName), LINEARIZABLE).join();
+        return invocationManager.<Integer>query(groupId, new AvailablePermitsOp(objectName), LINEARIZABLE).joinInternal();
     }
 
     @Override
@@ -183,7 +183,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
             RaftOp op = new DrainPermitsOp(objectName, sessionId, threadId, invocationUid);
             try {
                 InternalCompletableFuture<Integer> future = invocationManager.invoke(groupId, op);
-                int count = future.join();
+                int count = future.joinInternal();
                 releaseSession(sessionId, DRAIN_SESSION_ACQ_COUNT - count);
                 return count;
             } catch (SessionExpiredException e) {
@@ -207,7 +207,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         UUID invocationUid = newUnsecureUUID();
         try {
             RaftOp op = new ChangePermitsOp(objectName, sessionId, threadId, invocationUid, -reduction);
-            invocationManager.invoke(groupId, op).join();
+            invocationManager.invoke(groupId, op).joinInternal();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
             throw newIllegalStateException(e);
@@ -231,7 +231,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         UUID invocationUid = newUnsecureUUID();
         try {
             RaftOp op = new ChangePermitsOp(objectName, sessionId, threadId, invocationUid, increase);
-            invocationManager.invoke(groupId, op).join();
+            invocationManager.invoke(groupId, op).joinInternal();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
             throw newIllegalStateException(e);
@@ -261,7 +261,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
     }
 
 }

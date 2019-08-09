@@ -19,9 +19,9 @@ package com.hazelcast.internal.util.executor;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -152,6 +152,11 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
     @Override
     public V join() {
         return resolve(future.join());
+    }
+
+    @Override
+    public V joinInternal() {
+        return resolve(future.joinInternal());
     }
 
     @Override

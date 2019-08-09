@@ -52,7 +52,7 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
         assertCompletesEventually(f);
 
         expected.expect(ExpectedRuntimeException.class);
-        f.join();
+        f.joinInternal();
     }
 
     public class OperationsReturnsNoResponse extends Operation {

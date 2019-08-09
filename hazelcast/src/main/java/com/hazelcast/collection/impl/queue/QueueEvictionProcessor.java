@@ -53,7 +53,7 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
             Operation op = new CheckAndEvictOperation(entry.getKey())
                     .setPartitionId(partitionId);
 
-            operationService.invokeOnPartition(op).join();
+            operationService.invokeOnPartition(op).joinInternal();
         }
     }
 }

@@ -113,7 +113,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(dataKey);
         InternalCompletableFuture<Boolean> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        return future.join();
+        return future.joinInternal();
     }
 
     @Override

@@ -93,7 +93,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
                 .invoke();
 
         try {
-            future.join();
+            future.joinInternal();
             fail("Invocation should failed with timeout!");
         } catch (OperationTimeoutException expected) {
             ignore(expected);
