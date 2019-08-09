@@ -56,7 +56,7 @@ public class ColumnExpression<T> implements Expression<T> {
 
     @Override
     public DataType getType() {
-        return type;
+        return DataType.notNullOrLate(type);
     }
 
     @Override

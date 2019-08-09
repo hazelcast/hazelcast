@@ -115,7 +115,7 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
                     multiplier = operand1Converter.asInt(operand1);
                 }
 
-                return new SqlYearMonthInterval(interval.getType(), interval.value() * multiplier);
+                return new SqlYearMonthInterval(interval.getMonths() * multiplier);
             }
 
             case INTERVAL_DAY_SECOND: {
@@ -131,16 +131,16 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
                     multiplier = operand1Converter.asBigInt(operand1);
                 }
 
-                if (interval.nanos() == 0)
-                    return new SqlDaySecondInterval(interval.getType(), interval.value() * multiplier, 0);
+                if (interval.getNanos() == 0)
+                    return new SqlDaySecondInterval(interval.getSeconds() * multiplier, 0);
                 else {
-                    long valueMultiplied = interval.value() * multiplier;
-                    long nanosMultiplied = interval.nanos() * multiplier;
+                    long valueMultiplied = interval.getSeconds() * multiplier;
+                    long nanosMultiplied = interval.getNanos() * multiplier;
 
                     long newValue = valueMultiplied + nanosMultiplied / 1_000_000_000;
                     int newNanos = (int)(nanosMultiplied % 1_000_000_000);
 
-                    return new SqlDaySecondInterval(interval.getType(), newValue, newNanos);
+                    return new SqlDaySecondInterval(newValue, newNanos);
                 }
             }
 

@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Expression with two operands.
  */
-public abstract class UniCallExpression<T> implements Expression<T> {
+public abstract class UniCallExpression<T> implements CallExpression<T> {
     /** Operand. */
     protected Expression operand;
 

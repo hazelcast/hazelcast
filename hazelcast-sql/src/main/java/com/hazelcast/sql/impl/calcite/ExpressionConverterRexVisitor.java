@@ -2,10 +2,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
-import com.hazelcast.sql.SqlDaySecondIntervalType;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
-import com.hazelcast.sql.SqlYearMonthIntervalType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -13,17 +11,18 @@ import com.hazelcast.sql.impl.expression.TemporalUtils;
 import com.hazelcast.sql.impl.expression.call.CallOperator;
 import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
 import com.hazelcast.sql.impl.expression.call.func.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.call.func.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
 import com.hazelcast.sql.impl.expression.call.func.CurrentDateFunction;
-import com.hazelcast.sql.impl.expression.call.func.GetTimestampFunction;
 import com.hazelcast.sql.impl.expression.call.func.DatePartFunction;
 import com.hazelcast.sql.impl.expression.call.func.DatePartUnit;
 import com.hazelcast.sql.impl.expression.call.func.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.call.func.DoubleDoubleRetDoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.DoubleRetDoubleFunction;
 import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
-import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.call.func.GetTimestampFunction;
 import com.hazelcast.sql.impl.expression.call.func.IsPredicate;
+import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.call.func.PlusMinusFunction;
 import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
 import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
@@ -125,63 +124,39 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return convertSymbol(literal);
 
             case INTERVAL_YEAR:
-                return convertYearMonthInterval(SqlYearMonthIntervalType.YEAR, literal);
-
             case INTERVAL_MONTH:
-                return convertYearMonthInterval(SqlYearMonthIntervalType.MONTH, literal);
-
             case INTERVAL_YEAR_MONTH:
-                return convertYearMonthInterval(SqlYearMonthIntervalType.YEAR_TO_MONTH, literal);
+                return convertYearMonthInterval(literal);
 
             case INTERVAL_DAY:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY, literal);
-
             case INTERVAL_DAY_HOUR:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_HOUR, literal);
-
             case INTERVAL_DAY_MINUTE:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_MINUTE, literal);
-
             case INTERVAL_DAY_SECOND:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.DAY_TO_SECOND, literal);
-
             case INTERVAL_HOUR:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR, literal);
-
             case INTERVAL_HOUR_MINUTE:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR_TO_MINUTE, literal);
-
             case INTERVAL_HOUR_SECOND:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.HOUR_TO_SECOND, literal);
-
             case INTERVAL_MINUTE:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.MINUTE, literal);
-
             case INTERVAL_MINUTE_SECOND:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.MINUTE_TO_SECOND, literal);
-
             case INTERVAL_SECOND:
-                return convertDaySecondInterval(SqlDaySecondIntervalType.SECOND, literal);
+                return convertDaySecondInterval(literal);
         }
 
         throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
     }
 
-    private SqlYearMonthInterval convertYearMonthInterval(SqlYearMonthIntervalType type, RexLiteral literal) {
-        long val = literal.getValueAs(Long.class);
+    private SqlYearMonthInterval convertYearMonthInterval(RexLiteral literal) {
+        int months = literal.getValueAs(Integer.class);
 
-        int days = (int)(val / TemporalUtils.SECONDS_IN_DAY);
-
-        return new SqlYearMonthInterval(type, days);
+        return new SqlYearMonthInterval(months);
     }
 
-    private SqlDaySecondInterval convertDaySecondInterval(SqlDaySecondIntervalType type, RexLiteral literal) {
+    private SqlDaySecondInterval convertDaySecondInterval(RexLiteral literal) {
         long val = literal.getValueAs(Long.class);
 
         long sec = val / 1_000;
         int nano = (int)(val % 1_000) * 1_000_000;
 
-        return new SqlDaySecondInterval(type, sec, nano);
+        return new SqlDaySecondInterval(sec, nano);
     }
 
     private Object convertSymbol(RexLiteral literal) {
@@ -376,6 +351,14 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.OR:
                 return new AndOrPredicate(hzOperands.get(0), hzOperands.get(1), true);
 
+            case CallOperator.EQUALS:
+            case CallOperator.NOT_EQUALS:
+            case CallOperator.GREATER_THAN:
+            case CallOperator.GREATER_THAN_EQUAL:
+            case CallOperator.LESS_THAN:
+            case CallOperator.LESS_THAN_EQUAL:
+                return new ComparisonPredicate(hzOperands.get(0), hzOperands.get(1), hzOperator);
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -496,6 +479,24 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case OR:
                 return CallOperator.OR;
+
+            case EQUALS:
+                return CallOperator.EQUALS;
+
+            case NOT_EQUALS:
+                return CallOperator.NOT_EQUALS;
+
+            case GREATER_THAN:
+                return CallOperator.GREATER_THAN;
+
+            case GREATER_THAN_OR_EQUAL:
+                return CallOperator.GREATER_THAN_EQUAL;
+
+            case LESS_THAN:
+                return CallOperator.LESS_THAN;
+
+            case LESS_THAN_OR_EQUAL:
+                return CallOperator.LESS_THAN_EQUAL;
 
             case OTHER_FUNCTION: {
                 SqlFunction function = (SqlFunction)operator;

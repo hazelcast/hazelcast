@@ -9,60 +9,56 @@ import java.io.IOException;
 /**
  * Interval data type.
  */
-public class SqlYearMonthInterval implements DataSerializable {
-    /** Type. */
-    private SqlYearMonthIntervalType type;
-
-    /** Seconds. */
-    private int val;
+public class SqlYearMonthInterval implements DataSerializable, Comparable<SqlYearMonthInterval> {
+    /** Months. */
+    private int months;
 
     public SqlYearMonthInterval() {
         // No-op.
     }
 
-    public SqlYearMonthInterval(SqlYearMonthIntervalType type, int val) {
-        this.type = type;
-        this.val = val;
+    public SqlYearMonthInterval(int months) {
+        this.months = months;
     }
 
-    public SqlYearMonthIntervalType getType() {
-        return type;
-    }
-
-    public boolean negative() {
-        return val < 0;
-    }
-
-    public int years() {
-        int val0 = Math.abs(val);
-
-        return val0 / 12;
-    }
-
-    public int months() {
-        int val0 = Math.abs(val);
-
-        return type == SqlYearMonthIntervalType.MONTH ? val0 : val0 % 12;
-    }
-
-    public int value() {
-        return val;
+    public int getMonths() {
+        return months;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(type.order());
-        out.writeInt(val);
+        out.writeInt(months);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        type = SqlYearMonthIntervalType.byOrder(in.readInt());
-        val = in.readInt();
+        months = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return months;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SqlYearMonthInterval) {
+            SqlYearMonthInterval other = ((SqlYearMonthInterval)obj);
+
+            return months == other.months;
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("NullableProblems")
+    @Override
+    public int compareTo(SqlYearMonthInterval other) {
+        return Integer.compare(months, other.months);
     }
 
     @Override
     public String toString() {
-        return "SqlYearMonthInterval{" + (negative() ? "- " : "") + years() + " YEARS " + months()  + " MONTHS}";
+        return "SqlYearMonthInterval{months=" + months + "}";
     }
 }

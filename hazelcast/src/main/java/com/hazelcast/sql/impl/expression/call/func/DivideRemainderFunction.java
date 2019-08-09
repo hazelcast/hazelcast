@@ -137,7 +137,7 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                         divisor = operand1Converter.asInt(operand1);
                     }
 
-                    return new SqlYearMonthInterval(interval.getType(), interval.value() / divisor);
+                    return new SqlYearMonthInterval(interval.getMonths() / divisor);
                 }
 
                 case INTERVAL_DAY_SECOND: {
@@ -153,12 +153,12 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                         divisor = operand1Converter.asBigInt(operand1);
                     }
 
-                    long totalNanos = (interval.value() * 1_000_000_000 + interval.nanos()) / divisor;
+                    long totalNanos = (interval.getSeconds() * 1_000_000_000 + interval.getNanos()) / divisor;
 
                     long newValue = totalNanos / 1_000_000_000;
                     int newNanos = (int)(totalNanos % 1_000_000_000);
 
-                    return new SqlDaySecondInterval(interval.getType(), newValue, newNanos);
+                    return new SqlDaySecondInterval(newValue, newNanos);
                 }
 
                 default:

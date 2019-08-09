@@ -13,9 +13,6 @@ public class TemporalUtils {
     /** Default timestamp precision (nanos). */
     public static final int NANO_PRECISION = 9;
 
-    /** Amount of seconds in day. */
-    public static final int SECONDS_IN_DAY = 3600 * 24;
-
     private static int[] PRECISION_DIVISORS = new int[NANO_PRECISION + 1];
 
     static {

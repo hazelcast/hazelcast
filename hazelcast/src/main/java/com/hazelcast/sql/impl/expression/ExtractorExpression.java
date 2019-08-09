@@ -35,7 +35,7 @@ public class ExtractorExpression<T> implements Expression<T> {
     private String path;
 
     /** Type of the returned object. */
-    private transient DataType type = DataType.LATE;
+    private transient DataType type;
 
     public ExtractorExpression() {
         // No-op.
@@ -54,7 +54,7 @@ public class ExtractorExpression<T> implements Expression<T> {
 
         Object res = (T)row0.extract(path);
 
-        if (type == DataType.LATE)
+        if (type == null)
             type = DataType.resolveType(res);
 
         return (T)res;
@@ -62,7 +62,7 @@ public class ExtractorExpression<T> implements Expression<T> {
 
     @Override
     public DataType getType() {
-        return type;
+        return DataType.notNullOrLate(type);
     }
 
     @Override

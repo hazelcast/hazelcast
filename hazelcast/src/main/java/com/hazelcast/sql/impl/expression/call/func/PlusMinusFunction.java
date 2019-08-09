@@ -149,11 +149,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return date.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return date.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return date.atStartOfDay().plusSeconds(interval.value()).plusNanos(interval.nanos()).toLocalDate();
+                    return date.atStartOfDay().plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos()).toLocalDate();
                 }
             }
 
@@ -165,7 +165,7 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return time.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                    return time.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
             }
 
@@ -173,11 +173,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return ts.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                    return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
             }
 
@@ -185,11 +185,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return ts.plusSeconds(interval.value()).plusNanos(interval.nanos());
+                    return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
             }
         }
@@ -267,11 +267,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return date.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return date.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return date.atStartOfDay().minusSeconds(interval.value()).minusNanos(interval.nanos()).toLocalDate();
+                    return date.atStartOfDay().minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos()).toLocalDate();
                 }
             }
 
@@ -283,7 +283,7 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return time.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                    return time.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
             }
 
@@ -291,11 +291,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return ts.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                    return ts.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
             }
 
@@ -303,11 +303,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
                 if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).value());
+                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
                 else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
 
-                    return ts.minusSeconds(interval.value()).minusNanos(interval.nanos());
+                    return ts.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
             }
         }
