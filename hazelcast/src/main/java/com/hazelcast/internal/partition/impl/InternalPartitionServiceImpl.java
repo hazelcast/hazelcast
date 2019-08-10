@@ -67,6 +67,7 @@ import com.hazelcast.spi.partition.PartitionAwareService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -936,12 +937,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
-    public final int getPartitionId(Data key) {
+    public final int getPartitionId(@Nonnull Data key) {
         return HashUtil.hashToIndex(key.getPartitionHash(), partitionCount);
     }
 
     @Override
-    public final int getPartitionId(Object key) {
+    public final int getPartitionId(@Nonnull Object key) {
         return getPartitionId(nodeEngine.toData(key));
     }
 

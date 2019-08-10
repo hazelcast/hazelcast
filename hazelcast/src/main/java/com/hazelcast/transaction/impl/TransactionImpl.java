@@ -35,6 +35,8 @@ import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -92,13 +94,18 @@ public class TransactionImpl implements Transaction {
     private boolean backupLogsCreated;
     private boolean originatedFromClient;
 
-    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                           TransactionOptions options, UUID txOwnerUuid) {
+    public TransactionImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
+                           @Nonnull NodeEngine nodeEngine,
+                           @Nonnull TransactionOptions options,
+                           @Nullable UUID txOwnerUuid) {
         this(transactionManagerService, nodeEngine, options, txOwnerUuid, false);
     }
 
-    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                           TransactionOptions options, UUID txOwnerUuid, boolean originatedFromClient) {
+    public TransactionImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
+                           @Nonnull NodeEngine nodeEngine,
+                           @Nonnull TransactionOptions options,
+                           @Nullable UUID txOwnerUuid,
+                           boolean originatedFromClient) {
         this.transactionLog = new TransactionLog();
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;

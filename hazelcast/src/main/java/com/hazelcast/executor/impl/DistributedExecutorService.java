@@ -34,6 +34,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
@@ -107,7 +108,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public <T> void execute(String name, UUID uuid, T task, Operation op) {
+    public <T> void execute(String name, UUID uuid,
+                            @Nonnull T task, Operation op) {
         ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
             startPending(name);
@@ -250,7 +252,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         private final long creationTime = Clock.currentTimeMillis();
         private final boolean statisticsEnabled;
 
-        private Processor(String name, UUID uuid, Callable callable, Operation op, boolean statisticsEnabled) {
+        private Processor(String name, UUID uuid,
+                          @Nonnull Callable callable,
+                          Operation op,
+                          boolean statisticsEnabled) {
             //noinspection unchecked
             super(callable);
             this.name = name;
@@ -260,7 +265,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             this.statisticsEnabled = statisticsEnabled;
         }
 
-        private Processor(String name, UUID uuid, Runnable runnable, Operation op, boolean statisticsEnabled) {
+        private Processor(String name, UUID uuid,
+                          @Nonnull Runnable runnable,
+                          Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(runnable, null);
             this.name = name;

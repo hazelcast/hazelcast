@@ -42,6 +42,7 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.List;
@@ -276,7 +277,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     @Override
-    public int getPartitionId(Data key) {
+    public int getPartitionId(@Nonnull Data key) {
         final int pc = getPartitionCount();
         if (pc <= 0) {
             return 0;
@@ -286,7 +287,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     @Override
-    public int getPartitionId(Object key) {
+    public int getPartitionId(@Nonnull Object key) {
         final Data data = client.getSerializationService().toData(key);
         return getPartitionId(data);
     }

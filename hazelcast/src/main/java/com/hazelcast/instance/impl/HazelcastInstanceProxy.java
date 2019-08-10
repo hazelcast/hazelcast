@@ -52,6 +52,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
@@ -81,68 +82,79 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         name = original.getName();
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return name;
     }
 
+    @Nonnull
     @Override
-    public <K, V> IMap<K, V> getMap(String name) {
+    public <K, V> IMap<K, V> getMap(@Nonnull String name) {
         return getOriginal().getMap(name);
     }
 
+    @Nonnull
     @Override
-    public <E> IQueue<E> getQueue(String name) {
+    public <E> IQueue<E> getQueue(@Nonnull String name) {
         return getOriginal().getQueue(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getTopic(String name) {
+    public <E> ITopic<E> getTopic(@Nonnull String name) {
         return getOriginal().getTopic(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getReliableTopic(String name) {
+    public <E> ITopic<E> getReliableTopic(@Nonnull String name) {
         return getOriginal().getReliableTopic(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ISet<E> getSet(String name) {
+    public <E> ISet<E> getSet(@Nonnull String name) {
         return getOriginal().getSet(name);
     }
 
+    @Nonnull
     @Override
-    public <E> IList<E> getList(String name) {
+    public <E> IList<E> getList(@Nonnull String name) {
         return getOriginal().getList(name);
     }
 
+    @Nonnull
     @Override
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
+    public <K, V> MultiMap<K, V> getMultiMap(@Nonnull String name) {
         return getOriginal().getMultiMap(name);
     }
 
+    @Nonnull
     @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
+    public <E> Ringbuffer<E> getRingbuffer(@Nonnull String name) {
         return getOriginal().getRingbuffer(name);
     }
 
     @Override
-    public IExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(@Nonnull String name) {
         return getOriginal().getExecutorService(name);
     }
 
+    @Nonnull
     @Override
-    public DurableExecutorService getDurableExecutorService(String name) {
+    public DurableExecutorService getDurableExecutorService(@Nonnull String name) {
         return getOriginal().getDurableExecutorService(name);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionalTask<T> task) throws TransactionException {
         return getOriginal().executeTransaction(task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionOptions options,
+                                    @Nonnull TransactionalTask<T> task) throws TransactionException {
         return getOriginal().executeTransaction(options, task);
     }
 
@@ -152,17 +164,17 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public TransactionContext newTransactionContext(TransactionOptions options) {
+    public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
         return getOriginal().newTransactionContext(options);
     }
 
     @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+    public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         return getOriginal().getFlakeIdGenerator(name);
     }
 
     @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         return getOriginal().getReplicatedMap(name);
     }
 
@@ -171,11 +183,13 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getCacheManager();
     }
 
+    @Nonnull
     @Override
     public Cluster getCluster() {
         return getOriginal().getCluster();
     }
 
+    @Nonnull
     @Override
     public Member getLocalEndpoint() {
         return getOriginal().getLocalEndpoint();
@@ -186,77 +200,90 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getDistributedObjects();
     }
 
+    @Nonnull
     @Override
     public Config getConfig() {
         return getOriginal().getConfig();
     }
 
+    @Nonnull
     @Override
     public PartitionService getPartitionService() {
         return getOriginal().getPartitionService();
     }
 
+    @Nonnull
     @Override
     public SplitBrainProtectionService getSplitBrainProtectionService() {
         return getOriginal().getSplitBrainProtectionService();
     }
 
+    @Nonnull
     @Override
     public ClientService getClientService() {
         return getOriginal().getClientService();
     }
 
+    @Nonnull
     @Override
     public LoggingService getLoggingService() {
         return getOriginal().getLoggingService();
     }
 
+    @Nonnull
     @Override
     public LifecycleService getLifecycleService() {
         final HazelcastInstanceImpl hz = original;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
+    @Nonnull
     @Override
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+    public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
         return getOriginal().getDistributedObject(serviceName, name);
     }
 
     @Override
-    public UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener distributedObjectListener) {
         return getOriginal().addDistributedObjectListener(distributedObjectListener);
     }
 
     @Override
-    public boolean removeDistributedObjectListener(UUID registrationId) {
+    public boolean removeDistributedObjectListener(@Nonnull UUID registrationId) {
         return getOriginal().removeDistributedObjectListener(registrationId);
     }
 
+    @Nonnull
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return getOriginal().getUserContext();
     }
 
+    @Nonnull
     @Override
     public HazelcastXAResource getXAResource() {
         return getOriginal().getXAResource();
     }
 
+    @Nonnull
     @Override
-    public CardinalityEstimator getCardinalityEstimator(String name) {
+    public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
         return getOriginal().getCardinalityEstimator(name);
     }
 
+    @Nonnull
     @Override
-    public PNCounter getPNCounter(String name) {
+    public PNCounter getPNCounter(@Nonnull String name) {
         return getOriginal().getPNCounter(name);
     }
 
+    @Nonnull
     @Override
-    public IScheduledExecutorService getScheduledExecutorService(String name) {
+    public IScheduledExecutorService getScheduledExecutorService(@Nonnull String name) {
         return getOriginal().getScheduledExecutorService(name);
     }
 
+    @Nonnull
     @Override
     public CPSubsystem getCPSubsystem() {
         return getOriginal().getCPSubsystem();

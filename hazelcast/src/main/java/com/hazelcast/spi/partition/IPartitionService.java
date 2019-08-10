@@ -23,6 +23,7 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.internal.services.CoreService;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -92,7 +93,7 @@ public interface IPartitionService extends CoreService {
      * @return the partition ID
      * @throws NullPointerException if key is {@code null}
      */
-    int getPartitionId(Data key);
+    int getPartitionId(@Nonnull Data key);
 
     /**
      * Returns the partition ID for a given object.
@@ -100,7 +101,7 @@ public interface IPartitionService extends CoreService {
      * @param key the object key
      * @return the partition ID
      */
-    int getPartitionId(Object key);
+    int getPartitionId(@Nonnull Object key);
 
     /**
      * Returns the number of partitions.

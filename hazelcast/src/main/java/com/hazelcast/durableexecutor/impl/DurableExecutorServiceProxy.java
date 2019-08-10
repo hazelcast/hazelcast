@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -49,12 +50,10 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
@@ -124,74 +123,88 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
     }
 
     @Override
-    public void execute(Runnable task) {
+    public void execute(@Nonnull Runnable task) {
         RunnableAdapter runnableAdapter = createRunnableAdapter(task);
         int partitionId = getTaskPartitionId(runnableAdapter);
         submitToPartition(runnableAdapter, partitionId, null);
     }
 
     @Override
-    public void executeOnKeyOwner(Runnable task, Object key) {
+    public void executeOnKeyOwner(@Nonnull Runnable task,
+                                  @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         RunnableAdapter runnableAdapter = createRunnableAdapter(task);
         int partitionId = getPartitionId(key);
         submitToPartition(runnableAdapter, partitionId, null);
     }
 
+    @Nonnull
     @Override
-    public <T> DurableExecutorServiceFuture<T> submit(Runnable task, T result) {
+    public <T> DurableExecutorServiceFuture<T> submit(@Nonnull Runnable task, T result) {
         RunnableAdapter<T> runnableAdapter = createRunnableAdapter(task);
         int partitionId = getTaskPartitionId(runnableAdapter);
         return submitToPartition(runnableAdapter, partitionId, result);
     }
 
+    @Nonnull
     @Override
-    public DurableExecutorServiceFuture<?> submit(Runnable task) {
+    public DurableExecutorServiceFuture<?> submit(@Nonnull Runnable task) {
         RunnableAdapter<?> runnableAdapter = createRunnableAdapter(task);
         int partitionId = getTaskPartitionId(runnableAdapter);
         return submitToPartition(runnableAdapter, partitionId, null);
     }
 
-    public <T> DurableExecutorServiceFuture<T> submit(Callable<T> task) {
+    @Nonnull
+    public <T> DurableExecutorServiceFuture<T> submit(@Nonnull Callable<T> task) {
         int partitionId = getTaskPartitionId(task);
         return submitToPartition(task, partitionId, null);
     }
 
-    public <T> DurableExecutorServiceFuture<T> submitToKeyOwner(Callable<T> task, Object key) {
+    @Override
+    public <T> DurableExecutorServiceFuture<T> submitToKeyOwner(@Nonnull Callable<T> task,
+                                                                @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         int partitionId = getPartitionId(key);
         return submitToPartition(task, partitionId, null);
     }
 
     @Override
-    public DurableExecutorServiceFuture<?> submitToKeyOwner(Runnable task, Object key) {
+    public DurableExecutorServiceFuture<?> submitToKeyOwner(@Nonnull Runnable task,
+                                                            @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         RunnableAdapter<?> runnableAdapter = createRunnableAdapter(task);
         int partitionId = getPartitionId(key);
         return submitToPartition(runnableAdapter, partitionId, null);
     }
 
+    @Nonnull
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks,
+                                         long timeout, @Nonnull TimeUnit unit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks,
+                           long timeout, @Nonnull TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
+        checkNotNull(unit, "unit must not be null");
         return false;
     }
 
@@ -200,7 +213,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         NodeEngine nodeEngine = getNodeEngine();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<Future> calls = new LinkedList<Future>();
+        Collection<Future> calls = new LinkedList<>();
 
         for (Member member : members) {
             ShutdownOperation op = new ShutdownOperation(name);
@@ -211,6 +224,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         waitWithDeadline(calls, 3, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
+    @Nonnull
     @Override
     public List<Runnable> shutdownNow() {
         shutdown();
@@ -246,7 +260,9 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         throw new RejectedExecutionException();
     }
 
-    private <T> DurableExecutorServiceFuture<T> submitToPartition(Callable<T> task, int partitionId, T defaultValue) {
+    private <T> DurableExecutorServiceFuture<T> submitToPartition(@Nonnull Callable<T> task,
+                                                                  int partitionId,
+                                                                  T defaultValue) {
         checkNotNull(task, "task can't be null");
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
@@ -267,7 +283,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         InternalCompletableFuture<T> internalCompletableFuture = invokeOnPartition(op);
 
         long taskId = Bits.combineToLong(partitionId, sequence);
-        return new DurableExecutorServiceDelegateFuture<T>(internalCompletableFuture, serializationService, defaultValue, taskId);
+        return new DurableExecutorServiceDelegateFuture<>(internalCompletableFuture, serializationService, defaultValue, taskId);
     }
 
     private ExecutorService getAsyncExecutor() {
@@ -277,7 +293,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {
         checkNotNull(command, "Command can't be null");
 
-        return new RunnableAdapter<T>(command);
+        return new RunnableAdapter<>(command);
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
@@ -290,7 +306,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         return random.nextInt(partitionCount);
     }
 
-    private int getPartitionId(Object key) {
+    private int getPartitionId(@Nonnull Object key) {
         return getNodeEngine().getPartitionService().getPartitionId(key);
     }
 

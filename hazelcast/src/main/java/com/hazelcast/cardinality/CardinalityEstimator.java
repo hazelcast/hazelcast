@@ -21,9 +21,12 @@ import com.hazelcast.core.DistributedObject;
 
 import java.util.concurrent.CompletionStage;
 
+import javax.annotation.Nonnull;
+
 /**
- * CardinalityEstimator is a redundant and highly available distributed data-structure used
- * for probabilistic cardinality estimation purposes, on unique items, in significantly sized data cultures.
+ * CardinalityEstimator is a redundant and highly available distributed
+ * data-structure used for probabilistic cardinality estimation purposes,
+ * on unique items, in significantly sized data cultures.
  * <p>
  * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
@@ -36,18 +39,20 @@ public interface CardinalityEstimator extends DistributedObject {
      * Add a new object in the estimation set. This is the method you want to
      * use to feed objects into the estimator.
      * <p>
-     * Objects are considered identical if they are serialized into the same binary blob.
+     * Objects are considered identical if they are serialized into the same
+     * binary blob.
      * In other words: It does <strong>not</strong> use Java equality.
      *
      * @param obj object to add in the estimation set.
      * @throws NullPointerException if obj is null
      * @since 3.8
      */
-    void add(Object obj);
+    void add(@Nonnull Object obj);
 
     /**
      * Estimates the cardinality of the aggregation so far.
-     * If it was previously estimated and never invalidated, then a cached version is used.
+     * If it was previously estimated and never invalidated, then a cached
+     * version is used.
      *
      * @return a cached estimation or a newly computed one.
      * @since 3.8
@@ -58,7 +63,8 @@ public interface CardinalityEstimator extends DistributedObject {
      * Add a new object in the estimation set. This is the method you want to
      * use to feed objects into the estimator.
      * <p>
-     * Objects are considered identical if they are serialized into the same binary blob.
+     * Objects are considered identical if they are serialized into the same
+     * binary blob.
      * In other words: It does <strong>not</strong> use Java equality.
      * <p>
      * This method will dispatch a request and return immediately a {@link CompletionStage}.
@@ -85,11 +91,12 @@ public interface CardinalityEstimator extends DistributedObject {
      * @throws NullPointerException if obj is null
      * @since 3.8
      */
-    CompletionStage<Void> addAsync(Object obj);
+    CompletionStage<Void> addAsync(@Nonnull Object obj);
 
     /**
      * Estimates the cardinality of the aggregation so far.
-     * If it was previously estimated and never invalidated, then a cached version is used.
+     * If it was previously estimated and never invalidated, then a cached version
+     * is used.
      * <p>
      * This method will dispatch a request and return immediately a {@link CompletionStage}.
      * The operations result can be obtained in a blocking way, or a

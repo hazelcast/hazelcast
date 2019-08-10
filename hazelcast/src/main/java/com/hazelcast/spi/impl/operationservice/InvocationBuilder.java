@@ -23,6 +23,8 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 
@@ -263,7 +265,8 @@ public abstract class InvocationBuilder {
      * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
      * @return the updated InvocationBuilder.
      */
-    public InvocationBuilder setExecutionCallback(ExecutionCallback<Object> executionCallback) {
+    public InvocationBuilder setExecutionCallback(
+            @Nullable ExecutionCallback<Object> executionCallback) {
         this.executionCallback = executionCallback;
         return this;
     }

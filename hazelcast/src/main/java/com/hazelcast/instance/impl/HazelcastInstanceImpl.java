@@ -75,6 +75,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -158,68 +159,77 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return managementService;
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return name;
     }
 
+    @Nonnull
     @Override
-    public <K, V> IMap<K, V> getMap(String name) {
+    public <K, V> IMap<K, V> getMap(@Nonnull String name) {
         checkNotNull(name, "Retrieving a map instance with a null name is not allowed!");
         return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> IQueue<E> getQueue(String name) {
+    public <E> IQueue<E> getQueue(@Nonnull String name) {
         checkNotNull(name, "Retrieving a queue instance with a null name is not allowed!");
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getTopic(String name) {
+    public <E> ITopic<E> getTopic(@Nonnull String name) {
         checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
         return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getReliableTopic(String name) {
+    public <E> ITopic<E> getReliableTopic(@Nonnull String name) {
         checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
         return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> ISet<E> getSet(String name) {
+    public <E> ISet<E> getSet(@Nonnull String name) {
         checkNotNull(name, "Retrieving a set instance with a null name is not allowed!");
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> IList<E> getList(String name) {
+    public <E> IList<E> getList(@Nonnull String name) {
         checkNotNull(name, "Retrieving a list instance with a null name is not allowed!");
         return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
+    public <K, V> MultiMap<K, V> getMultiMap(@Nonnull String name) {
         checkNotNull(name, "Retrieving a multi-map instance with a null name is not allowed!");
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
+    public <E> Ringbuffer<E> getRingbuffer(@Nonnull String name) {
         checkNotNull(name, "Retrieving a ringbuffer instance with a null name is not allowed!");
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task)
+    public <T> T executeTransaction(@Nonnull TransactionalTask<T> task)
             throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task)
-            throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionOptions options,
+                                    @Nonnull TransactionalTask<T> task) throws TransactionException {
         TransactionManagerService transactionManagerService = node.getNodeEngine().getTransactionManagerService();
         return transactionManagerService.executeTransaction(options, task);
     }
@@ -230,31 +240,33 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public TransactionContext newTransactionContext(TransactionOptions options) {
+    public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
         TransactionManagerService transactionManagerService = node.getNodeEngine().getTransactionManagerService();
         return transactionManagerService.newTransactionContext(options);
     }
 
+    @Nonnull
     @Override
-    public IExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(@Nonnull String name) {
         checkNotNull(name, "Retrieving an executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public DurableExecutorService getDurableExecutorService(String name) {
+    public DurableExecutorService getDurableExecutorService(@Nonnull String name) {
         checkNotNull(name, "Retrieving a durable executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedDurableExecutorService.SERVICE_NAME, name);
     }
 
     @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+    public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
         return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
     }
@@ -264,11 +276,13 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return hazelcastCacheManager;
     }
 
+    @Nonnull
     @Override
     public Cluster getCluster() {
         return node.getClusterService();
     }
 
+    @Nonnull
     @Override
     public Member getLocalEndpoint() {
         return node.getLocalMember();
@@ -280,36 +294,43 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return proxyService.getAllDistributedObjects();
     }
 
+    @Nonnull
     @Override
     public Config getConfig() {
         return node.getConfig();
     }
 
+    @Nonnull
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return userContext;
     }
 
+    @Nonnull
     @Override
     public PartitionService getPartitionService() {
         return node.getPartitionService().getPartitionServiceProxy();
     }
 
+    @Nonnull
     @Override
     public SplitBrainProtectionService getSplitBrainProtectionService() {
         return node.getNodeEngine().getSplitBrainProtectionService();
     }
 
+    @Nonnull
     @Override
     public ClientService getClientService() {
         return new ClientServiceProxy(node);
     }
 
+    @Nonnull
     @Override
     public LoggingService getLoggingService() {
         return node.getLoggingService();
     }
 
+    @Nonnull
     @Override
     public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
@@ -320,21 +341,24 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         getLifecycleService().shutdown();
     }
 
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+    public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
         ProxyService proxyService = node.getNodeEngine().getProxyService();
         return (T) proxyService.getDistributedObject(serviceName, name);
     }
 
     @Override
-    public UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener distributedObjectListener) {
+        checkNotNull(distributedObjectListener, "DistributedObjectListener must not be null!");
         final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.addProxyListener(distributedObjectListener);
     }
 
     @Override
-    public boolean removeDistributedObjectListener(UUID registrationId) {
+    public boolean removeDistributedObjectListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "Registration ID must not be null!");
         final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.removeProxyListener(registrationId);
     }
@@ -348,29 +372,34 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return node.getNodeExtension().getMemoryStats();
     }
 
+    @Nonnull
     @Override
     public HazelcastXAResource getXAResource() {
         return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 
+    @Nonnull
     @Override
-    public CardinalityEstimator getCardinalityEstimator(String name) {
+    public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
         checkNotNull(name, "Retrieving a cardinality estimator instance with a null name is not allowed!");
         return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public PNCounter getPNCounter(String name) {
+    public PNCounter getPNCounter(@Nonnull String name) {
         checkNotNull(name, "Retrieving a PN counter instance with a null name is not allowed!");
         return getDistributedObject(PNCounterService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public IScheduledExecutorService getScheduledExecutorService(String name) {
+    public IScheduledExecutorService getScheduledExecutorService(@Nonnull String name) {
         checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public CPSubsystem getCPSubsystem() {
         return cpSubsystem;

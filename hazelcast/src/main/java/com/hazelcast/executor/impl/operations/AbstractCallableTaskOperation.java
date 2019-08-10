@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -41,7 +42,9 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
     AbstractCallableTaskOperation() {
     }
 
-    AbstractCallableTaskOperation(String name, UUID uuid, Data callableData) {
+    AbstractCallableTaskOperation(String name,
+                                  UUID uuid,
+                                  @Nonnull Data callableData) {
         this.name = name;
         this.uuid = uuid;
         this.callableData = callableData;

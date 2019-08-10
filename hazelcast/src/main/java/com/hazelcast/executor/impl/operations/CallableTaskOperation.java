@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 public final class CallableTaskOperation extends AbstractCallableTaskOperation
@@ -29,7 +30,9 @@ public final class CallableTaskOperation extends AbstractCallableTaskOperation
     public CallableTaskOperation() {
     }
 
-    public CallableTaskOperation(String name, UUID uuid, Data callableData) {
+    public CallableTaskOperation(String name,
+                                 UUID uuid,
+                                 @Nonnull Data callableData) {
         super(name, uuid, callableData);
     }
 
