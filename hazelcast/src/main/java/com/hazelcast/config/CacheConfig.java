@@ -496,9 +496,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *
      * @param disablePerEntryInvalidationEvents disables invalidation event sending behaviour if it is {@code true},
      *                                          otherwise enables it
+     * @return this configuration
      */
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheConfig<K, V> setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        return this;
     }
 
     @Override

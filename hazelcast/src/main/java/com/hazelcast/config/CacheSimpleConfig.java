@@ -563,9 +563,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      * Sets the WAN target replication reference.
      *
      * @param wanReplicationRef the WAN target replication reference
+     * @return this configuration
      */
-    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+    public CacheSimpleConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+        return this;
     }
 
     /**
@@ -699,9 +701,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      *
      * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is {@code true},
      *                                          otherwise enables it
+     * @return this configuration
      */
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheSimpleConfig setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        return this;
     }
 
     @Override

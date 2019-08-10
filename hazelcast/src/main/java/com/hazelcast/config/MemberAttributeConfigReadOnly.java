@@ -31,17 +31,17 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public void setAttribute(String key, String value) {
+    public MemberAttributeConfig setAttribute(String key, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void removeAttribute(String key) {
+    public MemberAttributeConfig removeAttribute(String key) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setAttributes(Map<String, String> attributes) {
+    public MemberAttributeConfig setAttributes(Map<String, String> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

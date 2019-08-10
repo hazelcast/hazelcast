@@ -42,15 +42,17 @@ public class SecurityInterceptorConfig {
         return className;
     }
 
-    public void setClassName(final String className) {
+    public SecurityInterceptorConfig setClassName(final String className) {
         this.className = className;
+        return this;
     }
 
     public SecurityInterceptor getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(final SecurityInterceptor implementation) {
+    public SecurityInterceptorConfig setImplementation(final SecurityInterceptor implementation) {
         this.implementation = implementation;
+        return this;
     }
 }

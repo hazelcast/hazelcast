@@ -308,7 +308,7 @@ public class AdvancedNetworkConfig {
         }
 
         @Override
-        public void setPortCount(int portCount) {
+        public NetworkConfig setPortCount(int portCount) {
             throw new UnsupportedOperationException();
         }
 

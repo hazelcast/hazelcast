@@ -57,7 +57,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
     }
 
     @Override
-    public void setSecurityInterceptorConfigs(List<SecurityInterceptorConfig> securityInterceptorConfigs) {
+    public SecurityConfig setSecurityInterceptorConfigs(List<SecurityInterceptorConfig> securityInterceptorConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

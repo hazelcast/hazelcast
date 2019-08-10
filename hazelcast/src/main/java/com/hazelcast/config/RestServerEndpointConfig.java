@@ -114,11 +114,12 @@ public class RestServerEndpointConfig
         return enabledGroups.contains(group);
     }
 
-    public void setEnabledGroups(Collection<RestEndpointGroup> groups) {
+    public RestServerEndpointConfig setEnabledGroups(Collection<RestEndpointGroup> groups) {
         enabledGroups.clear();
         if (groups != null) {
             enabledGroups.addAll(groups);
         }
+        return this;
     }
 
     @Override

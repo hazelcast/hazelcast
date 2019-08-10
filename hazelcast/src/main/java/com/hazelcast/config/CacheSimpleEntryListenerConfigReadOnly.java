@@ -28,22 +28,22 @@ public class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryList
     }
 
     @Override
-    public void setSynchronous(boolean synchronous) {
-        super.setSynchronous(synchronous);
-    }
-
-    @Override
-    public void setOldValueRequired(boolean oldValueRequired) {
+    public CacheSimpleEntryListenerConfig setSynchronous(boolean synchronous) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
+    public CacheSimpleEntryListenerConfig setOldValueRequired(boolean oldValueRequired) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
+    public CacheSimpleEntryListenerConfig setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public CacheSimpleEntryListenerConfig setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

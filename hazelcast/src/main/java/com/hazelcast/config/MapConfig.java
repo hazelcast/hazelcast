@@ -614,9 +614,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     /**
      * Sets {@link QueryCacheConfig} instances to this {@code MapConfig}.
+     * @return this configuration
      */
-    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+    public MapConfig setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
         this.queryCacheConfigs = queryCacheConfigs;
+        return this;
     }
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {

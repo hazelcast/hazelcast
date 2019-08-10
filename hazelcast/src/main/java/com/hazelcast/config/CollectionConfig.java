@@ -222,9 +222,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * Adds an item listener to this collection (listens for when items are added or removed).
      *
      * @param itemListenerConfig the item listener to add to this collection
+     * @return this configuration
      */
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+    public T addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
+        return (T) this;
     }
 
     /**

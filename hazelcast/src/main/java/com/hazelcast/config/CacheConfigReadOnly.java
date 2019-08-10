@@ -210,7 +210,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheConfig<K, V> setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         throw throwReadOnly();
     }
 

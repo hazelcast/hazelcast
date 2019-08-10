@@ -178,10 +178,12 @@ public class ClientConfig {
      *
      * @param configPatternMatcher the pattern matcher
      * @throws IllegalArgumentException if the pattern matcher is {@code null}
+     * @return this configuration
      */
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public ClientConfig setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         Preconditions.isNotNull(configPatternMatcher, "configPatternMatcher");
         this.configPatternMatcher = configPatternMatcher;
+        return this;
     }
 
     /**
@@ -744,18 +746,20 @@ public class ClientConfig {
         return queryCacheConfigs;
     }
 
-    public void setQueryCacheConfigs(Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs) {
+    public ClientConfig setQueryCacheConfigs(Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs) {
         Preconditions.isNotNull(queryCacheConfigs, "queryCacheConfigs");
         this.queryCacheConfigs.clear();
         this.queryCacheConfigs.putAll(queryCacheConfigs);
+        return this;
     }
 
     public String getInstanceName() {
         return instanceName;
     }
 
-    public void setInstanceName(String instanceName) {
+    public ClientConfig setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+        return this;
     }
 
     public ClientConnectionStrategyConfig getConnectionStrategyConfig() {
