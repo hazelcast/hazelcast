@@ -34,6 +34,8 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static java.util.Collections.singletonList;
 
 /**
@@ -50,33 +52,53 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle) {
-        return new PutOperation(name, key, value, ttl, maxIdle);
-    }
-
-    @Override
     public MapOperation createTryPutOperation(String name, Data dataKey, Data value, long timeout) {
         return new TryPutOperation(name, dataKey, value, timeout);
     }
 
     @Override
+    public MapOperation createPutOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+        if (hasNoExpiry(ttl, maxIdle)) {
+            return new PutOperation(name, key, value);
+        } else {
+            return new PutWithExpiryOperation(name, key, value, ttl, maxIdle);
+        }
+    }
+
+    private static boolean hasNoExpiry(long ttl, long maxIdle) {
+        return ttl == DEFAULT_TTL && maxIdle == DEFAULT_MAX_IDLE;
+    }
+
+    @Override
     public MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        return new SetOperation(name, dataKey, value, ttl, maxIdle);
+        if (hasNoExpiry(ttl, maxIdle)) {
+            return new SetOperation(name, dataKey, value);
+        } else {
+            return new SetWithExpiryOperation(name, dataKey, value, ttl, maxIdle);
+        }
     }
 
     @Override
     public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle) {
-        return new PutIfAbsentOperation(name, key, value, ttl, maxIdle);
+        if (hasNoExpiry(ttl, maxIdle)) {
+            return new PutIfAbsentOperation(name, key, value);
+        } else {
+            return new PutIfAbsentWithExpiryOperation(name, key, value, ttl, maxIdle);
+        }
     }
 
     @Override
-    public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle) {
-        return new PutTransientOperation(name, key, value, ttl, maxIdle);
+    public MapOperation createPutTransientOperation(String name, Data keyData, Data valueData, long ttl, long maxIdle) {
+        if (hasNoExpiry(ttl, maxIdle)) {
+            return new PutTransientOperation(name, keyData, valueData);
+        } else {
+            return new PutTransientWithExpiryOperation(name, keyData, valueData, ttl, maxIdle);
+        }
     }
 
     @Override
-    public MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent) {
-        return new RemoveOperation(name, key, disableWanReplicationEvent);
+    public MapOperation createRemoveOperation(String name, Data key) {
+        return new RemoveOperation(name, key);
     }
 
     @Override

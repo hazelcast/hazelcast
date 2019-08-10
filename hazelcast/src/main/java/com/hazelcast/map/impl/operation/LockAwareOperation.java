@@ -30,12 +30,8 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
         super(name, dataKey);
     }
 
-    protected LockAwareOperation(String name, Data dataKey, long ttl, long maxIdle) {
-        super(name, dataKey, ttl, maxIdle);
-    }
-
-    protected LockAwareOperation(String name, Data dataKey, Data dataValue, long ttl, long maxIdle) {
-        super(name, dataKey, dataValue, ttl, maxIdle);
+    public LockAwareOperation(String name, Data dataKey, Data dataValue) {
+        super(name, dataKey, dataValue);
     }
 
     @Override

@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,8 +39,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Puts records to map which are loaded from map store by {@link IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
-        BackupAwareOperation {
+public class PutFromLoadAllOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
 
     private List<Data> loadingSequence;
     private List<Data> invalidationKeys;
@@ -63,7 +63,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> loadingSequence = this.loadingSequence;
-        for (int i = 0; i < loadingSequence.size();) {
+        for (int i = 0; i < loadingSequence.size(); ) {
             Data key = loadingSequence.get(i++);
             Data dataValue = loadingSequence.get(i++);
 

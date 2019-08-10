@@ -37,12 +37,15 @@ import static com.hazelcast.core.EntryEventType.MERGED;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
- * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Contains multiple merge entries for split-brain
+ * healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
-public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
+public class MergeOperation extends MapOperation
+        implements PartitionAwareOperation, BackupAwareOperation {
 
+    private boolean disableWanReplicationEvent;
     private List<MapMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
@@ -66,6 +69,11 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override

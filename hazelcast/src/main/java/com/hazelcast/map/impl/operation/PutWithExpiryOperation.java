@@ -17,48 +17,59 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import java.io.IOException;
 
-public class SetOperation extends BasePutOperation implements MutatingOperation {
+public class PutWithExpiryOperation extends PutOperation {
 
-    private transient boolean newRecord;
+    private long ttl;
+    private long maxIdle;
 
-    public SetOperation() {
+    public PutWithExpiryOperation() {
     }
 
-    public SetOperation(String name, Data dataKey, Data value) {
+    public PutWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
         super(name, dataKey, value);
+        this.ttl = ttl;
+        this.maxIdle = maxIdle;
     }
 
     @Override
-    protected void runInternal() {
-        oldValue = recordStore.set(dataKey, dataValue, getTtl(), getMaxIdle());
-        newRecord = oldValue == null;
-    }
-
     protected long getTtl() {
-        return DEFAULT_TTL;
-    }
-
-    protected long getMaxIdle() {
-        return DEFAULT_MAX_IDLE;
+        return ttl;
     }
 
     @Override
-    protected void afterRunInternal() {
-        eventType = newRecord ? ADDED : UPDATED;
+    protected long getMaxIdle() {
+        return maxIdle;
+    }
 
-        super.afterRunInternal();
+    @Override
+    public Object getResponse() {
+        return oldValue;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.SET;
+        return MapDataSerializerHook.PUT_WITH_EXPIRY;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+
+        out.writeLong(ttl);
+        out.writeLong(maxIdle);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+
+        ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 }
