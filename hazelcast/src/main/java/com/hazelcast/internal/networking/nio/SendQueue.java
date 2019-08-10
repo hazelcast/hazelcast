@@ -64,6 +64,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
     // Therefor no synchronization is needed.
     private Node takeStackOldest;
     private Node takeStackYoungest;
+    private OutboundFrame[] frames = new OutboundFrame[100];
     private long lowWaterMark;
     private long highWatermark;
     private final SwCounter bytesWritten;
@@ -120,7 +121,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
             Node prev = putStack.get();
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
-            long bytesPending = next.bytesOffered - bytesWritten.get();
+            //long bytesPending = next.bytesOffered - bytesWritten.get();
             // todo: be careful with backing of a fat packet because it could be the queue is empty.
             //if(bytesPending>10mb){
             //      do backoff.
@@ -247,7 +248,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     /**
      * Tries to unschedule the SendQueue. This should be done by the Thread that owns the pipeline and
-     * determines that nothing is left to be done.
+     * determines that nothing is left to be done. So the
      *
      * The reason that try is returned if scheduling false is that other methods like offer also return
      * true in case of scheduling needed.
@@ -277,6 +278,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
         /// the put stack is empty, lets try to cas it to unscheduled.
         // todo: litter.
+        // we need a new node because we need to keep track of the number of bytes offered.
         Node next = new Node(UNSCHEDULED);
         next.bytesOffered = prev.bytesOffered;
         return !putStack.compareAndSet(prev, next);
