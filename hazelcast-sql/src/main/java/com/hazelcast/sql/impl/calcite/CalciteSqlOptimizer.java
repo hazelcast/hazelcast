@@ -101,7 +101,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public QueryPlan prepare(String sql) {
         // 1. Prepare context.
-        JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
+        JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig config = prepareConfig();
         Prepare.CatalogReader catalogReader = prepareCatalogReader(typeFactory, config);
         SqlValidator validator = prepareValidator(typeFactory, catalogReader);

@@ -10,6 +10,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
+import com.hazelcast.sql.impl.expression.ItemExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
@@ -359,6 +360,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.CASE:
                 return new CaseExpression(hzOperands);
 
+            case CallOperator.ITEM:
+                return new ItemExpression(hzOperands.get(0), hzOperands.get(1));
+
             default:
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
         }
@@ -500,6 +504,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return CallOperator.CASE;
 
             case OTHER_FUNCTION: {
+                if ("ITEM".equals(operator.getName()))
+                    return CallOperator.ITEM;
+
                 SqlFunction function = (SqlFunction)operator;
 
                 if (function == SqlStdOperatorTable.COS)
