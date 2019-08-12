@@ -16,16 +16,23 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.worker.control.FragmentDeployment;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.sql.impl.worker.control.FragmentDeployment;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * Context of the running query.
  */
 public class QueryContext {
+    /** Extractors updater. */
+    private static final AtomicReferenceFieldUpdater<QueryContext, Extractors> EXTRACTORS_UPDATER =
+        AtomicReferenceFieldUpdater.newUpdater(QueryContext.class, Extractors.class, "extractors");
+
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
@@ -43,6 +50,10 @@ public class QueryContext {
 
     /** Maps an edge to array, whose length is stripe length, and values are data thread IDs. */
     private final Map<Integer, int[]> edgeToStripeMap;
+
+    /** Extractors. */
+    @SuppressWarnings("unused")
+    private volatile Extractors extractors;
 
     public QueryContext(NodeEngine nodeEngine, QueryId queryId, List<Object> arguments, QueryResultConsumer rootConsumer,
         List<FragmentDeployment> fragmentDeployments, Map<Integer, int[]> edgeToStripeMap) {
@@ -79,5 +90,24 @@ public class QueryContext {
             throw new IllegalArgumentException("Argument not found: " + idx);
 
         return arguments.get(idx);
+    }
+
+    /**
+     * @return Extractors.
+     */
+    public Extractors getExtractors() {
+        Extractors res = extractors;
+
+        if (res != null)
+            return res;
+
+        InternalSerializationService ss = (InternalSerializationService)nodeEngine.getSerializationService();
+
+        res = Extractors.newBuilder(ss).build();
+
+        if (EXTRACTORS_UPDATER.compareAndSet(this, null, res))
+            return res;
+        else
+            return extractors;
     }
 }

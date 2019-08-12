@@ -38,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select COALESCE(age, name, birthDate) FROM persons ORDER BY name";
+    private static final String QUERY = "select persons.address.apartment FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -80,6 +80,7 @@ public class SqlTest extends HazelcastTestSupport {
         public final boolean active;
         public final LocalDateTime birthDate = LocalDateTime.now();
         public final String birthDateString;
+        public final Address address = new Address();
 
         public Person(int key) {
             this.__key = key;
@@ -91,6 +92,11 @@ public class SqlTest extends HazelcastTestSupport {
 
             birthDateString = LocalDateTime.now().toString();
         }
+    }
 
+    public static class Address implements Serializable {
+        private static final long serialVersionUID = 8442512199470933111L;
+
+        public final int apartment = ThreadLocalRandom.current().nextInt(100);
     }
 }

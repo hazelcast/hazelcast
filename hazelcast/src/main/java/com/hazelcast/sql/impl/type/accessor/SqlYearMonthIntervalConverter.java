@@ -20,7 +20,7 @@ import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.GenericType;
 
 /**
- * Converter for {@link Integer} type.
+ * Converter for {@link SqlYearMonthInterval} type.
  */
 public final class SqlYearMonthIntervalConverter extends Converter {
     /** Singleton instance. */

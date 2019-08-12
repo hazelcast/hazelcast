@@ -19,19 +19,19 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 
 /**
- * Specialized expression type which extract a value from the key-value pair.
- *
- * @param <T> Return type.
+ * Expression which extract a field from the underlying expression.
  */
 public class ExtractorExpression<T> implements Expression<T> {
-    /** Path for extractor. */
+    /** Operand. */
+    private Expression operand;
+
+    /** Path. */
     private String path;
 
     /** Type of the returned object. */
@@ -41,20 +41,19 @@ public class ExtractorExpression<T> implements Expression<T> {
         // No-op.
     }
 
-    public ExtractorExpression(String path) {
+    public ExtractorExpression(Expression operand, String path) {
+        this.operand = operand;
         this.path = path;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        assert row instanceof KeyValueRow;
+        Object operandValue = operand.eval(ctx, row);
 
-        KeyValueRow row0 = (KeyValueRow)row;
+        Object res = ctx.getExtractors().extract(operandValue, path, null);
 
-        Object res = (T)row0.extract(path);
-
-        if (type == null)
+        if (res != null && type == null)
             type = DataType.resolveType(res);
 
         return (T)res;
@@ -67,11 +66,13 @@ public class ExtractorExpression<T> implements Expression<T> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(operand);
         out.writeUTF(path);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        operand = in.readObject();
         path = in.readUTF();
     }
 }

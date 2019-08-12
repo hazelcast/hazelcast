@@ -46,10 +46,12 @@ public class ColumnExpression<T> implements Expression<T> {
     @Override public T eval(QueryContext ctx, Row row) {
         Object res = row.getColumn(idx);
 
-        if (type == null)
-            type = DataType.resolveType(res);
-        else
-            type.ensureSame(res);
+        if (res != null) {
+            if (type == null)
+                type = DataType.resolveType(res);
+            else
+                type.ensureSame(res);
+        }
 
         return (T)res;
     }

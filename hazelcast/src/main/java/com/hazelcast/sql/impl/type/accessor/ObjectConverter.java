@@ -16,27 +16,32 @@
 
 package com.hazelcast.sql.impl.type.accessor;
 
-import com.hazelcast.sql.SqlDaySecondInterval;
+import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.GenericType;
 
 /**
- * Converter for {@link SqlDaySecondInterval} type.
+ * Converter for {@link Integer} type.
  */
-public final class SqlDaySecondIntervalConverter extends Converter {
+public final class ObjectConverter extends Converter {
     /** Singleton instance. */
-    public static SqlDaySecondIntervalConverter INSTANCE = new SqlDaySecondIntervalConverter();
+    public static ObjectConverter INSTANCE = new ObjectConverter();
 
     @Override
     public Class getClazz() {
-        return SqlDaySecondInterval.class;
+        return Object.class;
     }
 
     @Override
     public GenericType getGenericType() {
-        return GenericType.INTERVAL_DAY_SECOND;
+        return GenericType.OBJECT;
     }
 
-    private SqlDaySecondIntervalConverter() {
+    @Override
+    public String asVarchar(Object val) {
+        return val != null ? val.toString() : "null";
+    }
+
+    private ObjectConverter() {
         // No-op.
     }
 }

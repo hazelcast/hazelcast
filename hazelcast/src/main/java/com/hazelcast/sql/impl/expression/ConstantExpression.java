@@ -46,7 +46,7 @@ public class ConstantExpression<T> implements Expression<T> {
 
     @Override
     public T eval(QueryContext ctx, Row row) {
-        if (type == null)
+        if (val != null && type == null)
             type = DataType.resolveType(val);
 
         return val;

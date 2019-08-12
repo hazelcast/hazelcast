@@ -19,35 +19,40 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.row.KeyValueRow;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
 
 /**
- * Expression which returns an argument by index.
+ * Specialized expression type which extract a value from the key-value pair.
  *
  * @param <T> Return type.
  */
-public class ArgumentExpression<T> implements Expression<T> {
-    /** Index. */
-    private int idx;
+public class KeyValueExtractorExpression<T> implements Expression<T> {
+    /** Path for extractor. */
+    private String path;
 
-    /** Return type. */
+    /** Type of the returned object. */
     private transient DataType type;
 
-    public ArgumentExpression() {
+    public KeyValueExtractorExpression() {
         // No-op.
     }
 
-    public ArgumentExpression(int idx) {
-        this.idx = idx;
+    public KeyValueExtractorExpression(String path) {
+        this.path = path;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(QueryContext ctx, Row row) {
-        Object res = ctx.getArgument(idx);
+        assert row instanceof KeyValueRow;
+
+        KeyValueRow row0 = (KeyValueRow)row;
+
+        Object res = (T)row0.extract(path);
 
         if (res != null && type == null)
             type = DataType.resolveType(res);
@@ -62,11 +67,11 @@ public class ArgumentExpression<T> implements Expression<T> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(idx);
+        out.writeUTF(path);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        idx = in.readInt();
+        path = in.readUTF();
     }
 }

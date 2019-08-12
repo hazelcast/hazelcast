@@ -15,7 +15,8 @@ public enum GenericType {
     TIMESTAMP(false, true),
     TIMESTAMP_WITH_TIMEZONE(false, true),
     INTERVAL_YEAR_MONTH(false, false),
-    INTERVAL_DAY_SECOND(false, false);
+    INTERVAL_DAY_SECOND(false, false),
+    OBJECT(false, false);
 
     private final boolean convertToNumeric;
     private final boolean temporal;

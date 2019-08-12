@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.type.accessor.LocalDateConverter;
 import com.hazelcast.sql.impl.type.accessor.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.LongConverter;
+import com.hazelcast.sql.impl.type.accessor.ObjectConverter;
 import com.hazelcast.sql.impl.type.accessor.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.ShortConverter;
 import com.hazelcast.sql.impl.type.accessor.SqlDaySecondIntervalConverter;
@@ -86,6 +87,7 @@ public class DataType {
     public static final int PRECEDENCE_DATE = 1300;
     public static final int PRECEDENCE_TIMESTAMP = 1400;
     public static final int PRECEDENCE_TIMESTAMP_WITH_TIMEZONE = 1500;
+    public static final int PRECEDENCE_OBJECT= 1600;
 
     /** LATE (unresolved) data type. */
     public static final DataType LATE = new DataType(
@@ -267,6 +269,15 @@ public class DataType {
         PRECEDENCE_INTERVAL_DAY_SECOND
     );
 
+    /** Object data type. */
+    public static final DataType OBJECT = new DataType(
+        GenericType.OBJECT,
+        ObjectConverter.INSTANCE,
+        PRECISION_UNLIMITED,
+        SCALE_UNLIMITED,
+        PRECEDENCE_OBJECT
+    );
+
     /** Common cached integer data types. */
     private static DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
 
@@ -394,6 +405,9 @@ public class DataType {
 
             case INTERVAL_DAY_SECOND:
                 return DataType.INTERVAL_DAY_SECOND;
+
+            case OBJECT:
+                return DataType.OBJECT;
         }
 
         throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported class: " + obj.getClass().getName());

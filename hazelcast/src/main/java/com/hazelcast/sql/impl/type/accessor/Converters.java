@@ -52,6 +52,9 @@ public class Converters {
         converters.add(SqlYearMonthIntervalConverter.INSTANCE);
         converters.add(SqlDaySecondIntervalConverter.INSTANCE);
 
+        // Object.
+        converters.add(ObjectConverter.INSTANCE);
+
         CLASS_TO_CONVERTER = new HashMap<>();
 
         for (Converter converter : converters) {
@@ -96,7 +99,7 @@ public class Converters {
         if (val instanceof Calendar)
             return CalendarConverter.INSTANCE;
 
-        return null;
+        return ObjectConverter.INSTANCE;
     }
 
     /**

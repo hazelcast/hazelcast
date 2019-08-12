@@ -9,6 +9,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExtractorExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
@@ -385,7 +386,12 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
     @Override
     public Expression visitFieldAccess(RexFieldAccess fieldAccess) {
-        throw new UnsupportedOperationException();
+        RexNode referenceExpr = fieldAccess.getReferenceExpr();
+
+        Expression convertedReferenceExpr = referenceExpr.accept(this);
+        String path = fieldAccess.getField().getName();
+
+        return new ExtractorExpression<>(convertedReferenceExpr, path);
     }
 
     @Override

@@ -4,7 +4,6 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Util;
 
 import java.util.ArrayList;
@@ -40,7 +39,9 @@ public class HazelcastTableFields {
         // TODO: Handle star.
 
         // Add the field dynamically.
-        RelDataType type = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.ANY), true);
+
+        RelDataType type = new HazelcastTableRelDataType(typeFactory, new HazelcastTableFields());
+        //RelDataType type = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.ANY), true);
 
         RelDataTypeField field = new RelDataTypeFieldImpl(
             fieldName,
