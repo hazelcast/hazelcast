@@ -4,33 +4,33 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
+import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
-import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
-import com.hazelcast.sql.impl.expression.CaseExpression;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
-import com.hazelcast.sql.impl.expression.string.ConcatFunction;
-import com.hazelcast.sql.impl.expression.time.CurrentDateFunction;
-import com.hazelcast.sql.impl.expression.time.DatePartFunction;
-import com.hazelcast.sql.impl.expression.time.DatePartUnit;
 import com.hazelcast.sql.impl.expression.math.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
-import com.hazelcast.sql.impl.expression.time.GetTimestampFunction;
-import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
 import com.hazelcast.sql.impl.expression.math.MathBiFunction;
 import com.hazelcast.sql.impl.expression.math.MathUniFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusMinusFunction;
-import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.math.RandomFunction;
-import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.math.SignFunction;
-import com.hazelcast.sql.impl.expression.string.StringFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.PositionFunction;
+import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
+import com.hazelcast.sql.impl.expression.string.StringFunction;
+import com.hazelcast.sql.impl.expression.time.CurrentDateFunction;
+import com.hazelcast.sql.impl.expression.time.DatePartFunction;
+import com.hazelcast.sql.impl.expression.time.DatePartUnit;
+import com.hazelcast.sql.impl.expression.time.GetTimestampFunction;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -71,7 +71,6 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
     @Override
     public Expression visitLocalRef(RexLocalRef localRef) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
@@ -366,48 +365,41 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
     @Override
     public Expression visitOver(RexOver over) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitCorrelVariable(RexCorrelVariable correlVariable) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitDynamicParam(RexDynamicParam dynamicParam) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitRangeRef(RexRangeRef rangeRef) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitFieldAccess(RexFieldAccess fieldAccess) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitSubQuery(RexSubQuery subQuery) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitTableInputRef(RexTableInputRef fieldRef) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression visitPatternFieldRef(RexPatternFieldRef fieldRef) {
-        // TODO
         throw new UnsupportedOperationException();
     }
 
