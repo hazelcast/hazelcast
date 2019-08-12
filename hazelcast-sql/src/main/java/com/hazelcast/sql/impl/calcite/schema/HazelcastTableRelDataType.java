@@ -7,6 +7,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
 import org.apache.calcite.sql.type.SqlTypeExplicitPrecedenceList;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.List;
@@ -60,7 +61,7 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
 
     @Override
     public SqlTypeName getSqlTypeName() {
-        return SqlTypeName.ROW;
+        return SqlTypeName.ANY;
     }
 
     @Override
@@ -76,10 +77,5 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
     @Override
     public boolean isDynamicStruct() {
         return true;
-    }
-
-    @Override
-    public RelDataTypeFamily getFamily() {
-        return getSqlTypeName().getFamily();
     }
 }

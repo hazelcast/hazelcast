@@ -38,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "select persons.address.apartment FROM persons ORDER BY name";
+    private static final String QUERY = "select persons.address.apartment, persons.address.apartment + 1 FROM persons ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
