@@ -68,7 +68,7 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
                 throw new HazelcastSqlException(-1, "Unsupported container type: " + container.getClass());
         }
 
-        if (resType == null)
+        if (res != null && resType == null)
             resType = DataType.resolveType(res);
 
         return (T)res;
