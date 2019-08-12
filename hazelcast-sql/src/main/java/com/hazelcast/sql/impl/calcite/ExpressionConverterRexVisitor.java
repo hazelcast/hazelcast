@@ -7,31 +7,30 @@ import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.call.CallOperator;
-import com.hazelcast.sql.impl.expression.call.func.AbsFunction;
-import com.hazelcast.sql.impl.expression.call.func.AndOrPredicate;
-import com.hazelcast.sql.impl.expression.call.func.CaseExpression;
-import com.hazelcast.sql.impl.expression.call.func.ComparisonPredicate;
-import com.hazelcast.sql.impl.expression.call.func.ConcatFunction;
-import com.hazelcast.sql.impl.expression.call.func.CurrentDateFunction;
-import com.hazelcast.sql.impl.expression.call.func.DatePartFunction;
-import com.hazelcast.sql.impl.expression.call.func.DatePartUnit;
-import com.hazelcast.sql.impl.expression.call.func.DivideRemainderFunction;
-import com.hazelcast.sql.impl.expression.call.func.DoubleDoubleRetDoubleFunction;
-import com.hazelcast.sql.impl.expression.call.func.DoubleRetDoubleFunction;
-import com.hazelcast.sql.impl.expression.call.func.FloorCeilFunction;
-import com.hazelcast.sql.impl.expression.call.func.GetTimestampFunction;
-import com.hazelcast.sql.impl.expression.call.func.IsPredicate;
-import com.hazelcast.sql.impl.expression.call.func.MultiplyFunction;
-import com.hazelcast.sql.impl.expression.call.func.PlusMinusFunction;
-import com.hazelcast.sql.impl.expression.call.func.PositionFunction;
-import com.hazelcast.sql.impl.expression.call.func.RandomFunction;
-import com.hazelcast.sql.impl.expression.call.func.ReplaceFunction;
-import com.hazelcast.sql.impl.expression.call.func.RoundTruncateFunction;
-import com.hazelcast.sql.impl.expression.call.func.SignFunction;
-import com.hazelcast.sql.impl.expression.call.func.StringRetIntFunction;
-import com.hazelcast.sql.impl.expression.call.func.StringRetStringFunction;
-import com.hazelcast.sql.impl.expression.call.func.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.math.AbsFunction;
+import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.CaseExpression;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.time.CurrentDateFunction;
+import com.hazelcast.sql.impl.expression.time.DatePartFunction;
+import com.hazelcast.sql.impl.expression.time.DatePartUnit;
+import com.hazelcast.sql.impl.expression.math.DivideRemainderFunction;
+import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
+import com.hazelcast.sql.impl.expression.time.GetTimestampFunction;
+import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
+import com.hazelcast.sql.impl.expression.math.MathBiFunction;
+import com.hazelcast.sql.impl.expression.math.MathUniFunction;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.math.PlusMinusFunction;
+import com.hazelcast.sql.impl.expression.string.PositionFunction;
+import com.hazelcast.sql.impl.expression.math.RandomFunction;
+import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
+import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
+import com.hazelcast.sql.impl.expression.math.SignFunction;
+import com.hazelcast.sql.impl.expression.string.StringFunction;
+import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -247,12 +246,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case CallOperator.CHAR_LENGTH:
             case CallOperator.ASCII:
-                return new StringRetIntFunction(hzOperands.get(0), hzOperator);
-
             case CallOperator.UPPER:
             case CallOperator.LOWER:
             case CallOperator.INITCAP:
-                return new StringRetStringFunction(hzOperands.get(0), hzOperator);
+                return new StringFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.CONCAT:
                 return new ConcatFunction(hzOperands.get(0), hzOperands.get(1));
@@ -279,7 +276,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CallOperator.LOG10:
             case CallOperator.DEGREES:
             case CallOperator.RADIANS:
-                return new DoubleRetDoubleFunction(hzOperands.get(0), hzOperator);
+                return new MathUniFunction(hzOperands.get(0), hzOperator);
 
             case CallOperator.FLOOR:
                 return new FloorCeilFunction(hzOperands.get(0), false);
@@ -319,7 +316,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
             case CallOperator.ATAN2:
             case CallOperator.POWER:
-                return new DoubleDoubleRetDoubleFunction(hzOperands.get(0), hzOperands.get(1), hzOperator);
+                return new MathBiFunction(hzOperands.get(0), hzOperands.get(1), hzOperator);
 
             case CallOperator.EXTRACT:
                 DatePartUnit unit = ((ConstantExpression<DatePartUnit>)hzOperands.get(0)).getValue();
