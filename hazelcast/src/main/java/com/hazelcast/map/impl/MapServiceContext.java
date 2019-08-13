@@ -98,7 +98,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      * @see MapManagedService#shutdown(boolean)
      */
     void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate, int partitionId,
-                                                     boolean onShutdown, boolean onRecordStoreDestroy);
+                                                     RecordStore.CleanupReason reason);
 
     MapService getService();
 

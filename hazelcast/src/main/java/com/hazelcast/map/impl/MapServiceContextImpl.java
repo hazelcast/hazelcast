@@ -305,11 +305,10 @@ class MapServiceContextImpl implements MapServiceContext {
      * @param onRecordStoreDestroy {@code true} if this method is called during to destroy record store,
      *                             otherwise set {@code false}
      */
-    protected void removeAllRecordStoresOfAllMaps(boolean onShutdown, boolean onRecordStoreDestroy) {
+    protected void removeAllRecordStoresOfAllMaps(RecordStore.CleanupReason reason) {
         for (PartitionContainer partitionContainer : partitionContainers) {
             if (partitionContainer != null) {
-                removeRecordStoresFromPartitionMatchingWith(recordStore -> true,
-                        partitionContainer.getPartitionId(), onShutdown, onRecordStoreDestroy);
+                removeRecordStoresFromPartitionMatchingWith(recordStore -> true, partitionContainer.getPartitionId(), reason);
             }
         }
     }
@@ -317,8 +316,7 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate,
                                                             int partitionId,
-                                                            boolean onShutdown,
-                                                            boolean onRecordStoreDestroy) {
+                                                            RecordStore.CleanupReason reason) {
 
         PartitionContainer container = partitionContainers[partitionId];
         if (container == null) {
@@ -329,7 +327,7 @@ class MapServiceContextImpl implements MapServiceContext {
         while (partitionIterator.hasNext()) {
             RecordStore partition = partitionIterator.next();
             if (predicate.test(partition)) {
-                partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                partition.clearPartition(reason);
                 partitionIterator.remove();
             }
         }
@@ -418,13 +416,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        removeAllRecordStoresOfAllMaps(false, false);
+        removeAllRecordStoresOfAllMaps(RecordStore.CleanupReason.Reset);
         mapNearCacheManager.reset();
     }
 
     @Override
     public void shutdown() {
-        removeAllRecordStoresOfAllMaps(true, false);
+        removeAllRecordStoresOfAllMaps(RecordStore.CleanupReason.Shutdown);
         mapNearCacheManager.shutdown();
         mapContainers.clear();
         expirationManager.onShutdown();

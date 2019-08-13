@@ -57,7 +57,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        ((DefaultRecordStore) recordStore).clearOtherDataThanStorage(false, true);
+        ((DefaultRecordStore) recordStore).clearOtherDataThanStorage(RecordStore.CleanupReason.Destroy);
     }
 
     @Override

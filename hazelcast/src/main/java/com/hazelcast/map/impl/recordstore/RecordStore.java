@@ -525,8 +525,7 @@ public interface RecordStore<R extends Record> {
      * @param onRecordStoreDestroy true if record-store will be destroyed,
      *                             otherwise false.
      */
-    void clearPartition(boolean onShutdown,
-                        boolean onRecordStoreDestroy);
+    void clearPartition(CleanupReason reason);
 
     /**
      * Called by {@link IMap#clear()}.
@@ -552,4 +551,11 @@ public interface RecordStore<R extends Record> {
      * Destroys data in this record store.
      */
     void destroy();
+
+    enum CleanupReason {
+        Reset,
+        Destroy,
+        Shutdown
+    }
+
 }

@@ -1188,26 +1188,28 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition(false, true);
+        clearPartition(CleanupReason.Destroy);
     }
 
     @Override
-    public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
+    public void clearPartition(CleanupReason reason) {
         clearLockStore();
-        clearOtherDataThanStorage(onShutdown, onStorageDestroy);
+        clearOtherDataThanStorage(reason);
 
-        if (onShutdown) {
-            if (hasPooledMemoryAllocator()) {
-                destroyStorageImmediate(true, true);
-            } else {
-                destroyStorageAfterClear(true, true);
-            }
-        } else {
-            if (onStorageDestroy) {
-                destroyStorageAfterClear(false, false);
-            } else {
+        switch (reason) {
+            case Reset:
                 clearStorage(false);
-            }
+                break;
+            case Destroy:
+                destroyStorageAfterClear(false, false);
+                break;
+            case Shutdown:
+                if (hasPooledMemoryAllocator()) {
+                    destroyStorageImmediate(true, true);
+                } else {
+                    destroyStorageAfterClear(true, true);
+                }
+                break;
         }
     }
 
@@ -1221,9 +1223,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * Only cleans the data other than storage-data that is held on this record
      * store. Other services data like lock-service-data is not cleared here.
      */
-    public void clearOtherDataThanStorage(boolean onShutdown, boolean onStorageDestroy) {
+    public void clearOtherDataThanStorage(CleanupReason reason) {
         clearMapStore();
-        clearIndexedData(onShutdown, onStorageDestroy);
+        clearIndexedData(reason);
     }
 
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
@@ -1265,9 +1267,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * Only indexed data will be removed, index info will stay.
      */
-    private void clearIndexedData(boolean onShutdown, boolean onStorageDestroy) {
-        clearGlobalIndexes(onShutdown);
-        clearPartitionedIndexes(onStorageDestroy);
+    private void clearIndexedData(CleanupReason reason) {
+        clearGlobalIndexes(reason == CleanupReason.Shutdown);
+        clearPartitionedIndexes(reason == CleanupReason.Destroy);
     }
 
     private void clearGlobalIndexes(boolean onShutdown) {
