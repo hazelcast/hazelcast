@@ -1210,6 +1210,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     destroyStorageAfterClear(true, true);
                 }
                 break;
+            default:
+                throw new IllegalStateException("unexpected cleanup reason: " + reason);
         }
     }
 
