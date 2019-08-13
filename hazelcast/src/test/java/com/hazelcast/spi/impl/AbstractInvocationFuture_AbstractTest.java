@@ -60,7 +60,7 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         @Override
         protected void onInterruptDetected() {
             interruptDetected = true;
-            complete(new InterruptedException());
+            completeExceptionally(new InterruptedException());
         }
 
         @Override

@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,7 +57,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
     }
 
     @Test
-    public void whenCustomerExecutor() {
+    public void whenCustomExecutor() {
         Executor defaultExecutor = mock(Executor.class);
         Executor customExecutor = mock(Executor.class);
         TestFuture future = new TestFuture(defaultExecutor, logger);
@@ -90,12 +89,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         final ExecutionCallback callback = mock(ExecutionCallback.class);
         future.andThen(callback);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback).onResponse(value);
-            }
-        });
+        assertTrueEventually(() -> verify(callback).onResponse(value));
     }
 
     @Test
@@ -108,12 +102,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 
         future.complete(value);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback).onResponse(value);
-            }
-        });
+        assertTrueEventually(() -> verify(callback).onResponse(value));
     }
 
     @Test
@@ -125,14 +114,9 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         verifyZeroInteractions(callback);
 
         final ExpectedRuntimeException ex = new ExpectedRuntimeException();
-        future.complete(ex);
+        future.completeExceptionally(ex);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback).onFailure(ex);
-            }
-        });
+        assertTrueEventually(() -> verify(callback).onFailure(ex));
     }
 
     @Test
@@ -159,13 +143,8 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         future.andThen(callback);
 
         final MemberLeftException ex = new MemberLeftException();
-        future.complete(ex);
+        future.completeExceptionally(ex);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback).onFailure(ex);
-            }
-        });
+        assertTrueEventually(() -> verify(callback).onFailure(ex));
     }
 }
