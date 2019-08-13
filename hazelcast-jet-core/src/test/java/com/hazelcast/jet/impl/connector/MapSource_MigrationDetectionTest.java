@@ -47,7 +47,7 @@ import static com.hazelcast.jet.pipeline.Sources.map;
 import static com.hazelcast.jet.pipeline.Sources.remoteMap;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSupport {
+public class MapSource_MigrationDetectionTest extends JetTestSupport {
 
     private static CountDownLatch startLatch;
     private static CountDownLatch proceedLatch;
@@ -94,9 +94,9 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
         }
 
         // populate the map
-        IMap m = mapInstance.getMap("map");
-        Map tmpMap = new HashMap();
-        for (int i = 0; i < 10000; i++) {
+        IMap<Integer, Integer> m = mapInstance.getMap("map");
+        Map<Integer, Integer> tmpMap = new HashMap<>();
+        for (int i = 0; i < 10_000; i++) {
             tmpMap.put(i, i);
         }
         m.putAll(tmpMap);

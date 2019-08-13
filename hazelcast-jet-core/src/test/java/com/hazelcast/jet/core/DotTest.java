@@ -140,7 +140,7 @@ public class DotTest {
                 "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "}", p.toDotString());
         assertEquals("digraph DAG {\n" +
-            "\t\"mapSource(source1\\\")\" [tooltip=\"local-parallelism=2\"];\n" +
+            "\t\"mapSource(source1\\\")\" [tooltip=\"local-parallelism=default\"];\n" +
             "\t\"aggregateToCount-prepare\" [tooltip=\"local-parallelism=default\"];\n" +
             "\t\"aggregateToCount\" [tooltip=\"local-parallelism=default\"];\n" +
             "\t\"loggerSink\" [tooltip=\"local-parallelism=1\"];\n" +

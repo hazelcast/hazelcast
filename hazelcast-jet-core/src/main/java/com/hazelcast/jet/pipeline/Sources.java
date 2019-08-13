@@ -26,8 +26,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.EventTimeMapper;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
@@ -206,7 +206,7 @@ public final class Sources {
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
      * data traffic. If your data is stored in the IMDG using the <a href=
-     *     "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
+     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance and
@@ -276,7 +276,7 @@ public final class Sources {
      * this.
      * <p>
      * If your data is stored in the IMDG using the <a href=
-     *   "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
+     *   "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance
@@ -563,7 +563,8 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return batchFromProcessor("remoteMapSource(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
+        return batchFromProcessor("remoteMapSource(" + mapName + ')',
+                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig)));
     }
 
     /**
@@ -574,7 +575,7 @@ public final class Sources {
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
      * data traffic. If your data is stored in the IMDG using the <a href=
-     *     "http://docs.hazelcast.org/docs/3.10/manual/html-single/index.html#implementing-portable-serialization">
+     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and {@link
      * Projections#multiAttribute}) to create your projection instance and
@@ -626,7 +627,7 @@ public final class Sources {
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                readRemoteMapP(mapName, clientConfig, predicate, projection));
+                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
     }
 
     /**
@@ -641,7 +642,7 @@ public final class Sources {
             @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projection
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                readRemoteMapP(mapName, clientConfig, predicate, projection));
+                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
     }
 
     /**
@@ -843,9 +844,8 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return batchFromProcessor(
-                "remoteCacheSource(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
-        );
+        return batchFromProcessor("remoteCacheSource(" + cacheName + ')',
+                ProcessorMetaSupplier.of(readRemoteCacheP(cacheName, clientConfig)));
     }
 
     /**

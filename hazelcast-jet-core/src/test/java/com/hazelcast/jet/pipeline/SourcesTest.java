@@ -275,7 +275,7 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @Test
-    public void remoteMapWithUnknownValueClass() throws Exception {
+    public void remoteMapWithUnknownValueClass_whenQueryingIsNotNecessary() throws Exception {
         // Given
         URL jarResource = Thread.currentThread().getContextClassLoader()
                                 .getResource("deployment/sample-pojo-1.0-car.jar");

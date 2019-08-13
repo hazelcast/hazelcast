@@ -16,22 +16,17 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.asClientConfig;
-import static com.hazelcast.jet.impl.util.Util.asXmlString;
 import static java.lang.Math.min;
 import static java.util.stream.IntStream.rangeClosed;
 
@@ -87,8 +82,4 @@ public final class ReadIListP extends AbstractProcessor {
         return clientXml != null;
     }
 
-    public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
-        String clientXml = asXmlString(clientConfig);
-        return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(listName, clientXml)), listName);
-    }
 }

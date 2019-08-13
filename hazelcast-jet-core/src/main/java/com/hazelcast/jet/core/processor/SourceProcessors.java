@@ -32,10 +32,9 @@ import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
+import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
-import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
-import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
@@ -89,7 +88,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return ReadWithPartitionIteratorP.readMapSupplier(mapName);
+        return HazelcastReaders.readLocalMapSupplier(mapName);
     }
 
     /**
@@ -102,7 +101,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<? super K, ? super V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, projection);
+        return HazelcastReaders.readLocalMapSupplier(mapName, predicate, projection);
     }
 
     /**
@@ -115,7 +114,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<? super K, ? super V> predicate,
             @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projection
     ) {
-        return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, toProjection(projection));
+        return HazelcastReaders.readLocalMapSupplier(mapName, predicate, toProjection(projection));
     }
 
 
@@ -152,8 +151,8 @@ public final class SourceProcessors {
      * {@link Sources#remoteMap(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return ReadWithPartitionIteratorP.readRemoteMapSupplier(mapName, clientConfig);
+    public static ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig);
     }
 
     /**
@@ -161,13 +160,13 @@ public final class SourceProcessors {
      * {@link Sources#remoteMap(String, ClientConfig, Predicate, Projection)}.
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier readRemoteMapP(
+    public static <T, K, V> ProcessorSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<? super K, ? super V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMapSupplier(mapName, clientConfig, projection, predicate);
+        return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig, predicate, projection);
     }
 
     /**
@@ -175,15 +174,13 @@ public final class SourceProcessors {
      * {@link Sources#remoteMap(String, ClientConfig, Predicate, FunctionEx)}.
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier readRemoteMapP(
+    public static <T, K, V> ProcessorSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<? super K, ? super V> predicate,
             @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMapSupplier(
-                mapName, clientConfig, toProjection(projectionFn), predicate
-        );
+        return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig, predicate, toProjection(projectionFn));
     }
 
     /**
@@ -225,7 +222,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readCacheP(@Nonnull String cacheName) {
-        return ReadWithPartitionIteratorP.readCacheSupplier(cacheName);
+        return HazelcastReaders.readLocalCacheSupplier(cacheName);
     }
 
     /**
@@ -263,10 +260,10 @@ public final class SourceProcessors {
      * {@link Sources#remoteCache(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readRemoteCacheP(
+    public static ProcessorSupplier readRemoteCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
     ) {
-        return ReadWithPartitionIteratorP.readRemoteCacheSupplier(cacheName, clientConfig);
+        return HazelcastReaders.readRemoteCacheSupplier(cacheName, clientConfig);
     }
 
     /**
@@ -308,7 +305,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readListP(@Nonnull String listName) {
-        return ReadIListP.metaSupplier(listName, null);
+        return HazelcastReaders.localOrRemoteListSupplier(listName, null);
     }
 
     /**
@@ -317,7 +314,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return ReadIListP.metaSupplier(listName, clientConfig);
+        return HazelcastReaders.localOrRemoteListSupplier(listName, clientConfig);
     }
 
     /**
