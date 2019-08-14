@@ -5,7 +5,7 @@ import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.CallOperator;
-import com.hazelcast.sql.impl.expression.CaseExpression;
+import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
