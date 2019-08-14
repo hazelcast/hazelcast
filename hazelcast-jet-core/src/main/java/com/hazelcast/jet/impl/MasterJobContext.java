@@ -296,9 +296,7 @@ public class MasterJobContext {
      *      SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      */
     @Nonnull
-    Tuple2<CompletableFuture<Void>, String> requestTermination(
-            TerminationMode mode, boolean allowWhileExportingSnapshot
-    ) {
+    Tuple2<CompletableFuture<Void>, String> requestTermination(TerminationMode mode, boolean allowWhileExportingSnapshot) {
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
         if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
@@ -612,6 +610,7 @@ public class MasterJobContext {
             completeVertices(failure);
 
             // reset state for the next execution
+            boolean wasCancelled = isCancelled();
             requestedTerminationMode = null;
             executionFailureCallback = null;
             ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
@@ -622,12 +621,13 @@ public class MasterJobContext {
             if (terminationModeAction == RESTART) {
                 mc.setJobStatus(NOT_RUNNING);
                 nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
-            } else if (isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
+            } else if (!wasCancelled && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
                 // if restart is due to a failure, schedule a restart after a delay
                 scheduleRestart();
                 nonSynchronizedAction = NO_OP;
             } else if (terminationModeAction == SUSPEND
                     || isRestartableException(failure)
+                    && !wasCancelled
                     && !mc.jobConfig().isAutoScaling()
                     && mc.jobConfig().getProcessingGuarantee() != NONE
             ) {
