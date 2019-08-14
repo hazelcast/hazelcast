@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -53,7 +54,7 @@ public class ReceiveExec extends AbstractExec {
 
         List<Row> rows = batch.getRows();
 
-        curBatch = new ListRowBatch(rows);
+        curBatch = rows.isEmpty() ? EmptyRowBatch.INSTANCE : new ListRowBatch(rows);
 
         if (inbox.closed()) {
             inboxDone = true;

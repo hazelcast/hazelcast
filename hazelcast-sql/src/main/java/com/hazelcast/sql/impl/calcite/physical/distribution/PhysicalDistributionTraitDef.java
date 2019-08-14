@@ -50,7 +50,7 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         if (currentTrait.equals(targetTrait))
             return rel;
 
-        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset) )
+        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
             return null;
 
         // Only physical nodes could be converted.

@@ -16,31 +16,40 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
-import java.util.List;
+/**
+ * Base class for map scans.
+ */
+public abstract class AbstractMapScanPhysicalRel extends TableScan implements PhysicalRel {
+    /** Row type. */
+    protected final RelDataType rowType;
 
-public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
-    public MapScanPhysicalRel(
+    public AbstractMapScanPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
         RelDataType rowType
     ) {
-        super(cluster, traitSet, table, rowType);
+        super(cluster, traitSet, table);
+
+        this.rowType = rowType;
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), rowType);
+    public RelDataType deriveRowType() {
+        return rowType;
     }
 
-    @Override
-    public void visit(PhysicalRelVisitor visitor) {
-        visitor.onMapScan(this);
+    /**
+     * @return Name of the map.
+     */
+    public String getMapName() {
+        return table.unwrap(HazelcastTable.class).getName();
     }
 }

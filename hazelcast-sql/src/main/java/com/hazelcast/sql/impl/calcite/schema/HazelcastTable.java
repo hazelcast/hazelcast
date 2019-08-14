@@ -16,7 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.impl.AbstractTable;
@@ -25,14 +26,27 @@ import org.apache.calcite.schema.impl.AbstractTable;
  * Hazelcast table which can register fields dynamically.
  */
 public class HazelcastTable extends AbstractTable {
+    /** Data container. */
+    private final DistributedObject container;
 
-    private final NodeEngine nodeEngine;
-    private final Object map;
+    /** Fields. */
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(NodeEngine nodeEngine, Object map) {
-        this.nodeEngine = nodeEngine;
-        this.map = map;
+    public HazelcastTable(DistributedObject container) {
+        this.container = container;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends DistributedObject> T getContainer() {
+        return (T)container;
+    }
+
+    public String getName() {
+        return container.getName();
+    }
+
+    public boolean isReplicated() {
+        return container.getServiceName().equals(ReplicatedMapService.SERVICE_NAME);
     }
 
     @Override

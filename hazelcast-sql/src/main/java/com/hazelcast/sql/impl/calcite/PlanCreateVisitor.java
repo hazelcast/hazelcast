@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
@@ -35,6 +36,7 @@ import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
 import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
@@ -99,7 +101,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        String mapName = rel.getTable().getQualifiedName().get(0);
+        String mapName = rel.getMapName();
 
         List<String> fieldNames = rel.getRowType().getFieldNames();
 
@@ -109,6 +111,26 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             projection.add(new KeyValueExtractorExpression(fieldName));
 
         MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
+            mapName,    // Scan
+            projection, // Project
+            null        // Filter
+        );
+
+        pushUpstream(mapScanNode);
+    }
+
+    @Override
+    public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
+        String mapName = rel.getMapName();
+
+        List<String> fieldNames = rel.getRowType().getFieldNames();
+
+        List<Expression> projection = new ArrayList<>();
+
+        for (String fieldName : fieldNames)
+            projection.add(new KeyValueExtractorExpression(fieldName));
+
+        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(
             mapName,    // Scan
             projection, // Project
             null        // Filter

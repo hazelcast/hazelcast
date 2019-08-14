@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -38,12 +37,11 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "SELECT persons.address.apartment + 1 FROM persons ORDER BY name";
+    // private static final String QUERY = "SELECT p.address.apartment + 1 FROM partitioned.persons p ORDER BY name";
+    private static final String QUERY = "SELECT name FROM city ORDER BY name";
 
     @Test
     public void testSimpleQuery() throws Exception {
-        Period p = Period.of(10, 4, 31);
-
         // Start several members.
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
@@ -53,6 +51,9 @@ public class SqlTest extends HazelcastTestSupport {
         nodeFactory.newHazelcastInstance(cfg);
 
         // Add some data.
+        for (int i = 0; i < 10; i++)
+            member1.getReplicatedMap("city").put(i, new City(i));
+
         for (int i = 0; i < 100; i++)
             member1.getMap("persons").put(i, new Person(i));
 
@@ -99,5 +100,15 @@ public class SqlTest extends HazelcastTestSupport {
         private static final long serialVersionUID = 8442512199470933111L;
 
         public final int apartment = ThreadLocalRandom.current().nextInt(100);
+    }
+
+    public static class City implements Serializable {
+        private static final long serialVersionUID = -5759518310551454362L;
+
+        public final String name;
+
+        public City(int i) {
+            this.name = "City-" + i;
+        }
     }
 }

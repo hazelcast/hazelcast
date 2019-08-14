@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
@@ -116,9 +117,11 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
         QueryExecuteOperation op = new QueryExecuteOperation(
             queryId,
+            plan.getIds(),
             plan.getPartitionMap(),
             plan.getFragments(),
             args,
+            ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE),
             consumer
         );
 
@@ -126,8 +129,10 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         controlThreadPool.submit(op.getTask());
 
         // Start execution on remote members.
-        for (Address remoteAddress : plan.getRemoteAddresses())
-            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, remoteAddress);
+        for (Address addresses : plan.getAddresses()) {
+            if (!addresses.equals(nodeEngine.getLocalMember().getAddress()))
+                nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, addresses);
+        }
 
         return new QueryHandle(queryId, consumer);
     }

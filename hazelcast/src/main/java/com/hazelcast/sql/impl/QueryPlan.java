@@ -32,17 +32,22 @@ public class QueryPlan {
     /** Partition mapping. */
     private final Map<String, PartitionIdSet> partMap;
 
-    /** Remote addresses. */
-    private final List<Address> remoteAddresses;
+    /** Addresses. */
+    private final List<Address> addresses;
+
+    /** Member IDs. */
+    private final List<String> ids;
 
     public QueryPlan(
         List<QueryFragment> fragments,
         Map<String, PartitionIdSet> partMap,
-        List<Address> remoteAddresses
+        List<Address> addresses,
+        List<String> ids
     ) {
         this.fragments = fragments;
         this.partMap = partMap;
-        this.remoteAddresses = remoteAddresses;
+        this.addresses = addresses;
+        this.ids = ids;
     }
 
     public List<QueryFragment> getFragments() {
@@ -53,7 +58,11 @@ public class QueryPlan {
         return partMap;
     }
 
-    public List<Address> getRemoteAddresses() {
-        return remoteAddresses;
+    public List<Address> getAddresses() {
+        return addresses;
+    }
+
+    public List<String> getIds() {
+        return ids;
     }
 }

@@ -50,7 +50,6 @@ import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -100,6 +99,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     @Override
     public QueryPlan prepare(String sql) {
+        try {
+            return prepare0(sql);
+        }
+        finally {
+            HazelcastCalciteContext.clear();
+        }
+    }
+
+    private QueryPlan prepare0(String sql) {
         // 1. Prepare context.
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig config = prepareConfig();
@@ -303,7 +311,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         String localMemberId = nodeEngine.getLocalMember().getUuid();
 
         // Collect remote addresses.
-        List<Address> remoteAddresses = new ArrayList<>(partMemberIds.size() - 1);
+        List<Address> addresses = new ArrayList<>(partMemberIds.size());
+        List<String> ids = new ArrayList<>(partMemberIds.size());
 
         for (String partMemberId : partMemberIds) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
@@ -312,8 +321,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has " +
                     "left the topology: " + partMemberId);
 
-            if (!member.localMember())
-                remoteAddresses.add(member.getAddress());
+            addresses.add(member.getAddress());
+            ids.add(member.getUuid());
         }
 
         // Create the plan.
@@ -323,6 +332,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         List<QueryFragment> fragments = visitor.getFragments();
 
-        return new QueryPlan(fragments, partMap, remoteAddresses);
+        return new QueryPlan(fragments, partMap, addresses, ids);
     }
 }

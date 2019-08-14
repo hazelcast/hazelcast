@@ -22,6 +22,7 @@ package com.hazelcast.sql.impl.calcite.physical.rel;
 public interface PhysicalRelVisitor {
     void onRoot(RootPhysicalRel root);
     void onMapScan(MapScanPhysicalRel rel);
+    void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);
     void onSingletonExchange(SingletonExchangePhysicalRel rel);
     void onSortMergeExchange(SortMergeExchangePhysicalRel rel);
     void onSort(SortPhysicalRel rel);

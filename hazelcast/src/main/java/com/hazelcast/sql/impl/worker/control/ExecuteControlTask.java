@@ -32,6 +32,9 @@ public class ExecuteControlTask implements ControlTask {
     /** Query ID. */
     private final QueryId queryId;
 
+    /** Member IDs. */
+    private final List<String> ids;
+
     /** Partition mapping. */
     private final Map<String, PartitionIdSet> partitionMapping;
 
@@ -41,21 +44,37 @@ public class ExecuteControlTask implements ControlTask {
     /** Query arguments. */
     private final List<Object> arguments;
 
+    /** Seed. */
+    private final int seed;
+
     /** Root consumer (available only on initiating node). */
     private final QueryResultConsumer rootConsumer;
 
-    public ExecuteControlTask(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments, List<Object> arguments, QueryResultConsumer rootConsumer) {
+    public ExecuteControlTask(
+        QueryId queryId,
+        List<String> ids,
+        Map<String, PartitionIdSet> partitionMapping,
+        List<QueryFragment> fragments,
+        List<Object> arguments,
+        int seed,
+        QueryResultConsumer rootConsumer
+    ) {
         this.queryId = queryId;
+        this.ids = ids;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
         this.arguments = arguments;
+        this.seed = seed;
         this.rootConsumer = rootConsumer;
     }
 
     @Override
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    public List<String> getIds() {
+        return ids;
     }
 
     public Map<String, PartitionIdSet> getPartitionMapping() {
@@ -68,6 +87,10 @@ public class ExecuteControlTask implements ControlTask {
 
     public List<Object> getArguments() {
         return arguments;
+    }
+
+    public int getSeed() {
+        return seed;
     }
 
     public QueryResultConsumer getRootConsumer() {

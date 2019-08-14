@@ -112,11 +112,13 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                     nodeEngine,
                     queryId,
                     nodeEngine.getPartitionService().getPartitionCount(),
+                    task.getIds(),
                     task.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
                     sendFragmentMap,
                     receiveFragmentMap,
                     i,
-                    fragment.getParallelism()
+                    fragment.getParallelism(),
+                    task.getSeed()
                 );
 
                 fragment.getNode().visit(visitor);

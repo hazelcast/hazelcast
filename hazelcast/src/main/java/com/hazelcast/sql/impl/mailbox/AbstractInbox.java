@@ -40,9 +40,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
      * Handle batch arrival. Always invoked from {@link DataWorker}.
      */
     public void onBatch(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
-        // Batch might be empty in case of last marker.
-        if (!batch.getRows().isEmpty())
-            onBatch0(sourceMemberId, sourceStripe, sourceThread, batch);
+        onBatch0(sourceMemberId, sourceStripe, sourceThread, batch);
 
         if (batch.isLast())
             remaining--;

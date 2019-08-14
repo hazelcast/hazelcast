@@ -16,64 +16,24 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
- * Node to scan a map.
+ * Node to scan a partitioned map.
  */
-public class MapScanPhysicalNode implements PhysicalNode {
-    /** Map name. */
-    private String mapName;
-
-    /** Projections. */
-    private List<Expression> projections;
-
-    /** Filter. */
-    private Expression<Boolean> filter;
-
+public class MapScanPhysicalNode extends AbstractMapScanPhysicalNode{
     public MapScanPhysicalNode() {
         // No-op.
     }
 
     public MapScanPhysicalNode(String mapName, List<Expression> projections, Expression<Boolean> filter) {
-        this.mapName = mapName;
-        this.projections = projections;
-        this.filter = filter;
-    }
-
-    public String getMapName() {
-        return mapName;
-    }
-
-    public List<Expression> getProjections() {
-        return projections;
-    }
-
-    public Expression<Boolean> getFilter() {
-        return filter;
+        super(mapName, projections, filter);
     }
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onMapScanNode(this);
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
-        out.writeObject(projections);
-        out.writeObject(filter);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
-        projections = in.readObject();
-        filter = in.readObject();
     }
 }

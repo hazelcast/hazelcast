@@ -25,6 +25,10 @@ public class PhysicalDistributionTrait implements RelTrait {
     public static final PhysicalDistributionTrait PARTITIONED =
         new PhysicalDistributionTrait(PhysicalDistributionType.PARTITIONED);
 
+    /** Data is distributed in replicated map. */
+    public static final PhysicalDistributionTrait REPLICATED =
+        new PhysicalDistributionTrait(PhysicalDistributionType.REPLICATED);
+
     /** Consume the whole stream on a single node. */
     public static final PhysicalDistributionTrait SINGLETON =
         new PhysicalDistributionTrait(PhysicalDistributionType.SINGLETON);

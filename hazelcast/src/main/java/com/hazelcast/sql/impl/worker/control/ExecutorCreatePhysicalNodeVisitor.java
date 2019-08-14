@@ -26,6 +26,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.exec.ProjectExec;
  import com.hazelcast.sql.impl.exec.ReceiveExec;
  import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
+ import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
  import com.hazelcast.sql.impl.exec.RootExec;
  import com.hazelcast.sql.impl.exec.SendExec;
  import com.hazelcast.sql.impl.exec.SortExec;
@@ -39,6 +40,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
  import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
  import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+ import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
  import com.hazelcast.sql.impl.physical.RootPhysicalNode;
  import com.hazelcast.sql.impl.physical.SendPhysicalNode;
  import com.hazelcast.sql.impl.physical.SortPhysicalNode;
@@ -62,6 +64,9 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Number of data partitions. */
     private final int partCnt;
 
+    /** Member IDs. */
+    private final List<String> memberIds;
+
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
@@ -76,6 +81,9 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     /** Number of stripes. */
     private final int stripeCnt;
+
+    /** Seed. */
+    private final int seed;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -93,20 +101,24 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         NodeEngine nodeEngine,
         QueryId queryId,
         int partCnt,
+        List<String> memberIds,
         PartitionIdSet localParts,
         Map<Integer, QueryFragment> sendFragmentMap,
         Map<Integer, QueryFragment> receiveFragmentMap,
         int stripe,
-        int stripeCnt
+        int stripeCnt,
+        int seed
     ) {
         this.nodeEngine = nodeEngine;
         this.queryId = queryId;
         this.partCnt = partCnt;
+        this.memberIds = memberIds;
         this.localParts = localParts;
         this.sendFragmentMap = sendFragmentMap;
         this.receiveFragmentMap = receiveFragmentMap;
         this.stripe = stripe;
         this.stripeCnt = stripeCnt;
+        this.seed = seed;
     }
 
     @Override
@@ -230,6 +242,20 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             res = EmptyScanExec.INSTANCE;
         else
             res = new MapScanExec(node.getMapName(), stripeParts, node.getProjections(), node.getFilter());
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
+        String memberId = memberIds.get(seed % memberIds.size());
+
+        Exec res;
+
+        if (nodeEngine.getLocalMember().getUuid().equals(memberId))
+            res = new ReplicatedMapScanExec(node.getMapName(), node.getProjections(), node.getFilter());
+        else
+            res = EmptyScanExec.INSTANCE;
 
         stack.add(res);
     }

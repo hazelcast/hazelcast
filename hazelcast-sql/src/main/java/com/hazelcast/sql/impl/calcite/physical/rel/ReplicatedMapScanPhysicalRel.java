@@ -24,8 +24,8 @@ import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.List;
 
-public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
-    public MapScanPhysicalRel(
+public class ReplicatedMapScanPhysicalRel extends AbstractMapScanPhysicalRel {
+    public ReplicatedMapScanPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
@@ -36,11 +36,11 @@ public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), rowType);
+        return new ReplicatedMapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), rowType);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        visitor.onMapScan(this);
+        visitor.onReplicatedMapScan(this);
     }
 }

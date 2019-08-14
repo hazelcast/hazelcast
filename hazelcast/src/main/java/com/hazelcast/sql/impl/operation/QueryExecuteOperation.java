@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryFragment;
@@ -40,6 +41,9 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Unique query ID. */
     private QueryId queryId;
 
+    /** Member IDs. */
+    private List<String> ids;
+
     /** Mapped ownership of partitions. */
     private Map<String, PartitionIdSet> partitionMapping;
 
@@ -49,6 +53,9 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Arguments. */
     private List<Object> arguments;
 
+    /** Seed used for load balancing. */
+    private int seed;
+
     /** Result consumer. */
     private transient QueryResultConsumer rootConsumer;
 
@@ -56,14 +63,23 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         // No-op.
     }
 
-    public QueryExecuteOperation(QueryId queryId, Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments, List<Object> arguments, QueryResultConsumer rootConsumer) {
+    public QueryExecuteOperation(
+        QueryId queryId,
+        List<String> ids,
+        Map<String, PartitionIdSet> partitionMapping,
+        List<QueryFragment> fragments,
+        List<Object> arguments,
+        int seed,
+        QueryResultConsumer rootConsumer
+    ) {
         assert fragments != null;
 
         this.queryId = queryId;
+        this.ids = ids;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
         this.arguments = arguments;
+        this.seed = seed;
         this.rootConsumer = rootConsumer;
     }
 
@@ -75,7 +91,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     }
 
     public ExecuteControlTask getTask() {
-        return new ExecuteControlTask(queryId, partitionMapping, fragments, arguments, rootConsumer);
+        return new ExecuteControlTask(queryId, ids, partitionMapping, fragments, arguments, seed, rootConsumer);
     }
 
     @Override
@@ -84,6 +100,12 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
 
         // Write query ID.
         queryId.writeData(out);
+
+        // Write addresses.
+        out.writeInt(ids.size());
+
+        for (String id : ids)
+            out.writeUTF(id);
 
         // Write partitions.
         out.writeInt(partitionMapping.size());
@@ -109,6 +131,8 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (Object argument : arguments)
                 out.writeObject(argument);
         }
+
+        out.writeInt(seed);
     }
 
     @Override
@@ -118,6 +142,14 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         // Read query ID.
         queryId = new QueryId();
         queryId.readData(in);
+
+        // Read IDs.
+        int idsCnt = in.readInt();
+
+        ids = new ArrayList<>(idsCnt);
+
+        for (int i = 0; i < idsCnt; i++)
+            ids.add(in.readUTF());
 
         // Read partitions.
         int partitionMappingCnt = in.readInt();
@@ -151,5 +183,7 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (int i = 0; i < argumentCnt; i++)
                 arguments.add(in.readObject());
         }
+
+        seed = in.readInt();
     }
 }

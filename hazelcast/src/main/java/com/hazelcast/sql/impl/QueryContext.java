@@ -103,7 +103,7 @@ public class QueryContext {
 
         InternalSerializationService ss = (InternalSerializationService)nodeEngine.getSerializationService();
 
-        res = Extractors.newBuilder(ss).build();
+        res = Extractors.newBuilder(ss).setClassLoader(nodeEngine.getConfigClassLoader()).build();
 
         if (EXTRACTORS_UPDATER.compareAndSet(this, null, res))
             return res;

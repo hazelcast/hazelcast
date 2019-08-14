@@ -16,17 +16,24 @@
 
 package com.hazelcast.sql.impl.physical;
 
+import com.hazelcast.sql.impl.expression.Expression;
+
+import java.util.List;
+
 /**
- * Physical node visitor.
+ * Node to scan a replicated map.
  */
-public interface PhysicalNodeVisitor {
-    void onRootNode(RootPhysicalNode node);
-    void onReceiveNode(ReceivePhysicalNode node);
-    void onSendNode(SendPhysicalNode node);
-    void onMapScanNode(MapScanPhysicalNode node);
-    void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node);
-    void onSortNode(SortPhysicalNode node);
-    void onReceiveSortMergeNode(ReceiveSortMergePhysicalNode node);
-    void onProjectNode(ProjectPhysicalNode node);
-    void onFilterNode(FilterPhysicalNode node);
+public class ReplicatedMapScanPhysicalNode extends AbstractMapScanPhysicalNode {
+    public ReplicatedMapScanPhysicalNode() {
+        // No-op.
+    }
+
+    public ReplicatedMapScanPhysicalNode(String mapName, List<Expression> projections, Expression<Boolean> filter) {
+        super(mapName, projections, filter);
+    }
+
+    @Override
+    public void visit(PhysicalNodeVisitor visitor) {
+        visitor.onReplicatedMapScanNode(this);
+    }
 }
