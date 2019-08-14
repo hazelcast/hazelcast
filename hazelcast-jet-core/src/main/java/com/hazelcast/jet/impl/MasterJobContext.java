@@ -63,6 +63,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -175,7 +176,7 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-    void tryStartJob(Function<Long, Long> executionIdSupplier) {
+    void tryStartJob(Supplier<Long> executionIdSupplier) {
         executionStartTime = System.nanoTime();
         try {
             JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
@@ -223,7 +224,7 @@ public class MasterJobContext {
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Function<Long, Long> executionIdSupplier)
+    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier)
             throws UserCausedException {
         mc.lock();
         try {
@@ -267,7 +268,7 @@ public class MasterJobContext {
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
             dag.iterator().forEachRemaining(vertices::add);
-            mc.setExecutionId(executionIdSupplier.apply(mc.jobId()));
+            mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
             return tuple2(dag, classLoader);
@@ -696,7 +697,7 @@ public class MasterJobContext {
         }
     }
 
-    void resumeJob(Function<Long, Long> executionIdSupplier) {
+    void resumeJob(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (mc.jobStatus() != SUSPENDED) {

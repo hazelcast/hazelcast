@@ -82,8 +82,8 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDAGData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId(jobId);
-        jobRepository.newExecutionId(jobId);
+        jobRepository.newExecutionId();
+        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -99,8 +99,8 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDAGData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId(jobId);
-        jobRepository.newExecutionId(jobId);
+        jobRepository.newExecutionId();
+        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 

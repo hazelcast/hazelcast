@@ -49,16 +49,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 
 import static com.hazelcast.jet.Util.idFromString;
@@ -113,6 +114,11 @@ public class JobRepository {
     public static final String JOB_RESULTS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "results";
 
     /**
+     * Name of internal IMap which stores {@link JobMetrics}s.
+     */
+    public static final String JOB_METRICS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "results.metrics";
+
+    /**
      * Prefix for internal IMaps which store snapshot data. Snapshot data for
      * one snapshot is stored in either of the following two maps:
      * <ul>
@@ -138,6 +144,7 @@ public class JobRepository {
     private final IMap<Long, JobRecord> jobRecords;
     private final IMap<Long, JobExecutionRecord> jobExecutionRecords;
     private final IMap<Long, JobResult> jobResults;
+    private final IMap<Long, JobMetrics> jobMetrics;
     private final IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache;
     private final FlakeIdGenerator idGenerator;
 
@@ -151,6 +158,7 @@ public class JobRepository {
         this.jobRecords = instance.getMap(JOB_RECORDS_MAP_NAME);
         this.jobExecutionRecords = instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
         this.jobResults = instance.getMap(JOB_RESULTS_MAP_NAME);
+        this.jobMetrics = instance.getMap(JOB_METRICS_MAP_NAME);
         this.exportedSnapshotDetailsCache = instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE);
     }
 
@@ -261,7 +269,7 @@ public class JobRepository {
     /**
      * Generates a new execution id for the given job id, guaranteed to be unique across the cluster
      */
-    long newExecutionId(long jobId) {
+    long newExecutionId() {
         return idGenerator.newId();
     }
 
@@ -270,7 +278,9 @@ public class JobRepository {
      * @throws JobNotFoundException if the JobRecord is not found
      * @throws IllegalStateException if the JobResult is already present
      */
-    void completeJob(long jobId, JobMetrics terminalMetrics, String coordinator, long completionTime, Throwable error) {
+    void completeJob(
+        long jobId, JobMetrics terminalMetrics, String coordinator, long completionTime, Throwable error
+    ) {
         JobRecord jobRecord = getJobRecord(jobId);
         if (jobRecord == null) {
             throw new JobNotFoundException(jobId);
@@ -278,9 +288,13 @@ public class JobRepository {
 
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
-        JobResult jobResult = new JobResult(jobId, terminalMetrics, config, coordinator, creationTime, completionTime,
+        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
                 error != null ? error.toString() : null);
 
+        JobMetrics prevMetrics = jobMetrics.put(jobId, terminalMetrics);
+        if (prevMetrics != null) {
+            logger.warning("Overwriting job metrics for job " + jobResult);
+        }
         JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
         if (prev != null) {
             throw new IllegalStateException("Job result already exists in the " + jobResults.getName() + " map:\n" +
@@ -305,6 +319,7 @@ public class JobRepository {
      * Cleans up stale maps related to jobs
      */
     void cleanup(NodeEngine nodeEngine) {
+        long start = System.nanoTime();
         Collection<DistributedObject> maps =
                 nodeEngine.getProxyService().getDistributedObjects(MapService.SERVICE_NAME);
 
@@ -346,10 +361,17 @@ public class JobRepository {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
         if (jobResults.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
-            jobResults.values().stream().sorted(Comparator.comparing(JobResult::getCompletionTime).reversed())
+            jobResults.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                       .skip(maxNoResults)
-                      .forEach(r -> jobResults.remove(r.getJobId()));
+                      .map(JobResult::getJobId)
+                      .collect(Collectors.toSet())
+                      .forEach(id -> {
+                          jobMetrics.delete(id);
+                          jobResults.delete(id);
+                      });
         }
+        long elapsed = System.nanoTime() - start;
+        logger.fine("Job cleanup took " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
     }
 
     private long jobIdFromMapName(String map, String prefix) {
@@ -390,6 +412,10 @@ public class JobRepository {
 
     public JobResult getJobResult(long jobId) {
         return jobResults.get(jobId);
+    }
+
+    public JobMetrics getJobMetrics(long jobId) {
+        return jobMetrics.get(jobId);
     }
 
     Collection<JobResult> getJobResults() {

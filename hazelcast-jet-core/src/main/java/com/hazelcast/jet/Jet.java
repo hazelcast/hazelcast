@@ -49,6 +49,7 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
@@ -198,8 +199,13 @@ public final class Jet {
                 .setName(JOB_RESULTS_MAP_NAME)
                 .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
 
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+            .setName(JOB_METRICS_MAP_NAME)
+            .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
         hzConfig.addMapConfig(internalMapConfig)
-                .addMapConfig(resultsMapConfig);
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
 
         if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
             !hzConfig.getHotRestartPersistenceConfig().isEnabled()) {

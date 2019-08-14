@@ -63,10 +63,10 @@ public final class JetProperties {
      * Maximum number of job results to keep in the cluster, the oldest
      * results will be automatically deleted after this size is reached.
      * <p>
-     * Default value is 10,000 jobs.
+     * Default value is 1,000 jobs.
      */
     public static final HazelcastProperty JOB_RESULTS_MAX_SIZE
-            = new HazelcastProperty("jet.job.results.max.size", 10_000);
+            = new HazelcastProperty("jet.job.results.max.size", 1_000);
 
     /**
      * Root of Jet installation. Used as default location for the lossless recovery

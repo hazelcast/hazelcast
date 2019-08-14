@@ -26,6 +26,7 @@ import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -41,6 +42,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Ignore("https://github.com/hazelcast/hazelcast-jet/issues/1470")
 public class ExecutionLifecycle_RestartableExceptionTest extends TestInClusterSupport {
 
     private static final RestartableException RESTARTABLE_EXCEPTION =

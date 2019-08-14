@@ -403,9 +403,9 @@ public class JobCoordinationService {
                 () -> {
                     // first check if there is a job result present.
                     // this map is updated first during completion.
-                    JobResult jobResult = jobRepository.getJobResult(jobId);
-                    if (jobResult != null) {
-                        cf.complete(jobResult.getJobMetrics());
+                    JobMetrics metrics = jobRepository.getJobMetrics(jobId);
+                    if (metrics != null) {
+                        cf.complete(metrics);
                         return;
                     }
 
@@ -424,9 +424,9 @@ public class JobCoordinationService {
                     } else {
                         // no job record found, but check job results again
                         // since job might have been completed meanwhile.
-                        jobResult = jobRepository.getJobResult(jobId);
-                        if (jobResult != null) {
-                            cf.complete(jobResult.getJobMetrics());
+                        metrics = jobRepository.getJobMetrics(jobId);
+                        if (metrics != null) {
+                            cf.complete(metrics);
                             return;
                         }
                     }
