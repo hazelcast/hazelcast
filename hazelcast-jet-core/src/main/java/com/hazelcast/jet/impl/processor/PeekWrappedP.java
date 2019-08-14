@@ -167,6 +167,11 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             peekedItemLogged = false;
             wrappedInbox.remove();
         }
+
+        @Override
+        public int size() {
+            return wrappedInbox.size();
+        }
     }
 
     private final class LoggingOutbox implements Outbox {

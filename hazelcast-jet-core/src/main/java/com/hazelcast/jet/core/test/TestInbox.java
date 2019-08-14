@@ -82,6 +82,7 @@ public final class TestInbox implements Inbox {
     /**
      * Convenience for {@code inbox.queue().size()}
      */
+    @Override
     public int size() {
        return queue.size();
     }

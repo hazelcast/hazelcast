@@ -83,6 +83,6 @@ public final class KafkaProcessors {
             @Nonnull Properties properties,
             @Nonnull FunctionEx<? super T, ? extends ProducerRecord<K, V>> toRecordFn
     ) {
-        return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<T, K, V>(properties, toRecordFn), 2);
+        return ProcessorMetaSupplier.of(2, new WriteKafkaP.Supplier<T, K, V>(properties, toRecordFn));
     }
 }

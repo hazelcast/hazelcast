@@ -36,6 +36,8 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
@@ -83,8 +86,8 @@ public class SinksTest extends PipelineTestSupport {
         String sinkName = randomName();
         String stageName = randomName();
         SinkStage stage = p
-                .drawFrom(Sources.list(sinkName))
-                .drainTo(Sinks.list(sinkName));
+            .drawFrom(Sources.list(sinkName))
+            .drainTo(Sinks.list(sinkName));
 
         //When
         stage = stage.setName(stageName);
@@ -99,8 +102,8 @@ public class SinksTest extends PipelineTestSupport {
         String sinkName = randomName();
         int localParallelism = 5;
         SinkStage stage = p
-                .drawFrom(Sources.list(sinkName))
-                .drainTo(Sinks.list(sinkName));
+            .drawFrom(Sources.list(sinkName))
+            .drainTo(Sinks.list(sinkName));
 
         //When
         stage.setLocalParallelism(localParallelism);
@@ -236,10 +239,10 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
-                srcName,
-                Entry::getKey,
-                Entry::getValue,
-                (oldValue, newValue) -> oldValue + newValue);
+            srcName,
+            Entry::getKey,
+            Entry::getValue,
+            (oldValue, newValue) -> oldValue + newValue);
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -261,10 +264,10 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
-                srcMap,
-                Entry::getKey,
-                Entry::getValue,
-                (oldValue, newValue) -> oldValue + newValue);
+            srcMap,
+            Entry::getKey,
+            Entry::getValue,
+            (oldValue, newValue) -> oldValue + newValue);
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -286,7 +289,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
-                srcMap, (oldValue, newValue) -> oldValue + newValue);
+            srcMap, (oldValue, newValue) -> oldValue + newValue);
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -353,7 +356,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithMerging_when_multipleValuesForSingleKeyInABatch() throws Exception {
         ProcessorMetaSupplier metaSupplier = SinkProcessors.<Entry<String, Integer>, String, Integer>mergeMapP(
-                sinkName, Entry::getKey, Entry::getValue, Integer::sum);
+            sinkName, Entry::getKey, Entry::getValue, Integer::sum);
 
         TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setJetInstance(member);
         Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
@@ -364,8 +367,10 @@ public class SinksTest extends PipelineTestSupport {
         inbox.add(entry("k", 1));
         inbox.add(entry("k", 2));
         p.process(0, inbox);
-        assertTrue(inbox.isEmpty());
-        assertTrue(p.complete());
+        assertTrue("inbox.isEmpty()", inbox.isEmpty());
+        assertTrueEventually(() -> {
+            assertTrue("p.complete()", p.complete());
+        }, 10);
         p.close();
 
         // assert the output map contents
@@ -378,8 +383,8 @@ public class SinksTest extends PipelineTestSupport {
     public void mapWithMerging_when_targetHasPartitionStrategy() {
         String targetMap = randomMapName();
         member.getHazelcastInstance().getConfig().addMapConfig(new MapConfig(targetMap)
-                .setPartitioningStrategyConfig(
-                        new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName())));
+            .setPartitioningStrategyConfig(
+                new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName())));
 
         List<Integer> input = sequence(itemCount);
         jet().getList(srcName).addAll(input);
@@ -392,12 +397,13 @@ public class SinksTest extends PipelineTestSupport {
          .drainTo(Sinks.mapWithMerging(targetMap, Integer::sum));
         execute();
         Map<String, Integer> actual = new HashMap<>(jet().getMap(targetMap));
-        Map<String, Integer> expected = input.stream()
-                .map(e -> {
-                    e = e % 100;
-                    return entry(e + "@" + e, e);
-                })
-                .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
+        Map<String, Integer> expected =
+            input.stream()
+                 .map(e -> {
+                     e = e % 100;
+                     return entry(e + "@" + e, e);
+                 })
+                 .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
         assertEquals(expected, actual);
     }
 
@@ -409,11 +415,11 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                Entry::getValue,
-                (oldValue, newValue) -> oldValue + newValue);
+            srcName,
+            clientConfig,
+            Entry::getKey,
+            Entry::getValue,
+            (oldValue, newValue) -> oldValue + newValue);
 
         // Then
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).drainTo(sink);
@@ -435,7 +441,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName, clientConfig, (oldValue, newValue) -> null);
+            srcName, clientConfig, (oldValue, newValue) -> null);
 
         // Then
         p.drawFrom(source).drainTo(sink);
@@ -452,9 +458,9 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithUpdating(
-                srcName,
-                Entry::getKey,
-                (Integer value, Entry<String, Integer> item) -> value + 10);
+            srcName,
+            Entry::getKey,
+            (Integer value, Entry<String, Integer> item) -> value + 10);
 
         // Then
         SinkStage sinkStage = p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -477,9 +483,9 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithUpdating(
-                srcMap,
-                Entry::getKey,
-                (Integer value, Entry<String, Integer> item) -> value + 10);
+            srcMap,
+            Entry::getKey,
+            (Integer value, Entry<String, Integer> item) -> value + 10);
 
         // Then
         SinkStage sinkStage = p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -494,7 +500,7 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapWithUpdating2_byRef() {
+    public void mapWithUpdating_withKeyFn_byRef() {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
@@ -502,8 +508,8 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithUpdating(
-                srcMap,
-                (Integer value, Entry<String, Integer> item) -> value + 10);
+            srcMap,
+            (Integer value, Entry<String, Integer> item) -> value + 10);
 
         // Then
         SinkStage sinkStage = p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -542,15 +548,15 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, DataSerializableObject>> sink = Sinks.mapWithUpdating(srcName,
-                (value, item) -> new DataSerializableObject(value.value + item.getValue().value));
+            (value, item) -> new DataSerializableObject(value.value + item.getValue().value));
 
         // Then
         p.drawFrom(Sources.<String, DataSerializableObject>map(srcName)).drainTo(sink);
         execute();
         List<Entry<String, DataSerializableObject>> expected = input
-                .stream()
-                .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
-                .collect(toList());
+            .stream()
+            .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
+            .collect(toList());
         Set<Entry<String, DataSerializableObject>> actual = sourceMap.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -580,10 +586,10 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithUpdating(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                (Integer value, Entry<String, Integer> item) -> value + 10);
+            srcName,
+            clientConfig,
+            Entry::getKey,
+            (Integer value, Entry<String, Integer> item) -> value + 10);
 
         // Then
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).drainTo(sink);
@@ -621,17 +627,17 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, DataSerializableObject>> sink = Sinks.remoteMapWithUpdating(
-                srcName,
-                clientConfig,
-                (value, item) -> new DataSerializableObject(value.value + item.getValue().value));
+            srcName,
+            clientConfig,
+            (value, item) -> new DataSerializableObject(value.value + item.getValue().value));
 
         // Then
         p.drawFrom(Sources.<String, DataSerializableObject>remoteMap(srcName, clientConfig)).drainTo(sink);
         execute();
         List<Entry<String, DataSerializableObject>> expected = input
-                .stream()
-                .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
-                .collect(toList());
+            .stream()
+            .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
+            .collect(toList());
         Set<Entry<String, DataSerializableObject>> actual = sourceMap.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -645,7 +651,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(
-                srcName, Entry::getKey, entry -> new IncrementEntryProcessor<>(10));
+            srcName, Entry::getKey, entry -> new IncrementEntryProcessor<>(10));
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -667,7 +673,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(
-                map, Entry::getKey, entry -> new IncrementEntryProcessor<>(10));
+            map, Entry::getKey, entry -> new IncrementEntryProcessor<>(10));
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -688,10 +694,10 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithEntryProcessor(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                entry -> new IncrementEntryProcessor<>(10));
+            srcName,
+            clientConfig,
+            Entry::getKey,
+            entry -> new IncrementEntryProcessor<>(10));
 
         // Then
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).drainTo(sink);
@@ -712,9 +718,9 @@ public class SinksTest extends PipelineTestSupport {
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(
-                srcName,
-                Entry::getKey,
-                entry -> new IncrementEntryProcessor<>(10));
+            srcName,
+            Entry::getKey,
+            entry -> new IncrementEntryProcessor<>(10));
 
         // Then
         p.drawFrom(Sources.<String, Integer>map(srcName)).drainTo(sink);
@@ -725,6 +731,29 @@ public class SinksTest extends PipelineTestSupport {
         srcMap.unlock("key");
         assertTrueEventually(() -> assertEquals(11, srcMap.get("key").intValue()), 10);
         job.join();
+    }
+
+    @Test
+    public void mapWithEntryProcessor_testBackpressure() {
+        /*
+        NOTE TO THE TEST
+        This test tries to test that when a permit for async op is denied, the
+        processor correctly yields. We don't assert that it actually happened,
+        nor that the backpressure was applied to the upstream. We only try to
+        simulate a slow sink (using the SleepingEntryProcessor) and check that
+        the results are correct.
+         */
+        String targetMap = randomMapName();
+
+        List<Integer> input = sequence(5_001);
+        p.drawFrom(TestSources.items(input))
+         .drainTo(Sinks.mapWithEntryProcessor(targetMap, FunctionEx.identity(), SleepingEntryProcessor::new));
+        execute();
+        Map<Integer, Integer> actual = new HashMap<>(jet().getMap(targetMap));
+        Map<Integer, Integer> expected =
+            input.stream()
+                 .collect(toMap(Function.identity(), Function.identity(), Integer::sum));
+        assertEquals(expected, actual);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -853,6 +882,21 @@ public class SinksTest extends PipelineTestSupport {
         @Override
         public int hashCode() {
             return value;
+        }
+    }
+
+    private static final class SleepingEntryProcessor extends AbstractEntryProcessor<Integer, Object> {
+        private final int v;
+
+        private SleepingEntryProcessor(int v) {
+            this.v = v;
+        }
+
+        @Override
+        public Object process(Entry<Integer, Object> entry) {
+            sleepMillis(10);
+            entry.setValue(v);
+            return null;
         }
     }
 }

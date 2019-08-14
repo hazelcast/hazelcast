@@ -75,11 +75,6 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     @Override
-    public boolean complete() {
-        return true;
-    }
-
-    @Override
     public void close() {
         if (buffer != null) {
             destroyFn.accept(buffer);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.jet.core.Partitioner;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
@@ -24,7 +25,6 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.pipeline.FunctionAdapter.adaptingMetaSupplier;
-
 
 public class SinkTransform<T> extends AbstractTransform {
     private static final int[] EMPTY_ORDINALS = new int[0];
@@ -53,6 +53,8 @@ public class SinkTransform<T> extends AbstractTransform {
             // all the items will be routed to the member with the partition key
             if (sink.isTotalParallelismOne()) {
                 e.allToOne(sink.name()).distributed();
+            } else if (sink.inputPartitionKeyFunction() != null) {
+                e.partitioned(sink.inputPartitionKeyFunction(), Partitioner.defaultPartitioner());
             }
         });
     }

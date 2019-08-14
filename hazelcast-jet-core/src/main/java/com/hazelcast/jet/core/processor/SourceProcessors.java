@@ -373,8 +373,9 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         return ProcessorMetaSupplier.of(
-                StreamJmsP.supplier(newConnectionFn, newSessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy),
-                StreamJmsP.PREFERRED_LOCAL_PARALLELISM);
+            StreamJmsP.PREFERRED_LOCAL_PARALLELISM,
+            StreamJmsP.supplier(newConnectionFn, newSessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy)
+        );
     }
 
     /**
@@ -472,7 +473,7 @@ public final class SourceProcessors {
                         new SourceBufferImpl.Plain<>(isBatch),
                         null));
         return preferredLocalParallelism != 0
-                ? ProcessorMetaSupplier.of(procSup, preferredLocalParallelism)
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
     }
 
@@ -524,7 +525,7 @@ public final class SourceProcessors {
                     eventTimePolicy
                 ));
         return preferredLocalParallelism > 0
-                ? ProcessorMetaSupplier.of(procSup, preferredLocalParallelism)
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
     }
 }

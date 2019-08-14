@@ -70,8 +70,9 @@ public final class WriteJmsP {
         checkSerializable(flushFn, "flushFn");
 
         return ProcessorMetaSupplier.of(
-                new Supplier<>(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, isTopic),
-                PREFERRED_LOCAL_PARALLELISM);
+            PREFERRED_LOCAL_PARALLELISM,
+            new Supplier<>(newConnectionFn, newSessionFn, messageFn, sendFn, flushFn, name, isTopic)
+        );
     }
 
     private static final class Supplier<T> implements ProcessorSupplier {

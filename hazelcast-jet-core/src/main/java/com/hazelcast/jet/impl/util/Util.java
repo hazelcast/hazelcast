@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConfigXmlGenerator;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
@@ -183,7 +184,6 @@ public final class Util {
     /**
      * Atomically increment the {@code value} by {@code increment}, unless
      * the value after increment would exceed the {@code limit}.
-     * <p>
      *
      * @param limit maximum value the {@code value} can take (inclusive)
      * @return {@code true}, if successful, {@code false}, if {@code limit} would be exceeded.
@@ -427,6 +427,10 @@ public final class Util {
                 return newValue;
             }
         };
+    }
+
+    public static boolean isMemberInstance(HazelcastInstance instance) {
+        return instance.getLocalEndpoint() instanceof Member;
     }
 
     /**

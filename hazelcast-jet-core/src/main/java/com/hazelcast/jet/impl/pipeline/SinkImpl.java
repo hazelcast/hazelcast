@@ -17,21 +17,33 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Sink;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class SinkImpl<T> implements Sink<T> {
 
     private final String name;
     private final ProcessorMetaSupplier metaSupplier;
     private final boolean isTotalParallelismOne;
+    private final FunctionEx<? super T, ?> inputPartitionKeyFunction;
     private boolean isAssignedToStage;
 
-    public SinkImpl(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier, boolean isTotalParallelismOne) {
+    public SinkImpl(
+            @Nonnull String name,
+            @Nonnull ProcessorMetaSupplier metaSupplier,
+            boolean isTotalParallelismOne,
+            @Nullable FunctionEx<? super T, ?> inputPartitionKeyFunction
+    ) {
+        if (inputPartitionKeyFunction != null && isTotalParallelismOne) {
+            throw new IllegalArgumentException();
+        }
         this.name = name;
         this.metaSupplier = metaSupplier;
         this.isTotalParallelismOne = isTotalParallelismOne;
+        this.inputPartitionKeyFunction = inputPartitionKeyFunction;
     }
 
     @Nonnull
@@ -41,6 +53,10 @@ public class SinkImpl<T> implements Sink<T> {
 
     public boolean isTotalParallelismOne() {
         return isTotalParallelismOne;
+    }
+
+    public FunctionEx<? super T, ?> inputPartitionKeyFunction() {
+        return inputPartitionKeyFunction;
     }
 
     @Override

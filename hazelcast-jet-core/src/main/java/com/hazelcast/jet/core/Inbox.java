@@ -79,4 +79,9 @@ public interface Inbox {
         }
         return consumed;
     }
+
+    /**
+     * Returns the number of objects in the inbox.
+     */
+    int size();
 }

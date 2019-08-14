@@ -22,10 +22,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BinaryOperatorEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.map.EntryProcessor;
@@ -54,6 +54,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.function.Functions.entryValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -87,7 +88,7 @@ public final class Sinks {
             @Nonnull String sinkName,
             @Nonnull ProcessorMetaSupplier metaSupplier
     ) {
-        return new SinkImpl<>(sinkName, metaSupplier, false);
+        return new SinkImpl<>(sinkName, metaSupplier, false, null);
     }
 
     /**
@@ -103,7 +104,7 @@ public final class Sinks {
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> map(@Nonnull String mapName) {
-        return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
+        return new SinkImpl<>("mapSink(" + mapName + ')', writeMapP(mapName), false, entryKey());
     }
 
     /**
@@ -193,8 +194,8 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        return fromProcessor("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn));
+        return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
+                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), false, toKeyFn);
     }
 
     /**
@@ -279,10 +280,9 @@ public final class Sinks {
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> mapWithMerging(
             @Nonnull String mapName,
-            @Nonnull BinaryOperatorEx<? super V> mergeFn
+            @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        return fromProcessor("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, Entry::getKey, entryValue(), mergeFn));
+        return Sinks.<Entry<K, V>, K, V>mapWithMerging(mapName, entryKey(), entryValue(), mergeFn);
     }
 
     /**
@@ -290,7 +290,7 @@ public final class Sinks {
      * BinaryOperatorEx)} with {@link Entry} as input item.
      */
     @Nonnull
-    public static <K, V, V_IN extends V> Sink<Entry<K, V_IN>> mapWithMerging(
+    public static <K, V> Sink<Entry<K, V>> mapWithMerging(
             @Nonnull IMap<? super K, V> map,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
@@ -354,7 +354,8 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
-        return fromProcessor("mapWithUpdatingSink(" + mapName + ')', updateMapP(mapName, toKeyFn, updateFn));
+        return new SinkImpl<>("mapWithUpdatingSink(" + mapName + ')',
+                updateMapP(mapName, toKeyFn, updateFn), false, toKeyFn);
     }
 
     /**
@@ -420,7 +421,6 @@ public final class Sinks {
             @Nonnull ClientConfig clientConfig,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
-
     ) {
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
                 updateRemoteMapP(mapName, clientConfig, toKeyFn, updateFn));
@@ -435,9 +435,7 @@ public final class Sinks {
             @Nonnull String mapName,
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
-        //noinspection Convert2MethodRef (provokes a javac 9 bug)
-        return fromProcessor("mapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, (Entry<K, V> e) -> e.getKey(), updateFn));
+        return mapWithUpdating(mapName, entryKey(), updateFn);
     }
 
     /**
@@ -461,7 +459,6 @@ public final class Sinks {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
-
     ) {
         //noinspection Convert2MethodRef (provokes a javac 9 bug)
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
@@ -511,7 +508,6 @@ public final class Sinks {
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V>> toEntryProcessorFn
-
     ) {
         return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
                 updateMapP(mapName, toKeyFn, toEntryProcessorFn));
@@ -564,7 +560,6 @@ public final class Sinks {
             @Nonnull IMap<? super K, ? super V> map,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
-
     ) {
         return mapWithEntryProcessor(map.getName(), toKeyFn, toEntryProcessorFn);
     }
@@ -580,7 +575,6 @@ public final class Sinks {
             @Nonnull ClientConfig clientConfig,
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V>> toEntryProcessorFn
-
     ) {
         return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
                 updateRemoteMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn));
@@ -599,7 +593,8 @@ public final class Sinks {
      */
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
-        return fromProcessor("cacheSink(" + cacheName + ')', writeCacheP(cacheName));
+        //noinspection Convert2MethodRef (provokes a javac 9 bug)
+        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), false, en -> en.getKey());
     }
 
     /**

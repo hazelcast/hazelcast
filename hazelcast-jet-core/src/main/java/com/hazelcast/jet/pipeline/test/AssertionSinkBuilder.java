@@ -158,6 +158,6 @@ public final class AssertionSinkBuilder<S, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        return new SinkImpl<>(name, AssertionP.assertionP(name, createFn, receiveFn, timerFn, completeFn), true);
+        return new SinkImpl<>(name, AssertionP.assertionP(name, createFn, receiveFn, timerFn, completeFn), true, null);
     }
 }
