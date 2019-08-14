@@ -360,36 +360,28 @@ public class JobCoordinationService {
         assertIsMaster("Cannot query status of job " + idToString(jobId) + " on non-master node");
 
         return submitToCoordinatorThread(() -> {
-            // first check if there is a job result present.
-            // this map is updated first during completion.
+            // check if there is a master context for running job
+            MasterContext mc = masterContexts.get(jobId);
+            if (mc != null) {
+                JobStatus jobStatus = mc.jobStatus();
+                return jobStatus == RUNNING && mc.jobContext().requestedTerminationMode() != null
+                    ? COMPLETING
+                    : jobStatus;
+            }
+
+            // job is not running, check completed jobs
             JobResult jobResult = jobRepository.getJobResult(jobId);
             if (jobResult != null) {
                 return jobResult.getJobStatus();
             }
 
-            // check if there is a master context for running job
-            MasterContext currentMasterContext = masterContexts.get(jobId);
-            if (currentMasterContext != null) {
-                JobStatus jobStatus = currentMasterContext.jobStatus();
-                if (jobStatus == RUNNING && currentMasterContext.jobContext().requestedTerminationMode() != null) {
-                    return COMPLETING;
-                }
-                return jobStatus;
-            }
-
-            // no master context found, job might be just submitted
+            // the job might not be yet discovered by job record scanning
             JobExecutionRecord jobExecutionRecord = jobRepository.getJobExecutionRecord(jobId);
             if (jobExecutionRecord != null) {
                 return jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING;
-            } else {
-                // no job record found, but check job results again
-                // since job might have been completed meanwhile.
-                jobResult = jobRepository.getJobResult(jobId);
-                if (jobResult != null) {
-                    return jobResult.getJobStatus();
-                }
-                throw new JobNotFoundException(jobId);
             }
+
+            throw new JobNotFoundException(jobId);
         });
     }
 
@@ -400,39 +392,39 @@ public class JobCoordinationService {
     public CompletableFuture<JobMetrics> getJobMetrics(long jobId) {
         CompletableFuture<JobMetrics> cf = new CompletableFuture<>();
         submitToCoordinatorThread(
-                () -> {
-                    // first check if there is a job result present.
-                    // this map is updated first during completion.
-                    JobMetrics metrics = jobRepository.getJobMetrics(jobId);
-                    if (metrics != null) {
-                        cf.complete(metrics);
-                        return;
-                    }
-
-                    // check if there is a master context for the running job
-                    MasterContext mc = masterContexts.get(jobId);
-                    if (mc != null) {
-                        mc.jobContext().collectMetrics(cf);
-                        return;
-                    }
-
-                    // no master context found, job might be just submitted
-                    JobExecutionRecord jobExecutionRecord = jobRepository.getJobExecutionRecord(jobId);
-                    if (jobExecutionRecord != null) {
-                        cf.complete(JobMetrics.empty());
-                        return;
-                    } else {
-                        // no job record found, but check job results again
-                        // since job might have been completed meanwhile.
-                        metrics = jobRepository.getJobMetrics(jobId);
-                        if (metrics != null) {
-                            cf.complete(metrics);
-                            return;
-                        }
-                    }
-
-                    cf.completeExceptionally(new JobNotFoundException(jobId));
+            () -> {
+                // check if there is a running job
+                MasterContext mc = masterContexts.get(jobId);
+                if (mc != null) {
+                    mc.jobContext().collectMetrics(cf);
+                    return;
                 }
+
+                // is job completed with metrics?
+                JobMetrics metrics = jobRepository.getJobMetrics(jobId);
+                if (metrics != null) {
+                    cf.complete(metrics);
+                    return;
+                }
+
+                // no metrics found, but job might still be completed without saving
+                // metrics enabled
+                JobResult jobResult = jobRepository.getJobResult(jobId);
+                if (jobResult != null) {
+                    cf.complete(JobMetrics.empty());
+                    return;
+                }
+
+                // no job result found,
+                // the job might not be yet discovered by job record scanning
+                JobExecutionRecord record = jobRepository.getJobExecutionRecord(jobId);
+                if (record != null) {
+                    cf.complete(JobMetrics.empty());
+                    return;
+                }
+
+                cf.completeExceptionally(new JobNotFoundException(jobId));
+            }
         );
         return cf;
     }
@@ -636,9 +628,11 @@ public class JobCoordinationService {
     CompletableFuture<Void> completeJob(MasterContext masterContext, long completionTime, Throwable error) {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
-
             long jobId = masterContext.jobId();
-            JobMetrics jobMetrics = masterContext.jobContext().jobMetrics();
+            JobMetrics jobMetrics =
+                    masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
+                            ? masterContext.jobContext().jobMetrics()
+                            : null;
             String coordinator = nodeEngine.getNode().getThisUuid();
             jobRepository.completeJob(jobId, jobMetrics, coordinator, completionTime, error);
             if (masterContexts.remove(masterContext.jobId(), masterContext)) {

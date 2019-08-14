@@ -52,6 +52,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean autoScaling = true;
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
+    private boolean storeMetricsAfterJobCompletion;
+
     private List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
@@ -426,7 +428,11 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets whether metrics collection should be enabled for the job.
+     * <p>
+     * Metrics for running jobs can be queried using {@link Job#getMetrics()}
      * It's enabled by default.
+     *
+     * @since 3.2
      */
     @Nonnull
     public JobConfig setMetricsEnabled(boolean enabled) {
@@ -435,10 +441,35 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns if metrics collection is enabled for the job
+     * Returns if metrics collection is enabled for the job.
+     *
+     * @since 3.2
      */
     public boolean isMetricsEnabled() {
         return enableMetrics;
+    }
+
+    /**
+     * Returns whether metrics should be stored in the cluster after the job
+     * completes. If enabled, metrics can be retrieved by calling {@link Job#getMetrics()}.
+     *
+     * @since 3.2
+     */
+    public boolean isStoreMetricsAfterJobCompletion() {
+        return storeMetricsAfterJobCompletion;
+    }
+
+    /**
+     * Sets whether metrics should be stored in the cluster after the job
+     * completes. If enabled, metrics can be retrieved by calling {@link Job#getMetrics()}.
+     * <p>
+     * It's disabled by default.
+     *
+     * @since 3.2
+     */
+    public JobConfig setStoreMetricsAfterJobCompletion(boolean storeMetricsAfterJobCompletion) {
+        this.storeMetricsAfterJobCompletion = storeMetricsAfterJobCompletion;
+        return this;
     }
 
     @Override
@@ -462,6 +493,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeObject(classLoaderFactory);
         out.writeUTF(initialSnapshotName);
         out.writeBoolean(enableMetrics);
+        out.writeBoolean(storeMetricsAfterJobCompletion);
     }
 
     @Override
@@ -475,7 +507,9 @@ public class JobConfig implements IdentifiedDataSerializable {
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readUTF();
         enableMetrics = in.readBoolean();
+        storeMetricsAfterJobCompletion = in.readBoolean();
     }
+
 
     @Override
     public boolean equals(Object o) {
@@ -490,6 +524,7 @@ public class JobConfig implements IdentifiedDataSerializable {
             autoScaling == jobConfig.autoScaling &&
             splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled &&
             enableMetrics == jobConfig.enableMetrics &&
+            storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion &&
             Objects.equals(name, jobConfig.name) &&
             processingGuarantee == jobConfig.processingGuarantee &&
             Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
@@ -500,7 +535,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling,
-            splitBrainProtectionEnabled, enableMetrics, resourceConfigs, classLoaderFactory, initialSnapshotName
+                splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
+                classLoaderFactory, initialSnapshotName
         );
     }
 }

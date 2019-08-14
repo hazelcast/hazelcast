@@ -20,7 +20,9 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -104,6 +106,16 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         for (DistributedObject o : allJetInstances()[0].getHazelcastInstance().getDistributedObjects()) {
             o.destroy();
         }
+    }
+
+    protected JetInstance jet() {
+        return testMode.getJet();
+    }
+
+    protected Job execute(Pipeline p, JobConfig config) {
+        Job job = jet().newJob(p, config);
+        job.join();
+        return job;
     }
 
     protected static JetInstance[] allJetInstances() {

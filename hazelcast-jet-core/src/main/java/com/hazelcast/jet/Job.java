@@ -99,9 +99,16 @@ public interface Job {
      * the metrics are reset too, their values will reflect only updates
      * from the latest execution of the job.
      * <p>
-     * The method returns empty metrics if metrics collection is {@link
-     * MetricsConfig#setEnabled disabled} or until the first collection takes
-     * place. Also keep in mind that the collections may occur at different times on
+     * The method returns empty metrics if either
+     * {@link MetricsConfig#setEnabled global metrics collection} or
+     * {@link JobConfig#isMetricsEnabled() per job metrics collection}
+     * are disabled or until the first metric collection takes place.
+     * <p>
+     * For completed jobs, metrics are only persisted if
+     * {@link JobConfig#setStoreMetricsAfterJobCompletion(boolean)}
+     * was enabled, otherwise empty metrics are returned.
+     * <p>
+     * Also keep in mind that the collections may occur at different times on
      * each member, metrics from various members aren't from the same instant
      * of time.
      *

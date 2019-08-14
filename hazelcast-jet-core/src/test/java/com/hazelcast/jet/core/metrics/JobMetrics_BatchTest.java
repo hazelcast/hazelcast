@@ -19,6 +19,7 @@ package com.hazelcast.jet.core.metrics;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -37,6 +38,8 @@ import static org.junit.Assert.assertNotEquals;
 
 public class JobMetrics_BatchTest extends TestInClusterSupport {
 
+    static final JobConfig JOB_CONFIG_WITH_METRICS = new JobConfig().setStoreMetricsAfterJobCompletion(true);
+
     private static final String SOURCE_VERTEX = "items";
     private static final String FLAT_MAP_AND_FILTER_VERTEX = "fused(flat-map, filter)";
     private static final String GROUP_AND_AGGREGATE_PREPARE_VERTEX = "group-and-aggregate-prepare";
@@ -51,29 +54,39 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     public void when_jobCompleted_then_metricsExist() {
         Pipeline p = createPipeline();
 
-        Job job = testMode.getJet().newJob(p);
         // When
-        job.join();
+        Job job = execute(p, JOB_CONFIG_WITH_METRICS);
 
         // Then
-        assertTrueEventually(() -> assertMetrics(job.getMetrics()));
+        assertMetrics(job.getMetrics());
+    }
+
+    @Test
+    public void when_storeMetricsAfterJobCompletionDisabled_then_metricsEmpty() {
+        Pipeline p = createPipeline();
+
+        // When
+        Job job = execute(p, new JobConfig());
+
+        // Then
+        assertEquals("non-empty metrics", JobMetrics.empty(), job.getMetrics());
     }
 
     @Test
     public void when_memberAddedAfterJobFinished_then_metricsNotAffected() {
         Pipeline p = createPipeline();
 
-        Job job = testMode.getJet().newJob(p);
-        job.join();
+        Job job = execute(p, JOB_CONFIG_WITH_METRICS);
 
         // When
-        JetInstance newMember = factory.newMember(prepareConfig());
+        JetInstance instance = factory.newMember(prepareConfig());
         try {
-            assertTrueEventually(() -> assertEquals(MEMBER_COUNT + 1, newMember.getCluster().getMembers().size()));
+            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
             // Then
-            assertTrueEventually(() -> assertMetrics(job.getMetrics()));
+            assertMetrics(job.getMetrics());
         } finally {
-            newMember.shutdown();
+            instance.shutdown();
+            assertClusterSizeEventually(MEMBER_COUNT, jet());
         }
     }
 
@@ -84,14 +97,13 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         JetInstance newMember = factory.newMember(prepareConfig());
         Job job;
         try {
-            assertTrueEventually(() -> assertEquals(MEMBER_COUNT + 1, newMember.getCluster().getMembers().size()));
-            job = testMode.getJet().newJob(p);
-            job.join();
+            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
+            job = execute(p, JOB_CONFIG_WITH_METRICS);
         } finally {
             newMember.shutdown();
         }
-        assertTrueEventually(() -> assertEquals(MEMBER_COUNT, testMode.getJet().getCluster().getMembers().size()));
-        assertTrueEventually(() -> assertMetrics(job.getMetrics()));
+        assertClusterSizeEventually(MEMBER_COUNT, jet());
+        assertMetrics(job.getMetrics());
     }
 
     @Test
@@ -100,28 +112,28 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Pipeline p = createPipeline();
         Pipeline p2 = createPipeline(anotherText);
 
-        Job job = testMode.getJet().newJob(p);
-        Job job2 = testMode.getJet().newJob(p2);
+        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job2 = jet().newJob(p2, JOB_CONFIG_WITH_METRICS);
         job.join();
         job2.join();
 
         assertNotEquals(job.getMetrics(), job2.getMetrics());
-        assertTrueEventually(() -> assertMetrics(job.getMetrics()));
-        assertTrueEventually(() -> assertMetrics(job2.getMetrics(), anotherText));
+        assertMetrics(job.getMetrics());
+        assertMetrics(job2.getMetrics(), anotherText);
     }
 
     @Test
     public void when_twoDifferentJobsForTheSamePipeline_then_haveDifferentMetrics() {
         Pipeline p = createPipeline();
 
-        Job job = testMode.getJet().newJob(p);
-        Job job2 = testMode.getJet().newJob(p);
+        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job2 = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
         job.join();
         job2.join();
 
         assertNotEquals(job.getMetrics(), job2.getMetrics());
-        assertTrueEventually(() -> assertMetrics(job.getMetrics()));
-        assertTrueEventually(() -> assertMetrics(job2.getMetrics()));
+        assertMetrics(job.getMetrics());
+        assertMetrics(job2.getMetrics());
     }
 
     private Pipeline createPipeline() {
@@ -131,11 +143,11 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     private Pipeline createPipeline(String text) {
         Pipeline p = Pipeline.create();
         p.drawFrom(TestSources.items(text))
-                .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
-                .filter(word -> !word.isEmpty())
-                .groupingKey(wholeItem())
-                .aggregate(counting())
-                .drainTo(Sinks.map("counts"));
+         .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+         .filter(word -> !word.isEmpty())
+         .groupingKey(wholeItem())
+         .aggregate(counting())
+         .drainTo(Sinks.map("counts"));
         return p;
     }
 
@@ -166,5 +178,4 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
                 .get(metric);
         return measurements.stream().mapToLong(Measurement::getValue).sum();
     }
-
 }

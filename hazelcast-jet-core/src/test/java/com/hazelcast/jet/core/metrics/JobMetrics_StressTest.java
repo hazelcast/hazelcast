@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -76,7 +77,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
 
     private void stressTest(Function<Job, Runnable> restart) throws Throwable {
         DAG dag = buildDag();
-        Job job = instance.newJob(dag);
+        Job job = instance.newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 

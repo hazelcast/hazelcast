@@ -43,6 +43,7 @@ import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -279,7 +280,11 @@ public class JobRepository {
      * @throws IllegalStateException if the JobResult is already present
      */
     void completeJob(
-        long jobId, JobMetrics terminalMetrics, String coordinator, long completionTime, Throwable error
+            long jobId,
+            @Nullable JobMetrics terminalMetrics,
+            @Nonnull String coordinator,
+            long completionTime,
+            @Nullable Throwable error
     ) {
         JobRecord jobRecord = getJobRecord(jobId);
         if (jobRecord == null) {
@@ -291,9 +296,11 @@ public class JobRepository {
         JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
                 error != null ? error.toString() : null);
 
-        JobMetrics prevMetrics = jobMetrics.put(jobId, terminalMetrics);
-        if (prevMetrics != null) {
-            logger.warning("Overwriting job metrics for job " + jobResult);
+        if (terminalMetrics != null) {
+            JobMetrics prevMetrics = jobMetrics.put(jobId, terminalMetrics);
+            if (prevMetrics != null) {
+                logger.warning("Overwriting job metrics for job " + jobResult);
+            }
         }
         JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
         if (prev != null) {
@@ -410,10 +417,12 @@ public class JobRepository {
         return Util.memoizeConcurrent(() -> instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId)));
     }
 
+    @Nullable
     public JobResult getJobResult(long jobId) {
         return jobResults.get(jobId);
     }
 
+    @Nullable
     public JobMetrics getJobMetrics(long jobId) {
         return jobMetrics.get(jobId);
     }

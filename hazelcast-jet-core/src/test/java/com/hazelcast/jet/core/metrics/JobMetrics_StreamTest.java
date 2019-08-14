@@ -35,6 +35,7 @@ import java.util.Map;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static org.junit.Assert.assertEquals;
 
 
@@ -58,13 +59,13 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRunning_then_metricsEventuallyExist() {
-        Map<String, String> map = testMode.getJet().getMap(journalMapName);
+        Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = testMode.getJet().getList(sinkListName);
+        List<String> sink = jet().getList(sinkListName);
 
         Pipeline p = createPipeline();
         // When
-        Job job = testMode.getJet().newJob(p);
+        Job job = jet().newJob(p);
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         // Then
@@ -78,12 +79,12 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobCancelled_then_terminalMetricsExist() {
-        Map<String, String> map = testMode.getJet().getMap(journalMapName);
+        Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = testMode.getJet().getList(sinkListName);
+        List<String> sink = jet().getList(sinkListName);
 
         Pipeline p = createPipeline();
-        Job job = testMode.getJet().newJob(p);
+        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
 
         putIntoMap(map, 1, 1);
 
@@ -98,15 +99,17 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobWithExactlyOnceSuspendAndResume_then_metricsReset() {
-        Map<String, String> map = testMode.getJet().getMap(journalMapName);
+        Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = testMode.getJet().getList(sinkListName);
+        List<String> sink = jet().getList(sinkListName);
 
         Pipeline p = createPipeline();
 
-        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        JobConfig jobConfig = new JobConfig()
+            .setStoreMetricsAfterJobCompletion(true)
+            .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         // When
-        Job job = testMode.getJet().newJob(p, jobConfig);
+        Job job = jet().newJob(p, jobConfig);
 
         putIntoMap(map, 1, 1);
 
@@ -140,12 +143,12 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset() {
-        Map<String, String> map = testMode.getJet().getMap(journalMapName);
+        Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = testMode.getJet().getList(sinkListName);
+        List<String> sink = jet().getList(sinkListName);
 
         Pipeline p = createPipeline();
-        Job job = testMode.getJet().newJob(p);
+        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));
@@ -174,12 +177,12 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset_withJournal() {
-        Map<String, String> map = testMode.getJet().getMap(journalMapName);
+        Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = testMode.getJet().getList(sinkListName);
+        List<String> sink = jet().getList(sinkListName);
 
         Pipeline p = createPipeline(JournalInitialPosition.START_FROM_CURRENT);
-        Job job = testMode.getJet().newJob(p);
+        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
 
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));

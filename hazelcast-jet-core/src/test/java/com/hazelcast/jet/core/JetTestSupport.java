@@ -170,6 +170,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         HazelcastTestSupport.assertTrueFiveSeconds(assertTask(runnable));
     }
 
+    public static void assertClusterSizeEventually(int size, JetInstance jetInstance) {
+        HazelcastTestSupport.assertClusterSizeEventually(size, jetInstance.getHazelcastInstance());
+    }
+
     public static JetService getJetService(JetInstance jetInstance) {
         return getNodeEngineImpl(jetInstance).getService(JetService.SERVICE_NAME);
     }

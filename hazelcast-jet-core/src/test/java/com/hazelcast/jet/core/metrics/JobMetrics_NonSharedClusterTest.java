@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +52,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
         DAG dag = new DAG();
         dag.newVertex("v1", (SupplierEx<Processor>) NoOutputSourceP::new).localParallelism(1);
-        Job job = inst.newJob(dag);
+        Job job = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
         assertTrue(job.getMetrics().metrics().isEmpty());
     }
 
@@ -65,7 +66,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
         dag.newVertex("v1", (SupplierEx<Processor>) NoOutputSourceP::new).localParallelism(1);
 
         // Initial collection interval is 1 second. So let's run a job and wait until it has metrics.
-        Job job1 = inst.newJob(dag);
+        Job job1 = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             JetTestSupport.assertTrueEventually(() -> assertFalse(job1.getMetrics().metrics().isEmpty()), 10);
         } catch (AssertionError e) {
@@ -76,7 +77,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
         // Let's do a second job for which we know there will be no metrics collection. It should
         // return empty metrics because the next collection will be in 10_000 seconds.
-        Job job2 = inst.newJob(dag);
+        Job job2 = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
         assertJobStatusEventually(job2, RUNNING);
         assertTrue(job2.getMetrics().metrics().isEmpty());
     }
