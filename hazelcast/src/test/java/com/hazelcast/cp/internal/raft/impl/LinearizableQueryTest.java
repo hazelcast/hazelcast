@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
+import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.QueryRaftRunnable;
@@ -235,7 +236,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         try {
             queryFuture.get();
             fail();
-        } catch (NotLeaderException ignored) {
+        } catch (LeaderDemotedException ignored) {
         }
     }
 

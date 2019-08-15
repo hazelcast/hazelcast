@@ -106,7 +106,7 @@ public class QueryState {
     public boolean tryAck(long queryRound, RaftEndpoint follower) {
         // If there is no query waiting to be executed or the received ack
         // belongs to an earlier query round, we ignore it.
-        if (operations.isEmpty() || this.queryRound > queryRound) {
+        if (queryCount() == 0  || this.queryRound > queryRound) {
             return false;
         }
 
@@ -148,11 +148,11 @@ public class QueryState {
             throw new IllegalStateException("Cannot execute: " + this + ", current commit index: " + commitIndex);
         }
 
-        return operations.size() > 0 && majority <= ackCount();
+        return queryCount() > 0 && majority <= ackCount();
     }
 
     public boolean isAckNeeded(RaftEndpoint follower, int majority) {
-        return !acks.contains(follower) && ackCount() < majority;
+        return queryCount() > 0 && !acks.contains(follower) && ackCount() < majority;
     }
 
     private int ackCount() {

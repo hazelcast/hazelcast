@@ -112,6 +112,11 @@ public class LocalRaftIntegration implements RaftIntegration {
 
     @Override
     public void execute(Runnable task) {
+        submit(task);
+    }
+
+    @Override
+    public void submit(Runnable task) {
         try {
             scheduledExecutor.execute(task);
         } catch (RejectedExecutionException e) {

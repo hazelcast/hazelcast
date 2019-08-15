@@ -112,6 +112,11 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
+    public void submit(Runnable task) {
+        operationService.execute(new PartitionSpecificRunnableAdaptor(task, partitionId));
+    }
+
+    @Override
     public void schedule(final Runnable task, long delay, TimeUnit timeUnit) {
         taskScheduler.schedule(new Runnable() {
             @Override
