@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contains at least one element e such that value.equals(e)
  */
 public final class QueueContainsCodec {
-    //hex: 0x030B
-    public static final int REQUEST_MESSAGE_TYPE = 779;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x030B00
+    public static final int REQUEST_MESSAGE_TYPE = 199424;
+    //hex: 0x030B01
+    public static final int RESPONSE_MESSAGE_TYPE = 199425;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class QueueContainsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * <tt>true</tt> if this collection contains the specified element
          */
         public boolean response;
     }

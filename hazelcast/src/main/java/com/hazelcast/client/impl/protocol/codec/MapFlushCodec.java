@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and/or MapStore.deleteAll().
  */
 public final class MapFlushCodec {
-    //hex: 0x010D
-    public static final int REQUEST_MESSAGE_TYPE = 269;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x010D00
+    public static final int REQUEST_MESSAGE_TYPE = 68864;
+    //hex: 0x010D01
+    public static final int RESPONSE_MESSAGE_TYPE = 68865;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

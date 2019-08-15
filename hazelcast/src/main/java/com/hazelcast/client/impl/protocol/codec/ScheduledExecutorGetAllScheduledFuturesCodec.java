@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
-    //hex: 0x1D04
-    public static final int REQUEST_MESSAGE_TYPE = 7428;
-    //hex: 0x0079
-    public static final int RESPONSE_MESSAGE_TYPE = 121;
+    //hex: 0x1D0400
+    public static final int REQUEST_MESSAGE_TYPE = 1901568;
+    //hex: 0x1D0401
+    public static final int RESPONSE_MESSAGE_TYPE = 1901569;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -72,7 +72,7 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A list of scheduled task handlers used to construct the future proxies.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.cluster.Member, java.util.List<com.hazelcast.scheduledexecutor.ScheduledTaskHandler>>> handlers;
     }

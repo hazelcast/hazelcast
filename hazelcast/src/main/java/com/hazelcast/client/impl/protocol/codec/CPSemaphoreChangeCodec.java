@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Increases or decreases the number of permits by the given value.
  */
 public final class CPSemaphoreChangeCodec {
-    //hex: 0x2705
-    public static final int REQUEST_MESSAGE_TYPE = 9989;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x270500
+    public static final int REQUEST_MESSAGE_TYPE = 2557184;
+    //hex: 0x270501
+    public static final int RESPONSE_MESSAGE_TYPE = 2557185;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -111,7 +111,7 @@ public final class CPSemaphoreChangeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true
          */
         public boolean response;
     }

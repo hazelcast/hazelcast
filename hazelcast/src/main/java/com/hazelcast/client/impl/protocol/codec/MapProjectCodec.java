@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the projection logic on all map entries and returns the result
  */
 public final class MapProjectCodec {
-    //hex: 0x0140
-    public static final int REQUEST_MESSAGE_TYPE = 320;
-    //hex: 0x0077
-    public static final int RESPONSE_MESSAGE_TYPE = 119;
+    //hex: 0x014000
+    public static final int REQUEST_MESSAGE_TYPE = 81920;
+    //hex: 0x014001
+    public static final int RESPONSE_MESSAGE_TYPE = 81921;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -79,7 +79,7 @@ public final class MapProjectCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the resulted collection upon transformation to the type of the projection
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

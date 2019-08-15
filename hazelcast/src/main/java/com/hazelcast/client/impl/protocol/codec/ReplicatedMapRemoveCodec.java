@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
 public final class ReplicatedMapRemoveCodec {
-    //hex: 0x0E07
-    public static final int REQUEST_MESSAGE_TYPE = 3591;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x0E0700
+    public static final int REQUEST_MESSAGE_TYPE = 919296;
+    //hex: 0x0E0701
+    public static final int RESPONSE_MESSAGE_TYPE = 919297;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -82,7 +82,7 @@ public final class ReplicatedMapRemoveCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

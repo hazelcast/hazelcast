@@ -38,10 +38,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to find that item.
  */
 public final class RingbufferAddCodec {
-    //hex: 0x1906
-    public static final int REQUEST_MESSAGE_TYPE = 6406;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190600
+    public static final int REQUEST_MESSAGE_TYPE = 1639936;
+    //hex: 0x190601
+    public static final int RESPONSE_MESSAGE_TYPE = 1639937;
     private static final int REQUEST_OVERFLOW_POLICY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_OVERFLOW_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -97,7 +97,7 @@ public final class RingbufferAddCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the sequence of the added item, or -1 if the add failed.
          */
         public long response;
     }

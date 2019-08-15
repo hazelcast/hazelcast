@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the size of the list
  */
 public final class TransactionalListSizeCodec {
-    //hex: 0x1303
-    public static final int REQUEST_MESSAGE_TYPE = 4867;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x130300
+    public static final int REQUEST_MESSAGE_TYPE = 1245952;
+    //hex: 0x130301
+    public static final int RESPONSE_MESSAGE_TYPE = 1245953;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -87,7 +87,7 @@ public final class TransactionalListSizeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The size of the list
          */
         public int response;
     }

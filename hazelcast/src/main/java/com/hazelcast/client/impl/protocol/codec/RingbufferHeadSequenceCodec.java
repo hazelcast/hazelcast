@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The initial value of the head is 0 (1 more than tail).
  */
 public final class RingbufferHeadSequenceCodec {
-    //hex: 0x1903
-    public static final int REQUEST_MESSAGE_TYPE = 6403;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190300
+    public static final int REQUEST_MESSAGE_TYPE = 1639168;
+    //hex: 0x190301
+    public static final int RESPONSE_MESSAGE_TYPE = 1639169;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -75,7 +75,7 @@ public final class RingbufferHeadSequenceCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the sequence of the head
          */
         public long response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Gets the current value.
  */
 public final class CPAtomicLongGetCodec {
-    //hex: 0x2305
-    public static final int REQUEST_MESSAGE_TYPE = 8965;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x230500
+    public static final int REQUEST_MESSAGE_TYPE = 2295040;
+    //hex: 0x230501
+    public static final int RESPONSE_MESSAGE_TYPE = 2295041;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class CPAtomicLongGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The current value
          */
         public long response;
     }

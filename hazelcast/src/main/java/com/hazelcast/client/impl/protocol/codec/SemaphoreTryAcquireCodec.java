@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * method will return immediately with the value false and the number of available permits is unchanged.
  */
 public final class SemaphoreTryAcquireCodec {
-    //hex: 0x0D07
-    public static final int REQUEST_MESSAGE_TYPE = 3335;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x0D0700
+    public static final int REQUEST_MESSAGE_TYPE = 853760;
+    //hex: 0x0D0701
+    public static final int RESPONSE_MESSAGE_TYPE = 853761;
     private static final int REQUEST_PERMITS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_PERMITS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -90,7 +90,7 @@ public final class SemaphoreTryAcquireCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if all permits were acquired,  false if the waiting time elapsed before all permits could be acquired
          */
         public boolean response;
     }

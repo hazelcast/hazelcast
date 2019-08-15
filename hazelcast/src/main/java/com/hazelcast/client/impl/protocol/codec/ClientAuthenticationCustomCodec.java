@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ClientAuthenticationCustomCodec {
-    //hex: 0x0003
-    public static final int REQUEST_MESSAGE_TYPE = 3;
-    //hex: 0x006B
-    public static final int RESPONSE_MESSAGE_TYPE = 107;
+    //hex: 0x000300
+    public static final int REQUEST_MESSAGE_TYPE = 768;
+    //hex: 0x000301
+    public static final int RESPONSE_MESSAGE_TYPE = 769;
     private static final int REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_PARTITION_COUNT_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;

@@ -29,16 +29,16 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class ClientAddPartitionListenerCodec {
-    //hex: 0x0012
-    public static final int REQUEST_MESSAGE_TYPE = 18;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x001200
+    public static final int REQUEST_MESSAGE_TYPE = 4608;
+    //hex: 0x001201
+    public static final int RESPONSE_MESSAGE_TYPE = 4609;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITIONS_INITIAL_FRAME_SIZE = EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D9
-    private static final int EVENT_PARTITIONS_MESSAGE_TYPE = 217;
+    //hex: 0x001202
+    private static final int EVENT_PARTITIONS_MESSAGE_TYPE = 4610;
 
     private ClientAddPartitionListenerCodec() {
     }

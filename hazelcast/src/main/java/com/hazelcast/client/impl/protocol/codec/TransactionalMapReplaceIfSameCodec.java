@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * accessible only in the current transaction context until the transaction is committed.
  */
 public final class TransactionalMapReplaceIfSameCodec {
-    //hex: 0x100A
-    public static final int REQUEST_MESSAGE_TYPE = 4106;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x100A00
+    public static final int REQUEST_MESSAGE_TYPE = 1051136;
+    //hex: 0x100A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1051137;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -109,7 +109,7 @@ public final class TransactionalMapReplaceIfSameCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if the value was replaced.
          */
         public boolean response;
     }

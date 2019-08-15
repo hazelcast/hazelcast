@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * message may act as a proxy.
  */
 public final class PNCounterGetCodec {
-    //hex: 0x2001
-    public static final int REQUEST_MESSAGE_TYPE = 8193;
-    //hex: 0x007F
-    public static final int RESPONSE_MESSAGE_TYPE = 127;
+    //hex: 0x200100
+    public static final int REQUEST_MESSAGE_TYPE = 2097408;
+    //hex: 0x200101
+    public static final int RESPONSE_MESSAGE_TYPE = 2097409;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_VALUE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

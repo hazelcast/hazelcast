@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
 public final class CacheGetAndRemoveCodec {
-    //hex: 0x150B
-    public static final int REQUEST_MESSAGE_TYPE = 5387;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x150B00
+    public static final int REQUEST_MESSAGE_TYPE = 1379072;
+    //hex: 0x150B01
+    public static final int RESPONSE_MESSAGE_TYPE = 1379073;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -87,7 +87,7 @@ public final class CacheGetAndRemoveCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the value if one existed or null if no mapping existed for this key
          */
         public com.hazelcast.nio.serialization.Data response;
     }

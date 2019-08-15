@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddMapConfigCodec {
-    //hex: 0x1E0E
-    public static final int REQUEST_MESSAGE_TYPE = 7694;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0E00
+    public static final int REQUEST_MESSAGE_TYPE = 1969664;
+    //hex: 0x1E0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1969665;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

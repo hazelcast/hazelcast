@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns whether this lock is locked by current thread or not.
  */
 public final class LockIsLockedByCurrentThreadCodec {
-    //hex: 0x0702
-    public static final int REQUEST_MESSAGE_TYPE = 1794;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x070200
+    public static final int REQUEST_MESSAGE_TYPE = 459264;
+    //hex: 0x070201
+    public static final int RESPONSE_MESSAGE_TYPE = 459265;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class LockIsLockedByCurrentThreadCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if this lock is locked by current thread, false otherwise.
          */
         public boolean response;
     }

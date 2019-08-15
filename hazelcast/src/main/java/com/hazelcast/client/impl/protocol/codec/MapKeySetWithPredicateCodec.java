@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * QueryResultSizeExceededException if query result size limit is configured.
  */
 public final class MapKeySetWithPredicateCodec {
-    //hex: 0x012A
-    public static final int REQUEST_MESSAGE_TYPE = 298;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x012A00
+    public static final int REQUEST_MESSAGE_TYPE = 76288;
+    //hex: 0x012A01
+    public static final int RESPONSE_MESSAGE_TYPE = 76289;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -82,7 +82,7 @@ public final class MapKeySetWithPredicateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * result key set for the query.
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

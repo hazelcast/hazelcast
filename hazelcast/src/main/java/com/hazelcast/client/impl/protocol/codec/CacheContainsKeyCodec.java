@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * cache contains a mapping for a key k such that key.equals(k). (There can be at most one such mapping.)
  */
 public final class CacheContainsKeyCodec {
-    //hex: 0x1506
-    public static final int REQUEST_MESSAGE_TYPE = 5382;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x150600
+    public static final int REQUEST_MESSAGE_TYPE = 1377792;
+    //hex: 0x150601
+    public static final int RESPONSE_MESSAGE_TYPE = 1377793;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class CacheContainsKeyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns true if cache value for the key exists, false otherwise.
          */
         public boolean response;
     }

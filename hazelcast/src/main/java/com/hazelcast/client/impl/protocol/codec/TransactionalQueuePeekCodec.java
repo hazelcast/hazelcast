@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
 public final class TransactionalQueuePeekCodec {
-    //hex: 0x1404
-    public static final int REQUEST_MESSAGE_TYPE = 5124;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x140400
+    public static final int REQUEST_MESSAGE_TYPE = 1311744;
+    //hex: 0x140401
+    public static final int RESPONSE_MESSAGE_TYPE = 1311745;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -94,7 +94,7 @@ public final class TransactionalQueuePeekCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The value at the head of the queue.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

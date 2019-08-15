@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, returns Integer.MAX_VALUE.
  */
 public final class SetSizeCodec {
-    //hex: 0x0601
-    public static final int REQUEST_MESSAGE_TYPE = 1537;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x060100
+    public static final int REQUEST_MESSAGE_TYPE = 393472;
+    //hex: 0x060101
+    public static final int RESPONSE_MESSAGE_TYPE = 393473;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class SetSizeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The number of elements in this set (its cardinality)
          */
         public int response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Publishes the message to all subscribers of this topic
  */
 public final class TopicPublishCodec {
-    //hex: 0x0401
-    public static final int REQUEST_MESSAGE_TYPE = 1025;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x040100
+    public static final int REQUEST_MESSAGE_TYPE = 262400;
+    //hex: 0x040101
+    public static final int RESPONSE_MESSAGE_TYPE = 262401;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

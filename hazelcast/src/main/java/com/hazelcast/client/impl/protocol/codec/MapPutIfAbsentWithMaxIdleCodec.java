@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
 public final class MapPutIfAbsentWithMaxIdleCodec {
-    //hex: 0x014C
-    public static final int REQUEST_MESSAGE_TYPE = 332;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x014C00
+    public static final int REQUEST_MESSAGE_TYPE = 84992;
+    //hex: 0x014C01
+    public static final int RESPONSE_MESSAGE_TYPE = 84993;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -111,7 +111,7 @@ public final class MapPutIfAbsentWithMaxIdleCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * old value of the entry
          */
         public com.hazelcast.nio.serialization.Data response;
     }

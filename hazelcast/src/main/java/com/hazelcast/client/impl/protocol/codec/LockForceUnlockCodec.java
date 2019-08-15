@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and returns immediately.
  */
 public final class LockForceUnlockCodec {
-    //hex: 0x0707
-    public static final int REQUEST_MESSAGE_TYPE = 1799;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x070700
+    public static final int REQUEST_MESSAGE_TYPE = 460544;
+    //hex: 0x070701
+    public static final int RESPONSE_MESSAGE_TYPE = 460545;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

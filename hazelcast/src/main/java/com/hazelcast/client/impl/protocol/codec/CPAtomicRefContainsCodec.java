@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if the reference contains the value.
  */
 public final class CPAtomicRefContainsCodec {
-    //hex: 0x2403
-    public static final int REQUEST_MESSAGE_TYPE = 9219;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x240300
+    public static final int REQUEST_MESSAGE_TYPE = 2360064;
+    //hex: 0x240301
+    public static final int RESPONSE_MESSAGE_TYPE = 2360065;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -87,7 +87,7 @@ public final class CPAtomicRefContainsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if the value is found, false otherwise.
          */
         public boolean response;
     }

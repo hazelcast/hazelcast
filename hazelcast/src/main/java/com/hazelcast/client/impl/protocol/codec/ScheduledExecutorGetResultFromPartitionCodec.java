@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The call will blocking until the result is ready.
  */
 public final class ScheduledExecutorGetResultFromPartitionCodec {
-    //hex: 0x1D0F
-    public static final int REQUEST_MESSAGE_TYPE = 7439;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x1D0F00
+    public static final int REQUEST_MESSAGE_TYPE = 1904384;
+    //hex: 0x1D0F01
+    public static final int RESPONSE_MESSAGE_TYPE = 1904385;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -80,7 +80,7 @@ public final class ScheduledExecutorGetResultFromPartitionCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The result of the completed task, in serialized form ({
          */
         public com.hazelcast.nio.serialization.Data response;
     }

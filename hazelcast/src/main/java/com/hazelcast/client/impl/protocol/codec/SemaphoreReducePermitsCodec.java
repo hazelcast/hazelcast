@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * does not block waiting for permits to become available.
  */
 public final class SemaphoreReducePermitsCodec {
-    //hex: 0x0D05
-    public static final int REQUEST_MESSAGE_TYPE = 3333;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x0D0500
+    public static final int REQUEST_MESSAGE_TYPE = 853248;
+    //hex: 0x0D0501
+    public static final int RESPONSE_MESSAGE_TYPE = 853249;
     private static final int REQUEST_REDUCTION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REDUCTION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

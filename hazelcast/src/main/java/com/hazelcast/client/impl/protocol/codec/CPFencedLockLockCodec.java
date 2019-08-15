@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}.
  */
 public final class CPFencedLockLockCodec {
-    //hex: 0x2601
-    public static final int REQUEST_MESSAGE_TYPE = 9729;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x260100
+    public static final int REQUEST_MESSAGE_TYPE = 2490624;
+    //hex: 0x260101
+    public static final int RESPONSE_MESSAGE_TYPE = 2490625;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -109,7 +109,8 @@ public final class CPFencedLockLockCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * a valid fencing token (positive number) if the lock
+         * is acquired, otherwise -1.
          */
         public long response;
     }

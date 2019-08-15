@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddReplicatedMapConfigCodec {
-    //hex: 0x1E07
-    public static final int REQUEST_MESSAGE_TYPE = 7687;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0700
+    public static final int REQUEST_MESSAGE_TYPE = 1967872;
+    //hex: 0x1E0701
+    public static final int RESPONSE_MESSAGE_TYPE = 1967873;
     private static final int REQUEST_ASYNC_FILLUP_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_ASYNC_FILLUP_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

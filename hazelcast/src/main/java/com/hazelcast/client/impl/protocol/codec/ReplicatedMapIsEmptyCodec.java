@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Return true if this map contains no key-value mappings
  */
 public final class ReplicatedMapIsEmptyCodec {
-    //hex: 0x0E03
-    public static final int REQUEST_MESSAGE_TYPE = 3587;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x0E0300
+    public static final int REQUEST_MESSAGE_TYPE = 918272;
+    //hex: 0x0E0301
+    public static final int RESPONSE_MESSAGE_TYPE = 918273;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -73,7 +73,7 @@ public final class ReplicatedMapIsEmptyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * <tt>True</tt> if this map contains no key-value mappings
          */
         public boolean response;
     }

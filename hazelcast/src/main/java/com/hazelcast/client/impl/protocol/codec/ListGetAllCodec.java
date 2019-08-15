@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Return the all elements of this collection
  */
 public final class ListGetAllCodec {
-    //hex: 0x050A
-    public static final int REQUEST_MESSAGE_TYPE = 1290;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x050A00
+    public static final int REQUEST_MESSAGE_TYPE = 330240;
+    //hex: 0x050A01
+    public static final int RESPONSE_MESSAGE_TYPE = 330241;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -72,7 +72,7 @@ public final class ListGetAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * An array of all item values in the list.
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

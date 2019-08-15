@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting for a permit, then  is thrown and the current thread's interrupted status is cleared.
  */
 public final class SemaphoreAcquireCodec {
-    //hex: 0x0D02
-    public static final int REQUEST_MESSAGE_TYPE = 3330;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x0D0200
+    public static final int REQUEST_MESSAGE_TYPE = 852480;
+    //hex: 0x0D0201
+    public static final int RESPONSE_MESSAGE_TYPE = 852481;
     private static final int REQUEST_PERMITS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERMITS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

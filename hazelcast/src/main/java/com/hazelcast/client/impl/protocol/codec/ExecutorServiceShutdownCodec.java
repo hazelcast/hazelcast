@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Invocation has no additional effect if already shut down.
  */
 public final class ExecutorServiceShutdownCodec {
-    //hex: 0x0901
-    public static final int REQUEST_MESSAGE_TYPE = 2305;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x090100
+    public static final int REQUEST_MESSAGE_TYPE = 590080;
+    //hex: 0x090101
+    public static final int RESPONSE_MESSAGE_TYPE = 590081;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

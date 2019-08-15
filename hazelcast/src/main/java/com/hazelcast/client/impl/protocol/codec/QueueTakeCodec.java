@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
 public final class QueueTakeCodec {
-    //hex: 0x0306
-    public static final int REQUEST_MESSAGE_TYPE = 774;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x030600
+    public static final int REQUEST_MESSAGE_TYPE = 198144;
+    //hex: 0x030601
+    public static final int RESPONSE_MESSAGE_TYPE = 198145;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -72,7 +72,7 @@ public final class QueueTakeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The head of this queue
          */
         public com.hazelcast.nio.serialization.Data response;
     }

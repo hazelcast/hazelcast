@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
 public final class MapGetAllCodec {
-    //hex: 0x0127
-    public static final int REQUEST_MESSAGE_TYPE = 295;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x012700
+    public static final int REQUEST_MESSAGE_TYPE = 75520;
+    //hex: 0x012701
+    public static final int RESPONSE_MESSAGE_TYPE = 75521;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -83,7 +83,7 @@ public final class MapGetAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * values for the provided keys.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

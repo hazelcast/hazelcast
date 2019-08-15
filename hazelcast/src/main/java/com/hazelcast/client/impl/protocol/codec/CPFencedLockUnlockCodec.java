@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * held by the caller after a successful unlock() call, false otherwise.
  */
 public final class CPFencedLockUnlockCodec {
-    //hex: 0x2603
-    public static final int REQUEST_MESSAGE_TYPE = 9731;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x260300
+    public static final int REQUEST_MESSAGE_TYPE = 2491136;
+    //hex: 0x260301
+    public static final int RESPONSE_MESSAGE_TYPE = 2491137;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -107,7 +107,8 @@ public final class CPFencedLockUnlockCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if the lock is still held by the caller after
+         * a successful unlock() call, false otherwise.
          */
         public boolean response;
     }

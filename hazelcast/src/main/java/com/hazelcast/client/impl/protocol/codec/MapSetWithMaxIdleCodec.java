@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
 public final class MapSetWithMaxIdleCodec {
-    //hex: 0x014D
-    public static final int REQUEST_MESSAGE_TYPE = 333;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x014D00
+    public static final int REQUEST_MESSAGE_TYPE = 85248;
+    //hex: 0x014D01
+    public static final int RESPONSE_MESSAGE_TYPE = 85249;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -114,7 +114,7 @@ public final class MapSetWithMaxIdleCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * old value of the entry
          */
         public com.hazelcast.nio.serialization.Data response;
     }

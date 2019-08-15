@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified item listener.Returns silently if the specified listener was not added before.
  */
 public final class QueueRemoveListenerCodec {
-    //hex: 0x0312
-    public static final int REQUEST_MESSAGE_TYPE = 786;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x031200
+    public static final int REQUEST_MESSAGE_TYPE = 201216;
+    //hex: 0x031201
+    public static final int RESPONSE_MESSAGE_TYPE = 201217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class QueueRemoveListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the item listener is removed, false otherwise
          */
         public boolean response;
     }

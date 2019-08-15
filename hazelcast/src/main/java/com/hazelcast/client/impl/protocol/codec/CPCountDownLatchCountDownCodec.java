@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null. If the current count equals zero, then nothing happens.
  */
 public final class CPCountDownLatchCountDownCodec {
-    //hex: 0x2503
-    public static final int REQUEST_MESSAGE_TYPE = 9475;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x250300
+    public static final int REQUEST_MESSAGE_TYPE = 2425600;
+    //hex: 0x250301
+    public static final int RESPONSE_MESSAGE_TYPE = 2425601;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_EXPECTED_ROUND_FIELD_OFFSET = REQUEST_INVOCATION_UID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_EXPECTED_ROUND_FIELD_OFFSET + INT_SIZE_IN_BYTES;

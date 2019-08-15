@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
  */
 public final class CacheGetCodec {
-    //hex: 0x150E
-    public static final int REQUEST_MESSAGE_TYPE = 5390;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x150E00
+    public static final int REQUEST_MESSAGE_TYPE = 1379840;
+    //hex: 0x150E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1379841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -89,7 +89,7 @@ public final class CacheGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The value assigned to the given key, or null if not assigned.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

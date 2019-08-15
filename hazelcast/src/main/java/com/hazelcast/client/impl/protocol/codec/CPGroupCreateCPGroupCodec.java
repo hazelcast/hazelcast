@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Creates a new CP group with the given name
  */
 public final class CPGroupCreateCPGroupCodec {
-    //hex: 0x2101
-    public static final int REQUEST_MESSAGE_TYPE = 8449;
-    //hex: 0x0080
-    public static final int RESPONSE_MESSAGE_TYPE = 128;
+    //hex: 0x210100
+    public static final int REQUEST_MESSAGE_TYPE = 2162944;
+    //hex: 0x210101
+    public static final int RESPONSE_MESSAGE_TYPE = 2162945;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -72,7 +72,7 @@ public final class CPGroupCreateCPGroupCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * ID of the CP group that contains the CP object
          */
         public com.hazelcast.cp.internal.RaftGroupId groupId;
     }

@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * initialized before.
  */
 public final class CPSemaphoreInitCodec {
-    //hex: 0x2701
-    public static final int REQUEST_MESSAGE_TYPE = 9985;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x270100
+    public static final int REQUEST_MESSAGE_TYPE = 2556160;
+    //hex: 0x270101
+    public static final int RESPONSE_MESSAGE_TYPE = 2556161;
     private static final int REQUEST_PERMITS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERMITS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -88,7 +88,7 @@ public final class CPSemaphoreInitCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if the ISemaphore is initialized with this call
          */
         public boolean response;
     }

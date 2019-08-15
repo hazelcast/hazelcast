@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddExecutorConfigCodec {
-    //hex: 0x1E09
-    public static final int REQUEST_MESSAGE_TYPE = 7689;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0900
+    public static final int REQUEST_MESSAGE_TYPE = 1968384;
+    //hex: 0x1E0901
+    public static final int RESPONSE_MESSAGE_TYPE = 1968385;
     private static final int REQUEST_POOL_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_QUEUE_CAPACITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_QUEUE_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This set will not contain the element once the call returns.)
  */
 public final class SetRemoveCodec {
-    //hex: 0x0605
-    public static final int REQUEST_MESSAGE_TYPE = 1541;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x060500
+    public static final int REQUEST_MESSAGE_TYPE = 394496;
+    //hex: 0x060501
+    public static final int RESPONSE_MESSAGE_TYPE = 394497;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -82,7 +82,7 @@ public final class SetRemoveCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if this set contained the specified element and it is removed successfully
          */
         public boolean response;
     }

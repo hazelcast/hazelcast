@@ -43,10 +43,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * case the implementation must ensure that the signal is redirected to another waiting thread, if there is one.
  */
 public final class ConditionBeforeAwaitCodec {
-    //hex: 0x0802
-    public static final int REQUEST_MESSAGE_TYPE = 2050;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x080200
+    public static final int REQUEST_MESSAGE_TYPE = 524800;
+    //hex: 0x080201
+    public static final int RESPONSE_MESSAGE_TYPE = 524801;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

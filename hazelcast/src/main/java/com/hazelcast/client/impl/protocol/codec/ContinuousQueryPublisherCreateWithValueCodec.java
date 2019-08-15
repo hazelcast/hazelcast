@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ContinuousQueryPublisherCreateWithValueCodec {
-    //hex: 0x1801
-    public static final int REQUEST_MESSAGE_TYPE = 6145;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x180100
+    public static final int REQUEST_MESSAGE_TYPE = 1573120;
+    //hex: 0x180101
+    public static final int RESPONSE_MESSAGE_TYPE = 1573121;
     private static final int REQUEST_BATCH_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BUFFER_SIZE_FIELD_OFFSET = REQUEST_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DELAY_SECONDS_FIELD_OFFSET = REQUEST_BUFFER_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -126,7 +126,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Array of key-value pairs.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

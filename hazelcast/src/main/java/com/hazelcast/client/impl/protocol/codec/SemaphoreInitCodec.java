@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Try to initialize this ISemaphore instance with the given permit count
  */
 public final class SemaphoreInitCodec {
-    //hex: 0x0D01
-    public static final int REQUEST_MESSAGE_TYPE = 3329;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x0D0100
+    public static final int REQUEST_MESSAGE_TYPE = 852224;
+    //hex: 0x0D0101
+    public static final int RESPONSE_MESSAGE_TYPE = 852225;
     private static final int REQUEST_PERMITS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERMITS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class SemaphoreInitCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if initialization succeeds, false otherwise.
          */
         public boolean response;
     }

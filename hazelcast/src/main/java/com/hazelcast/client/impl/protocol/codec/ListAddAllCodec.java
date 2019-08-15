@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
 public final class ListAddAllCodec {
-    //hex: 0x0506
-    public static final int REQUEST_MESSAGE_TYPE = 1286;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x050600
+    public static final int REQUEST_MESSAGE_TYPE = 329216;
+    //hex: 0x050601
+    public static final int RESPONSE_MESSAGE_TYPE = 329217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -83,7 +83,7 @@ public final class ListAddAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if this list changed as a result of the call, false otherwise
          */
         public boolean response;
     }

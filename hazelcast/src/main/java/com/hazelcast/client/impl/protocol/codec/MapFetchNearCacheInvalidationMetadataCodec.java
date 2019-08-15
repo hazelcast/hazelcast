@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches invalidation metadata from partitions of map.
  */
 public final class MapFetchNearCacheInvalidationMetadataCodec {
-    //hex: 0x0142
-    public static final int REQUEST_MESSAGE_TYPE = 322;
-    //hex: 0x007A
-    public static final int RESPONSE_MESSAGE_TYPE = 122;
+    //hex: 0x014200
+    public static final int REQUEST_MESSAGE_TYPE = 82432;
+    //hex: 0x014201
+    public static final int RESPONSE_MESSAGE_TYPE = 82433;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

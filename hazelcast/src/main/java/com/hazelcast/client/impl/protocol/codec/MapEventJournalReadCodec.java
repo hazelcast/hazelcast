@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and no projection is applied.
  */
 public final class MapEventJournalReadCodec {
-    //hex: 0x0148
-    public static final int REQUEST_MESSAGE_TYPE = 328;
-    //hex: 0x0073
-    public static final int RESPONSE_MESSAGE_TYPE = 115;
+    //hex: 0x014800
+    public static final int REQUEST_MESSAGE_TYPE = 83968;
+    //hex: 0x014801
+    public static final int RESPONSE_MESSAGE_TYPE = 83969;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

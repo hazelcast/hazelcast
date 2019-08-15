@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * returns Integer.MAX_VALUE
  */
 public final class MapSizeCodec {
-    //hex: 0x012E
-    public static final int REQUEST_MESSAGE_TYPE = 302;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x012E00
+    public static final int REQUEST_MESSAGE_TYPE = 77312;
+    //hex: 0x012E01
+    public static final int RESPONSE_MESSAGE_TYPE = 77313;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class MapSizeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the number of key-value mappings in this map
          */
         public int response;
     }

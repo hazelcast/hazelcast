@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The initial value of the tail is -1.
  */
 public final class RingbufferTailSequenceCodec {
-    //hex: 0x1902
-    public static final int REQUEST_MESSAGE_TYPE = 6402;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190200
+    public static final int REQUEST_MESSAGE_TYPE = 1638912;
+    //hex: 0x190201
+    public static final int RESPONSE_MESSAGE_TYPE = 1638913;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class RingbufferTailSequenceCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the sequence of the tail
          */
         public long response;
     }

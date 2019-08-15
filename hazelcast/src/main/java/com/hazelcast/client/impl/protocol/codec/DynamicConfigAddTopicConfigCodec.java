@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddTopicConfigCodec {
-    //hex: 0x1E08
-    public static final int REQUEST_MESSAGE_TYPE = 7688;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0800
+    public static final int REQUEST_MESSAGE_TYPE = 1968128;
+    //hex: 0x1E0801
+    public static final int RESPONSE_MESSAGE_TYPE = 1968129;
     private static final int REQUEST_GLOBAL_ORDERING_ENABLED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_GLOBAL_ORDERING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MULTI_THREADING_ENABLED_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

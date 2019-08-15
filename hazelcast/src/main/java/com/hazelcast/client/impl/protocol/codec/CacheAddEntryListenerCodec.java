@@ -29,18 +29,18 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class CacheAddEntryListenerCodec {
-    //hex: 0x1501
-    public static final int REQUEST_MESSAGE_TYPE = 5377;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x150100
+    public static final int REQUEST_MESSAGE_TYPE = 1376512;
+    //hex: 0x150101
+    public static final int RESPONSE_MESSAGE_TYPE = 1376513;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET = EVENT_CACHE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INITIAL_FRAME_SIZE = EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D2
-    private static final int EVENT_CACHE_MESSAGE_TYPE = 210;
+    //hex: 0x150102
+    private static final int EVENT_CACHE_MESSAGE_TYPE = 1376514;
 
     private CacheAddEntryListenerCodec() {
     }
@@ -85,7 +85,7 @@ public final class CacheAddEntryListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Registration id for the registered listener.
          */
         public java.lang.String response;
     }

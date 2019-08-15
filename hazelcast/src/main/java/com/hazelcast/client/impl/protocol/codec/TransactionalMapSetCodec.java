@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
 public final class TransactionalMapSetCodec {
-    //hex: 0x1007
-    public static final int REQUEST_MESSAGE_TYPE = 4103;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x100700
+    public static final int REQUEST_MESSAGE_TYPE = 1050368;
+    //hex: 0x100701
+    public static final int RESPONSE_MESSAGE_TYPE = 1050369;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

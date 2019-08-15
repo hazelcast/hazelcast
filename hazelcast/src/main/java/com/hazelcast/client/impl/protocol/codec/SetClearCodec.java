@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
  */
 public final class SetClearCodec {
-    //hex: 0x0609
-    public static final int REQUEST_MESSAGE_TYPE = 1545;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x060900
+    public static final int REQUEST_MESSAGE_TYPE = 395520;
+    //hex: 0x060901
+    public static final int RESPONSE_MESSAGE_TYPE = 395521;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

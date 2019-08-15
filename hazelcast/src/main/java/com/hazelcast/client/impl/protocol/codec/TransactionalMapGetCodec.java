@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the value for the specified key, or null if this map does not contain this key.
  */
 public final class TransactionalMapGetCodec {
-    //hex: 0x1002
-    public static final int REQUEST_MESSAGE_TYPE = 4098;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x100200
+    public static final int REQUEST_MESSAGE_TYPE = 1049088;
+    //hex: 0x100201
+    public static final int RESPONSE_MESSAGE_TYPE = 1049089;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -93,7 +93,7 @@ public final class TransactionalMapGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The value for the specified key
          */
         public com.hazelcast.nio.serialization.Data response;
     }

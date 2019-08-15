@@ -40,10 +40,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
 public final class MapSetTtlCodec {
-    //hex: 0x0149
-    public static final int REQUEST_MESSAGE_TYPE = 329;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x014900
+    public static final int REQUEST_MESSAGE_TYPE = 84224;
+    //hex: 0x014901
+    public static final int RESPONSE_MESSAGE_TYPE = 84225;
     private static final int REQUEST_TTL_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -99,7 +99,7 @@ public final class MapSetTtlCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * 'true' if the entry is affected, 'false' otherwise
          */
         public boolean response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
 public final class ScheduledExecutorGetDelayFromPartitionCodec {
-    //hex: 0x1D07
-    public static final int REQUEST_MESSAGE_TYPE = 7431;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x1D0700
+    public static final int REQUEST_MESSAGE_TYPE = 1902336;
+    //hex: 0x1D0701
+    public static final int RESPONSE_MESSAGE_TYPE = 1902337;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class ScheduledExecutorGetDelayFromPartitionCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The remaining delay of the task formatted in nanoseconds.
          */
         public long response;
     }

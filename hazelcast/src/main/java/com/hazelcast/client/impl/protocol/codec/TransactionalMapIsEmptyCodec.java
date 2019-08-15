@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map contains no entries.
  */
 public final class TransactionalMapIsEmptyCodec {
-    //hex: 0x1005
-    public static final int REQUEST_MESSAGE_TYPE = 4101;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x100500
+    public static final int REQUEST_MESSAGE_TYPE = 1049856;
+    //hex: 0x100501
+    public static final int RESPONSE_MESSAGE_TYPE = 1049857;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -87,7 +87,7 @@ public final class TransactionalMapIsEmptyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * <tt>true</tt> if this map contains no entries.
          */
         public boolean response;
     }

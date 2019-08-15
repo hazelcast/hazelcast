@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * return the old value, which is more efficient.
  */
 public final class MapSetCodec {
-    //hex: 0x0112
-    public static final int REQUEST_MESSAGE_TYPE = 274;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x011200
+    public static final int REQUEST_MESSAGE_TYPE = 70144;
+    //hex: 0x011201
+    public static final int RESPONSE_MESSAGE_TYPE = 70145;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

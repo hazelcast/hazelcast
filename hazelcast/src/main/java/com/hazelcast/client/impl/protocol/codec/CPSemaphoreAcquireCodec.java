@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until other threads release enough permits.
  */
 public final class CPSemaphoreAcquireCodec {
-    //hex: 0x2702
-    public static final int REQUEST_MESSAGE_TYPE = 9986;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x270200
+    public static final int REQUEST_MESSAGE_TYPE = 2556416;
+    //hex: 0x270201
+    public static final int RESPONSE_MESSAGE_TYPE = 2556417;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -122,7 +122,8 @@ public final class CPSemaphoreAcquireCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if requested permits are acquired,
+         * false otherwise
          */
         public boolean response;
     }

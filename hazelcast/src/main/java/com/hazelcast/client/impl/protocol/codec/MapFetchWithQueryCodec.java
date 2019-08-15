@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * that match the predicate and applies the projection logic on them.
  */
 public final class MapFetchWithQueryCodec {
-    //hex: 0x0146
-    public static final int REQUEST_MESSAGE_TYPE = 326;
-    //hex: 0x007C
-    public static final int RESPONSE_MESSAGE_TYPE = 124;
+    //hex: 0x014600
+    public static final int REQUEST_MESSAGE_TYPE = 83456;
+    //hex: 0x014601
+    public static final int RESPONSE_MESSAGE_TYPE = 83457;
     private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns current lock ownership status of the given FencedLock instance.
  */
 public final class CPFencedLockGetLockOwnershipCodec {
-    //hex: 0x2604
-    public static final int REQUEST_MESSAGE_TYPE = 9732;
-    //hex: 0x0081
-    public static final int RESPONSE_MESSAGE_TYPE = 129;
+    //hex: 0x260400
+    public static final int REQUEST_MESSAGE_TYPE = 2491392;
+    //hex: 0x260401
+    public static final int RESPONSE_MESSAGE_TYPE = 2491393;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_FENCE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_LOCK_COUNT_FIELD_OFFSET = RESPONSE_FENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

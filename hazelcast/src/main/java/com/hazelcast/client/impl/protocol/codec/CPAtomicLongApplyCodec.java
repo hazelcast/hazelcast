@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies a function on the value, the actual stored value will not change
  */
 public final class CPAtomicLongApplyCodec {
-    //hex: 0x2301
-    public static final int REQUEST_MESSAGE_TYPE = 8961;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x230100
+    public static final int REQUEST_MESSAGE_TYPE = 2294016;
+    //hex: 0x230101
+    public static final int RESPONSE_MESSAGE_TYPE = 2294017;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -87,7 +87,7 @@ public final class CPAtomicLongApplyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The result of the function application.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

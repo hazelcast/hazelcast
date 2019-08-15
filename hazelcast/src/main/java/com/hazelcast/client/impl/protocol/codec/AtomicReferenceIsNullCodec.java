@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks if the stored reference is null.
  */
 public final class AtomicReferenceIsNullCodec {
-    //hex: 0x0B0D
-    public static final int REQUEST_MESSAGE_TYPE = 2829;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x0B0D00
+    public static final int REQUEST_MESSAGE_TYPE = 724224;
+    //hex: 0x0B0D01
+    public static final int RESPONSE_MESSAGE_TYPE = 724225;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -73,7 +73,7 @@ public final class AtomicReferenceIsNullCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if null, false otherwise.
          */
         public boolean response;
     }

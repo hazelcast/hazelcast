@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * rounded to the next closest second value.
  */
 public final class MapPutWithMaxIdleCodec {
-    //hex: 0x014A
-    public static final int REQUEST_MESSAGE_TYPE = 330;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x014A00
+    public static final int REQUEST_MESSAGE_TYPE = 84480;
+    //hex: 0x014A01
+    public static final int RESPONSE_MESSAGE_TYPE = 84481;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -113,7 +113,7 @@ public final class MapPutWithMaxIdleCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * old value of the entry
          */
         public com.hazelcast.nio.serialization.Data response;
     }

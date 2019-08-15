@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
 public final class RingbufferReadOneCodec {
-    //hex: 0x1908
-    public static final int REQUEST_MESSAGE_TYPE = 6408;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x190800
+    public static final int REQUEST_MESSAGE_TYPE = 1640448;
+    //hex: 0x190801
+    public static final int RESPONSE_MESSAGE_TYPE = 1640449;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -82,7 +82,7 @@ public final class RingbufferReadOneCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the read item
          */
         public com.hazelcast.nio.serialization.Data response;
     }

@@ -32,17 +32,17 @@ import com.hazelcast.logging.Logger;
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
 public final class CacheAddPartitionLostListenerCodec {
-    //hex: 0x151A
-    public static final int REQUEST_MESSAGE_TYPE = 5402;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x151A00
+    public static final int REQUEST_MESSAGE_TYPE = 1382912;
+    //hex: 0x151A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1382913;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D6
-    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 214;
+    //hex: 0x151A02
+    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1382914;
 
     private CacheAddPartitionLostListenerCodec() {
     }
@@ -88,7 +88,7 @@ public final class CacheAddPartitionLostListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * returns the registration id for the CachePartitionLostListener.
          */
         public java.lang.String response;
     }

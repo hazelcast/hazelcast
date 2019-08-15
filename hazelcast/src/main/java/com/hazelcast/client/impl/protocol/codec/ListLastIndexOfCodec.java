@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * contain the element.
  */
 public final class ListLastIndexOfCodec {
-    //hex: 0x0513
-    public static final int REQUEST_MESSAGE_TYPE = 1299;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x051300
+    public static final int REQUEST_MESSAGE_TYPE = 332544;
+    //hex: 0x051301
+    public static final int RESPONSE_MESSAGE_TYPE = 332545;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -81,7 +81,8 @@ public final class ListLastIndexOfCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the index of the last occurrence of the specified element in
+         * this list, or -1 if this list does not contain the element
          */
         public int response;
     }

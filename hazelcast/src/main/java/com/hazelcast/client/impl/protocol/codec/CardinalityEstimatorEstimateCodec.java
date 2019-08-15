@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If it was previously estimated and never invalidated, then the cached version is used.
  */
 public final class CardinalityEstimatorEstimateCodec {
-    //hex: 0x1C02
-    public static final int REQUEST_MESSAGE_TYPE = 7170;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x1C0200
+    public static final int REQUEST_MESSAGE_TYPE = 1835520;
+    //hex: 0x1C0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1835521;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class CardinalityEstimatorEstimateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the previous cached estimation or the newly computed one.
          */
         public long response;
     }

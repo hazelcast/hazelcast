@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value pairs in the multimap.
  */
 public final class MultiMapSizeCodec {
-    //hex: 0x020A
-    public static final int REQUEST_MESSAGE_TYPE = 522;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x020A00
+    public static final int REQUEST_MESSAGE_TYPE = 133632;
+    //hex: 0x020A01
+    public static final int RESPONSE_MESSAGE_TYPE = 133633;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -73,7 +73,7 @@ public final class MultiMapSizeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The number of key-value pairs in the multimap.
          */
         public int response;
     }

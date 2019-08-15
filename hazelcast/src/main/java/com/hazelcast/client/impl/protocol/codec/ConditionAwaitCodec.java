@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time elapses.
  */
 public final class ConditionAwaitCodec {
-    //hex: 0x0801
-    public static final int REQUEST_MESSAGE_TYPE = 2049;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x080100
+    public static final int REQUEST_MESSAGE_TYPE = 524544;
+    //hex: 0x080101
+    public static final int RESPONSE_MESSAGE_TYPE = 524545;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -103,7 +103,7 @@ public final class ConditionAwaitCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * False if the waiting time detectably elapsed before return from the method, else true
          */
         public boolean response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The element previously at the specified position
  */
 public final class ListSetCodec {
-    //hex: 0x0510
-    public static final int REQUEST_MESSAGE_TYPE = 1296;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x051000
+    public static final int REQUEST_MESSAGE_TYPE = 331776;
+    //hex: 0x051001
+    public static final int RESPONSE_MESSAGE_TYPE = 331777;
     private static final int REQUEST_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -86,7 +86,7 @@ public final class ListSetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The element previously at the specified position
          */
         public com.hazelcast.nio.serialization.Data response;
     }

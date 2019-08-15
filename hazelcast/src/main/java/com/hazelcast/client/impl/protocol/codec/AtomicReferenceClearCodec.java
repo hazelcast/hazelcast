@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Clears the current stored reference.
  */
 public final class AtomicReferenceClearCodec {
-    //hex: 0x0B0A
-    public static final int REQUEST_MESSAGE_TYPE = 2826;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x0B0A00
+    public static final int REQUEST_MESSAGE_TYPE = 723456;
+    //hex: 0x0B0A01
+    public static final int RESPONSE_MESSAGE_TYPE = 723457;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

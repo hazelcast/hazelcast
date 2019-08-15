@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * head completed the first looparound the ring. This is because no items are getting retired.
  */
 public final class RingbufferSizeCodec {
-    //hex: 0x1901
-    public static final int REQUEST_MESSAGE_TYPE = 6401;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190100
+    public static final int REQUEST_MESSAGE_TYPE = 1638656;
+    //hex: 0x190101
+    public static final int RESPONSE_MESSAGE_TYPE = 1638657;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class RingbufferSizeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the size
          */
         public long response;
     }

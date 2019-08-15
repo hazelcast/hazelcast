@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class MapAssignAndGetUuidsCodec {
-    //hex: 0x0143
-    public static final int REQUEST_MESSAGE_TYPE = 323;
-    //hex: 0x007B
-    public static final int RESPONSE_MESSAGE_TYPE = 123;
+    //hex: 0x014300
+    public static final int REQUEST_MESSAGE_TYPE = 82688;
+    //hex: 0x014301
+    public static final int RESPONSE_MESSAGE_TYPE = 82689;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -65,7 +65,7 @@ public final class MapAssignAndGetUuidsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * partitionId to assigned uuid entry list
          */
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
     }

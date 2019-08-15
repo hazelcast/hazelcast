@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
 public final class MapAddInterceptorCodec {
-    //hex: 0x0117
-    public static final int REQUEST_MESSAGE_TYPE = 279;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x011700
+    public static final int REQUEST_MESSAGE_TYPE = 71424;
+    //hex: 0x011701
+    public static final int RESPONSE_MESSAGE_TYPE = 71425;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -80,7 +80,7 @@ public final class MapAddInterceptorCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * id of registered interceptor.
          */
         public java.lang.String response;
     }
