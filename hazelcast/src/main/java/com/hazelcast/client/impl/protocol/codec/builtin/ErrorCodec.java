@@ -29,7 +29,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 
 public final class ErrorCodec {
 
-    public static final short EXCEPTION = 109;
+    public static final int EXCEPTION = 109;
     private static final int ERROR_CODE = 0;
     private static final int INITIAL_FRAME_SIZE = ERROR_CODE + Bits.INT_SIZE_IN_BYTES;
 

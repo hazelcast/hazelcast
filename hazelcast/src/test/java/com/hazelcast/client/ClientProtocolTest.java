@@ -50,7 +50,7 @@ public class ClientProtocolTest extends ClientTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientMessage s = MapSizeCodec.encodeRequest("mapName");
-        short undefinedMessageType = Short.MAX_VALUE - 1;
+        int undefinedMessageType = -1;
         s.setMessageType(undefinedMessageType);
         ClientInvocation invocation = new ClientInvocation(clientImpl, s, "mapName");
         try {
