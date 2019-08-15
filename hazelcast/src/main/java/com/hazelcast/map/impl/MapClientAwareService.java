@@ -20,6 +20,8 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.internal.services.ClientAwareService;
 
+import java.util.UUID;
+
 /**
  * Defines {@link ClientAwareService} behavior of map service.
  * This service is used to clean unneeded resources.
@@ -35,7 +37,7 @@ class MapClientAwareService implements ClientAwareService {
     }
 
     @Override
-    public void clientDisconnected(String clientUuid) {
+    public void clientDisconnected(UUID clientUuid) {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         PublisherContext publisherContext = queryCacheContext.getPublisherContext();
         publisherContext.handleDisconnectedSubscriber(clientUuid);

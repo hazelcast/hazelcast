@@ -161,7 +161,7 @@ public class PhoneHome {
 
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator()
                 .addParam("version", buildInfo.getVersion())
-                .addParam("m", hazelcastNode.getThisUuid())
+                .addParam("m", hazelcastNode.getThisUuid().toString())
                 .addParam("p", getDownloadId())
                 .addParam("c", clusterService.getClusterId())
                 .addParam("crsz", convertToLetter(clusterSize))

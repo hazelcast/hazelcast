@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
+import java.util.UUID;
+
 public class MapAddEntryListenerToKeyWithPredicateMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters> {
 
@@ -57,7 +59,7 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
-                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+                                        Data meringValueData, int type, UUID uuid, int numberOfAffectedEntries) {
         return MapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent(keyData, newValueData,
                 oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }

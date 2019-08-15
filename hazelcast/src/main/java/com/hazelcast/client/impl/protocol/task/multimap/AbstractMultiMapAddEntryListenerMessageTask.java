@@ -32,6 +32,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P>
         implements ListenerMessageTask {
@@ -92,7 +93,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 Data oldValue = dataAwareEntryEvent.getOldValueData();
 
                 final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
+                final UUID uuid = event.getMember().getUuid();
 
                 sendClientMessage(key, encodeEvent(key, value, oldValue, type.getType(), uuid, 1));
             }
@@ -102,7 +103,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         public void onMapEvent(MapEvent event) {
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
+                final UUID uuid = event.getMember().getUuid();
                 sendClientMessage(null, encodeEvent(null,
                         null, null, type.getType(),
                         uuid, event.getNumberOfEntriesAffected()));
@@ -111,5 +112,5 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
     }
 
     protected abstract ClientMessage encodeEvent(Data key, Data value, Data oldValue,
-                                                 int type, String uuid, int numberOfEntriesAffected);
+                                                 int type, UUID uuid, int numberOfEntriesAffected);
 }

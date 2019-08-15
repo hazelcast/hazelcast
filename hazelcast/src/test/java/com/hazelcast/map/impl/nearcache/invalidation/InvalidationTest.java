@@ -56,11 +56,11 @@ public class InvalidationTest extends HazelcastTestSupport {
 
         Data key = serializationService.toData("key");
         String mapName = "mapName";
-        String sourceUuid = "sourceUuid";
+        UUID sourceUuid = UUID.randomUUID();
         UUID partitionUuid = UUID.randomUUID();
         singleInvalidation = new SingleNearCacheInvalidation(key, mapName, sourceUuid, partitionUuid, 1);
 
-        List<Invalidation> invalidations = Collections.<Invalidation>singletonList(singleInvalidation);
+        List<Invalidation> invalidations = Collections.singletonList(singleInvalidation);
         batchInvalidation = new BatchNearCacheInvalidation(mapName, invalidations);
     }
 

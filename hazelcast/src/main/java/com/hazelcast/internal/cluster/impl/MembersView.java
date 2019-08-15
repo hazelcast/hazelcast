@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
@@ -119,7 +120,7 @@ public final class MembersView implements IdentifiedDataSerializable {
         return false;
     }
 
-    public boolean containsMember(Address address, String uuid) {
+    public boolean containsMember(Address address, UUID uuid) {
         for (MemberInfo member : members) {
             if (member.getAddress().equals(address)) {
                 return member.getUuid().equals(uuid);

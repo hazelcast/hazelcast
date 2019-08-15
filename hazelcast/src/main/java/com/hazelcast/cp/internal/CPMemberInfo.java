@@ -43,7 +43,6 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     private static final long serialVersionUID = 5628148969327743953L;
 
     private transient UUID uuid;
-    private transient String uuidString;
     private transient Address address;
 
     public CPMemberInfo() {
@@ -51,16 +50,15 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     public CPMemberInfo(UUID uuid, Address address) {
         this.uuid = uuid;
-        this.uuidString = uuid.toString();
         this.address = address;
     }
 
     public CPMemberInfo(Member member) {
-        this(UUID.fromString(member.getUuid()), member.getAddress());
+        this(member.getUuid(), member.getAddress());
     }
 
-    public String getUuid() {
-        return uuidString;
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
@@ -86,7 +84,6 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         uuid = readUUID(in);
-        uuidString = uuid.toString();
         String host = in.readUTF();
         int port = in.readInt();
         address = new Address(host, port);
@@ -101,7 +98,6 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         uuid = readUUID(in);
-        uuidString = uuid.toString();
         address = in.readObject();
     }
 
@@ -142,6 +138,6 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     @Override
     public String toString() {
-        return "CPMember{" + "uuid=" + uuidString + ", address=" + address + '}';
+        return "CPMember{" + "uuid=" + uuid + ", address=" + address + '}';
     }
 }

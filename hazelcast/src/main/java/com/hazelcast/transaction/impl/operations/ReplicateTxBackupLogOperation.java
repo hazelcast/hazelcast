@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX_BACKUP_LOG;
@@ -41,7 +43,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     // todo: probably we don't want to use linked list.
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
-    private String callerUuid;
+    private UUID callerUuid;
     private String txnId;
     private long timeoutMillis;
     private long startTime;
@@ -49,7 +51,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     public ReplicateTxBackupLogOperation() {
     }
 
-    public ReplicateTxBackupLogOperation(Collection<TransactionLogRecord> logs, String callerUuid, String txnId,
+    public ReplicateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid, String txnId,
                                          long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.callerUuid = callerUuid;
@@ -84,7 +86,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
+        UUIDSerializationUtil.writeUUID(out, callerUuid);
         out.writeUTF(txnId);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
@@ -99,7 +101,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
+        callerUuid = UUIDSerializationUtil.readUUID(in);
         txnId = in.readUTF();
         timeoutMillis = in.readLong();
         startTime = in.readLong();

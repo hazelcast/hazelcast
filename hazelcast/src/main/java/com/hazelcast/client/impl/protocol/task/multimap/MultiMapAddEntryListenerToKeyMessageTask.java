@@ -22,6 +22,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.UUID;
+
 /**
  * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENERTOKEY}
@@ -44,7 +46,7 @@ public class MultiMapAddEntryListenerToKeyMessageTask
     }
 
     @Override
-    protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, String uuid, int numberOfEntriesAffected) {
+    protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, UUID uuid, int numberOfEntriesAffected) {
         return MultiMapAddEntryListenerToKeyCodec.encodeEntryEvent(key, value, oldValue,
                 null, type, uuid, numberOfEntriesAffected);
     }

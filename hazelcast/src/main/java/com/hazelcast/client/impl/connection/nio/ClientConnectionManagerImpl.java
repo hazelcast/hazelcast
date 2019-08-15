@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -597,8 +598,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private ClientMessage encodeAuthenticationRequest() {
             InternalSerializationService ss = client.getSerializationService();
             byte serializationVersion = ss.getVersion();
-            String uuid = null;
-            String ownerUuid = null;
+            UUID uuid = null;
+            UUID ownerUuid = null;
             ClientPrincipal principal = getPrincipal();
             if (principal != null) {
                 uuid = principal.getUuid();

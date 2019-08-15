@@ -57,19 +57,19 @@ public class CacheAddNearCacheInvalidationListenerTask
     private final class NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
         NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
-                                      String localMemberUuid, long correlationId) {
+                                      UUID localMemberUuid, long correlationId) {
             super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys,
                     sourceUuids, partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key,
                     sourceUuid, partitionUuid, sequence);

@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -344,7 +345,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy) {
+    public void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(cacheNameWithPrefix);
         if (config == null) {
             // Cache is already cleaned up
@@ -805,7 +806,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override
-    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid) {
+    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid) {
         cacheEventHandler.sendInvalidationEvent(cacheNameWithPrefix, key, sourceUuid);
     }
 

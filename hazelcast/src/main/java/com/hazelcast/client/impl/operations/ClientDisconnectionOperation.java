@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.services.ClientAwareService;
@@ -29,16 +30,17 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 
 public class ClientDisconnectionOperation extends AbstractClientOperation implements UrgentSystemOperation {
 
-    private String clientUuid;
-    private String memberUuid;
+    private UUID clientUuid;
+    private UUID memberUuid;
 
     public ClientDisconnectionOperation() {
     }
 
-    public ClientDisconnectionOperation(String clientUuid, String memberUuid) {
+    public ClientDisconnectionOperation(UUID clientUuid, UUID memberUuid) {
         this.clientUuid = clientUuid;
         this.memberUuid = memberUuid;
     }
@@ -85,15 +87,15 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(clientUuid);
-        out.writeUTF(memberUuid);
+        UUIDSerializationUtil.writeUUID(out, clientUuid);
+        UUIDSerializationUtil.writeUUID(out, memberUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        clientUuid = in.readUTF();
-        memberUuid = in.readUTF();
+        clientUuid = UUIDSerializationUtil.readUUID(in);
+        memberUuid = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

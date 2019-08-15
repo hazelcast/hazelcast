@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -218,13 +219,13 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Map<String, String> clientStatistics = clientEngine.getClientStatistics();
+                Map<UUID, String> clientStatistics = clientEngine.getClientStatistics();
                 assertNotNull(clientStatistics);
                 assertEquals(2, clientStatistics.size());
-                List<String> expectedUUIDs = new ArrayList<String>(2);
+                List<UUID> expectedUUIDs = new ArrayList<>(2);
                 expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
                 expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
-                for (Map.Entry<String, String> clientEntry : clientStatistics.entrySet()) {
+                for (Map.Entry<UUID, String> clientEntry : clientStatistics.entrySet()) {
                     assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
                     String stats = clientEntry.getValue();
                     assertNotNull(stats);
@@ -248,7 +249,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                Map<String, String> statistics = clientEngine.getClientStatistics();
+                Map<UUID, String> statistics = clientEngine.getClientStatistics();
                 assertEquals(0, statistics.size());
             }
         }, STATS_PERIOD_SECONDS * 3);
@@ -317,11 +318,11 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     private static Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
-        Map<String, String> clientStatistics = clientEngine.getClientStatistics();
+        Map<UUID, String> clientStatistics = clientEngine.getClientStatistics();
         assertNotNull("clientStatistics should not be null", clientStatistics);
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
-        Set<Map.Entry<String, String>> entries = clientStatistics.entrySet();
-        Map.Entry<String, String> statEntry = entries.iterator().next();
+        Set<Map.Entry<UUID, String>> entries = clientStatistics.entrySet();
+        Map.Entry<UUID, String> statEntry = entries.iterator().next();
         assertEquals(client.getClientClusterService().getLocalClient().getUuid(), statEntry.getKey());
         return parseStatValue(statEntry.getValue());
     }

@@ -27,15 +27,17 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
+import java.util.UUID;
+
 public class StaticMemberNodeContext implements NodeContext {
     private final NodeContext delegate;
-    private final String uuid;
+    private final UUID uuid;
 
     public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, Member member) {
         this(factory, member.getUuid(), member.getAddress());
     }
 
-    public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, String uuid, Address address) {
+    public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, UUID uuid, Address address) {
         this.uuid = uuid;
         delegate = factory.getRegistry().createNodeContext(address);
     }
@@ -44,7 +46,7 @@ public class StaticMemberNodeContext implements NodeContext {
     public NodeExtension createNodeExtension(Node node) {
         return new DefaultNodeExtension(node) {
             @Override
-            public String createMemberUuid(Address address) {
+            public UUID createMemberUuid(Address address) {
                 return uuid;
             }
         };

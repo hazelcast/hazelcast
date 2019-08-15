@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,6 +27,7 @@ import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.internal.util.ThreadUtil;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Represents an operation on the map in the transaction log.
@@ -36,13 +38,13 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private String name;
     private Data key;
     private long threadId = ThreadUtil.getThreadId();
-    private String ownerUuid;
+    private UUID ownerUuid;
     private Operation op;
 
     public MapTransactionLogRecord() {
     }
 
-    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, String ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, UUID ownerUuid) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -86,7 +88,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
             out.writeData(key);
         }
         out.writeLong(threadId);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeObject(op);
     }
 
@@ -99,7 +101,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
             key = in.readData();
         }
         threadId = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
         op = in.readObject();
     }
 

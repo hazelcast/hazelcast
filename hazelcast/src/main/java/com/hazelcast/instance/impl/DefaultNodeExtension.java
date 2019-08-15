@@ -101,6 +101,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -405,8 +406,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public String createMemberUuid(Address address) {
-        return UuidUtil.createMemberUuid(address);
+    public UUID createMemberUuid(Address address) {
+        return UuidUtil.newUnsecureUUID();
     }
 
     @Override

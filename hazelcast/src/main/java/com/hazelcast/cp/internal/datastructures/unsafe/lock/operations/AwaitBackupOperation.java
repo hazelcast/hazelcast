@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock.operations;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.ConditionKey;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreImpl;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,18 +27,19 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class AwaitBackupOperation extends AbstractLockOperation
         implements BackupOperation {
 
-    private String originalCaller;
+    private UUID originalCaller;
     private String conditionId;
 
     public AwaitBackupOperation() {
     }
 
     public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
-                                String conditionId, String originalCaller) {
+                                String conditionId, UUID originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.originalCaller = originalCaller;
@@ -61,14 +63,14 @@ public class AwaitBackupOperation extends AbstractLockOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(originalCaller);
+        UUIDSerializationUtil.writeUUID(out, originalCaller);
         out.writeUTF(conditionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        originalCaller = in.readUTF();
+        originalCaller = UUIDSerializationUtil.readUUID(in);
         conditionId = in.readUTF();
     }
 }

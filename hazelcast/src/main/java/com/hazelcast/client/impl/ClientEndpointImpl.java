@@ -36,6 +36,7 @@ import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -87,7 +88,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return principal != null ? principal.getUuid() : null;
     }
 

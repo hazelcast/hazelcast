@@ -42,6 +42,7 @@ import javax.cache.integration.CompletionListener;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -284,7 +285,7 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public void handleCachePartitionLostEvent(int partitionId, String uuid) {
+        public void handleCachePartitionLostEvent(int partitionId, UUID uuid) {
             Member member = clientContext.getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
         }

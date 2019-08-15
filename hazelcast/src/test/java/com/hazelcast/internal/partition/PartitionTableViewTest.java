@@ -140,7 +140,7 @@ public class PartitionTableViewTest {
         PartitionReplica[][] addresses = extractPartitionTableMembers(table1);
         PartitionReplica member = addresses[addresses.length - 1][MAX_REPLICA_COUNT - 1];
         Address newAddress = new Address(member.address().getInetAddress(), member.address().getPort() + 1);
-        addresses[addresses.length - 1][MAX_REPLICA_COUNT - 1] = new PartitionReplica(newAddress, UuidUtil.newUnsecureUuidString());
+        addresses[addresses.length - 1][MAX_REPLICA_COUNT - 1] = new PartitionReplica(newAddress, UuidUtil.newUnsecureUUID());
         PartitionTableView table2 = new PartitionTableView(addresses, table1.getVersion());
 
         assertNotEquals(table1, table2);
@@ -157,7 +157,7 @@ public class PartitionTableViewTest {
         for (int i = 0; i < addresses.length; i++) {
             for (int j = 0; j < MAX_REPLICA_COUNT; j++) {
                 Address address = new Address("10.10." + i + "." + RandomPicker.getInt(256), localAddress, 5000 + j);
-                addresses[i][j] = new PartitionReplica(address, UuidUtil.newUnsecureUuidString());
+                addresses[i][j] = new PartitionReplica(address, UuidUtil.newUnsecureUUID());
             }
         }
         return addresses;

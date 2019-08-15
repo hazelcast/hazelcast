@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -24,19 +25,20 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_TX_BACKUP_LOG;
 
 public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
-    private String callerUuid;
+    private UUID callerUuid;
     private String txnId;
 
     public CreateTxBackupLogOperation() {
     }
 
-    public CreateTxBackupLogOperation(String callerUuid, String txnId) {
+    public CreateTxBackupLogOperation(UUID callerUuid, String txnId) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
     }
@@ -66,7 +68,7 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public String getCallerUuid() {
+    public UUID getCallerUuid() {
         return callerUuid;
     }
 
@@ -76,13 +78,13 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
+        UUIDSerializationUtil.writeUUID(out, callerUuid);
         out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
+        callerUuid = UUIDSerializationUtil.readUUID(in);
         txnId = in.readUTF();
     }
 }

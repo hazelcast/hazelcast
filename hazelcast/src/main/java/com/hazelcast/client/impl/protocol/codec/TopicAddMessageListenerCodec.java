@@ -47,7 +47,8 @@ public final class TopicAddMessageListenerCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_TOPIC_INITIAL_FRAME_SIZE = EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_TOPIC_UUID_FIELD_OFFSET = EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_TOPIC_INITIAL_FRAME_SIZE = EVENT_TOPIC_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     //hex: 0x040202
     private static final int EVENT_TOPIC_MESSAGE_TYPE = 262658;
 
@@ -118,15 +119,15 @@ public final class TopicAddMessageListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.lang.String uuid) {
+    public static ClientMessage encodeTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_TOPIC_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_TOPIC_MESSAGE_TYPE);
         encodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET, publishTime);
+        encodeUUID(initialFrame.content, EVENT_TOPIC_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
         DataCodec.encode(clientMessage, item);
-        StringCodec.encode(clientMessage, uuid);
         return clientMessage;
     }
 
@@ -138,13 +139,13 @@ public final class TopicAddMessageListenerCodec {
             if (messageType == EVENT_TOPIC_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 long publishTime = decodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET);
+                java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_TOPIC_UUID_FIELD_OFFSET);
                 com.hazelcast.nio.serialization.Data item = DataCodec.decode(iterator);
-                java.lang.String uuid = StringCodec.decode(iterator);
                 handleTopicEvent(item, publishTime, uuid);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.lang.String uuid);
+        public abstract void handleTopicEvent(com.hazelcast.nio.serialization.Data item, long publishTime, java.util.UUID uuid);
     }
 }

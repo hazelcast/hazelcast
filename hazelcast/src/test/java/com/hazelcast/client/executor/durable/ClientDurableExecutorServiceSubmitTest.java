@@ -42,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -312,8 +313,8 @@ public class ClientDurableExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
 
-        Callable<String> callable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
-        Future<String> result = service.submit(callable);
+        Callable<UUID> callable = new MapPutPartitionAwareCallable<>(mapName, key);
+        Future<UUID> result = service.submit(callable);
 
         assertEquals(member.getUuid(), result.get());
         assertTrue(map.containsKey(member.getUuid()));
@@ -328,13 +329,13 @@ public class ClientDurableExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
 
-        Callable<String> runnable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
+        Callable<UUID> runnable = new MapPutPartitionAwareCallable<>(mapName, key);
 
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<UUID> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).andThen(new ExecutionCallback<String>() {
-            public void onResponse(String response) {
+        service.submit(runnable).andThen(new ExecutionCallback<UUID>() {
+            public void onResponse(UUID response) {
                 result.set(response);
                 responseLatch.countDown();
             }

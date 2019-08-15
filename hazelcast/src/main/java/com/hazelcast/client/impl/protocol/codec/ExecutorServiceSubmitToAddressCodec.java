@@ -37,10 +37,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 @Generated("3dea2658f5310bf0a68937dfb7320c1e")
 public final class ExecutorServiceSubmitToAddressCodec {
-    //hex: 0x0906
-    public static final int REQUEST_MESSAGE_TYPE = 2310;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x090600
+    public static final int REQUEST_MESSAGE_TYPE = 591360;
+    //hex: 0x090601
+    public static final int RESPONSE_MESSAGE_TYPE = 591361;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -102,7 +102,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The result of the callable execution.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

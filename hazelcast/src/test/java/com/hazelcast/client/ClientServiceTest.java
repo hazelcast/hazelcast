@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -172,10 +173,10 @@ public class ClientServiceTest extends ClientTestSupport {
         final Collection<Client> connectedClients = clientService.getConnectedClients();
         assertEquals(2, connectedClients.size());
 
-        final String uuid1 = client1.getLocalEndpoint().getUuid();
-        final String uuid2 = client2.getLocalEndpoint().getUuid();
+        final UUID uuid1 = client1.getLocalEndpoint().getUuid();
+        final UUID uuid2 = client2.getLocalEndpoint().getUuid();
         for (Client connectedClient : connectedClients) {
-            final String uuid = connectedClient.getUuid();
+            final UUID uuid = connectedClient.getUuid();
             assertTrue(uuid.equals(uuid1) || uuid.equals(uuid2));
         }
 

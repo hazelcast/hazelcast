@@ -49,7 +49,8 @@ public final class CacheAddPartitionLostListenerCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     //hex: 0x151A02
     private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1382914;
 
@@ -121,14 +122,14 @@ public final class CacheAddPartitionLostListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.lang.String uuid) {
+    public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
+        encodeUUID(initialFrame.content, EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, uuid);
         return clientMessage;
     }
 
@@ -140,12 +141,12 @@ public final class CacheAddPartitionLostListenerCodec {
             if (messageType == EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionId = decodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
-                java.lang.String uuid = StringCodec.decode(iterator);
+                java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET);
                 handleCachePartitionLostEvent(partitionId, uuid);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleCachePartitionLostEvent(int partitionId, java.lang.String uuid);
+        public abstract void handleCachePartitionLostEvent(int partitionId, java.util.UUID uuid);
     }
 }

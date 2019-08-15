@@ -677,7 +677,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         @Override
-        public void handleIMapInvalidationEvent(Data key, String sourceUuid,
+        public void handleIMapInvalidationEvent(Data key, UUID sourceUuid,
                                                 UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
@@ -685,7 +685,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handleIMapBatchInvalidationEvent(Collection<Data> keys,
-                                                     Collection<String> sourceUuids,
+                                                     Collection<UUID> sourceUuids,
                                                      Collection<UUID> partitionUuids,
                                                      Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);

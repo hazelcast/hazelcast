@@ -37,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -159,15 +160,15 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
 
     private HazelcastInstance getPrimaryInstance(HazelcastInstance instance, HazelcastInstance instance2) {
         Partition primaryPartition = instance.getPartitionService().getPartition(RINGBUFFER_NAME);
-        String primaryInstanceUuid = primaryPartition.getOwner().getUuid();
-        String instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
+        UUID primaryInstanceUuid = primaryPartition.getOwner().getUuid();
+        UUID instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
         return primaryInstanceUuid.equals(instanceOneUuid) ? instance : instance2;
     }
 
     private HazelcastInstance getBackupInstance(HazelcastInstance instance, HazelcastInstance instance2) {
         Partition primaryPartition = instance.getPartitionService().getPartition(RINGBUFFER_NAME);
-        String primaryInstanceUuid = primaryPartition.getOwner().getUuid();
-        String instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
+        UUID primaryInstanceUuid = primaryPartition.getOwner().getUuid();
+        UUID instanceOneUuid = instance.getCluster().getLocalMember().getUuid();
         return primaryInstanceUuid.equals(instanceOneUuid) ? instance2 : instance;
     }
 

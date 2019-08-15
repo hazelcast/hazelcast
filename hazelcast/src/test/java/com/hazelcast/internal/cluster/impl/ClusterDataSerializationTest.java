@@ -117,7 +117,7 @@ public class ClusterDataSerializationTest {
         addressMap.put(MEMBER, memberAddress);
         addressMap.put(CLIENT, clientAddress);
         addressMap.put(REST, restAddress);
-        MemberInfo memberInfo = new MemberInfo(memberAddress, UUID.randomUUID().toString(), attributes,
+        MemberInfo memberInfo = new MemberInfo(memberAddress, UUID.randomUUID(), attributes,
                 false, MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion()), addressMap);
 
         Data serialized = SERIALIZATION_SERVICE.toData(memberInfo);

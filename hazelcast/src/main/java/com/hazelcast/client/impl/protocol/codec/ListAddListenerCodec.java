@@ -46,7 +46,8 @@ public final class ListAddListenerCodec {
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_ITEM_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET = EVENT_ITEM_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_ITEM_INITIAL_FRAME_SIZE = EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x050B02
     private static final int EVENT_ITEM_MESSAGE_TYPE = 330498;
@@ -125,15 +126,15 @@ public final class ListAddListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodeItemEvent(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType) {
+    public static ClientMessage encodeItemEvent(com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_ITEM_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET, uuid);
         encodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);
         CodecUtil.encodeNullable(clientMessage, item, DataCodec::encode);
-        StringCodec.encode(clientMessage, uuid);
         return clientMessage;
     }
 
@@ -144,14 +145,14 @@ public final class ListAddListenerCodec {
             ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
             if (messageType == EVENT_ITEM_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
+                java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET);
                 int eventType = decodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET);
                 com.hazelcast.nio.serialization.Data item = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-                java.lang.String uuid = StringCodec.decode(iterator);
                 handleItemEvent(item, uuid, eventType);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleItemEvent(com.hazelcast.nio.serialization.Data item, java.lang.String uuid, int eventType);
+        public abstract void handleItemEvent(com.hazelcast.nio.serialization.Data item, java.util.UUID uuid, int eventType);
     }
 }

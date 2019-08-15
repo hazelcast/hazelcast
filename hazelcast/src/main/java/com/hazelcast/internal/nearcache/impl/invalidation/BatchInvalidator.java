@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,7 +81,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
+    protected Invalidation newInvalidation(Data key, String dataStructureName, UUID sourceUuid, int partitionId) {
         checkBackgroundTaskIsRunning();
         return super.newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
@@ -205,7 +206,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    public void destroy(String dataStructureName, String sourceUuid) {
+    public void destroy(String dataStructureName, UUID sourceUuid) {
         invalidationQueues.remove(dataStructureName);
         super.destroy(dataStructureName, sourceUuid);
     }

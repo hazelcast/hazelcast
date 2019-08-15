@@ -74,6 +74,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -246,7 +247,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public MembersView handleMastershipClaim(@Nonnull Address candidateAddress,
-                                             @Nonnull String candidateUuid) {
+                                             @Nonnull UUID candidateUuid) {
         checkNotNull(candidateAddress);
         checkNotNull(candidateUuid);
         checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
@@ -326,9 +327,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
-        Address memberAddress = node.getThisAddress();
         Map<EndpointQualifier, Address> addressMap = localMember.getAddressMap();
-        String newUuid = UuidUtil.createMemberUuid(memberAddress);
+        UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 
@@ -356,7 +356,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public boolean finalizeJoin(MembersView membersView, Address callerAddress, String callerUuid, String targetUuid,
+    public boolean finalizeJoin(MembersView membersView, Address callerAddress, UUID callerUuid, UUID targetUuid,
                                 String clusterId, ClusterState clusterState, Version clusterVersion, long clusterStartTime,
                                 long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
@@ -411,7 +411,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public boolean updateMembers(MembersView membersView, Address callerAddress, String callerUuid, String targetUuid) {
+    public boolean updateMembers(MembersView membersView, Address callerAddress, UUID callerUuid, UUID targetUuid) {
         lock.lock();
         try {
             if (!isJoined()) {
@@ -443,8 +443,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private void checkMemberUpdateContainsLocalMember(MembersView membersView, String targetUuid) {
-        String thisUuid = getThisUuid();
+    private void checkMemberUpdateContainsLocalMember(MembersView membersView, UUID targetUuid) {
+        UUID thisUuid = getThisUuid();
         if (!thisUuid.equals(targetUuid)) {
             String msg = "Not applying member update because target uuid: " + targetUuid + " is different! -> " + membersView
                     + ", local member: " + localMember;
@@ -496,7 +496,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return true;
     }
 
-    public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, String value) {
+    public void updateMemberAttribute(UUID uuid, MemberAttributeOperationType operationType, String key, String value) {
         lock.lock();
         try {
             MemberMap memberMap = membershipManager.getMemberMap();
@@ -539,7 +539,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
      * @param uuid    Uuid of the missing member
      * @return true if it's a known missing member, false otherwise
      */
-    public boolean isMissingMember(Address address, String uuid) {
+    public boolean isMissingMember(Address address, UUID uuid) {
         return membershipManager.isMissingMember(address, uuid);
     }
 
@@ -556,7 +556,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public void shrinkMissingMembers(Collection<String> memberUuidsToRemove) {
+    public void shrinkMissingMembers(Collection<UUID> memberUuidsToRemove) {
         membershipManager.shrinkMissingMembers(memberUuidsToRemove);
     }
 
@@ -590,7 +590,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public MemberImpl getMember(String uuid) {
+    public MemberImpl getMember(UUID uuid) {
         if (uuid == null) {
             return null;
         }
@@ -598,7 +598,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public MemberImpl getMember(Address address, String uuid) {
+    public MemberImpl getMember(Address address, UUID uuid) {
         if (address == null || uuid == null) {
             return null;
         }
@@ -692,7 +692,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return localMember;
     }
 
-    public String getThisUuid() {
+    public UUID getThisUuid() {
         return localMember.getUuid();
     }
 

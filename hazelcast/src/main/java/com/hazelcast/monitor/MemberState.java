@@ -23,6 +23,7 @@ import com.hazelcast.internal.management.dto.MXBeansDTO;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Local statistics for a Hazelcast member.
@@ -36,7 +37,7 @@ public interface MemberState extends JsonSerializable {
      *
      * @return the UUID of this member.
      */
-    String getUuid();
+    UUID getUuid();
 
     /**
      * Returns the local CP member's UUID if this Hazelcast
@@ -44,7 +45,7 @@ public interface MemberState extends JsonSerializable {
      *
      * @return local CP member's UUID if available, null otherwise
      */
-    String getCpMemberUuid();
+    UUID getCpMemberUuid();
 
     /**
      * Returns the name of a Hazelcast member.

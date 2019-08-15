@@ -37,6 +37,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter>
@@ -130,7 +131,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
 
     protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
-                                                 Data mergingValue, int type, String uuid, int numberOfAffectedEntries);
+                                                 Data mergingValue, int type, UUID uuid, int numberOfAffectedEntries);
 
     @Override
     public void entryAdded(EntryEvent<Object, Object> event) {

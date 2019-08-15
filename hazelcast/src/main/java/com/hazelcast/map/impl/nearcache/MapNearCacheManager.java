@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
@@ -108,7 +109,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
                 = new MemberMapInvalidationMetaDataFetcher(clusterService, operationService, metadataFetcherLogger);
 
         ILogger repairingTaskLogger = nodeEngine.getLogger(RepairingTask.class);
-        String localUuid = nodeEngine.getLocalMember().getUuid();
+        UUID localUuid = nodeEngine.getLocalMember().getUuid();
         return new RepairingTask(properties, invalidationMetaDataFetcher, executionService.getGlobalTaskScheduler(),
                 serializationService, partitionService, localUuid, repairingTaskLogger);
     }

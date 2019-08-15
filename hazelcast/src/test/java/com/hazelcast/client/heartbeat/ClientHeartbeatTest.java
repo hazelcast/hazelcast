@@ -54,6 +54,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -257,7 +258,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                String uuid = instance3.getLocalEndpoint().getUuid();
+                UUID uuid = instance3.getLocalEndpoint().getUuid();
                 assertEquals(uuid, getClientEngineImpl(instance3).getOwnerUuid(client.getLocalEndpoint().getUuid()));
                 assertEquals(uuid, getClientEngineImpl(instance2).getOwnerUuid(client.getLocalEndpoint().getUuid()));
                 assertEquals(uuid, clientConnectionManager.getPrincipal().getOwnerUuid());
@@ -272,7 +273,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                String uuid = instance3.getLocalEndpoint().getUuid();
+                UUID uuid = instance3.getLocalEndpoint().getUuid();
                 assertEquals(uuid, getClientEngineImpl(instance3).getOwnerUuid(client.getLocalEndpoint().getUuid()));
                 assertEquals(uuid, getClientEngineImpl(instance2).getOwnerUuid(client.getLocalEndpoint().getUuid()));
                 assertEquals(uuid, clientConnectionManager.getPrincipal().getOwnerUuid());
@@ -293,12 +294,9 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
 
         LifecycleService lifecycleService = client.getLifecycleService();
-        lifecycleService.addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
+        lifecycleService.addLifecycleListener(event -> {
+            if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                disconnectedLatch.countDown();
             }
         });
 

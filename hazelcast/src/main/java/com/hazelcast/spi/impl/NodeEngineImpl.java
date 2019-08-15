@@ -79,6 +79,7 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
@@ -426,7 +427,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService.onMemberLeft(member);
     }
 
-    public void onClientDisconnected(String clientUuid) {
+    public void onClientDisconnected(UUID clientUuid) {
         operationParker.onClientDisconnected(clientUuid);
     }
 

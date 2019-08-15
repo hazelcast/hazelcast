@@ -34,6 +34,8 @@ import com.hazelcast.topic.impl.DataAwareMessage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.UUID;
+
 import static com.hazelcast.client.impl.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -88,7 +90,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         }
 
         @Override
-        public void handleTopicEvent(Data item, long publishTime, String uuid) {
+        public void handleTopicEvent(Data item, long publishTime, UUID uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             Message message = new DataAwareMessage(name, item, publishTime, member, getSerializationService());
             listener.onMessage(message);

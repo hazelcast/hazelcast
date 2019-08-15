@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -81,7 +82,7 @@ public interface PublisherContext {
      *
      * @param uuid client or node UUID of subscriber.
      */
-    void handleDisconnectedSubscriber(String uuid);
+    void handleDisconnectedSubscriber(UUID uuid);
 
     /**
      * Handles a reconnected subscriber. This method will be used
@@ -90,7 +91,7 @@ public interface PublisherContext {
      * @param uuid client or node UUID of subscriber.
      * @see #handleDisconnectedSubscriber
      */
-    void handleConnectedSubscriber(String uuid);
+    void handleConnectedSubscriber(UUID uuid);
 
     /**
      * Flushes this publisher context.

@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -66,7 +67,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         final String queueName = "q";
 
         final HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient();
-        final String uuid = clientInstance.getLocalEndpoint().getUuid();
+        final UUID uuid = clientInstance.getLocalEndpoint().getUuid();
         final CountDownLatch clientDisconnectedFromNode = new CountDownLatch(1);
         hazelcastInstance.getClientService().addClientListener(new ClientListener() {
             @Override
@@ -124,7 +125,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
 
         final HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient();
         final CountDownLatch clientDisconnectedFromNode = new CountDownLatch(1);
-        final String uuid = clientInstance.getLocalEndpoint().getUuid();
+        final UUID uuid = clientInstance.getLocalEndpoint().getUuid();
         hazelcastInstance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {

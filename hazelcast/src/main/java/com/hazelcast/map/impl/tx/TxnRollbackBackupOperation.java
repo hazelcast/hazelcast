@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,15 +26,16 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to rollback transaction by unlocking the key on key backup owner.
  */
 public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
-    private String lockOwner;
+    private UUID lockOwner;
 
-    protected TxnRollbackBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
+    protected TxnRollbackBackupOperation(String name, Data dataKey, UUID lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.threadId = lockThreadId;
@@ -58,13 +60,13 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(lockOwner);
+        UUIDSerializationUtil.writeUUID(out, lockOwner);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        lockOwner = in.readUTF();
+        lockOwner = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

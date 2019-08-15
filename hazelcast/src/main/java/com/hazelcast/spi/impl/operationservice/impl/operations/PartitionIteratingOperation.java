@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -208,7 +209,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             return bitSet;
         }
 
-        private String extractCallerUuid() {
+        private UUID extractCallerUuid() {
             // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
             if (operationFactory instanceof OperationFactoryWrapper) {
                 return ((OperationFactoryWrapper) operationFactory).getUuid();

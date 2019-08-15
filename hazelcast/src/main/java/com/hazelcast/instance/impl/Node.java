@@ -105,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -766,7 +767,7 @@ public class Node {
     public JoinRequest createJoinRequest(boolean withCredentials) {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
-        final Set<String> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
+        final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         MemberImpl localMember = getLocalMember();
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
@@ -865,7 +866,7 @@ public class Node {
         }
     }
 
-    public String getThisUuid() {
+    public UUID getThisUuid() {
         return clusterService.getThisUuid();
     }
 

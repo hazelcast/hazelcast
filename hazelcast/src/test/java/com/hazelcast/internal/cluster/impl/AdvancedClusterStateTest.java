@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -780,7 +781,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public String getOwnerUuid() {
+        public UUID getOwnerUuid() {
             return tx.getOwnerUuid();
         }
 

@@ -28,6 +28,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Default Authentication with username password handling task
@@ -41,9 +42,9 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
-        final String uuid = parameters.uuid;
-        final String ownerUuid = parameters.ownerUuid;
-        if (uuid != null && uuid.length() > 0) {
+        final UUID uuid = parameters.uuid;
+        final UUID ownerUuid = parameters.ownerUuid;
+        if (uuid != null) {
             principal = new ClientPrincipal(uuid, ownerUuid);
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
@@ -62,7 +63,7 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid, byte version,
                                        List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
         return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version,
                 getMemberBuildInfo().getVersion(), cleanedUpMembers, partitionCount, clusterId);

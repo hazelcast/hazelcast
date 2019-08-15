@@ -44,6 +44,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -279,7 +280,7 @@ public interface NodeExtension {
      * @param address address of local member
      * @return new UUID
      */
-    String createMemberUuid(Address address);
+    UUID createMemberUuid(Address address);
 
     /**
      * Creates a TimedMemberStateFactory for a given Hazelcast instance

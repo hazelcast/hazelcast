@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
@@ -87,7 +88,7 @@ public interface ICacheService
 
     CacheContext getOrCreateCacheContext(String cacheNameWithPrefix);
 
-    void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy);
+    void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy);
 
     void deleteCacheStat(String cacheNameWithPrefix);
 
@@ -120,7 +121,7 @@ public interface ICacheService
 
     String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
-    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid);
+    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 
     /**
      * Returns {@code true} if WAN replication is enabled for the cache named {@code cacheNameWithPrefix}.

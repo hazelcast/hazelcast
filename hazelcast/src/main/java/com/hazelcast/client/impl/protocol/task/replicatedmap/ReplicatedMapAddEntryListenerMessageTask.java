@@ -23,6 +23,8 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
+import java.util.UUID;
+
 public class ReplicatedMapAddEntryListenerMessageTask
         extends AbstractReplicatedMapAddEntryListenerMessageTask<ReplicatedMapAddEntryListenerCodec.RequestParameters> {
 
@@ -47,7 +49,7 @@ public class ReplicatedMapAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
-                                        int type, String uuid, int numberOfAffectedEntries) {
+                                        int type, UUID uuid, int numberOfAffectedEntries) {
         return ReplicatedMapAddEntryListenerCodec.encodeEntryEvent(key, newValue,
                 oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
     }

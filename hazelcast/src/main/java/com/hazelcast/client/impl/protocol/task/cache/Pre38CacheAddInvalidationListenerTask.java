@@ -44,7 +44,7 @@ public class Pre38CacheAddInvalidationListenerTask
     protected Object call() {
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
-        String uuid = nodeEngine.getLocalMember().getUuid();
+        UUID uuid = nodeEngine.getLocalMember().getUuid();
         long correlationId = clientMessage.getCorrelationId();
         Pre38NearCacheInvalidationListener listener
                 = new Pre38NearCacheInvalidationListener(endpoint, cacheContext, uuid, correlationId);
@@ -61,19 +61,19 @@ public class Pre38CacheAddInvalidationListenerTask
     private final class Pre38NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
         Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
-                                           String localMemberUuid, long correlationId) {
+                                           UUID localMemberUuid, long correlationId) {
             super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys, sourceUuids,
                     partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key, sourceUuid,
                     partitionUuid, sequence);

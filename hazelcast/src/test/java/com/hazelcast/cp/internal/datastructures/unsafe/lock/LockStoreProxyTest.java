@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreProxy.NOT_LOCKED;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +50,7 @@ public class LockStoreProxyTest extends HazelcastTestSupport {
     private static final ObjectNamespace NAMESPACE = new DistributedObjectNamespace(MapService.SERVICE_NAME, "test");
 
     private Data key = new HeapData();
-    private String callerId = "called";
+    private UUID callerId = UUID.randomUUID();
     private long threadId = 1;
     private long otherThreadId = 2;
     private long referenceId = 1;
@@ -210,6 +211,6 @@ public class LockStoreProxyTest extends HazelcastTestSupport {
     @Test
     public void getOwnerInfo_whenLockWasLocked() {
         lockStoreProxy.lock(key, callerId, threadId, referenceId, leaseTimeInfinite);
-        assertContains(lockStoreProxy.getOwnerInfo(key), callerId);
+        assertContains(lockStoreProxy.getOwnerInfo(key), callerId.toString());
     }
 }

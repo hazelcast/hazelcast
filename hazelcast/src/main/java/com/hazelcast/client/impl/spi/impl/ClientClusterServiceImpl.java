@@ -51,6 +51,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -97,7 +98,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Member getMember(@Nonnull String uuid) {
+    public Member getMember(@Nonnull UUID uuid) {
         checkNotNull(uuid, "UUID must not be null");
         final Collection<Member> memberList = getMemberList();
         for (Member member : memberList) {
@@ -153,7 +154,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         final ClientConnection connection = cm.getOwnerConnection();
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         ClientPrincipal principal = cm.getPrincipal();
-        final String uuid = principal != null ? principal.getUuid() : null;
+        final UUID uuid = principal != null ? principal.getUuid() : null;
         return new ClientImpl(uuid, inetSocketAddress, client.getName(), labels);
     }
 

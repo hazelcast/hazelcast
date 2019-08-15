@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to unlock key on the partition owner.
@@ -36,7 +38,7 @@ public class TxnUnlockOperation extends LockAwareOperation
         implements MapTxnOperation, BackupAwareOperation, MutatingOperation {
 
     private long version;
-    private String ownerUuid;
+    private UUID ownerUuid;
 
     public TxnUnlockOperation() {
     }
@@ -106,7 +108,7 @@ public class TxnUnlockOperation extends LockAwareOperation
     }
 
     @Override
-    public void setOwnerUuid(String ownerUuid) {
+    public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
     }
 
@@ -124,14 +126,14 @@ public class TxnUnlockOperation extends LockAwareOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

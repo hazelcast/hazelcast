@@ -55,6 +55,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
@@ -116,7 +117,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
 
         @Override
-        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, UUID uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

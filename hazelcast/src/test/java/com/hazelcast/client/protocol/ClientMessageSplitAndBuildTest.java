@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,8 +57,8 @@ public class ClientMessageSplitAndBuildTest {
     private ClientMessage createMessage() {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
-        String uuid = generateRandomString(1000);
-        String ownerUuid = generateRandomString(1000);
+        UUID uuid = UuidUtil.newUnsecureUUID();
+        UUID ownerUuid = UuidUtil.newUnsecureUUID();
         boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);

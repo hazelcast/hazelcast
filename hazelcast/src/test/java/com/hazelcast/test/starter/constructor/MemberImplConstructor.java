@@ -23,6 +23,7 @@ import com.hazelcast.version.MemberVersion;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -39,7 +40,7 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         Object address = getFieldValueReflectively(delegate, "address");
         Object memberVersion = getMemberVersion(delegate);
         Boolean localMember = (Boolean) getFieldValueReflectively(delegate, "localMember");
-        String uuid = (String) getFieldValueReflectively(delegate, "uuid");
+        UUID uuid = (UUID) getFieldValueReflectively(delegate, "uuid");
         Object attributes = getFieldValueReflectively(delegate, "attributes");
         Boolean liteMember = (Boolean) getFieldValueReflectively(delegate, "liteMember");
 

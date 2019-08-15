@@ -113,7 +113,7 @@ public class InvalidationEventQueueTest {
 
     protected SingleNearCacheInvalidation newInvalidation() {
         return new SingleNearCacheInvalidation(new HeapData(), "name",
-                "source", new UUID(0, 0), 1);
+                UUID.randomUUID(), new UUID(0, 0), 1);
     }
 
     @Test(expected = UnsupportedOperationException.class)

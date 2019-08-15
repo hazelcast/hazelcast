@@ -45,6 +45,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Node extension that instantiates a {@link SamplingSerializationService} when asked to create
@@ -214,7 +215,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public String createMemberUuid(Address address) {
+    public UUID createMemberUuid(Address address) {
         return nodeExtension.createMemberUuid(address);
     }
 

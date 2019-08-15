@@ -652,7 +652,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleRemoveCPMember(final HttpPostCommand command) {
         String uri = command.getURI();
         String prefix = URI_CP_MEMBERS_URL + "/";
-        final String cpMemberUid = uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim();
+        final UUID cpMemberUid = UUID.fromString(uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim());
         getCpSubsystem().getCPSubsystemManagementService()
                         .removeCPMember(cpMemberUid)
                         .andThen(new ExecutionCallback<Void>() {

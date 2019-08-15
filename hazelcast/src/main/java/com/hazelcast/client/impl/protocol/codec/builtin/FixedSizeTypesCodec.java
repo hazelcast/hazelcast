@@ -28,6 +28,8 @@ public final class FixedSizeTypesCodec {
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
     public static final int UUID_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES * 2;
 
+    public static final UUID NIL_UUID = new UUID(0, 0);
+
     private FixedSizeTypesCodec() {
     }
 
@@ -72,6 +74,9 @@ public final class FixedSizeTypesCodec {
     }
 
     public static void encodeUUID(byte[] buffer, int pos, UUID value) {
+        if (value == null) {
+            value = NIL_UUID;
+        }
         long mostSigBits = value.getMostSignificantBits();
         long leastSigBits = value.getLeastSignificantBits();
         encodeLong(buffer, pos, mostSigBits);
@@ -81,7 +86,11 @@ public final class FixedSizeTypesCodec {
     public static UUID decodeUUID(byte[] buffer, int pos) {
         long mostSigBits = decodeLong(buffer, pos);
         long leastSigBits = decodeLong(buffer, pos + LONG_SIZE_IN_BYTES);
-        return new UUID(mostSigBits, leastSigBits);
+        UUID uuid = new UUID(mostSigBits, leastSigBits);
+        if (uuid.equals(NIL_UUID)) {
+            return null;
+        }
+        return uuid;
     }
 
 }

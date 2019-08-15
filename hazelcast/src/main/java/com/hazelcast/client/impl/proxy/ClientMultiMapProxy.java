@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
@@ -457,7 +458,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             handler = new MultiMapAddEntryListenerCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMultiMapEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -479,7 +480,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             handler = new MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMultiMapToKeyEventHandler.super.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -501,7 +502,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
 
         public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                        int eventType, String uuid, int numberOfAffectedEntries) {
+                                     int eventType, UUID uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             final IMapEvent iMapEvent = createIMapEvent(key, value, oldValue,
                     mergingValue, eventType, numberOfAffectedEntries, member);

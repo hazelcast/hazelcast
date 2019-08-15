@@ -81,6 +81,7 @@ import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -337,7 +338,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public ICompletableFuture<Void> removeCPMember(String cpMemberUuid) {
+    public ICompletableFuture<Void> removeCPMember(UUID cpMemberUuid) {
         ClusterService clusterService = nodeEngine.getClusterService();
         SimpleCompletableFuture<Void> future = newCompletableFuture();
 

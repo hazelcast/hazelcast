@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Cluster service for Hazelcast clients.
@@ -51,7 +52,7 @@ public interface ClientClusterService {
      * @param uuid The UUID of the member.
      * @return The member that was found, or null if not found. If UUID is null, null is returned.
      */
-    Member getMember(@Nonnull String uuid);
+    Member getMember(@Nonnull UUID uuid);
 
     /**
      * Gets the collection of members.

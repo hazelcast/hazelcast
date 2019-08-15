@@ -37,6 +37,7 @@ import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
@@ -64,7 +65,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public FinalizeJoinOp(String targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
+    public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
@@ -80,8 +81,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
-        String callerUuid = getCallerUuid();
-        String targetUuid = getTargetUuid();
+        UUID callerUuid = getCallerUuid();
+        UUID targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 

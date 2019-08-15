@@ -66,6 +66,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -567,7 +568,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -589,7 +590,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -611,7 +612,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
                             eventType, uuid, numberOfAffectedEntries);
                 }
@@ -633,7 +634,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
                             eventType, uuid, numberOfAffectedEntries);
                 }
@@ -655,7 +656,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         public void handleEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
-                                        int eventTypeId, String uuid, int numberOfAffectedEntries) {
+                                     int eventTypeId, UUID uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
             EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<>(member, eventTypeId, name, keyData, valueData,
@@ -711,7 +712,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         @Override
         public void handleEntryEvent(Data dataKey, Data value, Data oldValue, Data mergingValue,
-                                        int eventType, String uuid, int numberOfAffectedEntries) {
+                                        int eventType, UUID uuid, int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
                 case ADDED:

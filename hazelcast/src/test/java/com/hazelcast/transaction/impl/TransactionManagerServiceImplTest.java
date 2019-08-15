@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl.TxBackupLog;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -56,7 +58,7 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void createBackupLog_whenNotCreated() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
 
@@ -65,7 +67,7 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionException.class)
     public void createBackupLog_whenAlreadyExist() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
 
@@ -76,17 +78,17 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionException.class)
     public void replicaBackupLog_whenNotExist_thenTransactionException() {
-        List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
-        txService.replicaBackupLog(records, "notexist", "notexist", 1, 1);
+        List<TransactionLogRecord> records = new LinkedList<>();
+        txService.replicaBackupLog(records, UuidUtil.newUnsecureUUID(), "notexist", 1, 1);
     }
 
     @Test
     public void replicaBackupLog_whenExist() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
 
-        List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
+        List<TransactionLogRecord> records = new LinkedList<>();
         txService.replicaBackupLog(records, callerUuid, txId, 1, 1);
 
         assertTxLogState(txId, COMMITTING);
@@ -94,12 +96,12 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionException.class)
     public void replicaBackupLog_whenNotActive() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
         txService.txBackupLogs.get(txId).state = ROLLED_BACK;
 
-        List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
+        List<TransactionLogRecord> records = new LinkedList<>();
         txService.replicaBackupLog(records, callerUuid, txId, 1, 1);
     }
 
@@ -113,7 +115,7 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void rollbackBackupLog_whenExist() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
 
@@ -131,7 +133,7 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void purgeBackupLog_whenExist_thenRemoved() {
-        String callerUuid = "somecaller";
+        UUID callerUuid = UuidUtil.newUnsecureUUID();
         String txId = "tx1";
         txService.createBackupLog(callerUuid, txId);
 

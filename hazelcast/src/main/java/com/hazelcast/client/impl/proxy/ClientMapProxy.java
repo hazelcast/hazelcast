@@ -145,15 +145,7 @@ import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1949,7 +1941,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -1970,7 +1962,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -1992,7 +1984,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerToKeyCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -2014,7 +2006,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -2036,7 +2028,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                     int eventType, String uuid, int numberOfAffectedEntries) {
+                                     int eventType, UUID uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             listenerAdapter.onEvent(createIMapEvent(key, value, oldValue,
                     mergingValue, eventType, numberOfAffectedEntries, member));
@@ -2101,7 +2093,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handleMapPartitionLostEvent(int partitionId, String uuid) {
+        public void handleMapPartitionLostEvent(int partitionId, UUID uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
         }

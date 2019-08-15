@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -26,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transactional lock and get operation.
@@ -35,13 +37,13 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     private long ttl;
     private boolean shouldLoad;
     private boolean blockReads;
-    private String ownerUuid;
+    private UUID ownerUuid;
     private VersionedValue response;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, UUID ownerUuid,
                                   boolean shouldLoad, boolean blockReads) {
         super(name, dataKey);
         this.ownerUuid = ownerUuid;
@@ -81,7 +83,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeBoolean(shouldLoad);
         out.writeBoolean(blockReads);
         out.writeLong(ttl);
@@ -90,7 +92,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
         shouldLoad = in.readBoolean();
         blockReads = in.readBoolean();
         ttl = in.readLong();

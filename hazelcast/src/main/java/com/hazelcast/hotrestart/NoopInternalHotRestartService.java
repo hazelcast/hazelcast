@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,12 +46,12 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public boolean isMemberExcluded(Address memberAddress, String memberUuid) {
+    public boolean isMemberExcluded(Address memberAddress, UUID memberUuid) {
         return false;
     }
 
     @Override
-    public Set<String> getExcludedMemberUuids() {
+    public Set<UUID> getExcludedMemberUuids() {
         return Collections.emptySet();
     }
 
@@ -59,7 +60,7 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
+    public void handleExcludedMemberUuids(Address sender, Set<UUID> excludedMemberUuids) {
     }
 
     @Override

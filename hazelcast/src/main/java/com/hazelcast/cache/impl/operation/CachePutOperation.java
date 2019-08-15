@@ -27,11 +27,11 @@ import java.io.IOException;
 
 /**
  * Operation implementation for
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)} and
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)}.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)} and
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)}.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, java.util.UUID, int)
  */
 public class CachePutOperation extends MutatingCacheOperation {
 

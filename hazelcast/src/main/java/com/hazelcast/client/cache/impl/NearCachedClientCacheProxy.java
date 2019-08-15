@@ -745,14 +745,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid,
+        public void handleCacheInvalidationEvent(String name, Data key, UUID sourceUuid,
                                                  UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
         @Override
         public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys,
-                                                      Collection<String> sourceUuids,
+                                                      Collection<UUID> sourceUuids,
                                                       Collection<UUID> partitionUuids,
                                                       Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);

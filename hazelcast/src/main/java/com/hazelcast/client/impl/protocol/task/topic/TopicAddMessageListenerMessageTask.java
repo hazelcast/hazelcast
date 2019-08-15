@@ -32,6 +32,7 @@ import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 import java.util.Random;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 
@@ -105,7 +106,7 @@ public class TopicAddMessageListenerMessageTask
 
         DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
         Data messageData = dataAwareMessage.getMessageData();
-        String publisherUuid = message.getPublishingMember().getUuid();
+        UUID publisherUuid = message.getPublishingMember().getUuid();
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
                 message.getPublishTime(), publisherUuid);
 

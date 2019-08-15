@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.internal.services.CoreService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * A service responsible for member related functionality, e.g. members joining, leaving etc.
@@ -46,7 +47,7 @@ public interface ClusterService extends CoreService, Cluster {
      * @param uuid the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(String uuid);
+    MemberImpl getMember(UUID uuid);
 
     /**
      * Gets the member with the given UUID and address.
@@ -56,7 +57,7 @@ public interface ClusterService extends CoreService, Cluster {
      * @return the found member, or {@code null} if not found
      * (if the UUID and/or address is {@code null}, {@code null} is returned)
      */
-    MemberImpl getMember(Address address, String uuid);
+    MemberImpl getMember(Address address, UUID uuid);
 
     /**
      * Gets the collection of members.

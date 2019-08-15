@@ -28,19 +28,20 @@ import com.hazelcast.transaction.impl.operations.RollbackAllowedDuringPassiveSta
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 
 import java.util.List;
+import java.util.UUID;
 
 public class AllowedDuringPassiveStateTransactionImpl
         extends TransactionImpl {
 
     public AllowedDuringPassiveStateTransactionImpl(TransactionManagerServiceImpl transactionManagerService,
-                                                    NodeEngine nodeEngine, TransactionOptions options, String txOwnerUuid) {
+                                                    NodeEngine nodeEngine, TransactionOptions options, UUID txOwnerUuid) {
         super(transactionManagerService, nodeEngine, options, txOwnerUuid);
     }
 
     // used by tx backups
     AllowedDuringPassiveStateTransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                                              String txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
-                                             long startTime, String txOwnerUuid) {
+                                             long startTime, UUID txOwnerUuid) {
         super(transactionManagerService, nodeEngine, txnId, transactionLog, timeoutMillis, startTime, txOwnerUuid);
     }
 

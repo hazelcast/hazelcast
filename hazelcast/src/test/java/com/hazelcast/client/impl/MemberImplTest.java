@@ -21,6 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,10 +68,11 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withAddressAndUUid() {
-        MemberImpl member = new MemberImpl(address, VERSION, "uuid2342");
+        UUID uuid = UuidUtil.newUnsecureUUID();
+        MemberImpl member = new MemberImpl(address, VERSION, uuid);
 
         assertBasicMemberImplFields(member);
-        assertEquals("uuid2342", member.getUuid());
+        assertEquals(uuid, member.getUuid());
         assertFalse(member.isLiteMember());
     }
 
@@ -78,10 +81,11 @@ public class MemberImplTest extends HazelcastTestSupport {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("stringKey", "value");
 
-        MemberImpl member = new MemberImpl(address, VERSION, "uuid2342", attributes, true);
+        UUID uuid = UuidUtil.newUnsecureUUID();
+        MemberImpl member = new MemberImpl(address, VERSION, uuid, attributes, true);
 
         assertBasicMemberImplFields(member);
-        assertEquals("uuid2342", member.getUuid());
+        assertEquals(uuid, member.getUuid());
         assertTrue(member.isLiteMember());
 
         assertEquals("value", member.getAttribute("stringKey"));

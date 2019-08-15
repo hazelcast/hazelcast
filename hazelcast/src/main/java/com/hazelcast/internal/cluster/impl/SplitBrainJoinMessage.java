@@ -24,6 +24,7 @@ import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
@@ -54,7 +55,7 @@ public class SplitBrainJoinMessage extends JoinMessage {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
+    public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
                                  boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses,
                                  int dataMemberCount, Version clusterVersion, int memberListVersion) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, memberAddresses, dataMemberCount);

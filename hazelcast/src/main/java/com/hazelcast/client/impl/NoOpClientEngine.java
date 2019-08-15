@@ -32,6 +32,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -84,7 +85,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public String getThisUuid() {
+    public UUID getThisUuid() {
         return null;
     }
 
@@ -119,12 +120,12 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public Map<String, String> getClientStatistics() {
+    public Map<UUID, String> getClientStatistics() {
         return emptyMap();
     }
 
     @Override
-    public String getOwnerUuid(String clientUuid) {
+    public UUID getOwnerUuid(UUID clientUuid) {
         return null;
     }
 

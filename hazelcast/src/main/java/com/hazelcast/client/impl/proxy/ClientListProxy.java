@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -333,7 +334,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         }
 
         @Override
-        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, UUID uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

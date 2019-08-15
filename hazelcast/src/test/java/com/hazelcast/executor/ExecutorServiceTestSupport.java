@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -264,12 +265,12 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class IncrementAtomicLongIfMemberUUIDNotMatchRunnable implements Runnable, Serializable, HazelcastInstanceAware {
 
-        private final String uuid;
+        private final UUID uuid;
         private final String name;
 
         private HazelcastInstance instance;
 
-        public IncrementAtomicLongIfMemberUUIDNotMatchRunnable(String uuid, String name) {
+        public IncrementAtomicLongIfMemberUUIDNotMatchRunnable(UUID uuid, String name) {
             this.uuid = uuid;
             this.name = name;
         }
@@ -432,11 +433,11 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class MemberUUIDCheckCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
-        private final String uuid;
+        private final UUID uuid;
 
         private HazelcastInstance instance;
 
-        public MemberUUIDCheckCallable(String uuid) {
+        public MemberUUIDCheckCallable(UUID uuid) {
             this.uuid = uuid;
         }
 

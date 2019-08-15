@@ -46,6 +46,7 @@ import com.hazelcast.internal.util.ICMPHelper;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
@@ -213,7 +214,7 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, String receiverUuid, long timestamp) {
+    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, UUID receiverUuid, long timestamp) {
         Address senderAddress = senderMembersViewMetadata.getMemberAddress();
         try {
             long timeout = Math.min(TimeUnit.SECONDS.toMillis(1), heartbeatIntervalMillis / 2);
