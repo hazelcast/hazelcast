@@ -1303,12 +1303,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * partition full-scan.
      */
     private void fullScanLocalDataToClear(Indexes indexes) {
-        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+        InternalIndex[] populatedIndexes = indexes.getPopulatedIndexes(partitionId);
+        if (populatedIndexes.length == 0) {
+            return;
+        }
+
         for (Record record : storage.values()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
+            for (InternalIndex index : populatedIndexes) {
+                index.removeEntry(key, value, Index.OperationSource.SYSTEM);
+            }
         }
-        Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
+        Indexes.markPartitionAsUnindexed(partitionId, populatedIndexes);
     }
 }
