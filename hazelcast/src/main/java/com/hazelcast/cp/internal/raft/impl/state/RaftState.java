@@ -405,10 +405,7 @@ public final class RaftState {
         preCandidateState = null;
         leaderState = null;
         candidateState = null;
-        if (leadershipTransferState != null) {
-            assert leadershipTransferState.term() < term;
-            completeLeadershipTransfer(null);
-        }
+        completeLeadershipTransfer(null);
         setTerm(term);
         persistTerm();
     }
@@ -580,6 +577,10 @@ public final class RaftState {
      * and clears the state
      */
     public void completeLeadershipTransfer(Object result) {
+        if (leadershipTransferState == null) {
+            return;
+        }
+
         leadershipTransferState.complete(result);
         leadershipTransferState = null;
     }

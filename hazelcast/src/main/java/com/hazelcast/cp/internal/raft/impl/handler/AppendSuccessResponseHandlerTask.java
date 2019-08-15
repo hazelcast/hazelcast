@@ -21,8 +21,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
-import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
-import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
@@ -34,7 +32,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
-import static java.util.Arrays.sort;
 
 /**
  * Handles {@link AppendSuccessResponse} sent by
@@ -75,14 +72,15 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             logger.fine("Received " + resp);
         }
 
-        if (!updateFollowerIndices(state)) {
-            tryRunQueries(state);
-            return;
+        if (updateFollowerIndices(state)) {
+            if (!raftNode.tryAdvanceCommitIndex()) {
+                trySendAppendRequest(state);
+            }
+        } else {
+            raftNode.tryRunQueries();
         }
 
-        if (!tryAdvanceCommitIndex(state)) {
-            trySendAppendRequest(state);
-        }
+        checkIfQueryAckNeeded(state);
     }
 
     private boolean updateFollowerIndices(RaftState state) {
@@ -119,96 +117,19 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
         } else if (followerLastLogIndex == matchIndex) {
             // Received a response for the last append request. Resetting the flag...
             followerState.appendRequestAckReceived();
-        } else {
-            if (logger.isFineEnabled()) {
-                logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
-                        + followerLastLogIndex + ", match index: " + matchIndex);
-            }
+        } else if (logger.isFineEnabled()) {
+            logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
+                    + followerLastLogIndex + ", match index: " + matchIndex);
         }
 
         return false;
     }
 
-    private long findQuorumMatchIndex(RaftState state) {
-        LeaderState leaderState = state.leaderState();
-        long[] indices = leaderState.matchIndices();
-
-        // if the leader is leaving, it should not count its vote for quorum...
-        if (raftNode.state().isKnownMember(localMember())) {
-            indices[indices.length - 1] = state.log().lastLogOrSnapshotIndex();
-        } else {
-            // Remove the last empty slot reserved for leader index
-            indices = Arrays.copyOf(indices, indices.length - 1);
-        }
-
-        sort(indices);
-
-        long quorumMatchIndex = indices[(indices.length - 1) / 2];
-        if (logger.isFineEnabled()) {
-            logger.fine("Quorum match index: " + quorumMatchIndex + ", indices: " + Arrays.toString(indices));
-        }
-
-        return quorumMatchIndex;
-    }
-
-    private boolean tryAdvanceCommitIndex(RaftState state) {
-        // If there exists an N such that N > commitIndex, a majority of matchIndex[i] ≥ N, and log[N].term == currentTerm:
-        // set commitIndex = N (§5.3, §5.4)
-        long quorumMatchIndex = findQuorumMatchIndex(state);
-        long commitIndex = state.commitIndex();
-        RaftLog raftLog = state.log();
-        for (; quorumMatchIndex > commitIndex; quorumMatchIndex--) {
-            // Only log entries from the leader’s current term are committed by counting replicas; once an entry
-            // from the current term has been committed in this way, then all prior entries are committed indirectly
-            // because of the Log Matching Property.
-            LogEntry entry = raftLog.getLogEntry(quorumMatchIndex);
-            if (entry.term() == state.term()) {
-                raftLog.flush();
-                commitEntries(state, quorumMatchIndex);
-                return true;
-            } else if (logger.isFineEnabled()) {
-                logger.fine("Cannot commit " + entry + " since an entry from the current term: " + state.term() + " is needed.");
-            }
-        }
-        return false;
-    }
-
-    private void commitEntries(RaftState state, long commitIndex) {
-        if (logger.isFineEnabled()) {
-            logger.fine("Setting commit index: " + commitIndex);
-        }
-        state.commitIndex(commitIndex);
-        raftNode.broadcastAppendRequest();
-        raftNode.applyLogEntries();
-        tryRunQueries(state);
-    }
-
-    private void tryRunQueries(RaftState state) {
+    private void checkIfQueryAckNeeded(RaftState state) {
         QueryState queryState = state.leaderState().queryState();
-        if (queryState.queryCount() == 0) {
-            return;
-        }
-
-        long commitIndex = state.commitIndex();
-        if (!queryState.isMajorityAcked(commitIndex, state.majority())) {
-            return;
-        } else if (queryState.isAckNeeded(resp.follower(), state.majority())) {
+        if (queryState.isAckNeeded(resp.follower(), state.majority())) {
             raftNode.sendAppendRequest(resp.follower());
-            return;
         }
-
-        Collection<BiTuple<Object, SimpleCompletableFuture>> operations = queryState.operations();
-
-        if (logger.isFineEnabled()) {
-            logger.fine("Running " + operations.size() + " queries at commit index: " + commitIndex
-                    + ", query round: " + queryState.queryRound());
-        }
-
-        for (BiTuple<Object, SimpleCompletableFuture> t : operations) {
-            raftNode.runQuery(t.element1, t.element2);
-        }
-
-        queryState.reset();
     }
 
     private void trySendAppendRequest(RaftState state) {

@@ -174,17 +174,41 @@ public interface RaftIntegration {
     void restoreSnapshot(Object operation, long commitIndex);
 
     /**
-     * Executes the task on underlying task execution mechanism.
+     * Executes the given task on the underlying task execution mechanism.
+     * <p>
+     * Please note that all tasks of a single Raft node must be executed
+     * in a single-threaded manner and the happens-before relationship
+     * must be maintained between given tasks of the Raft node.
+     * <p>
+     * The underlying platform is free to execute the given task immediately
+     * if it fits to the defined guarantees.
      *
-     * @param task the task
+     * @param task the task to be executed.
      */
     void execute(Runnable task);
 
     /**
-     * Schedules the task on underlying scheduling mechanism.
+     * Submits the given task for execution.
+     * <p>
+     * If the caller is already on the thread that runs the Raft node,
+     * the given task cannot be executed immediately and it must be executed
+     * to the internal task queue.
      *
-     * @param task  the task
-     * @param delay the time from now to delay execution
+     * @param task to be executed later.
+     */
+    void submit(Runnable task);
+
+    /**
+     * Schedules the task on the underlying platform to be executed after
+     * the given delay.
+     * <p>
+     * Please note that even though the scheduling can be offloaded to another
+     * thread, the given task must be executed in a single-threaded manner and
+     * the happens-before relationship must be maintained between given tasks
+     * of the Raft node.
+     *
+     * @param task     the task to be executed in future
+     * @param delay    the time from now to delay execution
      * @param timeUnit the time unit of the delay
      */
     void schedule(Runnable task, long delay, TimeUnit timeUnit);

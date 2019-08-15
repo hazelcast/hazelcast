@@ -125,4 +125,8 @@ public class FencedLockConfig {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return "FencedLockConfig{" + "name='" + name + '\'' + ", lockAcquireLimit=" + lockAcquireLimit + '}';
+    }
 }

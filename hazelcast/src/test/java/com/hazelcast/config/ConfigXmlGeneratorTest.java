@@ -1234,12 +1234,14 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getCPSubsystemConfig()
-                .setCPMemberCount(10)
-                .setGroupSize(5)
-                .setSessionTimeToLiveSeconds(15)
-                .setSessionHeartbeatIntervalSeconds(3)
-                .setMissingCPMemberAutoRemovalSeconds(120)
-                .setFailOnIndeterminateOperationState(true);
+              .setCPMemberCount(10)
+              .setGroupSize(5)
+              .setSessionTimeToLiveSeconds(15)
+              .setSessionHeartbeatIntervalSeconds(3)
+              .setMissingCPMemberAutoRemovalSeconds(120)
+              .setFailOnIndeterminateOperationState(true)
+              .setPersistenceEnabled(true)
+              .setBaseDir(new File("/custom-dir"));
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()

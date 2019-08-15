@@ -194,4 +194,14 @@ public class RaftAlgorithmConfig {
         this.appendRequestBackoffTimeoutInMillis = appendRequestBackoffTimeoutInMillis;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "RaftAlgorithmConfig{" + "leaderElectionTimeoutInMillis=" + leaderElectionTimeoutInMillis
+                + ", leaderHeartbeatPeriodInMillis=" + leaderHeartbeatPeriodInMillis + ", maxMissedLeaderHeartbeatCount="
+                + maxMissedLeaderHeartbeatCount + ", appendRequestMaxEntryCount=" + appendRequestMaxEntryCount
+                + ", commitIndexAdvanceCountToSnapshot=" + commitIndexAdvanceCountToSnapshot
+                + ", uncommittedEntryCountToRejectNewAppends=" + uncommittedEntryCountToRejectNewAppends
+                + ", appendRequestBackoffTimeoutInMillis=" + appendRequestBackoffTimeoutInMillis + '}';
+    }
 }

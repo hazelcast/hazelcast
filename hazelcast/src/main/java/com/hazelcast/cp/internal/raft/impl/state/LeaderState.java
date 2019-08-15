@@ -34,11 +34,13 @@ public class LeaderState {
 
     private final Map<RaftEndpoint, FollowerState> followerStates = new HashMap<RaftEndpoint, FollowerState>();
     private final QueryState queryState = new QueryState();
+    private long flushedLogIndex;
 
     LeaderState(Collection<RaftEndpoint> remoteMembers, long lastLogIndex) {
         for (RaftEndpoint follower : remoteMembers) {
             followerStates.put(follower, new FollowerState(0L, lastLogIndex + 1));
         }
+        flushedLogIndex = lastLogIndex;
     }
 
     /**
@@ -91,6 +93,15 @@ public class LeaderState {
 
     public long queryRound() {
         return queryState.queryRound();
+    }
+
+    public void flushedLogIndex(long flushedLogIndex) {
+        assert flushedLogIndex > this.flushedLogIndex;
+        this.flushedLogIndex = flushedLogIndex;
+    }
+
+    public long flushedLogIndex() {
+        return flushedLogIndex;
     }
 
     /**

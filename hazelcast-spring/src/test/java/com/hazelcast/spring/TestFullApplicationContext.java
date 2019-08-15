@@ -1369,6 +1369,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        assertTrue(cpSubsystemConfig.isPersistenceEnabled());
+        assertEquals(new File("/custom-dir"), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

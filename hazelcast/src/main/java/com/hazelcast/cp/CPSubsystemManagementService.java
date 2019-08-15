@@ -35,13 +35,15 @@ import java.util.concurrent.TimeUnit;
  * unreachable, it cannot be automatically removed from the CP subsystem
  * because it could be still alive and partitioned away.
  * <p>
- * Moreover, the current CP subsystem implementation works only in memory
- * without persisting any state to disk. It means that a crashed CP member
- * will not be able to recover by reloading its previous state. Therefore,
- * crashed CP members create a danger for gradually losing majority of
- * CP groups and eventually total loss of the availability of the CP subsystem.
- * To prevent such situations, {@link CPSubsystemManagementService} offers
- * APIs for dynamic management of CP members.
+ * Moreover, by default CP subsystem works in memory without persisting any
+ * state to disk. It means that a crashed CP member will not be able to recover
+ * by reloading its previous state. Therefore, crashed CP members create a
+ * danger for gradually losing majority of CP groups and eventually total loss
+ * of the availability of the CP subsystem. To prevent such situations,
+ * {@link CPSubsystemManagementService} offers APIs for dynamic management of
+ * CP members. In addition to that, CP Subsystem Persistence can be enabled to
+ * make CP members persist their local CP state to stable storage. Please see
+ * {@link CPSubsystemConfig#setPersistenceEnabled(boolean)} for more details.
  * <p>
  * The CP subsystem relies on Hazelcast's failure detectors to test
  * reachability of CP members. Before removing a CP member from
@@ -50,18 +52,24 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * CP member additions and removals are internally handled by performing
  * a single membership change at a time. When multiple CP members are shutting
- * down concurrently, their shutdown process is executed serially. First,
- * the Metadata CP group creates a membership change plan for CP groups. Then,
- * the scheduled changes are applied to the CP groups one by one.
- * After all removals are done, the shutting down CP member is removed from
- * the active CP members list and its shutdown process is completed.
- * <p>
- * When a CP member is being shut down, it is replaced with another available
- * CP member in all of its CP groups, including the Metadata group, in order to
- * not to decrease or more importantly not to lose the majority of CP groups.
- * If there is no available CP member to replace a shutting down CP member in a
- * CP group, that group's size is reduced by 1 and its majority value is
- * recalculated.
+ * down concurrently, their shutdown process is executed serially. When a CP
+ * membership change is triggered, the Metadata CP group creates a membership
+ * change plan for CP groups. Then, the scheduled changes are applied to the CP
+ * groups one by one. After all CP group member removals are done, the shutting
+ * down CP member is removed from the active CP members list and its shutdown
+ * process is completed. A shut-down CP member is automatically replaced with
+ * another available CP member in all of its CP groups, including the Metadata
+ * CP group, in order not to decrease or more importantly not to lose
+ * the majority of CP groups. If there is no available CP member to replace
+ * a shutting down CP member in a CP group, that group's size is reduced by 1
+ * and its majority value is recalculated. Please note that this behaviour is
+ * when CP Subsystem Persistence is disabled. When CP Subsystem Persistence is
+ * enabled, shut-down CP members are not automatically removed from the active
+ * CP members list and they are still considered as part of CP groups
+ * and majority calculations, because they can come back by restoring their
+ * local CP state from stable storage. If you know that a shut-down CP member
+ * will not be restarted, you need to remove that member from the CP Subsystem
+ * via {@link #removeCPMember(String)}.
  * <p>
  * A new CP member can be added to the CP subsystem to either increase
  * the number of available CP members for new CP groups or to fulfill
@@ -265,6 +273,8 @@ public interface CPSubsystemManagementService {
      * in the cluster. Before calling this method, please make sure that
      * there is no new member joining and all existing Hazelcast members
      * have seen the same member list.
+     * <p>
+     * This method deletes all CP data written by CP Subsystem Persistence.
      * <p>
      * <strong>Use with caution:
      * This method is NOT idempotent and multiple invocations can break

@@ -138,7 +138,7 @@ public class CPSubsystemConfig {
     public static final int DEFAULT_MISSING_CP_MEMBER_AUTO_REMOVAL_SECONDS = (int) TimeUnit.HOURS.toSeconds(4);
 
 
-    /** Default directory name for the CP data. */
+    /** Default directory name for storing CP data. */
     public static final String CP_BASE_DIR_DEFAULT = "cp-data";
 
     /**
@@ -494,6 +494,7 @@ public class CPSubsystemConfig {
      * @param baseDir base directory
      */
     public CPSubsystemConfig setBaseDir(File baseDir) {
+        checkNotNull(baseDir);
         this.baseDir = baseDir;
         return this;
     }

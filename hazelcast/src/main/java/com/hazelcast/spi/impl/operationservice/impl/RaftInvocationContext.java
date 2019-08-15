@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -63,6 +65,11 @@ public class RaftInvocationContext {
     }
 
     public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
+        CPMemberInfo localCPMember = raftService.getLocalCPMember();
+        if (members.size() < 2) {
+            return false;
+        }
+
         CPMembersVersion version = new CPMembersVersion(groupIdSeed, membersCommitIndex);
         CPMembersContainer newContainer =  new CPMembersContainer(version, members.toArray(new CPMemberInfo[0]));
         while (true) {
@@ -81,15 +88,15 @@ public class RaftInvocationContext {
         return raftService.getCPGroupPartitionId(groupId);
     }
 
-    public CPMemberInfo getCPMember(String leaderUuid) {
-        if (leaderUuid == null) {
+    public CPMemberInfo getCPMember(String memberUid) {
+        if (memberUid == null) {
             return null;
         }
-        return getCPMember(UUID.fromString(leaderUuid));
+        return getCPMember(UUID.fromString(memberUid));
     }
 
-    public CPMemberInfo getCPMember(UUID leaderUuid) {
-        return membersContainer.get().membersMap.get(leaderUuid);
+    public CPMemberInfo getCPMember(UUID memberUid) {
+        return membersContainer.get().membersMap.get(memberUid);
     }
 
     int getCPGroupPartitionId(CPGroupId groupId) {
@@ -116,7 +123,7 @@ public class RaftInvocationContext {
             if (!setKnownLeader(groupId, getCPMember(e.getLeaderUuid()))) {
                 resetKnownLeader(groupId);
             }
-        } else {
+        } else if (cause instanceof TargetNotMemberException || cause instanceof MemberLeftException) {
             resetKnownLeader(groupId);
         }
     }

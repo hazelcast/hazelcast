@@ -439,7 +439,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 3; i < instances.length; i++) {
                     HazelcastInstance instance = instances[i];
                     CPGroup g = getRaftGroupLocally(instance, INITIAL_METADATA_GROUP_ID);
@@ -651,7 +651,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 CPGroup m = getRaftGroupLocally(newInstance, metadataGroup.id());
                 CPGroup g1 = getRaftGroupLocally(newInstance, group1.id());
                 CPGroup g2 = getRaftGroupLocally(newInstance, group2.id());
@@ -728,7 +728,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : Arrays.asList(newInstance1, newInstance2, newInstance3)) {
                     assertEquals(newMetadataGroupId.getSeed(), getMetadataGroupId(instance).getSeed());
 
@@ -823,7 +823,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : Arrays.asList(newInstance1, newInstance2, newInstance3)) {
                     assertEquals(newMetadataGroupId.getSeed(), getMetadataGroupId(instance).getSeed());
 
