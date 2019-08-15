@@ -190,7 +190,6 @@ public class SendQueue implements Supplier<OutboundFrame> {
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered;
             if (putStack.compareAndSet(prev, next)) {
-                //System.out.println(NioOutboundPipeline.this + " wakeup " + prev.state + "->" + next.state);
                 return prev.state == BLOCKED || prev.state == UNSCHEDULED;
             }
         }
@@ -235,8 +234,6 @@ public class SendQueue implements Supplier<OutboundFrame> {
                     }
                     break;
                 case SCHEDULED_WITH_TASK:
-                    // todo: why don't we process the task?
-
                     // we can't block, there is a task pending.
                     // return true to indicate that rescheduling is needed to get the task processed.
                     return true;
@@ -277,7 +274,6 @@ public class SendQueue implements Supplier<OutboundFrame> {
         }
 
         /// the put stack is empty, lets try to cas it to unscheduled.
-        // todo: litter.
         // we need a new node because we need to keep track of the number of bytes offered.
         Node next = new Node(UNSCHEDULED);
         next.bytesOffered = prev.bytesOffered;
@@ -362,6 +358,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
     public OutboundFrame get() {
         for (; ; ) {
             if (takeStackOldest == null) {
+                // there are no items pending.
                 return null;
             }
 

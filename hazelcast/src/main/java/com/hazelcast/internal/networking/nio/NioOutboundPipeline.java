@@ -74,7 +74,9 @@ public final class NioOutboundPipeline
                         NioThread owner,
                         ChannelErrorHandler errorHandler,
                         ILogger logger,
-                        IOBalancer balancer, ConcurrencyDetection concurrencyDetection, boolean writeThroughEnabled) {
+                        IOBalancer balancer,
+                        ConcurrencyDetection concurrencyDetection,
+                        boolean writeThroughEnabled) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
         this.concurrencyDetection = concurrencyDetection;
         this.writeThroughEnabled = writeThroughEnabled;
@@ -130,15 +132,28 @@ public final class NioOutboundPipeline
     }
 
     public void write(OutboundFrame frame) {
+        // todo: in the old implementation we could detect concurrency by checking if the pipeline was already
+        // scheduled. But currently we have lost that ability.
+
         if (sendQueue.offer(frame)) {
-            owner.addTaskAndWakeup(this);
+            // we manage to schedule the pipeline, meaning we are owner.
+            if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+                // we are allowed to do a write through, so lets process the request on the calling thread
+                try {
+                    process();
+                } catch (Throwable t) {
+                    onError(t);
+                }
+            } else {
+                // no write through, let the io thread deal with it.
+                owner.addTaskAndWakeup(this);
+            }
         }
     }
 
     @Override
     public OutboundPipeline wakeup() {
         execute(() -> {
-            System.out.println(NioOutboundPipeline.this + " Processing due to wakeup");
         });
         return this;
     }
@@ -193,20 +208,34 @@ public final class NioOutboundPipeline
             case CLEAN:
                 unregisterOp(OP_WRITE);
                 if (sendQueue.tryUnschedule()) {
-                    // todo: for write through we need to test the thread.
-                    // we don't need to notify the owner, because the owner will process all pending
-                    // pipelines before it goes to sleep.
-                    owner.addTask(this);
+                    // the pipeline is dirty; so we need to reschedule this pipeline
+                    if (Thread.currentThread().getClass() == NioThread.class) {
+                        // we are on the IO thread; we don't need to notify the IO thread
+                        owner().addTask(this);
+                    } else {
+                        // we are not on the IO thread, so we need to to notify it.
+                        owner().addTaskAndWakeup(this);
+                    }
                 }
                 break;
             case DIRTY:
                 // pipeline is dirty, so lets register for an OP_WRITE to write more data.
                 registerOp(OP_WRITE);
+
+                if (writeThroughEnabled && !(Thread.currentThread() instanceof NioThread)) {
+                    // there was a write through. Changing the interested set of the selection key
+                    // after the IO thread did a select, will not lead to the selector waking up. So
+                    // if we don't wake up the selector explicitly, only after the selector.select(timeout)
+                    // has expired the selectionKey will be seen. For more info see:
+                    // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
+                    owner.getSelector().wakeup();
+                    concurrencyDetection.onDetected();
+                }
                 break;
             case BLOCKED:
                 unregisterOp(OP_WRITE);
                 if (sendQueue.block()) {
-                    owner.addTask(this);
+                    owner.addTaskAndWakeup(this);
                 }
                 break;
             default:
