@@ -64,9 +64,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testConfiguration_withNullInputStream();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testInvalidRootElement();
-
-    @Test(expected = InvalidConfigurationException.class)
     public abstract void testJoinValidation();
 
     @Test

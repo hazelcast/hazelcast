@@ -403,9 +403,6 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("value", properties.getProperty("property"));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testInvalidRootElement();
-
     @Test(expected = HazelcastException.class)
     public abstract void loadingThroughSystemProperty_nonExistingFile() throws IOException;
 

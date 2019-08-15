@@ -76,15 +76,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         System.clearProperty("hazelcast.client.config");
     }
 
-    @Override
-    @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
+    @Test
+    public void testNoHazelcastClientRootElement() {
         String yaml = ""
-                + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: dev\n"
-                + "    password: clusterpass";
-        buildConfig(yaml);
+                + "instance-name: my-instance";
+        ClientConfig clientConfig = buildConfig(yaml);
+        assertEquals("my-instance", clientConfig.getInstanceName());
     }
 
     @Override

@@ -41,6 +41,7 @@ import java.util.Set;
 import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,15 +51,45 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     public ExpectedException rule = ExpectedException.none();
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
-    public void testImportElementOnlyAppersInTopLevel() {
+    @Test
+    public void testImportElementOnlyAppearsInTopLevel() throws IOException {
+        File config1 = createConfigFile("hz1", ".yaml");
+        FileOutputStream os1 = new FileOutputStream(config1);
+        String config1Yaml = ""
+                + "hazelcast-client:\n"
+                + "  instance-name: my-instance";
+        writeStringToStreamAndClose(os1, config1Yaml);
         String yaml = ""
-                + "hazelcast:\n"
+                + "hazelcast-client:\n"
                 + "  network:\n"
                 + "    import:\n"
-                + "      resource: \"\"";
+                + "      - file:///" + config1.getAbsolutePath() + "\"";
 
-        buildConfig(yaml);
+        ClientConfig clientConfig = buildConfig(yaml);
+
+        // verify that instance-name is not set, because the import is not
+        // processed when defined at this level
+        assertNull(clientConfig.getInstanceName());
+    }
+
+    @Test
+    public void testImportNoHazelcastClientRootNode() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "properties:\n"
+                + "  prop1: value1\n"
+                + "  prop2: value2\n";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "import:\n"
+                + "  - file:///" + "${file}\n"
+                + "instance-name: my-instance";
+        ClientConfig clientConfig = buildConfig(yaml, "file", file.getAbsolutePath());
+        assertEquals("my-instance", clientConfig.getInstanceName());
+        assertEquals("value1", clientConfig.getProperty("prop1"));
+        assertEquals("value2", clientConfig.getProperty("prop2"));
     }
 
     @Override

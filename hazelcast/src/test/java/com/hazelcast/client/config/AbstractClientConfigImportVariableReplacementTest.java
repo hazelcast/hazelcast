@@ -34,7 +34,7 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testImportElementOnlyAppersInTopLevel();
+    public abstract void testImportElementOnlyAppearsInTopLevel() throws IOException;
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testHazelcastElementOnlyAppearsOnce();

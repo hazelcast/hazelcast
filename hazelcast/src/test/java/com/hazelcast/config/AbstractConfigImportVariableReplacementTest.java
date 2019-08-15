@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.core.HazelcastException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -78,9 +77,6 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testImportNotExistingResourceThrowsException();
-
-    @Test(expected = HazelcastException.class)
-    public abstract void testImportFromNonHazelcastConfigThrowsException() throws Exception;
 
     @Test
     public abstract void testImportNetworkConfigFromFile() throws Exception;

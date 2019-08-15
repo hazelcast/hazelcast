@@ -47,14 +47,11 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         fullClientConfig = new YamlClientFailoverConfigBuilder(schemaResource).build();
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: dev\n"
-                + "    password: clusterpass";
-        buildConfig(yaml);
+    public void testNoHazelcastClientFailoverRootElement() {
+        String yaml = "try-count: 2";
+
+        ClientFailoverConfig clientFailoverConfig = buildConfig(yaml);
+        assertEquals(2, clientFailoverConfig.getTryCount());
     }
 
     @Test

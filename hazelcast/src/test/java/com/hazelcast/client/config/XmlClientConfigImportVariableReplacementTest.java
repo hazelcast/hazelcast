@@ -48,7 +48,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    public void testImportElementOnlyAppersInTopLevel() {
+    public void testImportElementOnlyAppearsInTopLevel() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "   <network>\n"
                 + "        <import resource=\"\"/>\n"
