@@ -41,7 +41,7 @@ import java.util.Set;
 import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,7 +66,10 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "      - file:///" + config1.getAbsolutePath() + "\"";
 
         ClientConfig clientConfig = buildConfig(yaml);
-        assertNotEquals("my-instance", clientConfig.getInstanceName());
+
+        // verify that instance-name is not set, because the import is not
+        // processed when defined at this level
+        assertNull(clientConfig.getInstanceName());
     }
 
     @Test
