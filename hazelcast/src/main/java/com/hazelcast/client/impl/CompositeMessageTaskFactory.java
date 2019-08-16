@@ -38,12 +38,14 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
 
     private final Node node;
     private final NodeEngine nodeEngine;
-    private final Int2ObjectHashMap<MessageTaskFactory> factories = new Int2ObjectHashMap<>();
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
-        loadProvider(new DefaultMessageTaskFactoryProvider(this.nodeEngine));
+        MessageTaskFactoryProvider defaultProvider = new DefaultMessageTaskFactoryProvider(this.nodeEngine);
+        this.factories = new Int2ObjectHashMap<>(defaultProvider.getFactories().size());
+        loadProvider(defaultProvider);
         loadServices();
     }
 

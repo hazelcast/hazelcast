@@ -264,7 +264,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        EventHandler<ClientMessage> handler = new ClientMultiMapEventHandler(listenerAdaptor);
         return registerListener(createEntryListenerCodec(includeValue), handler);
     }
 
@@ -304,7 +305,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        ListenerAdapter listenerAdapter = createListenerAdapter(listener);
+        EventHandler<ClientMessage> handler = new ClientMultiMapToKeyEventHandler(listenerAdapter);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);
     }
 
@@ -446,21 +448,58 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
     }
 
-    private EventHandler<ClientMessage> createHandler(final Object listener) {
-        final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        return new ClientMultiMapEventHandler(listenerAdaptor);
-    }
+    private class ClientMultiMapEventHandler extends AbstractClientMultiMapEventHandler {
 
-    private class ClientMultiMapEventHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private final ListenerAdapter listenerAdapter;
+        private MultiMapAddEntryListenerCodec.AbstractEventHandler handler;
 
         ClientMultiMapEventHandler(ListenerAdapter listenerAdapter) {
-            this.listenerAdapter = listenerAdapter;
+            super(listenerAdapter);
+            handler = new MultiMapAddEntryListenerCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMultiMapEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
         }
 
         @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ClientMultiMapToKeyEventHandler extends AbstractClientMultiMapEventHandler {
+
+        private MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler handler;
+
+        ClientMultiMapToKeyEventHandler(ListenerAdapter listenerAdapter) {
+            super(listenerAdapter);
+            handler = new MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMultiMapToKeyEventHandler.super.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage clientMessage) {
+            handler.handle(clientMessage);
+        }
+    }
+
+    private abstract class AbstractClientMultiMapEventHandler implements EventHandler<ClientMessage> {
+
+        private final ListenerAdapter listenerAdapter;
+
+        AbstractClientMultiMapEventHandler(ListenerAdapter listenerAdapter) {
+            this.listenerAdapter = listenerAdapter;
+        }
+
         public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
                                         int eventType, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);

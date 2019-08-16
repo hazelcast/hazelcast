@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
@@ -105,7 +104,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         };
     }
 
-    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
+    private class ItemEventHandler extends QueueAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final boolean includeValue;

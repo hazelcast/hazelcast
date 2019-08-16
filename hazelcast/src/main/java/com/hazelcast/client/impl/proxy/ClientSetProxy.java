@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.SetAddCodec;
 import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
@@ -220,7 +219,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         return "ISet{" + "name='" + name + '\'' + '}';
     }
 
-    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
+    private class ItemEventHandler extends SetAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final ItemListener<E> listener;

@@ -125,14 +125,15 @@ import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
  * EDITING THIS FILE CAN POTENTIALLY BREAK PROTOCOL
  */
 public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
-    private static final int MESSAGE_TASK_PROVIDER_CAPACITY = 500;
+    private static final int MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY = 500;
 
-    private final Int2ObjectHashMap<MessageTaskFactory> factories = createInt2ObjectHashMap(MESSAGE_TASK_PROVIDER_CAPACITY);
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
     private final Node node;
 
     public DefaultMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
+        this.factories = createInt2ObjectHashMap(MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY);
         initFactories();
     }
 

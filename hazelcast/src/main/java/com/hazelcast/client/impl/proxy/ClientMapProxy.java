@@ -856,7 +856,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
+        EventHandler<ClientMessage> handler = new ClientMapEventHandler(listenerAdaptor);
         return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), handler);
     }
 
@@ -948,7 +948,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, K key, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
+        EventHandler<ClientMessage> handler = new ClientMapToKeyEventHandler(listenerAdaptor);
         return registerListener(createMapEntryListenerToKeyCodec(includeValue, listenerFlags, keyData), handler);
     }
 
@@ -1010,7 +1010,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
         Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
+        EventHandler<ClientMessage> handler = new ClientMapToKeyWithPredicateEventHandler(listenerAdaptor);
         ListenerMessageCodec codec = createEntryListenerToKeyWithPredicateCodec(
                 includeValue, listenerFlags, keyData, predicateData);
         return registerListener(codec, handler);
@@ -1062,12 +1062,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor,
+    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdapter,
                                             Predicate<K, V> predicate,
                                             boolean includeValue) {
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        int listenerFlags = setAndGetListenerFlags(listenerAdapter);
         Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
+        EventHandler<ClientMessage> handler = new ClientMapWithPredicateEventHandler(listenerAdapter);
         return registerListener(createEntryListenerWithPredicateCodec(includeValue, listenerFlags, predicateData), handler);
     }
 
@@ -1855,10 +1855,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return queryCacheContext;
     }
 
-    private EventHandler<ClientMessage> createHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
-        return new ClientMapEventHandler(listenerAdapter);
-    }
-
     private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
         if (entryProcessor instanceof ReadOnly) {
             EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
@@ -1895,22 +1891,106 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (PagingPredicate) unwrappedPredicate;
     }
 
-    private class ClientMapEventHandler
-            extends MapAddEntryListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
+    private class ClientMapToKeyWithPredicateEventHandler extends AbstractClientMapEventHandler {
 
-        private ListenerAdapter<IMapEvent> listenerAdapter;
+        private MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler handler;
 
-        ClientMapEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
-            this.listenerAdapter = listenerAdapter;
+        ClientMapToKeyWithPredicateEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
+            super(listenerAdapter);
+            handler = new MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
         }
 
         @Override
-        public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
-                                        int numberOfAffectedEntries) {
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ClientMapWithPredicateEventHandler extends AbstractClientMapEventHandler {
+        private MapAddEntryListenerWithPredicateCodec.AbstractEventHandler handler;
+
+        ClientMapWithPredicateEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
+            super(listenerAdapter);
+            handler = new MapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ClientMapToKeyEventHandler extends AbstractClientMapEventHandler {
+
+        private MapAddEntryListenerToKeyCodec.AbstractEventHandler handler;
+
+        ClientMapToKeyEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
+            super(listenerAdapter);
+            handler = new MapAddEntryListenerToKeyCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ClientMapEventHandler extends AbstractClientMapEventHandler {
+
+        private MapAddEntryListenerCodec.AbstractEventHandler handler;
+
+        ClientMapEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
+            super(listenerAdapter);
+            handler = new MapAddEntryListenerCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ClientMapEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private abstract class AbstractClientMapEventHandler implements EventHandler<ClientMessage> {
+
+        private ListenerAdapter<IMapEvent> listenerAdapter;
+
+        AbstractClientMapEventHandler(ListenerAdapter<IMapEvent> listenerAdapter) {
+            this.listenerAdapter = listenerAdapter;
+        }
+
+        public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                     int eventType, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
-            listenerAdapter.onEvent(createIMapEvent(key, value, oldValue, mergingValue, eventType, numberOfAffectedEntries,
-                    member));
+            listenerAdapter.onEvent(createIMapEvent(key, value, oldValue,
+                    mergingValue, eventType, numberOfAffectedEntries, member));
         }
 
         private IMapEvent createIMapEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType,
@@ -1938,10 +2018,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return new MapEvent(name, member, eventType, numberOfAffectedEntries);
         }
 
-        private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValueData,
-                                                  int eventType, Member member) {
-            return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
-                    getSerializationService());
+        private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
+                                                  Data mergingValueData, int eventType, Member member) {
+            return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData,
+                    mergingValueData, getSerializationService());
         }
 
         @Override
