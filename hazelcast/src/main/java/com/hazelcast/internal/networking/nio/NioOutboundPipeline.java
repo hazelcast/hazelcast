@@ -132,22 +132,25 @@ public final class NioOutboundPipeline
     }
 
     public void write(OutboundFrame frame) {
-        // todo: in the old implementation we could detect concurrency by checking if the pipeline was already
-        // scheduled. But currently we have lost that ability.
-
         if (sendQueue.offer(frame)) {
             // we manage to schedule the pipeline, meaning we are owner.
             if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
-                // we are allowed to do a write through, so lets process the request on the calling thread
+                // we can do a write-through, so lets process the request on the calling thread
                 try {
                     process();
                 } catch (Throwable t) {
                     onError(t);
                 }
             } else {
-                // no write through, let the io thread deal with it.
+                // no write through; let the io thread deal with it. Since we managed to schedule
+                // the pipeline we need to notify the owner.
                 owner.addTaskAndWakeup(this);
             }
+        } else {
+            // the frame is scheduled, but other frames were pending. This means there
+            // is concurrent writes on the pipeline.
+            concurrencyDetection.onDetected();
+            System.out.println("write: write behind; pipeline already scheduled");
         }
     }
 
@@ -180,7 +183,6 @@ public final class NioOutboundPipeline
         HandlerStatus pipelineStatus = CLEAN;
         for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
             OutboundHandler handler = localHandlers[handlerIndex];
-
             HandlerStatus handlerStatus = handler.onWrite();
 
             if (localHandlers != handlers) {
@@ -219,6 +221,8 @@ public final class NioOutboundPipeline
                 }
                 break;
             case DIRTY:
+                System.out.println("pipeline is dirty");
+
                 // pipeline is dirty, so lets register for an OP_WRITE to write more data.
                 registerOp(OP_WRITE);
 
@@ -229,6 +233,7 @@ public final class NioOutboundPipeline
                     // has expired the selectionKey will be seen. For more info see:
                     // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
                     owner.getSelector().wakeup();
+                    System.out.println("NioOutboundPipeline.concurrecyDetection onDetected");
                     concurrencyDetection.onDetected();
                 }
                 break;

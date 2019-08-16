@@ -133,7 +133,7 @@ public final class NioNetworking implements Networking {
         this.idleStrategy = ctx.idleStrategy;
         metricsRegistry.scanAndRegister(this, "tcp");
         this.concurrencyDetection = ctx.concurrencyDetection;
-        this.writeThroughEnabled = false;//ctx.writeThroughEnabled;
+        this.writeThroughEnabled = ctx.writeThroughEnabled;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -302,7 +302,6 @@ public final class NioNetworking implements Networking {
         String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
         metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
         metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
-
 
         channels.add(channel);
 
