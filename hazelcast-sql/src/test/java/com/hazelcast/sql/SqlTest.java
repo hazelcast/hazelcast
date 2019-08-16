@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class SqlTest extends HazelcastTestSupport {
 
     // private static final String QUERY = "SELECT p.address.apartment + 1 FROM partitioned.persons p ORDER BY name";
-    private static final String QUERY = "SELECT name FROM city ORDER BY name";
+    private static final String QUERY = "SELECT SUM(height) FROM city GROUP BY age ORDER BY SUM(height)";
 
     @Test
     public void testSimpleQuery() throws Exception {
@@ -109,7 +109,7 @@ public class SqlTest extends HazelcastTestSupport {
         public Person(int key) {
 
             this.name = "Person " + key;
-            this.age = ThreadLocalRandom.current().nextInt(100);
+            this.age = ThreadLocalRandom.current().nextInt(10);
             this.height = ThreadLocalRandom.current().nextDouble(170);
             this.active = ThreadLocalRandom.current().nextBoolean();
 

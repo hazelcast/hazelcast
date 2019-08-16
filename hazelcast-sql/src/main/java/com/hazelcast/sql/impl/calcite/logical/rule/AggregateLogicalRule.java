@@ -17,40 +17,40 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.impl.calcite.RuleUtils;
-import com.hazelcast.sql.impl.calcite.logical.rel.SortLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.core.Sort;
-import org.apache.calcite.rel.logical.LogicalSort;
+import org.apache.calcite.rel.logical.LogicalAggregate;
 
-public class SortLogicalRule extends RelOptRule {
-    public static final RelOptRule INSTANCE = new SortLogicalRule();
+public class AggregateLogicalRule extends RelOptRule {
+    public static final RelOptRule INSTANCE = new AggregateLogicalRule();
 
-    private SortLogicalRule() {
+    private AggregateLogicalRule() {
         super(
-            RuleUtils.single(LogicalSort.class, Convention.NONE),
+            RuleUtils.single(LogicalAggregate.class, Convention.NONE),
             RelFactories.LOGICAL_BUILDER,
-            SortLogicalRule.class.getSimpleName()
+            AggregateLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        Sort sort = call.rel(0);
-        RelNode input = sort.getInput();
+        LogicalAggregate agg = call.rel(0);
+        RelNode input = agg.getInput(0);
 
-        SortLogicalRel newSort = new SortLogicalRel(
-            sort.getCluster(),
-            RuleUtils.toLogicalConvention(sort.getTraitSet()),
+        AggregateLogicalRel newAgg = new AggregateLogicalRel(
+            agg.getCluster(),
+            RuleUtils.toLogicalConvention(agg.getTraitSet()),
             RuleUtils.toLogicalInput(input),
-            sort.getCollation(),
-            sort.offset,
-            sort.fetch
+            agg.indicator,
+            agg.getGroupSet(),
+            agg.getGroupSets(),
+            agg.getAggCallList()
         );
 
-        call.transformTo(newSort);
+        call.transformTo(newAgg);
     }
 }

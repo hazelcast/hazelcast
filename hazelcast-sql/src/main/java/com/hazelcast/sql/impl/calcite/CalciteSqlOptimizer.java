@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rule.AggregateLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
@@ -53,8 +53,6 @@ import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.hep.HepPlanner;
-import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
@@ -122,10 +120,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // 3. Convert to REL.
         RelNode rel = doConvertToRel(node, sqlToRelConverter);
 
-        // 4. Perform logical heuristic optimization.
-        LogicalRel logicalRel = doOptimizeLogical(rel);
+        // 4. Perform logical optimization.
+        LogicalRel logicalRel = doOptimizeLogical(planner, rel);
 
-        // 5. Perform physical cost-based optimization.
+        // 5. Perform physical optimization.
         PhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
 
         // 6. Create plan.
@@ -231,30 +229,31 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return root.rel;
     }
 
-    private LogicalRel doOptimizeLogical(RelNode rel) {
-        HepProgramBuilder hepBuilder = new HepProgramBuilder();
+    private LogicalRel doOptimizeLogical(VolcanoPlanner planner, RelNode rel) {
+        RuleSet rules = RuleSets.ofList(
+            ProjectFilterTransposeRule.INSTANCE,
+            ProjectIntoScanLogicalRule.INSTANCE,
 
-        hepBuilder.addRuleInstance(ProjectFilterTransposeRule.INSTANCE);
-        hepBuilder.addRuleInstance(ProjectIntoScanLogicalRule.INSTANCE);
+            MapScanLogicalRule.INSTANCE,
+            FilterLogicalRule.INSTANCE,
+            ProjectLogicalRule.INSTANCE,
+            AggregateLogicalRule.INSTANCE,
+            SortLogicalRule.INSTANCE,
 
-        hepBuilder.addRuleInstance(MapScanLogicalRule.INSTANCE);
-        hepBuilder.addRuleInstance(FilterLogicalRule.INSTANCE);
-        hepBuilder.addRuleInstance(ProjectLogicalRule.INSTANCE);
-        hepBuilder.addRuleInstance(SortLogicalRule.INSTANCE);
-
-        HepPlanner hepPlanner = new HepPlanner(
-            hepBuilder.build()
+            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
-        hepPlanner.setRoot(rel);
+        Program program = Programs.of(rules);
 
-        RelNode optimizedRel = hepPlanner.findBestExp();
-
-        return new RootLogicalRel(
-            optimizedRel.getCluster(),
-            optimizedRel.getTraitSet(),
-            optimizedRel
+        RelNode res = program.run(
+            planner,
+            rel,
+            RuleUtils.toLogicalConvention(rel.getTraitSet()),
+            ImmutableList.of(),
+            ImmutableList.of()
         );
+
+        return (LogicalRel)res;
     }
 
     /**
