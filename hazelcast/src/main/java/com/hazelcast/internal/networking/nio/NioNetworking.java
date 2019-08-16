@@ -212,6 +212,7 @@ public final class NioNetworking implements Networking {
 
         startIOBalancer();
 
+        // todo: needs to be removed; added for debugging to see the status of the outbound pipelines.
         new Thread(){
             public void run(){
                 while (inputThreads!=null){

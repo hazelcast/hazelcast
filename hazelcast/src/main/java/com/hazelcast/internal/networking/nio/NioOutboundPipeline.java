@@ -150,7 +150,7 @@ public final class NioOutboundPipeline
             // the frame is scheduled, but other frames were pending. This means there
             // is concurrent writes on the pipeline.
             concurrencyDetection.onDetected();
-            System.out.println("write: write behind; pipeline already scheduled");
+            //System.out.println("write: write behind; pipeline already scheduled");
         }
     }
 
@@ -221,7 +221,7 @@ public final class NioOutboundPipeline
                 }
                 break;
             case DIRTY:
-                System.out.println("pipeline is dirty");
+                //System.out.println("pipeline is dirty");
 
                 // pipeline is dirty, so lets register for an OP_WRITE to write more data.
                 registerOp(OP_WRITE);
@@ -233,7 +233,7 @@ public final class NioOutboundPipeline
                     // has expired the selectionKey will be seen. For more info see:
                     // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
                     owner.getSelector().wakeup();
-                    System.out.println("NioOutboundPipeline.concurrecyDetection onDetected");
+                   // System.out.println("NioOutboundPipeline.concurrecyDetection onDetected");
                     concurrencyDetection.onDetected();
                 }
                 break;
