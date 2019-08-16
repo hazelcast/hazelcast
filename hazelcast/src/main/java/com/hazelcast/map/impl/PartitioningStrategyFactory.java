@@ -17,8 +17,11 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +45,10 @@ public final class PartitioningStrategyFactory {
         this.configClassLoader = configClassLoader;
     }
 
+    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
+        return getPartitioningStrategy(mapName, config, null);
+    }
+
     /**
      * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code mapName}. This method
      * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
@@ -51,7 +58,8 @@ public final class PartitioningStrategyFactory {
      * @param config        the partitioning strategy configuration
      * @return
      */
-    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
+    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config,
+        NodeEngine nodeEngine) {
         PartitioningStrategy strategy = null;
         if (config != null) {
             strategy = config.getPartitioningStrategy();
@@ -68,6 +76,10 @@ public final class PartitioningStrategyFactory {
                 }
             }
         }
+
+        if (strategy instanceof SerializationServiceAware)
+            ((SerializationServiceAware)strategy).setSerializationService(nodeEngine.getSerializationService());
+
         return strategy;
     }
 

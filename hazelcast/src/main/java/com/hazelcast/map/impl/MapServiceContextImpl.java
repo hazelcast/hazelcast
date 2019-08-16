@@ -772,7 +772,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
-        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config);
+        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config, nodeEngine);
     }
 
     @Override

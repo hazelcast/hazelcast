@@ -17,7 +17,10 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -47,6 +50,14 @@ public class SqlTest extends HazelcastTestSupport {
 
         Config cfg = new Config();
 
+        cfg.addMapConfig(new MapConfig()
+            .setName("persons")
+            .setPartitioningStrategyConfig(
+                new PartitioningStrategyConfig()
+                    .setPartitioningStrategy(new DeclarativePartitioningStrategy().setField("key"))
+            )
+        );
+
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
         nodeFactory.newHazelcastInstance(cfg);
 
@@ -55,7 +66,7 @@ public class SqlTest extends HazelcastTestSupport {
             member1.getReplicatedMap("city").put(i, new City(i));
 
         for (int i = 0; i < 100; i++)
-            member1.getMap("persons").put(i, new Person(i));
+            member1.getMap("persons").put(new PersonKey(i), new Person(i));
 
         // Execute.
         SqlCursor cursor = member1.getSqlService().query(QUERY);
@@ -69,12 +80,23 @@ public class SqlTest extends HazelcastTestSupport {
         System.out.println(">>> RES:  " + res);
     }
 
+    public static class PersonKey implements Serializable {
+        private static final long serialVersionUID = -2761952188092172459L;
+
+        public final int key;
+        public final String keyStr;
+
+        public PersonKey(int key) {
+            this.key = key;
+
+            keyStr = Integer.toString(key);
+        }
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static class Person implements Serializable {
         private static final long serialVersionUID = -221704179714350820L;
 
-        public final int __key;
-        public final String keyStr;
         public final String name;
         public final int age;
         public final double height;
@@ -85,8 +107,7 @@ public class SqlTest extends HazelcastTestSupport {
         public final List tokens = new ArrayList();
 
         public Person(int key) {
-            this.__key = key;
-            keyStr = Integer.toString(__key);
+
             this.name = "Person " + key;
             this.age = ThreadLocalRandom.current().nextInt(100);
             this.height = ThreadLocalRandom.current().nextDouble(170);
