@@ -29,7 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 
 public final class ErrorCodec {
 
-    public static final int EXCEPTION = 109;
+    // Other codecs message types can be in range 0x000100 - 0xFFFFFF
+    // So, it is safe to supply a custom message type for exceptions in
+    // the range 0x000000 - 0x0000FF
+    public static final int EXCEPTION_MESSAGE_TYPE = 0;
     private static final int ERROR_CODE = 0;
     private static final int INITIAL_FRAME_SIZE = ERROR_CODE + Bits.INT_SIZE_IN_BYTES;
 

@@ -37,7 +37,7 @@ public final class ErrorsCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         clientMessage.add(initialFrame);
-        clientMessage.setMessageType(ErrorCodec.EXCEPTION);
+        clientMessage.setMessageType(ErrorCodec.EXCEPTION_MESSAGE_TYPE);
         ListMultiFrameCodec.encode(clientMessage, errorHolders, ErrorCodec::encode);
         return clientMessage;
     }
