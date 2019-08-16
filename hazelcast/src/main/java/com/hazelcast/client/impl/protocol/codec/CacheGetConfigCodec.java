@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class CacheGetConfigCodec {
-    //hex: 0x150D
-    public static final int REQUEST_MESSAGE_TYPE = 5389;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x150D00
+    public static final int REQUEST_MESSAGE_TYPE = 1379584;
+    //hex: 0x150D01
+    public static final int RESPONSE_MESSAGE_TYPE = 1379585;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -79,7 +79,8 @@ public final class CacheGetConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The cache configuration. Byte-array which is serialized from an object implementing
+         * javax.cache.configuration.Configuration interface.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new configuration is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddCountDownLatchConfigCodec {
-    //hex: 0x1E15
-    public static final int REQUEST_MESSAGE_TYPE = 7701;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E1500
+    public static final int REQUEST_MESSAGE_TYPE = 1971456;
+    //hex: 0x1E1501
+    public static final int RESPONSE_MESSAGE_TYPE = 1971457;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

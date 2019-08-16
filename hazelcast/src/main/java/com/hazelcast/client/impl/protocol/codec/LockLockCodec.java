@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * has been acquired.
  */
 public final class LockLockCodec {
-    //hex: 0x0705
-    public static final int REQUEST_MESSAGE_TYPE = 1797;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x070500
+    public static final int REQUEST_MESSAGE_TYPE = 460032;
+    //hex: 0x070501
+    public static final int RESPONSE_MESSAGE_TYPE = 460033;
     private static final int REQUEST_LEASE_TIME_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_LEASE_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

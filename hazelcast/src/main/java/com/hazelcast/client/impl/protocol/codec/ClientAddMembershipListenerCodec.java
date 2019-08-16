@@ -29,24 +29,24 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class ClientAddMembershipListenerCodec {
-    //hex: 0x0004
-    public static final int REQUEST_MESSAGE_TYPE = 4;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x000400
+    public static final int REQUEST_MESSAGE_TYPE = 1024;
+    //hex: 0x000401
+    public static final int RESPONSE_MESSAGE_TYPE = 1025;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_INITIAL_FRAME_SIZE = EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00C8
-    private static final int EVENT_MEMBER_MESSAGE_TYPE = 200;
+    //hex: 0x000402
+    private static final int EVENT_MEMBER_MESSAGE_TYPE = 1026;
     private static final int EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00C9
-    private static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 201;
+    //hex: 0x000403
+    private static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 1027;
     private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE = EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CA
-    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 202;
+    //hex: 0x000404
+    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 1028;
 
     private ClientAddMembershipListenerCodec() {
     }
@@ -85,7 +85,7 @@ public final class ClientAddMembershipListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns the registration id for the listener.
          */
         public java.lang.String response;
     }

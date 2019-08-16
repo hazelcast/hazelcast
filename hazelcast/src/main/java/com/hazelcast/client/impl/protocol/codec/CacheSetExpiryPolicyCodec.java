@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
 public final class CacheSetExpiryPolicyCodec {
-    //hex: 0x1523
-    public static final int REQUEST_MESSAGE_TYPE = 5411;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x152300
+    public static final int REQUEST_MESSAGE_TYPE = 1385216;
+    //hex: 0x152301
+    public static final int RESPONSE_MESSAGE_TYPE = 1385217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -89,7 +89,7 @@ public final class CacheSetExpiryPolicyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * {
          */
         public boolean response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class XATransactionPrepareCodec {
-    //hex: 0x1606
-    public static final int REQUEST_MESSAGE_TYPE = 5638;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x160600
+    public static final int REQUEST_MESSAGE_TYPE = 1443328;
+    //hex: 0x160601
+    public static final int RESPONSE_MESSAGE_TYPE = 1443329;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

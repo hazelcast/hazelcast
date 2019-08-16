@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * has expired or has been evicted.
  */
 public final class CacheIterateCodec {
-    //hex: 0x150F
-    public static final int REQUEST_MESSAGE_TYPE = 5391;
-    //hex: 0x0074
-    public static final int RESPONSE_MESSAGE_TYPE = 116;
+    //hex: 0x150F00
+    public static final int REQUEST_MESSAGE_TYPE = 1380096;
+    //hex: 0x150F01
+    public static final int RESPONSE_MESSAGE_TYPE = 1380097;
     private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -17,33 +17,22 @@
 package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
-import com.hazelcast.client.impl.protocol.codec.builtin.DataCodec;
-import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import com.hazelcast.logging.Logger;
 
 /**
  * TODO DOC
  */
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
-    //hex: 0x0E12
-    public static final int REQUEST_MESSAGE_TYPE = 3602;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x0E1200
+    public static final int REQUEST_MESSAGE_TYPE = 922112;
+    //hex: 0x0E1201
+    public static final int RESPONSE_MESSAGE_TYPE = 922113;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -51,8 +40,8 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     private static final int EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CB
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 203;
+    //hex: 0x0E1202
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 922114;
 
     private ReplicatedMapAddNearCacheEntryListenerCodec() {
     }
@@ -104,7 +93,7 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A unique string  which is used as a key to remove the listener.
          */
         public java.lang.String response;
     }

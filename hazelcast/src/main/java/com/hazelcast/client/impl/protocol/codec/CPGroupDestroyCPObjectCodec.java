@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CP group
  */
 public final class CPGroupDestroyCPObjectCodec {
-    //hex: 0x2102
-    public static final int REQUEST_MESSAGE_TYPE = 8450;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x210200
+    public static final int REQUEST_MESSAGE_TYPE = 2163200;
+    //hex: 0x210201
+    public static final int RESPONSE_MESSAGE_TYPE = 2163201;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

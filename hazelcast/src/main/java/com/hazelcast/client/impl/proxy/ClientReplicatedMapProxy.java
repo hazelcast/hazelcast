@@ -273,7 +273,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        EventHandler<ClientMessage> handler = new ReplicatedMapEventHandler(listener);
         return registerListener(createEntryListenerCodec(), handler);
     }
 
@@ -306,7 +306,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        EventHandler<ClientMessage> handler = new ReplicatedMapToKeyEventHandler(listener);
         return key != null
                 ? registerListener(createEntryListenerToKeyCodec(keyData), handler)
                 : registerListener(createEntryListenerCodec(), handler);
@@ -343,7 +343,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         final Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        EventHandler<ClientMessage> handler = new ReplicatedMapWithPredicateEventHandler(listener);
         return registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
     }
 
@@ -381,7 +381,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listener);
+        EventHandler<ClientMessage> handler = new ReplicatedMapToKeyWithPredicateEventHandler(listener);
         return key != null
                 ? registerListener(createEntryListenerToKeyWithPredicateCodec(keyData, predicateData), handler)
                 : registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
@@ -465,11 +465,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
         return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
-
-    private EventHandler<ClientMessage> createHandler(EntryListener<K, V> listener) {
-        return new ReplicatedMapEventHandler(listener);
-    }
-
 
     public String addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheInvalidationListenerCodec(), handler);
@@ -563,17 +558,102 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         nearCache.invalidate(key);
     }
 
-    private class ReplicatedMapEventHandler
-            extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
+    private class ReplicatedMapToKeyWithPredicateEventHandler extends AbstractReplicatedMapEventHandler {
 
-        private final EntryListener<K, V> listener;
+        private ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler handler;
 
-        ReplicatedMapEventHandler(EntryListener<K, V> listener) {
-            this.listener = listener;
+        ReplicatedMapToKeyWithPredicateEventHandler(EntryListener<K, V> listener) {
+            super(listener);
+            handler = new ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ReplicatedMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
         }
 
         @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ReplicatedMapWithPredicateEventHandler extends AbstractReplicatedMapEventHandler {
+
+        private ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler handler;
+
+        ReplicatedMapWithPredicateEventHandler(EntryListener<K, V> listener) {
+            super(listener);
+            handler = new ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ReplicatedMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
+                            mergingValue, eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ReplicatedMapToKeyEventHandler extends AbstractReplicatedMapEventHandler {
+
+        private ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler handler;
+
+        ReplicatedMapToKeyEventHandler(EntryListener<K, V> listener) {
+            super(listener);
+            handler = new ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ReplicatedMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
+                            eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private class ReplicatedMapEventHandler extends AbstractReplicatedMapEventHandler {
+
+        private ReplicatedMapAddEntryListenerCodec.AbstractEventHandler handler;
+
+        ReplicatedMapEventHandler(EntryListener<K, V> listener) {
+            super(listener);
+            handler = new ReplicatedMapAddEntryListenerCodec.AbstractEventHandler() {
+                @Override
+                public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
+                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                    ReplicatedMapEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
+                            eventType, uuid, numberOfAffectedEntries);
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
+    }
+
+    private abstract class AbstractReplicatedMapEventHandler implements EventHandler<ClientMessage> {
+
+        private final EntryListener<K, V> listener;
+
+        AbstractReplicatedMapEventHandler(EntryListener<K, V> listener) {
+            this.listener = listener;
+        }
+
         public void handleEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
                                         int eventTypeId, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);

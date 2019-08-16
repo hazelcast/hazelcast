@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
 public final class ReplicatedMapGetCodec {
-    //hex: 0x0E06
-    public static final int REQUEST_MESSAGE_TYPE = 3590;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x0E0600
+    public static final int REQUEST_MESSAGE_TYPE = 919040;
+    //hex: 0x0E0601
+    public static final int RESPONSE_MESSAGE_TYPE = 919041;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -82,7 +82,7 @@ public final class ReplicatedMapGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The value to which the specified key is mapped, or null if this map contains no mapping for the key
          */
         public com.hazelcast.nio.serialization.Data response;
     }

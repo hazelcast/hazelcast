@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves the result of the execution with the given sequence
  */
 public final class DurableExecutorRetrieveResultCodec {
-    //hex: 0x1B04
-    public static final int REQUEST_MESSAGE_TYPE = 6916;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x1B0400
+    public static final int REQUEST_MESSAGE_TYPE = 1770496;
+    //hex: 0x1B0401
+    public static final int RESPONSE_MESSAGE_TYPE = 1770497;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -79,7 +79,7 @@ public final class DurableExecutorRetrieveResultCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The result of the callable execution with the given sequence.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

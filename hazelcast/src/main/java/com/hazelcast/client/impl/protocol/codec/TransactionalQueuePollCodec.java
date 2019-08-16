@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to become available.
  */
 public final class TransactionalQueuePollCodec {
-    //hex: 0x1403
-    public static final int REQUEST_MESSAGE_TYPE = 5123;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x140300
+    public static final int REQUEST_MESSAGE_TYPE = 1311488;
+    //hex: 0x140301
+    public static final int RESPONSE_MESSAGE_TYPE = 1311489;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -95,7 +95,7 @@ public final class TransactionalQueuePollCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The head of this queue, or <tt>null</tt> if the specified waiting time elapses before an element is available
          */
         public com.hazelcast.nio.serialization.Data response;
     }

@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * become available.
  */
 public final class TransactionalQueueOfferCodec {
-    //hex: 0x1401
-    public static final int REQUEST_MESSAGE_TYPE = 5121;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x140100
+    public static final int REQUEST_MESSAGE_TYPE = 1310976;
+    //hex: 0x140101
+    public static final int RESPONSE_MESSAGE_TYPE = 1310977;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -103,7 +103,7 @@ public final class TransactionalQueueOfferCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
          */
         public boolean response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class TransactionCreateCodec {
-    //hex: 0x1702
-    public static final int REQUEST_MESSAGE_TYPE = 5890;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x170200
+    public static final int REQUEST_MESSAGE_TYPE = 1507840;
+    //hex: 0x170201
+    public static final int RESPONSE_MESSAGE_TYPE = 1507841;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DURABILITY_FIELD_OFFSET = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_TRANSACTION_TYPE_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -102,7 +102,7 @@ public final class TransactionCreateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The transaction id for the created transaction.
          */
         public java.lang.String response;
     }

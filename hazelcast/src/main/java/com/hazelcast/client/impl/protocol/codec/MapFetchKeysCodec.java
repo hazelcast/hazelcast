@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
 public final class MapFetchKeysCodec {
-    //hex: 0x013C
-    public static final int REQUEST_MESSAGE_TYPE = 316;
-    //hex: 0x0074
-    public static final int RESPONSE_MESSAGE_TYPE = 116;
+    //hex: 0x013C00
+    public static final int REQUEST_MESSAGE_TYPE = 80896;
+    //hex: 0x013C01
+    public static final int RESPONSE_MESSAGE_TYPE = 80897;
     private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;

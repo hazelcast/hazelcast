@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * extends its session expiration time.
  */
 public final class CPSessionHeartbeatSessionCodec {
-    //hex: 0x2203
-    public static final int REQUEST_MESSAGE_TYPE = 8707;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x220300
+    public static final int REQUEST_MESSAGE_TYPE = 2228992;
+    //hex: 0x220301
+    public static final int RESPONSE_MESSAGE_TYPE = 2228993;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

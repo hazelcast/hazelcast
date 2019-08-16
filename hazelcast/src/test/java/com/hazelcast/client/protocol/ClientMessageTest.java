@@ -38,7 +38,7 @@ public class ClientMessageTest {
         ClientMessage cmEncode = ClientMessage.createForEncode();
 
         cmEncode.add(new ClientMessage.Frame(new byte[50], ClientMessage.DEFAULT_FLAGS));
-        cmEncode.setMessageType((short) 1)
+        cmEncode.setMessageType(1)
                 .setCorrelationId(0x1234567812345678L)
                 .setPartitionId(0x11223344);
 
@@ -61,7 +61,7 @@ public class ClientMessageTest {
         ClientMessage clientMessage = ClientMessage.createForEncode();
 
         clientMessage.add(new ClientMessage.Frame(new byte[50], ClientMessage.DEFAULT_FLAGS));
-        clientMessage.setMessageType((short) 1)
+        clientMessage.setMessageType(1)
                 .setCorrelationId(0x1234567812345678L)
                 .setPartitionId(0x11223344);
 

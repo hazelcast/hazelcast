@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * using a partially built index and returning incorrect results.
  */
 public final class MapAddIndexCodec {
-    //hex: 0x012D
-    public static final int REQUEST_MESSAGE_TYPE = 301;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x012D00
+    public static final int REQUEST_MESSAGE_TYPE = 77056;
+    //hex: 0x012D01
+    public static final int RESPONSE_MESSAGE_TYPE = 77057;
     private static final int REQUEST_ORDERED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ORDERED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

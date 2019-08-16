@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * reaches to 0 and a new round starts afterwards.
  */
 public final class CPCountDownLatchGetRoundCodec {
-    //hex: 0x2505
-    public static final int REQUEST_MESSAGE_TYPE = 9477;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x250500
+    public static final int REQUEST_MESSAGE_TYPE = 2426112;
+    //hex: 0x250501
+    public static final int RESPONSE_MESSAGE_TYPE = 2426113;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class CPCountDownLatchGetRoundCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The current round of this CountDownLatch instance
          */
         public int response;
     }

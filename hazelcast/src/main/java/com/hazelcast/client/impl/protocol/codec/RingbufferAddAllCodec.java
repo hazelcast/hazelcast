@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The result of the future contains the sequenceId of the last written item
  */
 public final class RingbufferAddAllCodec {
-    //hex: 0x1909
-    public static final int REQUEST_MESSAGE_TYPE = 6409;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190900
+    public static final int REQUEST_MESSAGE_TYPE = 1640704;
+    //hex: 0x190901
+    public static final int RESPONSE_MESSAGE_TYPE = 1640705;
     private static final int REQUEST_OVERFLOW_POLICY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_OVERFLOW_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -94,7 +94,7 @@ public final class RingbufferAddAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the ICompletableFuture to synchronize on completion.
          */
         public long response;
     }

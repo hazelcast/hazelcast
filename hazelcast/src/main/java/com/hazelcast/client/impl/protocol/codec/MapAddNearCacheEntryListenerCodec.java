@@ -29,10 +29,10 @@ import com.hazelcast.logging.Logger;
  * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
  */
 public final class MapAddNearCacheEntryListenerCodec {
-    //hex: 0x011D
-    public static final int REQUEST_MESSAGE_TYPE = 285;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x011D00
+    public static final int REQUEST_MESSAGE_TYPE = 72960;
+    //hex: 0x011D01
+    public static final int RESPONSE_MESSAGE_TYPE = 72961;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -40,11 +40,11 @@ public final class MapAddNearCacheEntryListenerCodec {
     private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x00D7
-    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 215;
+    //hex: 0x011D02
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 72962;
     private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D8
-    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 216;
+    //hex: 0x011D03
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 72963;
 
     private MapAddNearCacheEntryListenerCodec() {
     }
@@ -96,7 +96,7 @@ public final class MapAddNearCacheEntryListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A unique string which is used as a key to remove the listener.
          */
         public java.lang.String response;
     }

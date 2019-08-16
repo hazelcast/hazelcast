@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * value the expected value.
  */
 public final class CPAtomicLongCompareAndSetCodec {
-    //hex: 0x2304
-    public static final int REQUEST_MESSAGE_TYPE = 8964;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x230400
+    public static final int REQUEST_MESSAGE_TYPE = 2294784;
+    //hex: 0x230401
+    public static final int RESPONSE_MESSAGE_TYPE = 2294785;
     private static final int REQUEST_EXPECTED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_UPDATED_FIELD_OFFSET = REQUEST_EXPECTED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UPDATED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -96,7 +96,8 @@ public final class CPAtomicLongCompareAndSetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if successful; or false if the actual value
+         * was not equal to the expected value.
          */
         public boolean response;
     }

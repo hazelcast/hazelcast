@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
 public final class MapGetEntryViewCodec {
-    //hex: 0x0121
-    public static final int REQUEST_MESSAGE_TYPE = 289;
-    //hex: 0x006F
-    public static final int RESPONSE_MESSAGE_TYPE = 111;
+    //hex: 0x012100
+    public static final int REQUEST_MESSAGE_TYPE = 73984;
+    //hex: 0x012101
+    public static final int RESPONSE_MESSAGE_TYPE = 73985;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_MAX_IDLE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

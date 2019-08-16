@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * nothing and returns false
  */
 public final class CountDownLatchTrySetCountCodec {
-    //hex: 0x0C04
-    public static final int REQUEST_MESSAGE_TYPE = 3076;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x0C0400
+    public static final int REQUEST_MESSAGE_TYPE = 787456;
+    //hex: 0x0C0401
+    public static final int RESPONSE_MESSAGE_TYPE = 787457;
     private static final int REQUEST_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class CountDownLatchTrySetCountCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the new count was set, false if the current count is not zero.
          */
         public boolean response;
     }

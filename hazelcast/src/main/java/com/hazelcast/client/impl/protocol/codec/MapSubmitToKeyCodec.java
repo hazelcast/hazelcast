@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * operation of EntryProcessor.
  */
 public final class MapSubmitToKeyCodec {
-    //hex: 0x0133
-    public static final int REQUEST_MESSAGE_TYPE = 307;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x013300
+    public static final int REQUEST_MESSAGE_TYPE = 78592;
+    //hex: 0x013301
+    public static final int RESPONSE_MESSAGE_TYPE = 78593;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -95,7 +95,7 @@ public final class MapSubmitToKeyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * result of entry process.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

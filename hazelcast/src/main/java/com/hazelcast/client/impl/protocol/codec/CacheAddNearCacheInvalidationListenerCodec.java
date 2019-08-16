@@ -31,21 +31,21 @@ import com.hazelcast.logging.Logger;
  * instead of {@link #addInvalidationListener(String, boolean)}
  */
 public final class CacheAddNearCacheInvalidationListenerCodec {
-    //hex: 0x151E
-    public static final int REQUEST_MESSAGE_TYPE = 5406;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x151E00
+    public static final int REQUEST_MESSAGE_TYPE = 1383936;
+    //hex: 0x151E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1383937;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x00D0
-    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 208;
+    //hex: 0x151E02
+    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 1383938;
     private static final int EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D3
-    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 211;
+    //hex: 0x151E03
+    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 1383939;
 
     private CacheAddNearCacheInvalidationListenerCodec() {
     }
@@ -90,7 +90,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Registration id for the registered listener.
          */
         public java.lang.String response;
     }

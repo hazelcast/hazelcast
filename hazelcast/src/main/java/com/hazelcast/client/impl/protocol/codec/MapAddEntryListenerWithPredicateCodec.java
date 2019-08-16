@@ -30,10 +30,10 @@ import com.hazelcast.logging.Logger;
  * filtered by the given predicate.
  */
 public final class MapAddEntryListenerWithPredicateCodec {
-    //hex: 0x011A
-    public static final int REQUEST_MESSAGE_TYPE = 282;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x011A00
+    public static final int REQUEST_MESSAGE_TYPE = 72192;
+    //hex: 0x011A01
+    public static final int RESPONSE_MESSAGE_TYPE = 72193;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -42,8 +42,8 @@ public final class MapAddEntryListenerWithPredicateCodec {
     private static final int EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CB
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 203;
+    //hex: 0x011A02
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 72194;
 
     private MapAddEntryListenerWithPredicateCodec() {
     }
@@ -110,7 +110,7 @@ public final class MapAddEntryListenerWithPredicateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A unique string which is used as a key to remove the listener.
          */
         public java.lang.String response;
     }

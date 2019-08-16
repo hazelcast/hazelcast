@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
 public final class MapPutTransientWithMaxIdleCodec {
-    //hex: 0x014B
-    public static final int REQUEST_MESSAGE_TYPE = 331;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x014B00
+    public static final int REQUEST_MESSAGE_TYPE = 84736;
+    //hex: 0x014B01
+    public static final int RESPONSE_MESSAGE_TYPE = 84737;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -111,7 +111,7 @@ public final class MapPutTransientWithMaxIdleCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * old value of the entry
          */
         public com.hazelcast.nio.serialization.Data response;
     }

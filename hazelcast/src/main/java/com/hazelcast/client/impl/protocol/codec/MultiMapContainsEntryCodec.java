@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns whether the multimap contains the given key-value pair.
  */
 public final class MultiMapContainsEntryCodec {
-    //hex: 0x0209
-    public static final int REQUEST_MESSAGE_TYPE = 521;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x020900
+    public static final int REQUEST_MESSAGE_TYPE = 133376;
+    //hex: 0x020901
+    public static final int RESPONSE_MESSAGE_TYPE = 133377;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -94,7 +94,7 @@ public final class MultiMapContainsEntryCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the multimap contains the key-value pair, false otherwise.
          */
         public boolean response;
     }

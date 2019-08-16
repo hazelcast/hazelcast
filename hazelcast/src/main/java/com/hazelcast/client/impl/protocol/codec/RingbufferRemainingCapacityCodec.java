@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
 public final class RingbufferRemainingCapacityCodec {
-    //hex: 0x1905
-    public static final int REQUEST_MESSAGE_TYPE = 6405;
-    //hex: 0x0067
-    public static final int RESPONSE_MESSAGE_TYPE = 103;
+    //hex: 0x190500
+    public static final int REQUEST_MESSAGE_TYPE = 1639680;
+    //hex: 0x190501
+    public static final int RESPONSE_MESSAGE_TYPE = 1639681;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -74,7 +74,7 @@ public final class RingbufferRemainingCapacityCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the remaining capacity
          */
         public long response;
     }

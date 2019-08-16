@@ -29,18 +29,18 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class ClientAddPartitionLostListenerCodec {
-    //hex: 0x000A
-    public static final int REQUEST_MESSAGE_TYPE = 10;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x000A00
+    public static final int REQUEST_MESSAGE_TYPE = 2560;
+    //hex: 0x000A01
+    public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET = EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CE
-    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 206;
+    //hex: 0x000A02
+    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 2562;
 
     private ClientAddPartitionLostListenerCodec() {
     }
@@ -79,7 +79,7 @@ public final class ClientAddPartitionLostListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The listener registration id.
          */
         public java.lang.String response;
     }

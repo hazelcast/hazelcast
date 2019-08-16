@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * context until the transaction is committed.
  */
 public final class TransactionalMapRemoveCodec {
-    //hex: 0x100B
-    public static final int REQUEST_MESSAGE_TYPE = 4107;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x100B00
+    public static final int REQUEST_MESSAGE_TYPE = 1051392;
+    //hex: 0x100B01
+    public static final int RESPONSE_MESSAGE_TYPE = 1051393;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -95,7 +95,7 @@ public final class TransactionalMapRemoveCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The previous value associated with key, or null if there was no mapping for key
          */
         public com.hazelcast.nio.serialization.Data response;
     }

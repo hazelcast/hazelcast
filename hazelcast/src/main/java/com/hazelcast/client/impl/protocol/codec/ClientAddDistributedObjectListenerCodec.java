@@ -29,16 +29,16 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class ClientAddDistributedObjectListenerCodec {
-    //hex: 0x000D
-    public static final int REQUEST_MESSAGE_TYPE = 13;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x000D00
+    public static final int REQUEST_MESSAGE_TYPE = 3328;
+    //hex: 0x000D01
+    public static final int RESPONSE_MESSAGE_TYPE = 3329;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CF
-    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 207;
+    //hex: 0x000D02
+    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 3330;
 
     private ClientAddDistributedObjectListenerCodec() {
     }
@@ -77,7 +77,7 @@ public final class ClientAddDistributedObjectListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The registration id for the distributed object listener.
          */
         public java.lang.String response;
     }

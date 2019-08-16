@@ -33,10 +33,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
 public final class ReplicatedMapKeySetCodec {
-    //hex: 0x0E0F
-    public static final int REQUEST_MESSAGE_TYPE = 3599;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x0E0F00
+    public static final int REQUEST_MESSAGE_TYPE = 921344;
+    //hex: 0x0E0F01
+    public static final int RESPONSE_MESSAGE_TYPE = 921345;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -77,7 +77,7 @@ public final class ReplicatedMapKeySetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A lazy set view of the keys contained in this map.
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * available permits by that amount.
  */
 public final class CPSemaphoreReleaseCodec {
-    //hex: 0x2703
-    public static final int REQUEST_MESSAGE_TYPE = 9987;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x270300
+    public static final int REQUEST_MESSAGE_TYPE = 2556672;
+    //hex: 0x270301
+    public static final int RESPONSE_MESSAGE_TYPE = 2556673;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -112,7 +112,7 @@ public final class CPSemaphoreReleaseCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true
          */
         public boolean response;
     }

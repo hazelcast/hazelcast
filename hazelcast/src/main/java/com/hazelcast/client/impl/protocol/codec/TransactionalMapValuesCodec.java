@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * distributed query, so it may throw a QueryResultSizeExceededException if query result size limit is configured.
  */
 public final class TransactionalMapValuesCodec {
-    //hex: 0x1010
-    public static final int REQUEST_MESSAGE_TYPE = 4112;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x101000
+    public static final int REQUEST_MESSAGE_TYPE = 1052672;
+    //hex: 0x101001
+    public static final int RESPONSE_MESSAGE_TYPE = 1052673;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -88,7 +88,7 @@ public final class TransactionalMapValuesCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * All values in the map
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

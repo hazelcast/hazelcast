@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified entry listener. Returns silently if no such listener was added before.
  */
 public final class MultiMapRemoveEntryListenerCodec {
-    //hex: 0x020F
-    public static final int REQUEST_MESSAGE_TYPE = 527;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x020F00
+    public static final int REQUEST_MESSAGE_TYPE = 134912;
+    //hex: 0x020F01
+    public static final int RESPONSE_MESSAGE_TYPE = 134913;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class MultiMapRemoveEntryListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if registration is removed, false otherwise
          */
         public boolean response;
     }

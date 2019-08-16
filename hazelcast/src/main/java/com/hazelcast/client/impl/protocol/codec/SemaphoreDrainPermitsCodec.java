@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Acquires and returns all permits that are immediately available.
  */
 public final class SemaphoreDrainPermitsCodec {
-    //hex: 0x0D04
-    public static final int REQUEST_MESSAGE_TYPE = 3332;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x0D0400
+    public static final int REQUEST_MESSAGE_TYPE = 852992;
+    //hex: 0x0D0401
+    public static final int RESPONSE_MESSAGE_TYPE = 852993;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -73,7 +73,7 @@ public final class SemaphoreDrainPermitsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The number of permits drained
          */
         public int response;
     }

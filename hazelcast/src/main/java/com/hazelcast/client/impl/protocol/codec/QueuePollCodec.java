@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to become available.
  */
 public final class QueuePollCodec {
-    //hex: 0x0305
-    public static final int REQUEST_MESSAGE_TYPE = 773;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x030500
+    public static final int REQUEST_MESSAGE_TYPE = 197888;
+    //hex: 0x030501
+    public static final int RESPONSE_MESSAGE_TYPE = 197889;
     private static final int REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class QueuePollCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The head of this queue, or <tt>null</tt> if this queue is empty
          */
         public com.hazelcast.nio.serialization.Data response;
     }

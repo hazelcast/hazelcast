@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * clearly specify in their documentation any restrictions on what elements may be added.
  */
 public final class ListAddCodec {
-    //hex: 0x0504
-    public static final int REQUEST_MESSAGE_TYPE = 1284;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x050400
+    public static final int REQUEST_MESSAGE_TYPE = 328704;
+    //hex: 0x050401
+    public static final int RESPONSE_MESSAGE_TYPE = 328705;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -83,7 +83,7 @@ public final class ListAddCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if this list changed as a result of the call, false otherwise
          */
         public boolean response;
     }

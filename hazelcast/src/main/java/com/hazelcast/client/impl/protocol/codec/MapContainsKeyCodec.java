@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map contains a mapping for the specified key.
  */
 public final class MapContainsKeyCodec {
-    //hex: 0x0109
-    public static final int REQUEST_MESSAGE_TYPE = 265;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x010900
+    public static final int REQUEST_MESSAGE_TYPE = 67840;
+    //hex: 0x010901
+    public static final int RESPONSE_MESSAGE_TYPE = 67841;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -87,7 +87,7 @@ public final class MapContainsKeyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns true if the key exists, otherwise returns false.
          */
         public boolean response;
     }

@@ -29,18 +29,18 @@ import com.hazelcast.logging.Logger;
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
 public final class ReplicatedMapAddEntryListenerCodec {
-    //hex: 0x0E0D
-    public static final int REQUEST_MESSAGE_TYPE = 3597;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x0E0D00
+    public static final int REQUEST_MESSAGE_TYPE = 920832;
+    //hex: 0x0E0D01
+    public static final int RESPONSE_MESSAGE_TYPE = 920833;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CB
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 203;
+    //hex: 0x0E0D02
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 920834;
 
     private ReplicatedMapAddEntryListenerCodec() {
     }
@@ -85,7 +85,7 @@ public final class ReplicatedMapAddEntryListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A unique string  which is used as a key to remove the listener.
          */
         public java.lang.String response;
     }

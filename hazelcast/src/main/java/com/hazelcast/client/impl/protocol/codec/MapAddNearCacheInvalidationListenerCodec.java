@@ -17,32 +17,13 @@
 package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
-import com.hazelcast.client.impl.protocol.codec.builtin.DataCodec;
-import com.hazelcast.client.impl.protocol.codec.builtin.ListLongCodec;
-import com.hazelcast.client.impl.protocol.codec.builtin.ListMultiFrameCodec;
-import com.hazelcast.client.impl.protocol.codec.builtin.ListUUIDCodec;
-import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
+import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import com.hazelcast.logging.Logger;
 
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
@@ -50,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * instead of {@link #addNearCacheEntryListener(String, int, boolean)}
  */
 public final class MapAddNearCacheInvalidationListenerCodec {
-    //hex: 0x0145
-    public static final int REQUEST_MESSAGE_TYPE = 325;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x014500
+    public static final int REQUEST_MESSAGE_TYPE = 83200;
+    //hex: 0x014501
+    public static final int RESPONSE_MESSAGE_TYPE = 83201;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -61,11 +42,11 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x00D7
-    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 215;
+    //hex: 0x014502
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 83202;
     private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D8
-    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 216;
+    //hex: 0x014503
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 83203;
 
     private MapAddNearCacheInvalidationListenerCodec() {
     }
@@ -117,7 +98,7 @@ public final class MapAddNearCacheInvalidationListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A unique string which is used as a key to remove the listener.
          */
         public java.lang.String response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored value by applying a function on it.
  */
 public final class CPAtomicRefCompareAndSetCodec {
-    //hex: 0x2402
-    public static final int REQUEST_MESSAGE_TYPE = 9218;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x240200
+    public static final int REQUEST_MESSAGE_TYPE = 2359808;
+    //hex: 0x240201
+    public static final int RESPONSE_MESSAGE_TYPE = 2359809;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -94,7 +94,8 @@ public final class CPAtomicRefCompareAndSetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if successful; or false if the actual value
+         * was not equal to the expected value.
          */
         public boolean response;
     }

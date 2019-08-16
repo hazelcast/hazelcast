@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
 public final class ReplicatedMapPutCodec {
-    //hex: 0x0E01
-    public static final int REQUEST_MESSAGE_TYPE = 3585;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x0E0100
+    public static final int REQUEST_MESSAGE_TYPE = 917760;
+    //hex: 0x0E0101
+    public static final int RESPONSE_MESSAGE_TYPE = 917761;
     private static final int REQUEST_TTL_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -95,7 +95,7 @@ public final class ReplicatedMapPutCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The old value if existed for the key.
          */
         public com.hazelcast.nio.serialization.Data response;
     }

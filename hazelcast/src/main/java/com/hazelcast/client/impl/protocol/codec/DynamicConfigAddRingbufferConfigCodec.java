@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddRingbufferConfigCodec {
-    //hex: 0x1E02
-    public static final int REQUEST_MESSAGE_TYPE = 7682;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0200
+    public static final int REQUEST_MESSAGE_TYPE = 1966592;
+    //hex: 0x1E0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1966593;
     private static final int REQUEST_CAPACITY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = REQUEST_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

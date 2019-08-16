@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * unlocked N times before another thread can acquire it.
  */
 public final class MultiMapLockCodec {
-    //hex: 0x0210
-    public static final int REQUEST_MESSAGE_TYPE = 528;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x021000
+    public static final int REQUEST_MESSAGE_TYPE = 135168;
+    //hex: 0x021001
+    public static final int RESPONSE_MESSAGE_TYPE = 135169;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

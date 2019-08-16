@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
 public final class MapPutAllCodec {
-    //hex: 0x0130
-    public static final int REQUEST_MESSAGE_TYPE = 304;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x013000
+    public static final int REQUEST_MESSAGE_TYPE = 77824;
+    //hex: 0x013001
+    public static final int RESPONSE_MESSAGE_TYPE = 77825;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

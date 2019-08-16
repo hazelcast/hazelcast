@@ -144,7 +144,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             return;
         }
 
-        if (ErrorCodec.EXCEPTION == message.getMessageType()) {
+        if (ErrorCodec.EXCEPTION_MESSAGE_TYPE == message.getMessageType()) {
             future.notifyException(client.getClientExceptionFactory().createException(message));
         } else {
             future.notify(message);

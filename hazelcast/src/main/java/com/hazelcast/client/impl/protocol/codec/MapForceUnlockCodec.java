@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * never blocks,and returns immediately.
  */
 public final class MapForceUnlockCodec {
-    //hex: 0x0137
-    public static final int REQUEST_MESSAGE_TYPE = 311;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x013700
+    public static final int REQUEST_MESSAGE_TYPE = 79616;
+    //hex: 0x013701
+    public static final int RESPONSE_MESSAGE_TYPE = 79617;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

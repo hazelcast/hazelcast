@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
 public final class ListRemoveWithIndexCodec {
-    //hex: 0x0512
-    public static final int REQUEST_MESSAGE_TYPE = 1298;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x051200
+    public static final int REQUEST_MESSAGE_TYPE = 332288;
+    //hex: 0x051201
+    public static final int RESPONSE_MESSAGE_TYPE = 332289;
     private static final int REQUEST_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class ListRemoveWithIndexCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The element previously at the specified position
          */
         public com.hazelcast.nio.serialization.Data response;
     }

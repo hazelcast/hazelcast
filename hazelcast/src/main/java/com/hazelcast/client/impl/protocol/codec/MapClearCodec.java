@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * To clear a map without calling MapStore#deleteAll, use #evictAll.
  */
 public final class MapClearCodec {
-    //hex: 0x0131
-    public static final int REQUEST_MESSAGE_TYPE = 305;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x013100
+    public static final int REQUEST_MESSAGE_TYPE = 78080;
+    //hex: 0x013101
+    public static final int RESPONSE_MESSAGE_TYPE = 78081;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

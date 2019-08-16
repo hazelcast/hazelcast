@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Alters the currently stored reference by applying a function on it on and gets the old value.
  */
 public final class AtomicReferenceGetAndAlterCodec {
-    //hex: 0x0B04
-    public static final int REQUEST_MESSAGE_TYPE = 2820;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x0B0400
+    public static final int REQUEST_MESSAGE_TYPE = 721920;
+    //hex: 0x0B0401
+    public static final int RESPONSE_MESSAGE_TYPE = 721921;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -79,7 +79,7 @@ public final class AtomicReferenceGetAndAlterCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * the old value, the value before the function is applied
          */
         public com.hazelcast.nio.serialization.Data response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ClientGetPartitionsCodec {
-    //hex: 0x0008
-    public static final int REQUEST_MESSAGE_TYPE = 8;
-    //hex: 0x006C
-    public static final int RESPONSE_MESSAGE_TYPE = 108;
+    //hex: 0x000800
+    public static final int REQUEST_MESSAGE_TYPE = 2048;
+    //hex: 0x000801
+    public static final int RESPONSE_MESSAGE_TYPE = 2049;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;

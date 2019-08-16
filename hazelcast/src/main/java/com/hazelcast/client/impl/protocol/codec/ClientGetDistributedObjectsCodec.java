@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ClientGetDistributedObjectsCodec {
-    //hex: 0x000C
-    public static final int REQUEST_MESSAGE_TYPE = 12;
-    //hex: 0x006E
-    public static final int RESPONSE_MESSAGE_TYPE = 110;
+    //hex: 0x000C00
+    public static final int REQUEST_MESSAGE_TYPE = 3072;
+    //hex: 0x000C01
+    public static final int RESPONSE_MESSAGE_TYPE = 3073;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -65,7 +65,7 @@ public final class ClientGetDistributedObjectsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * An array of distributed object info in the cluster.
          */
         public java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> response;
     }

@@ -29,18 +29,18 @@ import com.hazelcast.logging.Logger;
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
 public final class ListAddListenerCodec {
-    //hex: 0x050B
-    public static final int REQUEST_MESSAGE_TYPE = 1291;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x050B00
+    public static final int REQUEST_MESSAGE_TYPE = 330496;
+    //hex: 0x050B01
+    public static final int RESPONSE_MESSAGE_TYPE = 330497;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ITEM_INITIAL_FRAME_SIZE = EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CC
-    private static final int EVENT_ITEM_MESSAGE_TYPE = 204;
+    //hex: 0x050B02
+    private static final int EVENT_ITEM_MESSAGE_TYPE = 330498;
 
     private ListAddListenerCodec() {
     }
@@ -92,7 +92,7 @@ public final class ListAddListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Registration id for the listener.
          */
         public java.lang.String response;
     }

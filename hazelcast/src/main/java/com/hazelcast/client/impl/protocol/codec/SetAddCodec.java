@@ -33,10 +33,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
 public final class SetAddCodec {
-    //hex: 0x0604
-    public static final int REQUEST_MESSAGE_TYPE = 1540;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x060400
+    public static final int REQUEST_MESSAGE_TYPE = 394240;
+    //hex: 0x060401
+    public static final int RESPONSE_MESSAGE_TYPE = 394241;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -85,7 +85,8 @@ public final class SetAddCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if this set did not already contain the specified
+         * element and the element is added, returns false otherwise.
          */
         public boolean response;
     }

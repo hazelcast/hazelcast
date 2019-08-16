@@ -30,10 +30,10 @@ import com.hazelcast.logging.Logger;
  * add/remove/update/evict events for the specified key only.
  */
 public final class MultiMapAddEntryListenerToKeyCodec {
-    //hex: 0x020D
-    public static final int REQUEST_MESSAGE_TYPE = 525;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x020D00
+    public static final int REQUEST_MESSAGE_TYPE = 134400;
+    //hex: 0x020D01
+    public static final int RESPONSE_MESSAGE_TYPE = 134401;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -41,8 +41,8 @@ public final class MultiMapAddEntryListenerToKeyCodec {
     private static final int EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00CB
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 203;
+    //hex: 0x020D02
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 134402;
 
     private MultiMapAddEntryListenerToKeyCodec() {
     }
@@ -101,7 +101,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns registration id for the entry listener
          */
         public java.lang.String response;
     }

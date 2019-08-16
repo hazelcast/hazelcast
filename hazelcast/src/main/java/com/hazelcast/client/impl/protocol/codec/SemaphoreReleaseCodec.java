@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * acquire()acquire methods. Correct usage of a semaphore is established by programming convention in the application.
  */
 public final class SemaphoreReleaseCodec {
-    //hex: 0x0D06
-    public static final int REQUEST_MESSAGE_TYPE = 3334;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x0D0600
+    public static final int REQUEST_MESSAGE_TYPE = 853504;
+    //hex: 0x0D0601
+    public static final int RESPONSE_MESSAGE_TYPE = 853505;
     private static final int REQUEST_PERMITS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERMITS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

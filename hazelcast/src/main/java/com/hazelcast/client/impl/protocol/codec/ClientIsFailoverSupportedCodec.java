@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ClientIsFailoverSupportedCodec {
-    //hex: 0x0014
-    public static final int REQUEST_MESSAGE_TYPE = 20;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x001400
+    public static final int REQUEST_MESSAGE_TYPE = 5120;
+    //hex: 0x001401
+    public static final int RESPONSE_MESSAGE_TYPE = 5121;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -66,7 +66,7 @@ public final class ClientIsFailoverSupportedCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns true if server supports cluster failover
          */
         public boolean response;
     }

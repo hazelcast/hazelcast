@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
 public final class QueueCompareAndRemoveAllCodec {
-    //hex: 0x030D
-    public static final int REQUEST_MESSAGE_TYPE = 781;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x030D00
+    public static final int REQUEST_MESSAGE_TYPE = 199936;
+    //hex: 0x030D01
+    public static final int RESPONSE_MESSAGE_TYPE = 199937;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class QueueCompareAndRemoveAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * <tt>true</tt> if this collection changed as a result of the call
          */
         public boolean response;
     }

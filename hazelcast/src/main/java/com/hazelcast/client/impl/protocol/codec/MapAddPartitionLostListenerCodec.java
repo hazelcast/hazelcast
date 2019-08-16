@@ -34,17 +34,17 @@ import com.hazelcast.logging.Logger;
  * to design limitations.
  */
 public final class MapAddPartitionLostListenerCodec {
-    //hex: 0x011F
-    public static final int REQUEST_MESSAGE_TYPE = 287;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x011F00
+    public static final int REQUEST_MESSAGE_TYPE = 73472;
+    //hex: 0x011F01
+    public static final int RESPONSE_MESSAGE_TYPE = 73473;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MAP_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D1
-    private static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 209;
+    //hex: 0x011F02
+    private static final int EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE = 73474;
 
     private MapAddPartitionLostListenerCodec() {
     }
@@ -89,7 +89,7 @@ public final class MapAddPartitionLostListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * returns the registration id for the MapPartitionLostListener.
          */
         public java.lang.String response;
     }

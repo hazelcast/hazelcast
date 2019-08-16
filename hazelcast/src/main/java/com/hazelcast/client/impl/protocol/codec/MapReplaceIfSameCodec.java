@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
 public final class MapReplaceIfSameCodec {
-    //hex: 0x0105
-    public static final int REQUEST_MESSAGE_TYPE = 261;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x010500
+    public static final int REQUEST_MESSAGE_TYPE = 66816;
+    //hex: 0x010501
+    public static final int RESPONSE_MESSAGE_TYPE = 66817;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -101,7 +101,7 @@ public final class MapReplaceIfSameCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if value is replaced with new one, false otherwise
          */
         public boolean response;
     }

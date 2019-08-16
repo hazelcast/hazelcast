@@ -29,20 +29,20 @@ import com.hazelcast.logging.Logger;
  * TODO DOC
  */
 public final class ContinuousQueryAddListenerCodec {
-    //hex: 0x1804
-    public static final int REQUEST_MESSAGE_TYPE = 6148;
-    //hex: 0x0068
-    public static final int RESPONSE_MESSAGE_TYPE = 104;
+    //hex: 0x180400
+    public static final int REQUEST_MESSAGE_TYPE = 1573888;
+    //hex: 0x180401
+    public static final int RESPONSE_MESSAGE_TYPE = 1573889;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D4
-    private static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 212;
+    //hex: 0x180402
+    private static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 1573890;
     private static final int EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE = EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x00D5
-    private static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 213;
+    //hex: 0x180403
+    private static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 1573891;
 
     private ContinuousQueryAddListenerCodec() {
     }
@@ -87,7 +87,7 @@ public final class ContinuousQueryAddListenerCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Registration id for the listener.
          */
         public java.lang.String response;
     }

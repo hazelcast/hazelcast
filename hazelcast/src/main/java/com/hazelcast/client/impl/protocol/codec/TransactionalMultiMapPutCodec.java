@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Stores a key-value pair in the multimap.
  */
 public final class TransactionalMultiMapPutCodec {
-    //hex: 0x1101
-    public static final int REQUEST_MESSAGE_TYPE = 4353;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x110100
+    public static final int REQUEST_MESSAGE_TYPE = 1114368;
+    //hex: 0x110101
+    public static final int RESPONSE_MESSAGE_TYPE = 1114369;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -101,7 +101,7 @@ public final class TransactionalMultiMapPutCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
          */
         public boolean response;
     }

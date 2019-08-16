@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values associated with the key.
  */
 public final class TransactionalMultiMapGetCodec {
-    //hex: 0x1102
-    public static final int REQUEST_MESSAGE_TYPE = 4354;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x110200
+    public static final int REQUEST_MESSAGE_TYPE = 1114624;
+    //hex: 0x110201
+    public static final int RESPONSE_MESSAGE_TYPE = 1114625;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -93,7 +93,7 @@ public final class TransactionalMultiMapGetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The collection of the values associated with the key
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

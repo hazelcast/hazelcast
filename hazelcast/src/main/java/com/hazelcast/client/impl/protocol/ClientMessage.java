@@ -34,7 +34,7 @@ import java.util.Objects;
  * message-first-frame          = frame-length flags message-type correlation-id *fix-sized-param
  * first-frame-flags            = %b1 %b1 %b0 13unused ; begin-fragment:1 end-fragment:1 final:0 ......
  * frame-length                 = int32
- * message-type                 = int16
+ * message-type                 = int32
  * correlation-id               = int64
  *
  * var-sized-param              = string-frame / custom-type-frames / list-frames / map-frames / null-frame
@@ -95,7 +95,7 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     // All offsets here are offset of frame.content byte[]
     // Note that frames have frame length and flags before this byte[] content
     public static final int TYPE_FIELD_OFFSET = 0;
-    public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
+    public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
     //offset valid for fragmentation frames only
     public static final int FRAGMENTATION_ID_OFFSET = 0;
     //optional fixed partition id field offset
@@ -140,12 +140,12 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
         return new ClientMessage(frames);
     }
 
-    public short getMessageType() {
-        return Bits.readShortL(get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
+    public int getMessageType() {
+        return Bits.readIntL(get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
-    public ClientMessage setMessageType(short messageType) {
-        Bits.writeShortL(get(0).content, TYPE_FIELD_OFFSET, messageType);
+    public ClientMessage setMessageType(int messageType) {
+        Bits.writeIntL(get(0).content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
@@ -228,7 +228,7 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
             sb.append(", length=").append(getFrameLength());
             sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(getOperationName());
-            sb.append(", messageType=").append(getMessageType());
+            sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", isRetryable=").append(isRetryable());
             sb.append(", isEvent=").append(isFlagSet(get(0).flags, IS_EVENT_FLAG));
             sb.append(", isFragmented=").append(!isFlagSet(get(0).flags, UNFRAGMENTED_MESSAGE));

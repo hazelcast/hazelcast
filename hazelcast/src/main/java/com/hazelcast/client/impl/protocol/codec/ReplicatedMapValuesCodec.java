@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class ReplicatedMapValuesCodec {
-    //hex: 0x0E10
-    public static final int REQUEST_MESSAGE_TYPE = 3600;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x0E1000
+    public static final int REQUEST_MESSAGE_TYPE = 921600;
+    //hex: 0x0E1001
+    public static final int RESPONSE_MESSAGE_TYPE = 921601;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -72,7 +72,7 @@ public final class ReplicatedMapValuesCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A collection view of the values contained in this map.
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

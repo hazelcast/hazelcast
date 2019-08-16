@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * intersection of the two sets.
  */
 public final class SetCompareAndRetainAllCodec {
-    //hex: 0x0608
-    public static final int REQUEST_MESSAGE_TYPE = 1544;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x060800
+    public static final int REQUEST_MESSAGE_TYPE = 395264;
+    //hex: 0x060801
+    public static final int RESPONSE_MESSAGE_TYPE = 395265;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -83,7 +83,8 @@ public final class SetCompareAndRetainAllCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but
+         * in the Set are removed.
          */
         public boolean response;
     }

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
 public final class MapRemoveInterceptorCodec {
-    //hex: 0x0118
-    public static final int REQUEST_MESSAGE_TYPE = 280;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x011800
+    public static final int REQUEST_MESSAGE_TYPE = 71680;
+    //hex: 0x011801
+    public static final int RESPONSE_MESSAGE_TYPE = 71681;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ public final class MapRemoveInterceptorCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Returns true if successful, otherwise returns false
          */
         public boolean response;
     }

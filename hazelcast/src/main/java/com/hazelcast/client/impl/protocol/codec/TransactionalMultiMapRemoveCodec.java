@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given key value pair from the multimap.
  */
 public final class TransactionalMultiMapRemoveCodec {
-    //hex: 0x1103
-    public static final int REQUEST_MESSAGE_TYPE = 4355;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x110300
+    public static final int REQUEST_MESSAGE_TYPE = 1114880;
+    //hex: 0x110301
+    public static final int RESPONSE_MESSAGE_TYPE = 1114881;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -93,7 +93,7 @@ public final class TransactionalMultiMapRemoveCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the size of the multimap changed after the remove operation, false otherwise.
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

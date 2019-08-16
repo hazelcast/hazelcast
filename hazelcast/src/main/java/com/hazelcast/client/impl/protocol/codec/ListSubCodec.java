@@ -38,10 +38,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
  */
 public final class ListSubCodec {
-    //hex: 0x0515
-    public static final int REQUEST_MESSAGE_TYPE = 1301;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x051500
+    public static final int REQUEST_MESSAGE_TYPE = 333056;
+    //hex: 0x051501
+    public static final int RESPONSE_MESSAGE_TYPE = 333057;
     private static final int REQUEST_FROM_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TO_FIELD_OFFSET = REQUEST_FROM_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TO_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -97,7 +97,7 @@ public final class ListSubCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * A view of the specified range within this list
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

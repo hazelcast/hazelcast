@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * each key in the collection.
  */
 public final class MapExecuteOnKeysCodec {
-    //hex: 0x0136
-    public static final int REQUEST_MESSAGE_TYPE = 310;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x013600
+    public static final int REQUEST_MESSAGE_TYPE = 79360;
+    //hex: 0x013601
+    public static final int RESPONSE_MESSAGE_TYPE = 79361;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -87,7 +87,7 @@ public final class MapExecuteOnKeysCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * results of entry process on the entries with the provided keys
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

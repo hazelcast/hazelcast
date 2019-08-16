@@ -34,10 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
 public final class RingbufferReadManyCodec {
-    //hex: 0x190A
-    public static final int REQUEST_MESSAGE_TYPE = 6410;
-    //hex: 0x0073
-    public static final int RESPONSE_MESSAGE_TYPE = 115;
+    //hex: 0x190A00
+    public static final int REQUEST_MESSAGE_TYPE = 1640960;
+    //hex: 0x190A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1640961;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_COUNT_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_COUNT_FIELD_OFFSET = REQUEST_MIN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * TODO DOC
  */
 public final class MapEntriesWithPagingPredicateCodec {
-    //hex: 0x013A
-    public static final int REQUEST_MESSAGE_TYPE = 314;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x013A00
+    public static final int REQUEST_MESSAGE_TYPE = 80384;
+    //hex: 0x013A01
+    public static final int RESPONSE_MESSAGE_TYPE = 80385;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -79,7 +79,7 @@ public final class MapEntriesWithPagingPredicateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * key-value pairs for the query.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

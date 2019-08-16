@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
  */
 public final class MapExecuteOnAllKeysCodec {
-    //hex: 0x0134
-    public static final int REQUEST_MESSAGE_TYPE = 308;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x013400
+    public static final int REQUEST_MESSAGE_TYPE = 78848;
+    //hex: 0x013401
+    public static final int RESPONSE_MESSAGE_TYPE = 78849;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -79,7 +79,7 @@ public final class MapExecuteOnAllKeysCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * results of entry process on the entries
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
 public final class QueueDrainToCodec {
-    //hex: 0x0309
-    public static final int REQUEST_MESSAGE_TYPE = 777;
-    //hex: 0x006A
-    public static final int RESPONSE_MESSAGE_TYPE = 106;
+    //hex: 0x030900
+    public static final int REQUEST_MESSAGE_TYPE = 198912;
+    //hex: 0x030901
+    public static final int RESPONSE_MESSAGE_TYPE = 198913;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -76,7 +76,7 @@ public final class QueueDrainToCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * list of all removed data in queue
          */
         public java.util.List<com.hazelcast.nio.serialization.Data> response;
     }

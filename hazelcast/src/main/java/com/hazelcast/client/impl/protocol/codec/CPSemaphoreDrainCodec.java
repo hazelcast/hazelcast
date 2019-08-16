@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Acquires all available permits at once and returns immediately.
  */
 public final class CPSemaphoreDrainCodec {
-    //hex: 0x2704
-    public static final int REQUEST_MESSAGE_TYPE = 9988;
-    //hex: 0x0066
-    public static final int RESPONSE_MESSAGE_TYPE = 102;
+    //hex: 0x270400
+    public static final int REQUEST_MESSAGE_TYPE = 2556928;
+    //hex: 0x270401
+    public static final int RESPONSE_MESSAGE_TYPE = 2556929;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -103,7 +103,7 @@ public final class CPSemaphoreDrainCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * number of acquired permits
          */
         public int response;
     }

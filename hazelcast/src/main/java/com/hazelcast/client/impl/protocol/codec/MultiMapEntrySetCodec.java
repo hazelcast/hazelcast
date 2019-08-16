@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * are NOT reflected in the collection, and vice-versa
  */
 public final class MultiMapEntrySetCodec {
-    //hex: 0x0206
-    public static final int REQUEST_MESSAGE_TYPE = 518;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x020600
+    public static final int REQUEST_MESSAGE_TYPE = 132608;
+    //hex: 0x020601
+    public static final int RESPONSE_MESSAGE_TYPE = 132609;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -73,7 +73,7 @@ public final class MultiMapEntrySetCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
 public final class ClientCreateProxiesCodec {
-    //hex: 0x0013
-    public static final int REQUEST_MESSAGE_TYPE = 19;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x001300
+    public static final int REQUEST_MESSAGE_TYPE = 4864;
+    //hex: 0x001301
+    public static final int RESPONSE_MESSAGE_TYPE = 4865;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

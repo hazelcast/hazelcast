@@ -29,10 +29,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the results mapped by each key in the map.
  */
 public final class MapExecuteWithPredicateCodec {
-    //hex: 0x0135
-    public static final int REQUEST_MESSAGE_TYPE = 309;
-    //hex: 0x0075
-    public static final int RESPONSE_MESSAGE_TYPE = 117;
+    //hex: 0x013500
+    public static final int REQUEST_MESSAGE_TYPE = 79104;
+    //hex: 0x013501
+    public static final int RESPONSE_MESSAGE_TYPE = 79105;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -87,7 +87,7 @@ public final class MapExecuteWithPredicateCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * results of entry process on the entries matching the query criteria
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> response;
     }

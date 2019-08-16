@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * time elapses.
  */
 public final class LockTryLockCodec {
-    //hex: 0x0708
-    public static final int REQUEST_MESSAGE_TYPE = 1800;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x070800
+    public static final int REQUEST_MESSAGE_TYPE = 460800;
+    //hex: 0x070801
+    public static final int RESPONSE_MESSAGE_TYPE = 460801;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LEASE_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_LEASE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -107,7 +107,7 @@ public final class LockTryLockCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * true if the lock was acquired and false if the waiting time elapsed before the lock was acquired.
          */
         public boolean response;
     }

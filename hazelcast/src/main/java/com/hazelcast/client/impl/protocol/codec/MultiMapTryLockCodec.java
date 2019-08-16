@@ -31,10 +31,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses.
  */
 public final class MultiMapTryLockCodec {
-    //hex: 0x0211
-    public static final int REQUEST_MESSAGE_TYPE = 529;
-    //hex: 0x0065
-    public static final int RESPONSE_MESSAGE_TYPE = 101;
+    //hex: 0x021100
+    public static final int REQUEST_MESSAGE_TYPE = 135424;
+    //hex: 0x021101
+    public static final int RESPONSE_MESSAGE_TYPE = 135425;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LEASE_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_LEASE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -114,7 +114,7 @@ public final class MultiMapTryLockCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * True if the lock was acquired and false if the waiting time elapsed before the lock acquired
          */
         public boolean response;
     }

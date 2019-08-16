@@ -32,10 +32,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ILLEGAL_MONITOR_STATE will be thrown.
  */
 public final class ConditionSignalCodec {
-    //hex: 0x0803
-    public static final int REQUEST_MESSAGE_TYPE = 2051;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x080300
+    public static final int REQUEST_MESSAGE_TYPE = 525056;
+    //hex: 0x080301
+    public static final int RESPONSE_MESSAGE_TYPE = 525057;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

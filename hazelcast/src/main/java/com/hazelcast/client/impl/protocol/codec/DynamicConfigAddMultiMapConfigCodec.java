@@ -30,10 +30,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the new multimap config is ignored and the existing one is preserved.
  */
 public final class DynamicConfigAddMultiMapConfigCodec {
-    //hex: 0x1E01
-    public static final int REQUEST_MESSAGE_TYPE = 7681;
-    //hex: 0x0064
-    public static final int RESPONSE_MESSAGE_TYPE = 100;
+    //hex: 0x1E0100
+    public static final int REQUEST_MESSAGE_TYPE = 1966336;
+    //hex: 0x1E0101
+    public static final int RESPONSE_MESSAGE_TYPE = 1966337;
     private static final int REQUEST_BINARY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BINARY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

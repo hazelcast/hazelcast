@@ -57,7 +57,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     public void test() {
         ClientMessage message = ClientMessage.createForEncode();
         message.add(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | IS_FINAL_FLAG));
-        message.setMessageType((short) MapPutCodec.REQUEST_MESSAGE_TYPE);
+        message.setMessageType(MapPutCodec.REQUEST_MESSAGE_TYPE);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 

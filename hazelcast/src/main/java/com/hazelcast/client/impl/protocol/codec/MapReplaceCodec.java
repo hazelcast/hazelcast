@@ -28,10 +28,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if currently mapped to a given value.
  */
 public final class MapReplaceCodec {
-    //hex: 0x0104
-    public static final int REQUEST_MESSAGE_TYPE = 260;
-    //hex: 0x0069
-    public static final int RESPONSE_MESSAGE_TYPE = 105;
+    //hex: 0x010400
+    public static final int REQUEST_MESSAGE_TYPE = 66560;
+    //hex: 0x010401
+    public static final int RESPONSE_MESSAGE_TYPE = 66561;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -93,7 +93,7 @@ public final class MapReplaceCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Clone of the previous value, not the original (identically equal) value previously put into the map.
          */
         public com.hazelcast.nio.serialization.Data response;
     }
