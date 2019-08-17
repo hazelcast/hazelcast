@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -81,12 +82,12 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback) {
+    public void andThen(@Nonnull ExecutionCallback<V> callback) {
         future.andThen(new DelegatingExecutionCallback<V>(callback, deserializeResponse), userExecutor);
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
+    public void andThen(@Nonnull ExecutionCallback<V> callback, Executor executor) {
         future.andThen(new DelegatingExecutionCallback<V>(callback, deserializeResponse), executor);
     }
 
