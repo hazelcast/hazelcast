@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.util.Preconditions;
 
 import java.util.List;
@@ -45,14 +46,7 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
      *
      */
     StreamStage<Integer> streamStageFromList(List<Integer> input) {
-        BatchSource<Integer> source = SourceBuilder
-                .batch("sequence", x -> null)
-                .<Integer>fillBufferFn((x, buf) -> {
-                    input.forEach(buf::add);
-                    buf.close();
-                })
-                .build();
-        return p.drawFrom(source).addTimestamps(ts -> ts, 0);
+        return p.drawFrom(TestSources.items(input)).addTimestamps(ts -> ts, 0).setLocalParallelism(1);
     }
 
     /**

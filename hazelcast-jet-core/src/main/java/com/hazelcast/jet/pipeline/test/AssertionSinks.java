@@ -65,6 +65,20 @@ public final class AssertionSinks {
     }
 
     /**
+     * Asserts that the previous stage emitted the exact sequence of expected
+     * items and nothing else. If the assertion fails, the job will fail with an
+     * {@link AssertionError}.
+     * <p>
+     * Since Jet jobs are distributed, input from multiple upstream processors
+     * is merged in a non-deterministic way. Therefore this assertion is usable
+     * only for testing of non-distributed sources.
+     */
+    @Nonnull
+    public static <T> Sink<T> assertOrdered(@Nonnull Collection<? extends T> expected) {
+        return assertOrdered(null, expected);
+    }
+
+    /**
      * Asserts that the previous stage emitted the expected items in any order,
      * but nothing else. If the assertion fails, the job will fail with an
      * {@link AssertionError} with the given message.
@@ -77,6 +91,16 @@ public final class AssertionSinks {
                 " {<item>=<num occurrences>}";
             assertEquals(message == null ? msg : message + ", " + msg, expBag, toBag(received));
         });
+    }
+
+    /**
+     * Asserts that the previous stage emitted the expected items in any order,
+     * but nothing else. If the assertion fails, the job will fail with an
+     * {@link AssertionError}.
+     */
+    @Nonnull
+    public static <T> Sink<T> assertAnyOrder(@Nonnull Collection<? extends T> expected) {
+        return assertAnyOrder(null, expected);
     }
 
     private static <T> Map<T, Long> toBag(Collection<T> coll) {

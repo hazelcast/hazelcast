@@ -41,7 +41,6 @@ public class TimestampTransform<T> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        @SuppressWarnings("unchecked")
         PlannerVertex pv = p.addVertex(
                 this, name(), localParallelism(), insertWatermarksP(eventTimePolicy)
         );

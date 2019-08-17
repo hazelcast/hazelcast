@@ -23,7 +23,10 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
@@ -47,6 +50,30 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull FunctionEx<? super T, ? extends K> keyFn
     ) {
         super(computeStage, keyFn);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<Entry<K, R>> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        return attachMapStateful(0, createFn, mapFn);
+    }
+
+    @Nonnull @Override
+    public <S> BatchStage<Entry<K, T>> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    ) {
+        return attachMapStateful(0, createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<Entry<K, R>> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        return attachFlatMapStateful(0, createFn, flatMapFn);
     }
 
     @Nonnull @Override
@@ -104,13 +131,6 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
                     flatMapAsyncFn
     ) {
         return attachTransformUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
-    }
-
-    @Nonnull @Override
-    public <R> BatchStage<Entry<K, R>> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return computeStage.attachRollingAggregate(keyFn(), aggrOp);
     }
 
     @Nonnull @Override

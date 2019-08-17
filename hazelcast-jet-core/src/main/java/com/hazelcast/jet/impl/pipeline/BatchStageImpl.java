@@ -22,10 +22,11 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.AggregateTransform;
@@ -38,6 +39,7 @@ import com.hazelcast.jet.pipeline.JoinClause;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -77,6 +79,30 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return attachFlatMap(flatMapFn);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        return attachGlobalMapStateful(createFn, mapFn);
+    }
+
+    @Nonnull @Override
+    public <S> BatchStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    ) {
+        return attachGlobalMapStateful(createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+    }
+
+    @Nonnull @Override
+    public <S, R> BatchStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        return attachGlobalFlatMapStateful(createFn, flatMapFn);
     }
 
     @Nonnull @Override
@@ -127,11 +153,6 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
-    }
-
-    @Nonnull @Override
-    public <R> BatchStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
-        return attachGlobalRollingAggregate(aggrOp);
     }
 
     @Nonnull @Override

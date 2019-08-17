@@ -79,11 +79,20 @@ public class TraversersTest {
         validateTraversal(traverseArray(new Integer[] {1, 2}));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void when_traverserOverArgsWithNull_then_failure() {
-        Traverser<Integer> trav = traverseItems(1, null);
-        trav.next();
-        trav.next();
+    @Test
+    public void when_traverserOverArgsWithNull_then_skipNulls() {
+        Traverser<Integer> trav = traverseItems(1, null, 2);
+        assertEquals(1, (int) trav.next());
+        assertEquals(2, (int) trav.next());
+        assertNull(trav.next());
+    }
+
+    @Test
+    public void when_traverseArrayWithNull_then_skipNulls() {
+        Traverser<Integer> trav = traverseArray(new Integer[] {1, null, 2});
+        assertEquals(1, (int) trav.next());
+        assertEquals(2, (int) trav.next());
+        assertNull(trav.next());
     }
 
     @Test(expected = NullPointerException.class)
@@ -118,13 +127,6 @@ public class TraversersTest {
     @Test(expected = NullPointerException.class)
     public void when_traverseIterableWithNull_then_failure() {
         Traverser<Integer> trav = traverseIterable(asList(1, null));
-        trav.next();
-        trav.next();
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void when_traverseArrayWithNull_then_failure() {
-        Traverser<Integer> trav = traverseArray(new Integer[] {1, null});
         trav.next();
         trav.next();
     }

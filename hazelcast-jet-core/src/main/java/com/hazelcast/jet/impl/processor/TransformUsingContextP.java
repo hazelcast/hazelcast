@@ -79,6 +79,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (outputTraverser == null) {
             outputTraverser = flatMapFn.apply(singletonTraverser, contextObject, (T) item);

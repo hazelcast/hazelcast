@@ -57,7 +57,7 @@ class WriteFileP extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) throws Exception {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         writer.append(item.toString());
         writer.newLine();
         return true;

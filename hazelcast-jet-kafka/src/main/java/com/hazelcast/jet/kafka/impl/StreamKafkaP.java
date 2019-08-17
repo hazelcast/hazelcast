@@ -240,6 +240,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     @Override
     public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        @SuppressWarnings("unchecked")
         TopicPartition topicPartition = ((BroadcastKey<TopicPartition>) key).key();
         long[] value1 = (long[]) value;
         long offset = value1[0];

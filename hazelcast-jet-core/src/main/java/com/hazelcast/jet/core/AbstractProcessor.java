@@ -383,13 +383,12 @@ public abstract class AbstractProcessor implements Processor {
      * identified in the supplied array. If the outbox refuses an item, it backs
      * off and returns {@code false}.
      * <p>
-     * Emitted items should not be subsequently mutated because the same
-     * instance might be used by a downstream processor in a different thread,
-     * causing concurrent access.
+     * Do not mutate the items you emit because the downstream processor may be
+     * using them in a different thread, resulting in concurrent access.
      * <p>
-     * If this method returns {@code false}, then the caller must retain the
-     * traverser and pass it again in the subsequent invocation of this method,
-     * so as to resume emitting where it left off.
+     * If this method returns {@code false}, then you must retain the traverser
+     * and pass it again in the subsequent invocation of this method, so as to
+     * resume emitting where you left off.
      * <p>
      * For simplified usage in {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.

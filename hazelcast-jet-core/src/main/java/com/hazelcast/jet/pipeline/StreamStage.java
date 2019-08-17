@@ -78,6 +78,29 @@ public interface StreamStage<T> extends GeneralStage<T> {
     <R> StreamStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn);
 
     @Nonnull @Override
+    <S, R> StreamStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    );
+
+    @Nonnull @Override
+    <S> StreamStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn);
+
+    @Nonnull @Override
+    <S, R> StreamStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn);
+
+    @Nonnull @Override
+    default <A, R> StreamStage<R> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    ) {
+        return (StreamStage<R>) GeneralStage.super.<A, R>rollingAggregate(aggrOp);
+    }
+
+    @Nonnull @Override
     <C, R> StreamStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
@@ -148,9 +171,6 @@ public interface StreamStage<T> extends GeneralStage<T> {
     ) {
         return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(iMap, lookupKeyFn, mapFn);
     }
-
-    @Nonnull @Override
-    <R> StreamStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     @Nonnull @Override
     <K, T1_IN, T1, R> StreamStage<R> hashJoin(

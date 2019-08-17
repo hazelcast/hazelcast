@@ -18,6 +18,8 @@ package expertzone;
 
 import com.hazelcast.jet.core.AbstractProcessor;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static java.util.Arrays.asList;
 
@@ -27,7 +29,7 @@ class ItemAndSuccessorP extends AbstractProcessor {
             flatMapper(i -> traverseIterable(asList(i, i + 1)));
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         return flatMapper.tryProcess((int) item);
     }
 }

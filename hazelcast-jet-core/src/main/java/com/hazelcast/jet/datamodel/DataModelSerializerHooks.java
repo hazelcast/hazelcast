@@ -126,6 +126,48 @@ class DataModelSerializerHooks {
         }
     }
 
+    public static final class TimestampedItemHook implements SerializerHook<TimestampedItem> {
+
+        @Override
+        public Class<TimestampedItem> getSerializationType() {
+            return TimestampedItem.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<TimestampedItem>() {
+                @Override
+                public int getTypeId() {
+                    return SerializerHookConstants.TIMESTAMPED_ITEM;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, TimestampedItem timestampedItem) throws IOException {
+                    out.writeLong(timestampedItem.timestamp());
+                    out.writeObject(timestampedItem.item());
+
+                }
+
+                @Override
+                public TimestampedItem read(ObjectDataInput in) throws IOException {
+                    long timestamp = in.readLong();
+                    Object item = in.readObject();
+                    return new TimestampedItem<>(timestamp, item);
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return false;
+        }
+    }
+
     public static final class Tuple2Hook implements SerializerHook<Tuple2> {
 
         @Override

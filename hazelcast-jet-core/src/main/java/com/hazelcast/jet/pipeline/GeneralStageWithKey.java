@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
@@ -31,6 +32,8 @@ import com.hazelcast.jet.function.TriPredicate;
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.toCompletableFuture;
 
@@ -51,6 +54,114 @@ public interface GeneralStageWithKey<T, K> {
      */
     @Nonnull
     FunctionEx<? super T, ? extends K> keyFn();
+
+    /**
+     * Attaches a stage that performs a stateful mapping operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code mapFn}, which can update
+     * the object's state. For each grouping key there's a separate state
+     * object. The state object will be included in the state snapshot, so it
+     * survives job restarts. For this reason the object must be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * }</pre>
+     *
+     * @param createFn the function that returns the state object
+     * @param mapFn    the function that receives the state object and the input item and
+     *                 outputs the result item. It may modify the state object.
+     * @param <S>      type of the state object
+     * @param <R>      type of the result
+     */
+    @Nonnull
+    <S, R> GeneralStage<Entry<K, R>> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    );
+
+    /**
+     * Attaches a stage that performs a stateful filtering operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code filterFn}, which can update
+     * the object's state. For each grouping key there's a separate state
+     * object. The state object will be included in the state snapshot, so it
+     * survives job restarts. For this reason the object must be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * }</pre>
+     *
+     * @param createFn function that returns the state object
+     * @param filterFn predicate that receives the state object and the input item and
+     *                 outputs a boolean value. It may modify the state object.
+     * @param <S>      type of the state object
+     */
+    @Nonnull
+    <S> GeneralStage<Entry<K, T>> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    );
+
+    /**
+     * Attaches a stage that performs a stateful flat-mapping operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code flatMapFn}, which can update
+     * the object's state. For each grouping key there's a separate state
+     * object. The state object will be included in the state snapshot, so it
+     * survives job restarts. For this reason the object must be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * }</pre>
+     *
+     * @param createFn  the function that returns the state object
+     * @param flatMapFn the function that receives the state object and the input item and
+     *                  outputs the result items. It may modify the state object.
+     * @param <S>       type of the state object
+     * @param <R>       type of the result
+     */
+    @Nonnull
+    <S, R> GeneralStage<Entry<K, R>> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    );
+
+    /**
+     * Attaches a rolling aggregation stage. This is a special case of
+     * {@linkplain #mapStateful stateful mapping} that uses an {@link
+     * AggregateOperation1 AggregateOperation}. It passes each input item to
+     * the accumulator and outputs the current result of aggregation (as
+     * returned by the {@link AggregateOperation1#exportFn() export} primitive).
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Entry<Color, Long>> aggregated = items
+     *         .groupingKey(Item::getColor)
+     *         .rollingAggregate(AggregateOperations.counting());
+     * }</pre>
+     * For example, if your input is {@code {2, 7, 8, -5}}, the output will be
+     * {@code {2, 9, 17, 12}}.
+     * <p>
+     * This stage is fault-tolerant and saves its state to the snapshot.
+     *
+     * @param aggrOp the aggregate operation to perform
+     * @param <R> type of the aggregate operation result
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <A, R> GeneralStage<Entry<K, R>> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    ) {
+        BiConsumer<? super A, ? super T> accumulateFn = aggrOp.accumulateFn();
+        Function<? super A, ? extends R> exportFn = aggrOp.exportFn();
+        return mapStateful(aggrOp.createFn(), (acc, item) -> {
+            accumulateFn.accept(acc, item);
+            return exportFn.apply(acc);
+        });
+    }
 
     /**
      * Attaches a mapping stage which applies the given function to each input
@@ -369,31 +480,6 @@ public interface GeneralStageWithKey<T, K> {
     ) {
         return mapUsingIMap(iMap.getName(), mapFn);
     }
-
-    /**
-     * Attaches a rolling aggregation stage. As opposed to regular aggregation,
-     * this stage emits the current aggregation result after receiving each
-     * item. For example, if your aggregation is <em>summing</em> and the input
-     * under a given key is {@code {2, 7, 8, -5}}, the output will be {@code {2,
-     * 9, 17, 12}}.
-     * <p>
-     * Sample usage:
-     * <pre>{@code
-     * StreamStage<Entry<Color, Long>> aggregated = items
-     *         .groupingKey(Item::getColor)
-     *         .rollingAggregate(AggregateOperations.counting());
-     * }</pre>
-     * <p>
-     * This stage is fault-tolerant and saves its state to the snapshot.
-     *
-     * @param aggrOp the aggregate operation to perform
-     * @param <R> type of the aggregate operation result
-     * @return the newly attached stage
-     */
-    @Nonnull
-    <R> GeneralStage<Entry<K, R>> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    );
 
     /**
      * Attaches a stage with a custom transform based on the provided supplier

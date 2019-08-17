@@ -18,12 +18,12 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
@@ -38,6 +38,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements StreamStage<T> {
@@ -79,6 +80,30 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
+    public <S, R> StreamStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        return attachGlobalMapStateful(createFn, mapFn);
+    }
+
+    @Nonnull @Override
+    public <S> StreamStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    ) {
+        return attachGlobalMapStateful(createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        return attachGlobalFlatMapStateful(createFn, flatMapFn);
+    }
+
+    @Nonnull @Override
     public <C, R> StreamStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
@@ -109,7 +134,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("filter", contextFactory,
-                (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
+                (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? singleton(t) : null));
     }
 
     @Nonnull @Override
@@ -126,11 +151,6 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
-    }
-
-    @Nonnull @Override
-    public <R> StreamStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
-        return attachGlobalRollingAggregate(aggrOp);
     }
 
     @Nonnull @Override

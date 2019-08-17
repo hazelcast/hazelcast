@@ -545,8 +545,12 @@ public class BatchAggregateTest extends PipelineTestSupport {
         Tag<Long> tag1 = agb.add(tag1_in, SUMMING);
         Tag<Long> tag2 = agb.add(tag2_in, SUMMING);
         AggregateOperation<Object[], ItemsByTag> aggrOp = agb.build();
-        BatchStage<Entry<Integer, Long>> aggregated = b.build(aggrOp,
-                (key, ibt) -> entry(key, ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2)));
+        BatchStage<Entry<Integer, Long>> aggregated = b
+                .build(aggrOp)
+                .map(e -> {
+                    ItemsByTag ibt = e.getValue();
+                    return entry(e.getKey(), ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2));
+                });
 
         // Then
         aggregated.drainTo(sink);

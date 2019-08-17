@@ -70,6 +70,27 @@ public interface BatchStage<T> extends GeneralStage<T> {
     <R> BatchStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn);
 
     @Nonnull @Override
+    <S, R> BatchStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    );
+
+    @Nonnull @Override
+    <S> BatchStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn);
+
+    @Nonnull @Override
+    <S, R> BatchStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn);
+
+    @Nonnull @Override
+    default <A, R> BatchStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp) {
+        return (BatchStage<R>) GeneralStage.super.<A, R>rollingAggregate(aggrOp);
+    }
+
+    @Nonnull @Override
     <C, R> BatchStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
@@ -106,7 +127,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
                     flatMapAsyncFn
     );
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> BatchStage<R> mapUsingReplicatedMap(
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
@@ -115,7 +136,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
         return (BatchStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(mapName, lookupKeyFn, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> BatchStage<R> mapUsingReplicatedMap(
             @Nonnull ReplicatedMap<K, V> replicatedMap,
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
@@ -124,7 +145,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
         return (BatchStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(replicatedMap, lookupKeyFn, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> BatchStage<R> mapUsingIMap(
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
@@ -133,7 +154,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
         return (BatchStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(mapName, lookupKeyFn, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> BatchStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
@@ -141,9 +162,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
     ) {
         return (BatchStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(iMap, lookupKeyFn, mapFn);
     }
-
-    @Nonnull @Override
-    <R> BatchStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     /**
      * Attaches a stage that emits just the items that are distinct according

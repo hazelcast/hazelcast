@@ -17,7 +17,9 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
@@ -49,6 +51,24 @@ class StageWithGroupingBase<T, K> {
     }
 
     @Nonnull
+    <S, R, RET> RET attachMapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        return computeStage.attachMapStateful(ttl, keyFn(), createFn, mapFn);
+    }
+
+    @Nonnull
+    <S, R, RET> RET attachFlatMapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> mapFn
+    ) {
+        return computeStage.attachFlatMapStateful(ttl, keyFn(), createFn, mapFn);
+    }
+
+    @Nonnull
     <C, R, RET> RET attachMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
@@ -73,7 +93,7 @@ class StageWithGroupingBase<T, K> {
     }
 
     @Nonnull
-    public <C, R, RET> RET attachFlatMapUsingContext(
+    <C, R, RET> RET attachFlatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
@@ -92,10 +112,11 @@ class StageWithGroupingBase<T, K> {
                     flatMapAsyncFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachTransformUsingPartitionedContextAsync(operationName, contextFactory, keyFn, (c, t) -> {
-            K k = keyFn.apply(t);
-            return flatMapAsyncFn.apply(c, k, t);
-        });
+        return computeStage.attachTransformUsingPartitionedContextAsync(operationName, contextFactory, keyFn,
+                (c, t) -> {
+                    K k = keyFn.apply(t);
+                    return flatMapAsyncFn.apply(c, k, t);
+                });
     }
 
     static Transform transformOf(GeneralStageWithKey stage) {

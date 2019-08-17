@@ -18,9 +18,11 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.pipeline.ContextFactory;
@@ -29,7 +31,7 @@ import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> implements StreamStageWithKey<T, K> {
@@ -44,6 +46,33 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public StageWithKeyAndWindowImpl<T, K> window(@Nonnull WindowDefinition wDef) {
         return new StageWithKeyAndWindowImpl<>((StreamStageImpl<T>) computeStage, keyFn(), wDef);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<Entry<K, R>> mapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        return attachMapStateful(ttl, createFn, mapFn);
+    }
+
+    @Nonnull @Override
+    public <S> StreamStage<Entry<K, T>> filterStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    ) {
+        return attachMapStateful(ttl, createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<Entry<K, R>> flatMapStateful(
+            long ttl,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        return attachFlatMapStateful(ttl, createFn, flatMapFn);
     }
 
     @Nonnull @Override
@@ -95,13 +124,6 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
                     flatMapAsyncFn
     ) {
         return attachTransformUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
-    }
-
-    @Nonnull @Override
-    public <R> StreamStage<Map.Entry<K, R>> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return computeStage.attachRollingAggregate(keyFn(), aggrOp);
     }
 
     @Nonnull @Override

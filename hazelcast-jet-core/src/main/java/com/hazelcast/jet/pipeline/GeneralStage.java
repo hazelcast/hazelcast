@@ -33,6 +33,8 @@ import com.hazelcast.jet.function.TriFunction;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
@@ -104,6 +106,112 @@ public interface GeneralStage<T> extends Stage {
     <R> GeneralStage<R> flatMap(
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     );
+
+    /**
+     * Attaches a stage that performs a stateful mapping operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code mapFn}, which can update
+     * the object's state. The state object will be included in the state
+     * snapshot, so it survives job restarts. For this reason the object must
+     * be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * @param createFn the function that returns the state object
+     * @param mapFn    the function that receives the state object and the input item and
+     *                 outputs the result item. It may modify the state object.
+     * @param <S>      type of the state object
+     * @param <R>      type of the result
+     */
+    @Nonnull
+    <S, R> GeneralStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    );
+
+    /**
+     * Attaches a stage that performs a stateful filtering operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code filterFn}, which can update
+     * the object's state. The state object will be included in the state
+     * snapshot, so it survives job restarts. For this reason the object must
+     * be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * @param createFn the function that returns the state object
+     * @param filterFn the function that receives the state object and the input item and
+     *                 produces the boolean result. It may modify the state object.
+     * @param <S>      type of the state object
+     */
+    @Nonnull
+    <S> GeneralStage<T> filterStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
+    );
+
+    /**
+     * Attaches a stage that performs a stateful flat-mapping operation. {@code
+     * createFn} returns the object that holds the state. Jet passes this
+     * object along with each input item to {@code flatMapFn}, which can update
+     * the object's state. The state object will be included in the state
+     * snapshot, so it survives job restarts. For this reason the object must
+     * be serializable.
+     * <p>
+     * Sample usage:
+     * <pre>{<code
+     *
+     * @param createFn  the function that returns the state object
+     * @param flatMapFn the function that receives the state object and the input item and
+     *                  outputs the result items. It may modify the state object.
+     * @param <S>       type of the state object
+     * @param <R>       type of the result
+     */
+    @Nonnull
+    <S, R> GeneralStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    );
+
+    /**
+     * Attaches a rolling aggregation stage. This is a special case of
+     * {@linkplain #mapStateful stateful mapping} that uses an {@link
+     * AggregateOperation1 AggregateOperation}. It passes each input item to
+     * the accumulator and outputs the current result of aggregation (as
+     * returned by the {@link AggregateOperation1#exportFn() export} primitive).
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.rollingAggregate(AggregateOperations.summing())
+     * }</pre>
+     * For example, if your input is {@code {2, 7, 8, -5}}, the output will be
+     * {@code {2, 9, 17, 12}}.
+     * <p>
+     * This stage is fault-tolerant and saves its state to the snapshot.
+     * <p>
+     * <strong>NOTE:</strong> since the output for each item depends on all
+     * the previous items, this operation cannot be parallelized. Jet will
+     * perform it on a single member, single-threaded. Jet also supports
+     * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
+     * which it can parallelize by partitioning.
+     *
+     * @param aggrOp the aggregate operation to do the aggregation
+     * @param <R> result type of the aggregate operation
+     * @return the newly attached stage
+     */
+    @Nonnull
+    default <A, R> GeneralStage<R> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
+    ) {
+        BiConsumer<? super A, ? super T> accumulateFn = aggrOp.accumulateFn();
+        Function<? super A, ? extends R> exportFn = aggrOp.exportFn();
+        return mapStateful(aggrOp.createFn(), (acc, item) -> {
+            accumulateFn.accept(acc, item);
+            return exportFn.apply(acc);
+        });
+    }
 
     /**
      * Attaches a mapping stage which applies the supplied function to each
@@ -531,33 +639,6 @@ public interface GeneralStage<T> extends Stage {
     ) {
         return mapUsingIMap(iMap.getName(), lookupKeyFn, mapFn);
     }
-
-    /**
-     * Attaches a rolling aggregation stage. As opposed to regular aggregation,
-     * this stage emits the current aggregation result after receiving each
-     * item. For example, if your aggregation is <em>summing</em> and the input
-     * is {@code {2, 7, 8, -5}}, the output will be {@code {2, 9, 17, 12}} (see
-     * the example below). The number of input and output items is equal.
-     * <p>
-     * Sample usage:
-     * <pre>{@code
-     * stage.rollingAggregate(AggregateOperations.summing())
-     * }</pre>
-     * This stage is fault-tolerant and saves its state to the snapshot.
-     * <p>
-     * <strong>NOTE 1:</strong> since the output for each item depends on all
-     * the previous items, this operation cannot be parallelized. Jet will
-     * perform it on a single member, single-threaded. Jet also supports
-     * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
-     * which it can parallelize by partitioning.
-     *
-     * @param aggrOp the aggregate operation to do the aggregation
-     * @param <R> result type of the aggregate operation
-     *
-     * @return the newly attached stage
-     */
-    @Nonnull
-    <R> GeneralStage<R> rollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     /**
      * Attaches to both this and the supplied stage a hash-joining stage and

@@ -35,6 +35,7 @@ import datamodel.Payment;
 import datamodel.StockInfo;
 import datamodel.Trade;
 
+import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
@@ -260,7 +261,7 @@ public class CheatSheet {
 
     //tag::custom-transform-1[]
     public static class IdentityMapP extends AbstractProcessor {
-        protected boolean tryProcess(int ordinal, Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryEmit(item);
         }
     }

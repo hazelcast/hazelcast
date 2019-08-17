@@ -17,23 +17,24 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Util;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
+import com.hazelcast.jet.impl.pipeline.transform.FlatMapStatefulTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
-import com.hazelcast.jet.impl.pipeline.transform.GlobalRollingAggregateTransform;
+import com.hazelcast.jet.impl.pipeline.transform.GlobalFlatMapStatefulTransform;
+import com.hazelcast.jet.impl.pipeline.transform.GlobalMapStatefulTransform;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
+import com.hazelcast.jet.impl.pipeline.transform.MapStatefulTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
 import com.hazelcast.jet.impl.pipeline.transform.PeekTransform;
-import com.hazelcast.jet.impl.pipeline.transform.RollingAggregateTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
@@ -46,8 +47,10 @@ import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
@@ -122,6 +125,92 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         return (RET) attach(new FlatMapTransform("flat-map", transform, fnAdapter.adaptFlatMapFn(flatMapFn)), fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <S, R, RET> RET attachGlobalMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        checkSerializable(createFn, "createFn");
+        checkSerializable(mapFn, "mapFn");
+        GlobalMapStatefulTransform<T, S, R> transform = new GlobalMapStatefulTransform(
+                this.transform,
+                fnAdapter.adaptTimestampFn(),
+                createFn,
+                fnAdapter.adaptStatefulMapFn(mapFn),
+                fnAdapter.adaptStatefulOutputFn((event, key, result) -> result)
+        );
+        return (RET) attach(transform, fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <S, R, RET> RET attachGlobalFlatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        checkSerializable(createFn, "createFn");
+        checkSerializable(flatMapFn, "flatMapFn");
+        GlobalFlatMapStatefulTransform<T, S, R, RET> transform = new GlobalFlatMapStatefulTransform(
+                this.transform,
+                fnAdapter.adaptTimestampFn(),
+                createFn,
+                fnAdapter.adaptStatefulFlatMapFn(flatMapFn),
+                fnAdapter.adaptStatefulOutputFn((event, key, result) -> result)
+        );
+        return (RET) attach(transform, fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <K, S, R, RET> RET attachMapStateful(
+            long ttl,
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+    ) {
+        checkSerializable(keyFn, "keyFn");
+        checkSerializable(createFn, "createFn");
+        checkSerializable(mapFn, "mapFn");
+        if (ttl > 0 && fnAdapter == DO_NOT_ADAPT) {
+            throw new IllegalStateException("Cannot use time-to-live on a non-timestamped stream");
+        }
+        MapStatefulTransform<T, K, S, R, Entry<K, R>> transform = new MapStatefulTransform(
+                this.transform,
+                ttl,
+                fnAdapter.adaptKeyFn(keyFn),
+                fnAdapter.adaptTimestampFn(),
+                createFn,
+                fnAdapter.adaptStatefulMapFn(mapFn),
+                fnAdapter.adaptStatefulOutputFn((e, k, r) -> entry(k, r)));
+        return (RET) attach(transform, fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <K, S, R, RET> RET attachFlatMapStateful(
+            long ttl,
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> mapFn
+    ) {
+        checkSerializable(keyFn, "keyFn");
+        checkSerializable(createFn, "createFn");
+        checkSerializable(mapFn, "mapFn");
+        if (ttl > 0 && fnAdapter == DO_NOT_ADAPT) {
+            throw new IllegalStateException("Cannot use time-to-live on a non-timestamped stream");
+        }
+        FlatMapStatefulTransform<T, K, S, R, Entry<K, R>> transform = new FlatMapStatefulTransform(
+                this.transform,
+                ttl,
+                fnAdapter.adaptKeyFn(keyFn),
+                fnAdapter.adaptTimestampFn(),
+                createFn,
+                fnAdapter.adaptStatefulFlatMapFn(mapFn),
+                fnAdapter.adaptStatefulOutputFn((e, k, r) -> entry(k, r)));
+        return (RET) attach(transform, fnAdapter);
     }
 
     @Nonnull
@@ -243,32 +332,6 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 flatMapUsingPartitionedContextAsyncTransform(
                         transform, operationName, contextFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
                 fnAdapter);
-    }
-
-    @Nonnull
-    @SuppressWarnings("unchecked")
-    <K, R, OUT, RET> RET attachRollingAggregate(
-            FunctionEx<? super T, ? extends K> keyFn,
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-
-    ) {
-        checkSerializable(keyFn, "keyFn");
-        return (RET) attach(new RollingAggregateTransform(
-                        transform,
-                        fnAdapter.adaptKeyFn(keyFn),
-                        fnAdapter.adaptAggregateOperation1(aggrOp),
-                        fnAdapter.adaptRollingAggregateOutputFn(Util::entry)
-        ), fnAdapter);
-    }
-
-    @Nonnull
-    @SuppressWarnings("unchecked")
-    <R, RET> RET attachGlobalRollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
-        GlobalRollingAggregateTransform transform = new GlobalRollingAggregateTransform(
-                this.transform,
-                fnAdapter.adaptAggregateOperation1(aggrOp),
-                fnAdapter.adaptRollingAggregateOutputFn((key, result) -> result));
-        return (RET) attach(transform, fnAdapter);
     }
 
     @Nonnull

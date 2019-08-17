@@ -16,35 +16,43 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
-import static com.hazelcast.jet.core.processor.Processors.rollingAggregateP;
+import static com.hazelcast.jet.core.processor.Processors.mapStatefulP;
 
-public class GlobalRollingAggregateTransform<T, R> extends AbstractTransform {
-    @Nonnull private final AggregateOperation1<? super T, ?, ? extends R> aggrOp;
-    @Nonnull private final TriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn;
+public class GlobalMapStatefulTransform<T, S, R> extends AbstractTransform {
 
-    public GlobalRollingAggregateTransform(
+    private final ToLongFunctionEx<? super T> timestampFn;
+    private final Supplier<? extends S> createFn;
+    private final BiFunctionEx<? super S, ? super T, ? extends R> statefulMapFn;
+    private final TriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn;
+
+    public GlobalMapStatefulTransform(
             @Nonnull Transform upstream,
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            ToLongFunctionEx<? super T> timestampFn, @Nonnull Supplier<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> statefulMapFn,
             @Nonnull TriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn
     ) {
-        super("rolling-aggregate", upstream);
-        this.aggrOp = aggrOp;
+        super("transform-stateful", upstream);
+        this.timestampFn = timestampFn;
+        this.createFn = createFn;
+        this.statefulMapFn = statefulMapFn;
         this.mapToOutputFn = mapToOutputFn;
     }
 
     @Override
     public void addToDag(Planner p) {
         ConstantFunctionEx<T, Integer> keyFn = new ConstantFunctionEx<>(name().hashCode());
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
-                rollingAggregateP(keyFn, aggrOp, mapToOutputFn));
+        PlannerVertex pv = p.addVertex(this, name(), 1,
+                mapStatefulP(Long.MAX_VALUE, keyFn, timestampFn, createFn, statefulMapFn, mapToOutputFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

@@ -16,37 +16,58 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
-import static com.hazelcast.jet.core.processor.Processors.rollingAggregateP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
+import static java.lang.Math.max;
 
-public class RollingAggregateTransform<T, K, R, OUT> extends AbstractTransform {
+public class FlatMapStatefulTransform<T, K, S, R, OUT> extends AbstractTransform {
+
+    private static final int TTL_TO_WM_STRIDE_RATIO = 4;
+    private final long ttl;
     private final FunctionEx<? super T, ? extends K> keyFn;
-    @Nonnull private final AggregateOperation1<? super T, ?, ? extends R> aggrOp;
-    @Nonnull private final TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn;
+    private final ToLongFunctionEx<? super T> timestampFn;
+    private final Supplier<? extends S> createFn;
+    private final BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> statefulFlatMapFn;
+    private final TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn;
 
-    public RollingAggregateTransform(
+    public FlatMapStatefulTransform(
             @Nonnull Transform upstream,
+            long ttl,
             @Nonnull FunctionEx<? super T, ? extends K> keyFn,
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull Supplier<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
             @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        super("rolling-aggregate", upstream);
+        super("transform-stateful", upstream);
+        this.ttl = ttl;
         this.keyFn = keyFn;
-        this.aggrOp = aggrOp;
+        this.timestampFn = timestampFn;
+        this.createFn = createFn;
+        this.statefulFlatMapFn = statefulFlatMapFn;
         this.mapToOutputFn = mapToOutputFn;
+    }
+
+    @Override
+    public long preferredWatermarkStride() {
+        return max(1, ttl / TTL_TO_WM_STRIDE_RATIO);
     }
 
     @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
-                rollingAggregateP(keyFn, aggrOp, mapToOutputFn));
+                flatMapStatefulP(
+                        ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, mapToOutputFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

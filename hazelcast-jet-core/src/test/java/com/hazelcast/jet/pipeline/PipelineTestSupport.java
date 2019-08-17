@@ -26,6 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.nio.Address;
 import org.junit.Before;
@@ -104,14 +105,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     }
 
     protected BatchStage<Integer> batchStageFromList(List<Integer> input) {
-        BatchSource<Integer> source = SourceBuilder
-                .batch("sequence", x -> null)
-                .<Integer>fillBufferFn((x, buf) -> {
-                    input.forEach(buf::add);
-                    buf.close();
-                })
-                .build();
-        return p.drawFrom(source);
+        return p.drawFrom(TestSources.items(input));
     }
 
     protected static String journaledMapName() {

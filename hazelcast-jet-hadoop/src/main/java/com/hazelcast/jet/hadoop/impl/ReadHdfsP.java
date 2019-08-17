@@ -346,6 +346,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             out.writeObject(mapper);
         }
 
+        @SuppressWarnings("unchecked")
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             jobConf = new SerializableJobConf();
             jobConf.readFields(in);

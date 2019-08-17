@@ -44,10 +44,10 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
-import com.hazelcast.jet.impl.processor.RollingAggregateP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
+import com.hazelcast.jet.impl.processor.TransformStatefulP;
 import com.hazelcast.jet.impl.processor.TransformUsingContextP;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
@@ -55,6 +55,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.FunctionEx.identity;
@@ -691,9 +692,7 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, R> SupplierEx<Processor> mapP(
-            @Nonnull FunctionEx<T, R> mapFn
-    ) {
+    public static <T, R> SupplierEx<Processor> mapP(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
         return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, R>(item -> {
@@ -713,14 +712,8 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> SupplierEx<Processor> filterP(@Nonnull PredicateEx<T> filterFn) {
-        return () -> {
-            final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
-            return new TransformP<T, T>(item -> {
-                trav.accept(filterFn.test(item) ? item : null);
-                return trav;
-            });
-        };
+    public static <T> SupplierEx<Processor> filterP(@Nonnull PredicateEx<? super T> filterFn) {
+        return mapP((T t) -> filterFn.test(t) ? t : null);
     }
 
     /**
@@ -737,9 +730,106 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> SupplierEx<Processor> flatMapP(
-            @Nonnull FunctionEx<T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return () -> new TransformP<>(flatMapFn);
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that performs a stateful
+     * mapping of its input. {@code createFn} returns the object that holds the
+     * state. The processor this object along with each input item to {@code
+     * mapFn}, which can update the object's state. For each grouping key
+     * there's a separate state object. The state object will be included in
+     * the state snapshot, so it survives job restarts. For this reason the
+     * object must be serializable. If the mapping function maps an item to
+     * {@code null}, it will have the effect of filtering out that item.
+     * <p>
+     * If the given {@code ttl} is greater than zero, the processor will
+     * consider the state object stale if its time-to-live has expired. The
+     * time-to-live refers to the event time as kept by the watermark: each
+     * time it processes an event, the processor compares the state object's
+     * timestamp with the current watermark. If it is less than {@code
+     * wm - ttl}, it discards the state object. Otherwise it updates the
+     * timestamp with the current watermark.
+     *
+     * @param ttl               state object's time to live
+     * @param keyFn             function to extract the key from an input item
+     * @param createFn          supplier of the state object
+     * @param statefulMapFn the stateful mapping function
+     * @param <T>               type of the input item
+     * @param <K>               type of the key
+     * @param <S>               type of the state object
+     * @param <R>               type of the mapping function's result
+     * @param <OUT>             type of the vertex's output
+     */
+    @Nonnull
+    public static <T, K, S, R, OUT> SupplierEx<Processor> mapStatefulP(
+            long ttl,
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
+            @Nonnull ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull Supplier<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> statefulMapFn,
+            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return () -> {
+            final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
+            return new TransformStatefulP<T, K, S, R, OUT>(
+                    ttl,
+                    keyFn,
+                    timestampFn,
+                    createFn,
+                    (state, item) -> {
+                        trav.accept(statefulMapFn.apply(state, item));
+                        return trav;
+                    },
+                    mapToOutputFn);
+        };
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that performs a stateful
+     * flat-mapping of its input. {@code createFn} returns the object that
+     * holds the state. The processor this object along with each input item to
+     * {@code mapFn}, which can update the object's state. For each grouping
+     * key there's a separate state object. The state object will be included
+     * in the state snapshot, so it survives job restarts. For this reason the
+     * object must be serializable.
+     * <p>
+     * If the given {@code ttl} is greater than zero, the processor will
+     * consider the state object stale if its time-to-live has expired. The
+     * time-to-live refers to the event time as kept by the watermark: each
+     * time it processes an event, the processor compares the state object's
+     * timestamp with the current watermark. If it is less than {@code
+     * wm - ttl}, it discards the state object. Otherwise it updates the
+     * timestamp with the current watermark.
+     *
+     * @param ttl               state object's time to live
+     * @param keyFn             function to extract the key from an input item
+     * @param createFn          supplier of the state object
+     * @param statefulFlatMapFn the stateful mapping function
+     * @param <T>               type of the input item
+     * @param <K>               type of the key
+     * @param <S>               type of the state object
+     * @param <R>               type of the mapping function's result
+     * @param <OUT>             type of the vertex's output
+     */
+    @Nonnull
+    public static <T, K, S, R, OUT> SupplierEx<Processor> flatMapStatefulP(
+            long ttl,
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
+            @Nonnull ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull Supplier<? extends S> createFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
+            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+    ) {
+        return () -> new TransformStatefulP<T, K, S, R, OUT>(
+                ttl,
+                keyFn,
+                timestampFn,
+                createFn,
+                statefulFlatMapFn,
+                mapToOutputFn);
     }
 
     /**
@@ -751,7 +841,7 @@ public final class Processors {
      * If the mapping result is {@code null}, the vertex emits nothing.
      * Therefore it can be used to implement filtering semantics as well.
      * <p>
-     * Unlike {@link #rollingAggregateP} (with the "{@code Keyed}" part),
+     * Unlike {@link #mapStatefulP} (with the "{@code Keyed}" part),
      * this method creates one context object per processor (or per member, if
      * {@linkplain ContextFactory#withLocalSharing() shared}).
      * <p>
@@ -919,37 +1009,6 @@ public final class Processors {
         return contextFactory.hasOrderedAsyncResponses()
                 ? AsyncTransformUsingContextOrderedP.supplier(contextFactory, flatMapAsyncFn)
                 : AsyncTransformUsingContextUnorderedP.supplier(contextFactory, flatMapAsyncFn, extractKeyFn);
-    }
-
-    /**
-     * Returns a supplier of processors for a vertex that performs a rolling
-     * aggregation. Every time it receives an item, it passes is to the
-     * accumulator and then calls the `export` primitive to emit the current
-     * state of aggregation.
-     * <p>
-     * If the result after applying `mapToOutputFn` is {@code null}, the vertex
-     * emits nothing. Therefore it can be used to implement filtering semantics
-     * as well.
-     * <p>
-     * This vertex saves the state to snapshot so the state of the accumulators
-     * will survive a job restart.
-     *
-     * @param <T> type of the input item
-     * @param <K> type of the key
-     * @param <A> type of the accumulator
-     * @param <R> type of the output item
-     * @param keyFn function that computes the grouping key
-     * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn function that takes the input item, the key and the aggregation result
-     *                      and returns the output item
-     */
-    @Nonnull
-    public static <T, K, A, R, OUT> SupplierEx<Processor> rollingAggregateP(
-            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
-            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
-            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
-    ) {
-        return () -> new RollingAggregateP<T, K, A, R, OUT>(keyFn, aggrOp, mapToOutputFn);
     }
 
     /**

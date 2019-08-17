@@ -30,6 +30,7 @@ com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple4Hook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple5Hook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$TagHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$ItemsByTagHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedItemHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$SnapshotBarrierHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastEntryHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyHook

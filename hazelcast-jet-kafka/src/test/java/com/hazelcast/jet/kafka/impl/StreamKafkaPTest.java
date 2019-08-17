@@ -94,7 +94,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     @Before
     public void before() throws Exception {
         String brokerConnectionString = createKafkaCluster();
-        properties = getProperties(brokerConnectionString, IntegerDeserializer.class, StringDeserializer.class);
+        properties = getProperties(brokerConnectionString);
 
         topic1Name = randomString();
         topic2Name = randomString();
@@ -122,7 +122,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertTrueEventually(() -> {
             assertEquals(messageCount, list.size());
             for (int i = 0; i < messageCount; i++) {
-                String value = Integer.toString(i) + "-x";
+                String value = i + "-x";
                 assertTrue("missing entry: " + value, list.contains(value));
             }
         }, 5);
@@ -352,7 +352,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             somethingInPartition1 |= recordMetadata.partition() == 1;
         }
         assertTrue("nothing was produced to partition-1", somethingInPartition1);
-        Set receivedEvents = new HashSet();
+        Set<Object> receivedEvents = new HashSet<>();
         for (int i = 1; i < 11; i++) {
             try {
                 receivedEvents.add(consumeEventually(processor, outbox));
@@ -416,6 +416,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertNull(outbox.queue(0).poll());
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T consumeEventually(Processor processor, TestOutbox outbox) {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
@@ -430,6 +431,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertTrue("unexpected items in outbox: " + outbox.queue(0), outbox.queue(0).isEmpty());
     }
 
+    @SuppressWarnings("unchecked")
     private Set<Entry<TopicPartition, String>> unwrapBroadcastKey(Collection c) {
         // BroadcastKey("x") != BroadcastKey("x") ==> we need to extract the key
         Set<Entry<TopicPartition, String>> res = new HashSet<>();
@@ -447,12 +449,12 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         return snapshot;
     }
 
-    private Properties getProperties(String brokerConnectionString, Class keyDeserializer, Class valueDeserializer) {
+    private Properties getProperties(String brokerConnectionString) {
         Properties properties = new Properties();
         properties.setProperty("group.id", randomString());
         properties.setProperty("bootstrap.servers", brokerConnectionString);
-        properties.setProperty("key.deserializer", keyDeserializer.getCanonicalName());
-        properties.setProperty("value.deserializer", valueDeserializer.getCanonicalName());
+        properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
+        properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
         properties.setProperty("auto.offset.reset", "earliest");
         return properties;
     }
