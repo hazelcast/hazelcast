@@ -277,8 +277,8 @@ public final class Util {
     }
 
     /**
-     * Calculates {@code a - b}, returns {@code Long.MAX_VALUE} if the result
-     * would overflow
+     * Calculates {@code a - b}, returns {@code Long.MAX_VALUE} or {@code
+     * Long.MIN_VALUE} if the result would overflow.
      *
      * @param a the amount
      * @param b the value to subtract

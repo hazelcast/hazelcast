@@ -738,10 +738,10 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that performs a stateful
      * mapping of its input. {@code createFn} returns the object that holds the
-     * state. The processor this object along with each input item to {@code
-     * mapFn}, which can update the object's state. For each grouping key
-     * there's a separate state object. The state object will be included in
-     * the state snapshot, so it survives job restarts. For this reason the
+     * state. The processor passes this object along with each input item to
+     * {@code mapFn}, which can update the object's state. For each grouping
+     * key there's a separate state object. The state object will be included
+     * in the state snapshot, so it survives job restarts. For this reason the
      * object must be serializable. If the mapping function maps an item to
      * {@code null}, it will have the effect of filtering out that item.
      * <p>
@@ -790,11 +790,11 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that performs a stateful
      * flat-mapping of its input. {@code createFn} returns the object that
-     * holds the state. The processor this object along with each input item to
-     * {@code mapFn}, which can update the object's state. For each grouping
-     * key there's a separate state object. The state object will be included
-     * in the state snapshot, so it survives job restarts. For this reason the
-     * object must be serializable.
+     * holds the state. The processor passes this object along with each input
+     * item to {@code mapFn}, which can update the object's state. For each
+     * grouping key there's a separate state object. The state object will be
+     * included in the state snapshot, so it survives job restarts. For this
+     * reason the object must be serializable.
      * <p>
      * If the given {@code ttl} is greater than zero, the processor will
      * consider the state object stale if its time-to-live has expired. The

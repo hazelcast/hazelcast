@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -105,7 +106,7 @@ public class TransformStatefulP<T, K, S, R, OUT> extends AbstractProcessor {
         TimestampedItem<S> tsAndState = keyToState.get(key);
         if (tsAndState != null) {
             long lastTouched = tsAndState.timestamp();
-            if (currentWm != Long.MIN_VALUE && lastTouched < currentWm - ttl) {
+            if (lastTouched < Util.subtractClamped(currentWm, ttl)) {
                 tsAndState = null;
             } else if (timestamp > lastTouched) {
                 tsAndState.setTimestamp(timestamp);
@@ -184,7 +185,7 @@ public class TransformStatefulP<T, K, S, R, OUT> extends AbstractProcessor {
 
         @Override
         protected boolean removeEldestEntry(@Nonnull Entry<K, TimestampedItem<S>> eldest) {
-            return currentWm != Long.MIN_VALUE && eldest.getValue().timestamp() < currentWm - ttl;
+            return eldest.getValue().timestamp() < Util.subtractClamped(currentWm, ttl);
         }
     }
 }

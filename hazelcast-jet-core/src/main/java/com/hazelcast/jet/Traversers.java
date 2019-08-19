@@ -38,15 +38,18 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Traversers {
 
+    private static final Traverser<Object> EMPTY_TRAVERSER = () -> null;
+
     private Traversers() {
     }
 
     /**
      * Returns a traverser that always returns {@code null}.
      */
+    @SuppressWarnings("unchecked")
     @Nonnull
     public static <T> Traverser<T> empty() {
-        return () -> null;
+        return (Traverser<T>) EMPTY_TRAVERSER;
     }
 
     /**
@@ -141,7 +144,8 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser over the given array.
+     * Returns a traverser over the given array. Null elements in the array are
+     * skipped.
      */
     @Nonnull
     public static <T> Traverser<T> traverseArray(@Nonnull T[] array) {
@@ -149,7 +153,8 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser over the supplied arguments (or item array).
+     * Returns a traverser over the supplied arguments (or item array). Null
+     * items are skipped.
      *
      * @param items the items to traverse over
      * @param <T> type of the items
@@ -192,7 +197,7 @@ public final class Traversers {
     }
 
     private static class ArrayTraverser<T> implements Traverser<T> {
-        private int i;
+        private int index;
         private final T[] array;
 
         ArrayTraverser(@Nonnull T[] array) {
@@ -201,14 +206,14 @@ public final class Traversers {
 
         @Override
         public T next() {
-            while (i < array.length) {
+            while (index < array.length) {
                 try {
-                    T t = array[i];
+                    T t = array[index];
                     if (t != null) {
                         return t;
                     }
                 } finally {
-                    i++;
+                    index++;
                 }
             }
             return null;

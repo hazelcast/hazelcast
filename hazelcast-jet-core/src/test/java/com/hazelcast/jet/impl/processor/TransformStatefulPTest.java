@@ -126,4 +126,39 @@ public class TransformStatefulPTest {
                            wm(3)
         ));
     }
+
+    @Test
+    public void mapStateful_negativeWmTime() {
+        SupplierEx<Processor> supplier = Processors.mapStatefulP(
+                2,
+                jetEvent -> jetEvent.payload().getKey(),
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, JetEvent<Entry<String, Long>> e) -> {
+                    s[0] += e.payload().getValue();
+                    return s[0];
+                },
+                (event, k, r) -> jetEvent(event.timestamp(), entry(k, r))
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                   .input(asList(
+                           jetEvent(-10, entry("a", 1L)),
+                           jetEvent(-9, entry("b", 2L)),
+                           wm(-7), // evict a
+                           jetEvent(-7, entry("a", 3L)),
+                           jetEvent(-7, entry("b", 3L)),
+                           wm(-4), // evict b
+                           jetEvent(-4, entry("b", 4L))
+                   ))
+                   .expectOutput(asList(
+                           jetEvent(-10, entry("a", 1L)),
+                           jetEvent(-9, entry("b", 2L)),
+                           wm(-7),
+                           jetEvent(-7, entry("a", 3L)),
+                           jetEvent(-7, entry("b", 5L)),
+                           wm(-4),
+                           jetEvent(-4, entry("b", 4L))
+                   ));
+    }
 }
