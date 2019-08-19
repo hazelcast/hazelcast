@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -449,7 +450,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
-        putAllInternal(map);
+        putAllInternal(map, null);
+    }
+
+    /**
+     * This version does not support batching.
+     */
+    // used by jet
+    public ICompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(getNodeEngine());
+        putAllInternal(map, future);
+        return future;
     }
 
     @Override

@@ -16,9 +16,10 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -173,12 +174,18 @@ public final class CollectionUtil {
      * @return the list.
      * throws {@link NullPointerException} if array is null.
      */
-    public static List<Integer> toIntegerList(int[] array) {
-        List<Integer> result = new ArrayList<Integer>(array.length);
-        for (int partitionId : array) {
-            result.add(partitionId);
-        }
-        return result;
+    public static List<Integer> asIntegerList(int[] array) {
+        return new AbstractList<Integer>() {
+            @Override
+            public Integer get(int index) {
+                return array[index];
+            }
+
+            @Override
+            public int size() {
+                return array.length;
+            }
+        };
     }
 
     /** Returns an empty Collection if argument is null. **/

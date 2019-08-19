@@ -480,9 +480,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void invokePutAllOperationFactory(long size, int[] partitions, MapEntries[] entries) throws Exception {
+    protected void putAllVisitSerializedKeys(MapEntries[] entries) {
         try {
-            super.invokePutAllOperationFactory(size, partitions, entries);
+            super.putAllVisitSerializedKeys(entries);
         } finally {
             if (serializeKeys) {
                 for (MapEntries mapEntries : entries) {
@@ -498,13 +498,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void finalizePutAll(Map<?, ?> map) {
-        try {
-            super.finalizePutAll(map);
-        } finally {
-            if (!serializeKeys) {
-                for (Object key : map.keySet()) {
-                    invalidateNearCache(key);
-                }
+        if (!serializeKeys) {
+            for (Object key : map.keySet()) {
+                invalidateNearCache(key);
             }
         }
     }
