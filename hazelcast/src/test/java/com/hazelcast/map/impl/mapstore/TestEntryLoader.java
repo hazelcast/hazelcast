@@ -30,7 +30,7 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     static final String NULL_RETURNING_KEY = "nullReturningKey";
 
-    private Map<String, Record> records = new HashMap<>();
+    private Map<String, Record> records = new ConcurrentHashMap<>();
     private AtomicInteger loadedEntryCount = new AtomicInteger();
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();

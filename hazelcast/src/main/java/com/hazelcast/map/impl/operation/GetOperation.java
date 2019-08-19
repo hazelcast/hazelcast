@@ -34,7 +34,6 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
         super(name, dataKey);
 
         this.dataKey = dataKey;
-        Thread.dumpStack();
     }
 
     @Override
