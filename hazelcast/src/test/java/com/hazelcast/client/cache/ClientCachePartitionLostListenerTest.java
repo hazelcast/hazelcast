@@ -41,11 +41,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
@@ -168,7 +164,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         final Cache<Integer, String> cache = clientCacheManager.getCache(cacheName);
         final ICache iCache = cache.unwrap(ICache.class);
 
-        final String registrationId = iCache.addPartitionLostListener(mock(CachePartitionLostListener.class));
+        final UUID registrationId = iCache.addPartitionLostListener(mock(CachePartitionLostListener.class));
 
         assertRegistrationsSizeEventually(instance, cacheName, 1);
 

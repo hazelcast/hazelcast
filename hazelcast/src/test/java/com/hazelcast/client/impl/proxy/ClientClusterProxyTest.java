@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -63,14 +65,14 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
 
     @Test
     public void addMembershipListener() throws Exception {
-        String regId = client().getCluster().addMembershipListener(new MembershipAdapter());
+        UUID regId = client().getCluster().addMembershipListener(new MembershipAdapter());
         assertNotNull(regId);
     }
 
     @Test
     public void removeMembershipListener() throws Exception {
         Cluster cluster = client().getCluster();
-        String regId = cluster.addMembershipListener(new MembershipAdapter());
+        UUID regId = cluster.addMembershipListener(new MembershipAdapter());
         assertTrue(cluster.removeMembershipListener(regId));
     }
 

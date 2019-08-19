@@ -102,11 +102,11 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
 
-    boolean deregisterListener(String cacheNameWithPrefix, String registrationId);
+    boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
 
@@ -119,7 +119,7 @@ public interface ICacheService
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
 
-    String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
+    UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
     void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 

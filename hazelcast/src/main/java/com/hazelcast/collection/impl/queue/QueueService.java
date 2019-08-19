@@ -62,14 +62,8 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -273,7 +267,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         splitBrainProtectionConfigCache.remove(name);
     }
 
-    public String addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
+    public UUID addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         EventRegistration registration;
@@ -289,7 +283,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return registration.getId();
     }
 
-    public boolean removeItemListener(String name, String registrationId) {
+    public boolean removeItemListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }

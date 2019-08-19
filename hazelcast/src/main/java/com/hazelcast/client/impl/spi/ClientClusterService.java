@@ -103,13 +103,13 @@ public interface ClientClusterService {
      * @return The registration ID
      */
     @Nonnull
-    String addMembershipListener(@Nonnull MembershipListener listener);
+    UUID addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
      * @param registrationId The registrationId of the listener to be removed.
      * @return true if successfully removed, false otherwise.
      */
-    boolean removeMembershipListener(@Nonnull String registrationId);
+    boolean removeMembershipListener(@Nonnull UUID registrationId);
 
     void reset();
 }

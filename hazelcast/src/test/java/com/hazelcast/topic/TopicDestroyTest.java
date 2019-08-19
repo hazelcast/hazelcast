@@ -29,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -57,7 +58,7 @@ public class TopicDestroyTest extends HazelcastTestSupport {
 
     @Test
     public void testRemovingListenersRemovesRegistrations() {
-        String registrationId = topic.addMessageListener(new EmptyListener());
+        UUID registrationId = topic.addMessageListener(new EmptyListener());
         topic.removeMessageListener(registrationId);
 
         assertRegistrationSize(0);

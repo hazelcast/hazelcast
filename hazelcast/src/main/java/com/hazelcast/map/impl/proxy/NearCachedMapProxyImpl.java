@@ -73,7 +73,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     private NearCache<Object, Object> nearCache;
     private RepairingHandler repairingHandler;
 
-    private volatile String invalidationListenerId;
+    private volatile UUID invalidationListenerId;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
@@ -627,7 +627,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return serializeKeys ? serializationService.toData(key, partitionStrategy) : key;
     }
 
-    public String addNearCacheInvalidationListener(InvalidationListener listener) {
+    public UUID addNearCacheInvalidationListener(InvalidationListener listener) {
         // local member UUID may change after a split-brain merge
         UUID localMemberUuid = getNodeEngine().getClusterService().getLocalMember().getUuid();
         EventFilter eventFilter = new UuidFilter(localMemberUuid);

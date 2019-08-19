@@ -33,11 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -310,7 +306,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
             sleep(sleep);
             queue.destroy();
             queue = instance.getQueue(name);
-            String id = queue.addItemListener(listener, false);
+            UUID id = queue.addItemListener(listener, false);
             queue.offer(2);
             sleep(sleep);
             queue.removeItemListener(id);

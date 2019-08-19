@@ -67,7 +67,7 @@ public class BatchInvalidator extends Invalidator {
 
     private final int batchSize;
     private final int batchFrequencySeconds;
-    private final String nodeShutdownListenerId;
+    private final UUID nodeShutdownListenerId;
     private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
@@ -156,7 +156,7 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Sends remaining invalidation events in this invalidator's queues to the recipients.
      */
-    private String registerNodeShutdownListener() {
+    private UUID registerNodeShutdownListener() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
         return lifecycleService.addLifecycleListener(new LifecycleListener() {

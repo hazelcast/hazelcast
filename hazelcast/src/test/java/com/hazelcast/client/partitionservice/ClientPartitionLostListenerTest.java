@@ -45,6 +45,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
@@ -86,7 +87,7 @@ public class ClientPartitionLostListenerTest {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final String registrationId = client.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        final UUID registrationId = client.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
         // Expected = 4 -> 1 added & 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
         // + 2 from map and cache ExpirationManagers
         assertRegistrationsSizeEventually(instance, 4);

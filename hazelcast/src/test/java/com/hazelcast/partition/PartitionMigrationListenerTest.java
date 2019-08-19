@@ -27,10 +27,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -110,8 +112,8 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         MigrationListener listener = mock(MigrationListener.class);
 
-        String id1 = partitionService.addMigrationListener(listener);
-        String id2 = partitionService.addMigrationListener(listener);
+        UUID id1 = partitionService.addMigrationListener(listener);
+        UUID id2 = partitionService.addMigrationListener(listener);
 
         // first we check if the registration id's are different
         assertNotEquals(id1, id2);
@@ -130,7 +132,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         PartitionService partitionService = hz.getPartitionService();
 
-        boolean result = partitionService.removeMigrationListener("notExist");
+        boolean result = partitionService.removeMigrationListener(UuidUtil.newUnsecureUUID());
 
         assertFalse(result);
     }
@@ -143,7 +145,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         MigrationListener listener = mock(MigrationListener.class);
 
-        String id = partitionService.addMigrationListener(listener);
+        UUID id = partitionService.addMigrationListener(listener);
         boolean removed = partitionService.removeMigrationListener(id);
 
         assertTrue(removed);

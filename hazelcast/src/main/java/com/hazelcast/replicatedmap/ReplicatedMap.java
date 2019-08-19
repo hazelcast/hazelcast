@@ -24,10 +24,7 @@ import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -76,7 +73,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param id ID of the registered entry listener.
      * @return true if registration is removed, false otherwise.
      */
-    boolean removeEntryListener(@Nonnull String id);
+    boolean removeEntryListener(@Nonnull UUID id);
 
     /**
      * Adds an entry listener for this map. The listener will be notified
@@ -85,7 +82,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param listener entry listener
      */
     @Nonnull
-    String addEntryListener(@Nonnull EntryListener<K, V> listener);
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -101,7 +98,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @throws NullPointerException if the specified key is null
      */
     @Nonnull
-    String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key);
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key);
 
     /**
      * Adds an continuous entry listener for this map. The listener will be notified
@@ -111,7 +108,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param predicate the predicate for filtering entries
      */
     @Nonnull
-    String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate);
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate);
 
     /**
      * Adds an continuous entry listener for this map. The listener will be notified
@@ -122,7 +119,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param key       the key to listen to
      */
     @Nonnull
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull Predicate<K, V> predicate,
                             @Nullable K key);
 

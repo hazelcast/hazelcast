@@ -65,6 +65,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -414,7 +415,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(2);
 
         final IMap<Object, Object> m = client.getMap("m");
-        final String id = m.addEntryListener(new EntryAdapter() {
+        final UUID id = m.addEntryListener(new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
@@ -449,7 +450,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         thread.interrupt();
         assertJoinable(thread);
         assertTrue(m.removeEntryListener(id));
-        assertFalse(m.removeEntryListener("foo"));
+        assertFalse(m.removeEntryListener(new UUID(0, 0)));
     }
 
     static class SamplePortable implements Portable {
@@ -872,7 +873,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             public void onMessage(Message message) {
             }
         };
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         ITopic<Object> client2Topic = client2.getTopic(key);
         long begin = System.currentTimeMillis();

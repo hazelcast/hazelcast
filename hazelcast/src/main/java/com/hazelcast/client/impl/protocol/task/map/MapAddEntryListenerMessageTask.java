@@ -59,7 +59,7 @@ public class MapAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddEntryListenerCodec.encodeResponse((String) response);
+        return MapAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

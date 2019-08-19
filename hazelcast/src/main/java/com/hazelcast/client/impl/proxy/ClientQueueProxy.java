@@ -75,7 +75,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Nonnull
     @Override
-    public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+    public UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -89,12 +89,12 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return QueueAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return QueueRemoveListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -138,7 +138,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Null registrationId is not allowed!");
         return deregisterListener(registrationId);
     }

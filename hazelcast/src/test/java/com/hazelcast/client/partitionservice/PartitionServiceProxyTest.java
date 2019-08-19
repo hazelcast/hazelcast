@@ -25,6 +25,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +65,7 @@ public class PartitionServiceProxyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveMigrationListener() throws Exception {
         PartitionService p = client.getPartitionService();
-        p.removeMigrationListener("");
+        p.removeMigrationListener(UuidUtil.newUnsecureUUID());
     }
 
     @Test

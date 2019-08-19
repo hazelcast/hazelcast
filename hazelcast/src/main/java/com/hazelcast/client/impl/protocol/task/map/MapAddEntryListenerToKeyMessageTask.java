@@ -42,7 +42,7 @@ public class MapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+        return MapAddEntryListenerToKeyCodec.encodeResponse((UUID) response);
     }
 
     @Override

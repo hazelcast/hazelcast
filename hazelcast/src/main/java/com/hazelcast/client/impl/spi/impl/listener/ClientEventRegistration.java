@@ -19,6 +19,8 @@ package com.hazelcast.client.impl.spi.impl.listener;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.internal.nio.Connection;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
@@ -27,11 +29,11 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 public class ClientEventRegistration {
 
     private Connection subscriber;
-    private final String serverRegistrationId;
+    private final UUID serverRegistrationId;
     private final long callId;
     private final ListenerMessageCodec codec;
 
-    public ClientEventRegistration(String serverRegistrationId, long callId, Connection subscriber, ListenerMessageCodec codec) {
+    public ClientEventRegistration(UUID serverRegistrationId, long callId, Connection subscriber, ListenerMessageCodec codec) {
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
@@ -47,7 +49,7 @@ public class ClientEventRegistration {
      *
      * @return server registration ID
      */
-    public String getServerRegistrationId() {
+    public UUID getServerRegistrationId() {
         return serverRegistrationId;
     }
 

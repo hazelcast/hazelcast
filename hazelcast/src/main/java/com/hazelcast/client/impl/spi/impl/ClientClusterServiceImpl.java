@@ -66,7 +66,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     protected final HazelcastClientInstanceImpl client;
     private ClientMembershipListener clientMembershipListener;
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<>();
-    private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final Object initialMembershipListenerMutex = new Object();
     private final Set<String> labels;
 
@@ -160,19 +160,19 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     @Nonnull
     @Override
-    public String addMembershipListener(@Nonnull MembershipListener listener) {
+    public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "Listener can't be null");
 
         synchronized (initialMembershipListenerMutex) {
-            String id = addMembershipListenerWithoutInit(listener);
+            UUID id = addMembershipListenerWithoutInit(listener);
             initMembershipListener(listener);
             return id;
         }
     }
 
     private @Nonnull
-    String addMembershipListenerWithoutInit(@Nonnull MembershipListener listener) {
-        String id = UuidUtil.newUnsecureUuidString();
+    UUID addMembershipListenerWithoutInit(@Nonnull MembershipListener listener) {
+        UUID id = UuidUtil.newUnsecureUUID();
         listeners.put(id, listener);
         return id;
     }
@@ -193,7 +193,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public boolean removeMembershipListener(@Nonnull String registrationId) {
+    public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
         return listeners.remove(registrationId) != null;
     }

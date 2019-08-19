@@ -30,13 +30,7 @@ import com.hazelcast.topic.MessageListener;
 import org.junit.Ignore;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -567,7 +561,7 @@ public class AllTest {
                         latch.countDown();
                     }
                 };
-                String id = map.addEntryListener(listener, true);
+                UUID id = map.addEntryListener(listener, true);
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
@@ -592,7 +586,7 @@ public class AllTest {
                         latch.countDown();
                     }
                 };
-                String id = map.addLocalEntryListener(listener);
+                UUID id = map.addLocalEntryListener(listener);
                 try {
                     latch.await();
                 } catch (InterruptedException e) {

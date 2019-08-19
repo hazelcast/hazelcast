@@ -51,7 +51,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
-        String registrationId;
+        UUID registrationId;
         if (isLocalOnly()) {
             registrationId = mapServiceContext.addLocalEventListener(listener, eventFilter, name);
         } else {

@@ -41,7 +41,8 @@ public final class CacheRemoveEntryListenerCodec {
     public static final int REQUEST_MESSAGE_TYPE = 1381632;
     //hex: 0x151501
     public static final int RESPONSE_MESSAGE_TYPE = 1381633;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
@@ -59,29 +60,28 @@ public final class CacheRemoveEntryListenerCodec {
         /**
          * The id assigned during the registration for the listener which shall be removed.
          */
-        public java.lang.String registrationId;
+        public java.util.UUID registrationId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String registrationId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET, registrationId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, registrationId);
         return clientMessage;
     }
 
     public static CacheRemoveEntryListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.registrationId = StringCodec.decode(iterator);
         return request;
     }
 

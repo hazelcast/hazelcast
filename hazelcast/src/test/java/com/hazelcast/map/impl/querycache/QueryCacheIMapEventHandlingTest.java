@@ -45,6 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
@@ -147,19 +148,19 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerRegistration() {
-        String addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+        UUID addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        String removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
+        UUID removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        assertFalse(queryCache.removeEntryListener("notFound"));
+        assertFalse(queryCache.removeEntryListener(new UUID(0, 0)));
 
         assertTrue(queryCache.removeEntryListener(removeEntryListener));
         assertFalse(queryCache.removeEntryListener(removeEntryListener));

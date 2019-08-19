@@ -72,7 +72,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private NearCacheManager nearCacheManager;
     private NearCache<Object, Object> nearCache;
-    private String nearCacheMembershipRegistrationId;
+    private UUID nearCacheMembershipRegistrationId;
 
     NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
@@ -550,7 +550,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    public String addNearCacheInvalidationListener(EventHandler eventHandler) {
+    public UUID addNearCacheInvalidationListener(EventHandler eventHandler) {
         return registerListener(createInvalidationListenerCodec(nameWithPrefix), eventHandler);
     }
 
@@ -568,7 +568,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return;
         }
 
-        String registrationId = nearCacheMembershipRegistrationId;
+        UUID registrationId = nearCacheMembershipRegistrationId;
         if (registrationId != null) {
             getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);

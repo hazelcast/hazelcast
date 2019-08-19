@@ -58,7 +58,7 @@ public class MultiMapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+        return MultiMapAddEntryListenerToKeyCodec.encodeResponse((UUID) response);
     }
 
     @Override

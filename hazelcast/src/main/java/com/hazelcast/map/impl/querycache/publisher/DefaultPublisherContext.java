@@ -58,11 +58,11 @@ public class DefaultPublisherContext implements PublisherContext {
     private final MapListenerRegistry mapListenerRegistry;
     private final MapPublisherRegistry mapPublisherRegistry;
     private final AccumulatorInfoSupplier accumulatorInfoSupplier;
-    private final Function<String, String> listenerRegistrator;
+    private final Function<String, UUID> listenerRegistrator;
     private final ConcurrentMap<UUID, ScheduledFuture> removalCandidateFutures;
 
     public DefaultPublisherContext(QueryCacheContext context, NodeEngine nodeEngine,
-                                   Function<String, String> listenerRegistrator) {
+                                   Function<String, UUID> listenerRegistrator) {
         this.context = context;
         this.nodeEngine = nodeEngine;
         this.mapListenerRegistry = new MapListenerRegistry(context);
@@ -101,7 +101,7 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     @Override
-    public Function<String, String> getListenerRegistrator() {
+    public Function<String, UUID> getListenerRegistrator() {
         return listenerRegistrator;
     }
 

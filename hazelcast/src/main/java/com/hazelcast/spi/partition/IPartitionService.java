@@ -25,6 +25,7 @@ import com.hazelcast.internal.services.CoreService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * An SPI service for accessing partition related information.
@@ -126,15 +127,15 @@ public interface IPartitionService extends CoreService {
      */
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
-    String addMigrationListener(MigrationListener migrationListener);
+    UUID addMigrationListener(MigrationListener migrationListener);
 
-    boolean removeMigrationListener(String registrationId);
+    boolean removeMigrationListener(UUID registrationId);
 
-    String addPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
-    String addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
 
-    boolean removePartitionLostListener(String registrationId);
+    boolean removePartitionLostListener(UUID registrationId);
 
     long getMigrationQueueSize();
 

@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * SetAddListenerMessageTask
@@ -59,7 +60,7 @@ public class SetAddListenerMessageTask
         } else {
             registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
         }
-        String registrationId = registration.getId();
+        UUID registrationId = registration.getId();
         endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
         return registrationId;
     }
@@ -103,7 +104,7 @@ public class SetAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return SetAddListenerCodec.encodeResponse((String) response);
+        return SetAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

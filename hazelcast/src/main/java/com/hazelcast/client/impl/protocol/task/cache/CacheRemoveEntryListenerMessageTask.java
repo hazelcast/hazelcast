@@ -26,6 +26,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client request which unregisters the event listener on behalf of the client.
@@ -40,7 +41,7 @@ public class CacheRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

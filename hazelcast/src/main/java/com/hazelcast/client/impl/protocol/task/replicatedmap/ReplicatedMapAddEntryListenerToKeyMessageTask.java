@@ -62,7 +62,7 @@ public class ReplicatedMapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+        return ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse((UUID) response);
     }
 
     @Override

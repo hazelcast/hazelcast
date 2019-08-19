@@ -753,7 +753,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterId = null;
     }
 
-    public String addMembershipListener(@Nonnull MembershipListener listener) {
+    public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -773,7 +773,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return registration.getId();
     }
 
-    public boolean removeMembershipListener(@Nonnull String registrationId) {
+    public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId cannot be null");
 
         EventService eventService = nodeEngine.getEventService();

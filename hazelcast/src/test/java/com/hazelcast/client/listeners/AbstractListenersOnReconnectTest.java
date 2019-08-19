@@ -43,10 +43,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -65,7 +62,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private CountDownLatch eventsLatch = new CountDownLatch(1);
     private final Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private String registrationId;
+    private UUID registrationId;
     private int clusterSize;
     protected HazelcastInstance client;
 
@@ -498,7 +495,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     abstract String getServiceName();
 
-    private void validateRegistrations(final int clusterSize, final String registrationId,
+    private void validateRegistrations(final int clusterSize, final UUID registrationId,
                                        final HazelcastClientInstanceImpl clientInstanceImpl) {
         final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
 
@@ -561,7 +558,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         instances[randNode].getLifecycleService().terminate();
     }
 
-    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
+    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);
@@ -595,7 +592,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         return clientConfig;
     }
 
-    protected abstract String addListener();
+    protected abstract UUID addListener();
 
     protected abstract void produceEvent(String event);
 
@@ -607,5 +604,5 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         }
     }
 
-    protected abstract boolean removeListener(String registrationId);
+    protected abstract boolean removeListener(UUID registrationId);
 }

@@ -59,14 +59,14 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
     @Nonnull
     @Override
-    public String addMessageListener(@Nonnull final MessageListener<E> listener) {
+    public UUID addMessageListener(@Nonnull final MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
         return registerListener(new Codec(), handler);
     }
 
     @Override
-    public boolean removeMessageListener(@Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull UUID registrationId) {
         return deregisterListener(registrationId);
     }
 
@@ -113,12 +113,12 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return TopicRemoveMessageListenerCodec.encodeRequest(name, realRegistrationId);
         }
 

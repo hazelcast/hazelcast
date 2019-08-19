@@ -401,12 +401,12 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ClientRemovePartitionLostListenerCodec.encodeRequest(realRegistrationId);
             }
 

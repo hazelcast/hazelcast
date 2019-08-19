@@ -60,7 +60,7 @@ public interface PublisherContext {
      *
      * @return a helper function in order to register listener to {@code IMap}
      */
-    Function<String, String> getListenerRegistrator();
+    Function<String, UUID> getListenerRegistrator();
 
     /**
      * Returns {@link QueryCacheContext} on this node.

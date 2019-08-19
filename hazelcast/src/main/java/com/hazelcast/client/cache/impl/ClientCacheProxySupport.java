@@ -67,14 +67,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessorException;
 import java.io.Closeable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -133,7 +126,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
     private final ClientCacheProxySyncListenerCompleter listenerCompleter;
-    private final ConcurrentMap<String, Closeable> closeableListeners;
+    private final ConcurrentMap<UUID, Closeable> closeableListeners;
 
     protected ClientCacheProxySupport(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(ICacheService.SERVICE_NAME, cacheConfig.getName(), context);
@@ -632,7 +625,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+    protected void addListenerLocally(UUID regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                       CacheEventListenerAdaptor<K, V> adaptor) {
         listenerCompleter.putListenerIfAbsent(cacheEntryListenerConfiguration, regId);
         CacheEntryListener<K, V> entryListener = adaptor.getCacheEntryListener();
@@ -642,20 +635,20 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected void removeListenerLocally(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        String registrationId = listenerCompleter.removeListener(cacheEntryListenerConfiguration);
+        UUID registrationId = listenerCompleter.removeListener(cacheEntryListenerConfiguration);
         if (registrationId != null) {
             Closeable closeable = closeableListeners.remove(registrationId);
             IOUtil.closeResource(closeable);
         }
     }
 
-    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected UUID getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         return listenerCompleter.getListenerId(cacheEntryListenerConfiguration);
     }
 
-    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<UUID> listenerRegistrations) {
         ClientListenerService listenerService = getContext().getListenerService();
-        for (String regId : listenerRegistrations) {
+        for (UUID regId : listenerRegistrations) {
             listenerService.deregisterListener(regId);
         }
     }

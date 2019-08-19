@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
@@ -66,14 +67,14 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     public void testRemoveListener() {
         MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
         MyEntryListener listener = new CountDownValueNotNullListener(1);
-        String id = multiMap.addEntryListener(listener, true);
+        UUID id = multiMap.addEntryListener(listener, true);
         assertTrue(multiMap.removeEntryListener(id));
     }
 
     @Test
     public void testRemoveListener_whenNotExist() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
-        assertFalse(multiMap.removeEntryListener("NOT_THERE"));
+        assertFalse(multiMap.removeEntryListener(new UUID(0, 0)));
     }
 
     @Test
@@ -415,7 +416,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
 
         KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
-        String id2 = multiMap.addEntryListener(listener, true);
+        UUID id2 = multiMap.addEntryListener(listener, true);
         getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key3", "val33");
         getMultiMap(instances, name).put("key4", "val4");

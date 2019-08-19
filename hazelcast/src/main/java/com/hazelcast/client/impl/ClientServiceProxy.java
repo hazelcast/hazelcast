@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -47,7 +48,7 @@ public final class ClientServiceProxy implements ClientService {
     }
 
     @Override
-    public String addClientListener(ClientListener clientListener) {
+    public UUID addClientListener(ClientListener clientListener) {
         checkNotNull(clientListener, "clientListener should not be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -57,7 +58,7 @@ public final class ClientServiceProxy implements ClientService {
     }
 
     @Override
-    public boolean removeClientListener(String registrationId) {
+    public boolean removeClientListener(UUID registrationId) {
         checkNotNull(registrationId, "registrationId should not be null");
 
         EventService eventService = nodeEngine.getEventService();

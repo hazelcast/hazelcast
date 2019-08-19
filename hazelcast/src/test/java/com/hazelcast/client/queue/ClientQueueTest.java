@@ -34,12 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -530,7 +525,7 @@ public class ClientQueueTest extends HazelcastTestSupport {
 
         final IQueue<Integer> queue = client.getQueue(randomString());
 
-        String id = queue.addItemListener(new ItemListener<Integer>() {
+        UUID id = queue.addItemListener(new ItemListener<Integer>() {
 
             public void itemAdded(ItemEvent<Integer> itemEvent) {
                 itemAddedLatch.countDown();

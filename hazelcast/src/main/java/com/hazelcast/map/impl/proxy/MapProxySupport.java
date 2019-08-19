@@ -93,16 +93,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1148,21 +1139,21 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public String addLocalEntryListenerInternal(Object listener) {
+    public UUID addLocalEntryListenerInternal(Object listener) {
         return mapServiceContext.addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
+    protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener,
+    protected UUID addEntryListenerInternal(Object listener,
                                               Predicate predicate,
                                               @Nullable Data key,
                                               boolean includeValue) {
@@ -1170,15 +1161,15 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected boolean removeEntryListenerInternal(String id) {
+    protected boolean removeEntryListenerInternal(UUID id) {
         return mapServiceContext.removeEventListener(name, id);
     }
 
-    protected String addPartitionLostListenerInternal(MapPartitionLostListener listener) {
+    protected UUID addPartitionLostListenerInternal(MapPartitionLostListener listener) {
         return mapServiceContext.addPartitionLostListener(listener, name);
     }
 
-    protected boolean removePartitionLostListenerInternal(String id) {
+    protected boolean removePartitionLostListenerInternal(UUID id) {
         return mapServiceContext.removePartitionLostListener(name, id);
     }
 

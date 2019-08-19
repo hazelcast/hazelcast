@@ -82,6 +82,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -351,13 +352,13 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.addProxyListener(distributedObjectListener);
     }
 
     @Override
-    public boolean removeDistributedObjectListener(String registrationId) {
+    public boolean removeDistributedObjectListener(UUID registrationId) {
         final ProxyService proxyService = node.getNodeEngine().getProxyService();
         return proxyService.removeProxyListener(registrationId);
     }

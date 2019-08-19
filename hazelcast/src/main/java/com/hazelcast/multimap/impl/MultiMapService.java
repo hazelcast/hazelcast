@@ -63,16 +63,7 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -238,7 +229,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
-    public String addListener(String name,
+    public UUID addListener(String name,
                               @Nonnull EventListener listener,
                               Data key,
                               boolean includeValue,
@@ -254,7 +245,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         return registration.getId();
     }
 
-    public boolean removeListener(String name, String registrationId) {
+    public boolean removeListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }

@@ -94,7 +94,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private int targetPartitionId;
 
     private volatile NearCache<K, V> nearCache;
-    private volatile String invalidationListenerId;
+    private volatile UUID invalidationListenerId;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
@@ -266,13 +266,13 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String registrationId) {
+    public boolean removeEntryListener(@Nonnull UUID registrationId) {
         return deregisterListener(registrationId);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new ReplicatedMapEventHandler(listener);
         return registerListener(createEntryListenerCodec(), handler);
@@ -286,12 +286,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -304,7 +304,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         EventHandler<ClientMessage> handler = new ReplicatedMapToKeyEventHandler(listener);
@@ -321,12 +321,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -339,7 +339,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
@@ -356,12 +356,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -374,7 +374,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -398,12 +398,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -467,7 +467,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
 
-    public String addNearCacheInvalidationListener(EventHandler handler) {
+    public UUID addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheInvalidationListenerCodec(), handler);
     }
 
@@ -488,12 +488,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 

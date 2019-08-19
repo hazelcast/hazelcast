@@ -132,12 +132,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
         }
 
@@ -161,12 +161,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
         }
 
@@ -190,12 +190,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
         }
 

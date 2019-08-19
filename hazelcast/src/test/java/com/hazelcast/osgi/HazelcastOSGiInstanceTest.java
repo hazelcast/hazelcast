@@ -50,11 +50,13 @@ import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
@@ -497,9 +499,10 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance =
                 createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn("my-registration-id");
+        UUID registrationId = UuidUtil.newUnsecureUUID();
+        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn(registrationId);
 
-        assertEquals("my-registration-id", hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
+        assertEquals(registrationId, hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
 
         verify(mockHazelcastInstance).addDistributedObjectListener(mockDistributedObjectListener);
     }
@@ -509,11 +512,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.removeDistributedObjectListener("my-registration-id")).thenReturn(true);
+        UUID registrationId = UuidUtil.newUnsecureUUID();
 
-        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener("my-registration-id"));
+        when(mockHazelcastInstance.removeDistributedObjectListener(registrationId)).thenReturn(true);
 
-        verify(mockHazelcastInstance).removeDistributedObjectListener("my-registration-id");
+        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener(registrationId));
+
+        verify(mockHazelcastInstance).removeDistributedObjectListener(registrationId);
     }
 
     @Test

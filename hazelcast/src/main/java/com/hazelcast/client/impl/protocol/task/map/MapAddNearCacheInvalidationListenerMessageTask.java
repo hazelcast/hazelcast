@@ -70,7 +70,7 @@ public class MapAddNearCacheInvalidationListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddNearCacheInvalidationListenerCodec.encodeResponse((String) response);
+        return MapAddNearCacheInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

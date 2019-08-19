@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -81,7 +82,7 @@ public class ClientTopicTest {
             public void onMessage(Message message) {
             }
         };
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         assertTrue(topic.removeMessageListener(id));
     }

@@ -32,10 +32,7 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -79,7 +76,7 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
 
     private final WeakReference<ClassLoader> classLoaderReference;
     private final String cacheNamePrefix;
-    private final String lifecycleListenerRegistrationId;
+    private final UUID lifecycleListenerRegistrationId;
 
     public AbstractHazelcastCacheManager(CachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                          URI uri, ClassLoader classLoader, Properties properties) {
@@ -288,7 +285,7 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
     }
 
-    private String registerLifecycleListener() {
+    private UUID registerLifecycleListener() {
         return hazelcastInstance.getLifecycleService().addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
                 onShuttingDown();

@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * SetRemoveListenerMessageTask
@@ -45,7 +46,7 @@ public class SetRemoveListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

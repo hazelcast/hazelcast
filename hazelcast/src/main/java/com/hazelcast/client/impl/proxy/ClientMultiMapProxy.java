@@ -257,13 +257,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Nonnull
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("Locality for client is ambiguous");
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventHandler<ClientMessage> handler = new ClientMultiMapEventHandler(listenerAdaptor);
@@ -278,12 +278,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MultiMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MultiMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -295,14 +295,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String registrationId) {
+    public boolean removeEntryListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Registration ID should not be null!");
         return deregisterListener(registrationId);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, final boolean includeValue) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
@@ -319,12 +319,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MultiMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 

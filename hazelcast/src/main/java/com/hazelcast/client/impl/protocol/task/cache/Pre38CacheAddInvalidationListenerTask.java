@@ -48,7 +48,7 @@ public class Pre38CacheAddInvalidationListenerTask
         long correlationId = clientMessage.getCorrelationId();
         Pre38NearCacheInvalidationListener listener
                 = new Pre38NearCacheInvalidationListener(endpoint, cacheContext, uuid, correlationId);
-        String registrationId =
+        UUID registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
@@ -97,7 +97,7 @@ public class Pre38CacheAddInvalidationListenerTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddInvalidationListenerCodec.encodeResponse((String) response);
+        return CacheAddInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

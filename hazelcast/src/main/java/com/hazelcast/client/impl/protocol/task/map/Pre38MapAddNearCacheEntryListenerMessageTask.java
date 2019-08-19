@@ -70,7 +70,7 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddNearCacheEntryListenerCodec.encodeResponse((String) response);
+        return MapAddNearCacheEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

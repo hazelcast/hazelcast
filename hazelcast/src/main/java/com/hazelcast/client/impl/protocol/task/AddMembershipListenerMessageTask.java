@@ -36,6 +36,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 
 public class AddMembershipListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddMembershipListenerCodec.RequestParameters> {
@@ -49,7 +50,7 @@ public class AddMembershipListenerMessageTask
         String serviceName = ClusterServiceImpl.SERVICE_NAME;
         ClusterServiceImpl service = getService(serviceName);
         boolean advancedNetworkConfigEnabled = isAdvancedNetworkEnabled();
-        String registrationId = service.addMembershipListener(
+        UUID registrationId = service.addMembershipListener(
                 new MembershipListenerImpl(endpoint, advancedNetworkConfigEnabled));
         endpoint.addListenerDestroyAction(serviceName, serviceName, registrationId);
         return registrationId;
@@ -62,7 +63,7 @@ public class AddMembershipListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddMembershipListenerCodec.encodeResponse((String) response);
+        return ClientAddMembershipListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

@@ -68,7 +68,7 @@ public class ReplicatedMapAddNearCacheListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((String) response);
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((UUID) response);
     }
 
     @Override

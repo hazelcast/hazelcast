@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * This operation removes all {@code QueryCache} resources on a node.
@@ -86,7 +87,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
         if (listenerRegistry == null) {
             return;
         }
-        String listenerId = listenerRegistry.remove(cacheId);
+        UUID listenerId = listenerRegistry.remove(cacheId);
         mapService.getMapServiceContext().removeEventListener(name, listenerId);
     }
 

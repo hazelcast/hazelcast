@@ -26,6 +26,8 @@ import com.hazelcast.topic.impl.TopicService;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
@@ -38,7 +40,7 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
     }
 
     @Override
-    protected String addListener() {
+    protected UUID addListener() {
         topic = client.getTopic(randomString());
 
         MessageListener<String> listener = new MessageListener<String>() {
@@ -56,7 +58,7 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
     }
 
     @Override
-    public boolean removeListener(String registrationId) {
+    public boolean removeListener(UUID registrationId) {
         return topic.removeMessageListener(registrationId);
     }
 }

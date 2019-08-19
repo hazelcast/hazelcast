@@ -20,6 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
+import java.util.UUID;
+
 /**
  * An event processor responsible of fetching the registration and service responsible for the published event
  * and processing it. The processor is an instance of the {@link StripedRunnable} and events are processed on a
@@ -80,7 +82,7 @@ public class EventProcessor implements StripedRunnable {
             return null;
         }
 
-        String id = eventEnvelope.getEventId();
+        UUID id = eventEnvelope.getEventId();
         Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
         if (registration == null) {
             if (eventService.nodeEngine.isRunning()) {

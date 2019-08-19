@@ -87,7 +87,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         ClientService clientService = instance.getClientService();
         ClientListener clientListener = mock(ClientListener.class);
-        String id = clientService.addClientListener(clientListener);
+        UUID id = clientService.addClientListener(clientListener);
 
         // first time remove
         assertTrue(clientService.removeClientListener(id));
@@ -102,7 +102,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         ClientService clientService = instance.getClientService();
 
-        assertFalse(clientService.removeClientListener("foobar"));
+        assertFalse(clientService.removeClientListener(new UUID(0, 0)));
     }
 
     @Test(timeout = 120000)
@@ -202,7 +202,7 @@ public class ClientServiceTest extends ClientTestSupport {
                 latchRemove.countDown();
             }
         };
-        final String id = clientService.addClientListener(clientListener);
+        final UUID id = clientService.addClientListener(clientListener);
 
         final HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
         final HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
@@ -215,7 +215,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         assertTrue(clientService.removeClientListener(id));
 
-        assertFalse(clientService.removeClientListener("foo"));
+        assertFalse(clientService.removeClientListener(new UUID(0, 0)));
 
         assertEquals(0, clientService.getConnectedClients().size());
 

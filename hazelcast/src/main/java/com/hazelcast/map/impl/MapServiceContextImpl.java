@@ -90,12 +90,7 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -654,19 +649,19 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addLocalEventListener(Object listener, String mapName) {
+    public UUID addLocalEventListener(Object listener, String mapName) {
         EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
         return registration.getId();
     }
 
     @Override
-    public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
+    public UUID addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, true);
         return registration.getId();
     }
 
     @Override
-    public String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
@@ -674,13 +669,13 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
+    public UUID addEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();
     }
 
     @Override
-    public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
         EventRegistration registration = eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter);
@@ -702,12 +697,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public boolean removeEventListener(String mapName, String registrationId) {
+    public boolean removeEventListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
-    public boolean removePartitionLostListener(String mapName, String registrationId) {
+    public boolean removePartitionLostListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
@@ -785,14 +780,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
+    public UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
         EventRegistration registration = getNodeEngine().getEventService().
                 registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
-    public String addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
+    public UUID addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
         return registration.getId();

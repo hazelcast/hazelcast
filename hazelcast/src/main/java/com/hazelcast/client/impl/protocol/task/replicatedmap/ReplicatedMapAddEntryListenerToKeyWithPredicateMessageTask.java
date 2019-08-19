@@ -64,7 +64,7 @@ public class ReplicatedMapAddEntryListenerToKeyWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeResponse((String) response);
+        return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeResponse((UUID) response);
     }
 
     @Override

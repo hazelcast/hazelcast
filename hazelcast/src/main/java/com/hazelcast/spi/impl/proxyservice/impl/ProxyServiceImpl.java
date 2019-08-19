@@ -40,10 +40,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.UuidUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -72,8 +69,8 @@ public class ProxyServiceImpl
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
-    final ConcurrentMap<String, DistributedObjectListener> listeners =
-            new ConcurrentHashMap<String, DistributedObjectListener>();
+    final ConcurrentMap<UUID, DistributedObjectListener> listeners =
+            new ConcurrentHashMap<UUID, DistributedObjectListener>();
 
     private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
             new ConstructorFunction<String, ProxyRegistry>() {
@@ -220,14 +217,14 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        String id = UuidUtil.newUnsecureUuidString();
+    public UUID addProxyListener(DistributedObjectListener distributedObjectListener) {
+        UUID id = UuidUtil.newUnsecureUUID();
         listeners.put(id, distributedObjectListener);
         return id;
     }
 
     @Override
-    public boolean removeProxyListener(String registrationId) {
+    public boolean removeProxyListener(UUID registrationId) {
         return listeners.remove(registrationId) != null;
     }
 

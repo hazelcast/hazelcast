@@ -26,6 +26,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapRemoveEntryListenerMessageTask
         extends AbstractRemoveListenerMessageTask<MapRemoveEntryListenerCodec.RequestParameters> {
@@ -41,7 +42,7 @@ public class MapRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

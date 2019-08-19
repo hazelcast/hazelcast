@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -46,7 +47,7 @@ public class ListRemoveListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

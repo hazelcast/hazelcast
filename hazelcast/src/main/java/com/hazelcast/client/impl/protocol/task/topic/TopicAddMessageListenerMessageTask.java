@@ -51,7 +51,7 @@ public class TopicAddMessageListenerMessageTask
     protected Object call() throws Exception {
         partitionKey = serializationService.toData(parameters.name);
         TopicService service = getService(TopicService.SERVICE_NAME);
-        String registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
+        UUID registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
         endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }
@@ -63,7 +63,7 @@ public class TopicAddMessageListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TopicAddMessageListenerCodec.encodeResponse((String) response);
+        return TopicAddMessageListenerCodec.encodeResponse((UUID) response);
     }
 
 

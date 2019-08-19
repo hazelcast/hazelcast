@@ -33,12 +33,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -226,27 +221,27 @@ public class ObjectMultiMapProxy<K, V>
 
     @Nonnull
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, false, true);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, includeValue, false);
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String registrationId) {
+    public boolean removeEntryListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Registration ID should not be null!");
         return getService().removeListener(name, registrationId);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();

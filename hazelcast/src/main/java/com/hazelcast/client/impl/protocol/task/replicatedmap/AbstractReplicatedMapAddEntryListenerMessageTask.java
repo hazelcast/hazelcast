@@ -52,7 +52,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     protected Object call() {
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
-        String registrationId;
+        UUID registrationId;
         Predicate predicate = getPredicate();
         if (predicate == null) {
             registrationId = eventPublishingService.addEventListener(this,

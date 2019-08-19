@@ -29,6 +29,7 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
@@ -100,11 +101,11 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     }
 
     public @Nonnull
-    String addMessageListenerInternal(@Nonnull MessageListener listener) {
+    UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
         return topicService.addMessageListener(name, listener, false);
     }
 
-    public boolean removeMessageListenerInternal(@Nonnull String registrationId) {
+    public boolean removeMessageListenerInternal(@Nonnull UUID registrationId) {
         return topicService.removeMessageListener(name, registrationId);
     }
 

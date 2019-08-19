@@ -48,7 +48,7 @@ public class CacheAddNearCacheInvalidationListenerTask
                 = new NearCacheInvalidationListener(endpoint, cacheContext,
                 nodeEngine.getLocalMember().getUuid(), clientMessage.getCorrelationId());
 
-        String registrationId =
+        UUID registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
@@ -93,7 +93,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((String) response);
+        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
