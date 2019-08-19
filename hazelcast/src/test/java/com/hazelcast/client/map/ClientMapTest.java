@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
@@ -356,6 +357,17 @@ public class ClientMapTest extends HazelcastTestSupport {
         Future<String> future = map.removeAsync("key4");
         assertEquals("value4", future.get());
         assertEquals(9, map.size());
+    }
+
+    @Test
+    public void testAsyncPutAll()  {
+        IMap<String, String> map = createMap();
+        Map<String, String> tmpMap = new HashMap<>();
+        fillMap(tmpMap);
+        ICompletableFuture<Void> future = ((ClientMapProxy<String, String>) map).putAllAsync(tmpMap);
+        assertEqualsEventually(map::size, tmpMap.size());
+        assertTrue(future.isDone());
+        assertEquals(tmpMap, new HashMap<>(map));
     }
 
     @Test
@@ -980,7 +992,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         return client.getMap(randomString());
     }
 
-    private void fillMap(IMap<String, String> map) {
+    private void fillMap(Map<String, String> map) {
         for (int i = 0; i < 10; i++) {
             map.put("key" + i, "value" + i);
         }

@@ -24,9 +24,9 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import java.util.function.BiFunction;
-
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -71,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -1030,6 +1031,23 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(size, map1.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map1.get(i).intValue());
+        }
+    }
+
+    @Test
+    public void testPutAllAsync() {
+        int size = 10000;
+
+        IMap<Integer, Integer> map = instances[0].getMap("testPutAllAsync");
+        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
+        for (int i = 0; i < size; i++) {
+            mm.put(i, i);
+        }
+        ICompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
+        assertEqualsEventually(map::size, size);
+        assertTrue(future.isDone());
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i).intValue());
         }
     }
 
