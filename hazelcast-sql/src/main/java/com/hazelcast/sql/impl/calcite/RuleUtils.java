@@ -2,11 +2,16 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.apache.calcite.plan.RelOptRule.convert;
 
@@ -100,6 +105,16 @@ public class RuleUtils {
      * Convert the given trait set to physical convention.
      *
      * @param traitSet Original trait set.
+     * @return New trait set with physical convention and provided distribution.
+     */
+    public static RelTraitSet toPhysicalConvention(RelTraitSet traitSet) {
+        return traitPlus(traitSet, HazelcastConventions.PHYSICAL);
+    }
+
+    /**
+     * Convert the given trait set to physical convention.
+     *
+     * @param traitSet Original trait set.
      * @param distribution Distribution.
      * @return New trait set with physical convention and provided distribution.
      */
@@ -111,11 +126,48 @@ public class RuleUtils {
      * Convert the given input into physical input.
      *
      * @param input Original input.
+     * @return Logical input.
+     */
+    public static RelNode toPhysicalInput(RelNode input) {
+        return convert(input, toPhysicalConvention(input.getTraitSet()));
+    }
+
+    /**
+     * Convert the given input into physical input.
+     *
+     * @param input Original input.
      * @param distribution Distribution.
      * @return Logical input.
      */
     public static RelNode toPhysicalInput(RelNode input, PhysicalDistributionTrait distribution) {
         return convert(input, toPhysicalConvention(input.getTraitSet(), distribution));
+    }
+
+    /**
+     * @param rel Node.
+     * @return {@code True} if the given node is physical node.
+     */
+    public static boolean isPhysical(RelNode rel) {
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(HazelcastConventions.PHYSICAL);
+    }
+
+    /**
+     * Get combinations of trait sets of physical relations of the given subset.
+     *
+     * @param subset Subset.
+     * @return Trait sets.
+     */
+    public static Set<RelTraitSet> getPhysicalTraitSets(RelSubset subset) {
+        Set<RelTraitSet> traitSets = new HashSet<>();
+
+        for (RelNode rel : subset.getRelList()) {
+            if (!isPhysical(rel))
+                continue;
+
+            traitSets.add(rel.getTraitSet());
+        }
+
+        return traitSets;
     }
 
     private RuleUtils() {

@@ -17,8 +17,9 @@
 package com.hazelcast.sql.impl.calcite.physical.distribution;
 
 public enum PhysicalDistributionType {
-    PARTITIONED,
-    REPLICATED,
+    DISTRIBUTED,
+    DISTRIBUTED_PARTITIONED,
+    DISTRIBUTED_REPLICATED,
     SINGLETON,
     ANY
 }

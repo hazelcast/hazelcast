@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.physical.distribution;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
+import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
@@ -50,7 +51,9 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         if (currentTrait.equals(targetTrait))
             return rel;
 
-        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
+        // TODO: What is the reason of having this RelSubset check?
+        // if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
+        if (currentTrait.equals(PhysicalDistributionTrait.ANY))
             return null;
 
         // Only physical nodes could be converted.
@@ -63,6 +66,14 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
                     rel.getCluster(),
                     RuleUtils.toPhysicalConvention(planner.emptyTraitSet(), targetTrait),
                     rel
+                );
+
+            case DISTRIBUTED_PARTITIONED:
+                return new PartitionedExchangePhysicalRel(
+                    rel.getCluster(),
+                    RuleUtils.toPhysicalConvention(planner.emptyTraitSet(), targetTrait),
+                    rel,
+                    targetTrait.getFields()
                 );
 
             case ANY:

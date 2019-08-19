@@ -16,35 +16,39 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
+import com.sun.org.omg.CORBA.ParDescriptionSeqHelper;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import java.util.List;
 
-public class RootPhysicalRel extends SingleRel implements PhysicalRel {
-    public RootPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+public class PartitionedExchangePhysicalRel extends SingleRel implements PhysicalRel {
+
+    private final List<PhysicalDistributionField> fields;
+
+    public PartitionedExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input,
+        List<PhysicalDistributionField> fields) {
         super(cluster, traits, input);
+
+        this.fields = fields;
+    }
+
+    public List<PhysicalDistributionField> getFields() {
+        return fields;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new RootPhysicalRel(this.getCluster(), traitSet, sole(inputs));
+        return new PartitionedExchangePhysicalRel(getCluster(), traitSet, sole(inputs), fields);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel)input).visit(visitor);
 
-        visitor.onRoot(this);
-    }
-
-    @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq);
+        visitor.onPartitionedExchange(this);
     }
 }

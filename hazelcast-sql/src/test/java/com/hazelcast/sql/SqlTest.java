@@ -40,10 +40,10 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    // private static final String QUERY = "SELECT p.address.apartment + 1 FROM partitioned.persons p ORDER BY name";
-    private static final String QUERY = "SELECT SUM(height) FROM city GROUP BY age ORDER BY SUM(height)";
+    private static final String QUERY = "SELECT p.__key.key, p.__key.keyStr FROM partitioned.persons p";
+    // private static final String QUERY = "SELECT SUM(height) FROM city GROUP BY age ORDER BY SUM(height)";
 
-    @Test
+    @Test(timeout = Long.MAX_VALUE)
     public void testSimpleQuery() throws Exception {
         // Start several members.
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);

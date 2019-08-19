@@ -17,8 +17,10 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.calcite.physical.rel.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
@@ -188,6 +190,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
+    public void onPartitionedExchange(PartitionedExchangePhysicalRel rel) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
         // Get upstream node. It should be sort node.
         PhysicalNode upstreamNode = pollSingleUpstream();
@@ -250,6 +258,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Expression<Boolean>)convertedCondition);
 
         pushUpstream(filterNode);
+    }
+
+    @Override
+    public void onAggregate(AggregatePhysicalRel rel) {
+        // TODO
     }
 
     /**

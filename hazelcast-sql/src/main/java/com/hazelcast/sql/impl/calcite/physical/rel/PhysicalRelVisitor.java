@@ -24,8 +24,10 @@ public interface PhysicalRelVisitor {
     void onMapScan(MapScanPhysicalRel rel);
     void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);
     void onSingletonExchange(SingletonExchangePhysicalRel rel);
+    void onPartitionedExchange(PartitionedExchangePhysicalRel rel);
     void onSortMergeExchange(SortMergeExchangePhysicalRel rel);
     void onSort(SortPhysicalRel rel);
     void onProject(ProjectPhysicalRel rel);
     void onFilter(FilterPhysicalRel rel);
+    void onAggregate(AggregatePhysicalRel rel);
 }

@@ -20,7 +20,10 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.schema.impl.AbstractTable;
+
+import java.util.List;
 
 /**
  * Hazelcast table which can register fields dynamically.
@@ -47,6 +50,10 @@ public class HazelcastTable extends AbstractTable {
 
     public boolean isReplicated() {
         return container.getServiceName().equals(ReplicatedMapService.SERVICE_NAME);
+    }
+
+    public List<RelDataTypeField> getFieldList() {
+        return fields.getFieldList();
     }
 
     @Override
