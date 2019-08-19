@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
@@ -87,8 +88,6 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
-import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
-import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
@@ -96,7 +95,8 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
+import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -104,16 +104,18 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.IMapEvent;
-import com.hazelcast.map.MapEvent;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.QueryCache;
@@ -138,7 +140,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 
@@ -153,8 +154,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
@@ -1698,7 +1701,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
+    public void putAll(@Nonnull Map<? extends K, ? extends V> m) {
+        putAllInternal(m, null);
+    }
+
+    // used by Jet
+    public ICompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
+        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(ForkJoinPool.commonPool(),
+                getClient().getLoggingService().getLogger(ClientMapProxy.class));
+        putAllInternal(m, future);
+        return future;
+    }
+
+    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable SimpleCompletableFuture<Void> future) {
         checkNotNull(map, "Null argument map is not allowed");
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
@@ -1717,25 +1732,50 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
             partition.add(new AbstractMap.SimpleEntry<>(keyData, toData(entry.getValue())));
         }
-        putAllInternal(map, entryMap);
-    }
 
-    protected void putAllInternal(Map<? extends K, ? extends V> map, Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
         List<Future<?>> futures = new ArrayList<>(entryMap.size());
+        AtomicInteger counter = new AtomicInteger(entryMap.size());
+        ExecutionCallback<ClientMessage> callback = new ExecutionCallback<ClientMessage>() {
+            @Override
+            public void onResponse(ClientMessage response) {
+                if (counter.decrementAndGet() == 0) {
+                    if (future != null) {
+                        future.setResult(null);
+                    }
+                    finalizePutAll(map, entryMap);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (future != null) {
+                    future.setResult(t);
+                }
+                onResponse(null);
+            }
+        };
         for (Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
             Integer partitionId = entry.getKey();
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+            ClientInvocationFuture f = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            f.andThen(callback);
+            futures.add(f);
         }
-        try {
-            for (Future<?> future : futures) {
-                future.get();
+        // if executing in sync mode, block for the responses
+        if (future == null) {
+            try {
+                for (Future<?> f : futures) {
+                    f.get();
+                }
+            } catch (Exception e) {
+                throw rethrow(e);
             }
-        } catch (Exception e) {
-            throw rethrow(e);
         }
+    }
+
+    protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
     }
 
     @Override
