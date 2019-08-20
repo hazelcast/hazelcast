@@ -60,7 +60,7 @@ public class MapScanPhysicalRule extends RelOptRule {
         if (hazelcastTable.isReplicated()) {
             newScan = new ReplicatedMapScanPhysicalRel(
                 scan.getCluster(),
-                RuleUtils.toPhysicalConvention(scan.getTraitSet(), PhysicalDistributionTrait.DISTRIBUTED_REPLICATED),
+                RuleUtils.toPhysicalConvention(scan.getTraitSet(), PhysicalDistributionTrait.REPLICATED),
                 table,
                 scan.deriveRowType()
             );

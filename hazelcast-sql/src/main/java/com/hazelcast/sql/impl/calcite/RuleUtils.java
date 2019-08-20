@@ -1,6 +1,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptRule;
@@ -199,6 +200,16 @@ public class RuleUtils {
         }
 
         return traitSets;
+    }
+
+    /**
+     * Get physical distribution of the given node.
+     *
+     * @param rel Rel node.
+     * @return Physical distribution.
+     */
+    public static PhysicalDistributionTrait getPhysicalDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
     }
 
     private RuleUtils() {

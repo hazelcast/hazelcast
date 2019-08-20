@@ -30,8 +30,8 @@ public class PhysicalDistributionTrait implements RelTrait {
         new PhysicalDistributionTrait(PhysicalDistributionType.DISTRIBUTED);
 
     /** Data is distributed in replicated map. */
-    public static final PhysicalDistributionTrait DISTRIBUTED_REPLICATED =
-        new PhysicalDistributionTrait(PhysicalDistributionType.DISTRIBUTED_REPLICATED);
+    public static final PhysicalDistributionTrait REPLICATED =
+        new PhysicalDistributionTrait(PhysicalDistributionType.REPLICATED);
 
     /** Consume the whole stream on a single node. */
     public static final PhysicalDistributionTrait SINGLETON =
@@ -87,7 +87,6 @@ public class PhysicalDistributionTrait implements RelTrait {
                 switch (type) {
                     case DISTRIBUTED:
                     case DISTRIBUTED_PARTITIONED:
-                    case DISTRIBUTED_REPLICATED:
                         if (targetType == PhysicalDistributionType.DISTRIBUTED) {
                             res = true;
 

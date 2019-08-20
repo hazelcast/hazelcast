@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRe
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
 public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributionTrait> {
@@ -45,7 +44,7 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         PhysicalDistributionTrait targetTrait,
         boolean allowInfiniteCostConverters
     ) {
-        PhysicalDistributionTrait currentTrait = rel.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
+        PhysicalDistributionTrait currentTrait = RuleUtils.getPhysicalDistribution(rel);
 
         // Do nothing if input is already converted.
         if (currentTrait.equals(targetTrait))
@@ -59,6 +58,8 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         // Only physical nodes could be converted.
         if (rel.getConvention() != HazelcastConventions.PHYSICAL)
             return null;
+
+        // TODO: Make sure that SINGLETON <- REPLICATED is treated specially!
 
         switch (targetTrait.getType()){
             case SINGLETON:

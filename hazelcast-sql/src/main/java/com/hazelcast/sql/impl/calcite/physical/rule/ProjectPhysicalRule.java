@@ -21,13 +21,11 @@ import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
@@ -35,15 +33,11 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType.*;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType.DISTRIBUTED_PARTITIONED;
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
@@ -64,7 +58,9 @@ public class ProjectPhysicalRule extends RelOptRule {
         ProjectLogicalRel logicalProject = call.rel(0);
         RelNode input = logicalProject.getInput();
 
-        Collection<InputAndTraitSet> transforms = getConversions(logicalProject, input);
+        RelNode convertedInput = RuleUtils.toPhysicalInput(input);
+
+        Collection<InputAndTraitSet> transforms = getTransforms(logicalProject, convertedInput);
 
         for (InputAndTraitSet transform : transforms) {
             ProjectPhysicalRel newProject = new ProjectPhysicalRel(
@@ -83,39 +79,26 @@ public class ProjectPhysicalRule extends RelOptRule {
      * Get conversions which will be applied to the given logical project.
      *
      * @param logicalProject Logical project.
-     * @param input Input.
+     * @param convertedInput Input.
      * @return Conversions (converted input + trait set).
      */
-    private static Collection<InputAndTraitSet> getConversions(ProjectLogicalRel logicalProject, RelNode input) {
+    private static Collection<InputAndTraitSet> getTransforms(ProjectLogicalRel logicalProject,
+        RelNode convertedInput) {
         // TODO: Handle collation properly.
         List<InputAndTraitSet> res = new ArrayList<>();
 
-        // Convert an input to physical.
-        RelNode convertedInput = RuleUtils.toPhysicalInput(input);
-
-        // Get mapping of project input fields to an index of related expression in the projection.
+                // Get mapping of project input fields to an index of related expression in the projection.
         Map<PhysicalDistributionField, Integer> projectFieldMap = getProjectFieldMap(logicalProject);
 
-        if (convertedInput instanceof RelSubset) {
-            Set<RelTraitSet> traitSets = RuleUtils.getPhysicalTraitSets((RelSubset)convertedInput);
+        Collection<RelNode> physicalInputs = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
 
-            Set<RelNode> transformedInputs = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (RelNode physicalInput : physicalInputs) {
+            PhysicalDistributionTrait transformedInputDist = RuleUtils.getPhysicalDistribution(physicalInput);
 
-            for (RelTraitSet traitSet : traitSets) {
-                // Get an input with the given trait.
-                RelNode convertedInput0 = convert(convertedInput, traitSet);
+            PhysicalDistributionTrait projectDist =
+                getProjectTraitForInputTrait(transformedInputDist, projectFieldMap);
 
-                if (!transformedInputs.add(convertedInput0))
-                    continue;
-
-                PhysicalDistributionTrait transformedInputDist =
-                    convertedInput0.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
-
-                PhysicalDistributionTrait projectDist =
-                    getProjectTraitForInputTrait(transformedInputDist, projectFieldMap);
-
-                res.add(new InputAndTraitSet(convertedInput0, convertedInput0.getTraitSet().plus(projectDist)));
-            }
+            res.add(new InputAndTraitSet(physicalInput, physicalInput.getTraitSet().plus(projectDist)));
         }
 
         if (res.isEmpty())
@@ -145,7 +128,7 @@ public class ProjectPhysicalRule extends RelOptRule {
             case DISTRIBUTED:
                 // Arbitrary distribution remains arbitrary. Fall-through.
 
-            case DISTRIBUTED_REPLICATED:
+            case REPLICATED:
                 // Replicated distribution is still replicated anyway.
                 return inputDist;
 

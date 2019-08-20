@@ -40,7 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "SELECT __key, COUNT(LENGTH(name)) FROM city GROUP BY __key";
+    private static final String QUERY = "SELECT __key, COUNT(DISTINCT LENGTH(name)), age, SUM(height) FROM city GROUP BY __key, age";
     // private static final String QUERY = "SELECT SUM(height) FROM city GROUP BY age ORDER BY SUM(height)";
 
     @Test(timeout = Long.MAX_VALUE)

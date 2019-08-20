@@ -22,14 +22,10 @@ import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
 
 /**
  * This rule converts logical filter into physical filter. Physical projection inherits distribution of the
@@ -52,7 +48,7 @@ public class FilterPhysicalRule extends RelOptRule {
 
         RelNode convertedInput = RuleUtils.toPhysicalInput(input);
 
-        Collection<RelNode> transformedInputs = getTransformedInputs(convertedInput);
+        Collection<RelNode> transformedInputs = getInputTransforms(convertedInput);
 
         for (RelNode transformedInput : transformedInputs) {
             FilterPhysicalRel newFilter = new FilterPhysicalRel(
@@ -72,22 +68,11 @@ public class FilterPhysicalRule extends RelOptRule {
      * @param convertedInput Original input in physical convention.
      * @return Inputs which should be used for transformation.
      */
-    private Collection<RelNode> getTransformedInputs(RelNode convertedInput) {
-        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
-
-        if (convertedInput instanceof RelSubset) {
-            Set<RelTraitSet> traitSets = RuleUtils.getPhysicalTraitSets((RelSubset) convertedInput);
-
-            for (RelTraitSet traitSet : traitSets) {
-                // Get an input with the given trait.
-                RelNode convertedInput0 = convert(convertedInput, traitSet);
-
-                res.add(convertedInput0);
-            }
-        }
+    private Collection<RelNode> getInputTransforms(RelNode convertedInput) {
+        Collection<RelNode> res = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
 
         if (res.isEmpty())
-            res.add(convertedInput);
+            res = Collections.singletonList(convertedInput);
 
         return res;
     }
