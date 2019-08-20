@@ -197,6 +197,15 @@ public class CallOperator {
     /** Item operator. */
     public static final int ITEM = 401;
 
+    /** Aggregate: SUM. */
+    public static final int AGG_SUM = 501;
+
+    /** Aggregate: COUNT. */
+    public static final int AGG_COUNT = 502;
+
+    /** Aggregate: AVG. */
+    public static final int AGG_AVG = 503;
+
     private CallOperator() {
         // No-op.
     }
