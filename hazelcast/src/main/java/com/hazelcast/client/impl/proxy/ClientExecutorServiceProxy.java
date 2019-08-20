@@ -410,7 +410,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
                 message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response);
-        delegatingFuture.andThen(callback);
+        if (callback != null) {
+            delegatingFuture.andThen(callback);
+        }
         return delegatingFuture;
     }
 
@@ -453,7 +455,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientInvocationFuture f = invokeOnTarget(request, address);
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
                 message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response);
-        delegatingFuture.andThen(callback);
+        if (callback != null) {
+            delegatingFuture.andThen(callback);
+        }
     }
 
     @Override
