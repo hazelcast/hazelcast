@@ -46,6 +46,7 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
+    @Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testClientLifecycle() {
         memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
 
@@ -80,6 +81,7 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
+    @Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testAdvancedClientMap() {
         memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
         HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
