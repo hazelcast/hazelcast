@@ -37,9 +37,20 @@ import java.util.Objects;
  * message-type                 = int32
  * correlation-id               = int64
  *
- * var-sized-param              = string-frame / custom-type-frames / list-frames / map-frames / null-frame
- * map-frames                   = list-frames list-frames                                       ; key-frames value-frames
+ * var-sized-param              = string-frame / custom-type-frames / var-sized-param-list-frames / fixed-sized-param-list-frame
+ * / map-fixed-to-fixed-frame / map-var-sized-to-var-sized-frames / null-frame
+ *
+ * map-fixed-to-fixed-frame          = frame-length flags *fixed-size-entry
+ * fixed-size-entry                  = fixed-sized-param fixed-sized-param
+ * map-var-sized-to-var-sized-frames = begin-frame *var-sized-entry end-frame
+ * var-sized-entry                   = var-sized-param var-sized-param
+ *
+ * //map-fixed-sized-to-var-sized-frames // Not defined yet. Has no usage yet.
+ * //map-var-sized-to-fixed-sized-frames // Not defined yet. Has no usage yet.
+ *
  * list-frames                  = var-sized-param-list-frames | fixed-sized-param-list-frame
+ * var-sized-param-list-frames  = begin-frame *var-sized-param  end-frame  ; all elements should be same type
+ * fixed-sized-param-list-frame = frame-length flags *fixed-sized-param    ; all elements should be same type
  *
  *
  * string-frame                 = frame-length flags *OCTET ; Contains UTF-8 encoded octets
@@ -47,8 +58,6 @@ import java.util.Objects;
  * custom-type-frames           = begin-frame *1custom-type-first-frame *var-sized-param end-frame
  * custom-type-first-frame      = frame-length flags *fix-sized-param
  *
- * var-sized-param-list-frames  = begin-frame *var-sized-param  end-frame  ; all elements should be same type
- * fixed-sized-param-list-frame = frame-length flags *fixed-sized-param    ; all elements should be same type
  *
  * null-frame                   = %x00 %x00 %x00 %x05 null-flags
  * null-flags                   = %b0  %b0  %b0 %b0 %b0 %b1 10reserved  ; is-null: 1
