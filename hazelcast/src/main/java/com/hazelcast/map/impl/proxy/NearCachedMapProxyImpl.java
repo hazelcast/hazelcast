@@ -25,6 +25,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
@@ -518,14 +519,28 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (serializeKeys) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
-        try {
-            return super.submitToKeysInternal(keys, dataKeys, entryProcessor);
-        } finally {
-            Set<?> ncKeys = serializeKeys ? dataKeys : keys;
-            for (Object key : ncKeys) {
-                invalidateNearCache(key);
+        SimpleCompletableFuture<Map<K, R>> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
+        ICompletableFuture<Map<K, R>> future = super.submitToKeysInternal(keys, dataKeys, entryProcessor);
+        future.andThen(new ExecutionCallback<Map<K, R>>() {
+            @Override
+            public void onResponse(Map<K, R> response) {
+                handle(response);
             }
-        }
+
+            @Override
+            public void onFailure(Throwable t) {
+                handle(t);
+            }
+
+            private void handle(Object response) {
+                Set<?> ncKeys = serializeKeys ? dataKeys : keys;
+                for (Object key : ncKeys) {
+                    invalidateNearCache(key);
+                }
+                resultFuture.setResult(response);
+            }
+        });
+        return resultFuture;
     }
 
     @Override
