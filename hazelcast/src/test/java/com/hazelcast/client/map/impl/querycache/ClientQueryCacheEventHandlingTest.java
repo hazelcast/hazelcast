@@ -104,7 +104,7 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
             }
         }, true);
 
-        assertFalse(queryCache.removeEntryListener(new UUID(0, 0)));
+        assertFalse(queryCache.removeEntryListener(UUID.randomUUID()));
 
         assertTrue(queryCache.removeEntryListener(removeEntryListener));
         assertFalse(queryCache.removeEntryListener(removeEntryListener));

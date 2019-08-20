@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

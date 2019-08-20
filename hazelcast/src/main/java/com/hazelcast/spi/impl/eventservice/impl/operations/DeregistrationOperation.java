@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;

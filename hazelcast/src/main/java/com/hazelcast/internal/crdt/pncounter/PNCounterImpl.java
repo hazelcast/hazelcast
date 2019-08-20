@@ -18,7 +18,7 @@ package com.hazelcast.internal.crdt.pncounter;
 
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.crdt.CRDT;
 import com.hazelcast.internal.crdt.CRDTDataSerializerHook;
 import com.hazelcast.crdt.MutationDisallowedException;

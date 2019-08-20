@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.logging.ILogger;

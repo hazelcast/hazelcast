@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

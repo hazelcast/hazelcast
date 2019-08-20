@@ -31,8 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 

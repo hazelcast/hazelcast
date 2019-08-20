@@ -31,8 +31,8 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * {@code CPMember} represents a member in Raft group.

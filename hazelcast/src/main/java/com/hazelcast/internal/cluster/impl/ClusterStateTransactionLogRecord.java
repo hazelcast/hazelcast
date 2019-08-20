@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;

@@ -917,7 +917,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        assertFalse(map1.removeEntryListener(new UUID(0, 0)));
+        assertFalse(map1.removeEntryListener(UUID.randomUUID()));
     }
 
     @Test(expected = NullPointerException.class)

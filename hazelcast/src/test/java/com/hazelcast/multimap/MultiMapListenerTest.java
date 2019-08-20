@@ -74,7 +74,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     @Test
     public void testRemoveListener_whenNotExist() {
         MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
-        assertFalse(multiMap.removeEntryListener(new UUID(0, 0)));
+        assertFalse(multiMap.removeEntryListener(UUID.randomUUID()));
     }
 
     @Test

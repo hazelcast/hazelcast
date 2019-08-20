@@ -450,7 +450,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         thread.interrupt();
         assertJoinable(thread);
         assertTrue(m.removeEntryListener(id));
-        assertFalse(m.removeEntryListener(new UUID(0, 0)));
+        assertFalse(m.removeEntryListener(UUID.randomUUID()));
     }
 
     static class SamplePortable implements Portable {

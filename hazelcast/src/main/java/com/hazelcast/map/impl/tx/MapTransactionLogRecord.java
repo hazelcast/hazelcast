@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;

@@ -104,7 +104,7 @@ import static java.util.Collections.emptySet;
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
-    public static final UUID SOURCE_NOT_AVAILABLE = new UUID(0, 0);
+    public static final UUID SOURCE_NOT_AVAILABLE = new UUID(-1, -1);
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;
 
     protected final int partitionId;

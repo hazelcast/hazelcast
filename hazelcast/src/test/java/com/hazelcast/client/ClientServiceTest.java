@@ -102,7 +102,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         ClientService clientService = instance.getClientService();
 
-        assertFalse(clientService.removeClientListener(new UUID(0, 0)));
+        assertFalse(clientService.removeClientListener(UUID.randomUUID()));
     }
 
     @Test(timeout = 120000)
@@ -215,7 +215,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         assertTrue(clientService.removeClientListener(id));
 
-        assertFalse(clientService.removeClientListener(new UUID(0, 0)));
+        assertFalse(clientService.removeClientListener(UUID.randomUUID()));
 
         assertEquals(0, clientService.getConnectedClients().size());
 

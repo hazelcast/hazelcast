@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;

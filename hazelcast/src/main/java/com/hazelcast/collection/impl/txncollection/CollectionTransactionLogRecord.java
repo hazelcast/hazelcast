@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;

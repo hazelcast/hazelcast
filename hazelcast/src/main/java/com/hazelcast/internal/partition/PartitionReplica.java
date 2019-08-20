@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

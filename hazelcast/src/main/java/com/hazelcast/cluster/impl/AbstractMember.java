@@ -18,14 +18,13 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
@@ -61,7 +60,7 @@ public abstract class AbstractMember implements Member {
         this.addressMap = addresses;
         assert address != null : "Address is required!";
         this.version = version;
-        this.uuid = uuid != null ? uuid : UuidUtil.newUnsecureUUID();
+        this.uuid = uuid != null ? uuid : new UUID(address.getHost().hashCode(), address.getPort());
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }

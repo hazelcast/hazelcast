@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;

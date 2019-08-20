@@ -42,8 +42,8 @@ import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.A
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.SUCCESSFUL;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 

@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

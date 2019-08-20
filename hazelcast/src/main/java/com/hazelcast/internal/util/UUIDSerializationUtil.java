@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.util;
+package com.hazelcast.internal.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;

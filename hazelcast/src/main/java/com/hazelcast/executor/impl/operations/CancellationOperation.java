@@ -16,7 +16,7 @@
 
 package com.hazelcast.executor.impl.operations;
 
-import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
