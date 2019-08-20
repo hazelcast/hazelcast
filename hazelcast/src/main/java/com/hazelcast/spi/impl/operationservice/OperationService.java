@@ -205,6 +205,26 @@ public interface OperationService {
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions);
 
     /**
+     * Invokes a set of operations on selected set of partitions in an async way.
+     * <p>
+     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * operations are completed on primary replicas of the given {@code partitions}.
+     *
+     * @param serviceName      the name of the service
+     * @param operationFactory the factory responsible for creating operations
+     * @param memberPartitions the partitions the operation should be executed on,
+     *                         grouped by owners
+     * @param <T>              type of result of operations returned by {@code operationFactory}
+     * @return a future returning a Map with partitionId as a key and the
+     *         outcome of the operation as a value.
+     */
+    <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+            String serviceName,
+            OperationFactory operationFactory,
+            Map<Address, List<Integer>> memberPartitions);
+
+    /**
      * Invokes a set of operations on selected set of partitions.
      * <p>
      * This method blocks until all operations complete.

@@ -129,6 +129,7 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
@@ -940,7 +941,7 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(partitions, entriesPerPartition)
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition)
                                 .get();
                     }
                 }
@@ -969,7 +970,8 @@ abstract class MapProxySupport<K, V>
             };
             List<Future<Map<Integer, Object>>> futures = new ArrayList<>(memberPartitionsMap.size());
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                ICompletableFuture<Map<Integer, Object>> f = invokePutAllOperation(entry.getValue(), entriesPerPartition);
+                ICompletableFuture<Map<Integer, Object>> f =
+                        invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
                 futures.add(f);
                 f.andThen(callback);
             }
@@ -986,6 +988,7 @@ abstract class MapProxySupport<K, V>
 
     @Nonnull
     private ICompletableFuture<Map<Integer, Object>> invokePutAllOperation(
+            Address address,
             List<Integer> memberPartitions,
             MapEntries[] entriesPerPartition
     ) {
@@ -1023,7 +1026,7 @@ abstract class MapProxySupport<K, V>
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
         long startTimeNanos = System.nanoTime();
         ICompletableFuture<Map<Integer, Object>> future =
-                operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, asIntegerList(partitions));
+                operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
         long finalTotalSize = totalSize;
         future.andThen(new ExecutionCallback<Map<Integer, Object>>() {
             @Override

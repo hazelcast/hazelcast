@@ -419,7 +419,13 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions) {
 
-        Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
+        return invokeOnPartitionsAsync(serviceName, operationFactory, getMemberPartitions(partitions));
+    }
+
+    @Override
+    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+            String serviceName, OperationFactory operationFactory, Map<Address, List<Integer>> memberPartitions) {
+
         InvokeOnPartitions invokeOnPartitions =
                 new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync();
