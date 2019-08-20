@@ -52,17 +52,21 @@ public class ClientMessageWriter {
         int frameContentLength = frame.content == null ? 0 : frame.content.length;
 
         //if write offset is -1 put the length and flags byte first
-        if (writeOffset == -1 && bytesWritable >= SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
-            Bits.writeIntL(dst, dst.position(), frameContentLength + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-            dst.position(dst.position() + Bits.INT_SIZE_IN_BYTES);
+        if (writeOffset == -1) {
+            if (bytesWritable >= SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+                Bits.writeIntL(dst, dst.position(), frameContentLength + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+                dst.position(dst.position() + Bits.INT_SIZE_IN_BYTES);
 
-            if (isLastFrame) {
-                Bits.writeShortL(dst, dst.position(), (short) (frame.flags | IS_FINAL_FLAG));
+                if (isLastFrame) {
+                    Bits.writeShortL(dst, dst.position(), (short) (frame.flags | IS_FINAL_FLAG));
+                } else {
+                    Bits.writeShortL(dst, dst.position(), (short) frame.flags);
+                }
+                dst.position(dst.position() + Bits.SHORT_SIZE_IN_BYTES);
+                writeOffset = 0;
             } else {
-                Bits.writeShortL(dst, dst.position(), (short) frame.flags);
+                return false;
             }
-            dst.position(dst.position() + Bits.SHORT_SIZE_IN_BYTES);
-            writeOffset = 0;
         }
         bytesWritable = dst.remaining();
 
