@@ -29,6 +29,8 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ThreadUtil;
 
+import java.util.UUID;
+
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
@@ -49,7 +51,7 @@ final class TransactionProxy {
     private final ClientConnection connection;
     private final ILogger logger;
 
-    private String txnId;
+    private UUID txnId;
     private State state = NO_TXN;
     private long startTime;
 
@@ -60,7 +62,7 @@ final class TransactionProxy {
         this.logger = client.getLoggingService().getLogger(TransactionProxy.class);
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 

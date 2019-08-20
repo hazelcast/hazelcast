@@ -19,18 +19,20 @@ package com.hazelcast.collection.impl.txnqueue;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transactional Queue Item.
  */
 public class TxQueueItem extends QueueItem {
 
-    private String transactionId;
+    private UUID transactionId;
     private boolean pollOperation;
 
     public TxQueueItem() {
@@ -46,11 +48,11 @@ public class TxQueueItem extends QueueItem {
         super(container, itemId, data);
     }
 
-    public String getTransactionId() {
+    public UUID getTransactionId() {
         return transactionId;
     }
 
-    public TxQueueItem setTransactionId(String transactionId) {
+    public TxQueueItem setTransactionId(UUID transactionId) {
         this.transactionId = transactionId;
         return this;
     }
@@ -67,14 +69,14 @@ public class TxQueueItem extends QueueItem {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeBoolean(pollOperation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         pollOperation = in.readBoolean();
     }
 

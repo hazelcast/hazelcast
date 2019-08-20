@@ -71,9 +71,9 @@ public interface ClientEndpoint extends Client {
 
     void setTransactionContext(TransactionContext context);
 
-    TransactionContext getTransactionContext(String txnId);
+    TransactionContext getTransactionContext(UUID txnId);
 
-    void removeTransactionContext(String txnId);
+    void removeTransactionContext(UUID txnId);
 
     /**
      * Indicates whether this endpoint is the owner connection for that client.

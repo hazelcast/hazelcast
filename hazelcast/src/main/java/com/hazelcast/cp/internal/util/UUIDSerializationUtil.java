@@ -25,11 +25,16 @@ import java.util.UUID;
  * Util methods for UUID serialization / deserialization operations
  */
 public final class UUIDSerializationUtil {
+    private static final UUID NIL_UUID = new UUID(0, 0);
+
 
     private UUIDSerializationUtil() {
     }
 
     public static void writeUUID(DataOutput out, UUID uid) throws IOException {
+        if (uid == null) {
+            uid = NIL_UUID;
+        }
         out.writeLong(uid.getLeastSignificantBits());
         out.writeLong(uid.getMostSignificantBits());
     }
@@ -38,6 +43,10 @@ public final class UUIDSerializationUtil {
         long least = in.readLong();
         long most = in.readLong();
 
+        UUID uuid = new UUID(most, least);
+        if (uuid.equals(NIL_UUID)) {
+            return null;
+        }
         return new UUID(most, least);
     }
 }

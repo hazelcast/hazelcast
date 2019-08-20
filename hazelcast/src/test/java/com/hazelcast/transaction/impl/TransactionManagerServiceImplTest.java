@@ -44,6 +44,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
+    private static final UUID TXN = UUID.randomUUID();
 
     private TransactionManagerServiceImpl txService;
 
@@ -59,19 +60,17 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
     @Test
     public void createBackupLog_whenNotCreated() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
 
-        assertTxLogState(txId, ACTIVE);
+        assertTxLogState(TXN, ACTIVE);
     }
 
     @Test(expected = TransactionException.class)
     public void createBackupLog_whenAlreadyExist() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
 
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
     }
 
     // ================= rollbackBackupLog ===================================
@@ -79,33 +78,31 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
     @Test(expected = TransactionException.class)
     public void replicaBackupLog_whenNotExist_thenTransactionException() {
         List<TransactionLogRecord> records = new LinkedList<>();
-        txService.replicaBackupLog(records, UuidUtil.newUnsecureUUID(), "notexist", 1, 1);
+        txService.replicaBackupLog(records, UuidUtil.newUnsecureUUID(), TXN, 1, 1);
     }
 
     @Test
     public void replicaBackupLog_whenExist() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
 
         List<TransactionLogRecord> records = new LinkedList<>();
-        txService.replicaBackupLog(records, callerUuid, txId, 1, 1);
+        txService.replicaBackupLog(records, callerUuid, TXN, 1, 1);
 
-        assertTxLogState(txId, COMMITTING);
+        assertTxLogState(TXN, COMMITTING);
     }
 
     @Test(expected = TransactionException.class)
     public void replicaBackupLog_whenNotActive() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
-        txService.txBackupLogs.get(txId).state = ROLLED_BACK;
+        txService.createBackupLog(callerUuid, TXN);
+        txService.txBackupLogs.get(TXN).state = ROLLED_BACK;
 
         List<TransactionLogRecord> records = new LinkedList<>();
-        txService.replicaBackupLog(records, callerUuid, txId, 1, 1);
+        txService.replicaBackupLog(records, callerUuid, TXN, 1, 1);
     }
 
-    private void assertTxLogState(String txId, Transaction.State state) {
+    private void assertTxLogState(UUID txId, Transaction.State state) {
         TxBackupLog backupLog = txService.txBackupLogs.get(txId);
         assertNotNull(backupLog);
         assertEquals(state, backupLog.state);
@@ -116,17 +113,16 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
     @Test
     public void rollbackBackupLog_whenExist() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
 
-        txService.rollbackBackupLog(txId);
+        txService.rollbackBackupLog(TXN);
 
-        assertTxLogState(txId, ROLLING_BACK);
+        assertTxLogState(TXN, ROLLING_BACK);
     }
 
     @Test
     public void rollbackBackupLog_whenNotExist_thenIgnored() {
-        txService.rollbackBackupLog("notexist");
+        txService.rollbackBackupLog(TXN);
     }
 
     // ================= purgeBackupLog ===================================
@@ -134,16 +130,15 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
     @Test
     public void purgeBackupLog_whenExist_thenRemoved() {
         UUID callerUuid = UuidUtil.newUnsecureUUID();
-        String txId = "tx1";
-        txService.createBackupLog(callerUuid, txId);
+        txService.createBackupLog(callerUuid, TXN);
 
-        txService.purgeBackupLog(txId);
+        txService.purgeBackupLog(TXN);
 
-        assertFalse(txService.txBackupLogs.containsKey(txId));
+        assertFalse(txService.txBackupLogs.containsKey(TXN));
     }
 
     @Test
     public void purgeBackupLog_whenNotExist_thenIgnored() {
-        txService.purgeBackupLog("notexist");
+        txService.purgeBackupLog(TXN);
     }
 }

@@ -60,7 +60,7 @@ final class TransactionContextImpl implements TransactionContext {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 

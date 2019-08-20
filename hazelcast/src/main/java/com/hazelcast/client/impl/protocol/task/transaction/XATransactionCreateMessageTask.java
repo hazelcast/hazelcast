@@ -53,7 +53,7 @@ public class XATransactionCreateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCreateCodec.encodeResponse((String) response);
+        return XATransactionCreateCodec.encodeResponse((UUID) response);
     }
 
     @Override

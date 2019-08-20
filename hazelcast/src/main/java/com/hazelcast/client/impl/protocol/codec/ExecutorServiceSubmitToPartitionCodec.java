@@ -41,7 +41,8 @@ public final class ExecutorServiceSubmitToPartitionCodec {
     public static final int REQUEST_MESSAGE_TYPE = 591104;
     //hex: 0x090501
     public static final int RESPONSE_MESSAGE_TYPE = 591105;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private ExecutorServiceSubmitToPartitionCodec() {
@@ -58,7 +59,7 @@ public final class ExecutorServiceSubmitToPartitionCodec {
         /**
          * Unique id for the execution.
          */
-        public java.lang.String uuid;
+        public java.util.UUID uuid;
 
         /**
          * The callable object to be executed.
@@ -66,16 +67,16 @@ public final class ExecutorServiceSubmitToPartitionCodec {
         public com.hazelcast.nio.serialization.Data callable;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String uuid, com.hazelcast.nio.serialization.Data callable) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.SubmitToPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, uuid);
         DataCodec.encode(clientMessage, callable);
         return clientMessage;
     }
@@ -83,10 +84,9 @@ public final class ExecutorServiceSubmitToPartitionCodec {
     public static ExecutorServiceSubmitToPartitionCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.uuid = StringCodec.decode(iterator);
         request.callable = DataCodec.decode(iterator);
         return request;
     }

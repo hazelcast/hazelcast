@@ -19,25 +19,27 @@ package com.hazelcast.collection.impl.txncollection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
 
 public class CollectionReserveRemoveOperation extends CollectionOperation implements MutatingOperation {
 
-    private String transactionId;
+    private UUID transactionId;
     private Data value;
     private long reservedItemId = INVALID_ITEM_ID;
 
     public CollectionReserveRemoveOperation() {
     }
 
-    public CollectionReserveRemoveOperation(String name, long reservedItemId, Data value, String transactionId) {
+    public CollectionReserveRemoveOperation(String name, long reservedItemId, Data value, UUID transactionId) {
         super(name);
         this.reservedItemId = reservedItemId;
         this.value = value;
@@ -60,7 +62,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation implem
         super.writeInternal(out);
         out.writeLong(reservedItemId);
         out.writeData(value);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
@@ -68,6 +70,6 @@ public class CollectionReserveRemoveOperation extends CollectionOperation implem
         super.readInternal(in);
         reservedItemId = in.readLong();
         value = in.readData();
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 }

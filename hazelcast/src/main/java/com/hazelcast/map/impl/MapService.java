@@ -195,7 +195,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         transactionalService.rollbackTransaction(transactionId);
     }
 

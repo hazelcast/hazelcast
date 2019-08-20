@@ -76,7 +76,7 @@ public final class XATransaction implements Transaction {
 
     private final NodeEngine nodeEngine;
     private final long timeoutMillis;
-    private final String txnId;
+    private final UUID txnId;
     private final SerializableXID xid;
     private final UUID txOwnerUuid;
     private final TransactionLog transactionLog;
@@ -90,7 +90,7 @@ public final class XATransaction implements Transaction {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog();
         this.timeoutMillis = SECONDS.toMillis(timeout);
-        this.txnId = UuidUtil.newUnsecureUuidString();
+        this.txnId = UuidUtil.newUnsecureUUID();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
 
@@ -102,7 +102,7 @@ public final class XATransaction implements Transaction {
     }
 
     public XATransaction(NodeEngine nodeEngine, Collection<TransactionLogRecord> logs,
-                         String txnId, SerializableXID xid, UUID txOwnerUuid, long timeoutMillis, long startTime) {
+                         UUID txnId, SerializableXID xid, UUID txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
         this.timeoutMillis = timeoutMillis;
@@ -215,7 +215,7 @@ public final class XATransaction implements Transaction {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 

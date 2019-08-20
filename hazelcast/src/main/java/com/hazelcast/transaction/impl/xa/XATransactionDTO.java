@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class XATransactionDTO implements IdentifiedDataSerializable {
-    private String txnId;
+    private UUID txnId;
     private SerializableXID xid;
     private UUID ownerUuid;
     private long timeoutMilis;
@@ -49,7 +49,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         records = xaTransaction.getTransactionRecords();
     }
 
-    public XATransactionDTO(String txnId, SerializableXID xid, UUID ownerUuid, long timeoutMilis,
+    public XATransactionDTO(UUID txnId, SerializableXID xid, UUID ownerUuid, long timeoutMilis,
                             long startTime, List<TransactionLogRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
@@ -59,7 +59,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         this.records = records;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 
@@ -85,7 +85,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeObject(xid);
         UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeLong(timeoutMilis);
@@ -101,7 +101,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         xid = in.readObject();
         ownerUuid = UUIDSerializationUtil.readUUID(in);
         timeoutMilis = in.readLong();

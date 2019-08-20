@@ -42,6 +42,7 @@ import com.hazelcast.version.Version;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -191,7 +192,7 @@ public class ClusterStateManager {
     /**
      * Validates the requested cluster state change and sets a {@code ClusterStateLock}.
      */
-    public void lockClusterState(ClusterStateChange stateChange, Address initiator, String txnId, long leaseTime,
+    public void lockClusterState(ClusterStateChange stateChange, Address initiator, UUID txnId, long leaseTime,
                                  int memberListVersion, int partitionStateVersion) {
         Preconditions.checkNotNull(stateChange);
         clusterServiceLock.lock();
@@ -237,7 +238,7 @@ public class ClusterStateManager {
         }
     }
 
-    private void lockOrExtendClusterState(Address initiator, String txnId, long leaseTime) {
+    private void lockOrExtendClusterState(Address initiator, UUID txnId, long leaseTime) {
         Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
 
         LockGuard currentLock = getStateLock();
@@ -284,7 +285,7 @@ public class ClusterStateManager {
         }
     }
 
-    public boolean rollbackClusterState(String txnId) {
+    public boolean rollbackClusterState(UUID txnId) {
         clusterServiceLock.lock();
         try {
             final LockGuard currentLock = getStateLock();
@@ -306,11 +307,11 @@ public class ClusterStateManager {
     }
 
     // for tests only
-    void commitClusterState(ClusterStateChange newState, Address initiator, String txnId) {
+    void commitClusterState(ClusterStateChange newState, Address initiator, UUID txnId) {
         commitClusterState(newState, initiator, txnId, false);
     }
 
-    public void commitClusterState(ClusterStateChange stateChange, Address initiator, String txnId, boolean isTransient) {
+    public void commitClusterState(ClusterStateChange stateChange, Address initiator, UUID txnId, boolean isTransient) {
         Preconditions.checkNotNull(stateChange);
         stateChange.validate();
 
@@ -377,7 +378,7 @@ public class ClusterStateManager {
         notifyBeforeStateChange(oldState, requestedState, isTransient);
         tx.begin();
         try {
-            String txnId = tx.getTxnId();
+            UUID txnId = tx.getTxnId();
             Collection<MemberImpl> members = memberMap.getMembers();
             int memberListVersion = memberMap.getVersion();
 
@@ -440,7 +441,7 @@ public class ClusterStateManager {
 
     private void lockClusterStateOnAllMembers(ClusterStateChange stateChange,
                                               NodeEngineImpl nodeEngine, long leaseTime,
-                                              String txnId, Collection<MemberImpl> members,
+                                              UUID txnId, Collection<MemberImpl> members,
                                               int memberListVersion, int partitionStateVersion) {
 
         Collection<Future> futures = new ArrayList<>(members.size());

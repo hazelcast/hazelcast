@@ -40,7 +40,11 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.UuidUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;

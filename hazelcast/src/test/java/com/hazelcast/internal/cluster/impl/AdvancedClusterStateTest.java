@@ -181,7 +181,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
         ClusterStateManager clusterStateManager = clusterService.getClusterStateManager();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), "fakeTxn",
+        clusterStateManager.lockClusterState(ClusterStateChange.from(ClusterState.FROZEN), node.getThisAddress(), UUID.randomUUID(),
                 timeoutInMillis, memberListVersion, partitionStateVersion);
     }
 
@@ -751,7 +751,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public String getTxnId() {
+        public UUID getTxnId() {
             return tx.getTxnId();
         }
 

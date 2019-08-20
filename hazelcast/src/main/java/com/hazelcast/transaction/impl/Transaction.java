@@ -31,7 +31,7 @@ public interface Transaction {
 
     void rollback() throws IllegalStateException;
 
-    String getTxnId();
+    UUID getTxnId();
 
     State getState();
 

@@ -40,7 +40,7 @@ public class AllowedDuringPassiveStateTransactionImpl
 
     // used by tx backups
     AllowedDuringPassiveStateTransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                                             String txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
+                                             UUID txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
                                              long startTime, UUID txOwnerUuid) {
         super(transactionManagerService, nodeEngine, txnId, transactionLog, timeoutMillis, startTime, txOwnerUuid);
     }

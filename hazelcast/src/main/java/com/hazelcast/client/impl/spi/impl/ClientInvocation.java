@@ -71,7 +71,7 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private final long startTimeMillis;
     private final long retryPauseMillis;
-    private final String objectName;
+    private final Object objectName;
     private volatile ClientConnection sendConnection;
     private EventHandler handler;
     private volatile long invokeCount;
@@ -79,7 +79,7 @@ public class ClientInvocation implements Runnable {
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
-                               String objectName,
+                               Object objectName,
                                int partitionId,
                                Address address,
                                Connection connection) {
@@ -104,14 +104,14 @@ public class ClientInvocation implements Runnable {
     /**
      * Create an invocation that will be executed on random member.
      */
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName) {
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, null);
     }
 
     /**
      * Create an invocation that will be executed on owner of {@code partitionId}.
      */
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
                             int partitionId) {
         this(client, clientMessage, objectName, partitionId, null, null);
     }
@@ -119,7 +119,7 @@ public class ClientInvocation implements Runnable {
     /**
      * Create an invocation that will be executed on member with given {@code address}.
      */
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
                             Address address) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, address, null);
     }
@@ -127,7 +127,7 @@ public class ClientInvocation implements Runnable {
     /**
      * Create an invocation that will be executed on given {@code connection}.
      */
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
                             Connection connection) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
     }

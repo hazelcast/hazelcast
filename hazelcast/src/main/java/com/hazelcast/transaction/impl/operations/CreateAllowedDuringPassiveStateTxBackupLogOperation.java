@@ -30,7 +30,7 @@ public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
     public CreateAllowedDuringPassiveStateTxBackupLogOperation() {
     }
 
-    public CreateAllowedDuringPassiveStateTxBackupLogOperation(UUID callerUuid, String txnId) {
+    public CreateAllowedDuringPassiveStateTxBackupLogOperation(UUID callerUuid, UUID txnId) {
         super(callerUuid, txnId);
     }
 

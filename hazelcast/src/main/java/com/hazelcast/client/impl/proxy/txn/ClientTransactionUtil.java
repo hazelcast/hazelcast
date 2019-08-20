@@ -49,7 +49,7 @@ public final class ClientTransactionUtil {
      * More specifically IOException, because in case of a IO problem in ClientInvocation that send to a connection
      * sends IOException to user. This wraps that exception into a TransactionException.
      */
-    public static ClientMessage invoke(ClientMessage request, String objectName, HazelcastClientInstanceImpl client,
+    public static ClientMessage invoke(ClientMessage request, Object objectName, HazelcastClientInstanceImpl client,
                                        Connection connection) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, connection);

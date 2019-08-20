@@ -41,7 +41,12 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;

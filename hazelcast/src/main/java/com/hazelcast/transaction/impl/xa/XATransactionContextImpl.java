@@ -80,7 +80,7 @@ public class XATransactionContextImpl implements TransactionContext {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 

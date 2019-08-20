@@ -37,7 +37,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 
     private SerializableXID xid;
-    private String txnId;
+    private UUID txnId;
     private UUID txOwnerUuid;
     private long timeoutMillis;
     private long startTime;
@@ -45,7 +45,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
     public PutRemoteTransactionBackupOperation() {
     }
 
-    public PutRemoteTransactionBackupOperation(List<TransactionLogRecord> logs, String txnId, SerializableXID xid,
+    public PutRemoteTransactionBackupOperation(List<TransactionLogRecord> logs, UUID txnId, SerializableXID xid,
                                                UUID txOwnerUuid, long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.txnId = txnId;
@@ -71,7 +71,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeObject(xid);
         UUIDSerializationUtil.writeUUID(out, txOwnerUuid);
         out.writeLong(timeoutMillis);
@@ -87,7 +87,7 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         xid = in.readObject();
         txOwnerUuid = UUIDSerializationUtil.readUUID(in);
         timeoutMillis = in.readLong();

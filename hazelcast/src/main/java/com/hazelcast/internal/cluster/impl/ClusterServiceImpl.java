@@ -831,7 +831,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         clusterStateManager.rollbackClusterState(transactionId);
     }
 

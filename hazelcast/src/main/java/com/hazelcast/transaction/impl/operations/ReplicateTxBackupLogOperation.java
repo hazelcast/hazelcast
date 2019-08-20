@@ -44,14 +44,14 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     // todo: probably we don't want to use linked list.
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
     private UUID callerUuid;
-    private String txnId;
+    private UUID txnId;
     private long timeoutMillis;
     private long startTime;
 
     public ReplicateTxBackupLogOperation() {
     }
 
-    public ReplicateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid, String txnId,
+    public ReplicateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid, UUID txnId,
                                          long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.callerUuid = callerUuid;
@@ -87,7 +87,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, callerUuid);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
         int len = records.size();
@@ -102,7 +102,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         callerUuid = UUIDSerializationUtil.readUUID(in);
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         timeoutMillis = in.readLong();
         startTime = in.readLong();
         int len = in.readInt();

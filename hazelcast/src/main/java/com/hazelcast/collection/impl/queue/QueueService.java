@@ -62,8 +62,15 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -346,7 +353,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         final Set<String> queueNames = containerMap.keySet();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {

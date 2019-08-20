@@ -50,8 +50,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<String, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<String, TransactionContext>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
+            = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<UUID, Callable>();
     private final SocketAddress socketAddress;
     private final long creationTime;
@@ -200,7 +200,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public TransactionContext getTransactionContext(String txnId) {
+    public TransactionContext getTransactionContext(UUID txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
@@ -219,7 +219,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void removeTransactionContext(String txnId) {
+    public void removeTransactionContext(UUID txnId) {
         transactionContextMap.remove(txnId);
     }
 

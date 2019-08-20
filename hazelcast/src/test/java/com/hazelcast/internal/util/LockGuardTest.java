@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -38,6 +39,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LockGuardTest {
+    private static final UUID TXN = UUID.randomUUID();
+    private static final UUID ANOTHER_TXN = UUID.randomUUID();
 
     @Test
     public void testNotLocked() {
@@ -60,7 +63,7 @@ public class LockGuardTest {
 
     @Test(expected = NullPointerException.class)
     public void testConstructor_nullEndpoint() throws Exception {
-        new LockGuard(null, "txn", 1000);
+        new LockGuard(null, TXN, 1000);
     }
 
     @Test(expected = NullPointerException.class)
@@ -72,20 +75,20 @@ public class LockGuardTest {
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nonPositiveLeaseTime() throws Exception {
         Address endpoint = newAddress();
-        new LockGuard(endpoint, "txn", -1000);
+        new LockGuard(endpoint, TXN, -1000);
     }
 
     @Test
     public void testAllowsLock_success() throws Exception {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
-        assertTrue(stateLock.allowsLock("txn"));
+        assertTrue(stateLock.allowsLock(TXN));
     }
 
     @Test
     public void testAllowsLock_fail() throws Exception {
         Address endpoint = newAddress();
-        LockGuard stateLock = new LockGuard(endpoint, "txn", 1000);
-        assertFalse(stateLock.allowsLock("another-txn"));
+        LockGuard stateLock = new LockGuard(endpoint, TXN, 1000);
+        assertFalse(stateLock.allowsLock(ANOTHER_TXN));
     }
 
     @Test
@@ -94,7 +97,7 @@ public class LockGuardTest {
         assertFalse(stateLock.isLocked());
 
         Address endpoint = newAddress();
-        stateLock = new LockGuard(endpoint, "txn", 1000);
+        stateLock = new LockGuard(endpoint, TXN, 1000);
         assertTrue(stateLock.isLocked());
     }
 
@@ -104,10 +107,10 @@ public class LockGuardTest {
         assertFalse(stateLock.isLeaseExpired());
 
         Address endpoint = newAddress();
-        stateLock = new LockGuard(endpoint, "txn", TimeUnit.HOURS.toMillis(1));
+        stateLock = new LockGuard(endpoint, TXN, TimeUnit.HOURS.toMillis(1));
         assertFalse(stateLock.isLeaseExpired());
 
-        stateLock = new LockGuard(endpoint, "txn", 1);
+        stateLock = new LockGuard(endpoint, TXN, 1);
         final LockGuard finalStateLock = stateLock;
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override

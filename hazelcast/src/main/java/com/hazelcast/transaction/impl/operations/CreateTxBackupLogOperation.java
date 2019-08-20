@@ -33,12 +33,12 @@ import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREAT
 public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
     private UUID callerUuid;
-    private String txnId;
+    private UUID txnId;
 
     public CreateTxBackupLogOperation() {
     }
 
-    public CreateTxBackupLogOperation(UUID callerUuid, String txnId) {
+    public CreateTxBackupLogOperation(UUID callerUuid, UUID txnId) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
     }
@@ -72,19 +72,19 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
         return callerUuid;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, callerUuid);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         callerUuid = UUIDSerializationUtil.readUUID(in);
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
     }
 }
