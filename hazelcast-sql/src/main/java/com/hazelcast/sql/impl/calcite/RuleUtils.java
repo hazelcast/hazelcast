@@ -10,7 +10,10 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 
 import static org.apache.calcite.plan.RelOptRule.convert;
@@ -149,6 +152,34 @@ public class RuleUtils {
      */
     public static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(HazelcastConventions.PHYSICAL);
+    }
+
+    /**
+     * Get possible physical rels from the given subset.
+     *
+     * @param subset Subset.
+     * @return Physical rels.
+     */
+    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode subset) {
+        if (subset instanceof RelSubset) {
+            RelSubset subset0 = (RelSubset)subset;
+
+            Set<RelTraitSet> traitSets = new HashSet<>();
+
+            Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
+
+            for (RelNode rel : subset0.getRelList()) {
+                if (!isPhysical(rel))
+                    continue;
+
+                if (traitSets.add(rel.getTraitSet()))
+                    res.add(convert(subset, rel.getTraitSet()));
+            }
+
+            return res;
+        }
+        else
+            return Collections.emptyList();
     }
 
     /**

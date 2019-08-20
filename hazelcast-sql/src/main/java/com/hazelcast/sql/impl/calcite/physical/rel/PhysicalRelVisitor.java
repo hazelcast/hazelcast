@@ -29,5 +29,5 @@ public interface PhysicalRelVisitor {
     void onSort(SortPhysicalRel rel);
     void onProject(ProjectPhysicalRel rel);
     void onFilter(FilterPhysicalRel rel);
-    void onAggregate(AggregatePhysicalRel rel);
+    void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel);
 }

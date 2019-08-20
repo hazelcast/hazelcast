@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.calcite.physical.rel.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRel;
@@ -261,7 +261,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onAggregate(AggregatePhysicalRel rel) {
+    public void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel) {
         // TODO
     }
 

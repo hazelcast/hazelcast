@@ -40,7 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
 
-    private static final String QUERY = "SELECT p.__key.key, p.__key.keyStr FROM partitioned.persons p";
+    private static final String QUERY = "SELECT __key, COUNT(LENGTH(name)) FROM city GROUP BY __key";
     // private static final String QUERY = "SELECT SUM(height) FROM city GROUP BY age ORDER BY SUM(height)";
 
     @Test(timeout = Long.MAX_VALUE)
@@ -50,13 +50,13 @@ public class SqlTest extends HazelcastTestSupport {
 
         Config cfg = new Config();
 
-        cfg.addMapConfig(new MapConfig()
-            .setName("persons")
-            .setPartitioningStrategyConfig(
-                new PartitioningStrategyConfig()
-                    .setPartitioningStrategy(new DeclarativePartitioningStrategy().setField("key"))
-            )
-        );
+//        cfg.addMapConfig(new MapConfig()
+//            .setName("persons")
+//            .setPartitioningStrategyConfig(
+//                new PartitioningStrategyConfig()
+//                    .setPartitioningStrategy(new DeclarativePartitioningStrategy().setField("key"))
+//            )
+//        );
 
         HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
         nodeFactory.newHazelcastInstance(cfg);

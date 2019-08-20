@@ -66,9 +66,7 @@ public class MapScanPhysicalRule extends RelOptRule {
             );
         }
         else {
-            List<PhysicalDistributionField> distributionFields = getDistributionFields(hazelcastTable);
-
-            PhysicalDistributionTrait distributionTrait = PhysicalDistributionTrait.distributedPartitioned(distributionFields);
+            PhysicalDistributionTrait distributionTrait = getDistributionTrait(hazelcastTable);
 
             newScan = new MapScanPhysicalRel(
                 scan.getCluster(),
@@ -81,35 +79,66 @@ public class MapScanPhysicalRule extends RelOptRule {
         call.transformTo(newScan);
     }
 
-    private List<PhysicalDistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
+    /**
+     * Get distribution trait for the given table.
+     *
+     * @param hazelcastTable Table.
+     * @return Distribution trait.
+     */
+    private static PhysicalDistributionTrait getDistributionTrait(HazelcastTable hazelcastTable) {
+        List<PhysicalDistributionField> distributionFields = getDistributionFields(hazelcastTable);
+
+        return PhysicalDistributionTrait.distributedPartitioned(distributionFields);
+    }
+
+    /**
+     * Get distribution field of the given table.
+     *
+     * @param hazelcastTable Table.
+     * @return Distribution field wrapped into a list or an empty list if no distribution field could be determined.
+     */
+    private static List<PhysicalDistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
+        String distributionField = getDistributionFieldName(hazelcastTable);
+
+        int index = 0;
+
+        for (RelDataTypeField field : hazelcastTable.getFieldList()) {
+            if (field.getName().equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
+                // If there is no distribution field, use the whole key.
+                if (distributionField == null)
+                    return Collections.singletonList(new PhysicalDistributionField(index));
+
+                // Otherwise try to find desired field as a nested field of the key.
+                for (RelDataTypeField nestedField : field.getType().getFieldList()) {
+                    String nestedFieldName = nestedField.getName();
+
+                    if (nestedField.getName().equals(distributionField))
+                        return Collections.singletonList(new PhysicalDistributionField(index, nestedFieldName));
+                }
+            }
+
+            index++;
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * Get distribution field name if possible.
+     *
+     * @param hazelcastTable Table.
+     * @return Distribution field or {@code null} if none available.
+     */
+    private static String getDistributionFieldName(HazelcastTable hazelcastTable) {
         assert !hazelcastTable.isReplicated();
 
         MapProxyImpl map = hazelcastTable.getContainer();
 
         PartitioningStrategy strategy = map.getPartitionStrategy();
 
-        if (strategy instanceof DeclarativePartitioningStrategy) {
-            String distributionField = ((DeclarativePartitioningStrategy) strategy).getField();
+        if (strategy instanceof DeclarativePartitioningStrategy)
+            return ((DeclarativePartitioningStrategy)strategy).getField();
 
-            int index = 0;
-
-            for (RelDataTypeField field : hazelcastTable.getFieldList()) {
-                if (field.getName().equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
-                    for (RelDataTypeField nestedField : field.getType().getFieldList()) {
-                        String nestedFieldName = nestedField.getName();
-
-                        if (nestedField.getName().equals(distributionField))
-                            return Collections.singletonList(new PhysicalDistributionField(index, nestedFieldName));
-                    }
-                }
-
-                index++;
-            }
-        }
-        else {
-            // TODO: Can we use __key when other partitioning strategies are used?
-        }
-
-        return Collections.emptyList();
+        return null;
     }
 }

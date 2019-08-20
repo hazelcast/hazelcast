@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.rel.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -44,10 +44,10 @@ public class AggregatePhysicalRule extends RelOptRule {
         AggregateLogicalRel agg = call.rel(0);
         RelNode input = agg.getInput();
 
-        AggregatePhysicalRel newAgg = new AggregatePhysicalRel(
+        CollocatedAggregatePhysicalRel newAgg = new CollocatedAggregatePhysicalRel(
             agg.getCluster(),
-            RuleUtils.toPhysicalConvention(agg.getTraitSet(), PhysicalDistributionTrait.ANY),
-            RuleUtils.toPhysicalInput(input, PhysicalDistributionTrait.ANY),
+            RuleUtils.toPhysicalConvention(agg.getTraitSet()),
+            RuleUtils.toPhysicalInput(input),
             agg.indicator,
             agg.getGroupSet(),
             agg.getGroupSets(),
