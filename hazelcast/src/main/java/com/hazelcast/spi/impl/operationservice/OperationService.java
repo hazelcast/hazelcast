@@ -38,6 +38,7 @@ import java.util.Map;
  * It also is possible to execute multiple operation on multiple partitions
  * using one of the invoke methods.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public interface OperationService {
     String SERVICE_NAME = "hz:impl:operationService";
 
