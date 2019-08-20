@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * Collocated physical aggregation is performed locally on top of locally available data set. This includes:
- * - SINGLETON and DISTRIBUTED_REPLICATED inputs, because the whole data set is available;
+ * - SINGLETON and REPLICATED inputs, because the whole data set is available on the local member;
  * - DISTRIBUTED_PARTITIONED when distribution fields are a prefix of grouping fields.
  *
  * That is, {@code SELECT a FROM t GROUP BY a, b} is collocated if {@code a} is the distribution field, while
@@ -47,8 +47,10 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
     }
 
     @Override
-    public Aggregate copy(RelTraitSet traitSet, RelNode input, boolean indicator, ImmutableBitSet groupSet, List<ImmutableBitSet> groupSets, List<AggregateCall> aggCalls) {
-        return new CollocatedAggregatePhysicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls);
+    public Aggregate copy(RelTraitSet traitSet, RelNode input, boolean indicator, ImmutableBitSet groupSet,
+        List<ImmutableBitSet> groupSets, List<AggregateCall> aggCalls) {
+        return new CollocatedAggregatePhysicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets,
+            aggCalls);
     }
 
     @Override
