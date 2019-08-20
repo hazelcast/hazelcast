@@ -1045,7 +1045,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
         ICompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
         assertEqualsEventually(map::size, size);
-        assertTrue(future.isDone());
+        assertTrueEventually(() -> assertTrue(future.isDone()));
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i).intValue());
         }
