@@ -31,6 +31,7 @@ import java.util.function.Function;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.NULL_FRAME;
+import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsDataStructureEndFrame;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.nextFrameIsNullEndFrame;
 
 public final class MapCodec {
@@ -44,11 +45,6 @@ public final class MapCodec {
         clientMessage.add(BEGIN_FRAME);
         for (Map.Entry<K, V> entry : collection) {
             encodeKeyFunc.accept(clientMessage, entry.getKey());
-        }
-        clientMessage.add(END_FRAME);
-
-        clientMessage.add(BEGIN_FRAME);
-        for (Map.Entry<K, V> entry : collection) {
             encodeValueFunc.accept(clientMessage, entry.getValue());
         }
         clientMessage.add(END_FRAME);
@@ -73,13 +69,16 @@ public final class MapCodec {
     public static <K, V> List<Map.Entry<K, V>> decode(ListIterator<ClientMessage.Frame> iterator,
                                                       Function<ListIterator<ClientMessage.Frame>, K> decodeKeyFunc,
                                                       Function<ListIterator<ClientMessage.Frame>, V> decodeValueFunc) {
-        List<K> listK = ListMultiFrameCodec.decode(iterator, decodeKeyFunc);
-        List<V> listV = ListMultiFrameCodec.decode(iterator, decodeValueFunc);
-
-        List<Map.Entry<K, V>> result = new ArrayList<>(listK.size());
-        for (int i = 0; i < listK.size(); i++) {
-            result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(i)));
+        List<Map.Entry<K, V>> result = new ArrayList<>();
+        //begin frame, map
+        iterator.next();
+        while (!nextFrameIsDataStructureEndFrame(iterator)) {
+            K key = decodeKeyFunc.apply(iterator);
+            V value = decodeValueFunc.apply(iterator);
+            result.add(new AbstractMap.SimpleEntry<>(key, value));
         }
+        //end frame, map
+        iterator.next();
         return result;
     }
 
@@ -92,13 +91,16 @@ public final class MapCodec {
     public static <K, V> Map<K, V> decodeToMap(ListIterator<ClientMessage.Frame> iterator,
                                                Function<ListIterator<ClientMessage.Frame>, K> decodeKeyFunc,
                                                Function<ListIterator<ClientMessage.Frame>, V> decodeValueFunc) {
-        List<K> listK = ListMultiFrameCodec.decode(iterator, decodeKeyFunc);
-        List<V> listV = ListMultiFrameCodec.decode(iterator, decodeValueFunc);
-
-        Map<K, V> result = new HashMap<>(listK.size());
-        for (int i = 0; i < listK.size(); i++) {
-            result.put(listK.get(i), listV.get(i));
+        Map<K, V> result = new HashMap<>();
+        //begin frame, map
+        iterator.next();
+        while (!nextFrameIsDataStructureEndFrame(iterator)) {
+            K key = decodeKeyFunc.apply(iterator);
+            V value = decodeValueFunc.apply(iterator);
+            result.put(key, value);
         }
+        //end frame, map
+        iterator.next();
         return result;
     }
 
