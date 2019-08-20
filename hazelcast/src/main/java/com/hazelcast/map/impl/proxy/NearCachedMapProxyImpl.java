@@ -481,15 +481,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void putAllVisitSerializedKeys(MapEntries[] entries) {
-        try {
-            super.putAllVisitSerializedKeys(entries);
-        } finally {
-            if (serializeKeys) {
-                for (MapEntries mapEntries : entries) {
-                    if (mapEntries != null) {
-                        for (int i = 0; i < mapEntries.size(); i++) {
-                            invalidateNearCache(mapEntries.getKey(i));
-                        }
+        if (serializeKeys) {
+            for (MapEntries mapEntries : entries) {
+                if (mapEntries != null) {
+                    for (int i = 0; i < mapEntries.size(); i++) {
+                        invalidateNearCache(mapEntries.getKey(i));
                     }
                 }
             }
