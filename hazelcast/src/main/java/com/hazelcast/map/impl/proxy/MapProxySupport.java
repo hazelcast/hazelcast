@@ -949,36 +949,30 @@ abstract class MapProxySupport<K, V>
 
             // invoke operations for entriesPerPartition
             AtomicInteger counter = new AtomicInteger(memberPartitionsMap.size());
+            SimpleCompletableFuture<Void> resultFuture =
+                    future != null ? future : new SimpleCompletableFuture<>(getNodeEngine());
             ExecutionCallback<Void> callback = new ExecutionCallback<Void>() {
                 @Override
                 public void onResponse(Void response) {
                     if (counter.decrementAndGet() == 0) {
                         finalizePutAll(map);
-                        if (future != null) {
-                            future.setResult(null);
-                        }
+                        resultFuture.setResult(null);
                     }
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    if (future != null) {
-                        future.setResult(t);
-                    }
+                    resultFuture.setResult(t);
                     onResponse(null);
                 }
             };
-            List<Future<Void>> futures = new ArrayList<>(memberPartitionsMap.size());
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                ICompletableFuture<Void> f = invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
-                futures.add(f);
-                f.andThen(callback);
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition)
+                        .andThen(callback);
             }
             // if executing in sync mode, block for the responses
             if (future == null) {
-                for (Future<?> f : futures) {
-                    f.get();
-                }
+                resultFuture.get();
             }
         } catch (Exception e) {
             throw rethrow(e);
