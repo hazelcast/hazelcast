@@ -1739,10 +1739,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
             @Override
             public void onResponse(ClientMessage response) {
                 if (counter.decrementAndGet() == 0) {
+                    finalizePutAll(map, entryMap);
                     if (future != null) {
                         future.setResult(null);
                     }
-                    finalizePutAll(map, entryMap);
                 }
             }
 

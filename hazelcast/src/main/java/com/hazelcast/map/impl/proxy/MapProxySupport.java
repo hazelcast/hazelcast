@@ -949,14 +949,14 @@ abstract class MapProxySupport<K, V>
 
             // invoke operations for entriesPerPartition
             AtomicInteger counter = new AtomicInteger(memberPartitionsMap.size());
-            ExecutionCallback<Map<Integer, Object>> callback = new ExecutionCallback<Map<Integer, Object>>() {
+            ExecutionCallback<Void> callback = new ExecutionCallback<Void>() {
                 @Override
-                public void onResponse(Map<Integer, Object> response) {
+                public void onResponse(Void response) {
                     if (counter.decrementAndGet() == 0) {
+                        finalizePutAll(map);
                         if (future != null) {
                             future.setResult(null);
                         }
-                        finalizePutAll(map);
                     }
                 }
 
@@ -968,16 +968,15 @@ abstract class MapProxySupport<K, V>
                     onResponse(null);
                 }
             };
-            List<Future<Map<Integer, Object>>> futures = new ArrayList<>(memberPartitionsMap.size());
+            List<Future<Void>> futures = new ArrayList<>(memberPartitionsMap.size());
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                ICompletableFuture<Map<Integer, Object>> f =
-                        invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
+                ICompletableFuture<Void> f = invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
                 futures.add(f);
                 f.andThen(callback);
             }
             // if executing in sync mode, block for the responses
             if (future == null) {
-                for (Future<Map<Integer, Object>> f : futures) {
+                for (Future<?> f : futures) {
                     f.get();
                 }
             }
@@ -987,7 +986,7 @@ abstract class MapProxySupport<K, V>
     }
 
     @Nonnull
-    private ICompletableFuture<Map<Integer, Object>> invokePutAllOperation(
+    private ICompletableFuture<Void> invokePutAllOperation(
             Address address,
             List<Integer> memberPartitions,
             MapEntries[] entriesPerPartition
@@ -1027,19 +1026,23 @@ abstract class MapProxySupport<K, V>
         long startTimeNanos = System.nanoTime();
         ICompletableFuture<Map<Integer, Object>> future =
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
+        SimpleCompletableFuture<Void> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
         long finalTotalSize = totalSize;
         future.andThen(new ExecutionCallback<Map<Integer, Object>>() {
             @Override
             public void onResponse(Map<Integer, Object> response) {
                 putAllVisitSerializedKeys(entries);
                 localMapStats.incrementPutLatencyNanos(finalTotalSize, System.nanoTime() - startTimeNanos);
+                resultFuture.setResult(null);
             }
 
             @Override
             public void onFailure(Throwable t) {
+                putAllVisitSerializedKeys(entries);
+                resultFuture.setResult(t);
             }
         });
-        return future;
+        return resultFuture;
     }
 
     protected void putAllVisitSerializedKeys(MapEntries[] entries) {
