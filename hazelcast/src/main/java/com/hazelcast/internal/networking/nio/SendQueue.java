@@ -28,10 +28,6 @@ import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
  */
 public class SendQueue implements Supplier<OutboundFrame> {
 
-    public enum Owner {
-        TRUE, FALSE
-    }
-
     public enum State {
 
         /**
@@ -159,7 +155,6 @@ public class SendQueue implements Supplier<OutboundFrame> {
                         return false;
                     }
                     break;
-
                 default:
                     throw new IllegalStateException();
             }
