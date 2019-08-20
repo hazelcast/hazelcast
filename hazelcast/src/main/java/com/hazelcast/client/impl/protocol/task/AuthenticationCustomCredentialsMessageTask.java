@@ -77,7 +77,7 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
+                                       List<Member> cleanedUpMembers, int partitionCount, UUID clusterId) {
         return ClientAuthenticationCustomCodec
                 .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
                         cleanedUpMembers, partitionCount, clusterId);

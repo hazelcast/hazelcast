@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cp.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -53,7 +54,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     private OnJoinOp preJoinOp;
     /** The operation to be executed on the target node after join completes, can be {@code null}. */
     private OnJoinOp postJoinOp;
-    private String clusterId;
+    private UUID clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
     private Version clusterVersion;
@@ -66,7 +67,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
-                          long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
+                          long masterTime, UUID clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
@@ -159,7 +160,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         super.writeInternalImpl(out);
-        out.writeUTF(clusterId);
+        UUIDSerializationUtil.writeUUID(out, clusterId);
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
         out.writeObject(clusterVersion);
@@ -170,7 +171,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         super.readInternalImpl(in);
-        clusterId = in.readUTF();
+        clusterId = UUIDSerializationUtil.readUUID(in);
         clusterStartTime = in.readLong();
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);

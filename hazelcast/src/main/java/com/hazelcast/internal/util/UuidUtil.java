@@ -36,17 +36,17 @@ public final class UuidUtil {
     }
 
     /**
-     * Creates a new cluster {@link UUID} string,
+     * Creates a new cluster {@link UUID},
      * based on a cryptographically weak pseudo random number generator.
      *
-     * @return a new cluster {@link UUID} string
+     * @return a new cluster {@link UUID}
      */
-    public static String createClusterUuid() {
-        return newUnsecureUuidString();
+    public static UUID createClusterUuid() {
+        return newUnsecureUUID();
     }
 
     /**
-     * Creates a new member {@link UUID} string,
+     * Creates a new member {@link UUID},
      * based on a cryptographically weak pseudo random number generator.
      *
      * @return a new member {@link UUID} string

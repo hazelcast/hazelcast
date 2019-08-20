@@ -118,7 +118,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean joined = new AtomicBoolean(false);
 
-    private volatile String clusterId;
+    private volatile UUID clusterId;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
 
@@ -357,7 +357,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @SuppressWarnings("checkstyle:parameternumber")
     public boolean finalizeJoin(MembersView membersView, Address callerAddress, UUID callerUuid, UUID targetUuid,
-                                String clusterId, ClusterState clusterState, Version clusterVersion, long clusterStartTime,
+                                UUID clusterId, ClusterState clusterState, Version clusterVersion, long clusterStartTime,
                                 long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
@@ -736,12 +736,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public String getClusterId() {
+    public UUID getClusterId() {
         return clusterId;
     }
 
     // called under cluster service lock
-    void setClusterId(String newClusterId) {
+    void setClusterId(UUID newClusterId) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert clusterId == null : "Cluster ID should be null: " + clusterId;
         clusterId = newClusterId;

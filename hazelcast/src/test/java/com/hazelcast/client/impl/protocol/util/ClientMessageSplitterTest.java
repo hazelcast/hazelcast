@@ -53,7 +53,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        String clusterId = generateRandomString(1000);
+        UUID clusterId = UUID.randomUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
@@ -72,7 +72,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     public void testGetSubFrames() {
         List<ClientMessage> fragments = getFragments(128, clientMessage);
         ListIterator<ClientMessage.Frame> originalIterator = clientMessage.listIterator();
-        assertEquals(19, fragments.size());
+        assertEquals(18, fragments.size());
 
         assertFragments(fragments, originalIterator);
     }

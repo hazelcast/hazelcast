@@ -46,13 +46,15 @@ public final class ClientAuthenticationCustomCodec {
     private static final int REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET = REQUEST_OWNER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_PARTITION_COUNT_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_CLUSTER_ID_FIELD_OFFSET = REQUEST_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_STATUS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_STATUS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_OWNER_UUID_FIELD_OFFSET = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET = RESPONSE_OWNER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_PARTITION_COUNT_FIELD_OFFSET = RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_CLUSTER_ID_FIELD_OFFSET = RESPONSE_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
     private ClientAuthenticationCustomCodec() {
     }
@@ -116,10 +118,10 @@ public final class ClientAuthenticationCustomCodec {
          * the expected id of the cluster. Checked on the server side when provided.
          * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
          */
-        public java.lang.String clusterId;
+        public java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data credentials, java.util.UUID uuid, java.util.UUID ownerUuid, boolean isOwnerConnection, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, java.lang.String clusterId) {
+    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data credentials, java.util.UUID uuid, java.util.UUID ownerUuid, boolean isOwnerConnection, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -131,13 +133,13 @@ public final class ClientAuthenticationCustomCodec {
         encodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET, isOwnerConnection);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
+        encodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET, clusterId);
         clientMessage.add(initialFrame);
         DataCodec.encode(clientMessage, credentials);
         StringCodec.encode(clientMessage, clientType);
         StringCodec.encode(clientMessage, clientHazelcastVersion);
         StringCodec.encode(clientMessage, clientName);
         ListMultiFrameCodec.encode(clientMessage, labels, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, clusterId, StringCodec::encode);
         return clientMessage;
     }
 
@@ -150,12 +152,12 @@ public final class ClientAuthenticationCustomCodec {
         request.isOwnerConnection = decodeBoolean(initialFrame.content, REQUEST_IS_OWNER_CONNECTION_FIELD_OFFSET);
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
         request.partitionCount = decodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET);
+        request.clusterId = decodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET);
         request.credentials = DataCodec.decode(iterator);
         request.clientType = StringCodec.decode(iterator);
         request.clientHazelcastVersion = StringCodec.decode(iterator);
         request.clientName = StringCodec.decode(iterator);
         request.labels = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
-        request.clusterId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
     }
 
@@ -208,10 +210,10 @@ public final class ClientAuthenticationCustomCodec {
          * the expected id of the cluster. Checked on the server side when provided.
          * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
          */
-        public java.lang.String clusterId;
+        public java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeResponse(byte status, com.hazelcast.nio.Address address, java.util.UUID uuid, java.util.UUID ownerUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, java.util.Collection<com.hazelcast.cluster.Member> clientUnregisteredMembers, int partitionCount, java.lang.String clusterId) {
+    public static ClientMessage encodeResponse(byte status, com.hazelcast.nio.Address address, java.util.UUID uuid, java.util.UUID ownerUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, java.util.Collection<com.hazelcast.cluster.Member> clientUnregisteredMembers, int partitionCount, java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -222,10 +224,10 @@ public final class ClientAuthenticationCustomCodec {
         encodeUUID(initialFrame.content, RESPONSE_OWNER_UUID_FIELD_OFFSET, ownerUuid);
         encodeByte(initialFrame.content, RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         encodeInt(initialFrame.content, RESPONSE_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
+        encodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET, clusterId);
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
         ListMultiFrameCodec.encodeNullable(clientMessage, clientUnregisteredMembers, MemberCodec::encode);
-        StringCodec.encode(clientMessage, clusterId);
         return clientMessage;
     }
 
@@ -238,10 +240,10 @@ public final class ClientAuthenticationCustomCodec {
         response.ownerUuid = decodeUUID(initialFrame.content, RESPONSE_OWNER_UUID_FIELD_OFFSET);
         response.serializationVersion = decodeByte(initialFrame.content, RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET);
         response.partitionCount = decodeInt(initialFrame.content, RESPONSE_PARTITION_COUNT_FIELD_OFFSET);
+        response.clusterId = decodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         response.clientUnregisteredMembers = ListMultiFrameCodec.decodeNullable(iterator, MemberCodec::decode);
-        response.clusterId = StringCodec.decode(iterator);
         return response;
     }
 

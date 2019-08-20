@@ -63,7 +63,7 @@ public class ClientMessageSplitAndBuildTest {
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        String clusterId = generateRandomString(1000);
+        UUID clusterId = UuidUtil.newUnsecureUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));

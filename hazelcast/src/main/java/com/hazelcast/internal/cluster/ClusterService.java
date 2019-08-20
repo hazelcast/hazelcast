@@ -145,7 +145,7 @@ public interface ClusterService extends CoreService, Cluster {
      *
      * @return unique UUID for cluster
      */
-    String getClusterId();
+    UUID getClusterId();
 
     /**
      * Returns the current version of member list.

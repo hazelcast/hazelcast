@@ -57,7 +57,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     protected transient String clientName;
     protected transient Set<String> labels;
     protected transient Credentials credentials;
-    protected transient String clusterId;
+    protected transient UUID clusterId;
     protected transient int partitionCount;
     transient byte clientSerializationVersion;
     transient String clientVersion;
@@ -242,7 +242,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid,
                                                 byte serializationVersion, List<Member> cleanedUpMembers,
-                                                int partitionCount, String clusterId);
+                                                int partitionCount, UUID clusterId);
 
     protected abstract boolean isOwnerConnection();
 

@@ -121,7 +121,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
     private volatile int clusterPartitionCount = -1;
-    private volatile String clusterId;
+    private volatile UUID clusterId;
     private volatile Address ownerConnectionAddress;
     private volatile CandidateClusterContext currentClusterContext;
 
@@ -609,7 +609,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             Credentials credentials = currentClusterContext.getCredentialsFactory().newCredentials();
             lastCredentials = credentials;
 
-            String resolvedClusterId = null;
+            UUID resolvedClusterId = null;
             if (failoverConfigProvided) {
                 resolvedClusterId = clusterId;
             }
