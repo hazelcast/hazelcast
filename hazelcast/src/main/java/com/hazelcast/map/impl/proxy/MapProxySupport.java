@@ -974,7 +974,7 @@ abstract class MapProxySupport<K, V>
             if (future == null) {
                 resultFuture.get();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw rethrow(e);
         }
     }
