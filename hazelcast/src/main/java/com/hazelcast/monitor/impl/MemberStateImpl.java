@@ -331,8 +331,10 @@ public class MemberStateImpl implements MemberState {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
-        root.add("uuid", uuid.toString());
-        root.add("cpMemberUuid", cpMemberUuid.toString());
+        String uuidString = uuid != null ? uuid.toString() : null;
+        root.add("uuid", uuidString);
+        String cpMemberUuidString = cpMemberUuid != null ? cpMemberUuid.toString() : null;
+        root.add("cpMemberUuid", cpMemberUuidString);
         root.add("name", name);
 
         final JsonArray endpoints = new JsonArray();

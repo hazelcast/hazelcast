@@ -162,10 +162,11 @@ public class WaitSetTest {
         WaitSet waitSet = newWaitSet();
 
         UUID uuid = UUID.randomUUID();
+        UUID anotherUuid = UUID.randomUUID();
 
         BlockedOperation op1 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op1);
-        BlockedOperation op2 = newBlockingOperationWithCallerUuid(uuid);
+        BlockedOperation op2 = newBlockingOperationWithCallerUuid(anotherUuid);
         waitSet.park(op2);
         BlockedOperation op3 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op3);
