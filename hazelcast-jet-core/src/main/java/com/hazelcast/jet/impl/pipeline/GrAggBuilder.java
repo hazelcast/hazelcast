@@ -104,7 +104,7 @@ public class GrAggBuilder<K> {
     @SuppressWarnings("unchecked")
     public <A, R> StreamStage<KeyedWindowResult<K, R>> buildStream(@Nonnull AggregateOperation<A, ? extends R> aggrOp) {
         List<Transform> upstreamTransforms = upstreamStages.stream().map(s -> s.transform).collect(toList());
-        JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
+        FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
 
         // Avoided Stream API here due to static typing issues
         List<FunctionEx<?, ? extends K>> adaptedKeyFns = new ArrayList<>();

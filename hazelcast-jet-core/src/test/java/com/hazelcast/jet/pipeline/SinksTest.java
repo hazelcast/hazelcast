@@ -27,6 +27,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.AbstractEntryProcessor;
@@ -810,6 +812,28 @@ public class SinksTest extends PipelineTestSupport {
         p.drawFrom(Sources.list(srcName)).drainTo(sink);
         execute();
         assertEquals(itemCount, remoteHz.getList(sinkName).size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void test_adaptingPartitionFunction() {
+        Pipeline p = Pipeline.create();
+        StreamStage<KeyedWindowResult<String, Long>> input1 =
+                p.drawFrom(TestSources.items(0))
+                 .addTimestamps(i -> i, 0)
+                 .groupingKey(item -> "key0")
+                 .window(WindowDefinition.sliding(1, 1))
+                 .aggregate(AggregateOperations.counting());
+        BatchStage<Entry<String, Long>> input2 =
+                p.drawFrom(TestSources.items(entry("key1", 2L)));
+
+        IMap<String, Long> sinkMap = jet().getMap(randomMapName());
+        p.drainTo(Sinks.map(sinkMap), input1, input2);
+
+        jet().newJob(p).join();
+        assertEquals(2, sinkMap.size());
+        assertEquals((Long) 1L, sinkMap.get("key0"));
+        assertEquals((Long) 2L, sinkMap.get("key1"));
     }
 
     @Test

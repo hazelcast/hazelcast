@@ -73,8 +73,8 @@ import static java.util.Collections.singletonList;
 
 public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
+    public static final FunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
     static final FunctionAdapter DO_NOT_ADAPT = new FunctionAdapter();
-    static final JetEventFunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
 
     @Nonnull
     public FunctionAdapter fnAdapter;

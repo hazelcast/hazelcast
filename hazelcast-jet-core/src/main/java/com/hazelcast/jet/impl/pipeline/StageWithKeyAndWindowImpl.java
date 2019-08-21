@@ -63,7 +63,7 @@ public class StageWithKeyAndWindowImpl<T, K>
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
         ensureJetEvents(computeStage, "This pipeline stage");
-        JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
+        FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
         return computeStage.attach(new WindowGroupTransform<K, R>(
                         singletonList(computeStage.transform),
                         wDef,
@@ -81,7 +81,7 @@ public class StageWithKeyAndWindowImpl<T, K>
         ensureJetEvents(computeStage, "This pipeline stage");
         ensureJetEvents(((StageWithGroupingBase) stage1).computeStage, "stage1");
         Transform upstream1 = ((StageWithGroupingBase) stage1).computeStage.transform;
-        JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
+        FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
         return computeStage.attach(new WindowGroupTransform<K, R>(
                         asList(computeStage.transform, upstream1),
                         wDef,
@@ -105,7 +105,7 @@ public class StageWithKeyAndWindowImpl<T, K>
         ensureJetEvents(stageImpl2, "stage2");
         Transform transform1 = ((StageWithGroupingBase) stage1).computeStage.transform;
         Transform transform2 = ((StageWithGroupingBase) stage2).computeStage.transform;
-        JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
+        FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
         return computeStage.attach(new WindowGroupTransform<K, R>(
                         asList(computeStage.transform, transform1, transform2),
                         wDef,

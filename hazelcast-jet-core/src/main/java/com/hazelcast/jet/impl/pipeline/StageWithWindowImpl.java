@@ -75,7 +75,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     private <A, R> StreamStage<WindowResult<R>> attachAggregate(
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
     ) {
-        JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
+        FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
         return streamStage.attach(new WindowAggregateTransform<A, R>(
                         singletonList(streamStage.transform),
                         wDef,

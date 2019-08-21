@@ -43,11 +43,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 
-
 public class FunctionAdapter {
 
     @Nonnull
-    <T, K> FunctionEx<?, ? extends K> adaptKeyFn(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
+    public <T, K> FunctionEx<?, ? extends K> adaptKeyFn(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         return keyFn;
     }
 
@@ -153,6 +152,13 @@ public class FunctionAdapter {
     }
 
     @Nonnull
+    <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp
+    ) {
+        return aggrOp;
+    }
+
+    @Nonnull
     <T, A, R> AggregateOperation1<?, A, ? extends R> adaptAggregateOperation1(
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
     ) {
@@ -228,7 +234,7 @@ public class FunctionAdapter {
 
 class JetEventFunctionAdapter extends FunctionAdapter {
     @Nonnull @Override
-    <T, K> FunctionEx<? super JetEvent<T>, ? extends K> adaptKeyFn(
+    public <T, K> FunctionEx<? super JetEvent<T>, ? extends K> adaptKeyFn(
             @Nonnull FunctionEx<? super T, ? extends K> keyFn
     ) {
         return e -> keyFn.apply(e.payload());
@@ -340,7 +346,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
         return (e, t1, t2) -> jetEvent(e.timestamp(), mapToOutputFn.apply(e.payload(), t1, t2));
     }
 
-    @Nonnull
+    @Nonnull @Override
     @SuppressWarnings("unchecked")
     <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
             @Nonnull AggregateOperation<A, ? extends R> aggrOp
