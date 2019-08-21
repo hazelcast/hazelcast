@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
@@ -56,7 +57,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     @Test
     public void test() {
         ClientMessage message = ClientMessage.createForEncode();
-        message.add(new ClientMessage.Frame(new byte[100], UNFRAGMENTED_MESSAGE | IS_FINAL_FLAG));
+        message.add(new Frame(new byte[100], UNFRAGMENTED_MESSAGE | IS_FINAL_FLAG));
         message.setMessageType(MapPutCodec.REQUEST_MESSAGE_TYPE);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
