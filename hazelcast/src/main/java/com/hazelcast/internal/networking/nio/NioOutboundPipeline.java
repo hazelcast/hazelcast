@@ -149,7 +149,7 @@ public final class NioOutboundPipeline
         } else {
             // the frame is scheduled, but other frames were pending. This means there
             // is concurrent writes on the pipeline.
-            concurrencyDetection.onDetected();
+           // concurrencyDetection.onDetected();
             //System.out.println("write: write behind; pipeline already scheduled");
         }
     }

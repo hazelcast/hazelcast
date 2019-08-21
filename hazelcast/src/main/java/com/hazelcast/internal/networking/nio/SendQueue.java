@@ -58,11 +58,10 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     // Will only be accessed by the thread that is processing the pipeline.
     // Therefor no synchronization is needed.
-    private Node takeStackOldest;
-    private Node takeStackYoungest;
-    private OutboundFrame[] frames = new OutboundFrame[100];
-    private long lowWaterMark;
-    private long highWatermark;
+    private final Queue<Runnable> taskQueue = new Queue<>();
+    private final Queue<OutboundFrame> priorityFrameQueue = new Queue<>();
+    private final Queue<OutboundFrame> frameQueue = new Queue<>();
+
     private final SwCounter bytesWritten;
 
     final PaddedAtomicReference<Node> putStack = new PaddedAtomicReference<>(new Node(BLOCKED));
@@ -117,6 +116,10 @@ public class SendQueue implements Supplier<OutboundFrame> {
             Node prev = putStack.get();
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
+            next.urgentFrameCount = frame.isUrgent() ? prev.urgentFrameCount + 1 : prev.urgentFrameCount;
+
+            //   next.prevNodeWithPriorityFrame =
+
             //long bytesPending = next.bytesOffered - bytesWritten.get();
             // todo: be careful with backing of a fat packet because it could be the queue is empty.
             //if(bytesPending>10mb){
@@ -184,6 +187,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
             next.state = SCHEDULED_WITH_TASK;
             next.prev = prev;
             next.bytesOffered = prev.bytesOffered;
+            next.urgentFrameCount = prev.urgentFrameCount;
             if (putStack.compareAndSet(prev, next)) {
                 return prev.state == BLOCKED || prev.state == UNSCHEDULED;
             }
@@ -222,6 +226,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
                         next = new Node(BLOCKED);
                     }
                     next.prev = prev;
+                    next.urgentFrameCount = prev.urgentFrameCount;
                     next.bytesOffered = prev.bytesOffered;
                     if (putStack.compareAndSet(prev, next)) {
                         // we return false to indicate that rescheduling isn't needed.
@@ -256,7 +261,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * is clean.
      */
     public boolean tryUnschedule() {
-        if (takeStackOldest != null) {
+        if (taskQueue.hasItems() || priorityFrameQueue.hasItems()) {
             throw new IllegalStateException("Can't call tryUnschedule if the takeStack isn't empty");
         }
 
@@ -297,6 +302,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
             }
 
             Node next = new Node(SCHEDULED_DATA_ONLY);
+            next.urgentFrameCount = putStackHead.urgentFrameCount;
             next.bytesOffered = putStackHead.bytesOffered;
             if (putStack.compareAndSet(putStackHead, next)) {
                 // we are done, we successfully managed to take the head
@@ -306,8 +312,12 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
         // iterate over all items. As a result we get 2 stacks: one stack with tasks and one stack with frames.
         Node oldestTaskNode = null;
+
         Node oldestFrameNode = null;
         Node youngestFrameNode = null;
+        Node urgentOldestFrameNode = null;
+        Node urgentYoungestFrameNode = null;
+
         Node current = putStackHead;
         while (current != null) {
             Node next = current.prev;
@@ -316,12 +326,21 @@ public class SendQueue implements Supplier<OutboundFrame> {
                 oldestTaskNode = current;
                 oldestTaskNode.prev = tmp;
             } else if (current.frame != null) {
-                if (youngestFrameNode == null) {
-                    youngestFrameNode = current;
+                if (current.frame.isUrgent()) {
+                    if (urgentYoungestFrameNode == null) {
+                        urgentYoungestFrameNode = current;
+                    }
+                    Node tmp = urgentOldestFrameNode;
+                    urgentOldestFrameNode = current;
+                    urgentOldestFrameNode.prev = tmp;
+                } else {
+                    if (youngestFrameNode == null) {
+                        youngestFrameNode = current;
+                    }
+                    Node tmp = oldestFrameNode;
+                    oldestFrameNode = current;
+                    oldestFrameNode.prev = tmp;
                 }
-                Node tmp = oldestFrameNode;
-                oldestFrameNode = current;
-                oldestFrameNode.prev = tmp;
             }
             current = next;
         }
@@ -339,6 +358,14 @@ public class SendQueue implements Supplier<OutboundFrame> {
             takeStackOldest = oldestFrameNode;
         }
         takeStackYoungest = youngestFrameNode;
+
+        // append the stack after the takeStack so we can take the items in the correct order.
+        if (urgentTakeStackYoungest != null) {
+            urgentTakeStackYoungest.prev = urgentYoungestFrameNode;
+        } else {
+            urgentTakeStackOldest = urgentOldestFrameNode;
+        }
+        urgentTakeStackYoungest = urgentYoungestFrameNode;
     }
 
     /**
@@ -351,7 +378,18 @@ public class SendQueue implements Supplier<OutboundFrame> {
      */
     @Override
     public OutboundFrame get() {
+        // todo: we always need to check if the putStack has priority frames so that the
+
+
+        OutboundFrame frame = priorityFrameQueue.deque();
+        if (frame != null) {
+            return frame;
+        }
+
+        return frameQueue.deque();
+
         for (; ; ) {
+
             if (takeStackOldest == null) {
                 // there are no items pending.
                 return null;
@@ -373,7 +411,48 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * Clears the SendQueue. Can only be made by the thread owning the pipeline.
      */
     public void clear() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        putStack.set(new Node(BLOCKED));
+        taskQueue.clear();
+        frameQueue.clear();
+        priorityFrameQueue.clear();
+    }
+
+    static class Queue<E> {
+        Node head;
+        Node tail;
+
+        void enqueue(Node node) {
+            if (tail == null) {
+                tail = node;
+                head = node;
+            } else {
+                tail.prev = node;
+                tail = node;
+            }
+        }
+
+        E deque() {
+            if (head == null) {
+                return null;
+            }
+
+            OutboundFrame frame =
+            if (head.prev == null) {
+                head = null;
+                tail = null;
+            } else {
+                head = head.prev;
+            }
+        }
+
+        void clear() {
+            head = null;
+            tail = null;
+        }
+
+        boolean hasItems() {
+            return head != null;
+        }
     }
 
     static class Node {
@@ -382,6 +461,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
         OutboundFrame frame;
         Runnable task;
         long bytesOffered;
+        int urgentFrameCount;
 
         Node(OutboundFrame frame) {
             this.frame = frame;
