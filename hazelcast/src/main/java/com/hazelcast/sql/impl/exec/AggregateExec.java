@@ -17,14 +17,27 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.aggregate.AggregateAccumulator;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+
+import java.util.List;
 
 /**
  * Filter executor.
  */
 public class AggregateExec extends AbstractUpstreamAwareExec {
+//    /** Accumulators. */
+//    private final List<AggregateAccumulator> accumulators;
+//
+//    /** Whether the input is sorted on group attributes. */
+//    private final boolean sorted;
+//
+//    /** Group key. */
+//    private final List<Integer> groupKey;
+
+
     /** Filter. */
     private final Expression<Boolean> filter;
 

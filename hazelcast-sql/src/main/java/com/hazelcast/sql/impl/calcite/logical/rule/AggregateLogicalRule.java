@@ -25,6 +25,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 
+// TODO: GROUP BY ("__key", ...) could be converted to plain projection because every group is guaranteed to be unique.
 public class AggregateLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new AggregateLogicalRule();
 

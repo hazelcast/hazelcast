@@ -29,6 +29,12 @@ import java.util.List;
  * Base class for physical aggregations.
  */
 public abstract class AbstractAggregatePhysicalRel extends Aggregate implements PhysicalRel {
+    /**
+     * Whether the input is already sorted on group key. When this is the case, the aggregation could be performed
+     * in non-blocking fashion.
+     */
+    protected final boolean sorted;
+
     protected AbstractAggregatePhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traits,
@@ -36,8 +42,15 @@ public abstract class AbstractAggregatePhysicalRel extends Aggregate implements 
         boolean indicator,
         ImmutableBitSet groupSet,
         List<ImmutableBitSet> groupSets,
-        List<AggregateCall> aggCalls
+        List<AggregateCall> aggCalls,
+        boolean sorted
     ) {
         super(cluster, traits, child, indicator, groupSet, groupSets, aggCalls);
+
+        this.sorted = sorted;
+    }
+
+    public boolean isSorted() {
+        return sorted;
     }
 }
