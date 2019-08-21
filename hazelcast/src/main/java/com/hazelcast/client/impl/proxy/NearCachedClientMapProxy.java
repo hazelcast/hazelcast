@@ -481,6 +481,22 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return localMapStats;
     }
 
+    /**
+     * Async version of {@link #executeOnKeys}.
+     */
+    public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
+                                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+
+        InternalCompletableFuture<Map<K, R>> response;
+        try {
+            response = super.submitToKeys(keys, entryProcessor);
+        } finally {
+            keys.forEach(this::invalidateNearCache);
+        }
+        return response;
+    }
+
     @Override
     public <R> R executeOnKeyInternal(Object key,
                                       EntryProcessor<K, V, R> entryProcessor) {
