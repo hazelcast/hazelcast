@@ -235,10 +235,6 @@ public final class SourceBuilder<C> {
      * Pipeline p = Pipeline.create();
      * StreamStage<String> srcStage = p.drawFrom(socketSource);
      * }</pre>
-     * <p>
-     * <strong>NOTE:</strong> the source you build with this builder is not
-     * fault-tolerant. You shouldn't use it in jobs that require a processing
-     * guarantee.
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the source's context object
@@ -317,11 +313,11 @@ public final class SourceBuilder<C> {
      * partitioned, you may run into issues with event skew between partitions
      * assigned to a given parallel processor. The timestamp you get from one
      * partition may be significantly behind the timestamp you already got from
-     * another one. If the skew is more than the allowed lag you have
-     * {@linkplain StreamSourceStage#withNativeTimestamps(long) configured},
-     * you risk that the events will be late. Use a {@linkplain
-     * Sources#streamFromProcessorWithWatermarks custom processor} if you need
-     * to coalesce watermarks from multiple partitions.
+     * another one. If the skew is more than the allowed lag and you have
+     * {@linkplain StreamSourceStage#withNativeTimestamps(long) configured
+     * native timestamps}, you risk that the events will be late. Use a
+     * {@linkplain Sources#streamFromProcessorWithWatermarks custom processor}
+     * if you need to coalesce watermarks from multiple partitions.
      *
      * @param name a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the source's context object
