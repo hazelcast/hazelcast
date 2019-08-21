@@ -12,11 +12,12 @@ public class HazelcastTypeFactory extends JavaTypeFactoryImpl {
         return super.createTypeWithNullability(type, nullable);
     }
 
-    @Override
-    public RelDataType createSqlType(SqlTypeName typeName) {
-        if (typeName == SqlTypeName.ANY)
-            return new HazelcastTableRelDataType(this, new HazelcastTableFields());
-
-        return super.createSqlType(typeName);
-    }
+    // TODO: Possible nested fields support. See big TODO in HazelcastTableFields.
+//    @Override
+//    public RelDataType createSqlType(SqlTypeName typeName) {
+//        if (typeName == SqlTypeName.ANY)
+//            return new HazelcastTableRelDataType(this, new HazelcastTableFields());
+//
+//        return super.createSqlType(typeName);
+//    }
 }

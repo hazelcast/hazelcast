@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
 import org.apache.calcite.plan.Convention;
@@ -41,6 +42,9 @@ public class AggregateLogicalRule extends RelOptRule {
     public void onMatch(RelOptRuleCall call) {
         LogicalAggregate agg = call.rel(0);
         RelNode input = agg.getInput(0);
+
+        if (agg.getGroupCount() > 1)
+            throw new HazelcastSqlException(-1, "Grouping sets are not supported.");
 
         AggregateLogicalRel newAgg = new AggregateLogicalRel(
             agg.getCluster(),

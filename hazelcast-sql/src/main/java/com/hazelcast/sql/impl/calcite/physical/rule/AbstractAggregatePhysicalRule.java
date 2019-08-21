@@ -24,16 +24,15 @@ import org.apache.calcite.rel.RelCollationImpl;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.metadata.BuiltInMetadata;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Base class for aggregate rules.
  */
-// TODO: Handle cases with inputs sorted on grouping key (save collation)
-// TODO: Understand ROLLUP/CUBE/GROUPING stuff
+
 // TODO: Check if any transpose rules are necessary
 public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
     protected AbstractAggregatePhysicalRule(RelOptRuleOperand operand, String description) {
@@ -41,36 +40,61 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
     }
 
     /**
-     * Get collation for aggregate. Currently it
+     * Get collation for aggregate.
      *
      * @param agg Aggregate.
      * @param input Input.
      * @return Collation for the given aggregate or {@code EMPTY} if input's collation is either empty or destroyed.
      */
     protected static AggregateCollation getCollation(AggregateLogicalRel agg, RelNode input) {
+        assert agg.getGroupCount() == 1 : "Grouping sets are not supported at the moment: " + agg;
+
         RelCollation inputCollation = input.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
 
         List<RelFieldCollation> inputFieldCollations = inputCollation.getFieldCollations();
 
-        if (inputFieldCollations.isEmpty())
-            return new AggregateCollation(RelCollationImpl.EMPTY, false);
+        // GROUP BY columns should be a prefix of collation columns. E.g. "GROUP BY a" on top of an input sorted
+        // by "a, b" is OK.
 
-        // GROUP BY columns should be a prefix of collation columns.
-        List<Integer> inputIndexes = new ArrayList<>(inputFieldCollations.size());
+        int groupFieldCount = agg.getGroupSet().cardinality();
 
-        for (RelFieldCollation inputFieldCollation : inputFieldCollations)
-            inputIndexes.add(inputFieldCollation.getFieldIndex());
+        if (inputFieldCollations.size() < groupFieldCount)
+            return AggregateCollation.EMPTY;
 
-        List<RelFieldCollation> aggFieldCollations = null;
+        List<RelFieldCollation> aggFieldCollations = new ArrayList<>(groupFieldCount);
 
-        // TODO
-        return new AggregateCollation(RelCollationImpl.EMPTY, false);
+        int idx = 0;
+
+        for (Integer groupFieldIdx : agg.getGroupSet()) {
+            RelFieldCollation inputCollationField = inputFieldCollations.get(idx);
+
+            if (inputCollationField.getFieldIndex() == groupFieldIdx)
+                aggFieldCollations.add(new RelFieldCollation(groupFieldIdx, inputCollationField.getDirection()));
+            else {
+                // TODO: Consider adding partial prefix supoprt. In this case it is not possible to avoid blocking
+                // TODO: behavior, but only part of the group key is needed for mapping. E.g. GROUP BY (a, b) on top
+                // TODO: input sorted by (a) will have "fixed" group key component of "a", and "blocking" map
+                // TODO: (group key -> group value) for "b" only. As a result, instead of storing the whole group
+                // TODO: map in memory, we may return the next row as soon as the next value of "a" is different from
+                // TODO: the current one. This descreases memory demands and partially preserves the collation.
+
+                return AggregateCollation.EMPTY;
+            }
+
+            idx++;
+        }
+
+        return new AggregateCollation(RelCollationImpl.of(aggFieldCollations), true);
     }
 
     /**
      * Collation which should be applied to aggregate.
      */
     protected static class AggregateCollation {
+
+        private static final AggregateCollation EMPTY =
+            new AggregateCollation(RelCollationImpl.of(Collections.emptyList()), false);
+
         /** Collation to be applied to aggregate. */
         private final RelCollation collation;
 

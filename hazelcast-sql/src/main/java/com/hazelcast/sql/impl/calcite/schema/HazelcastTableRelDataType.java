@@ -78,7 +78,7 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
 
     @Override
     public SqlTypeName getSqlTypeName() {
-        return SqlTypeName.ANY;
+        return SqlTypeName.ROW;
     }
 
     @Override

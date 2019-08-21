@@ -92,8 +92,6 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
             case SINGLETON:
                 AggregateCollation collation = getCollation(logicalAgg, input);
 
-                // TODO: Process collation properly: If collation matches distribution, then grouping may be performed
-                // TODO: in a non-blocking mode.
                 RelTraitSet traitSet = RuleUtils.toPhysicalConvention(call.getPlanner().emptyTraitSet(), inputDist)
                     .plus(collation.getCollation());
 

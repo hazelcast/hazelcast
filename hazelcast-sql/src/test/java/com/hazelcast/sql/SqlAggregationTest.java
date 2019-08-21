@@ -79,7 +79,12 @@ public class SqlAggregationTest extends HazelcastTestSupport {
 
     @Test(timeout = Long.MAX_VALUE)
     public void testGroupByHaving() throws Exception {
-        doQuery("SELECT SUM(v2) FROM map GROUP BY v1 HAVING SUM(v3) = 10");
+        doQuery("SELECT SUM(v1) FROM map GROUP BY v2 HAVING SUM(v3) = 10");
+    }
+
+    @Test(timeout = Long.MAX_VALUE)
+    public void testGroupByGroupingSet() throws Exception {
+        doQuery("SELECT v1, v2, SUM(v3) + SUM(v3) FROM map GROUP BY GROUPING SETS ((v1, v2), (v2))");
     }
 
     private List<SqlRow> doQuery(String sql) {

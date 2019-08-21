@@ -20,6 +20,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Util;
 
 import java.util.ArrayList;
@@ -63,7 +64,21 @@ public class HazelcastTableFields {
         // TODO: Handle star.
 
         // Add the field dynamically.
-        RelDataType type = new HazelcastTableRelDataType(typeFactory, new HazelcastTableFields());
+        // TODO: Vladimir Ozerov:
+        // TODO: Note that if we return "ANY", then nested field access will not work. But otherwise,
+        // TODO: we have a problem with type inferences, e.g. try to do "HAVING sum(field) > 1" query and
+        // TODO: see what happens. One potential solution is to override *ALL* operator definitions with our
+        // TODO: own type inference strategy, but this is a *LOT* of work. Also note that "STRUCT" access
+        // TODO: doesn't work well for GROUP BY! E.g. you will have an exception if you do
+        // TODO: "SELECT t.__key.field, SUM(field2) FROM t GROUP BY t.__key.field", and this behavior is hard coded
+        // TODO: into Calcite's logic!
+
+        // TODO: In order to get nested field access working with aforementioned problems, uncomment the following
+        // TODO: line, then set HazelcastTableRelDataType.getSqlTypeName() to "ANY" instead of "ROW", then
+        // TODO: uncomment HazelcastTypeFactory.createSqlType()
+        // RelDataType type = new HazelcastTableRelDataType(typeFactory, new HazelcastTableFields());
+
+        RelDataType type = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.ANY), true);
 
         RelDataTypeField field = new RelDataTypeFieldImpl(fieldName, fields.size(), type);
 
