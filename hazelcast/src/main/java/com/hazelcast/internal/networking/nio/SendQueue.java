@@ -59,8 +59,8 @@ public class SendQueue implements Supplier<OutboundFrame> {
     // Will only be accessed by the thread that is processing the pipeline.
     // Therefor no synchronization is needed.
     private final Queue<Runnable> taskQueue = new Queue<>();
-    private final Queue<OutboundFrame> priorityFrameQueue = new Queue<>();
-    private final Queue<OutboundFrame> frameQueue = new Queue<>();
+    private final Queue<OutboundFrame> priorityQueue = new Queue<>();
+    private final Queue<OutboundFrame> queue = new Queue<>();
 
     private final SwCounter bytesWritten;
 
@@ -114,7 +114,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
         //System.out.println(this+" schedule:"+next);
         for (; ; ) {
             Node prev = putStack.get();
-            next.prev = prev;
+            next.node = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
             next.urgentFrameCount = frame.isUrgent() ? prev.urgentFrameCount + 1 : prev.urgentFrameCount;
 
@@ -185,7 +185,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
         for (; ; ) {
             Node prev = putStack.get();
             next.state = SCHEDULED_WITH_TASK;
-            next.prev = prev;
+            next.node = prev;
             next.bytesOffered = prev.bytesOffered;
             next.urgentFrameCount = prev.urgentFrameCount;
             if (putStack.compareAndSet(prev, next)) {
@@ -225,7 +225,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
                     if (next == null) {
                         next = new Node(BLOCKED);
                     }
-                    next.prev = prev;
+                    next.node = prev;
                     next.urgentFrameCount = prev.urgentFrameCount;
                     next.bytesOffered = prev.bytesOffered;
                     if (putStack.compareAndSet(prev, next)) {
@@ -261,14 +261,14 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * is clean.
      */
     public boolean tryUnschedule() {
-        if (taskQueue.hasItems() || priorityFrameQueue.hasItems()) {
-            throw new IllegalStateException("Can't call tryUnschedule if the takeStack isn't empty");
+        if (taskQueue.hasItems() || priorityQueue.hasItems()) {
+            throw new IllegalStateException("Can't call tryUnschedule if items are pending");
         }
 
         Node prev = putStack.get();
-        assert prev.task == null;
 
-        if (prev.frame != null) {
+        if (prev.item != null) {
+            //todo: what if the node is a marker node and node with data are behind?
             // we can't unschedule since the putStack isn't empty.
             return true;
         }
@@ -310,62 +310,62 @@ public class SendQueue implements Supplier<OutboundFrame> {
             }
         }
 
-        // iterate over all items. As a result we get 2 stacks: one stack with tasks and one stack with frames.
+        Node newestTaskNode = null;
         Node oldestTaskNode = null;
-
+        Node newestFrameNode = null;
         Node oldestFrameNode = null;
-        Node youngestFrameNode = null;
-        Node urgentOldestFrameNode = null;
-        Node urgentYoungestFrameNode = null;
+        Node newestPriorityFrameNode = null;
+        Node oldestPriorityFrameNode = null;
+
+
+        // todo: how does this code deal with a part of the stack being processed more than once? because
+        // we don't change the stack while taking items. Afaik this is broken
 
         Node current = putStackHead;
         while (current != null) {
-            Node next = current.prev;
-            if (current.task != null) {
-                Node tmp = oldestTaskNode;
-                oldestTaskNode = current;
-                oldestTaskNode.prev = tmp;
-            } else if (current.frame != null) {
-                if (current.frame.isUrgent()) {
-                    if (urgentYoungestFrameNode == null) {
-                        urgentYoungestFrameNode = current;
+            Node prev = current.node;
+            Object item = current.item;
+            if (item != null) {
+                if (item instanceof Runnable) {
+                    if (newestTaskNode == null) {
+                        current.node = null;
+                        newestTaskNode = current;
+                        oldestTaskNode = current;
+                    } else {
+                        current.node = oldestTaskNode;
+                        oldestTaskNode = current;
                     }
-                    Node tmp = urgentOldestFrameNode;
-                    urgentOldestFrameNode = current;
-                    urgentOldestFrameNode.prev = tmp;
+                } else if (((OutboundFrame) item).isUrgent()) {
+                    if (newestPriorityFrameNode == null) {
+                        current.node = null;
+                        newestPriorityFrameNode = current;
+                        oldestPriorityFrameNode = current;
+                    } else {
+                        current.node = oldestPriorityFrameNode;
+                        oldestPriorityFrameNode = current;
+                    }
                 } else {
-                    if (youngestFrameNode == null) {
-                        youngestFrameNode = current;
+                    if (newestFrameNode == null) {
+                        current.node = null;
+                        newestFrameNode = current;
+                        oldestFrameNode = current;
+                    } else {
+                        current.node = oldestFrameNode;
+                        oldestFrameNode = current;
                     }
-                    Node tmp = oldestFrameNode;
-                    oldestFrameNode = current;
-                    oldestFrameNode.prev = tmp;
                 }
             }
-            current = next;
+            current = prev;
         }
 
-        // process all tasks in order.
-        while (oldestTaskNode != null) {
-            oldestTaskNode.task.run();
-            oldestTaskNode = oldestTaskNode.prev;
-        }
+        priorityQueue.enque(oldestPriorityFrameNode, newestPriorityFrameNode);
+        queue.enque(oldestFrameNode, newestFrameNode);
+        taskQueue.enque(oldestTaskNode, newestTaskNode);
 
-        // append the stack after the takeStack so we can take the items in the correct order.
-        if (takeStackYoungest != null) {
-            takeStackYoungest.prev = youngestFrameNode;
-        } else {
-            takeStackOldest = oldestFrameNode;
+        // we process all tasks;
+        while (taskQueue.hasItems()) {
+            taskQueue.deque().run();
         }
-        takeStackYoungest = youngestFrameNode;
-
-        // append the stack after the takeStack so we can take the items in the correct order.
-        if (urgentTakeStackYoungest != null) {
-            urgentTakeStackYoungest.prev = urgentYoungestFrameNode;
-        } else {
-            urgentTakeStackOldest = urgentOldestFrameNode;
-        }
-        urgentTakeStackYoungest = urgentYoungestFrameNode;
     }
 
     /**
@@ -381,30 +381,13 @@ public class SendQueue implements Supplier<OutboundFrame> {
         // todo: we always need to check if the putStack has priority frames so that the
 
 
-        OutboundFrame frame = priorityFrameQueue.deque();
+        OutboundFrame frame = priorityQueue.deque();
         if (frame != null) {
             return frame;
         }
 
-        return frameQueue.deque();
-
-        for (; ; ) {
-
-            if (takeStackOldest == null) {
-                // there are no items pending.
-                return null;
-            }
-
-            Node node = takeStackOldest;
-            takeStackOldest = takeStackOldest.prev;
-            if (takeStackOldest == null) {
-                takeStackYoungest = null;
-            }
-            OutboundFrame frame = node.frame;
-            node.frame = null;
-            // normalFramesWritten.inc();
-            return frame;
-        }
+        // normalFramesWritten.inc();
+        return queue.deque();
     }
 
     /**
@@ -413,35 +396,51 @@ public class SendQueue implements Supplier<OutboundFrame> {
     public void clear() {
         putStack.set(new Node(BLOCKED));
         taskQueue.clear();
-        frameQueue.clear();
-        priorityFrameQueue.clear();
+        queue.clear();
+        priorityQueue.clear();
     }
 
     static class Queue<E> {
         Node head;
         Node tail;
 
-        void enqueue(Node node) {
+        void enque(Node oldest, Node youngest) {
             if (tail == null) {
-                tail = node;
-                head = node;
+                tail = youngest;
+                head = oldest;
             } else {
-                tail.prev = node;
-                tail = node;
+                tail.node = oldest;
+                tail = youngest;
             }
         }
 
+        /**
+         * Deques an item. If no item is found, false is returned.
+         *
+         * @return the dequed item.
+         */
         E deque() {
-            if (head == null) {
-                return null;
-            }
+            for (; ; ) {
+                if (head == null) {
+                    // queue is empty.
+                    return null;
+                }
 
-            OutboundFrame frame =
-            if (head.prev == null) {
-                head = null;
-                tail = null;
-            } else {
-                head = head.prev;
+                E item = (E) head.item;
+                head.item = null;
+
+                if (head.node == null) {
+                    head = null;
+                    tail = null;
+                } else {
+                    head = head.node;
+                }
+
+                if (item != null) {
+                    return item;
+                }
+
+                // if there is no item on the node, we move on to the next node and try again.
             }
         }
 
@@ -457,18 +456,17 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     static class Node {
         State state;
-        Node prev;
-        OutboundFrame frame;
-        Runnable task;
+        Node node;
+        Object item;
         long bytesOffered;
         int urgentFrameCount;
 
         Node(OutboundFrame frame) {
-            this.frame = frame;
+            this.item = frame;
         }
 
         Node(Runnable task) {
-            this.task = task;
+            this.item = task;
         }
 
         Node(State state) {
@@ -479,10 +477,9 @@ public class SendQueue implements Supplier<OutboundFrame> {
         public String toString() {
             return "Node{" +
                     "state=" + state +
-                    ", frame=" + frame +
-                    ", task=" + task +
+                    ", item=" + item +
                     ", bytesOffered=" + bytesOffered +
-                    ", prev=" + prev +
+                    ", prev=" + node +
                     '}';
         }
     }
