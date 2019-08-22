@@ -141,6 +141,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterationType;
 
 import javax.annotation.Nonnull;
@@ -154,7 +155,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -166,6 +166,7 @@ import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.new
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -1707,7 +1708,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     // used by Jet
     public ICompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
-        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(ForkJoinPool.commonPool(),
+        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(
+                getClient().getClientExecutionService().getUserExecutor(),
                 getClient().getLoggingService().getLogger(ClientMapProxy.class));
         putAllInternal(m, future);
         return future;
@@ -1764,15 +1766,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             futures.add(f);
         }
         // if executing in sync mode, block for the responses
-        if (future == null) {
-            try {
-                for (Future<?> f : futures) {
-                    f.get();
-                }
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
+        FutureUtil.waitForever(futures, RETHROW_EVERYTHING);
     }
 
     protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {

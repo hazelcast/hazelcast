@@ -63,6 +63,12 @@ public class SimpleCompletedFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Note: Since this future is always completed, the callback is executed
+     * immediately and in the calling thread.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void andThen(ExecutionCallback<E> callback) {
