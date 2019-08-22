@@ -141,7 +141,6 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterationType;
 
 import javax.annotation.Nonnull;
@@ -166,7 +165,6 @@ import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.new
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -1735,24 +1733,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
             partition.add(new AbstractMap.SimpleEntry<>(keyData, toData(entry.getValue())));
         }
 
-        List<Future<?>> futures = new ArrayList<>(entryMap.size());
         AtomicInteger counter = new AtomicInteger(entryMap.size());
+        SimpleCompletableFuture<Void> resultFuture =
+                future != null ? future : new SimpleCompletableFuture<>(
+                        getClient().getClientExecutionService().getUserExecutor(),
+                        getClient().getLoggingService().getLogger(ClientMapProxy.class));
         ExecutionCallback<ClientMessage> callback = new ExecutionCallback<ClientMessage>() {
             @Override
             public void onResponse(ClientMessage response) {
                 if (counter.decrementAndGet() == 0) {
                     finalizePutAll(map, entryMap);
-                    if (future != null) {
-                        future.setResult(null);
-                    }
+                    resultFuture.setResult(null);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                if (future != null) {
-                    future.setResult(t);
-                }
+                resultFuture.setResult(t);
                 onResponse(null);
             }
         };
@@ -1761,12 +1758,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            ClientInvocationFuture f = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-            f.andThen(callback);
-            futures.add(f);
+            new ClientInvocation(getClient(), request, getName(), partitionId).invoke()
+                    .andThen(callback);
         }
         // if executing in sync mode, block for the responses
-        FutureUtil.waitForever(futures, RETHROW_EVERYTHING);
+        if (future == null) {
+            try {
+                resultFuture.get();
+            } catch (Throwable e) {
+                throw rethrow(e);
+            }
+        }
     }
 
     protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
