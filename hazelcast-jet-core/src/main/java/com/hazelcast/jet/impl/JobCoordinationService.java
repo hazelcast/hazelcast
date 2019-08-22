@@ -278,6 +278,28 @@ public class JobCoordinationService {
         assertIsMaster("Cannot " + terminationMode + " job " + idToString(jobId) + " on non-master node");
 
         return submitToCoordinatorThread(() -> {
+            MasterContext masterContext = masterContexts.get(jobId);
+            if (masterContext != null) {
+                // User can cancel in any state, other terminations are allowed only when running.
+                // This is not technically required (we can request termination in any state),
+                // but this method is only called by the user. It would be weird for the client to
+                // request a restart if the job didn't start yet etc.
+                // Also, it would be weird to restart the job during STARTING: as soon as it will start,
+                // it will restart.
+                // In any case, it doesn't make sense to restart a suspended job.
+                JobStatus jobStatus = masterContext.jobStatus();
+                if (jobStatus != RUNNING && terminationMode != CANCEL_FORCEFUL) {
+                    throw new IllegalStateException("Cannot " + terminationMode + ", job status is " + jobStatus
+                            + ", should be " + RUNNING);
+                }
+
+                String terminationResult = masterContext.jobContext().requestTermination(terminationMode, false).f1();
+                if (terminationResult != null) {
+                    throw new IllegalStateException("Cannot " + terminationMode + ": " + terminationResult);
+                }
+                return;
+            }
+
             JobResult jobResult = jobRepository.getJobResult(jobId);
             if (jobResult != null) {
                 if (terminationMode == CANCEL_FORCEFUL) {
@@ -288,34 +310,14 @@ public class JobCoordinationService {
                         + " because it already has a result: " + jobResult);
             }
 
-            MasterContext masterContext = masterContexts.get(jobId);
-            if (masterContext == null) {
-                JobRecord jobRecord = jobRepository.getJobRecord(jobId);
-                String message = "No MasterContext found for job " + idToString(jobId) + " for " + terminationMode;
-                if (jobRecord != null) {
-                    // we'll eventually learn of the job through scanning of records or from a join operation
-                    throw new RetryableHazelcastException(message);
-                }
-                throw new JobNotFoundException(jobId);
+            JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+            if (jobRecord != null) {
+                // we'll eventually learn of the job through scanning of records or from a join operation
+                throw new RetryableHazelcastException("No MasterContext found for job " + idToString(jobId) + " for "
+                        + terminationMode);
             }
 
-            // User can cancel in any state, other terminations are allowed only when running.
-            // This is not technically required (we can request termination in any state),
-            // but this method is only called from client. It would be weird for the client to
-            // request a restart if the job didn't start yet etc.
-            // Also, it would be weird to restart the job during STARTING: as soon as it will start,
-            // it will restart.
-            // In any case, it doesn't make sense to restart a suspended job.
-            JobStatus jobStatus = masterContext.jobStatus();
-            if (jobStatus != RUNNING && terminationMode != CANCEL_FORCEFUL) {
-                throw new IllegalStateException("Cannot " + terminationMode + ", job status is " + jobStatus
-                        + ", should be " + RUNNING);
-            }
-
-            String terminationResult = masterContext.jobContext().requestTermination(terminationMode, false).f1();
-            if (terminationResult != null) {
-                throw new IllegalStateException("Cannot " + terminationMode + ": " + terminationResult);
-            }
+            throw new JobNotFoundException(jobId);
         });
     }
 
