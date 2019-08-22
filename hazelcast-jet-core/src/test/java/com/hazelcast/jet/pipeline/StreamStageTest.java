@@ -34,20 +34,15 @@ import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.JetEvent;
-import com.hazelcast.jet.pipeline.test.TestSources;
 import org.junit.Test;
 
-import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -70,7 +65,6 @@ import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 public class StreamStageTest extends PipelineStreamTestSupport {
@@ -648,33 +642,6 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapStateful_keyedWithTtl() {
-        // Given
-        List<Integer> input = IntStream.range(0, itemCount)
-                                       .mapToObj(i -> 10 * i)
-                                       .collect(toList());
-
-        // When
-        StreamStage<Entry<Integer, Long>> stage =
-                p.drawFrom(TestSources.items(new DelayedIterable<>(input)))
-                 .addTimestamps(ts -> ts, 0).setLocalParallelism(1)
-                 .groupingKey(i -> i % 2)
-                 .mapStateful(4, LongAccumulator::new, (acc, i) -> {
-                     acc.add(i);
-                     return acc.get();
-                 });
-
-        // Then
-        stage.drainTo(sink);
-        execute();
-        Function<Entry<Integer, Long>, String> formatFn = e -> String.format("%d %04d", e.getKey(), e.getValue());
-        assertEquals(
-                streamToString(input.stream().map(i -> entry(i % 2, (long) i)), formatFn),
-                streamToString(sinkStreamOfEntry(), formatFn)
-        );
-    }
-
-    @Test
     public void filterStateful_global() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -1093,19 +1060,5 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         assertEquals(
                 streamToString(input.stream().filter(filterFn), formatFn),
                 streamToString(sinkStreamOf(Integer.class), formatFn));
-    }
-
-    private static final class DelayedIterable<T> implements Iterable<T>, Serializable {
-        private final Iterable<T> wrapped;
-
-        private DelayedIterable(Iterable<T> wrapped) {
-            this.wrapped = wrapped;
-        }
-
-        @Nonnull @Override
-        public Iterator<T> iterator() {
-            LockSupport.parkNanos(1_000_000);
-            return wrapped.iterator();
-        }
     }
 }
