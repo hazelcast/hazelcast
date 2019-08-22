@@ -24,8 +24,17 @@ import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
+/**
+ * Exchange which marge sorted input streams from several nodes into a a single sorted stream on a single node.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: derived from the input, never empty</li>
+ *     <li><b>Distribution</b>: SINGLETON</li>
+ * </ul>
+ */
 public class SortMergeExchangePhysicalRel extends SingleRel implements PhysicalRel {
-
+    /** Collation. */
     private final RelCollation collation;
 
     public SortMergeExchangePhysicalRel(

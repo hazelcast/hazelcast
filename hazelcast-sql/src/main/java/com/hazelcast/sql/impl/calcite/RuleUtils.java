@@ -156,7 +156,7 @@ public class RuleUtils {
     }
 
     /**
-     * Get possible physical rels from the given subset.
+     * Get possible physical rels from the given subset. Every returned input is guaranteed to have a unique trait set.
      *
      * @param subset Subset.
      * @return Physical rels.

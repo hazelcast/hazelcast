@@ -25,6 +25,12 @@ import org.apache.calcite.rex.RexNode;
 
 /**
  * Physical sort performed locally.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: defined by the operator</li>
+ *     <li><b>Distribution</b>: derive from the input, since this is a local operation</li>
+ * </ul>
  */
 public class SortPhysicalRel extends Sort implements PhysicalRel {
     public SortPhysicalRel(

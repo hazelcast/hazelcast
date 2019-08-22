@@ -43,10 +43,6 @@ public class HazelcastCalciteContext {
         CTX.remove();
     }
 
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
-
     /**
      * @return {@code True} if the given node stores data. Provided that the optimizer can only run on members,
      * lite member check is enough.

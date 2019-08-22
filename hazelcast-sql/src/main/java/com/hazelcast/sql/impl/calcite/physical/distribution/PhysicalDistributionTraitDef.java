@@ -24,6 +24,8 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.rel.RelNode;
 
+import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.*;
+
 public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributionTrait> {
     public static final PhysicalDistributionTraitDef INSTANCE = new PhysicalDistributionTraitDef();
 
@@ -52,7 +54,7 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
 
         // TODO: What is the reason of having this RelSubset check?
         // if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
-        if (currentTrait.equals(PhysicalDistributionTrait.ANY))
+        if (currentTrait.equals(ANY))
             return null;
 
         // Only physical nodes could be converted.
@@ -61,7 +63,7 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
 
         switch (targetTrait.getType()){
             case SINGLETON:
-                if (currentTrait == PhysicalDistributionTrait.REPLICATED && HazelcastCalciteContext.get().isDataMember())
+                if (currentTrait == REPLICATED && HazelcastCalciteContext.get().isDataMember())
                     return rel;
 
                 // TODO: Do we really need this kind of conversions? Can't this be handled on rule level?
@@ -92,6 +94,6 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
 
     @Override
     public PhysicalDistributionTrait getDefault() {
-        return PhysicalDistributionTrait.ANY;
+        return ANY;
     }
 }

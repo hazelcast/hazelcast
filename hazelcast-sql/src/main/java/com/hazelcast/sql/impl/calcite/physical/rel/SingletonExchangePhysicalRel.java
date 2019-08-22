@@ -23,6 +23,15 @@ import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
+/**
+ * Exchange which takes data from several nodes and merges them into unsorted stream on a single node.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: empty, as resulting input consists of unordered batches from different nodes</li>
+ *     <li><b>Distribution</b>: SINGLETON</li>
+ * </ul>
+ */
 public class SingletonExchangePhysicalRel extends SingleRel implements PhysicalRel {
     public SingletonExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
