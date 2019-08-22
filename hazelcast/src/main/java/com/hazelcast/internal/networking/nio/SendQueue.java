@@ -422,7 +422,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     private static class Queue {
 
-        private OutboundFrame[] array = new OutboundFrame[512];
+        private OutboundFrame[] array = new OutboundFrame[32];
         private int capacity = array.length;
         private int head;
         private int tail;
