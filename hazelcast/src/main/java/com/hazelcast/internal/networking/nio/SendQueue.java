@@ -9,6 +9,8 @@ import static com.hazelcast.internal.networking.nio.SendQueue.State.BLOCKED;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.SCHEDULED_DATA_ONLY;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.SCHEDULED_WITH_TASK;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
+import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 
 // todo: priority
 
@@ -25,8 +27,17 @@ import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
  * The SendQueue doesn't wake up the NioThread. This is done for a reason; make the SendQueue easy
  * to test in isolation. So the return value of the methods need to be checked if the IOThread needs
  * to be notified.
+ *
+ * Could it be we end up in a situation whereby we run out of the frames array because we don't move
+ * the unprocessed items to the beginning? So imagine a pipeline with more frames it can handle
+ * and therefor it needs to reschedule itself and the next round frames again are added; but
+ * this isn't done at the end of the array.
  */
 public class SendQueue implements Supplier<OutboundFrame> {
+
+    public enum Owner {
+        TRUE, FALSE
+    }
 
     public enum State {
 
@@ -56,13 +67,14 @@ public class SendQueue implements Supplier<OutboundFrame> {
         BLOCKED
     }
 
-    // Will only be accessed by the thread that is processing the pipeline.
-    // Therefor no synchronization is needed.
-    private final Queue<Runnable> taskQueue = new Queue<>();
-    private final Queue<OutboundFrame> priorityQueue = new Queue<>();
-    private final Queue<OutboundFrame> queue = new Queue<>();
-
+    private Runnable[] tasks = new Runnable[10000];
     private final SwCounter bytesWritten;
+    private long frameNr;
+    private long priorityFrameNr;
+    public long nodeNr;
+    public final Queue queue = new Queue();
+    public final Queue priorityQueue = new Queue();
+    public NioChannel nioChannel;
 
     final PaddedAtomicReference<Node> putStack = new PaddedAtomicReference<>(new Node(BLOCKED));
 
@@ -108,18 +120,21 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * @param frame the frame to write.
      * @return return true if the NioThread needs to be woken up.
      */
-    public boolean offer(OutboundFrame frame) {
+    public boolean enque(OutboundFrame frame) {
         Node next = new Node(frame);
 
-        //System.out.println(this+" schedule:"+next);
         for (; ; ) {
             Node prev = putStack.get();
-            next.node = prev;
+            next.prev = prev;
             next.bytesOffered = prev.bytesOffered + frame.getFrameLength();
-            next.urgentFrameCount = frame.isUrgent() ? prev.urgentFrameCount + 1 : prev.urgentFrameCount;
-
-            //   next.prevNodeWithPriorityFrame =
-
+            if (frame.isUrgent()) {
+                next.frameNr = prev.frameNr;
+                next.priorityFrameNr = prev.priorityFrameNr + 1;
+            } else {
+                next.frameNr = prev.frameNr + 1;
+                next.priorityFrameNr = prev.priorityFrameNr;
+            }
+            next.nodeNr = prev.nodeNr + 1;
             //long bytesPending = next.bytesOffered - bytesWritten.get();
             // todo: be careful with backing of a fat packet because it could be the queue is empty.
             //if(bytesPending>10mb){
@@ -158,6 +173,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
                         return false;
                     }
                     break;
+
                 default:
                     throw new IllegalStateException();
             }
@@ -179,16 +195,19 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * @param task
      * @return return true if the NioThread needs to be woken up.
      */
-    public boolean execute(Runnable task) {
+    public boolean enque(Runnable task) {
         Node next = new Node(task);
 
         for (; ; ) {
             Node prev = putStack.get();
             next.state = SCHEDULED_WITH_TASK;
-            next.node = prev;
+            next.prev = prev;
             next.bytesOffered = prev.bytesOffered;
-            next.urgentFrameCount = prev.urgentFrameCount;
+            next.frameNr = prev.frameNr;
+            next.priorityFrameNr = prev.priorityFrameNr;
+            next.nodeNr = prev.nodeNr + 1;
             if (putStack.compareAndSet(prev, next)) {
+                //System.out.println(NioOutboundPipeline.this + " wakeup " + prev.state + "->" + next.state);
                 return prev.state == BLOCKED || prev.state == UNSCHEDULED;
             }
         }
@@ -201,7 +220,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * is blocked for some external event and we don't want to cause the pipeline to get processed if new frames
      * are offered.
      *
-     * Should only be made by the thread that owns the Pipeline (so the one calling process).
+     * Should only be made by the thread that owns the Pipeline (so the one calling the process method).
      *
      * This method guarantees that it won't block if there is a task pending.
      * - there should not be a task on the putStack (then true is returned)
@@ -225,9 +244,11 @@ public class SendQueue implements Supplier<OutboundFrame> {
                     if (next == null) {
                         next = new Node(BLOCKED);
                     }
-                    next.node = prev;
-                    next.urgentFrameCount = prev.urgentFrameCount;
+                    next.prev = prev;
                     next.bytesOffered = prev.bytesOffered;
+                    next.frameNr = prev.frameNr;
+                    next.priorityFrameNr = prev.priorityFrameNr;
+                    next.nodeNr = prev.nodeNr + 1;
                     if (putStack.compareAndSet(prev, next)) {
                         // we return false to indicate that rescheduling isn't needed.
                         return false;
@@ -245,7 +266,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     /**
      * Tries to unschedule the SendQueue. This should be done by the Thread that owns the pipeline and
-     * determines that nothing is left to be done. So the
+     * determines that nothing is left to be done.
      *
      * The reason that try is returned if scheduling false is that other methods like offer also return
      * true in case of scheduling needed.
@@ -261,22 +282,25 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * is clean.
      */
     public boolean tryUnschedule() {
-        if (taskQueue.hasItems() || priorityQueue.hasItems()) {
-            throw new IllegalStateException("Can't call tryUnschedule if items are pending");
-        }
-
-        Node prev = putStack.get();
-
-        if (prev.item != null) {
-            //todo: what if the node is a marker node and node with data are behind?
-            // we can't unschedule since the putStack isn't empty.
+        if (queue.hasItems() || priorityQueue.hasItems()) {
+            // there are frames pending
             return true;
         }
 
-        /// the put stack is empty, lets try to cas it to unscheduled.
-        // we need a new node because we need to keep track of the number of bytes offered.
+        Node prev = putStack.get();
+        if (prev.nodeNr != nodeNr) {
+            // there are some frames on the putStack pending
+            return true;
+        }
+
+        // No more frames are pending.
+        // So we are going to try to unschedule.
+        // We need a new node because we need to keep track of some important information.
         Node next = new Node(UNSCHEDULED);
         next.bytesOffered = prev.bytesOffered;
+        next.frameNr = prev.frameNr;
+        next.priorityFrameNr = prev.priorityFrameNr;
+        next.nodeNr = prev.nodeNr + 1;
         return !putStack.compareAndSet(prev, next);
     }
 
@@ -285,87 +309,94 @@ public class SendQueue implements Supplier<OutboundFrame> {
      *
      * The reason this method exists next to get is that even though a pipeline process method is called,
      * it doesn't mean that the {@link #get()} is called; e.g. because the pipeline is trying to get write a
-     * large packet that needs many writes.
-     *
-     * If such a pipeline would have tasks pending, these tasks wouldn't get processed.
+     * large packet that needs many writes. If such a pipeline would have tasks pending, these tasks wouldn't
+     * get processed.
      *
      * After this method is called, no tasks are pending to be processed.
      */
     public void prepare() {
-        // we read the putStack head. Only in case of a SCHEDULED_WITH_TASK
-        // we swap the node.
-        Node putStackHead;
         for (; ; ) {
-            putStackHead = putStack.get();
-            if (putStackHead.state != SCHEDULED_WITH_TASK) {
-                break;
-            }
-
-            Node next = new Node(SCHEDULED_DATA_ONLY);
-            next.urgentFrameCount = putStackHead.urgentFrameCount;
-            next.bytesOffered = putStackHead.bytesOffered;
-            if (putStack.compareAndSet(putStackHead, next)) {
-                // we are done, we successfully managed to take the head
-                break;
+            Node prev = putStack.get();
+            switch (prev.state) {
+                case BLOCKED:
+                case SCHEDULED_DATA_ONLY:
+                    // this is the most frequent occurring case.
+                    // we do not want to cas the node because this will cause contention with
+                    // threads that want to write something to the pipeline and we already need to
+                    // change the status when the pipeline wants to unschedule.
+                    moveToTakeStack(prev);
+                    return;
+                case SCHEDULED_WITH_TASK:
+                    Node next = new Node(SCHEDULED_DATA_ONLY);
+                    next.nodeNr = prev.nodeNr + 1;
+                    next.frameNr = prev.frameNr;
+                    next.priorityFrameNr = prev.priorityFrameNr;
+                    next.prev = prev;
+                    if (putStack.compareAndSet(prev, next)) {
+                        moveToTakeStack(next);
+                        return;
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException();
             }
         }
+    }
 
-        Node newestTaskNode = null;
-        Node oldestTaskNode = null;
-        Node newestFrameNode = null;
-        Node oldestFrameNode = null;
-        Node newestPriorityFrameNode = null;
-        Node oldestPriorityFrameNode = null;
+    private void moveToTakeStack(final Node head) {
+        if (head.nodeNr == nodeNr) {
+            // we already processed up to this point, we are done.
+            return;
+        }
 
+        int framesPending = (int) (head.frameNr - frameNr);
+        queue.ensureExtraCapacity(framesPending);
 
-        // todo: how does this code deal with a part of the stack being processed more than once? because
-        // we don't change the stack while taking items. Afaik this is broken
+        int priorityFramesPending = (int) (head.priorityFrameNr - priorityFrameNr);
+        priorityQueue.ensureExtraCapacity(priorityFramesPending);
 
-        Node current = putStackHead;
-        while (current != null) {
-            Node prev = current.node;
-            Object item = current.item;
+        int frameIndex = queue.toIndex(queue.tail + framesPending - 1);
+        int priorityFrameIndex = priorityQueue.toIndex(priorityQueue.tail + priorityFramesPending - 1);
+
+       // int taskIndex = -1;
+        Node node = head;
+        do {
+            if (node.nodeNr == nodeNr) {
+                // We are done; premature end of the stack detected.
+                break;
+            }
+
+            Object item = node.item;
             if (item != null) {
                 if (item instanceof Runnable) {
-                    if (newestTaskNode == null) {
-                        current.node = null;
-                        newestTaskNode = current;
-                        oldestTaskNode = current;
-                    } else {
-                        current.node = oldestTaskNode;
-                        oldestTaskNode = current;
-                    }
+                     //todo: reverse order
+                    ((Runnable) item).run();
                 } else if (((OutboundFrame) item).isUrgent()) {
-                    if (newestPriorityFrameNode == null) {
-                        current.node = null;
-                        newestPriorityFrameNode = current;
-                        oldestPriorityFrameNode = current;
-                    } else {
-                        current.node = oldestPriorityFrameNode;
-                        oldestPriorityFrameNode = current;
-                    }
+                    priorityQueue.array[priorityFrameIndex] = (OutboundFrame) item;
+                    priorityFrameIndex = priorityQueue.toIndex(priorityFrameIndex - 1);
                 } else {
-                    if (newestFrameNode == null) {
-                        current.node = null;
-                        newestFrameNode = current;
-                        oldestFrameNode = current;
-                    } else {
-                        current.node = oldestFrameNode;
-                        oldestFrameNode = current;
-                    }
+                    queue.array[frameIndex] = (OutboundFrame) item;
+                    frameIndex = queue.toIndex(frameIndex - 1);
                 }
             }
-            current = prev;
-        }
 
-        priorityQueue.enque(oldestPriorityFrameNode, newestPriorityFrameNode);
-        queue.enque(oldestFrameNode, newestFrameNode);
-        taskQueue.enque(oldestTaskNode, newestTaskNode);
+            node = node.prev;
+        } while (node != null);
 
-        // we process all tasks;
-        while (taskQueue.hasItems()) {
-            taskQueue.deque().run();
-        }
+//        // tasks are processed in reverse order to restore the FIFO property.
+//        for (int k = 0; k <= taskIndex; k++) {
+//            tasks[k].run();
+//            tasks[k] = null;
+//        }
+
+        priorityQueue.tail = priorityQueue.toIndex(priorityQueue.tail + priorityFramesPending);
+        queue.tail = queue.toIndex(queue.tail + framesPending);
+
+         // since we already processed this node and whatever is following, we can get rid of it.
+        head.prev = null;
+        frameNr = head.frameNr;
+        priorityFrameNr = head.priorityFrameNr;
+        nodeNr = head.nodeNr;
     }
 
     /**
@@ -380,7 +411,6 @@ public class SendQueue implements Supplier<OutboundFrame> {
     public OutboundFrame get() {
         // todo: we always need to check if the putStack has priority frames so that the
 
-
         OutboundFrame frame = priorityQueue.deque();
         if (frame != null) {
             return frame;
@@ -390,79 +420,107 @@ public class SendQueue implements Supplier<OutboundFrame> {
         return queue.deque();
     }
 
+    private static class Queue {
+
+        private OutboundFrame[] array = new OutboundFrame[512];
+        private int capacity = array.length;
+        private int head;
+        private int tail;
+
+        /**
+         * Deques an item. If no item is found, null is returned.
+         *
+         * @return the dequeued item.
+         */
+        OutboundFrame deque() {
+            if (head == tail)
+                return null;
+            OutboundFrame frame = array[head];
+            array[head] = null;
+            head = modPowerOfTwo(head + 1, capacity);
+            return frame;
+        }
+
+        int toIndex(int i) {
+            if (i < 0) {
+                return i + capacity;
+            }
+            return i;
+        }
+
+        void clear() {
+            while (deque() != null) ;
+        }
+
+        boolean hasItems() {
+            return head != tail;
+        }
+
+        void resize(int newCapacity) {
+            newCapacity = nextPowerOfTwo(newCapacity);
+            OutboundFrame[] newQueue = new OutboundFrame[newCapacity];
+
+            int size = size();
+            for (int i = 0; i < size; i++)
+                newQueue[i] = deque();
+
+            this.array = newQueue;
+            this.capacity = newCapacity;
+            this.head = 0;
+            this.tail = size;
+        }
+
+        int size() {
+            int diff = tail - head;
+            if (diff < 0)
+                diff += capacity;
+            return diff;
+        }
+
+        void ensureExtraCapacity(int extraItems) {
+            if (extraItems == 0) {
+                return;
+            }
+
+            int requiredCapacity = size() + extraItems;
+            if (requiredCapacity > capacity) {
+                resize(requiredCapacity);
+            }
+        }
+    }
+
     /**
      * Clears the SendQueue. Can only be made by the thread owning the pipeline.
      */
     public void clear() {
-        putStack.set(new Node(BLOCKED));
-        taskQueue.clear();
+        Node node = new Node(UNSCHEDULED);
+        for (; ; ) {
+            Node prev = putStack.get();
+            node.bytesOffered = prev.bytesOffered;
+            node.frameNr = prev.frameNr;
+            node.priorityFrameNr = prev.priorityFrameNr;
+            node.nodeNr = prev.nodeNr + 1;
+            node.prev = prev;
+            if (putStack.compareAndSet(prev, node)) {
+                break;
+            }
+        }
+
         queue.clear();
         priorityQueue.clear();
     }
 
-    static class Queue<E> {
-        Node head;
-        Node tail;
-
-        void enque(Node oldest, Node youngest) {
-            if (tail == null) {
-                tail = youngest;
-                head = oldest;
-            } else {
-                tail.node = oldest;
-                tail = youngest;
-            }
-        }
-
-        /**
-         * Deques an item. If no item is found, false is returned.
-         *
-         * @return the dequed item.
-         */
-        E deque() {
-            for (; ; ) {
-                if (head == null) {
-                    // queue is empty.
-                    return null;
-                }
-
-                E item = (E) head.item;
-                head.item = null;
-
-                if (head.node == null) {
-                    head = null;
-                    tail = null;
-                } else {
-                    head = head.node;
-                }
-
-                if (item != null) {
-                    return item;
-                }
-
-                // if there is no item on the node, we move on to the next node and try again.
-            }
-        }
-
-        void clear() {
-            head = null;
-            tail = null;
-        }
-
-        boolean hasItems() {
-            return head != null;
-        }
-    }
-
     static class Node {
         State state;
-        Node node;
+        Node prev;
         Object item;
         long bytesOffered;
-        int urgentFrameCount;
+        long priorityFrameNr;
+        long frameNr;
+        long nodeNr;
 
-        Node(OutboundFrame frame) {
-            this.item = frame;
+        Node(OutboundFrame item) {
+            this.item = item;
         }
 
         Node(Runnable task) {
@@ -479,7 +537,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
                     "state=" + state +
                     ", item=" + item +
                     ", bytesOffered=" + bytesOffered +
-                    ", prev=" + node +
+                    ", prev=" + prev +
                     '}';
         }
     }

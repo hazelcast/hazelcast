@@ -8,6 +8,7 @@ import org.junit.Test;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.BLOCKED;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.SCHEDULED_DATA_ONLY;
 import static com.hazelcast.internal.networking.nio.SendQueue.State.SCHEDULED_WITH_TASK;
+import static com.hazelcast.internal.networking.nio.SendQueue.State.UNSCHEDULED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -37,7 +38,7 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenNewQueue() {
-        boolean schedule = q.offer(newFrame());
+        boolean schedule = q.enque(newFrame());
 
         // should not be scheduled since pipeline is blocked.
         assertFalse(schedule);
@@ -46,11 +47,11 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenBlocked() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.get();
         q.block();
 
-        boolean schedule = q.offer(newFrame());
+        boolean schedule = q.enque(newFrame());
 
         // should not be scheduled since pipeline is blocked.
         assertFalse(schedule);
@@ -59,14 +60,13 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenAlreadyScheduled() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.prepare();
         q.get();
         q.tryUnschedule();
-        q.offer(newFrame());
+        q.enque(newFrame());
 
-
-        boolean schedule = q.offer(newFrame());
+        boolean schedule = q.enque(newFrame());
 
         // should not be scheduled since pipeline is blocked.
         assertFalse(schedule);
@@ -75,12 +75,35 @@ public class SendQueueTest {
 
     @Test
     public void offer_whenUnscheduled() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.prepare();
         q.get();
         System.out.println(q.tryUnschedule());
 
-        boolean schedule = q.offer(newFrame());
+        OutboundFrame frame = newFrame();
+        boolean schedule = q.enque(frame);
+
+        assertTrue(schedule);
+        assertEquals(SCHEDULED_DATA_ONLY, q.state());
+    }
+
+
+    @Test
+    public void tmp() {
+        OutboundFrame frame = newFrame();
+        q.enque(frame);
+        assertEquals(BLOCKED, q.state());
+        q.prepare();
+        assertEquals(BLOCKED, q.state());
+        OutboundFrame f = q.get();
+        assertSame(frame,f);
+
+
+        System.out.println(q.tryUnschedule());
+        assertEquals(UNSCHEDULED, q.state());
+
+        OutboundFrame f2 = newFrame();
+        boolean schedule = q.enque(f2);
 
         assertTrue(schedule);
         assertEquals(SCHEDULED_DATA_ONLY, q.state());
@@ -91,7 +114,7 @@ public class SendQueueTest {
     @Test
     public void execute_whenNewQueue() {
         Runnable task = mock(Runnable.class);
-        boolean wakeup = q.execute(task);
+        boolean wakeup = q.enque(task);
 
         assertTrue(wakeup);
         assertEquals(SCHEDULED_WITH_TASK, q.state());
@@ -100,12 +123,12 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenBlocked() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.get();
         q.block();
 
         Runnable task = mock(Runnable.class);
-        boolean schedule = q.execute(task);
+        boolean schedule = q.enque(task);
 
         assertTrue(schedule);
         assertEquals(SCHEDULED_WITH_TASK, q.state());
@@ -114,14 +137,14 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenScheduled() {
-        q.execute(() -> {
+        q.enque(() -> {
         });
 
         OutboundFrame frame = newFrame();
-        q.offer(frame);
+        q.enque(frame);
 
         Runnable task = mock(Runnable.class);
-        boolean schedule = q.execute(task);
+        boolean schedule = q.enque(task);
 
         assertFalse(schedule);
         assertEquals(SCHEDULED_WITH_TASK, q.state());
@@ -130,12 +153,12 @@ public class SendQueueTest {
 
     @Test
     public void execute_whenUnscheduled() {
-        q.execute(() -> { });
+        q.enque(() -> { });
         q.prepare();
         q.get();
         q.tryUnschedule();
 
-        boolean schedule = q.execute(() -> {
+        boolean schedule = q.enque(() -> {
         });
 
         assertTrue(schedule);
@@ -148,7 +171,7 @@ public class SendQueueTest {
 
     @Test(expected = IllegalStateException.class)
     public void block_whenUnscheduled() {
-        q.execute(() -> { });
+        q.enque(() -> { });
         q.prepare();
         q.get();
         q.tryUnschedule();
@@ -157,7 +180,7 @@ public class SendQueueTest {
 
     @Test
     public void block_whenScheduled() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.get();
 
         q.block();
@@ -167,7 +190,7 @@ public class SendQueueTest {
 
     @Test
     public void block_whenBlocked() {
-        q.offer(newFrame());
+        q.enque(newFrame());
         q.get();
         q.block();
 
@@ -182,8 +205,8 @@ public class SendQueueTest {
     public void get_whenBlocked() {
         OutboundFrame f1 = newFrame();
         OutboundFrame f2 = newFrame();
-        q.offer(f1);
-        q.offer(f2);
+        q.enque(f1);
+        q.enque(f2);
         q.prepare();
         q.block();
 
@@ -195,7 +218,7 @@ public class SendQueueTest {
 
     @Test
     public void get_whenScheduledAndEmpty() {
-        q.execute(() -> {
+        q.enque(() -> {
         });
 
         SendQueue.Node node = q.putStack.get();

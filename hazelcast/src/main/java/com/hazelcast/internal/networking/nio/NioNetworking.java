@@ -133,7 +133,7 @@ public final class NioNetworking implements Networking {
         this.idleStrategy = ctx.idleStrategy;
         metricsRegistry.scanAndRegister(this, "tcp");
         this.concurrencyDetection = ctx.concurrencyDetection;
-        this.writeThroughEnabled = ctx.writeThroughEnabled;
+        this.writeThroughEnabled = false;//ctx.writeThroughEnabled;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -218,11 +218,11 @@ public final class NioNetworking implements Networking {
                 while (inputThreads!=null){
                     for(NioChannel channel: channels){
                         NioOutboundPipeline out = channel.outboundPipeline;
-                       // System.out.println(out+" status:"+out.putStack.get());
+                        System.out.println(out+" status:"+out.sendQueue.state());
                     }
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(700);
                     } catch (InterruptedException e) {
                         return;
                     }

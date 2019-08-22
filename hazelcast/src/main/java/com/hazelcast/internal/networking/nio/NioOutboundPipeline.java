@@ -68,7 +68,7 @@ public final class NioOutboundPipeline
     private long normalFramesWrittenLastPublish;
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
-    private SendQueue sendQueue = new SendQueue(bytesWritten);
+    public final SendQueue sendQueue = new SendQueue(bytesWritten);
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
@@ -80,6 +80,7 @@ public final class NioOutboundPipeline
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
         this.concurrencyDetection = concurrencyDetection;
         this.writeThroughEnabled = writeThroughEnabled;
+        sendQueue.nioChannel = channel;
     }
 
     @Override
@@ -126,13 +127,13 @@ public final class NioOutboundPipeline
 
     @Override
     public void execute(Runnable task) {
-        if (sendQueue.execute(task)) {
+        if (sendQueue.enque(task)) {
             owner.addTaskAndWakeup(this);
         }
     }
 
     public void write(OutboundFrame frame) {
-        if (sendQueue.offer(frame)) {
+        if (sendQueue.enque(frame)) {
             // we manage to schedule the pipeline, meaning we are owner.
             if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
                 // we can do a write-through, so lets process the request on the calling thread
