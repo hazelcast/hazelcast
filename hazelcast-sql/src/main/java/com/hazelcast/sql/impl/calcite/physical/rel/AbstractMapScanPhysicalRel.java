@@ -24,7 +24,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 
 /**
- * Base class for map scans.
+ * Base class for physical map scans.
  */
 public abstract class AbstractMapScanPhysicalRel extends TableScan implements PhysicalRel {
     /** Row type. */

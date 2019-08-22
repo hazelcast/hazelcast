@@ -41,7 +41,7 @@ public class SortPhysicalRule extends RelOptRule {
         SortLogicalRel sort = call.rel(0);
         RelNode input = sort.getInput();
 
-        SortPhysicalRel newSort = new SortPhysicalRel(
+        SortPhysicalRel localSort = new SortPhysicalRel(
             sort.getCluster(),
             RuleUtils.toPhysicalConvention(sort.getTraitSet(), PhysicalDistributionTrait.ANY),
             RuleUtils.toPhysicalInput(input, PhysicalDistributionTrait.ANY),
@@ -50,13 +50,13 @@ public class SortPhysicalRule extends RelOptRule {
             sort.fetch
         );
 
-        SortMergeExchangePhysicalRel newSortExchange = new SortMergeExchangePhysicalRel(
+        SortMergeExchangePhysicalRel exchange = new SortMergeExchangePhysicalRel(
             sort.getCluster(),
             RuleUtils.toPhysicalConvention(sort.getTraitSet(), PhysicalDistributionTrait.SINGLETON),
-            newSort,
+            localSort,
             sort.getCollation()
         );
 
-        call.transformTo(newSortExchange);
+        call.transformTo(exchange);
     }
 }

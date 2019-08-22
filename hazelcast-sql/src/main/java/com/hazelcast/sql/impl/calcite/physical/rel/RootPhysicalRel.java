@@ -17,15 +17,21 @@
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import java.util.List;
 
+/**
+ * Root node which consumes data from it's input and returns it to the user.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: inherited from the input</li>
+ *     <li><b>Distribution</b>: always SINGLETON, since there is only one node consuming the input</li>
+ * </ul>
+ */
 public class RootPhysicalRel extends SingleRel implements PhysicalRel {
     public RootPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
@@ -41,10 +47,5 @@ public class RootPhysicalRel extends SingleRel implements PhysicalRel {
         ((PhysicalRel)input).visit(visitor);
 
         visitor.onRoot(this);
-    }
-
-    @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq);
     }
 }

@@ -23,6 +23,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rex.RexNode;
 
+/**
+ * Physical sort performed locally.
+ */
 public class SortPhysicalRel extends Sort implements PhysicalRel {
     public SortPhysicalRel(
         RelOptCluster cluster,

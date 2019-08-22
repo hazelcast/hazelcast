@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
@@ -187,12 +186,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
 
         pushUpstream(receiveNode);
-    }
-
-    @Override
-    public void onPartitionedExchange(PartitionedExchangePhysicalRel rel) {
-        // TODO
-        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -53,6 +54,11 @@ public class SqlAggregationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++)
             map.put((long)i, new Value(i % 100, i % 10, i ));
+
+        ReplicatedMap<Long, Value> replicatedMap = member.getReplicatedMap("rmap");
+
+        for (int i = 0; i < 1000; i++)
+            replicatedMap.put((long)i, new Value(i % 100, i % 10, i ));
     }
 
     @After
@@ -85,6 +91,12 @@ public class SqlAggregationTest extends HazelcastTestSupport {
     @Test(timeout = Long.MAX_VALUE)
     public void testGroupByGroupingSet() throws Exception {
         doQuery("SELECT v1, v2, SUM(v3) + SUM(v3) FROM map GROUP BY GROUPING SETS ((v1, v2), (v2))");
+    }
+
+    // TODO: Remove
+    @Test(timeout = Long.MAX_VALUE)
+    public void testSort() throws Exception {
+        doQuery("SELECT v2 FROM map");
     }
 
     private List<SqlRow> doQuery(String sql) {

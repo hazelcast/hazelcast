@@ -8,6 +8,12 @@ import org.apache.calcite.rex.RexNode;
 
 /**
  * Physical projection.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: inherited from the input</li>
+ *     <li><b>Distribution</b>: inherited form the input</li>
+ * </ul>
  */
 public class FilterPhysicalRel extends Filter implements PhysicalRel {
     public FilterPhysicalRel(

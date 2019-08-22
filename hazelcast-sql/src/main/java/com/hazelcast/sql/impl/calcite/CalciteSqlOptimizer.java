@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rule.AggregateLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
@@ -98,6 +99,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     @Override
     public QueryPlan prepare(String sql) {
+        HazelcastCalciteContext.initialize(nodeEngine);
+
         try {
             return prepare0(sql);
         }
@@ -128,7 +131,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = doOptimizePhysical(planner, logicalRel);
 
         // 6. Create plan.
-         return doCreatePlan(physicalRel);
+        return doCreatePlan(physicalRel);
     }
 
     private CalciteConnectionConfig prepareConfig() {
@@ -254,7 +257,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             ImmutableList.of()
         );
 
-        return (LogicalRel)res;
+        return new RootLogicalRel(res.getCluster(), res.getTraitSet(), res);
     }
 
     /**

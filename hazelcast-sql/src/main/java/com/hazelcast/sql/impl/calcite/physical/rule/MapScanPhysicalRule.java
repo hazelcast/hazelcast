@@ -37,6 +37,9 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Convert logical map scan to either replicated or partitioned physical scan.
+ */
 public class MapScanPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new MapScanPhysicalRule();
 
@@ -88,7 +91,10 @@ public class MapScanPhysicalRule extends RelOptRule {
     private static PhysicalDistributionTrait getDistributionTrait(HazelcastTable hazelcastTable) {
         List<PhysicalDistributionField> distributionFields = getDistributionFields(hazelcastTable);
 
-        return PhysicalDistributionTrait.distributedPartitioned(distributionFields);
+        if (distributionFields.isEmpty())
+            return PhysicalDistributionTrait.DISTRIBUTED;
+        else
+            return PhysicalDistributionTrait.distributedPartitioned(distributionFields);
     }
 
     /**

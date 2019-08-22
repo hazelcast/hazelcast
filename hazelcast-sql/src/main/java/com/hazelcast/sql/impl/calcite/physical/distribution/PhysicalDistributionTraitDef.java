@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.physical.distribution;
 
+import com.hazelcast.sql.impl.calcite.HazelcastCalciteContext;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
-import com.hazelcast.sql.impl.calcite.physical.rel.PartitionedExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
@@ -59,22 +59,18 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         if (rel.getConvention() != HazelcastConventions.PHYSICAL)
             return null;
 
-        // TODO: Make sure that SINGLETON <- REPLICATED is treated specially!
-
         switch (targetTrait.getType()){
             case SINGLETON:
+                if (currentTrait == PhysicalDistributionTrait.REPLICATED && HazelcastCalciteContext.get().isDataMember())
+                    return rel;
+
+                // TODO: Do we really need this kind of conversions? Can't this be handled on rule level?
+                // TODO: E.g. RootPhyicalRule could set proper exchanges on its own.
+
                 return new SingletonExchangePhysicalRel(
                     rel.getCluster(),
                     RuleUtils.toPhysicalConvention(planner.emptyTraitSet(), targetTrait),
                     rel
-                );
-
-            case DISTRIBUTED_PARTITIONED:
-                return new PartitionedExchangePhysicalRel(
-                    rel.getCluster(),
-                    RuleUtils.toPhysicalConvention(planner.emptyTraitSet(), targetTrait),
-                    rel,
-                    targetTrait.getFields()
                 );
 
             case ANY:

@@ -28,8 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * This rule converts logical filter into physical filter. Physical projection inherits distribution of the
- * underlying operator.
+ * Convert logical filter to physical filter.
  */
 public class FilterPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new FilterPhysicalRule();

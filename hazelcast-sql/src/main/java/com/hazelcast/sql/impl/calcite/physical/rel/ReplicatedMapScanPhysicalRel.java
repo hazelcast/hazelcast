@@ -24,6 +24,15 @@ import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.List;
 
+/**
+ * Physical scan over replicated map.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: empty, as map is not sorted</li>
+ *     <li><b>Distribution</b>: REPLICATED</li>
+ * </ul>
+ */
 public class ReplicatedMapScanPhysicalRel extends AbstractMapScanPhysicalRel {
     public ReplicatedMapScanPhysicalRel(
         RelOptCluster cluster,
