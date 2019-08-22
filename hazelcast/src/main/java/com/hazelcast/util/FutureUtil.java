@@ -20,14 +20,13 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.transaction.TransactionTimedOutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -279,22 +278,11 @@ public final class FutureUtil {
 
     @PrivateApi
     public static void waitForever(Collection<? extends Future> futuresToWaitFor, ExceptionHandler exceptionHandler) {
-        Collection<Future> futures = new ArrayList<Future>(futuresToWaitFor);
-        while (true) {
-            Iterator<Future> it = futures.iterator();
-            while (it.hasNext()) {
-                Future future = it.next();
-                try {
-                    future.get();
-                } catch (Exception e) {
-                    exceptionHandler.handleException(e);
-                }
-                if (future.isDone() || future.isCancelled()) {
-                    it.remove();
-                }
-            }
-            if (futures.isEmpty()) {
-                return;
+        for (Future future : futuresToWaitFor) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                exceptionHandler.handleException(e);
             }
         }
     }
