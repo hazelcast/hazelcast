@@ -96,7 +96,7 @@ public class SqlAggregationTest extends HazelcastTestSupport {
     // TODO: Remove
     @Test(timeout = Long.MAX_VALUE)
     public void testSort() throws Exception {
-        doQuery("SELECT v2 FROM rmap ORDER BY v1");
+        doQuery("SELECT v2 * 2, v2 FROM rmap");
     }
 
     private List<SqlRow> doQuery(String sql) {

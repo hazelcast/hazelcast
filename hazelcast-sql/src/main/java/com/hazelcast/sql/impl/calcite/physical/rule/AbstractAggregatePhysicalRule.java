@@ -40,13 +40,13 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
     }
 
     /**
-     * Get collation for aggregate.
+     * Get collation for local aggregate.
      *
      * @param agg Aggregate.
      * @param input Input.
-     * @return Collation for the given aggregate or {@code EMPTY} if input's collation is either empty or destroyed.
+     * @return Collation for the given aggregate (empty if input's collation is either empty or destroyed).
      */
-    protected static AggregateCollation getCollation(AggregateLogicalRel agg, RelNode input) {
+    protected static AggregateCollation getLocalCollation(AggregateLogicalRel agg, RelNode input) {
         assert agg.getGroupCount() == 1 : "Grouping sets are not supported at the moment: " + agg;
 
         RelCollation inputCollation = input.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
@@ -61,15 +61,22 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
         if (inputFieldCollations.size() < groupFieldCount)
             return AggregateCollation.EMPTY;
 
-        List<RelFieldCollation> aggFieldCollations = new ArrayList<>(groupFieldCount);
+        List<RelFieldCollation> aggCollationFields = new ArrayList<>(groupFieldCount);
 
         int idx = 0;
 
         for (Integer groupFieldIdx : agg.getGroupSet()) {
             RelFieldCollation inputCollationField = inputFieldCollations.get(idx);
 
-            if (inputCollationField.getFieldIndex() == groupFieldIdx)
-                aggFieldCollations.add(new RelFieldCollation(groupFieldIdx, inputCollationField.getDirection()));
+            if (inputCollationField.getFieldIndex() == groupFieldIdx) {
+                RelFieldCollation collationField = new RelFieldCollation(
+                    groupFieldIdx,
+                    inputCollationField.getDirection(),
+                    inputCollationField.nullDirection
+                );
+
+                aggCollationFields.add(collationField);
+            }
             else {
                 // TODO: Consider adding partial prefix supoprt. In this case it is not possible to avoid blocking
                 // TODO: behavior, but only part of the group key is needed for mapping. E.g. GROUP BY (a, b) on top
@@ -84,7 +91,7 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
             idx++;
         }
 
-        return new AggregateCollation(RelCollationImpl.of(aggFieldCollations), true);
+        return new AggregateCollation(RelCollationImpl.of(aggCollationFields), true);
     }
 
     /**

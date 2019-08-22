@@ -11,6 +11,12 @@ import java.util.List;
 
 /**
  * Physical projection.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: propagated from input if prefix of sort fields are still there; destroyed otherwise</li>
+ *     <li><b>Distribution</b>: derived from input if all distribution fields are still there; destroyed otherwise</li>
+ * </ul>
  */
 public class ProjectPhysicalRel extends Project implements PhysicalRel {
     public ProjectPhysicalRel(

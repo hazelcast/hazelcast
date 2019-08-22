@@ -187,11 +187,9 @@ public class SortPhysicalRule extends RelOptRule {
      *
      * @param logicalSort Logical sort.
      * @param physicalInput Physical input.
-     * @return
+     * @return Local sort.
      */
     private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput) {
-        PhysicalDistributionTrait physicalInputDist = RuleUtils.getPhysicalDistribution(physicalInput);
-
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = RuleUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation()

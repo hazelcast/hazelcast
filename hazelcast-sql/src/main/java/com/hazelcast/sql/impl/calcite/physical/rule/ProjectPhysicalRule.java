@@ -26,6 +26,10 @@ import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationImpl;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
@@ -33,6 +37,7 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,39 +92,59 @@ public class ProjectPhysicalRule extends RelOptRule {
         // TODO: Handle collation properly.
         List<InputAndTraitSet> res = new ArrayList<>();
 
-                // Get mapping of project input fields to an index of related expression in the projection.
-        Map<PhysicalDistributionField, Integer> projectFieldMap = getProjectFieldMap(logicalProject);
+        // Get mapping of project input fields to an index of related expression in the projection.
+        Map<PhysicalDistributionField, Integer> candDistFields = getCandidateDistributionFields(logicalProject);
+        Map<Integer, Integer> candCollationFields = getCandidateCollationFields(logicalProject);
 
         Collection<RelNode> physicalInputs = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
 
         for (RelNode physicalInput : physicalInputs) {
-            PhysicalDistributionTrait transformedInputDist = RuleUtils.getPhysicalDistribution(physicalInput);
+            RelTraitSet finalTraitSet = createPhysicalTraitSet(physicalInput, candDistFields, candCollationFields);
 
-            PhysicalDistributionTrait projectDist =
-                getProjectTraitForInputTrait(transformedInputDist, projectFieldMap);
-
-            res.add(new InputAndTraitSet(physicalInput, physicalInput.getTraitSet().plus(projectDist)));
+            res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
         }
 
-        if (res.isEmpty())
+        if (res.isEmpty()) {
             // If there were no physical inputs, then just propagate the default distribution.
-            res.add(new InputAndTraitSet(convertedInput, convertedInput.getTraitSet()));
+            RelTraitSet finalTraitSet = createPhysicalTraitSet(convertedInput, candDistFields, candCollationFields);
+
+            res.add(new InputAndTraitSet(convertedInput, finalTraitSet));
+        }
 
         return res;
     }
 
     /**
+     * Create a trait set for physical project.
+     *
+     * @param physicalInput Project's input.
+     * @param candDistFields Candidate distribution fields.
+     * @param candCollationFields Candidate collation fields.
+     * @return Trait set.
+     */
+    private static RelTraitSet createPhysicalTraitSet(
+        RelNode physicalInput,
+        Map<PhysicalDistributionField, Integer> candDistFields,
+        Map<Integer, Integer> candCollationFields
+    ) {
+        PhysicalDistributionTrait finalDist = deriveDistribution(physicalInput, candDistFields);
+        RelCollation finalCollation = deriveCollation(physicalInput, candCollationFields);
+
+        return RuleUtils.traitPlus(physicalInput.getTraitSet(), finalDist, finalCollation);
+    }
+
+    /**
      * Get distribution trait which should be used by project based on the distribution of it's input.
      *
-     * @param inputDist Input distribution.
+     * @param physicalInput Physical input.
      * @param projectFieldMap Project field map.
      * @return Distribution which should be used by project.
      */
-    private static PhysicalDistributionTrait getProjectTraitForInputTrait(
-        PhysicalDistributionTrait inputDist,
-        Map<PhysicalDistributionField, Integer> projectFieldMap
-    ) {
-        PhysicalDistributionType type = inputDist.getType();
+    private static PhysicalDistributionTrait deriveDistribution(RelNode physicalInput,
+        Map<PhysicalDistributionField, Integer> projectFieldMap) {
+        PhysicalDistributionTrait physicalInputDist = RuleUtils.getPhysicalDistribution(physicalInput);
+
+        PhysicalDistributionType type = physicalInputDist.getType();
 
         switch (type) {
             case SINGLETON:
@@ -130,7 +155,7 @@ public class ProjectPhysicalRule extends RelOptRule {
 
             case REPLICATED:
                 // Replicated distribution is still replicated anyway.
-                return inputDist;
+                return physicalInputDist;
 
             case ANY:
                 // Unknown distribution -> convert to arbitrary.
@@ -146,7 +171,7 @@ public class ProjectPhysicalRule extends RelOptRule {
         // an input is partitioned by fields [a, b]. However, when one of this fields are lost during projection,
         // the input is no longer partitioned on any attribute. E.g MEMBER_1([a1, b1]), MEMBER_2([a1, b2]) becomes
         // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may containt the same value.
-        List<PhysicalDistributionField> inputDistFields = inputDist.getFields();
+        List<PhysicalDistributionField> inputDistFields = physicalInputDist.getFields();
         List<PhysicalDistributionField> projectDistFields = new ArrayList<>();
 
         for (PhysicalDistributionField inputDistField : inputDistFields) {
@@ -161,7 +186,77 @@ public class ProjectPhysicalRule extends RelOptRule {
         }
 
         // All input distribution fields have been mapped to project fields. Propagate input distribution to project.
-        return new PhysicalDistributionTrait(inputDist.getType(), projectDistFields);
+        return new PhysicalDistributionTrait(physicalInputDist.getType(), projectDistFields);
+    }
+
+    /**
+     * Derive collation of physical projection from the logical projection and physical input. The condition is that
+     * logical projection should have at least some prefix of input fields.
+     *
+     * @param physicalInput Physical input.
+     * @param candCollationFields Candidate collation fields.
+     * @return Collation which should be used for physical projection.
+     */
+    private static RelCollation deriveCollation(RelNode physicalInput, Map<Integer, Integer> candCollationFields) {
+        RelCollation inputCollation = physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        List<RelFieldCollation> fields = null;
+
+        for (RelFieldCollation field : inputCollation.getFieldCollations()) {
+            Integer projectFieldIndex = candCollationFields.get(field.getFieldIndex());
+
+            if (projectFieldIndex != null) {
+                if (fields == null)
+                    fields = new ArrayList<>(1);
+
+                fields.add(new RelFieldCollation(projectFieldIndex, field.getDirection(), field.nullDirection));
+            }
+            else
+                // No more prefixes. We are done.
+                break;
+        }
+
+        if (fields == null)
+            fields = Collections.emptyList();
+
+        return RelCollationImpl.of(fields);
+    }
+
+    /**
+     * Get a map of candidate collation fields for the given logical project. Key of the map is the index of the field
+     * in it's input, value of the map is the index of that field in projection.
+     *
+     * @param project Project.
+     * @return Map of candidate collation fields.
+     */
+    private static Map<Integer, Integer> getCandidateCollationFields(ProjectLogicalRel project) {
+        Map<Integer, Integer> res = new HashMap<>();
+
+        int idx = 0;
+
+        for (RexNode node : project.getProjects()) {
+            // Only direct field references are capable of maintaining collation.
+            // Nested fields are not supported, since they loss the collation. E.g. a stream of data sorted on "a"
+            // is not guaranteed to be sorted on "a.b".
+            // CAST function is not applicable here as wel, because collation rules may be different for different
+            // data types, and concrete data type is only resolved in runtime. For example, integer input of values
+            // 1, 2, 11 is sorted in that order. But if the field is converted to VARCHAR, then sort order is
+            // different: "1", "11", "2".
+
+            // TODO: Some functions may preserve monotonicity, e.g. "x + 1" is always sorted in the same way as "x"
+            // TODO: provided that precision loss is prohibited. Investigate Calcite's SqlMonotonicity.
+
+            // TODO:
+            if (node instanceof RexInputRef) {
+                RexInputRef node0 = (RexInputRef)node;
+
+                res.put(node0.getIndex(), idx);
+            }
+
+            idx++;
+        }
+
+        return res;
     }
 
     /**
@@ -170,7 +265,7 @@ public class ProjectPhysicalRule extends RelOptRule {
      * @param project Projection.
      * @return Result.
      */
-    private static Map<PhysicalDistributionField, Integer> getProjectFieldMap(ProjectLogicalRel project) {
+    private static Map<PhysicalDistributionField, Integer> getCandidateDistributionFields(ProjectLogicalRel project) {
         Map<PhysicalDistributionField, Integer> res = new HashMap<>();
 
         int idx = 0;
@@ -195,8 +290,6 @@ public class ProjectPhysicalRule extends RelOptRule {
 
             idx++;
         }
-
-        // TODO: Cast without precision loss may also preserve partition info.
 
         return res;
     }

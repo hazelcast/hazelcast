@@ -53,6 +53,9 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
 
         Collection<RelNode> physicalInputs = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
 
+        // TODO: Could "physicalInputs" be empty here? If yes, then we should handle it in the same way as other
+        // TODO: calls to this method.
+
         for (RelNode physicalInput : physicalInputs) {
             CollocatedAggregatePhysicalRel physicalAgg = tryCreateCollocatedAggregate(call, logicalAgg, physicalInput);
 
@@ -90,7 +93,7 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
 
             case REPLICATED:
             case SINGLETON:
-                AggregateCollation collation = getCollation(logicalAgg, input);
+                AggregateCollation collation = getLocalCollation(logicalAgg, input);
 
                 RelTraitSet traitSet = RuleUtils.toPhysicalConvention(call.getPlanner().emptyTraitSet(), inputDist)
                     .plus(collation.getCollation());
