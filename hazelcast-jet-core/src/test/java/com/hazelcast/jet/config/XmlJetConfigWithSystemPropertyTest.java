@@ -17,8 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -265,9 +264,7 @@ public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigW
     public void loadingThroughSystemPropertyViaLocator_nonXmlSuffix() {
         System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-foo.bar");
 
-        JetInstance instance = Jet.newJetInstance();
-        JetConfig config = instance.getConfig();
-        instance.shutdown();
+        JetConfig config = ConfigProvider.locateAndGetJetConfig();
 
         assertEquals("bar", config.getProperties().getProperty("foo"));
 

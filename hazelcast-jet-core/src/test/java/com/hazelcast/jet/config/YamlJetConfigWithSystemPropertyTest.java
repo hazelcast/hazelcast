@@ -17,8 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -275,11 +274,7 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
     public void loadingThroughSystemPropertyWithLocator_existingClasspathResource() {
         System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + JET_TEST_YAML);
 
-        JetInstance instance = Jet.newJetInstance();
-        JetConfig config = instance.getConfig();
-        instance.shutdown();
-
-        assertConfig(config);
+        assertConfig(ConfigProvider.locateAndGetJetConfig());
     }
 
 }
