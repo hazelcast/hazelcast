@@ -174,7 +174,7 @@ public class OperationLossTest extends JetTestSupport {
         dag.edge(between(source, sink).distributed());
         Job job = instance1.newJob(dag);
         assertJobStatusEventually(job, RUNNING);
-        assertEquals(2, NoOutputSourceP.initCount.get());
+        assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
         Connection connection = Util.getMemberConnection(getNodeEngineImpl(instance1),
                 instance2.getHazelcastInstance().getCluster().getLocalMember().getAddress());
