@@ -1714,6 +1714,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable SimpleCompletableFuture<Void> future) {
+        if (map.isEmpty()) {
+            if (future != null) {
+                future.setResult(null);
+            }
+            return;
+        }
         checkNotNull(map, "Null argument map is not allowed");
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
@@ -1732,7 +1738,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
             partition.add(new AbstractMap.SimpleEntry<>(keyData, toData(entry.getValue())));
         }
-
+        assert entryMap.size() > 0;
         AtomicInteger counter = new AtomicInteger(entryMap.size());
         SimpleCompletableFuture<Void> resultFuture =
                 future != null ? future : new SimpleCompletableFuture<>(
@@ -1758,7 +1764,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            new ClientInvocation(getClient(), request, getName(), partitionId).invoke()
+            new ClientInvocation(getClient(), request, getName(), partitionId)
+                    .invoke()
                     .andThen(callback);
         }
         // if executing in sync mode, block for the responses

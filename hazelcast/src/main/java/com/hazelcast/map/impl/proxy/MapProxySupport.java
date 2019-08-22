@@ -896,6 +896,9 @@ abstract class MapProxySupport<K, V>
         try {
             int mapSize = map.size();
             if (mapSize == 0) {
+                if (future != null) {
+                    future.setResult(null);
+                }
                 return;
             }
 
