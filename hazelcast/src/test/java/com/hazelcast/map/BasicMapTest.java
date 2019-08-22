@@ -73,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
+import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
@@ -934,6 +935,18 @@ public class BasicMapTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testPutAllEmpty() {
+        IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
+        map.putAll(emptyMap());
+    }
+
+    @Test
+    public void tstPutAllAsyncEmpty() {
+        IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
+        ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
     }
 
     @Test
