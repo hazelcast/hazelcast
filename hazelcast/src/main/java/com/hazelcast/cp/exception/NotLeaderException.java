@@ -19,6 +19,8 @@ package com.hazelcast.cp.exception;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.util.UUID;
+
 /**
  * A {@code CPSubsystemException} which is thrown when
  * a leader-only request is received by a non-leader member.
@@ -29,5 +31,14 @@ public class NotLeaderException extends CPSubsystemException {
     public NotLeaderException(CPGroupId groupId, RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER of " + groupId + ". Known leader is: "
                 + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
+    }
+
+    private NotLeaderException(String message, UUID leaderUuid, Throwable cause) {
+        super(message, cause, leaderUuid);
+    }
+
+    @Override
+    public NotLeaderException wrap() {
+        return new NotLeaderException(getMessage(), getLeaderUuid(), this);
     }
 }

@@ -20,6 +20,8 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.spi.exception.RetryableException;
 
+import java.util.UUID;
+
 /**
  * A {@code CPSubsystemException} which is thrown when an entry cannot be
  * replicated, which can occur in one of the following cases:
@@ -38,5 +40,14 @@ public class CannotReplicateException extends CPSubsystemException implements Re
 
     public CannotReplicateException(RaftEndpoint leader) {
         super("Cannot replicate new operations for now", leader != null ? leader.getUuid() : null);
+    }
+
+    private CannotReplicateException(UUID leaderUuid, Throwable cause) {
+        super("Cannot replicate new operations for now", cause, leaderUuid);
+    }
+
+    @Override
+    public CannotReplicateException wrap() {
+        return new CannotReplicateException(getLeaderUuid(), this);
     }
 }

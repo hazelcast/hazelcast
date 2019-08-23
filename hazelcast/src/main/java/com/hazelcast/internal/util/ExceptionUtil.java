@@ -32,8 +32,6 @@ import java.util.function.BiConsumer;
  */
 public final class ExceptionUtil {
 
-    private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
-    private static final String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
     private static final RuntimeExceptionFactory HAZELCAST_EXCEPTION_FACTORY = (throwable, message) -> {
         if (message != null) {
             return new HazelcastException(message, throwable);
@@ -172,59 +170,6 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given async cause, and it adds the also given local stacktrace.<br>
-     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
-     * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
-     * that instead of the given asyncCause itself.
-     *
-     * @param asyncCause          the async exception
-     * @param localSideStackTrace the local stacktrace to add to the exception stacktrace
-     */
-    public static void fixAsyncStackTrace(Throwable asyncCause, StackTraceElement[] localSideStackTrace) {
-        Throwable throwable = asyncCause;
-        if (asyncCause instanceof ExecutionException && throwable.getCause() != null) {
-            throwable = throwable.getCause();
-        }
-
-        StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
-        StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length];
-        System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
-        newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
-        System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
-        throwable.setStackTrace(newStackTrace);
-    }
-
-    /**
-     * This method changes the given async cause, and it adds the also given local stacktrace separated by the
-     * supplied exception message.<br>
-     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
-     * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
-     * that instead of the given remoteCause itself.
-     *
-     * @param asyncCause            the async exception
-     * @param localSideStackTrace   the local stacktrace to add to the exceptions stacktrace
-     * @param localExceptionMessage a special exception message which is added to the stacktrace
-     */
-    public static void fixAsyncStackTrace(Throwable asyncCause, StackTraceElement[] localSideStackTrace,
-                                          String localExceptionMessage) {
-        Throwable throwable = asyncCause;
-        if (asyncCause instanceof ExecutionException && throwable.getCause() != null) {
-            throwable = throwable.getCause();
-        }
-
-        String msg = EXCEPTION_MESSAGE_SEPARATOR.replace("%MSG%", localExceptionMessage);
-        StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
-        StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length + 1];
-        System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
-        newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
-        StackTraceElement nextElement = localSideStackTrace[1];
-        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName(),
-                nextElement.getFileName(), nextElement.getLineNumber());
-        System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
-        throwable.setStackTrace(newStackTrace);
-    }
-
-    /**
      * Utility to make sure exceptions inside
      * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
      * Exceptions will be caught and logged using the supplied logger.
@@ -253,5 +198,4 @@ public final class ExceptionUtil {
             }
         };
     }
-
 }

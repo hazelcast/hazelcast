@@ -18,6 +18,8 @@ package com.hazelcast.cp.exception;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 
+import java.util.UUID;
+
 /**
  * A {@code CPSubsystemException} which is thrown when
  * an appended but not-committed entry is truncated by the new leader.
@@ -29,5 +31,14 @@ public class LeaderDemotedException extends CPSubsystemException {
     public LeaderDemotedException(RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER anymore. Known leader is: "
                 + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
+    }
+
+    private LeaderDemotedException(String message, UUID leaderUuid, Throwable cause) {
+        super(message, cause, leaderUuid);
+    }
+
+    @Override
+    public LeaderDemotedException wrap() {
+        return new LeaderDemotedException(getMessage(), getLeaderUuid(), this);
     }
 }

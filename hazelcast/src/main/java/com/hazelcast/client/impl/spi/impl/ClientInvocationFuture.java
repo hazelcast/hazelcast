@@ -30,8 +30,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
-
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
     private final ClientMessage request;
@@ -106,7 +104,6 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
             response = ((ExceptionalResult) response).getCause();
         }
         if (response instanceof Throwable) {
-            fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
             }

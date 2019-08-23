@@ -51,8 +51,8 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.IN
  */
 public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
-    volatile boolean interrupted;
     final Invocation invocation;
+    volatile boolean interrupted;
     private final boolean deserialize;
 
     InvocationFuture(Invocation invocation, boolean deserialize) {
@@ -159,7 +159,7 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         if (value instanceof Throwable || value instanceof ExceptionalResult) {
             Throwable throwable = (value instanceof Throwable) ? ((Throwable) value) : ((ExceptionalResult) value).getCause();
             // todo async stack trace rewriting
-            ExceptionUtil.fixAsyncStackTrace(throwable, Thread.currentThread().getStackTrace());
+//            ExceptionUtil.fixAsyncStackTrace(throwable, Thread.currentThread().getStackTrace());
             return new ExceptionalResult(throwable);
         }
 

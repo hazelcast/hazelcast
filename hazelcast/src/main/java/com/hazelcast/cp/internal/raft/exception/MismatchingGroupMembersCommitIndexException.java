@@ -41,11 +41,22 @@ public class MismatchingGroupMembersCommitIndexException extends CPSubsystemExce
         this.members = members;
     }
 
+    private MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<RaftEndpoint> members, Throwable cause) {
+        super("commit index: " + commitIndex + " members: " + members, cause, null);
+        this.commitIndex = commitIndex;
+        this.members = members;
+    }
+
     public long getCommitIndex() {
         return commitIndex;
     }
 
     public Collection<RaftEndpoint> getMembers() {
         return members;
+    }
+
+    @Override
+    public MismatchingGroupMembersCommitIndexException wrap() {
+        return new MismatchingGroupMembersCommitIndexException(commitIndex, members, this);
     }
 }
