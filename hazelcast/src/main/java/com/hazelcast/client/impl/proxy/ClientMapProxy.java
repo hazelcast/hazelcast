@@ -134,10 +134,10 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -1317,9 +1317,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Set<K> keySetWithPagingPredicate(Predicate predicate) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.KEY);
 
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.KEY);
         ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1357,9 +1357,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private Set entrySetWithPagingPredicate(Predicate predicate, IterationType iterationType) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
-
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.ENTRY);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.ENTRY);
 
         ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
@@ -1403,8 +1402,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Collection<V> valuesForPagingPredicate(Predicate predicate) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.VALUE);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.VALUE);
 
         ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1924,23 +1923,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private static boolean containsPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicate) {
+        if (predicate instanceof PagingPredicateImpl) {
             return true;
         }
         if (!(predicate instanceof PartitionPredicate)) {
             return false;
         }
         PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-        return partitionPredicate.getTarget() instanceof PagingPredicate;
+        return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
     }
 
-    private static PagingPredicate unwrapPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicate) {
-            return (PagingPredicate) predicate;
+    private static PagingPredicateImpl unwrapPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicateImpl) {
+            return (PagingPredicateImpl) predicate;
         }
 
         Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
-        return (PagingPredicate) unwrappedPredicate;
+        return (PagingPredicateImpl) unwrappedPredicate;
     }
 
     private class ClientMapToKeyWithPredicateEventHandler extends AbstractClientMapEventHandler {
