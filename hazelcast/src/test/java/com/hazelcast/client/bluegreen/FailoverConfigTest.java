@@ -62,7 +62,7 @@ public class FailoverConfigTest {
                 "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "equals", "hashCode");
+                "setUserContext", "getUserContext", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             String methodName = method.getName();
@@ -85,7 +85,7 @@ public class FailoverConfigTest {
                 "getKubernetesConfig", "setEurekaConfig", "getEurekaConfig", "getCloudConfig", "setCloudConfig",
                 "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions", "setOutboundPorts",
                 "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig", "setClientIcmpPingConfig",
-                "equals", "hashCode");
+                "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientNetworkConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (!method.getName().startsWith("$") && !allClientNetworkConfigMethods.contains(method.getName())) {
