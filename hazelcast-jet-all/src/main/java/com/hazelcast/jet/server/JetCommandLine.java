@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -164,9 +165,7 @@ public class JetCommandLine implements Runnable {
         // top-level command, do nothing
     }
 
-    @Command(description = "Submits a job to the cluster",
-            mixinStandardHelpOptions = true
-    )
+    @Command(description = "Submits a job to the cluster")
     public void submit(
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Option(names = {"-s", "--snapshot"},
@@ -204,10 +203,7 @@ public class JetCommandLine implements Runnable {
         JetBootstrap.executeJar(this::getJetClient, file.getAbsolutePath(), snapshotName, name, params);
     }
 
-    @Command(
-            description = "Suspends a running job",
-            mixinStandardHelpOptions = true
-    )
+    @Command(description = "Suspends a running job")
     public void suspend(
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Parameters(index = "0",
@@ -356,16 +352,14 @@ public class JetCommandLine implements Runnable {
         runWithJet(verbosity, jet -> {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
             List<JobSummary> summaries = client.getJobSummaryList();
-            String format = "%-24s %-19s %-18s %-23s%n";
-            printf(format, "NAME", "ID", "STATUS", "SUBMISSION TIME");
+            String format = "%-19s %-18s %-23s %s%n";
+            printf(format, "ID", "STATUS", "SUBMISSION TIME", "NAME");
             summaries.stream()
                      .filter(job -> listAll || isActive(job.getStatus()))
                      .forEach(job -> {
                          String idString = idToString(job.getJobId());
-                         String name = job.getName().equals(idString) ? "N/A" : shorten(job.getName(), MAX_STR_LENGTH);
-                         printf(format,
-                                 name, idString, job.getStatus(), toLocalDateTime(job.getSubmissionTime())
-                         );
+                         String name = job.getName().equals(idString) ? "N/A" : job.getName();
+                         printf(format, idString, job.getStatus(), toLocalDateTime(job.getSubmissionTime()), name);
                      });
         });
     }
@@ -375,18 +369,23 @@ public class JetCommandLine implements Runnable {
             description = "Lists exported snapshots on the cluster"
     )
     public void listSnapshots(
-            @Mixin(name = "verbosity") Verbosity verbosity
-    ) throws IOException {
+            @Mixin(name = "verbosity") Verbosity verbosity,
+            @Option(names = {"-F", "--full-job-name"},
+                    description = "Don't trim job name to fit, can break layout")
+                    boolean fullJobName) throws IOException {
         runWithJet(verbosity, jet -> {
             Collection<JobStateSnapshot> snapshots = jet.getJobStateSnapshots();
-            printf("%-24s %-15s %-23s %-24s%n", "NAME", "SIZE (bytes)", "TIME", "JOB NAME");
-            snapshots.forEach(ss -> {
-                String jobName = ss.jobName() == null ? Util.idToString(ss.jobId()) : ss.jobName();
-                jobName = shorten(jobName, MAX_STR_LENGTH);
-                String ssName = shorten(ss.name(), MAX_STR_LENGTH);
-                LocalDateTime creationTime = toLocalDateTime(ss.creationTime());
-                printf("%-24s %-,15d %-23s %-24s%n", ssName, ss.payloadSize(), creationTime, jobName);
-            });
+            printf("%-23s %-15s %-24s %s%n", "TIME", "SIZE (bytes)", "JOB NAME", "SNAPSHOT NAME");
+            snapshots.stream()
+                     .sorted(Comparator.comparing(JobStateSnapshot::name))
+                     .forEach(ss -> {
+                         LocalDateTime creationTime = toLocalDateTime(ss.creationTime());
+                         String jobName = ss.jobName() == null ? Util.idToString(ss.jobId()) : ss.jobName();
+                         if (!fullJobName) {
+                             jobName = shorten(jobName);
+                         }
+                         printf("%-23s %-,15d %-24s %s%n", creationTime, ss.payloadSize(), jobName, ss.name());
+                     });
         });
     }
 
@@ -482,8 +481,15 @@ public class JetCommandLine implements Runnable {
         out.println(msg);
     }
 
-    private static String shorten(String name, int length) {
-        return name.substring(0, Math.min(name.length(), length));
+    /**
+     * If name is longer than the {@code length}, shorten it and add an
+     * asterisk so that the resulting string has {@code length} length.
+     */
+    private static String shorten(String name) {
+        if (name.length() <= MAX_STR_LENGTH) {
+            return name;
+        }
+        return name.substring(0, Math.min(name.length(), MAX_STR_LENGTH - 1)) + "*";
     }
 
     private static String formatJob(Job job) {

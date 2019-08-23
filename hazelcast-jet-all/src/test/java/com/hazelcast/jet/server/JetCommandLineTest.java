@@ -43,11 +43,11 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -67,8 +67,8 @@ public class JetCommandLineTest extends JetTestSupport {
     private static final int ITEM_COUNT = 1000;
 
     private static Path testJobJarFile;
-    private static Path xmlConfiguration;
-    private static Path yamlConfiguration;
+    private static File xmlConfiguration;
+    private static File yamlConfiguration;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -87,8 +87,8 @@ public class JetCommandLineTest extends JetTestSupport {
     public static void beforeClass() throws IOException {
         testJobJarFile = Files.createTempFile("testjob-", ".jar");
         IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob.jar"), testJobJarFile.toFile());
-        xmlConfiguration = Paths.get(JetCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
-        yamlConfiguration = Paths.get(JetCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
+        xmlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
+        yamlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
     }
 
     @AfterClass
@@ -143,6 +143,22 @@ public class JetCommandLineTest extends JetTestSupport {
         // Then
         String actual = captureOut();
         assertContains(actual, job.getName());
+        assertContains(actual, job.getIdString());
+        assertContains(actual, job.getStatus().toString());
+    }
+
+    @Test
+    public void test_listJobs_dirtyName() {
+        // Given
+        String jobName = "job\n\tname\u0000";
+        Job job = newJob(jobName);
+
+        // When
+        run("list-jobs");
+
+        // Then
+        String actual = captureOut();
+        assertContains(actual, jobName);
         assertContains(actual, job.getIdString());
         assertContains(actual, job.getStatus().toString());
     }
@@ -469,11 +485,15 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     private Job newJob() {
+        return newJob("job-infinite-pipeline");
+    }
+
+    private Job newJob(String jobName) {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
          .withoutTimestamps()
          .drainTo(Sinks.list(SINK_NAME));
-        Job job = jet.newJob(p, new JobConfig().setName("job-infinite-pipeline"));
+        Job job = jet.newJob(p, new JobConfig().setName(jobName));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;
     }
