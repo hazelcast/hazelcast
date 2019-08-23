@@ -85,8 +85,9 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
             String v1name = name();
             Vertex v1 = p.dag.newVertex(v1name, metaSupplierFn.apply(eventTimePolicy))
                              .localParallelism(localParallelism());
+            int localParallelism = v1.determineLocalParallelism(localParallelism());
             PlannerVertex pv2 = p.addVertex(
-                    this, v1name + "-add-timestamps", localParallelism(), insertWatermarksP(eventTimePolicy)
+                    this, v1name + "-add-timestamps", localParallelism, insertWatermarksP(eventTimePolicy)
             );
             p.dag.edge(between(v1, pv2.v).isolated());
         }

@@ -92,10 +92,11 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Integer> stage = streamStageFromList(emptyList());
-        stage.setLocalParallelism(localParallelism);
+        StreamStage<Integer> filter = stage.filter(i -> i < 10)
+                                           .setLocalParallelism(localParallelism);
 
         // Then
-        assertEquals(localParallelism, transformOf(stage).localParallelism());
+        assertEquals(localParallelism, transformOf(filter).localParallelism());
     }
 
     @Test

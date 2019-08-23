@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
@@ -40,11 +41,18 @@ public class TimestampTransform<T> extends AbstractTransform {
     }
 
     @Override
+    public void localParallelism(int localParallelism) {
+        throw new UnsupportedOperationException("Explicit local parallelism for addTimestamps() is not supported");
+    }
+
+    @Override
     public void addToDag(Planner p) {
+        PlannerVertex upstream = p.xform2vertex.get(this.upstream().get(0));
+        int localParallelism = upstream.v.determineLocalParallelism(upstream.v.getLocalParallelism());
         PlannerVertex pv = p.addVertex(
-                this, name(), localParallelism(), insertWatermarksP(eventTimePolicy)
+                this, name(), localParallelism, insertWatermarksP(eventTimePolicy)
         );
-        p.addEdges(this, pv.v);
+        p.addEdges(this, pv.v, Edge::isolated);
     }
 
     @Nonnull

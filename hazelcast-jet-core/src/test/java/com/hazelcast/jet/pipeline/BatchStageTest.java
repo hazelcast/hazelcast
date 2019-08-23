@@ -21,6 +21,10 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -30,6 +34,7 @@ import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,6 +53,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.Functions.wholeItem;
@@ -435,11 +441,11 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
-            .groupingKey(i -> i % 2)
-            .mapStateful(LongAccumulator::new, (acc, i) -> {
-                acc.addAllowingOverflow(1);
-                return (acc.get() == input.size() / 2) ? acc.get() : null;
-            });
+                .groupingKey(i -> i % 2)
+                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                    acc.addAllowingOverflow(1);
+                    return (acc.get() == input.size() / 2) ? acc.get() : null;
+                });
 
         // Then
         long expectedCount = itemCount / 2;
@@ -543,10 +549,10 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Long> stage = batchStageFromList(input)
-            .mapStateful(LongAccumulator::new, (acc, i) -> {
-                acc.add(1);
-                return (acc.get() == input.size()) ? acc.get() : null;
-            });
+                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                    acc.add(1);
+                    return (acc.get() == input.size()) ? acc.get() : null;
+                });
         // Then
         stage.drainTo(assertOrdered(Collections.singletonList((long) itemCount)));
         execute();
@@ -870,4 +876,87 @@ public class BatchStageTest extends PipelineTestSupport {
         // multiple processors will observe the same keys and the counts won't match.
         assertEquals("0\n1", streamToString(sinkStreamOf(Integer.class), Object::toString));
     }
+
+    @Test
+    public void batchAddTimestampPreserveOrderTest() {
+        // Given
+        List<Integer> items = IntStream.range(0, 10).boxed().collect(toList());
+        BatchSource<Integer> source = TestSources.items(items);
+
+        // When
+        p.drawFrom(source)
+         .addTimestamps(o -> 0L, 0)
+         .drainTo(assertOrdered(items));
+
+        // Then
+        execute();
+    }
+
+    @Test
+    public void addTimestamps_when_upstreamHasPreferredLocalParallelism_then_lpMatchUpstream() {
+        // Given
+        int lp = 11;
+
+        // When
+        p.drawFrom(Sources.batchFromProcessor("src",
+                ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
+         .addTimestamps(o -> 0L, 0)
+         .drainTo(Sinks.noop());
+        DAG dag = p.toDag();
+
+        // Then
+        Vertex tsVertex = dag.getVertex("add-timestamps");
+        assertEquals(lp, tsVertex.getLocalParallelism());
+    }
+
+    @Test
+    public void addTimestamps_when_upstreamHasExplicitLocalParallelism_then_lpMatchUpstream() {
+        // Given
+        int lp = 11;
+
+        // When
+        p.drawFrom(source)
+         .setLocalParallelism(lp)
+         .addTimestamps(t -> System.currentTimeMillis(), 1000)
+         .drainTo(Sinks.noop());
+        DAG dag = p.toDag();
+
+        // Then
+        Vertex tsVertex = dag.getVertex("add-timestamps");
+        assertEquals(lp, tsVertex.getLocalParallelism());
+    }
+
+
+    @Test
+    public void addTimestamps_when_upstreamHasNoPreferredLocalParallelism_then_lpMatchUpstream() {
+        // Given
+        BatchSource<Object> src = Sources.batchFromProcessor("src",
+                ProcessorMetaSupplier.of(noopP()));
+
+        // When
+        p.drawFrom(src)
+         .addTimestamps(o -> 0L, 0)
+         .drainTo(Sinks.noop());
+        DAG dag = p.toDag();
+
+        // Then
+        Vertex tsVertex = dag.getVertex("add-timestamps");
+        Vertex srcVertex = dag.getVertex("src");
+        int lp1 = srcVertex.determineLocalParallelism(-1);
+        int lp2 = tsVertex.determineLocalParallelism(-1);
+        assertEquals(lp1, lp2);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void addTimestamps_when_HasExplicitLocalParallelism_then_throwsException() {
+        // Given
+        int lp = 11;
+
+        // When
+        p.drawFrom(source)
+         .addTimestamps(o -> 0L, 0)
+         .setLocalParallelism(lp)
+         .drainTo(Sinks.noop());
+    }
+
 }

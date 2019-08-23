@@ -29,6 +29,7 @@ import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Math.min;
 
 /**
  * Represents a unit of data processing in a Jet computation job. Conceptually,
@@ -122,6 +123,26 @@ public class Vertex implements IdentifiedDataSerializable {
             throw new IllegalArgumentException("Parallelism must be either -1 or a positive number");
         }
         return parallelism;
+    }
+
+    /**
+     * Determines the local parallelism value for the vertex by looking
+     * its local parallelism and meta supplier's preferred local parallelism.
+     * <p>
+     * If none of them is set, returns the provided default parallelism
+     */
+    public int determineLocalParallelism(int defaultParallelism) {
+        int localParallelism = this.localParallelism;
+        int preferredLocalParallelism = this.metaSupplier.preferredLocalParallelism();
+        checkLocalParallelism(preferredLocalParallelism);
+        checkLocalParallelism(localParallelism);
+        return localParallelism != LOCAL_PARALLELISM_USE_DEFAULT
+                ? localParallelism
+                : preferredLocalParallelism != LOCAL_PARALLELISM_USE_DEFAULT
+                    ? defaultParallelism == LOCAL_PARALLELISM_USE_DEFAULT
+                        ? preferredLocalParallelism
+                        : min(preferredLocalParallelism, defaultParallelism)
+                    : defaultParallelism;
     }
 
     /**

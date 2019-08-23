@@ -46,7 +46,7 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
      *
      */
     StreamStage<Integer> streamStageFromList(List<Integer> input) {
-        return p.drawFrom(TestSources.items(input)).addTimestamps(ts -> ts, 0).setLocalParallelism(1);
+        return p.drawFrom(TestSources.items(input)).addTimestamps(ts -> ts, 0);
     }
 
     /**
