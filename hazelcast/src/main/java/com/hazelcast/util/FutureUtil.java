@@ -279,11 +279,14 @@ public final class FutureUtil {
     @PrivateApi
     public static void waitForever(Collection<? extends Future> futuresToWaitFor, ExceptionHandler exceptionHandler) {
         for (Future future : futuresToWaitFor) {
-            try {
-                future.get();
-            } catch (Exception e) {
-                exceptionHandler.handleException(e);
-            }
+            do {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    exceptionHandler.handleException(e);
+                }
+                // future might not be done if get() call was interrupted and the handler ignored it
+            } while (!future.isDone());
         }
     }
 
