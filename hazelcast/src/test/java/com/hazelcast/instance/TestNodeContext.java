@@ -28,6 +28,7 @@ import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.util.UuidUtil
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
 import org.mockito.ArgumentMatchers;
@@ -73,6 +74,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
+        when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.createMemberUuid());
         return nodeExtension;
     }
 

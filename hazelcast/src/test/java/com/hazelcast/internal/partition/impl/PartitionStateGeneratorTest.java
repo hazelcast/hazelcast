@@ -36,6 +36,7 @@ import com.hazelcast.partition.membergroup.SingleMemberGroupFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -311,7 +312,7 @@ public class PartitionStateGeneratorTest {
             count++;
             port++;
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
-                    , port), VERSION, false);
+                    , port), VERSION, false, UuidUtil.createMemberUuid());
             members.add(m);
             if ((0xff & ip[3]) == 255) {
                 ip[2] = ++ip[2];

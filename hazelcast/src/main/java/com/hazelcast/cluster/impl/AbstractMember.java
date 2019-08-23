@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -218,7 +219,7 @@ public abstract class AbstractMember implements Member {
     @Override
     public int hashCode() {
         int result = address.hashCode();
-        result = 31 * result + uuid.hashCode();
+        result = 31 * result + Objects.hashCode(uuid);
         return result;
     }
 
@@ -236,6 +237,6 @@ public abstract class AbstractMember implements Member {
         }
 
         Member that = (Member) obj;
-        return address.equals(that.getAddress()) && uuid.equals(that.getUuid());
+        return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
     }
 }
