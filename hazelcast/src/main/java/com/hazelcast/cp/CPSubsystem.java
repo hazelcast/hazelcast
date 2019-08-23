@@ -34,7 +34,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
 
 /**
  * The CP subsystem is a component of a Hazelcast cluster that builds
- * an in-memory strongly consistent layer. It is accessed via
+ * a strongly consistent layer. It is accessed via
  * {@link HazelcastInstance#getCPSubsystem()}. Its data structures are CP with
  * respect to the CAP principle, i.e., they always maintain linearizability
  * and prefer consistency over availability during network partitions.
@@ -62,16 +62,21 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * Please note that the size of CP groups do not have to be same with
  * the CP member count. Namely, number of CP members in the CP subsystem can be
  * larger than the configured CP group size. In this case, CP groups will be
- * formed by selecting the CP members randomly. Please note that the current CP
- * subsystem implementation works only in memory without persisting any state
- * to disk. It means that a crashed CP member will not be able to recover by
- * reloading its previous state. Therefore, crashed CP members create a danger
- * for gradually losing majority of CP groups and eventually cause the total
- * loss of availability of the CP subsystem. To prevent such situations, failed
- * CP members can be removed from the CP subsystem and replaced in CP groups
- * with other available CP members. This flexibility provides a good degree of
- * fault-tolerance at run-time. Please see {@link CPSubsystemConfig} and
- * {@link CPSubsystemManagementService} for more details.
+ * formed by selecting the CP members randomly. Also note that if CP Subsystem
+ * Persistence is not enabled, CP Subsystem works only in memory without
+ * persisting any state to disk. It means that a crashed CP member will not be
+ * able to recover by reloading its previous state. Therefore, crashed CP
+ * members create a danger for gradually losing majority of CP groups
+ * and eventually cause the total loss of availability of the CP subsystem.
+ * To prevent such situations, failed CP members can be removed from the CP
+ * Subsystem and replaced in CP groups with other available CP members. This
+ * flexibility provides a good degree of fault-tolerance at run-time. Please
+ * see {@link CPSubsystemConfig} and {@link CPSubsystemManagementService} for
+ * more details. Moreover, CP Subsystem Persistence enables more robustness.
+ * When it is enabled via
+ * {@link CPSubsystemConfig#setPersistenceEnabled(boolean)}, CP members persist
+ * their local state to stable storage and can restore their state after
+ * crashes.
  * <p>
  * The CP subsystem runs 2 CP groups by default. The first one is
  * the Metadata group. It is an internal CP group which is responsible for
@@ -144,7 +149,62 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * CP group and cannot be reinitialized until the CP group is force-destroyed.
  * For this reason, please make sure that you are completely done with a CP
  * data structure before destroying its proxy.</strong>
- *
+ * <p>
+ * CP Subsystem Persistence enables CP members to be recovered from crash
+ * scenarios. This capability significantly improves the overall reliability of
+ * CP Subsystem. When it is enabled, CP members persist their local state to
+ * stable storage. You can restart crashed CP members and they will restore
+ * their local state and resume working as if they have never crashed. CP
+ * Subsystem Persistence enables you to handle single or multiple CP member
+ * crashes, or even whole cluster crashes and guarantee that committed
+ * operations are not lost after recovery. As long as majority of CP members
+ * are available after recovery, CP Subsystem remains operational.
+ * <p>
+ * When CP Subsystem Persistence is enabled, all cluster members create a
+ * sub-directory under the base persistence directory. This means that AP
+ * Hazelcast members, which are the ones not marked as CP members during the CP
+ * Subsystem discovery process, create their persistence directories as well.
+ * Those members persist only the information that they are not CP members.
+ * This is done because when a Hazelcast member starts with CP Subsystem
+ * Persistence enabled, it checks if there is a CP persistence directory
+ * belongs to itself, and if it founds one it skips the CP Subsystem discovery
+ * process and initializes its CP member identity from the persisted
+ * information. If it was an AP member before shutdown or crash, it will
+ * restore this information. Otherwise, it could think that the CP Subsystem
+ * discovery process is not executed and initiate it, which would break CP
+ * Subsystem.
+ * <p>
+ * <strong> In light of this information, If you have both CP and AP members
+ * when CP Subsystem Persistence is enabled, and if you want to perform
+ * a cluster-wide restart, you need to ensure that AP members are also
+ * restarted with their persistence directories.</strong>
+ * <p>
+ * There is a significant behavioral difference during CP member shutdown when
+ * CP Subsystem Persistence is enabled and disabled. When disabled (the default
+ * mode), during a CP member shutting down, it is replaced with another
+ * available CP member in all of its CP groups, including the Metadata CP
+ * group, in order not to decrease or more importantly not to lose the majority
+ * of CP groups. If there is no available CP member to replace a shutting down
+ * CP member in a CP group, that CP group's size is reduced by 1 and its
+ * majority value is recalculated. CP member shutdown works this way because CP
+ * members keep their local state only in memory when CP Subsystem Persistence
+ * is disabled and a shut-down CP member cannot join back with its previous
+ * state, hence it is better to remove it from its CP groups to not to hurt
+ * availability. However, when CP Subsystem Persistence is enabled, a shutting
+ * down CP Member can come back with its local CP state. Therefore, we don't
+ * remove shutting down CP members from their CP groups when CP Subsystem
+ * Persistence is enabled. It is up to the user to remove those CP members from
+ * CP Subsystem if they will not come back.
+ * <p>
+ * In summary, CP member shutdown behaviour is as follows:
+ * <ul>
+ * <li>When CP Subsystem Persistence is disabled (the default mode), shutting
+ * down CP members are removed from CP groups and CP group majority values are
+ * recalculated.</li>
+ * <li>When CP Subsystem Persistence is enabled, shutting down CP members are
+ * still kept in CP groups so they will be part of CP group majority
+ * calculations.</li>
+ * </ul>
  * @see CPSubsystemConfig
  * @see CPMember
  * @see CPSession

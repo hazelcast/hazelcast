@@ -4598,6 +4598,22 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="persistence-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Flag to denote whether or not CP persistence is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="cp-data">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory to store all CP persistence data when persistence-enabled is true.
+                        This directory can be shared between multiple members.
+                        Each member will create a unique directory under base-dir for itself.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="raft-algorithm" type="raft-algorithm" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>

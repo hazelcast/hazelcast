@@ -1362,7 +1362,9 @@ public class ConfigXmlGeneratorTest {
               .setSessionTimeToLiveSeconds(15)
               .setSessionHeartbeatIntervalSeconds(3)
               .setMissingCPMemberAutoRemovalSeconds(120)
-              .setFailOnIndeterminateOperationState(true);
+              .setFailOnIndeterminateOperationState(true)
+              .setPersistenceEnabled(true)
+              .setBaseDir(new File("/custom-dir"));
 
         config.getCPSubsystemConfig()
               .getRaftAlgorithmConfig()

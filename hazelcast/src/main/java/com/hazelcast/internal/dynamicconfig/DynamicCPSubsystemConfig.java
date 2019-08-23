@@ -21,6 +21,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -58,6 +59,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
     }
 
     @Override
+    public CPSubsystemConfig setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public RaftAlgorithmConfig getRaftAlgorithmConfig() {
         return new DynamicRaftAlgorithmConfig(super.getRaftAlgorithmConfig());
     }
@@ -84,6 +90,16 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
 
     @Override
     public CPSubsystemConfig setLockConfigs(Map<String, FencedLockConfig> lockConfigs) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CPSubsystemConfig setPersistenceEnabled(boolean persistenceEnabled) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CPSubsystemConfig setBaseDir(File baseDir) {
         throw new UnsupportedOperationException();
     }
 

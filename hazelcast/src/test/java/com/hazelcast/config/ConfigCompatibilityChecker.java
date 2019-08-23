@@ -702,7 +702,9 @@ public class ConfigCompatibilityChecker {
                     && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
                     && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
                     && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
-                    && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState());
+                    && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
+                    && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
+                    && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile());
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;

@@ -1434,7 +1434,9 @@ public class ConfigXmlGenerator {
            .node("session-time-to-live-seconds", cpSubsystemConfig.getSessionTimeToLiveSeconds())
            .node("session-heartbeat-interval-seconds", cpSubsystemConfig.getSessionHeartbeatIntervalSeconds())
            .node("missing-cp-member-auto-removal-seconds", cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds())
-           .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState());
+           .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
+           .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
+           .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")
