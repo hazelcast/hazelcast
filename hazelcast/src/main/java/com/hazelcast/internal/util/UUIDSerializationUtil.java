@@ -21,13 +21,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.hazelcast.util.UuidUtil.NIL_UUID;
+
 /**
  * Util methods for UUID serialization / deserialization operations
  */
 public final class UUIDSerializationUtil {
-    private static final UUID NIL_UUID = new UUID(0, 0);
-
-
     private UUIDSerializationUtil() {
     }
 

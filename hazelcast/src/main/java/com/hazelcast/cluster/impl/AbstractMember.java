@@ -60,7 +60,7 @@ public abstract class AbstractMember implements Member {
         this.addressMap = addresses;
         assert address != null : "Address is required!";
         this.version = version;
-        this.uuid = uuid != null ? uuid : new UUID(address.getHost().hashCode(), address.getPort());
+        this.uuid = uuid;
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }

@@ -233,7 +233,7 @@ public class Node {
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
-                    .uuid(nodeExtension.createMemberUuid(address))
+                    .uuid(nodeExtension.createMemberUuid())
                     .attributes(memberAttributes)
                     .liteMember(liteMember)
                     .instance(hazelcastInstance)

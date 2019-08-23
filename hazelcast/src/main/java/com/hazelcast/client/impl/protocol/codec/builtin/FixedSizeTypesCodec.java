@@ -20,6 +20,8 @@ import com.hazelcast.internal.nio.Bits;
 
 import java.util.UUID;
 
+import static com.hazelcast.util.UuidUtil.NIL_UUID;
+
 public final class FixedSizeTypesCodec {
 
     public static final int BYTE_SIZE_IN_BYTES = Bits.BYTE_SIZE_IN_BYTES;
@@ -27,8 +29,6 @@ public final class FixedSizeTypesCodec {
     public static final int INT_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
     public static final int UUID_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES * 2;
-
-    public static final UUID NIL_UUID = new UUID(0, 0);
 
     private FixedSizeTypesCodec() {
     }

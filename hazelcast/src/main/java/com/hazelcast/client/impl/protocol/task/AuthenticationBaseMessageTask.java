@@ -252,7 +252,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         if (principal != null) {
             return principal.getUuid();
         }
-        return UuidUtil.newUnsecureUUID();
+        return UuidUtil.createClientUuid();
     }
 
     @Override

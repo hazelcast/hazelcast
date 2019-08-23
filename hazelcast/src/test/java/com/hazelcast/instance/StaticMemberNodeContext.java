@@ -46,7 +46,7 @@ public class StaticMemberNodeContext implements NodeContext {
     public NodeExtension createNodeExtension(Node node) {
         return new DefaultNodeExtension(node) {
             @Override
-            public UUID createMemberUuid(Address address) {
+            public UUID createMemberUuid() {
                 return uuid;
             }
         };

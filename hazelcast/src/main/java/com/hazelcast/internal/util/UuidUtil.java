@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.nio.Address;
-
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
@@ -29,8 +27,13 @@ import java.util.UUID;
  * which are based on cryptographically weak {@link Random}
  * and strong {@link SecureRandom} pseudo random number generators.
  */
-@SuppressWarnings("unused")
 public final class UuidUtil {
+
+    /**
+     * The nil UUID is special form of UUID that is specified to have all
+     * 128 bits set to zero as described in the RFC 4122.
+     */
+    public static final UUID NIL_UUID = new UUID(0, 0);
 
     private UuidUtil() {
     }
@@ -49,20 +52,20 @@ public final class UuidUtil {
      * Creates a new member {@link UUID},
      * based on a cryptographically weak pseudo random number generator.
      *
-     * @return a new member {@link UUID} string
+     * @return a new member {@link UUID}
      */
-    public static String createMemberUuid(Address endpoint) {
-        return newUnsecureUuidString();
+    public static UUID createMemberUuid() {
+        return newUnsecureUUID();
     }
 
     /**
-     * Creates a new client {@link UUID} string,
+     * Creates a new client {@link UUID},
      * based on a cryptographically weak pseudo random number generator.
      *
-     * @return a new client {@link UUID} string
+     * @return a new client {@link UUID}
      */
-    public static String createClientUuid(Address endpoint) {
-        return newUnsecureUuidString();
+    public static UUID createClientUuid() {
+        return newUnsecureUUID();
     }
 
     /**

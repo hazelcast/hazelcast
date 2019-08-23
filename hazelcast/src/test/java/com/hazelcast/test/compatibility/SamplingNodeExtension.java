@@ -35,7 +35,6 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
@@ -215,8 +214,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public UUID createMemberUuid(Address address) {
-        return nodeExtension.createMemberUuid(address);
+    public UUID createMemberUuid() {
+        return nodeExtension.createMemberUuid();
     }
 
     @Override
