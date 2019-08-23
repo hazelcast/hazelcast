@@ -187,4 +187,16 @@ public class ClientIcmpPingConfig {
         result = 31 * result + (enabled ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientIcmpPingConfig{"
+                + "timeoutMilliseconds=" + timeoutMilliseconds
+                + ", intervalMilliseconds=" + intervalMilliseconds
+                + ", echoFailFastOnStartup=" + echoFailFastOnStartup
+                + ", ttl=" + ttl
+                + ", maxAttempts=" + maxAttempts
+                + ", enabled=" + enabled
+                + '}';
+    }
 }

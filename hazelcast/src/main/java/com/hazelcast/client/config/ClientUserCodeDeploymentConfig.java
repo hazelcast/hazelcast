@@ -170,4 +170,13 @@ public class ClientUserCodeDeploymentConfig {
         result = 31 * result + jarPaths.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientUserCodeDeploymentConfig{"
+                + "enabled=" + enabled
+                + ", classNames=" + classNames
+                + ", jarPaths=" + jarPaths
+                + '}';
+    }
 }

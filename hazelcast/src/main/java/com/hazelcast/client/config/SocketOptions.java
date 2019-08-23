@@ -197,4 +197,15 @@ public class SocketOptions {
         result = 31 * result + bufferSizeInKB;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "SocketOptions{"
+                + "tcpNoDelay=" + tcpNoDelay
+                + ", keepAlive=" + keepAlive
+                + ", reuseAddress=" + reuseAddress
+                + ", lingerSeconds=" + lingerSeconds
+                + ", bufferSizeInKB=" + bufferSizeInKB
+                + '}';
+    }
 }

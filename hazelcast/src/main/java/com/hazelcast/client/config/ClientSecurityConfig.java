@@ -124,4 +124,13 @@ public class ClientSecurityConfig {
         result = 31 * result + (credentialsFactoryConfig != null ? credentialsFactoryConfig.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientSecurityConfig{"
+                + "credentials=" + credentials
+                + ", credentialsClassname='" + credentialsClassname + '\''
+                + ", credentialsFactoryConfig=" + credentialsFactoryConfig
+                + '}';
+    }
 }
