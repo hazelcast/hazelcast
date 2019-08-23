@@ -176,76 +176,81 @@ public final class NioOutboundPipeline
     @Override
     @SuppressWarnings("unchecked")
     public void process() throws Exception {
-        processCount.inc();
+        try {
+            processCount.inc();
 
-        sendQueue.prepare();
+            sendQueue.prepare();
 
-        OutboundHandler[] localHandlers = handlers;
-        HandlerStatus pipelineStatus = CLEAN;
-        for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-            OutboundHandler handler = localHandlers[handlerIndex];
-            HandlerStatus handlerStatus = handler.onWrite();
+            OutboundHandler[] localHandlers = handlers;
+            HandlerStatus pipelineStatus = CLEAN;
+            for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+                OutboundHandler handler = localHandlers[handlerIndex];
+                HandlerStatus handlerStatus = handler.onWrite();
 
-            if (localHandlers != handlers) {
-                // change in the pipeline detected, therefor the pipeline is restarted.
-                localHandlers = handlers;
-                pipelineStatus = CLEAN;
-                handlerIndex = -1;
-            } else if (handlerStatus != CLEAN) {
-                pipelineStatus = handlerStatus;
+                if (localHandlers != handlers) {
+                    // change in the pipeline detected, therefor the pipeline is restarted.
+                    localHandlers = handlers;
+                    pipelineStatus = CLEAN;
+                    handlerIndex = -1;
+                } else if (handlerStatus != CLEAN) {
+                    pipelineStatus = handlerStatus;
+                }
             }
-        }
 
-        writeToSocket();
+            writeToSocket();
 
-        if (migrationReguested) {
-            startMigration();
-            return;
-        }
+            if (migrationReguested) {
+                startMigration();
+                return;
+            }
 
-        if (sendBuffer.remaining() > 0) {
-            pipelineStatus = DIRTY;
-        }
+            if (sendBuffer.remaining() > 0) {
+                pipelineStatus = DIRTY;
+            }
 
-        switch (pipelineStatus) {
-            case CLEAN:
-                unregisterOp(OP_WRITE);
-                if (sendQueue.tryUnschedule()) {
-                    // the pipeline is dirty; so we need to reschedule this pipeline
-                    if (Thread.currentThread().getClass() == NioThread.class) {
-                        // we are on the IO thread; we don't need to notify the IO thread
-                        owner().addTask(this);
-                    } else {
-                        // we are not on the IO thread, so we need to to notify it.
-                        owner().addTaskAndWakeup(this);
+            switch (pipelineStatus) {
+                case CLEAN:
+                    unregisterOp(OP_WRITE);
+                    if (sendQueue.tryUnschedule()) {
+                        // the pipeline is dirty; so we need to reschedule this pipeline
+                        if (Thread.currentThread().getClass() == NioThread.class) {
+                            // we are on the IO thread; we don't need to notify the IO thread
+                            owner().addTask(this);
+                        } else {
+                            // we are not on the IO thread, so we need to to notify it.
+                            owner().addTaskAndWakeup(this);
+                        }
                     }
-                }
-                break;
-            case DIRTY:
-                //System.out.println("pipeline is dirty");
+                    break;
+                case DIRTY:
+                    //System.out.println("pipeline is dirty");
 
-                // pipeline is dirty, so lets register for an OP_WRITE to write more data.
-                registerOp(OP_WRITE);
+                    // pipeline is dirty, so lets register for an OP_WRITE to write more data.
+                    registerOp(OP_WRITE);
 
-                if (writeThroughEnabled && !(Thread.currentThread() instanceof NioThread)) {
-                    // there was a write through. Changing the interested set of the selection key
-                    // after the IO thread did a select, will not lead to the selector waking up. So
-                    // if we don't wake up the selector explicitly, only after the selector.select(timeout)
-                    // has expired the selectionKey will be seen. For more info see:
-                    // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
-                    owner.getSelector().wakeup();
-                   // System.out.println("NioOutboundPipeline.concurrecyDetection onDetected");
-                    concurrencyDetection.onDetected();
-                }
-                break;
-            case BLOCKED:
-                unregisterOp(OP_WRITE);
-                if (sendQueue.block()) {
-                    owner.addTaskAndWakeup(this);
-                }
-                break;
-            default:
-                throw new IllegalStateException();
+                    if (writeThroughEnabled && !(Thread.currentThread() instanceof NioThread)) {
+                        // there was a write through. Changing the interested set of the selection key
+                        // after the IO thread did a select, will not lead to the selector waking up. So
+                        // if we don't wake up the selector explicitly, only after the selector.select(timeout)
+                        // has expired the selectionKey will be seen. For more info see:
+                        // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
+                        owner.getSelector().wakeup();
+                        // System.out.println("NioOutboundPipeline.concurrecyDetection onDetected");
+                        concurrencyDetection.onDetected();
+                    }
+                    break;
+                case BLOCKED:
+                    unregisterOp(OP_WRITE);
+                    if (sendQueue.block()) {
+                        owner.addTaskAndWakeup(this);
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            throw e;
         }
     }
 

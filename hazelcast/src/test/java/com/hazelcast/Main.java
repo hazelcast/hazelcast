@@ -12,8 +12,12 @@ public class Main {
         System.out.println("inserting too map");
 
         IMap map = hz1.getMap("foo");
-        for(int k=0;k<20;k++){
+        for(int k=0;k<20*1000*1000;k++){
             map.put(k,k);
+
+            if(k%1000==0){
+                System.out.println(k);
+            }
         }
 
         System.out.println("done");

@@ -319,6 +319,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
             Node prev = putStack.get();
             switch (prev.state) {
                 case BLOCKED:
+                    // fall through to SCHEDULED_DATA_ONLY
                 case SCHEDULED_DATA_ONLY:
                     // this is the most frequent occurring case.
                     // we do not want to cas the node because this will cause contention with
@@ -358,7 +359,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
         int frameIndex = queue.toIndex(queue.tail + framesPending - 1);
         int priorityFrameIndex = priorityQueue.toIndex(priorityQueue.tail + priorityFramesPending - 1);
 
-       // int taskIndex = -1;
+        // int taskIndex = -1;
         Node node = head;
         do {
             if (node.nodeNr == nodeNr) {
@@ -369,7 +370,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
             Object item = node.item;
             if (item != null) {
                 if (item instanceof Runnable) {
-                     //todo: reverse order
+                    //todo: reverse order
                     ((Runnable) item).run();
                 } else if (((OutboundFrame) item).isUrgent()) {
                     priorityQueue.array[priorityFrameIndex] = (OutboundFrame) item;
@@ -392,7 +393,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
         priorityQueue.tail = priorityQueue.toIndex(priorityQueue.tail + priorityFramesPending);
         queue.tail = queue.toIndex(queue.tail + framesPending);
 
-         // since we already processed this node and whatever is following, we can get rid of it.
+        // since we already processed this node and whatever is following, we can get rid of it.
         head.prev = null;
         frameNr = head.frameNr;
         priorityFrameNr = head.priorityFrameNr;
@@ -422,7 +423,7 @@ public class SendQueue implements Supplier<OutboundFrame> {
 
     private static class Queue {
 
-        private OutboundFrame[] array = new OutboundFrame[32];
+        private OutboundFrame[] array = new OutboundFrame[65536];
         private int capacity = array.length;
         private int head;
         private int tail;
@@ -444,8 +445,11 @@ public class SendQueue implements Supplier<OutboundFrame> {
         int toIndex(int i) {
             if (i < 0) {
                 return i + capacity;
+            } else if (i >= capacity) {
+                return i - capacity;
+            } else {
+                return i;
             }
-            return i;
         }
 
         void clear() {
@@ -493,21 +497,21 @@ public class SendQueue implements Supplier<OutboundFrame> {
      * Clears the SendQueue. Can only be made by the thread owning the pipeline.
      */
     public void clear() {
-        Node node = new Node(UNSCHEDULED);
-        for (; ; ) {
-            Node prev = putStack.get();
-            node.bytesOffered = prev.bytesOffered;
-            node.frameNr = prev.frameNr;
-            node.priorityFrameNr = prev.priorityFrameNr;
-            node.nodeNr = prev.nodeNr + 1;
-            node.prev = prev;
-            if (putStack.compareAndSet(prev, node)) {
-                break;
-            }
-        }
-
-        queue.clear();
-        priorityQueue.clear();
+//        Node node = new Node(UNSCHEDULED);
+//        for (; ; ) {
+//            Node prev = putStack.get();
+//            node.bytesOffered = prev.bytesOffered;
+//            node.frameNr = prev.frameNr;
+//            node.priorityFrameNr = prev.priorityFrameNr;
+//            node.nodeNr = prev.nodeNr + 1;
+//            node.prev = prev;
+//            if (putStack.compareAndSet(prev, node)) {
+//                break;
+//            }
+//        }
+//
+//        queue.clear();
+//        priorityQueue.clear();
     }
 
     static class Node {
@@ -535,9 +539,12 @@ public class SendQueue implements Supplier<OutboundFrame> {
         public String toString() {
             return "Node{" +
                     "state=" + state +
+                    ", prev=" + prev +
                     ", item=" + item +
                     ", bytesOffered=" + bytesOffered +
-                    ", prev=" + prev +
+                    ", priorityFrameNr=" + priorityFrameNr +
+                    ", frameNr=" + frameNr +
+                    ", nodeNr=" + nodeNr +
                     '}';
         }
     }
