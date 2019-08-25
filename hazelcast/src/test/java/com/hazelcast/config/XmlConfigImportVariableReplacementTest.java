@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,25 +43,27 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class XmlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
 
-    @Test
+    private static final String IMPORT_RESOURCE_TEMPLATE = HAZELCAST_START_TAG
+            + "    <import resource=\"file:///" + "%s" + "\"/>\n"
+            + HAZELCAST_END_TAG;
+
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppearsInTopLevel() {
         String xml = HAZELCAST_START_TAG
                 + "   <network>"
                 + "        <import resource=\"\"/>\n"
                 + "   </network>"
                 + HAZELCAST_END_TAG;
-        expectInvalid();
         buildConfig(xml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppearsOnce() {
         String xml = HAZELCAST_START_TAG
                 + "   <hazelcast>"
                 + "   </hazelcast>"
                 + HAZELCAST_END_TAG;
-        expectInvalid();
         buildConfig(xml, null);
     }
 
@@ -137,70 +140,71 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        String config1Xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_END_TAG;
-        String config2Xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_END_TAG;
-        writeStringToStreamAndClose(os1, config1Xml);
-        writeStringToStreamAndClose(os2, config2Xml);
-        expectInvalid();
-        buildConfig(config1Xml, null);
+
+        String xmlWithCyclicImport = createFilesWithCycleImports(
+                createConfigFile("hz1", "xml"),
+                createConfigFile("hz2", "xml")
+        );
+
+        buildConfig(xmlWithCyclicImport, null);
+    }
+
+    private String createFilesWithCycleImports(File... files) throws Exception {
+        for (int i = 1; i < files.length; i++) {
+            createFileWithDependencyImport(files[i - 1], files[i].getAbsolutePath());
+        }
+        return createFileWithDependencyImport(files[0], files[1].getAbsolutePath());
+    }
+
+    private String createFileWithDependencyImport(File dependent, String pathToDependency) throws Exception {
+        final String xmlContent = String.format(IMPORT_RESOURCE_TEMPLATE, pathToDependency);
+        writeStringToStreamAndClose(new FileOutputStream(dependent), xmlContent);
+        return xmlContent;
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        String template = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///%s\"/>\n"
-                + HAZELCAST_END_TAG;
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        File config3 = createConfigFile("hz3", "xml");
-        String config1Xml = String.format(template, config2.getAbsolutePath());
-        String config2Xml = String.format(template, config3.getAbsolutePath());
-        String config3Xml = String.format(template, config1.getAbsolutePath());
-        writeStringToStreamAndClose(new FileOutputStream(config1), config1Xml);
-        writeStringToStreamAndClose(new FileOutputStream(config2), config2Xml);
-        writeStringToStreamAndClose(new FileOutputStream(config3), config3Xml);
-        expectInvalid();
-        buildConfig(config1Xml, null);
+        String xmlWithCyclicImport = createFilesWithCycleImports(
+                createConfigFile("hz1", "xml"),
+                createConfigFile("hz2", "xml"),
+                createConfigFile("hz3", "xml")
+        );
+
+        buildConfig(xmlWithCyclicImport, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        String config1Xml = HAZELCAST_START_TAG
-                + "    <import resource='file:///" + config1.getAbsolutePath() + "'/>\n"
+        String pathToEmptyFile = createEmptyFile();
+        String xmlConfig = HAZELCAST_START_TAG
+                + "    <import resource='file:///" + pathToEmptyFile + "'/>\n"
                 + HAZELCAST_END_TAG;
-        writeStringToStreamAndClose(os1, "");
-        expectInvalid();
-        buildConfig(config1Xml, null);
+        buildConfig(xmlConfig, null);
+    }
+
+    private String createEmptyFile() throws Exception {
+        File file = createConfigFile("hz1", "xml");
+        FileOutputStream outputStream = new FileOutputStream(file);
+        writeStringToStreamAndClose(outputStream, "");
+        return file.getAbsolutePath();
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() {
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"\"/>\n"
                 + HAZELCAST_END_TAG;
-        expectInvalid();
         buildConfig(xml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
-        expectInvalid();
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"notexisting.xml\"/>\n"
                 + HAZELCAST_END_TAG;
