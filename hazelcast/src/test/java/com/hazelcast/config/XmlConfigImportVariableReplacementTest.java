@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -85,6 +85,28 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         MapConfig mapConfig = config.getMapConfig("s");
         assertEquals(6, mapConfig.getBackupCount());
         assertEquals(0, mapConfig.getAsyncBackupCount());
+    }
+
+    @Test
+    @Ignore
+    public void testImportResourceWithConfigReplacers() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configReplacer = HAZELCAST_START_TAG
+                + "    <config-replacers>\n"
+                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+                + "    </config-replacers>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, configReplacer);
+
+        String xml = HAZELCAST_START_TAG
+                + "    <import resource=\"${config.location}\"/>\n"
+                + "    <group>\n"
+                + "        <name>${java.version} $ID{dev}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, "config.location", file.getAbsolutePath()).getGroupConfig();
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
     }
 
     @Override
