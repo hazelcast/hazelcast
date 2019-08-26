@@ -16,8 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.core.HazelcastException;
-
 /**
  * This exception class is thrown while creating {@link com.hazelcast.cache.impl.CacheRecordStore}
  * instances but the cache config does not exist on the node to create the instance on. This can
@@ -29,7 +27,7 @@ import com.hazelcast.core.HazelcastException;
  * For the first option, the caller can decide to just retry the operation a couple of times since
  * distribution is executed in a asynchronous way.
  */
-public class CacheNotExistsException extends HazelcastException {
+public class CacheNotExistsException extends IllegalStateException {
 
     public CacheNotExistsException(String s) {
         super(s);
