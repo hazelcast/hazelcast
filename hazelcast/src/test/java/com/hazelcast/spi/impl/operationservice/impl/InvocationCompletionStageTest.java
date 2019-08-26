@@ -731,6 +731,7 @@ public class InvocationCompletionStageTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertEquals(chainedReturnValue, chained.join());
     }
+
     @Test
     public void exceptionally_whenAsync() {
         CompletableFuture<Object> future = invokeAsync(local, true);
