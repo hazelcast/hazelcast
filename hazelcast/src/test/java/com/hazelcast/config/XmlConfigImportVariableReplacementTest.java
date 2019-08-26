@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 public class XmlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
 
     private static final String IMPORT_RESOURCE_TEMPLATE = HAZELCAST_START_TAG
-            + "    <import resource=\"file:///" + "%s" + "\"/>\n"
+            + "    <import resource=\"" + "%s" + "\"/>\n"
             + HAZELCAST_END_TAG;
 
     @Test(expected = InvalidConfigurationException.class)
@@ -105,7 +106,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <name>${java.version} $ID{dev}</name>\n"
                 + "    </group>\n"
                 + HAZELCAST_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, "config.location", file.getAbsolutePath()).getGroupConfig();
+        GroupConfig groupConfig = buildConfig(
+                xml,
+                "config.location",
+                file.getAbsolutePath()
+        ).getGroupConfig();
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
     }
 
@@ -180,8 +185,10 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         return createFileWithDependencyImport(files[0], files[1].getAbsolutePath());
     }
 
-    private String createFileWithDependencyImport(File dependent, String pathToDependency) throws Exception {
-        final String xmlContent = String.format(IMPORT_RESOURCE_TEMPLATE, pathToDependency);
+    private String createFileWithDependencyImport(
+            File dependent,
+            String pathToDependency) throws Exception {
+        final String xmlContent = xmlContentWithImportResource(pathToDependency);
         writeStringToStreamAndClose(new FileOutputStream(dependent), xmlContent);
         return xmlContent;
     }
@@ -202,10 +209,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         String pathToEmptyFile = createEmptyFile();
-        String xmlConfig = HAZELCAST_START_TAG
-                + "    <import resource='file:///" + pathToEmptyFile + "'/>\n"
-                + HAZELCAST_END_TAG;
-        buildConfig(xmlConfig, null);
+        buildConfig(xmlContentWithImportResource("file://" + pathToEmptyFile), null);
+    }
+
+    private String xmlContentWithImportResource(String pathToResource) {
+        return String.format(IMPORT_RESOURCE_TEMPLATE, pathToResource);
     }
 
     private String createEmptyFile() throws Exception {
@@ -218,19 +226,13 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() {
-        String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"\"/>\n"
-                + HAZELCAST_END_TAG;
-        buildConfig(xml, null);
+        buildConfig(xmlContentWithImportResource(""), null);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
-        String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"notexisting.xml\"/>\n"
-                + HAZELCAST_END_TAG;
-        buildConfig(xml, null);
+        buildConfig(xmlContentWithImportResource("notexisting.xml"), null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -298,7 +300,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "            <write-delay-seconds>10</write-delay-seconds>\n"
                 + "            <write-batch-size>100</write-batch-size>\n"
                 + "        </map-store>"
-                + "</map>\n"
+                + "    </map>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, mapConfig);
 
