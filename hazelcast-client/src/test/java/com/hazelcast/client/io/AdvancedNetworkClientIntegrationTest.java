@@ -32,6 +32,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -53,8 +54,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -134,6 +137,12 @@ public class AdvancedNetworkClientIntegrationTest {
 
         instances[2].shutdown();
         assertClusterSizeEventually(2, instances[0]);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(memberRemoved.get());
+            }
+        });
 
         assertEquals(memberRemoved.get().getAddress(), removedMemberAddress);
 

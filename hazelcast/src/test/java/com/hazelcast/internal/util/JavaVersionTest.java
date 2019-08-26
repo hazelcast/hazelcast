@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_10;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_11;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_12;
+import static com.hazelcast.internal.util.JavaVersion.JAVA_13;
+import static com.hazelcast.internal.util.JavaVersion.JAVA_14;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_6;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_8;
@@ -53,18 +55,24 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertEquals(JAVA_11, JavaVersion.parseVersion("11"));
         assertEquals(JAVA_12, JavaVersion.parseVersion("12-ea"));
         assertEquals(JAVA_12, JavaVersion.parseVersion("12"));
+        assertEquals(JAVA_13, JavaVersion.parseVersion("13-ea"));
+        assertEquals(JAVA_13, JavaVersion.parseVersion("13"));
+        assertEquals(JAVA_14, JavaVersion.parseVersion("14-ea"));
+        assertEquals(JAVA_14, JavaVersion.parseVersion("14"));
     }
 
     @Test
     public void testIsAtLeast_unknown() {
         assertTrue(JavaVersion.isAtLeast(UNKNOWN, UNKNOWN));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_7));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_8));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_9));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_10));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_11));
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_12));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_7));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_8));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_9));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_10));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_11));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_12));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_13));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_14));
     }
 
     @Test
@@ -77,6 +85,8 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_11));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_12));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_13));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_14));
     }
 
     @Test
@@ -88,6 +98,9 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_9));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_11));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_12));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_13));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_14));
     }
 
     @Test
@@ -99,6 +112,9 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_9));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_11));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_12));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_13));
+        assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_14));
     }
 
     @Test
@@ -110,6 +126,9 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertTrue(JavaVersion.isAtLeast(JAVA_9, JAVA_9));
         assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_11));
+        assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_12));
+        assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_13));
+        assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_14));
     }
 
     @Test
@@ -121,14 +140,18 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertTrue(JavaVersion.isAtLeast(JAVA_10, JAVA_9));
         assertTrue(JavaVersion.isAtLeast(JAVA_11, JAVA_10));
         assertTrue(JavaVersion.isAtLeast(JAVA_12, JAVA_11));
+        assertTrue(JavaVersion.isAtLeast(JAVA_13, JAVA_12));
+        assertTrue(JavaVersion.isAtLeast(JAVA_14, JAVA_13));
 
-        assertFalse(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
+        assertTrue(JavaVersion.isAtLeast(UNKNOWN, JAVA_1_6));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_6, JAVA_1_7));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_7, JAVA_1_8));
         assertFalse(JavaVersion.isAtLeast(JAVA_1_8, JAVA_9));
         assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_10, JAVA_11));
         assertFalse(JavaVersion.isAtLeast(JAVA_11, JAVA_12));
+        assertFalse(JavaVersion.isAtLeast(JAVA_12, JAVA_13));
+        assertFalse(JavaVersion.isAtLeast(JAVA_13, JAVA_14));
     }
 
     @Test
@@ -139,6 +162,10 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertTrue(JavaVersion.isAtMost(JAVA_9, JAVA_10));
         assertTrue(JavaVersion.isAtMost(JAVA_11, JAVA_12));
         assertTrue(JavaVersion.isAtMost(JAVA_12, JAVA_12));
+        assertTrue(JavaVersion.isAtMost(JAVA_12, JAVA_13));
+        assertTrue(JavaVersion.isAtMost(JAVA_13, JAVA_13));
+        assertTrue(JavaVersion.isAtMost(JAVA_13, JAVA_14));
+        assertTrue(JavaVersion.isAtMost(JAVA_14, JAVA_14));
 
         assertFalse(JavaVersion.isAtMost(JAVA_1_7, JAVA_1_6));
         assertFalse(JavaVersion.isAtMost(JAVA_1_8, JAVA_1_7));
@@ -146,5 +173,7 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertFalse(JavaVersion.isAtMost(JAVA_10, JAVA_9));
         assertFalse(JavaVersion.isAtMost(JAVA_11, JAVA_10));
         assertFalse(JavaVersion.isAtMost(JAVA_12, JAVA_11));
+        assertFalse(JavaVersion.isAtMost(JAVA_13, JAVA_12));
+        assertFalse(JavaVersion.isAtMost(JAVA_14, JAVA_13));
     }
 }

@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package example.serialization;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class LockBasicDistributedTest extends LockBasicTest {
+public class TestExternalizableDeserialized implements Externalizable {
+
+    public static volatile boolean isDeserialized = false;
+
+    // field used for indexing in IMap
+    private String name = "foo";
+
     @Override
-    protected HazelcastInstance[] newInstances() {
-        return createHazelcastInstanceFactory(2).newInstances(getConfig());
+    public void writeExternal(ObjectOutput out) throws IOException {
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        isDeserialized = true;
     }
 }

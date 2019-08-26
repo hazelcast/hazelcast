@@ -491,21 +491,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
         }
+
         if (valueComparator.isEqual(testValue, oldValue, serializationService)) {
             mapServiceContext.interceptRemove(name, oldValue);
-            removeIndex(record);
             mapDataStore.remove(key, now);
-            onStore(record);
-            mutationObserver.onRemoveRecord(record.getKey(), record);
-            storage.removeRecord(record);
+
+            if (record != null) {
+                removeIndex(record);
+                onStore(record);
+                mutationObserver.onRemoveRecord(key, record);
+                storage.removeRecord(record);
+            }
             removed = true;
         }
         return removed;
     }
 
     @Override
-    public Object get(Data key, boolean backup, Address
-            callerAddress) {
+    public Object get(Data key, boolean backup, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1215,7 +1218,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
         clearLockStore();
-        clearOtherDataThanStorage(onStorageDestroy);
+        clearOtherDataThanStorage(onShutdown, onStorageDestroy);
 
         if (onShutdown) {
             if (hasPooledMemoryAllocator()) {
@@ -1242,9 +1245,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * Only cleans the data other than storage-data that is held on this record
      * store. Other services data like lock-service-data is not cleared here.
      */
-    public void clearOtherDataThanStorage(boolean onStorageDestroy) {
+    public void clearOtherDataThanStorage(boolean onShutdown, boolean onStorageDestroy) {
         clearMapStore();
-        clearIndexedData(onStorageDestroy);
+        clearIndexedData(onShutdown, onStorageDestroy);
     }
 
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
@@ -1286,18 +1289,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * Only indexed data will be removed, index info will stay.
      */
-    private void clearIndexedData(boolean onStorageDestroy) {
-        clearGlobalIndexes();
+    private void clearIndexedData(boolean onShutdown, boolean onStorageDestroy) {
+        clearGlobalIndexes(onShutdown);
         clearPartitionedIndexes(onStorageDestroy);
     }
 
-    private void clearGlobalIndexes() {
+    private void clearGlobalIndexes(boolean onShutdown) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
-            if (indexes.haveAtLeastOneIndex()) {
-                // clears indexed data of this partition
-                // from shared global index.
-                fullScanLocalDataToClear(indexes);
+            if (onShutdown) {
+                indexes.destroyIndexes();
+            } else {
+                if (indexes.haveAtLeastOneIndex()) {
+                    // clears indexed data of this partition
+                    // from shared global index.
+                    fullScanLocalDataToClear(indexes);
+                }
             }
         }
     }

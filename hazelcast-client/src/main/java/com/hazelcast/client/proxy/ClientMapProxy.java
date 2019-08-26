@@ -1271,11 +1271,18 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return setBuilder.build();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (containsPagingPredicate(predicate)) {
-            return keySetWithPagingPredicate(predicate);
+            PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
+            if (pagingPredicate.getComparator() == null) {
+                return keySetWithPagingPredicate(predicate);
+            } else {
+                // custom comparator may act on keys and values at the same time
+                return entrySetWithPagingPredicate(predicate, IterationType.KEY);
+            }
         }
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
@@ -1309,10 +1316,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         if (containsPagingPredicate(predicate)) {
-            return entrySetWithPagingPredicate(predicate);
+            return entrySetWithPagingPredicate(predicate, IterationType.ENTRY);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
 
@@ -1328,8 +1336,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return setBuilder.build();
     }
 
-    @SuppressWarnings("unchecked")
-    private Set<Entry<K, V>> entrySetWithPagingPredicate(Predicate predicate) {
+    private Set entrySetWithPagingPredicate(Predicate predicate, IterationType iterationType) {
         PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
 
         pagingPredicate.setIterationType(IterationType.ENTRY);
@@ -1346,8 +1353,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
-        Set result = getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
-        return (Set<Entry<K, V>>) result;
+        return getSortedQueryResultSet(resultList, pagingPredicate, iterationType);
     }
 
     @Override

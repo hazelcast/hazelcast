@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.spi;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+/**
+ * Interface to be implemented by services that need to intercept lock operation
+ * for distributed objects it manages.
+ *
+ * @param <T> type of key
+ */
+public interface LockInterceptorService<T> {
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class LockBasicDistributedTest extends LockBasicTest {
-    @Override
-    protected HazelcastInstance[] newInstances() {
-        return createHazelcastInstanceFactory(2).newInstances(getConfig());
-    }
+    void onBeforeLock(String distributedObjectName, T key);
+
 }

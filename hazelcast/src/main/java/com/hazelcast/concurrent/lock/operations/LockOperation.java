@@ -45,6 +45,7 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
 
     @Override
     public void run() throws Exception {
+        interceptLockOperation();
         final boolean lockResult = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
         response = lockResult;
 

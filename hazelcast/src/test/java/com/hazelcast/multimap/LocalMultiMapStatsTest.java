@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.multimap;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.Predicates;
+import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,25 +27,21 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LocalMapStatsTest extends HazelcastTestSupport {
+public class LocalMultiMapStatsTest extends HazelcastTestSupport {
 
-    static final int OPERATION_COUNT = 10;
+    private static final int OPERATION_COUNT = 10;
 
-    HazelcastInstance instance;
+    private HazelcastInstance instance;
     private String mapName = "mapName";
 
     @Before
@@ -53,185 +49,81 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         instance = createHazelcastInstance(getConfig());
     }
 
-    protected LocalMapStats getMapStats() {
-        return instance.getMap(mapName).getLocalMapStats();
+    protected LocalMultiMapStats getMultiMapStats() {
+        return instance.getMultiMap(mapName).getLocalMultiMapStats();
     }
 
-    protected <K, V> IMap<K, V> getMap() {
+    protected <K, V> MultiMap<K, V> getMultiMap() {
         warmUpPartitions(instance);
-        return instance.getMap(mapName);
+        return instance.getMultiMap(mapName);
     }
 
     @Test
     public void testHitsGenerated() {
-        IMap<Integer, Integer> map = getMap();
+        MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = getMapStats();
+        LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getHits());
     }
 
     @Test
     public void testPutAndHitsGenerated() {
-        IMap<Integer, Integer> map = getMap();
+        MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = getMapStats();
+        LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getHits());
-    }
-
-    @Test
-    public void testPutIfAbsentAndHitsGenerated() {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            map.putIfAbsent(i, i);
-            map.get(i);
-        }
-        LocalMapStats localMapStats = getMapStats();
-        assertEquals(100, localMapStats.getPutOperationCount());
-        assertEquals(100, localMapStats.getHits());
-    }
-
-    @Test
-    public void testPutAsync() {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            map.putAsync(i, i);
-        }
-        final LocalMapStats localMapStats = getMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(100, localMapStats.getPutOperationCount());
-            }
-        });
     }
 
     @Test
     public void testGetAndHitsGenerated() {
-        IMap<Integer, Integer> map = getMap();
+        MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = getMapStats();
+        LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getGetOperationCount());
         assertEquals(100, localMapStats.getHits());
     }
 
     @Test
-    public void testPutAllGenerated() {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
-            putMap.put(i, i);
-            putMap.put(100 + i, 100 + i);
-            map.putAll(putMap);
-        }
-        LocalMapStats localMapStats = getMapStats();
-        assertEquals(200, localMapStats.getPutOperationCount());
-    }
-
-    @Test
-    public void testGetAllGenerated() {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 200; i++) {
-            map.put(i, i);
-        }
-        for (int i = 0; i < 100; i++) {
-            Set<Integer> keys = new HashSet<Integer>();
-            keys.add(i);
-            keys.add(100 + i);
-            map.getAll(keys);
-        }
-        LocalMapStats localMapStats = getMapStats();
-        assertEquals(200, localMapStats.getGetOperationCount());
-    }
-
-    @Test
-    public void testGetAsyncAndHitsGenerated() throws Exception {
-        final IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            map.put(i, i);
-            map.getAsync(i).get();
-        }
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final LocalMapStats localMapStats = getMapStats();
-                assertEquals(100, localMapStats.getGetOperationCount());
-                assertEquals(100, localMapStats.getHits());
-            }
-        });
-    }
-
-    @Test
     public void testDelete() {
-        IMap<Integer, Integer> map = getMap();
+        MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.delete(i);
         }
-        LocalMapStats localMapStats = getMapStats();
+        LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getRemoveOperationCount());
     }
 
     @Test
-    public void testSet() throws Exception {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            map.set(i, i);
-        }
-        LocalMapStats localMapStats = getMapStats();
-        assertEquals(100, localMapStats.getPutOperationCount());
-    }
-
-
-    @Test
     public void testRemove() {
-        IMap<Integer, Integer> map = getMap();
+        MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.remove(i);
         }
-        LocalMapStats localMapStats = getMapStats();
+        LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getRemoveOperationCount());
     }
 
     @Test
-    public void testRemoveAsync() {
-        IMap<Integer, Integer> map = getMap();
-        for (int i = 0; i < 100; i++) {
-            map.put(i, i);
-            map.removeAsync(i);
-        }
-        final LocalMapStats localMapStats = getMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(100, localMapStats.getRemoveOperationCount());
-            }
-        });
-    }
-
-    @Test
     public void testHitsGenerated_updatedConcurrently() {
-        final IMap<Integer, Integer> map = getMap();
+        final MultiMap<Integer, Integer> map = getMultiMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
             map.put(i, i);
             map.get(i);
         }
-        final LocalMapStats localMapStats = getMapStats();
+        final LocalMapStats localMapStats = getMultiMapStats();
         final long initialHits = localMapStats.getHits();
 
         new Thread(new Runnable() {
@@ -240,7 +132,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 for (int i = 0; i < actionCount; i++) {
                     map.get(i);
                 }
-                getMapStats(); // causes the local stats object to update
+                getMultiMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -258,31 +150,31 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     public void testLastAccessTime() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
 
-        IMap<String, String> map = getMap();
+        MultiMap<String, String> map = getMultiMap();
 
         String key = "key";
         map.put(key, "value");
         map.get(key);
 
-        long lastAccessTime = getMapStats().getLastAccessTime();
+        long lastAccessTime = getMultiMapStats().getLastAccessTime();
         assertTrue(lastAccessTime >= startTime);
 
         Thread.sleep(5);
         map.put(key, "value2");
-        long lastAccessTime2 = getMapStats().getLastAccessTime();
+        long lastAccessTime2 = getMultiMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);
     }
 
     @Test
     public void testLastAccessTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
-        final IMap<String, String> map = getMap();
+        final MultiMap<String, String> map = getMultiMap();
 
         final String key = "key";
         map.put(key, "value");
         map.put(key, "value");
 
-        final LocalMapStats localMapStats = getMapStats();
+        final LocalMapStats localMapStats = getMultiMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
         new Thread(new Runnable() {
@@ -290,7 +182,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             public void run() {
                 sleepAtLeastMillis(1);
                 map.put(key, "value2");
-                getMapStats(); // causes the local stats object to update
+                getMultiMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -305,158 +197,127 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictAll() {
-        IMap<String, String> map = getMap();
-        map.put("key", "value");
-        map.evictAll();
-
-        final long heapCost = getMapStats().getHeapCost();
-
-        assertEquals(0L, heapCost);
-    }
-
-
-    @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_containsKey() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.containsKey(i);
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_entrySet() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.entrySet();
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_keySet() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.keySet();
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
     public void testOtherOperationCount_localKeySet() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
-            ((IMap) map).localKeySet();
+            map.localKeySet();
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_values() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.values();
         }
 
-        LocalMapStats stats = getMapStats();
-        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
-    }
-
-
-    @Test
-    public void testOtherOperationCount_valuesWithPredicate() {
-        Map map = getMap();
-
-        for (int i = 0; i < OPERATION_COUNT; i++) {
-
-            ((IMap) map).values(Predicates.lessThan("this", 0));
-        }
-
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_clear() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.clear();
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_containsValue() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.containsValue(1);
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
-    public void testOtherOperationCount_isEmpty() {
-        Map map = getMap();
-
-        for (int i = 0; i < OPERATION_COUNT; i++) {
-            map.isEmpty();
-        }
-
-        LocalMapStats stats = getMapStats();
-        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
-    }
-
-    @Test
+    @Ignore("GH issue 15307")
     public void testOtherOperationCount_size() {
-        Map map = getMap();
+        MultiMap map = getMultiMap();
 
         for (int i = 0; i < OPERATION_COUNT; i++) {
             map.size();
         }
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
-    public void testLockedEntryCount_emptyMap() {
-        IMap<String, String> map = getMap();
+    public void testLockedEntryCount_emptyMultiMap() {
+        MultiMap<String, String> map = getMultiMap();
 
         map.lock("non-existent-key");
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(1, stats.getLockedEntryCount());
     }
 
     @Test
-    public void testLockedEntryCount_mapWithOneEntry() {
-        IMap<String, String> map = getMap();
+    public void testLockedEntryCount_multiMapWithOneEntry() {
+        MultiMap<String, String> map = getMultiMap();
 
         map.put("key", "value");
         map.lock("key");
         map.lock("non-existent-key");
 
-        LocalMapStats stats = getMapStats();
+        LocalMapStats stats = getMultiMapStats();
         assertEquals(2, stats.getLockedEntryCount());
     }
 }
