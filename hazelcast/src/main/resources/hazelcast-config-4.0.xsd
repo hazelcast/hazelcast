@@ -3374,6 +3374,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
+            <xs:element name="persistent-memory-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>

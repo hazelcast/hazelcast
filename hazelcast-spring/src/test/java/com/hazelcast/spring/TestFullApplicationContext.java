@@ -1178,6 +1178,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
         assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+        assertEquals("/mnt/optane", nativeMemoryConfig.getPersistentMemoryDirectory());
     }
 
     @Test

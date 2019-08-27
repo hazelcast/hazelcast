@@ -134,6 +134,7 @@ public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
+    public static final String PERSISTENT_MEMORY_DIRECTORY;
 
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
@@ -152,6 +153,8 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
+        String pmemDirectory = System.getProperty("hazelcast.persistent.memory");
+        PERSISTENT_MEMORY_DIRECTORY =  pmemDirectory != null ? pmemDirectory : "/tmp/pmem";
     }
 
     @After

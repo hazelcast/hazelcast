@@ -637,7 +637,8 @@
 
             <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
                               min-block-size="10"
-                              page-size="20">
+                              page-size="20"
+                              persistent-memory-directory="/mnt/optane">
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
             <hz:security>

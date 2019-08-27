@@ -319,6 +319,7 @@ public final class ClientConfigXmlGenerator {
                 .node("min-block-size", nativeMemory.getMinBlockSize())
                 .node("page-size", nativeMemory.getPageSize())
                 .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage())
+                .node("persistent-memory-directory", nativeMemory.getPersistentMemoryDirectory())
                 .close();
     }
 
