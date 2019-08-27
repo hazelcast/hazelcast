@@ -230,7 +230,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), getStorage());
+            return new LazySet<>(new KeySetIteratorFactory<>(this), getStorage());
         }
         return getStorage().keySet();
     }
@@ -241,7 +241,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), getStorage());
+            return new LazyCollection<>(new ValuesIteratorFactory<>(this), getStorage());
         }
         return getStorage().values();
     }
@@ -249,7 +249,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @Override
     public Collection values(Comparator comparator) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
-        List<Object> values = new ArrayList<Object>(storage.size());
+        List<Object> values = new ArrayList<>(storage.size());
         for (ReplicatedRecord record : storage.values()) {
             values.add(unmarshall(record.getValue()));
         }
@@ -263,7 +263,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         if (lazy) {
             // Lazy evaluation to prevent to much copying
-            return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), getStorage());
+            return new LazySet<>(new EntrySetIteratorFactory<>(this), getStorage());
         }
         return getStorage().entrySet();
     }
@@ -330,7 +330,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
-        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
+        return new ReplicatedRecord<>(key, value, ttlMillis);
     }
 
     @Override

@@ -47,11 +47,11 @@ public class KeySetOperation extends AbstractNamedSerializableOperation implemen
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        List<Object> keys = new ArrayList<Object>();
+        List<Object> keys = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             keys.addAll(store.keySet(false));
         }
-        ArrayList<Data> dataKeys = new ArrayList<Data>(keys.size());
+        ArrayList<Data> dataKeys = new ArrayList<>(keys.size());
         SerializationService serializationService = getNodeEngine().getSerializationService();
         for (Object key : keys) {
             dataKeys.add(serializationService.toData(key));

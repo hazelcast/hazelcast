@@ -59,7 +59,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 public class ReplicatedMapEventPublishingService
         implements EventPublishingService {
 
-    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
+    private final HashMap<String, Boolean> statisticsMap = new HashMap<>();
 
     private final ReplicatedMapService replicatedMapService;
     private final NodeEngine nodeEngine;
@@ -120,12 +120,10 @@ public class ReplicatedMapEventPublishingService
                     mapEventData.getEventType(), mapEventData.getNumberOfEntries());
             EntryListener entryListener = (EntryListener) listener;
             EntryEventType type = EntryEventType.getByType(mapEventData.getEventType());
-            switch (type) {
-                case CLEAR_ALL:
-                    entryListener.mapCleared(mapEvent);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
+            if (type == EntryEventType.CLEAR_ALL) {
+                entryListener.mapCleared(mapEvent);
+            } else {
+                throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
             }
         }
     }

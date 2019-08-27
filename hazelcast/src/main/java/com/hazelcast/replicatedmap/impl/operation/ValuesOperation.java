@@ -47,11 +47,11 @@ public class ValuesOperation extends AbstractNamedSerializableOperation implemen
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        Collection<ReplicatedRecord> values = new ArrayList<ReplicatedRecord>();
+        Collection<ReplicatedRecord> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(false));
         }
-        Collection<Data> dataValues = new ArrayList<Data>(values.size());
+        Collection<Data> dataValues = new ArrayList<>(values.size());
         SerializationService serializationService = getNodeEngine().getSerializationService();
         for (ReplicatedRecord value : values) {
             dataValues.add(serializationService.toData(value.getValue()));

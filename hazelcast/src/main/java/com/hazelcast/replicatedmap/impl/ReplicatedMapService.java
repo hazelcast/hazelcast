@@ -89,7 +89,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private final AntiEntropyTask antiEntropyTask = new AntiEntropyTask();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -162,6 +162,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     /**
      * Gets the {@link LocalReplicatedMapStatsImpl} implementation of {@link LocalReplicatedMapStats} for the provided
      * {@param name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
+     *
      * @param name of the replicated map.
      * @return replicated map's local statistics object.
      */
@@ -172,6 +173,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     /**
      * Gets the replicated map's local statistics. If the statistics is disabled so method returns always the same object which is
      * empty and immutable.
+     *
      * @param name of the replicated map.
      * @return replicated map's local statistics object.
      */
@@ -214,7 +216,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         eventPublishingService.dispatchEvent(event, listener);
     }
 
-    @SuppressWarnings("deprecation")
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
         return config.findReplicatedMapConfig(name);
     }
@@ -237,7 +238,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     public Collection<ReplicatedRecordStore> getAllReplicatedRecordStores(String name) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        ArrayList<ReplicatedRecordStore> stores = new ArrayList<ReplicatedRecordStore>(partitionCount);
+        ArrayList<ReplicatedRecordStore> stores = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer partitionContainer = partitionContainers[i];
             if (partitionContainer == null) {
@@ -254,7 +255,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
         Collection<Member> members = clusterService.getMembers(memberSelector);
-        Collection<Address> addresses = new ArrayList<Address>(members.size());
+        Collection<Address> addresses = new ArrayList<>(members.size());
         for (Member member : members) {
             addresses.add(member.getAddress());
         }
@@ -336,7 +337,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public Map<String, LocalReplicatedMapStats> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
         Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<String, LocalReplicatedMapStats>(maps.size());
+                HashMap<>(maps.size());
         for (String map : maps) {
             mapStats.put(map, getLocalReplicatedMapStats(map));
         }
@@ -377,7 +378,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             if (nodeEngine.getLocalMember().isLiteMember() || clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
                 return;
             }
-            Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+            Collection<Address> addresses = new ArrayList<>(getMemberAddresses(DATA_MEMBER_SELECTOR));
             addresses.remove(nodeEngine.getThisAddress());
             for (int i = 0; i < partitionContainers.length; i++) {
                 Address thisAddress = nodeEngine.getThisAddress();

@@ -1415,16 +1415,6 @@ hazelcast:
   #     Data will be stored in serialized binary format. It is the default option.
   # - OBJECT:
   #     Data will be stored in deserialized form.
-  # * "concurrency-level":
-  #     Number of parallel mutexes to minimize contention on keys. Its default value is 32.
-  #     If higher contention is seen on writes to values inside the replicated map, this value can
-  #     be adjusted to the needs.
-  # * "replication-delay-millis":
-  #     Time in milliseconds after a put is executed before the value is replicated
-  # to other members. During this time, multiple puts can be operated and cached up to be sent
-  # out all at once after the delay. Default value is 100ms. If set to 0, no delay is used and
-  # all values are replicated one by one.
-  # * "replication-delay-millis":
   # * "async-fillup":
   #     Specifies whether the replicated map is available for reads before the initial
   # replication is completed. Its default value is true. If false, no Exception will be
@@ -1444,8 +1434,6 @@ hazelcast:
   replicatedmap:
     replicatedMap1:
       in-memory-format: BINARY
-      concurrency-level: 32
-      replication-delay-millis: 200
       async-fillup: true
       statistics-enabled: true
       entry-listeners:

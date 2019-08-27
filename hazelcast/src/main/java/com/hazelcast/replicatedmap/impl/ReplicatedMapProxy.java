@@ -51,7 +51,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -297,7 +296,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         int initialSize = getPutAllInitialSize(mapSize, partitionCount);
 
         try {
-            List<Future> futures = new ArrayList<Future>(partitionCount);
+            List<Future> futures = new ArrayList<>(partitionCount);
             ReplicatedMapEntries[] entrySetPerPartition = new ReplicatedMapEntries[partitionCount];
 
             // first we fill entrySetPerPartition
@@ -439,7 +438,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(comparator));
         }
-        Collections.sort(values, comparator);
+        values.sort(comparator);
         return values;
     }
 

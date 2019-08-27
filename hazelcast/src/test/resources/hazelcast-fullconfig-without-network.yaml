@@ -392,8 +392,6 @@ hazelcast:
   replicatedmap:
     dummy:
       in-memory-format: BINARY
-      concurrency-level: 12
-      replication-delay-millis: 12
       async-fillup: false
       statistics-enabled: false
       quorum-ref: quorumRuleWithThreeMembers

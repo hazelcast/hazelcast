@@ -1189,8 +1189,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(replicatedMapConfig);
         assertEquals("replicatedMap", replicatedMapConfig.getName());
         assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
-        assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
-        assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
         assertEquals("my-quorum", replicatedMapConfig.getQuorumName());

@@ -446,7 +446,6 @@ public class ConfigXmlGeneratorTest {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")
                 .setStatisticsEnabled(false)
-                .setConcurrencyLevel(128)
                 .setQuorumName("quorum")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -463,7 +462,6 @@ public class ConfigXmlGeneratorTest {
         MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
         assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("quorum", xmlReplicatedMapConfig.getQuorumName());
         assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());

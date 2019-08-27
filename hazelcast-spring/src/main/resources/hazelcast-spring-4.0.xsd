@@ -1397,33 +1397,6 @@
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
                                 <xs:attribute name="in-memory-format" type="in-memory-format" use="optional"
                                               default="OBJECT"/>
-                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional"
-                                              default="32">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Number of parallel mutexes to minimize contention on keys. The default value
-                                            is 32 which
-                                            is a good number for lots of applications. If higher contention is seen on
-                                            writes to values
-                                            inside of the replicated map this value can be adjusted to the needs.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="replication-delay-millis" type="parameterized-unsigned-int" use="optional"
-                                              default="100">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Defines a number of milliseconds after a put is executed before the value is
-                                            replicated
-                                            to other nodes. In this time multiple puts can be operated and are cached up
-                                            to be send
-                                            at once.
-                                            Default value is 100ms before a replication is operated, if set to 0 no
-                                            delay is used and
-                                            all values are replicated one by one.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                                 <xs:attribute name="async-fillup" type="parameterized-boolean" use="optional" default="true">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -3846,12 +3819,6 @@
         <xs:attribute name="duration-amount" type="xs:unsignedLong" use="optional"/>
         <xs:attribute name="time-unit" type="time-unit" use="optional"/>
     </xs:complexType>
-
-    <xs:simpleType name="concurrency-level">
-        <xs:restriction base="xs:int">
-            <xs:minInclusive value="0"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:simpleType name="topology-changed-strategy">
         <xs:restriction base="non-space-string">
