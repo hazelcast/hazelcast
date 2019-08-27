@@ -30,12 +30,12 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     static final String NULL_RETURNING_KEY = "nullReturningKey";
 
-    private Map<String, Record> records = new ConcurrentHashMap<>();
-    private AtomicInteger loadedEntryCount = new AtomicInteger();
-    private AtomicInteger loadAllCallCount = new AtomicInteger();
-    private AtomicInteger loadCallCount = new AtomicInteger();
-    private Set<String> loadUniqueKeys = ConcurrentHashMap.newKeySet();
-    private AtomicInteger loadKeysCallCount = new AtomicInteger();
+    private final Map<String, Record> records = new ConcurrentHashMap<>();
+    private final AtomicInteger loadedEntryCount = new AtomicInteger();
+    private final AtomicInteger loadAllCallCount = new AtomicInteger();
+    private final AtomicInteger loadCallCount = new AtomicInteger();
+    private final Set<String> loadUniqueKeys = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger loadKeysCallCount = new AtomicInteger();
 
     @Override
     public MetadataAwareValue<String> load(String key) {
