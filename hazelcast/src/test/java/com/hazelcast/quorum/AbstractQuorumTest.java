@@ -18,6 +18,9 @@ package com.hazelcast.quorum;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -38,22 +41,18 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.collection.ISet;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -99,13 +98,20 @@ public abstract class AbstractQuorumTest {
     protected static final String PN_COUNTER_NAME = "quorum" + randomString();
 
     protected static PartitionedCluster cluster;
+    protected static TestHazelcastInstanceFactory factory;
 
-    protected static void initTestEnvironment(Config config, TestHazelcastInstanceFactory factory) {
+    protected static void initTestEnvironment(Config config,
+                                              TestHazelcastInstanceFactory factory) {
+        if (AbstractQuorumTest.factory != null) {
+            throw new IllegalStateException("Already initialised!");
+        }
+        AbstractQuorumTest.factory = factory;
         initCluster(PartitionedCluster.createClusterConfig(config), factory, READ, WRITE, READ_WRITE);
     }
 
     protected static void shutdownTestEnvironment() {
-        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
+        factory = null;
         cluster = null;
     }
 

@@ -17,7 +17,6 @@
 package com.hazelcast.quorum.cache;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.config.Config;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
@@ -40,6 +39,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -60,7 +60,7 @@ public class CacheQuorumReadTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

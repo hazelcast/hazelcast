@@ -17,7 +17,6 @@
 package com.hazelcast.quorum.map;
 
 import com.hazelcast.aggregation.Aggregators;
-import com.hazelcast.config.Config;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.quorum.AbstractQuorumTest;
@@ -41,6 +40,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.HashSet;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
 
@@ -62,7 +62,7 @@ public class MapQuorumReadTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

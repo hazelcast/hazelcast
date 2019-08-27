@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.map;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
 import com.hazelcast.quorum.AbstractQuorumTest;
@@ -42,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -59,7 +59,7 @@ public class MapQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass
