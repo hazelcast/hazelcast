@@ -144,7 +144,7 @@ public class MasterContext {
         return jobRecord.getConfig();
     }
 
-    JobRecord jobRecord() {
+    public JobRecord jobRecord() {
         return jobRecord;
     }
 

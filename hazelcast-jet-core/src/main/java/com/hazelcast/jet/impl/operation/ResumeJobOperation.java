@@ -19,10 +19,12 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Resumes the execution of a suspended job.
  */
-public class ResumeJobOperation extends AbstractJobOperation {
+public class ResumeJobOperation extends AsyncJobOperation {
 
     public ResumeJobOperation() {
     }
@@ -32,9 +34,9 @@ public class ResumeJobOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() {
+    public CompletableFuture<Void> doRun() {
         JetService service = getService();
-        service.getJobCoordinationService().resumeJob(jobId());
+        return service.getJobCoordinationService().resumeJob(jobId());
     }
 
     @Override
