@@ -42,6 +42,7 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -151,9 +152,8 @@ class MasterSnapshotContext {
         String finalMapName = isExport ? exportedSnapshotMapName(snapshotMapName)
                 : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
         mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
-        logger.info(String.format("Starting snapshot %d for %s", newSnapshotId, mc.jobIdString())
-                + (isTerminal ? ", terminal" : "")
-                + (isExport ? ", exporting to '" + snapshotMapName + '\'' : ""));
+        logFine(logger, "Starting snapshot %d for %s, terminal: %s, writing to: %s",
+                newSnapshotId, mc.jobIdString(), isTerminal ? "yes" : "no", snapshotMapName);
 
         Function<ExecutionPlan, Operation> factory =
                 plan -> new SnapshotOperation(mc.jobId(), mc.executionId(), newSnapshotId, finalMapName, isTerminal);
@@ -225,12 +225,14 @@ class MasterSnapshotContext {
                 mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
                 mergedResult.getError());
         mc.writeJobExecutionRecord(false);
-        logger.info(String.format("Snapshot %d for %s completed with status %s in %dms, " +
-                        "%,d bytes, %,d keys in %,d chunks, stored in '%s'",
-                snapshotId, mc.jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
-                stats.duration(), stats.numBytes(),
-                stats.numKeys(), stats.numChunks(),
-                snapshotMapName));
+        if (logger.isFineEnabled()) {
+            logger.fine(String.format("Snapshot %d for %s completed with status %s in %dms, " +
+                            "%,d bytes, %,d keys in %,d chunks, stored in '%s'",
+                    snapshotId, mc.jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
+                    stats.duration(), stats.numBytes(),
+                    stats.numKeys(), stats.numChunks(),
+                    snapshotMapName));
+        }
         if (!wasExport) {
             mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
         }

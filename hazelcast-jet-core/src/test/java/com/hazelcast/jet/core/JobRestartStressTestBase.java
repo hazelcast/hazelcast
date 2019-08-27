@@ -50,6 +50,7 @@ public class JobRestartStressTestBase extends JetTestSupport {
         createJetMember(config);
     }
 
+    @SuppressWarnings("WeakerAccess") // has sub-classes in jet-enterprise
     protected void stressTest(Function<Tuple3<JetInstance, DAG, Job>, Job> action) throws Exception {
         JobRepository jobRepository = new JobRepository(instance1);
         TestProcessors.reset(2);
