@@ -29,4 +29,5 @@ public interface PhysicalRelVisitor {
     void onProject(ProjectPhysicalRel rel);
     void onFilter(FilterPhysicalRel rel);
     void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel);
+    void onCollocatedJoin(CollocatedJoinPhysicalRel rel);
 }

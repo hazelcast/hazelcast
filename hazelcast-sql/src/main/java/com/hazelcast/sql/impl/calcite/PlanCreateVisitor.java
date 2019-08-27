@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
@@ -285,6 +286,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(aggNode);
+    }
+
+    @Override
+    public void onCollocatedJoin(CollocatedJoinPhysicalRel rel) {
+        // TODO: Implement me.
     }
 
     private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {

@@ -39,7 +39,14 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
     }
 
     @Override
-    public Aggregate copy(RelTraitSet traitSet, RelNode input, boolean indicator, ImmutableBitSet groupSet, List<ImmutableBitSet> groupSets, List<AggregateCall> aggCalls) {
+    public Aggregate copy(
+        RelTraitSet traitSet,
+        RelNode input,
+        boolean indicator,
+        ImmutableBitSet groupSet,
+        List<ImmutableBitSet> groupSets,
+        List<AggregateCall> aggCalls
+    ) {
         return new AggregateLogicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls);
     }
 }

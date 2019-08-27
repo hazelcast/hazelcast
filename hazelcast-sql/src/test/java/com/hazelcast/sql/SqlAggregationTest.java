@@ -80,8 +80,13 @@ public class SqlAggregationTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = Long.MAX_VALUE)
-    public void testGroupBy1() throws Exception {
+    public void testGroupBy() throws Exception {
         doQuery("SELECT v1, SUM(v2), SUM(v3) FROM rmap GROUP BY v1");
+    }
+
+    @Test(timeout = Long.MAX_VALUE)
+    public void testJoin() throws Exception {
+        doQuery("SELECT p.__key, r.__key FROM map p INNER JOIN rmap r ON p.__key = r.__key");
     }
 
     private List<SqlRow> doQuery(String sql) {

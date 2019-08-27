@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rule.AggregateLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
+import com.hazelcast.sql.impl.calcite.logical.rule.JoinLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
@@ -243,6 +244,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             ProjectLogicalRule.INSTANCE,
             AggregateLogicalRule.INSTANCE,
             SortLogicalRule.INSTANCE,
+            JoinLogicalRule.INSTANCE,
 
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
@@ -273,6 +275,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             FilterPhysicalRule.INSTANCE,
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
+            CollocatedAggregatePhysicalRule.INSTANCE,
             CollocatedAggregatePhysicalRule.INSTANCE,
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
