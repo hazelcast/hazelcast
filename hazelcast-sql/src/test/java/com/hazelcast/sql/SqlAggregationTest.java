@@ -75,7 +75,7 @@ public class SqlAggregationTest extends HazelcastTestSupport {
 
     @Test(timeout = Long.MAX_VALUE)
     public void testGroupBy1() throws Exception {
-        doQuery("SELECT SUM(v2), SUM(v3) FROM map GROUP BY v1");
+        doQuery("SELECT SUM(v2), SUM(v3) FROM rmap GROUP BY v1");
     }
 
     @Test(timeout = Long.MAX_VALUE)

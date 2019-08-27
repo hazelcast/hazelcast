@@ -18,8 +18,11 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.exec.AggregateExec;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
+import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
@@ -27,13 +30,7 @@ import java.io.IOException;
 /**
  * Common parent for all aggregate accumulators.
  */
-public abstract class AggregateAccumulator<T> implements Expression<T> {
-    /** Accumulator: sum. */
-    public static final int TYPE_SUM = 1;
-
-    /** Accumulator: count. */
-    public static final int TYPE_COUNT = 2;
-
+public abstract class AggregateExpression<T> implements DataSerializable {
     /** Distinct flag. */
     protected boolean distinct;
 
@@ -41,28 +38,40 @@ public abstract class AggregateAccumulator<T> implements Expression<T> {
     protected transient DataType resType;
 
     /** Parent executor. */
-    protected transient AggregateExec parent;
+    protected transient LocalAggregateExec parent;
 
-    protected AggregateAccumulator() {
+    protected AggregateExpression() {
         // No-op.
     }
 
-    protected AggregateAccumulator(boolean distinct) {
+    protected AggregateExpression(boolean distinct) {
         this.distinct = distinct;
     }
 
-    public void setup(AggregateExec parent) {
+    public void setup(LocalAggregateExec parent) {
         this.parent = parent;
     }
 
     /**
-     * Get the final result and reset the state.
+     * Collect value of the aggregate.
      *
-     * @return Final result.
+     * @param ctx Query context.
+     * @param row Row.
+     * @param collector Collector.
      */
-    protected abstract T reduceAndReset();
+    public abstract void collect(QueryContext ctx, Row row, AggregateCollector collector);
 
-    @Override
+    /**
+     * Create new collector for the given expression.
+     *
+     * @param ctx Query context.
+     * @return Collector.
+     */
+    public abstract AggregateCollector newCollector(QueryContext ctx);
+
+    /**
+     * @return Return type of the expression.
+     */
     public DataType getType() {
         return DataType.notNullOrLate(resType);
     }

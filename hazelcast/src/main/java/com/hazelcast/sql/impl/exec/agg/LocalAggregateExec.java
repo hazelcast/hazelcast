@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.agg;
 
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.aggregate.AggregateAccumulator;
+import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Filter executor.
+ * Executor that performs local-only aggregation. If the input is already sorted properly on the group key, then
+ * only a single aggregated row is allocated at a time. Otherwise, the whole result set is consumed from the upstream.
  */
-public class AggregateExec extends AbstractUpstreamAwareExec {
-//    /** Accumulators. */
-//    private final List<AggregateAccumulator> accumulators;
-//
-//    /** Whether the input is sorted on group attributes. */
-//    private final boolean sorted;
-//
-//    /** Group key. */
-//    private final List<Integer> groupKey;
+public class LocalAggregateExec extends AbstractUpstreamAwareExec {
+    /** Number of keys in the group. */
+    private final int groupKeySize;
 
+    /** Accumulators. */
+    private final List<AggregateExpression> accumulators;
 
-    /** Filter. */
-    private final Expression<Boolean> filter;
+    /** Whether group key columns are already sorted. */
+    private final boolean sorted;
 
     /** Last upstream batch. */
     private RowBatch curBatch;
@@ -53,15 +55,36 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
     /** Current row. */
     private RowBatch curRow;
 
-    public AggregateExec(Exec upstream, Expression<Boolean> filter) {
+    /** Aggregated rows (for blocking mode). */
+    private Map<AggregateKey, List<AggregateCollector>> map;
+
+    /** Current single key (for non-blocking mode). */
+    private AggregateKey singleKey;
+
+    /** Current single values (for non-blocking mode). */
+    private List<AggregateCollector> singleVals;
+
+    public LocalAggregateExec(
+        Exec upstream,
+        int groupKeySize,
+        List<AggregateExpression> accumulators,
+        boolean sorted
+    ) {
         super(upstream);
 
-        this.filter = filter;
+        this.groupKeySize = groupKeySize;
+        this.accumulators = accumulators;
+        this.sorted = sorted;
+    }
+
+    @Override
+    protected void setup1(QueryContext ctx, DataWorker worker) {
+        super.setup1(ctx, worker);
     }
 
     @Override
     public IterationResult advance() {
-        // Cycle is needed because some of the rows will be filtered, so we do not how many upstream rows to consume.
+        // Fetch data in cycle because we do not know when to stop in advance.
         while (true) {
             if (curBatch == null) {
                 if (upstreamDone)
@@ -71,6 +94,7 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
                     case FETCHED_DONE:
                     case FETCHED:
                         RowBatch batch = upstreamCurrentBatch;
+
                         int batchRowCnt = batch.getRowCount();
 
                         if (batchRowCnt > 0) {
@@ -102,6 +126,7 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
      * @return Iteration result is succeeded, {@code null} if all rows from the given batch were filtered.
      */
     private IterationResult advanceCurrentBatch() {
+        // Handle empty batch.
         if (curBatch == null) {
             assert upstreamDone;
 
@@ -116,7 +141,14 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
         while (true) {
             Row candidateRow = curBatch0.getRow(curBatchPos0);
 
+            AggregateKey key = createKeyFromRow(candidateRow);
+
+
+
+
+
             boolean matches = filter.eval(ctx, candidateRow);
+
             boolean last = curBatchPos0 + 1 == curBatchRowCnt;
 
             // Nullify state if this was the last entry in the upstream batch.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
@@ -31,6 +32,10 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
+import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
+import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
@@ -42,7 +47,9 @@ import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlAggFunction;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -255,7 +262,47 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel) {
-        // TODO
+        PhysicalNode upstreamNode = pollSingleUpstream();
+
+        int groupKeySize = rel.getGroupSet().cardinality();
+        boolean sorted = rel.isSorted();
+
+        List<AggregateCall> aggCalls = rel.getAggCallList();
+
+        List<AggregateExpression> aggAccumulators = new ArrayList<>();
+
+        for (AggregateCall aggCall : aggCalls) {
+            AggregateExpression aggAccumulator = convertAggregateCall(aggCall);
+
+            aggAccumulators.add(aggAccumulator);
+        }
+
+        CollocatedAggregatePhysicalNode aggNode = new CollocatedAggregatePhysicalNode(
+            upstreamNode,
+            groupKeySize,
+            aggAccumulators,
+            sorted
+        );
+
+        pushUpstream(aggNode);
+    }
+
+    private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
+        SqlAggFunction aggFunc = aggCall.getAggregation();
+        List<Integer> argList = aggCall.getArgList();
+
+        boolean distinct = aggCall.isDistinct();
+
+        switch (aggFunc.getKind()) {
+            case SUM:
+                return new SumAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+
+            case COUNT:
+                return new CountAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported aggregate call: " + aggFunc.getName());
+        }
     }
 
     /**

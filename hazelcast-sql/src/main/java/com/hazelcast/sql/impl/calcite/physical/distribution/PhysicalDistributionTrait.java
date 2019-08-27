@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.physical.distribution;
 
+import com.hazelcast.sql.impl.calcite.HazelcastCalciteContext;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;
@@ -88,6 +89,14 @@ public class PhysicalDistributionTrait implements RelTrait {
                     case DISTRIBUTED:
                     case DISTRIBUTED_PARTITIONED:
                         if (targetType == PhysicalDistributionType.DISTRIBUTED) {
+                            res = true;
+
+                            break;
+                        }
+
+                    case REPLICATED:
+                        if (targetType == PhysicalDistributionType.SINGLETON &&
+                            HazelcastCalciteContext.get().isDataMember()) {
                             res = true;
 
                             break;

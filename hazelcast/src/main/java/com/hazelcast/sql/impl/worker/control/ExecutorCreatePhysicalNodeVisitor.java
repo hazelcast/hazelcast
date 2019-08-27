@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.spi.NodeEngine;
  import com.hazelcast.sql.impl.QueryFragment;
  import com.hazelcast.sql.impl.QueryId;
+ import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
  import com.hazelcast.sql.impl.exec.EmptyScanExec;
  import com.hazelcast.sql.impl.exec.Exec;
  import com.hazelcast.sql.impl.exec.FilterExec;
@@ -34,6 +35,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.mailbox.Outbox;
  import com.hazelcast.sql.impl.mailbox.SingleInbox;
  import com.hazelcast.sql.impl.mailbox.StripedInbox;
+ import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
  import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
  import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
  import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
@@ -277,6 +279,18 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onFilterNode(FilterPhysicalNode node) {
         Exec res = new FilterExec(stack.remove(0), node.getCondition());
+
+        stack.add(res);
+    }
+
+    @Override
+    public void onCollocatedAggregate(CollocatedAggregatePhysicalNode node) {
+        Exec res = new LocalAggregateExec(
+            stack.remove(0),
+            node.getGroupKeySize(),
+            node.getAccumulators(),
+            node.isSorted()
+        );
 
         stack.add(res);
     }

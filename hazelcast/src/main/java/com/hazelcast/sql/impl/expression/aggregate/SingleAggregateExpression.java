@@ -1,7 +1,8 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.exec.AggregateExec;
+import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
+import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -12,7 +13,7 @@ import java.util.Set;
 /**
  * Aggregate accumulator which uses only a single input.
  */
-public abstract class SingleAggregateAccumulator<T> extends AggregateAccumulator<T> {
+public abstract class SingleAggregateExpression<T> extends AggregateExpression<T> {
     /** Operand. */
     private Expression operand;
 
@@ -20,20 +21,21 @@ public abstract class SingleAggregateAccumulator<T> extends AggregateAccumulator
     protected transient DataType operandType;
 
     /** Distinct operands. */
+    // TODO: Move to collector! Expression should be stateless.
     private transient Set<Object> distinctSet;
 
-    public SingleAggregateAccumulator() {
+    public SingleAggregateExpression() {
         // No-op.
     }
 
-    public SingleAggregateAccumulator(boolean distinct, Expression operand) {
+    public SingleAggregateExpression(boolean distinct, Expression operand) {
         super(distinct);
 
         this.operand = operand;
     }
 
     @Override
-    public void setup(AggregateExec parent) {
+    public void setup(LocalAggregateExec parent) {
         super.setup(parent);
 
         if (distinct)
@@ -41,16 +43,16 @@ public abstract class SingleAggregateAccumulator<T> extends AggregateAccumulator
     }
 
     @Override
-    public T eval(QueryContext ctx, Row row) {
+    public void collect(QueryContext ctx, Row row, AggregateCollector collector) {
         Object operandValue = operand.eval(ctx, row);
 
         // Null operands are not processed.
         if (operandValue == null)
-            return null;
+            return;
 
         // Check for uniqueness.
         if (distinct && !isDistinct(operandValue))
-            return null;
+            return;
 
         // Resolve types.
         if (operandType == null) {
@@ -59,19 +61,8 @@ public abstract class SingleAggregateAccumulator<T> extends AggregateAccumulator
             resType = resolveReturnType(operandType);
         }
 
-        // Collect.
-        collect(operandValue);
-
-        // Accumulators do not return anything.
-        return null;
+        collector.collect(operandValue);
     }
-
-    /**
-     * Collect new value.
-     *
-     * @param value New value.
-     */
-    protected abstract void collect(Object value);
 
     /**
      * Resolve return type for the accumulator.
