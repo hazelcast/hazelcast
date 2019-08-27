@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
@@ -26,14 +25,13 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -56,9 +54,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
@@ -67,10 +70,6 @@ import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation
 import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -300,7 +299,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
+    public <E> InvocationFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         op.setServiceName(serviceName)
                 .setPartitionId(partitionId)
                 .setReplicaIndex(DEFAULT_REPLICA_INDEX);
@@ -312,7 +311,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
+    public <E> InvocationFuture<E> invokeOnPartition(Operation op) {
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();
@@ -387,8 +386,8 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     }
 
     @Override
-    public <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(String serviceName,
-                                                                              OperationFactory operationFactory) {
+    public <T> CompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(String serviceName,
+                                                                             OperationFactory operationFactory) {
 
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         InvokeOnPartitions invokeOnPartitions =
@@ -416,14 +415,14 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     }
 
     @Override
-    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+    public <T> CompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions) {
 
         return invokeOnPartitionsAsync(serviceName, operationFactory, getMemberPartitions(partitions));
     }
 
     @Override
-    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+    public <T> CompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName, OperationFactory operationFactory, Map<Address, List<Integer>> memberPartitions) {
 
         InvokeOnPartitions invokeOnPartitions =

@@ -31,9 +31,15 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.IterableUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
@@ -66,7 +72,6 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
@@ -86,11 +91,6 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.IterableUtil;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.MutableLong;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -112,20 +112,20 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
+import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
@@ -1231,29 +1231,24 @@ abstract class MapProxySupport<K, V>
                 entryProcessor);
 
         final SimpleCompletableFuture<Map<K, R>> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
-        ExecutionCallback<Map<Integer, Object>> partialCallback = new ExecutionCallback<Map<Integer, Object>>() {
-            @Override
-            public void onResponse(Map<Integer, Object> response) {
-                Map<K, Object> result = null;
-                try {
-                    result = createHashMap(response.size());
-                    for (Object object : response.values()) {
-                        MapEntries mapEntries = (MapEntries) object;
-                        mapEntries.putAllToMap(serializationService, result);
-                    }
-                } catch (Throwable e) {
-                    resultFuture.setResult(e);
-                }
-                resultFuture.setResult(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                resultFuture.setResult(t);
-            }
-        };
-
-        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys).andThen(partialCallback);
+        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys)
+                        .whenCompleteAsync((response, throwable) -> {
+                            if (throwable == null) {
+                                Map<K, Object> result = null;
+                                try {
+                                    result = createHashMap(response.size());
+                                    for (Object object : response.values()) {
+                                        MapEntries mapEntries = (MapEntries) object;
+                                        mapEntries.putAllToMap(serializationService, result);
+                                    }
+                                } catch (Throwable e) {
+                                    resultFuture.setResult(e);
+                                }
+                                resultFuture.setResult(result);
+                            } else {
+                                resultFuture.setResult(throwable);
+                            }
+                        });
         return resultFuture;
     }
 

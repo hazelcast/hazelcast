@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -29,12 +27,14 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 
 import java.security.Permission;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -79,16 +79,12 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
 
         final int thisPartitionId = partitionId;
         operation.setCallerUuid(endpoint.getUuid());
-        ICompletableFuture<Object> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        future.andThen(new ExecutionCallback<Object>() {
-            @Override
-            public void onResponse(Object response) {
-                MapRemoveAllMessageTask.this.onResponse(Collections.singletonMap(thisPartitionId, response));
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                MapRemoveAllMessageTask.this.onFailure(t);
+        InvocationFuture<Object> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        future.whenCompleteAsync((response, throwable) -> {
+            if (throwable == null) {
+                sendResponse(reduce(Collections.singletonMap(thisPartitionId, response)));
+            } else {
+                handleProcessingFailure(throwable);
             }
         });
     }

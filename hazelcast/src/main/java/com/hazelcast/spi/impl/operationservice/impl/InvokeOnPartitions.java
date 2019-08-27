@@ -17,13 +17,11 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -31,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratin
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -60,7 +59,7 @@ final class InvokeOnPartitions {
     private final ILogger logger;
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
-    private final SimpleCompletableFuture future;
+    private final CompletableFuture future;
     private boolean invoked;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
@@ -78,7 +77,7 @@ final class InvokeOnPartitions {
         }
         this.partitionResults = new AtomicReferenceArray<Object>(partitionCount);
         this.latch = new AtomicInteger(actualPartitionCount);
-        this.future = new SimpleCompletableFuture(operationService.nodeEngine);
+        this.future = new CompletableFuture();
     }
 
     /**
@@ -92,7 +91,7 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     @SuppressWarnings("unchecked")
-    <T> ICompletableFuture<Map<Integer, T>> invokeAsync() {
+    <T> CompletableFuture<Map<Integer, T>> invokeAsync() {
         assert !invoked : "already invoked";
         invoked = true;
         ensureNotCallingFromPartitionOperationThread();
@@ -108,7 +107,7 @@ final class InvokeOnPartitions {
 
     private void invokeOnAllPartitions() {
         if (memberPartitions.isEmpty()) {
-            future.setResult(Collections.EMPTY_MAP);
+            future.complete(Collections.EMPTY_MAP);
             return;
         }
         for (final Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
@@ -159,7 +158,7 @@ final class InvokeOnPartitions {
         for (int partitionId = 0; partitionId < partitionResults.length(); partitionId++) {
             Object partitionResult = partitionResults.get(partitionId);
             if (partitionResult instanceof Throwable) {
-                future.setResult(partitionResult);
+                future.completeExceptionally((Throwable) partitionResult);
                 return;
             }
 
@@ -169,7 +168,7 @@ final class InvokeOnPartitions {
                 result.put(partitionId, partitionResult == NULL_RESULT ? null : partitionResult);
             }
         }
-        future.setResult(result);
+        future.complete(result);
     }
 
     private class FirstAttemptExecutionCallback implements ExecutionCallback<Object> {
