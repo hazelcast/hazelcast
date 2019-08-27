@@ -28,12 +28,14 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapEntries;
@@ -71,10 +73,10 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -83,13 +85,11 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.collection.PartitionIdSet;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -105,6 +105,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -115,6 +116,7 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
@@ -127,6 +129,7 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
@@ -877,25 +880,29 @@ abstract class MapProxySupport<K, V>
     }
 
     /**
-     * This method will group all puts per partition and send a
-     * {@link com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory} per member.
-     * <p>
-     * If there are e.g. five keys for a single member, there will only be a single remote invocation
-     * instead of having five remote invocations.
+     * This method will group all entries per partition and send one operation
+     * per member. If there are e.g. five keys for a single member, even if
+     * they are from different partitions, there will only be a single remote
+     * invocation instead of five.
      * <p>
      * There is also an optional support for batching to send smaller packages.
      * Takes care about {@code null} checks for keys and values.
+     *
+     * @param future iff not-null, execute asynchronously by completing this future.
+     *               Batching is not supported in async mode
      */
-    @SuppressWarnings({"checkstyle:npathcomplexity", "UnnecessaryBoxing"})
-    @SuppressFBWarnings(value = "DM_NUMBER_CTOR", justification = "we need a shared counter object for each member per partition")
-    protected void putAllInternal(Map<?, ?> map) {
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    protected void putAllInternal(Map<? extends K, ? extends V> map, @Nullable SimpleCompletableFuture<Void> future) {
         try {
             int mapSize = map.size();
             if (mapSize == 0) {
+                if (future != null) {
+                    future.setResult(null);
+                }
                 return;
             }
 
-            boolean useBatching = isPutAllUseBatching(mapSize);
+            boolean useBatching = future == null && isPutAllUseBatching(mapSize);
             int partitionCount = partitionService.getPartitionCount();
             int initialSize = getPutAllInitialSize(useBatching, mapSize, partitionCount);
 
@@ -937,23 +944,50 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(partitions, entriesPerPartition);
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition)
+                                .get();
                     }
                 }
             }
 
             // invoke operations for entriesPerPartition
-            for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getValue(), entriesPerPartition);
-            }
+            AtomicInteger counter = new AtomicInteger(memberPartitionsMap.size());
+            SimpleCompletableFuture<Void> resultFuture =
+                    future != null ? future : new SimpleCompletableFuture<>(getNodeEngine());
+            ExecutionCallback<Void> callback = new ExecutionCallback<Void>() {
+                @Override
+                public void onResponse(Void response) {
+                    if (counter.decrementAndGet() == 0) {
+                        finalizePutAll(map);
+                        resultFuture.setResult(null);
+                    }
+                }
 
-            finalizePutAll(map);
-        } catch (Exception e) {
+                @Override
+                public void onFailure(Throwable t) {
+                    resultFuture.setResult(t);
+                    onResponse(null);
+                }
+            };
+            for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition)
+                        .andThen(callback);
+            }
+            // if executing in sync mode, block for the responses
+            if (future == null) {
+                resultFuture.get();
+            }
+        } catch (Throwable e) {
             throw rethrow(e);
         }
     }
 
-    private void invokePutAllOperation(List<Integer> memberPartitions, MapEntries[] entriesPerPartition) throws Exception {
+    @Nonnull
+    private ICompletableFuture<Void> invokePutAllOperation(
+            Address address,
+            List<Integer> memberPartitions,
+            MapEntries[] entriesPerPartition
+    ) {
         int size = memberPartitions.size();
         int[] partitions = new int[size];
         int index = 0;
@@ -963,7 +997,7 @@ abstract class MapProxySupport<K, V>
             }
         }
         if (index == 0) {
-            return;
+            return new SimpleCompletedFuture<>(null);
         }
         // trim partition array to real size
         if (index < size) {
@@ -982,17 +1016,33 @@ abstract class MapProxySupport<K, V>
             entriesPerPartition[partitionId] = null;
         }
         if (totalSize == 0) {
-            return;
+            return new SimpleCompletedFuture<>(null);
         }
 
-        invokePutAllOperationFactory(totalSize, partitions, entries);
-    }
-
-    protected void invokePutAllOperationFactory(long size, int[] partitions, MapEntries[] entries) throws Exception {
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
         long startTimeNanos = System.nanoTime();
-        operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);
-        localMapStats.incrementPutLatencyNanos(size, System.nanoTime() - startTimeNanos);
+        ICompletableFuture<Map<Integer, Object>> future =
+                operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
+        SimpleCompletableFuture<Void> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
+        long finalTotalSize = totalSize;
+        future.andThen(new ExecutionCallback<Map<Integer, Object>>() {
+            @Override
+            public void onResponse(Map<Integer, Object> response) {
+                putAllVisitSerializedKeys(entries);
+                localMapStats.incrementPutLatencyNanos(finalTotalSize, System.nanoTime() - startTimeNanos);
+                resultFuture.setResult(null);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                putAllVisitSerializedKeys(entries);
+                resultFuture.setResult(t);
+            }
+        });
+        return resultFuture;
+    }
+
+    protected void putAllVisitSerializedKeys(MapEntries[] entries) {
     }
 
     protected void finalizePutAll(Map<?, ?> map) {

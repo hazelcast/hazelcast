@@ -17,8 +17,8 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
@@ -67,6 +68,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -356,6 +358,29 @@ public class ClientMapTest extends HazelcastTestSupport {
         Future<String> future = map.removeAsync("key4");
         assertEquals("value4", future.get());
         assertEquals(9, map.size());
+    }
+
+    @Test
+    public void testPutAllEmpty() {
+        IMap<Integer, Integer> map = createMap();
+        map.putAll(emptyMap());
+    }
+
+    @Test
+    public void tstPutAllAsyncEmpty() {
+        IMap<Integer, Integer> map = createMap();
+        ((ClientMapProxy<Integer, Integer>) map).putAllAsync(emptyMap());
+    }
+
+    @Test
+    public void testAsyncPutAll()  {
+        IMap<String, String> map = createMap();
+        Map<String, String> tmpMap = new HashMap<>();
+        fillMap(tmpMap);
+        ICompletableFuture<Void> future = ((ClientMapProxy<String, String>) map).putAllAsync(tmpMap);
+        assertEqualsEventually(map::size, tmpMap.size());
+        assertTrue(future.isDone());
+        assertEquals(tmpMap, new HashMap<>(map));
     }
 
     @Test
@@ -980,7 +1005,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         return client.getMap(randomString());
     }
 
-    private void fillMap(IMap<String, String> map) {
+    private void fillMap(Map<String, String> map) {
         for (int i = 0; i < 10; i++) {
             map.put("key" + i, "value" + i);
         }
