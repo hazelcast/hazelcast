@@ -934,6 +934,11 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
+    @SuppressWarnings("unused") // used in jet-enterprise
+    NodeEngineImpl nodeEngine() {
+        return nodeEngine;
+    }
+
     CompletableFuture<Void> submitToCoordinatorThread(Runnable action) {
         return submitToCoordinatorThread(() -> {
             action.run();
