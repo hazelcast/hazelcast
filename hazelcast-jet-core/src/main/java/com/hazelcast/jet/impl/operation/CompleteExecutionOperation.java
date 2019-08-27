@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.metrics.MetricsCompressor;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -31,9 +33,9 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
@@ -70,8 +72,9 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         JobExecutionService jobExecutionService = service.getJobExecutionService();
-        JobMetricsRenderer metricsRenderer = new JobMetricsRenderer(executionId);
+        JobMetricsRenderer metricsRenderer = new JobMetricsRenderer(executionId, nodeEngine.getLocalMember(), logger);
         nodeEngine.getMetricsRegistry().render(metricsRenderer);
+        metricsRenderer.whenComplete();
         //TODO: we should probably filter out some of the metrics for completed jobs, not all make sense at this point
         //  take for example MetricNames.LAST_FORWARDED_WM_LATENCY
         response = metricsRenderer.getJobMetrics();
@@ -116,35 +119,59 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     private static class JobMetricsRenderer implements ProbeRenderer {
 
         private final Long executionIdOfInterest;
-        private final Map<String, Long> jobMetrics = new HashMap<>();
+        private final String namePrefix;
+        private final MetricsCompressor compressor;
+        private final ILogger logger;
 
-        JobMetricsRenderer(long executionId) {
+        private RawJobMetrics jobMetrics = RawJobMetrics.empty();
+
+        JobMetricsRenderer(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
+            Objects.requireNonNull(member, "member");
+            this.logger = Objects.requireNonNull(logger, "logger");
+
             this.executionIdOfInterest = executionId;
+            this.namePrefix = JobMetricsUtil.getMemberPrefix(member);
+            this.compressor = new MetricsCompressor();
         }
 
         @Override
         public void renderLong(String name, long value) {
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
             if (executionIdOfInterest.equals(executionId)) {
-                jobMetrics.put(name, value);
+                String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
+                compressor.addLong(prefixedName, value);
             }
         }
 
         @Override
         public void renderDouble(String name, double value) {
-            renderLong(name, JobMetricsUtil.toLongMetricValue(value));
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+            if (executionIdOfInterest.equals(executionId)) {
+                String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
+                compressor.addDouble(prefixedName, value);
+            }
         }
 
         @Override
         public void renderException(String name, Exception e) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+            if (executionIdOfInterest.equals(executionId)) {
+                logger.warning("Exception when rendering job metrics: " + e, e);
+            }
         }
 
         @Override
         public void renderNoValue(String name) {
+            throw new UnsupportedOperationException();
         }
 
+        public void whenComplete() {
+            jobMetrics = RawJobMetrics.of(compressor.getBlobAndReset());
+        }
+
+        @Nonnull
         RawJobMetrics getJobMetrics() {
-            return RawJobMetrics.of(System.currentTimeMillis(), jobMetrics);
+            return jobMetrics;
         }
     }
 }

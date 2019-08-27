@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.jet.Util;
 import com.hazelcast.nio.Address;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
-
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,11 +29,11 @@ public class JobMetricsUtilTest {
 
     @Test
     public void prefixNameWithMemberTags() throws Throwable {
-        MemberInfo member = new MemberInfo(
+        Member member = new MemberImpl(
                 new Address("127.0.0.1", 12345),
-                Util.idToString(1834287L),
-                Collections.emptyMap(),
-                MemberVersion.UNKNOWN
+                MemberVersion.UNKNOWN,
+                true,
+                Util.idToString(1834287L)
         );
 
         String memberPrefix = JobMetricsUtil.getMemberPrefix(member);

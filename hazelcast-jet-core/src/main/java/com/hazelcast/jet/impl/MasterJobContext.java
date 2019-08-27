@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -52,6 +51,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,6 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -120,7 +121,7 @@ public class MasterJobContext {
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
     @Nonnull
-    private volatile JobMetrics jobMetrics = JobMetrics.empty();
+    private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
 
     /**
      * A future (re)created when the job is started and completed when its
@@ -559,7 +560,7 @@ public class MasterJobContext {
                 logger.severe(mc.jobIdString() + ": some CompleteExecutionOperation invocations failed, execution " +
                         "resources might leak: " + responses);
             } else {
-                setJobMetrics(mergeMetrics(responses));
+                setJobMetrics(responses.stream().map(e -> (RawJobMetrics) e.getValue()).collect(Collectors.toList()));
             }
             onCompleteExecutionCompleted(error);
         }, null, true);
@@ -773,21 +774,21 @@ public class MasterJobContext {
         return false;
     }
 
-    JobMetrics jobMetrics() {
+    List<RawJobMetrics> jobMetrics() {
         return jobMetrics;
     }
 
-    private void setJobMetrics(JobMetrics jobMetrics) {
+    private void setJobMetrics(List<RawJobMetrics> jobMetrics) {
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
     }
 
-    void collectMetrics(CompletableFuture<JobMetrics> clientFuture) {
+    void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {
         if (mc.jobStatus() == RUNNING) {
             long jobId = mc.jobId();
             long executionId = mc.executionId();
             mc.invokeOnParticipants(
                     plan -> new GetLocalJobMetricsOperation(jobId, executionId),
-                    objects -> completeWithMergedMetrics(clientFuture, objects),
+                    objects -> completeWithMetrics(clientFuture, objects),
                     null,
                     false
             );
@@ -796,8 +797,8 @@ public class MasterJobContext {
         }
     }
 
-    private void completeWithMergedMetrics(CompletableFuture<JobMetrics> clientFuture,
-                                           Collection<Map.Entry<MemberInfo, Object>> metrics) {
+    private void completeWithMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture,
+                                     Collection<Map.Entry<MemberInfo, Object>> metrics) {
         if (metrics.stream().anyMatch(en -> en.getValue() instanceof ExecutionNotFoundException)) {
             // If any member threw ExecutionNotFoundException, we'll retry. This happens
             // when the job is starting or completing - master sees the job as
@@ -816,20 +817,8 @@ public class MasterJobContext {
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);
         } else {
-            JobMetrics jobMetrics = mergeMetrics(metrics);
-            clientFuture.complete(jobMetrics);
+            clientFuture.complete(metrics.stream().map(e -> (RawJobMetrics) e.getValue()).collect(Collectors.toList()));
         }
-    }
-
-    private JobMetrics mergeMetrics(Collection<Map.Entry<MemberInfo, Object>> metrics) {
-        JobMetrics mergedMetrics = JobMetrics.empty();
-        for (Map.Entry<MemberInfo, Object> memberEntry : metrics) {
-            String memberPrefix = JobMetricsUtil.getMemberPrefix(memberEntry.getKey());
-            RawJobMetrics rawJobMetrics = (RawJobMetrics) memberEntry.getValue();
-            rawJobMetrics = rawJobMetrics.prefixNames(memberPrefix);
-            mergedMetrics = mergedMetrics.merge(JobMetrics.of(rawJobMetrics.getTimestamp(), rawJobMetrics.getValues()));
-        }
-        return mergedMetrics;
     }
 
     // true -> failures, false -> success responses

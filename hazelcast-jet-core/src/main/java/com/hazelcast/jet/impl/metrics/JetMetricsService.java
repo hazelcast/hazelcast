@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.impl.JobExecutionService;
-import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.jet.impl.LiveOperationRegistry;
 import com.hazelcast.jet.impl.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
@@ -34,12 +33,9 @@ import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -61,7 +57,7 @@ public class JetMetricsService implements LiveOperationsTracker {
     private final LiveOperationRegistry liveOperationRegistry;
     // Holds futures for pending read metrics operations
     private final ConcurrentMap<CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>>, Long>
-        pendingReads = new ConcurrentHashMap<>();
+            pendingReads = new ConcurrentHashMap<>();
 
     /**
      * Ringbuffer which stores a bounded history of metrics. For each round of collection,
@@ -101,8 +97,8 @@ public class JetMetricsService implements LiveOperationsTracker {
         }
 
         logger.info("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
-            + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
-            + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
+                + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
+                + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
 
         ProbeRenderer renderer = new PublisherProbeRenderer();
         scheduledFuture = nodeEngine.getExecutionService().scheduleWithRepetition("MetricsPublisher", () -> {
@@ -179,63 +175,21 @@ public class JetMetricsService implements LiveOperationsTracker {
         List<MetricsPublisher> publishers = new ArrayList<>();
         if (config.isEnabled()) {
             int journalSize = Math.max(
-                1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
+                    1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
             );
             metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
-            ManagementCenterPublisher publisher = new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
-                (blob, ts) -> {
-                    metricsJournal.add(entry(ts, blob));
-                    pendingReads.forEach(this::tryCompleteRead);
-                }
-            );
-            publishers.add(publisher);
-
-            publishers.add(new InternalJobMetricsPublisher(jobExecutionService));
+            publishers.add(new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
+                    (blob, ts) -> {
+                        metricsJournal.add(entry(ts, blob));
+                        pendingReads.forEach(this::tryCompleteRead);
+                    }
+            ));
+            publishers.add(new JobMetricsPublisher(jobExecutionService, nodeEngine.getLocalMember()));
         }
         if (config.isJmxEnabled()) {
             publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
         }
         return publishers;
-    }
-
-    /**
-     * Internal publisher which notifies the {@link JobExecutionService} about
-     * the latest metric values.
-     */
-    public static class InternalJobMetricsPublisher implements MetricsPublisher {
-
-        private final JobExecutionService jobExecutionService;
-        private final Map<Long, Map<String, Long>> metrics = new HashMap<>();
-
-        InternalJobMetricsPublisher(@Nonnull JobExecutionService jobExecutionService) {
-            Objects.requireNonNull(jobExecutionService, "jobExecutionService");
-            this.jobExecutionService = jobExecutionService;
-        }
-
-        @Override
-        public void publishLong(String name, long value) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
-            if (executionId != null) {
-                metrics.computeIfAbsent(executionId, x -> new HashMap<>())
-                        .put(name, value);
-            }
-        }
-
-        @Override
-        public void publishDouble(String name, double value) {
-            publishLong(name, JobMetricsUtil.toLongMetricValue(value));
-        }
-
-        @Override
-        public void whenComplete() {
-            jobExecutionService.updateMetrics(System.currentTimeMillis(), metrics);
-            metrics.clear();
-        }
-
-        @Override
-        public String name() {
-            return "Internal Publisher";
-        }
     }
 
     /**

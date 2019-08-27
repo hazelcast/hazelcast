@@ -35,6 +35,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -328,12 +329,10 @@ public class JobExecutionService {
         }
     }
 
-    public void updateMetrics(long timestamp, Map<Long, Map<String, Long>> metrics) {
-        for (Entry<Long, Map<String, Long>> entry : metrics.entrySet()) {
-            ExecutionContext executionContext = executionContexts.get(entry.getKey());
-            if (executionContext != null) {
-                executionContext.setJobMetrics(RawJobMetrics.of(timestamp, entry.getValue()));
-            }
+    public void updateMetrics(@Nonnull Long executionId, RawJobMetrics metrics) {
+        ExecutionContext executionContext = executionContexts.get(executionId);
+        if (executionContext != null) {
+            executionContext.setJobMetrics(metrics);
         }
     }
 

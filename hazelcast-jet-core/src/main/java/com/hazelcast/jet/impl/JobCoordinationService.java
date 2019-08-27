@@ -33,8 +33,8 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
-import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
+import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -51,6 +51,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -391,8 +392,8 @@ public class JobCoordinationService {
      * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public CompletableFuture<JobMetrics> getJobMetrics(long jobId) {
-        CompletableFuture<JobMetrics> cf = new CompletableFuture<>();
+    public CompletableFuture<List<RawJobMetrics>> getJobMetrics(long jobId) {
+        CompletableFuture<List<RawJobMetrics>> cf = new CompletableFuture<>();
         submitToCoordinatorThread(
             () -> {
                 // check if there is a running job
@@ -403,17 +404,16 @@ public class JobCoordinationService {
                 }
 
                 // is job completed with metrics?
-                JobMetrics metrics = jobRepository.getJobMetrics(jobId);
+                List<RawJobMetrics> metrics = jobRepository.getJobMetrics(jobId);
                 if (metrics != null) {
                     cf.complete(metrics);
                     return;
                 }
 
-                // no metrics found, but job might still be completed without saving
-                // metrics enabled
+                // no metrics found, but job might be completed with disabled metrics saving
                 JobResult jobResult = jobRepository.getJobResult(jobId);
                 if (jobResult != null) {
-                    cf.complete(JobMetrics.empty());
+                    cf.complete(Collections.emptyList());
                     return;
                 }
 
@@ -421,7 +421,7 @@ public class JobCoordinationService {
                 // the job might not be yet discovered by job record scanning
                 JobExecutionRecord record = jobRepository.getJobExecutionRecord(jobId);
                 if (record != null) {
-                    cf.complete(JobMetrics.empty());
+                    cf.complete(Collections.emptyList());
                     return;
                 }
 
@@ -631,7 +631,7 @@ public class JobCoordinationService {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
             long jobId = masterContext.jobId();
-            JobMetrics jobMetrics =
+            List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
                             ? masterContext.jobContext().jobMetrics()
                             : null;

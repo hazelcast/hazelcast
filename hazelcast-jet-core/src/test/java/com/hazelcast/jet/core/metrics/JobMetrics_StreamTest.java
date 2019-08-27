@@ -38,7 +38,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static org.junit.Assert.assertEquals;
 
-
 public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     private static final String NOT_FILTER_OUT_PREFIX = "ok";

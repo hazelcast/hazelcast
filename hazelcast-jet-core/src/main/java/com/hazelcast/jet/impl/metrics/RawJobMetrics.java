@@ -16,63 +16,42 @@
 
 package com.hazelcast.jet.impl.metrics;
 
-import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Arrays;
 
 public final class RawJobMetrics implements IdentifiedDataSerializable {
 
     private long timestamp;
-    private Map<String, Long> values;
+    private byte[] blob;
 
     RawJobMetrics() { //needed for deserialization
     }
 
-    private RawJobMetrics(long timestamp, @Nonnull Map<String, Long> values) {
-        Objects.requireNonNull(values, "values");
+    private RawJobMetrics(long timestamp, byte[] blob) {
         this.timestamp = timestamp;
-        this.values = Collections.unmodifiableMap(values);
+        this.blob = blob;
     }
 
     public static RawJobMetrics empty() {
-        return RawJobMetrics.of(System.currentTimeMillis(), Collections.emptyMap());
+        return of(null);
     }
 
-    public static RawJobMetrics of(@Nonnull Map<String, Long> values) {
-        return RawJobMetrics.of(System.currentTimeMillis(), values);
-    }
-
-    public static RawJobMetrics of(long timestamp, @Nonnull Map<String, Long> values) {
-        return new RawJobMetrics(timestamp, values);
+    public static RawJobMetrics of(@Nullable byte[] blob) {
+        return new RawJobMetrics(System.currentTimeMillis(), blob);
     }
 
     public long getTimestamp() {
         return timestamp;
     }
 
-    public Map<String, Long> getValues() {
-        return values;
-    }
-
-    public RawJobMetrics prefixNames(String prefix) {
-        return new RawJobMetrics(
-                timestamp,
-                values.entrySet().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        e -> JobMetricsUtil.addPrefixToDescriptor(e.getKey(), prefix),
-                                        Map.Entry::getValue
-                                )
-                        )
-        );
+    @Nullable
+    public byte[] getBlob() {
+        return blob;
     }
 
     @Override
@@ -87,19 +66,19 @@ public final class RawJobMetrics implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(values);
+        out.writeByteArray(blob);
         out.writeLong(timestamp);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        values = in.readObject();
+        blob = in.readByteArray();
         timestamp = in.readLong();
     }
 
     @Override
     public int hashCode() {
-        return (int) timestamp * 31 + Objects.hashCode(values);
+        return (int) timestamp * 31 + Arrays.hashCode(blob);
     }
 
     @Override
@@ -113,12 +92,12 @@ public final class RawJobMetrics implements IdentifiedDataSerializable {
         }
 
         RawJobMetrics that;
-        return Objects.equals(values, (that = (RawJobMetrics) obj).values)
+        return Arrays.equals(blob, (that = (RawJobMetrics) obj).blob)
                 && this.timestamp == that.timestamp;
     }
 
     @Override
     public String toString() {
-        return values + " @ " + timestamp;
+        return Arrays.toString(blob) + " @ " + timestamp;
     }
 }

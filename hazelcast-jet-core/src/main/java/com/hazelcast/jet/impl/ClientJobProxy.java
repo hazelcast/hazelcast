@@ -49,6 +49,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
@@ -82,7 +83,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         try {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
-            return serializationService().toObject(parameters.response);
+            return toJobMetrics(serializationService().toObject(parameters.response));
         } catch (Exception e) {
             throw rethrow(e);
         }

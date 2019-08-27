@@ -78,6 +78,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
+        config.getMetricsConfig().setCollectionIntervalSeconds(1);
         Config hzConfig = config.getHazelcastConfig();
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count

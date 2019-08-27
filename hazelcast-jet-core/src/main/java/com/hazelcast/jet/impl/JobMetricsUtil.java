@@ -16,27 +16,32 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.metrics.MetricsUtil;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.impl.metrics.Metric;
+import com.hazelcast.jet.impl.metrics.MetricsCompressor;
+import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public final class JobMetricsUtil {
 
     private static final Pattern METRIC_KEY_EXEC_ID_PATTERN =
             Pattern.compile("\\[module=jet,job=[^,]+,exec=([^,]+),.*");
-
-    // required precision after the decimal point for doubles
-    private static final int CONVERSION_PRECISION = 4;
-    // coefficient for converting doubles to long
-    private static final double DOUBLE_TO_LONG = Math.pow(10, CONVERSION_PRECISION);
 
     private JobMetricsUtil() {
     }
@@ -52,17 +57,6 @@ public final class JobMetricsUtil {
         return Util.idFromString(m.group(1));
     }
 
-    public static long toLongMetricValue(double value) {
-        return Math.round(value * DOUBLE_TO_LONG);
-    }
-
-    public static Map<String, String> parseMetricDescriptor(@Nonnull String descriptor) {
-        Objects.requireNonNull(descriptor, "descriptor");
-
-        return MetricsUtil.parseMetricName(descriptor).stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
     public static String addPrefixToDescriptor(@Nonnull String descriptor, @Nonnull String prefix) {
         assert !prefix.isEmpty() : "Prefix is empty";
         assert prefix.endsWith(",") : "Prefix should end in a comma";
@@ -74,12 +68,37 @@ public final class JobMetricsUtil {
         return "[" + prefix + descriptor.substring(1);
     }
 
-    static String getMemberPrefix(@Nonnull MemberInfo memberInfo) {
-        Objects.requireNonNull(memberInfo, "memberInfo");
+    public static String getMemberPrefix(@Nonnull Member member) {
+        Objects.requireNonNull(member, "member");
 
-        String uuid = memberInfo.getUuid();
-        String address = memberInfo.getAddress().toString();
+        String uuid = member.getUuid();
+        String address = member.getAddress().toString();
         return MetricTags.MEMBER + "=" + MetricsUtil.escapeMetricNamePart(uuid) + "," +
                 MetricTags.ADDRESS + "=" + MetricsUtil.escapeMetricNamePart(address) + ",";
     }
+
+    static JobMetrics toJobMetrics(List<RawJobMetrics> rawJobMetrics) {
+        return JobMetrics.of(
+                rawJobMetrics.stream()
+                         .filter(r -> r.getBlob() != null)
+                         .flatMap(r -> metricStream(r).map(metric -> toMeasurement(r.getTimestamp(), metric)))
+        );
+    }
+
+    private static Stream<Metric> metricStream(RawJobMetrics r) {
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(
+                        MetricsCompressor.decompressingIterator(r.getBlob()),
+                        Spliterator.NONNULL
+                ), false
+        );
+    }
+
+    private static Measurement toMeasurement(long timestamp, Metric metric) {
+        String descriptor = metric.key();
+        Map<String, String> tags = MetricsUtil.parseMetricName(descriptor).stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return Measurement.of(metric.value(), timestamp, tags);
+    }
+
 }

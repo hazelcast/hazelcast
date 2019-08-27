@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -145,7 +146,7 @@ public class JobRepository {
     private final IMap<Long, JobRecord> jobRecords;
     private final IMap<Long, JobExecutionRecord> jobExecutionRecords;
     private final IMap<Long, JobResult> jobResults;
-    private final IMap<Long, JobMetrics> jobMetrics;
+    private final IMap<Long, List<RawJobMetrics>> jobMetrics;
     private final IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache;
     private final FlakeIdGenerator idGenerator;
 
@@ -281,7 +282,7 @@ public class JobRepository {
      */
     void completeJob(
             long jobId,
-            @Nullable JobMetrics terminalMetrics,
+            @Nullable List<RawJobMetrics> terminalMetrics,
             @Nonnull String coordinator,
             long completionTime,
             @Nullable Throwable error
@@ -297,7 +298,7 @@ public class JobRepository {
                 error != null ? error.toString() : null);
 
         if (terminalMetrics != null) {
-            JobMetrics prevMetrics = jobMetrics.put(jobId, terminalMetrics);
+            List<RawJobMetrics> prevMetrics = jobMetrics.put(jobId, terminalMetrics);
             if (prevMetrics != null) {
                 logger.warning("Overwriting job metrics for job " + jobResult);
             }
@@ -423,7 +424,7 @@ public class JobRepository {
     }
 
     @Nullable
-    public JobMetrics getJobMetrics(long jobId) {
+    public List<RawJobMetrics> getJobMetrics(long jobId) {
         return jobMetrics.get(jobId);
     }
 

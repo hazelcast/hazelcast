@@ -16,15 +16,14 @@
 
 package com.hazelcast.jet.core.metrics;
 
-import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,53 +65,27 @@ public final class JobMetrics implements IdentifiedDataSerializable {
      * Returns an empty {@link JobMetrics} object.
      */
     @Nonnull
+    @PrivateApi
     public static JobMetrics empty() {
         return EMPTY;
     }
 
     /**
-     * Builds a {@link JobMetrics} object based on one global timestamp and
-     * a key-value map of raw metrics data. The key {@code String}s in the
-     * map should be well formed metric descriptors and the values
-     * associated with them are {@code long} numbers.
-     * <p>
-     * Descriptors are {@code String}s structured as a comma-separated lists
-     * of tag=value pairs, enclosed in square brackets. An example of a
-     * valid metric descriptor would be:
-     * <pre>{@code
-     *      [module=jet,job=jobId,exec=execId,vertex=filter,proc=3,
-     *                                   unit=count,metric=queuesCapacity]
-     * }</pre>
+     * Builds a {@link JobMetrics} object based on a stream of
+     * {@link Measurement}s.
      */
     @Nonnull
-    public static JobMetrics of(long timestamp, @Nonnull Map<String, Long> metrics) {
-        Objects.requireNonNull(metrics, "metrics");
-        if (metrics.isEmpty()) {
-            return EMPTY;
-        }
-        return new JobMetrics(parseRawMetrics(timestamp, metrics));
-    }
-
-    private static Map<String, List<Measurement>> parseRawMetrics(long timestamp, Map<String, Long> raw) {
-        HashMap<String, List<Measurement>> parsed = new HashMap<>();
-        for (Entry<String, Long> rawEntry : raw.entrySet()) {
-            Long value = rawEntry.getValue();
-            if (value == null) {
-                throw new IllegalArgumentException("Value missing");
-            }
-
-            String descriptor = rawEntry.getKey();
-            Map<String, String> tags = JobMetricsUtil.parseMetricDescriptor(descriptor);
-
-            String metricName = tags.get(MetricTags.METRIC);
+    @PrivateApi
+    public static JobMetrics of(Stream<Measurement> measurements) {
+        Map<String, List<Measurement>> parsed = new HashMap<>();
+        measurements.forEach(m -> {
+            String metricName = m.getTag(MetricTags.METRIC);
             if (metricName == null || metricName.isEmpty()) {
                 throw new IllegalArgumentException("Metric name missing");
             }
-
-            List<Measurement> measurements = parsed.computeIfAbsent(metricName, mn -> new ArrayList<>());
-            measurements.add(Measurement.of(value, timestamp, tags));
-        }
-        return parsed;
+            parsed.computeIfAbsent(metricName, mn -> new ArrayList<>()).add(m);
+        });
+        return new JobMetrics(parsed);
     }
 
     /**
@@ -168,20 +141,6 @@ public final class JobMetrics implements IdentifiedDataSerializable {
                    .filter(predicate)
                    .collect(COLLECTOR);
         return new JobMetrics(filteredMetrics);
-    }
-
-    /**
-     * Merges the current instance of {@link JobMetrics} with the provided
-     * one and returns the result as a new {@link JobMetrics} object. The
-     * returned object will contain all metric names from both sources and
-     * a union of all their {@link Measurement}s.
-     */
-    @Nonnull
-    public JobMetrics merge(@Nonnull JobMetrics that) {
-        Objects.requireNonNull(that, "that");
-        Stream<Measurement> thisMeasurements = this.metrics.values().stream().flatMap(Collection::stream);
-        Stream<Measurement> thatMeasurements = that.metrics.values().stream().flatMap(Collection::stream);
-        return new JobMetrics(Stream.concat(thisMeasurements, thatMeasurements).collect(COLLECTOR));
     }
 
     @Override
