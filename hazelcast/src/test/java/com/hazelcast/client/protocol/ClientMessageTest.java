@@ -17,6 +17,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,7 +25,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ListIterator;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * ClientMessage Tests of Flyweight functionality
@@ -49,6 +55,25 @@ public class ClientMessageTest {
         assertEquals(cmEncode.getCorrelationId(), cmDecode.getCorrelationId());
         assertEquals(cmEncode.getPartitionId(), cmDecode.getPartitionId());
         assertEquals(cmEncode.getFrameLength(), cmDecode.getFrameLength());
+    }
+
+    @Test
+    public void testFastForwardToEndFrame_whenCustomTypeIsExtendedWithCustomTypeField() {
+        ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.add(BEGIN_FRAME);
+
+        // New custom-typed parameter with its own begin and end frames
+        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(new ClientMessage.Frame(new byte[0]));
+        clientMessage.add(END_FRAME);
+
+        clientMessage.add(END_FRAME);
+
+        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        // begin frame
+        iterator.next();
+        CodecUtil.fastForwardToEndFrame(iterator);
+        assertFalse(iterator.hasNext());
     }
 
     @Test

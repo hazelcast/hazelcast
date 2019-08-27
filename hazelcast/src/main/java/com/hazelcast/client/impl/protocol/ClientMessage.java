@@ -329,6 +329,10 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
             return ClientMessage.isFlagSet(flags, END_DATA_STRUCTURE_FLAG);
         }
 
+        public boolean isBeginFrame() {
+            return ClientMessage.isFlagSet(flags, BEGIN_DATA_STRUCTURE_FLAG);
+        }
+
         public boolean isNullFrame() {
             return ClientMessage.isFlagSet(flags, IS_NULL_FLAG);
         }
