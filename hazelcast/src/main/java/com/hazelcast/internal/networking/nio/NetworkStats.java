@@ -61,7 +61,7 @@ public class NetworkStats {
      * @param prefix          prefix for the probe names to be registered
      */
     void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
-        for (ProtocolType protocolType : ProtocolType.values()) {
+        for (final ProtocolType protocolType : ProtocolType.values()) {
             metricsRegistry.register(this, prefix + "." + protocolType.name(), ProbeLevel.INFO,
                     new LongProbeFunction<NetworkStats>() {
                         @Override
