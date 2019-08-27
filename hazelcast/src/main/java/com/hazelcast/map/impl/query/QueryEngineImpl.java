@@ -85,6 +85,7 @@ public class QueryEngineImpl implements QueryEngine {
         this.resultProcessorRegistry = mapServiceContext.getResultProcessorRegistry();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Result execute(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
@@ -234,17 +235,22 @@ public class QueryEngineImpl implements QueryEngine {
     private IterationType getRetrievalIterationType(Predicate predicate, IterationType iterationType) {
         IterationType retrievalIterationType = iterationType;
         if (predicate instanceof PagingPredicate) {
-            // in case of value, we also need to get the keys for sorting.
-            retrievalIterationType = (iterationType == IterationType.VALUE) ? IterationType.ENTRY : iterationType;
+            PagingPredicate pagingPredicate = (PagingPredicate) predicate;
+            if (pagingPredicate.getComparator() != null) {
+                // custom comparators may act on keys and values at the same time
+                retrievalIterationType = IterationType.ENTRY;
+            } else {
+                // in case of value, we also need to get the keys for sorting
+                retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
+            }
         }
         return retrievalIterationType;
     }
 
     private PartitionIdSet getLocalPartitionIds() {
         int partitionCount = partitionService.getPartitionCount();
-        PartitionIdSet partitionIds = new PartitionIdSet(partitionCount,
-                partitionService.getMemberPartitions(nodeEngine.getThisAddress()));
-        return partitionIds;
+        List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return new PartitionIdSet(partitionCount, memberPartitions);
     }
 
     private PartitionIdSet getAllPartitionIds() {
