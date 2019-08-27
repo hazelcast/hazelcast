@@ -16,13 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientConfigXmlGenerator;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -30,27 +23,13 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,25 +38,19 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
@@ -98,7 +71,8 @@ import static java.util.stream.IntStream.range;
 
 public final class Util {
 
-    private static final int BUFFER_SIZE = 1 << 15;
+    static final int BUFFER_SIZE = 1 << 15;
+
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
@@ -130,58 +104,6 @@ public final class Util {
     }
 
     /**
-     * This method will generate an {@link ExecutionCallback} which
-     * allows to asynchronously get notified when the execution is completed,
-     * either successfully or with error by calling {@code onResponse} on success
-     * and {@code onError} on error respectively.
-     *
-     * @param onResponse function to call when execution is completed successfully
-     * @param onError function to call when execution is completed with error
-     * @param <T> type of the response
-     * @return {@link ExecutionCallback}
-     */
-    public static <T> ExecutionCallback<T> callbackOf(@Nonnull Consumer<T> onResponse,
-                                                      @Nonnull Consumer<Throwable> onError) {
-        return new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T o) {
-                onResponse.accept(o);
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                onError.accept(throwable);
-            }
-        };
-    }
-
-    /**
-     * This method will generate an {@link ExecutionCallback} which allows to
-     * asynchronously get notified when the execution is completed, either
-     * successfully or with an error.
-     *
-     * @param callback BiConsumer to call when execution is completed. Only one
-     *                of the passed values will be non-null, except for the
-     *                case the normal result is null, in which case both values
-     *                will be null
-     * @param <T> type of the response
-     * @return {@link ExecutionCallback}
-     */
-    public static <T> ExecutionCallback<T> callbackOf(BiConsumer<T, Throwable> callback) {
-        return new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T o) {
-                callback.accept(o, null);
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                callback.accept(null, throwable);
-            }
-        };
-    }
-
-    /**
      * Atomically increment the {@code value} by {@code increment}, unless
      * the value after increment would exceed the {@code limit}.
      *
@@ -202,43 +124,12 @@ public final class Util {
         return true;
     }
 
-    public static boolean existsDistributedObject(NodeEngine nodeEngine, String serviceName, String objectName) {
-        return nodeEngine.getProxyService()
-                  .getDistributedObjectNames(serviceName)
-                  .contains(objectName);
-    }
-
     public interface RunnableExc<T extends Exception> {
         void run() throws T;
     }
 
-    @Nonnull
-    public static List<Address> getRemoteMembers(@Nonnull NodeEngine engine) {
-        final Member localMember = engine.getLocalMember();
-        return engine.getClusterService().getMembers().stream()
-                     .filter(m -> !m.equals(localMember))
-                     .map(Member::getAddress)
-                     .collect(toList());
-    }
-
-    public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
-        return ((NodeEngineImpl) engine).getNode().getEndpointManager().getConnection(memberAddr);
-    }
-
     public static JetInstance getJetInstance(NodeEngine nodeEngine) {
         return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
-    }
-
-    @Nonnull
-    public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine) {
-        return ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataOutput(BUFFER_SIZE);
-    }
-
-    @Nonnull
-    public static BufferObjectDataInput createObjectDataInput(@Nonnull NodeEngine engine, @Nonnull byte[] buf) {
-        return ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataInput(buf);
     }
 
     @Nonnull
@@ -250,23 +141,6 @@ public final class Util {
             }
             return out.toByteArray();
         }
-    }
-
-    public static void writeList(@Nonnull ObjectDataOutput output, @Nonnull List list) throws IOException {
-        output.writeInt(list.size());
-        for (Object o : list) {
-            output.writeObject(o);
-        }
-    }
-
-    @Nonnull
-    public static <E> List<E> readList(@Nonnull ObjectDataInput output) throws IOException {
-        int length = output.readInt();
-        List<E> list = new ArrayList<>(length);
-        for (int i = 0; i < length; i++) {
-            list.add(output.readObject());
-        }
-        return list;
     }
 
     public static long addClamped(long a, long b) {
@@ -299,7 +173,7 @@ public final class Util {
 
     // Hacker's Delight, 2nd Ed, 2-13: overflow has occurred iff operands have
     // opposite signs and result has opposite sign of left-hand operand
-    public static boolean diffHadOverflow(long a, long b, long diff) {
+    private static boolean diffHadOverflow(long a, long b, long diff) {
         return ((a ^ b) & (a ^ diff)) < 0;
     }
 
@@ -384,18 +258,6 @@ public final class Util {
         }
     }
 
-    /*
- * The random number generator used by this class to create random
- * based UUIDs. In a holder class to defer initialization until needed.
- */
-    private static class Holder {
-        static final SecureRandom NUMBER_GENERATOR = new SecureRandom();
-    }
-
-    public static long secureRandomNextLong() {
-        return Holder.NUMBER_GENERATOR.nextLong();
-    }
-
     public static String jobNameAndExecutionId(String jobName, long executionId) {
         return "job '" + jobName + "', execution " + idToString(executionId);
     }
@@ -404,7 +266,7 @@ public final class Util {
         return "job " + idToString(jobId) + ", execution " + idToString(executionId);
     }
 
-    public static ZonedDateTime toZonedDateTime(long timestamp) {
+    private static ZonedDateTime toZonedDateTime(long timestamp) {
         return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault());
     }
 
@@ -414,23 +276,6 @@ public final class Util {
 
     public static String toLocalTime(long timestamp) {
         return toZonedDateTime(timestamp).toLocalTime().format(LOCAL_TIME_FORMATTER);
-    }
-
-    public static <K, V> EntryProcessor<K, V> entryProcessor(
-            BiFunctionEx<? super K, ? super V, ? extends V> remappingFunction
-    ) {
-        return new AbstractEntryProcessor<K, V>() {
-            @Override
-            public Object process(Entry<K, V> entry) {
-                V newValue = remappingFunction.apply(entry.getKey(), entry.getValue());
-                entry.setValue(newValue);
-                return newValue;
-            }
-        };
-    }
-
-    public static boolean isMemberInstance(HazelcastInstance instance) {
-        return instance.getLocalEndpoint() instanceof Member;
     }
 
     /**
@@ -549,23 +394,7 @@ public final class Util {
         return value.replace("\"", "\\\"");
     }
 
-    /**
-     * Converts {@link ClientConfig} to xml representation using {@link
-     * ClientConfigXmlGenerator}.
-     */
-    public static String asXmlString(ClientConfig clientConfig) {
-        return clientConfig == null ? null : ClientConfigXmlGenerator.generate(clientConfig);
-    }
-
-    /**
-     * Converts client-config xml string to {@link ClientConfig} using {@link
-     * XmlClientConfigBuilder}.
-     */
-    public static ClientConfig asClientConfig(String xml) {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        return new XmlClientConfigBuilder(inputStream).build();
-    }
-
+    @SuppressWarnings("WeakerAccess")  // used in jet-enterprise
     public static CompletableFuture<Void> copyMapUsingJob(JetInstance instance, int queueSize,
                                                           String sourceMap, String targetMap) {
         DAG dag = new DAG();
@@ -599,54 +428,6 @@ public final class Util {
         return name + '-' + index;
     }
 
-    public static <T> PredicateEx<T> wrapImdgPredicate(com.hazelcast.util.function.Predicate<T> predicate) {
-        return new ImdgPredicateWrapper(predicate);
-    }
-
-    public static <T> com.hazelcast.util.function.Predicate<T> maybeUnwrapImdgPredicate(PredicateEx<T> predicate) {
-        if (predicate instanceof ImdgPredicateWrapper) {
-            return ((ImdgPredicateWrapper<T>) predicate).wrapped;
-        }
-        return predicate;
-    }
-
-    public static FunctionEx wrapImdgFunction(com.hazelcast.util.function.Function function) {
-        return new ImdgFunctionWrapper(function);
-    }
-
-    public static <T, R> com.hazelcast.util.function.Function<T, R> maybeUnwrapImdgFunction(FunctionEx<T, R> function) {
-        if (function instanceof ImdgFunctionWrapper) {
-            return ((ImdgFunctionWrapper<T, R>) function).wrapped;
-        }
-        return function;
-    }
-
-    private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {
-        private final com.hazelcast.util.function.Predicate<T> wrapped;
-
-        ImdgPredicateWrapper(Predicate<T> wrapped) {
-            this.wrapped = wrapped;
-        }
-
-        @Override
-        public boolean testEx(T t) {
-            return wrapped.test(t);
-        }
-    }
-
-    private static final class ImdgFunctionWrapper<T, R> implements FunctionEx<T, R> {
-        private final com.hazelcast.util.function.Function<T, R> wrapped;
-
-        ImdgFunctionWrapper(com.hazelcast.util.function.Function<T, R> wrapped) {
-            this.wrapped = wrapped;
-        }
-
-        @Override
-        public R applyEx(T t) {
-            return wrapped.apply(t);
-        }
-    }
-
     public static String sanitizeLoggerNamePart(String name) {
         return name.replace('.', '_');
     }
@@ -661,4 +442,5 @@ public final class Util {
             currentThread.setContextClassLoader(previousCl);
         }
     }
+
 }

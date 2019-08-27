@@ -27,7 +27,7 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
@@ -36,7 +36,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
-import static com.hazelcast.jet.impl.util.Util.asXmlString;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 public final class HazelcastReaders {
@@ -54,7 +54,7 @@ public final class HazelcastReaders {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
-        String clientXml = Util.asXmlString(clientConfig);
+        String clientXml = ImdgUtil.asXmlString(clientConfig);
         return new RemoteProcessorSupplier<>(clientXml, hzInstance -> new RemoteCacheReader(hzInstance, cacheName));
     }
 
@@ -81,7 +81,7 @@ public final class HazelcastReaders {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        String clientXml = Util.asXmlString(clientConfig);
+        String clientXml = ImdgUtil.asXmlString(clientConfig);
         return new RemoteProcessorSupplier<>(clientXml, hzInstance -> new RemoteMapReader(hzInstance, mapName));
     }
 
@@ -95,7 +95,7 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(predicate), "predicate");
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
-        String clientXml = Util.asXmlString(clientConfig);
+        String clientXml = ImdgUtil.asXmlString(clientConfig);
         return new RemoteProcessorSupplier<>(clientXml,
                 hzInstance -> new RemoteMapQueryReader(hzInstance, mapName, predicate, projection));
     }

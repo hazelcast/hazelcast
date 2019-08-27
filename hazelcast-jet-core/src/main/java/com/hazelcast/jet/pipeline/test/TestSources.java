@@ -81,7 +81,7 @@ public final class TestSources {
      * generated.
      * <p>
      * <b>Note:</b>
-     * There is no absolute guarantee that the actual number of emitted
+     * There is no absolute guarantee that the actual rate of emitted
      * items will match the supplied value. It is done on a best-effort
      * basis.
      *
@@ -105,7 +105,7 @@ public final class TestSources {
      * generated.
      * <p>
      * <b>Note:</b>
-     * There is no absolute guarantee that the actual number of emitted
+     * There is no absolute guarantee that the actual rate of emitted
      * items will match the supplied value. It is done on a best-effort
      * basis.
      *

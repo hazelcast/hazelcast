@@ -83,7 +83,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.asClientConfig;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;

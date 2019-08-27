@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.impl.util.Util.asClientConfig;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static java.util.stream.Collectors.toList;
 
 public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSupplier {
@@ -57,7 +57,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
 
     protected abstract Processor createProcessor(HazelcastInstance instance);
 
-    private boolean isLocal() {
+    boolean isLocal() {
         return clientXml == null;
     }
 

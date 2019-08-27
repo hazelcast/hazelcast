@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.Util.readList;
-import static com.hazelcast.jet.impl.util.Util.writeList;
+import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
+import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 
 public class VertexDef implements IdentifiedDataSerializable {
 

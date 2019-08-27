@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -46,7 +45,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
-import static com.hazelcast.jet.impl.util.Util.asXmlString;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -63,24 +62,7 @@ public final class HazelcastWriters {
         @Nonnull String name,
         @Nullable ClientConfig clientConfig
     ) {
-        boolean isLocal = clientConfig == null;
-        return ProcessorMetaSupplier.of(2, new WriterSupplier<ArrayMap<K, V>, Entry<K, V>>(
-            asXmlString(clientConfig),
-            ArrayMap::new,
-            ArrayMap::add,
-            instance -> {
-                IMap<K, V> map = instance.getMap(name);
-                return buffer -> {
-                    try {
-                        map.putAll(buffer);
-                    } catch (HazelcastInstanceNotActiveException e) {
-                        throw handleInstanceNotActive(e, isLocal);
-                    }
-                    buffer.clear();
-                };
-            },
-            ConsumerEx.noop()
-        ));
+        return ProcessorMetaSupplier.of(new WriteMapP.Supplier<>(asXmlString(clientConfig), name));
     }
 
     @Nonnull
@@ -199,13 +181,17 @@ public final class HazelcastWriters {
         }
     }
 
-    private static final class ArrayMap<K, V> extends AbstractMap<K, V> {
+    static final class ArrayMap<K, V> extends AbstractMap<K, V> {
 
         private final List<Entry<K, V>> entries;
         private final ArraySet set = new ArraySet();
 
         ArrayMap() {
             entries = new ArrayList<>();
+        }
+
+        ArrayMap(int size) {
+            entries = new ArrayList<>(size);
         }
 
         @Override @Nonnull
@@ -215,6 +201,11 @@ public final class HazelcastWriters {
 
         public void add(Map.Entry<K, V> entry) {
             entries.add(entry);
+        }
+
+        @Override
+        public V get(Object key) {
+            throw new UnsupportedOperationException();
         }
 
         private class ArraySet extends AbstractSet<Entry<K, V>> {

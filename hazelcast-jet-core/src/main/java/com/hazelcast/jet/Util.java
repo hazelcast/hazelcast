@@ -34,8 +34,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.jet.impl.util.Util.wrapImdgFunction;
-import static com.hazelcast.jet.impl.util.Util.wrapImdgPredicate;
+import static com.hazelcast.jet.impl.util.ImdgUtil.wrapImdgFunction;
+import static com.hazelcast.jet.impl.util.ImdgUtil.wrapImdgPredicate;
 
 /**
  * Miscellaneous utility methods useful in DAG building logic.

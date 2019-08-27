@@ -33,10 +33,10 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.Util.createObjectDataInput;
-import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
-import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
-import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
+import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
+import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
+import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
+import static com.hazelcast.jet.impl.util.ImdgUtil.getRemoteMembers;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;

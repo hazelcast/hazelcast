@@ -23,7 +23,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.impl.connector.HazelcastWriters.handleInstanceNotActive;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.Util.callbackOf;
+import static com.hazelcast.jet.impl.util.ImdgUtil.callbackOf;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
@@ -57,7 +57,7 @@ public abstract class AsyncHazelcastWriterP implements Processor {
     AsyncHazelcastWriterP(HazelcastInstance instance, int maxParallelAsyncOps) {
         this.instance = instance;
         this.maxParallelAsyncOps = maxParallelAsyncOps;
-        this.isLocal = Util.isMemberInstance(instance);
+        this.isLocal = ImdgUtil.isMemberInstance(instance);
     }
 
     @Override

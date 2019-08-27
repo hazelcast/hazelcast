@@ -16,21 +16,15 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.IMapJet;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.addClamped;
@@ -39,13 +33,12 @@ import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.roundRobinPart;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
-import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class UtilTest extends JetTestSupport {
+public class UtilTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -127,22 +120,6 @@ public class UtilTest extends JetTestSupport {
         assertEquals(4, gcd(4, 4, 4));
         assertEquals(4, gcd(4, 8, 12));
         assertEquals(1, gcd(4, 8, 13));
-    }
-
-    @Test
-    public void test_copyMap() throws Exception {
-        JetInstance[] instances = createJetMembers(2);
-
-        logger.info("Populating source map...");
-        IMapJet<Object, Object> srcMap = instances[0].getMap("src");
-        Map<Integer, Integer> testData = IntStream.range(0, 100_000).boxed().collect(toMap(e -> e, e -> e));
-        srcMap.putAll(testData);
-
-        logger.info("Copying using job...");
-        Util.copyMapUsingJob(instances[0], 128, srcMap.getName(), "target").get();
-        logger.info("Done copying");
-
-        assertEquals(testData, new HashMap<>(instances[0].getMap("target")));
     }
 
     @Test

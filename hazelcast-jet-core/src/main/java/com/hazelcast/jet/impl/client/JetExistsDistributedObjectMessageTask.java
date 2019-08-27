@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
@@ -34,7 +34,7 @@ public class JetExistsDistributedObjectMessageTask
 
     @Override
     protected void processMessage() {
-        sendResponse(Util.existsDistributedObject(nodeEngine, parameters.serviceName, parameters.objectName));
+        sendResponse(ImdgUtil.existsDistributedObject(nodeEngine, parameters.serviceName, parameters.objectName));
     }
 
     @Override

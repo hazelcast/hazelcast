@@ -192,7 +192,7 @@ public class JetClassLoader extends ClassLoader {
     public String toString() {
         return "JetClassLoader{" +
                 "jobName='" + jobName + '\'' +
-                ", jobId=" + jobId +
+                ", jobId=" + idToString(jobId) +
                 '}';
     }
 }

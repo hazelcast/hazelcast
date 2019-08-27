@@ -103,48 +103,48 @@ aren't packaged with Jet.
 
 {jet-javadoc}/pipeline/Sinks.html#map-java.lang.String-[Sink]
 |{jet-samples}/hazelcast-connectors/src/main/java/MapSourceAndSinks.java[Sample]
-|❌
+|image::cross-mark.png[X,0,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |Src ✅
 
-Sink ❌
+Sink image::cross-mark.png[X,,2.5ex]
 
 |<<connector-imdg, ICache>>
 |{jet-javadoc}/pipeline/Sources.html#cache-java.lang.String-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#cache-java.lang.String-[Sink]
 |{jet-samples}/hazelcast-connectors/src/main/java/CacheSourceAndSink.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |Src ✅
 
-Sink ❌
+Sink image::cross-mark.png[X,,2.5ex]
 
 |<<connector-imdg-external, IMap in another cluster>>
 |{jet-javadoc}/pipeline/Sources.html#remoteMap-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.query.Predicate-com.hazelcast.projection.Projection-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#remoteMap-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |{jet-samples}/hazelcast-connectors/src/main/java/RemoteMapSourceAndSink.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |<<connector-imdg-external, ICache in another cluster>>
 |{jet-javadoc}/pipeline/Sources.html#remoteCache-java.lang.String-com.hazelcast.client.config.ClientConfig-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#remoteCache-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |<<connector-imdg-journal, IMap's Event Journal>>
 |{jet-javadoc}/pipeline/Sources.html#mapJournal-java.lang.String-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
@@ -172,7 +172,7 @@ Sink ❌
 |✅
 |✅
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |Event Journal of ICache in another cluster
 |{jet-javadoc}/pipeline/Sources.html#remoteCacheJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
@@ -181,17 +181,17 @@ Sink ❌
 |✅
 |✅
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |<<imdg-list, IList>>
 |{jet-javadoc}/pipeline/Sources.html#list-java.lang.String-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#list-java.lang.String-[Sink]
 |{jet-samples}/hazelcast-connectors/src/main/java/ListSourceAndSink.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 |✅
 
 |IList in another cluster
@@ -199,20 +199,20 @@ Sink ❌
 
 {jet-javadoc}/pipeline/Sinks.html#remoteList-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |{jet-samples}/hazelcast-connectors/src/main/java/RemoteListSourceAndSink.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 
 |<<hdfs>>
 |{jet-javadoc}/hadoop/HdfsSources.html[Source]
 
 {jet-javadoc}/hadoop/HdfsSinks.html[Sink]
 |{jet-samples}/hadoop/src/main/java/HadoopWordCount.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |✅
 
@@ -225,31 +225,31 @@ Sink ❌
 |✅
 |✅
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |<<connector-files, Files>>
 |{jet-javadoc}/pipeline/Sources.html#files-java.lang.String-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#files-java.lang.String-[Sink]
 |{jet-samples}/file-io/src/main/java/AccessLogAnalyzer.java[Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |Local FS ✅
 
- Shared FS ❌
+ Shared FS image::cross-mark.png[X,,2.5ex]
 
 |<<connector-files, File Watcher>>
 |{jet-javadoc}/pipeline/Sources.html#fileWatcher-java.lang.String-[Source]
 |{jet-samples}/file-io/src/main/java/AccessLogStreamAnalyzer.java[Sample]
 |✅
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |Local FS ✅
 
- Shared FS ❌
+ Shared FS image::cross-mark.png[X,,2.5ex]
 
 |<<connector-files-avro, Avro>>
 |{jet-javadoc}/avro/AvroSources.html#files-java.lang.String-java.lang.Class-[Source]
@@ -258,13 +258,13 @@ Sink ❌
 |{jet-samples}/file-io/src/main/java/avro/AvroSource.java[Source Sample]
 
 {jet-samples}/file-io/src/main/java/avro/AvroSink.java[Sink Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |Local FS ✅
 
- Shared FS ❌
+ Shared FS image::cross-mark.png[X,,2.5ex]
 
 |<<connector-socket, TCP Socket>>
 |{jet-javadoc}/pipeline/Sources.html#socket-java.lang.String-int-java.nio.charset.Charset-[Source]
@@ -274,10 +274,10 @@ Sink ❌
 
 {jet-samples}/sockets/src/main/java/WriteTextSocket.java[Sink]
 |✅
-|❌
-|❌
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 
 |<<jms>>
 |{jet-javadoc}/pipeline/Sources.html#jmsQueue-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Queue Source]
@@ -289,16 +289,16 @@ Sink ❌
 
 {jet-samples}/jms/src/main/java/JmsTopicSample.java[Topic Sample]
 |✅
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 |Queue Source ✅
 
 Queue Sink ✅
 
-Topic Source ❌
+Topic Source image::cross-mark.png[X,,2.5ex]
 
 Topic Sink ✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |<<jdbc>>
 |{jet-javadoc}/pipeline/Sources.html#jdbc-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.ToResultSetFunction-com.hazelcast.jet.function.FunctionEx-[Source]
@@ -307,18 +307,18 @@ Topic Sink ✅
 |{jet-samples}/jdbc/src/main/java/JdbcSource.java[Source Sample]
 
 {jet-samples}/jdbc/src/main/java/JdbcSink.java[Sink Sample]
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 |✅
-|❌
+|image::cross-mark.png[X,,2.5ex]
 
 |Application Log
 |{jet-javadoc}/pipeline/Sinks.html#logger-com.hazelcast.jet.function.FunctionEx-[Sink]
 |{jet-samples}/enrichment/src/main/java/Enrichment.java[Sink]
 |N/A
 |N/A
-|❌
-|❌
+|image::cross-mark.png[X,,2.5ex]
+|image::cross-mark.png[X,,2.5ex]
 |✅
 |===
