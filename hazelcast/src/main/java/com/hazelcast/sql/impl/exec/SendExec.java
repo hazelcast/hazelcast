@@ -37,9 +37,6 @@ public class SendExec extends AbstractUpstreamAwareExec {
     /** Current position in the last upstream batch. */
     private int curBatchPos = -1;
 
-    /** Maximum position in the last upstream batch. */
-    private int curBatchRowCnt = -1;
-
     public SendExec(Exec upstream, Expression<Integer> partitionHasher, Outbox[] outboxes) {
         super(upstream);
 
@@ -62,14 +59,12 @@ public class SendExec extends AbstractUpstreamAwareExec {
                     case FETCHED_DONE:
                     case FETCHED:
                         RowBatch batch = upstreamCurrentBatch;
-                        int batchRowCnt = batch.getRowCount();
 
-                        if (batchRowCnt == 0)
+                        if (batch.getRowCount() == 0)
                             continue;
 
                         curBatch = batch;
                         curBatchPos = 0;
-                        curBatchRowCnt = batchRowCnt;
 
                         break;
 
@@ -94,7 +89,7 @@ public class SendExec extends AbstractUpstreamAwareExec {
     private boolean pushRows() {
         int curBatchPos0 = curBatchPos;
 
-        for (; curBatchPos0 < curBatchRowCnt; curBatchPos0++) {
+        for (; curBatchPos0 < curBatch.getRowCount(); curBatchPos0++) {
             Row row = curBatch.getRow(curBatchPos0);
 
             int part = partitionHasher.eval(ctx, row);
@@ -109,7 +104,6 @@ public class SendExec extends AbstractUpstreamAwareExec {
 
         curBatch = null;
         curBatchPos = -1;
-        curBatchRowCnt = -1;
 
         return true;
     }

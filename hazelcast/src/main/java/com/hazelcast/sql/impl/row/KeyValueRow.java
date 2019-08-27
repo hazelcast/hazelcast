@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.sql.impl.type.DataType;
-
 /**
  * Key-value row. Appears during iteration over a data stored in map or it's index.
  */
@@ -47,11 +45,6 @@ public class KeyValueRow implements Row {
 
     @Override
     public int getColumnCount() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DataType getType(int idx) {
         throw new UnsupportedOperationException();
     }
 

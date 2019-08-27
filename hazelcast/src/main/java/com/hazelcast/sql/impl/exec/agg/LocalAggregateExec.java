@@ -22,10 +22,14 @@ import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.data.DataWorker;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,11 +41,15 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     /** Number of keys in the group. */
     private final int groupKeySize;
 
-    /** Accumulators. */
-    private final List<AggregateExpression> accumulators;
+    /** Expressions. */
+    // TODO: Use array instead?
+    private final List<AggregateExpression> expressions;
 
     /** Whether group key columns are already sorted. */
     private final boolean sorted;
+
+    /** Number of columns. */
+    private final int columnCount;
 
     /** Last upstream batch. */
     private RowBatch curBatch;
@@ -49,37 +57,41 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     /** Current position in the last upstream batch. */
     private int curBatchPos = -1;
 
-    /** Maximum position in the last upstream batch. */
-    private int curBatchRowCnt = -1;
-
     /** Current row. */
     private RowBatch curRow;
 
     /** Aggregated rows (for blocking mode). */
+    // TODO: Use array for collectors?
     private Map<AggregateKey, List<AggregateCollector>> map;
 
     /** Current single key (for non-blocking mode). */
     private AggregateKey singleKey;
 
     /** Current single values (for non-blocking mode). */
-    private List<AggregateCollector> singleVals;
+    private List<AggregateCollector> singleValues;
 
     public LocalAggregateExec(
         Exec upstream,
         int groupKeySize,
-        List<AggregateExpression> accumulators,
+        List<AggregateExpression> expressions,
         boolean sorted
     ) {
         super(upstream);
 
         this.groupKeySize = groupKeySize;
-        this.accumulators = accumulators;
+        this.expressions = expressions;
         this.sorted = sorted;
+
+        columnCount = groupKeySize + expressions.size();
     }
 
     @Override
     protected void setup1(QueryContext ctx, DataWorker worker) {
-        super.setup1(ctx, worker);
+        for (AggregateExpression expression : expressions)
+            expression.setup(this);
+
+        if (!sorted)
+            map = new HashMap<>();
     }
 
     @Override
@@ -100,7 +112,6 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
                         if (batchRowCnt > 0) {
                             curBatch = batch;
                             curBatchPos = 0;
-                            curBatchRowCnt = batchRowCnt;
                         }
 
                         break;
@@ -121,16 +132,28 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     }
 
     /**
-     * Advance position in the current batch
+     * Advance position in the current batch.
      *
-     * @return Iteration result is succeeded, {@code null} if all rows from the given batch were filtered.
+     * @return Iteration result if succeeded, {@code null} if all rows from the given batch were consumed, and
+     *     more rows from the upstream is needed.
      */
     private IterationResult advanceCurrentBatch() {
         // Handle empty batch.
         if (curBatch == null) {
             assert upstreamDone;
 
-            curRow = EmptyRowBatch.INSTANCE;
+            if (sorted) {
+                if (singleKey == null)
+                    curRow = EmptyRowBatch.INSTANCE;
+                else {
+                    curRow = createRowFromKeyAndValues(singleKey, singleValues);
+
+                    singleKey = null;
+                    singleValues = null;
+                }
+            }
+            else
+                curRow = createRows();
 
             return IterationResult.FETCHED_DONE;
         }
@@ -138,55 +161,202 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
         RowBatch curBatch0 = curBatch;
         int curBatchPos0 = curBatchPos;
 
+        // We need to loop through current upstream batch because we do not know how many rows to consume in advance.
         while (true) {
-            Row candidateRow = curBatch0.getRow(curBatchPos0);
+            // Prepare key and value.
+            Row row = curBatch0.getRow(curBatchPos0);
 
-            AggregateKey key = createKeyFromRow(candidateRow);
+            AggregateKey key = getKey(row);
+            List<AggregateCollector> values = getValues(key);
 
+            // Accumulate.
+            for (int i = 0; i < expressions.size(); i++) {
+                AggregateExpression expression = expressions.get(i);
+                AggregateCollector value = values.get(i);
 
-
-
-
-            boolean matches = filter.eval(ctx, candidateRow);
-
-            boolean last = curBatchPos0 + 1 == curBatchRowCnt;
+                expression.collect(ctx, row, value);
+            }
 
             // Nullify state if this was the last entry in the upstream batch.
+            boolean last = curBatchPos0 + 1 == curBatch0.getRowCount();
+
             if (last) {
                 curBatch = null;
                 curBatchPos = -1;
-                curBatchRowCnt = -1;
             }
 
-            if (matches) {
-                curRow = candidateRow;
+            // Post-process.
+            if (sorted) {
+                // Special handling of non-blocking mode: if the key has changed, replace old key/value pair with the
+                // one, and return the old one as a row.
+                if (singleKey != null && singleKey != key) {
+                    curRow = createRowFromKeyAndValues(singleKey, singleValues);
 
-                if (last)
-                    // Return DONE if the upstream is not going to provide more data.
-                    return upstreamDone ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-                else {
-                    // Advance batch position for the next call.
-                    curBatchPos = curBatchPos0;
+                    singleKey = key;
+                    singleValues = values;
 
-                    // This is not the last entry.
-                    return IterationResult.FETCHED;
+                    if (last)
+                        return upstreamDone ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                    else {
+                        // Advance batch position for the next call.
+                        curBatchPos = curBatchPos0;
+
+                        // This is not the last entry.
+                        return IterationResult.FETCHED;
+                    }
                 }
             }
             else {
                 if (last) {
                     if (upstreamDone) {
-                        // Set empty batch for the downstream operator.
-                        curRow = EmptyRowBatch.INSTANCE;
+                        // All data is fetched. Prepare the final row batch.
+                        curRow = createRows();
 
                         return IterationResult.FETCHED_DONE;
                     }
                     else
-                        // Request next batch.
+                        // Request the next batch.
                         return null;
                 }
             }
 
             curBatchPos0++;
+        }
+    }
+
+    /**
+     * Create final rows.
+     *
+     * @return Final rows.
+     */
+    private RowBatch createRows() {
+        // TODO: Avoid copying from map to that row list. Initial map should be the row batch in the first place!
+        int cnt = map.size();
+
+        if (cnt == 0)
+            return EmptyRowBatch.INSTANCE;
+        else {
+            List<Row> rows = new ArrayList<>(map.size());
+
+            for (Map.Entry<AggregateKey, List<AggregateCollector>> entry : map.entrySet()) {
+                Row row = createRowFromKeyAndValues(entry.getKey(), entry.getValue());
+
+                rows.add(row);
+            }
+
+            map.clear();
+
+            return new ListRowBatch(rows);
+        }
+    }
+
+    /**
+     * Create the final row from group key and associated values.
+     *
+     * @param key Group key.
+     * @param values Values.
+     * @return Values.
+     */
+    private HeapRow createRowFromKeyAndValues(AggregateKey key, List<AggregateCollector> values) {
+        HeapRow res = new HeapRow(columnCount);
+
+        int idx = 0;
+
+        for (int i = 0; i < key.getCount(); i++)
+            res.set(idx++, key.get(i));
+
+        for (AggregateCollector value : values)
+            res.set(idx++, value.reduce());
+
+        return res;
+    }
+
+    /**
+     * Get values (collectors) for the given key.
+     *
+     * @param key Key.
+     * @return Values.
+     */
+    private List<AggregateCollector> getValues(AggregateKey key) {
+        if (sorted) {
+            if (key == singleKey)
+                return singleValues;
+            else {
+                return createValues();
+            }
+        }
+        else {
+            List<AggregateCollector> res = map.get(key);
+
+            if (res == null) {
+                res = createValues();
+
+                map.put(key, res);
+            }
+
+            return res;
+        }
+    }
+
+    /**
+     * Create new values (aggregators).
+     *
+     * @return Values.
+     */
+    private List<AggregateCollector> createValues() {
+        int cnt = expressions.size();
+
+        List<AggregateCollector> res = new ArrayList<>(cnt);
+
+        for (AggregateExpression expression : expressions)
+            res.add(expression.newCollector(ctx));
+
+        return res;
+    }
+
+    /**
+     * Get aggregation key for the given row.
+     *
+     * @param row Row.
+     * @return Aggregation key.
+     */
+    private AggregateKey getKey(Row row) {
+        if (sorted) {
+            // In the sorted mode we perform comparison before allocating a new row. If the incoming row matches
+            // our expectations, we return already existing group key. Future comparison would be performed by
+            // referential equality only.
+            if (singleKey != null && singleKey.matches(row))
+                return singleKey;
+            else
+                return createKey(row);
+        }
+        else {
+            // Otherwise we just create a new row which will be used to lookup aggregate values.
+            return createKey(row);
+        }
+    }
+
+    /**
+     * Create the new key from the row.
+     *
+     * @param row Row.
+     * @return Key.
+     */
+    private AggregateKey createKey(Row row) {
+        switch (groupKeySize) {
+            case 1:
+                return AggregateKey.single(row.getColumn(0));
+
+            case 2:
+                return AggregateKey.dual(row.getColumn(0), row.getColumn(1));
+
+            default:
+                Object[] items = new Object[groupKeySize];
+
+                for (int i = 0; i < groupKeySize; i++)
+                    items[i] = row.getColumn(i);
+
+                return AggregateKey.multiple(items);
         }
     }
 

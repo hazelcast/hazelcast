@@ -34,9 +34,6 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     /** Current position in the last upstream batch. */
     private int curBatchPos = -1;
 
-    /** Maximum position in the last upstream batch. */
-    private int curBatchRowCnt = -1;
-
     /** Current row. */
     private RowBatch curRow;
 
@@ -58,12 +55,10 @@ public class FilterExec extends AbstractUpstreamAwareExec {
                     case FETCHED_DONE:
                     case FETCHED:
                         RowBatch batch = upstreamCurrentBatch;
-                        int batchRowCnt = batch.getRowCount();
 
-                        if (batchRowCnt > 0) {
+                        if (batch.getRowCount() > 0) {
                             curBatch = batch;
                             curBatchPos = 0;
-                            curBatchRowCnt = batchRowCnt;
                         }
 
                         break;
@@ -86,7 +81,8 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     /**
      * Advance position in the current batch
      *
-     * @return Iteration result is succeeded, {@code null} if all rows from the given batch were filtered.
+     * @return Iteration result if succeeded, {@code null} if all rows from the given batch were filtered and more
+     *    data from the upstream is required.
      */
     private IterationResult advanceCurrentBatch() {
         if (curBatch == null) {
@@ -104,13 +100,12 @@ public class FilterExec extends AbstractUpstreamAwareExec {
             Row candidateRow = curBatch0.getRow(curBatchPos0);
 
             boolean matches = filter.eval(ctx, candidateRow);
-            boolean last = curBatchPos0 + 1 == curBatchRowCnt;
+            boolean last = curBatchPos0 + 1 == curBatch0.getRowCount();
 
             // Nullify state if this was the last entry in the upstream batch.
             if (last) {
                 curBatch = null;
                 curBatchPos = -1;
-                curBatchRowCnt = -1;
             }
 
             if (matches) {
@@ -136,7 +131,7 @@ public class FilterExec extends AbstractUpstreamAwareExec {
                         return IterationResult.FETCHED_DONE;
                     }
                     else
-                        // Request next batch.
+                        // Request the next batch.
                         return null;
                 }
             }

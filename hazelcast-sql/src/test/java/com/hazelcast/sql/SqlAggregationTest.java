@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -47,6 +48,11 @@ public class SqlAggregationTest extends HazelcastTestSupport {
 
         Config cfg = new Config();
 
+        ReplicatedMapConfig rmapCfg = new ReplicatedMapConfig("rmap");
+        rmapCfg.setAsyncFillup(false);
+
+        cfg.addReplicatedMapConfig(rmapCfg);
+
         member = nodeFactory.newHazelcastInstance(cfg);
         nodeFactory.newHazelcastInstance(cfg);
 
@@ -58,7 +64,7 @@ public class SqlAggregationTest extends HazelcastTestSupport {
         ReplicatedMap<Long, Value> replicatedMap = member.getReplicatedMap("rmap");
 
         for (int i = 0; i < 1000; i++)
-            replicatedMap.put((long)i, new Value(i % 100, i % 10, i ));
+            replicatedMap.put((long)i, new Value(i % 10, i % 100, i ));
     }
 
     @After
@@ -75,39 +81,27 @@ public class SqlAggregationTest extends HazelcastTestSupport {
 
     @Test(timeout = Long.MAX_VALUE)
     public void testGroupBy1() throws Exception {
-        doQuery("SELECT SUM(v2), SUM(v3) FROM rmap GROUP BY v1");
-    }
-
-    @Test(timeout = Long.MAX_VALUE)
-    public void testGroupBy2() throws Exception {
-        doQuery("SELECT v1, v2, SUM(v3) FROM map GROUP BY v1, v2");
-    }
-
-    @Test(timeout = Long.MAX_VALUE)
-    public void testGroupByHaving() throws Exception {
-        doQuery("SELECT SUM(v1) FROM map GROUP BY v2 HAVING SUM(v3) = 10");
-    }
-
-    @Test(timeout = Long.MAX_VALUE)
-    public void testGroupByGroupingSet() throws Exception {
-        doQuery("SELECT v1, v2, SUM(v3) + SUM(v3) FROM map GROUP BY GROUPING SETS ((v1, v2), (v2))");
-    }
-
-    // TODO: Remove
-    @Test(timeout = Long.MAX_VALUE)
-    public void testSort() throws Exception {
-        doQuery("SELECT v2 * 2, v2 FROM rmap");
+        doQuery("SELECT v1, SUM(v2), SUM(v3) FROM rmap GROUP BY v1");
     }
 
     private List<SqlRow> doQuery(String sql) {
         SqlCursor cursor = member.getSqlService().query(sql);
 
-        List<SqlRow> res = new ArrayList<>();
+        List<SqlRow> rows = new ArrayList<>();
 
         for (SqlRow row : cursor)
-            res.add(row);
+            rows.add(row);
 
-        return res;
+        print(rows);
+
+        return rows;
+    }
+
+    private void print(List<SqlRow> rows) {
+        System.out.println(">>> RESULT:");
+
+        for (SqlRow row : rows)
+            System.out.println(">>>\t" + row);
     }
 
     private static class Value implements Serializable {

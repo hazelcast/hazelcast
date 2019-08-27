@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -31,17 +30,12 @@ public class HeapRow implements Row, DataSerializable {
     /** Row values. */
     private Object[] values;
 
-    /** Data types. */
-    private DataType[] types;
-
     public HeapRow() {
         // No-op.
     }
 
-    public HeapRow(int valCnt, DataType[] types) {
-        this.values = new Object[valCnt];
-
-        this.types = types;
+    public HeapRow(int length) {
+        this.values = new Object[length];
     }
 
     @Override
@@ -54,23 +48,7 @@ public class HeapRow implements Row, DataSerializable {
         return values.length;
     }
 
-    @Override
-    public DataType getType(int idx) {
-        DataType res = types[idx];
-
-        return DataType.notNullOrLate(res);
-    }
-
     public void set(int idx, Object val) {
-        if (val != null) {
-            DataType type = types[idx];
-
-            if (type == null)
-                types[idx] = DataType.resolveType(val);
-            else
-                type.ensureSame(val);
-        }
-
         values[idx] = val;
     }
 

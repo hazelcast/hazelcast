@@ -21,9 +21,10 @@ public abstract class AggregateCollector {
         collect0(value);
     }
 
-    public abstract void collect0(Object value);
+    protected abstract void collect0(Object value);
 
     public abstract Object reduce();
 
+    // TODO: Not needed on the general interface level.
     public abstract void reset();
 }

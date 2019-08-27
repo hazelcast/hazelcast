@@ -35,9 +35,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
     /** Current row batch. */
     private RowBatch curBatch;
 
-    /** Size of the batch. */
-    private int curBatchSize = -1;
-
     /** Position within a batch. */
     private int curBatchPos = -1;
 
@@ -68,13 +65,11 @@ public class RootExec extends AbstractUpstreamAwareExec {
                     case FETCHED_DONE:
                     case FETCHED:
                         RowBatch batch = upstreamCurrentBatch;
-                        int batchSize = batch.getRowCount();
 
-                        if (batchSize == 0)
+                        if (batch.getRowCount() == 0)
                             continue;
 
                         curBatch = batch;
-                        curBatchSize = batchSize;
                         curBatchPos = 0;
 
                         break;
@@ -107,10 +102,9 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
         curBatchPos += consumed;
 
-        if (curBatchPos == curBatchSize) {
+        if (curBatchPos == curBatch.getRowCount()) {
             curBatch = null;
             curBatchPos = -1;
-            curBatchSize = -1;
 
             return true;
         }

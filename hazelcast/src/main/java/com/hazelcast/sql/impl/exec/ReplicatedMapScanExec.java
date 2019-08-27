@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 import java.util.ArrayList;
@@ -52,9 +51,6 @@ public class ReplicatedMapScanExec extends AbstractExec implements KeyValueRowEx
 
     /** Projection expressions. */
     private final List<Expression> projections;
-
-    /** Data types. */
-    private final DataType[] types;
 
     /** Filter. */
     private final Expression<Boolean> filter;
@@ -81,8 +77,6 @@ public class ReplicatedMapScanExec extends AbstractExec implements KeyValueRowEx
         this.mapName = mapName;
         this.projections = expressions;
         this.filter = filter;
-
-        types = new DataType[projections.size()];
     }
 
     @Override
@@ -122,7 +116,7 @@ public class ReplicatedMapScanExec extends AbstractExec implements KeyValueRowEx
                         continue;
 
                     // Create final row.
-                    HeapRow row = new HeapRow(projections.size(), types);
+                    HeapRow row = new HeapRow(projections.size());
 
                     for (int j = 0; j < projections.size(); j++) {
                         Object projectionRes = projections.get(j).eval(ctx, keyValueRow);

@@ -39,7 +39,7 @@ public class CountAggregateExpression extends SingleAggregateExpression<Long> {
         }
 
         @Override
-        public void collect0(Object value) {
+        protected void collect0(Object value) {
             res++;
         }
 

@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.collection.PartitionIdSet;
@@ -60,9 +59,6 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
 
     /** Projection expressions. */
     private final List<Expression> projections;
-
-    /** Data types. */
-    private final DataType[] types;
 
     /** Filter. */
     private final Expression<Boolean> filter;
@@ -93,8 +89,6 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
         this.parts = parts;
         this.projections = expressions;
         this.filter = filter;
-
-        types = new DataType[projections.size()];
     }
 
     @Override
@@ -143,7 +137,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
                         continue;
 
                     // Create final row.
-                    HeapRow row = new HeapRow(projections.size(), types);
+                    HeapRow row = new HeapRow(projections.size());
 
                     for (int j = 0; j < projections.size(); j++) {
                         Object projectionRes = projections.get(j).eval(ctx, keyValueRow);

@@ -63,7 +63,7 @@ public class SumAggregateExpression<T> extends SingleAggregateExpression<T> {
         }
 
         @Override
-        public void collect0(Object value) {
+        protected void collect0(Object value) {
             if (res == null)
                 reset();
 

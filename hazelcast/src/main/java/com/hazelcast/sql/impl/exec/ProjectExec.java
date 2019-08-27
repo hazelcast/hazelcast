@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.List;
 
@@ -32,17 +31,11 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Projection expressions. */
     private final List<Expression> projections;
 
-    /** Data types. */
-    private final DataType[] types;
-
     /** Last upstream batch. */
     private RowBatch curBatch;
 
     /** Current position in the last upstream batch. */
     private int curBatchPos = -1;
-
-    /** Maximum position in the last upstream batch. */
-    private int curBatchRowCnt = -1;
 
     /** Current row. */
     private RowBatch curRow;
@@ -51,8 +44,6 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
         super(upstream);
 
         this.projections = projections;
-
-        types = new DataType[projections.size()];
     }
 
     @Override
@@ -65,12 +56,10 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
                 case FETCHED_DONE:
                 case FETCHED:
                     RowBatch batch = upstreamCurrentBatch;
-                    int batchRowCnt = batch.getRowCount();
 
-                    if (batchRowCnt > 0) {
+                    if (batch.getRowCount() > 0) {
                         curBatch = batch;
                         curBatchPos = 0;
-                        curBatchRowCnt = batchRowCnt;
                     }
 
                     break;
@@ -104,7 +93,7 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
         Row upstreamRow = curBatch.getRow(curBatchPos);
 
-        HeapRow curRow0 = new HeapRow(projections.size(), types);
+        HeapRow curRow0 = new HeapRow(projections.size());
 
         int colIdx = 0;
 
@@ -116,10 +105,9 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
         curRow = curRow0;
 
-        if (++curBatchPos == curBatchRowCnt) {
+        if (++curBatchPos == curBatch.getRowCount()) {
             curBatch = null;
             curBatchPos = -1;
-            curBatchRowCnt = -1;
 
             if (upstreamDone)
                 return IterationResult.FETCHED_DONE;
