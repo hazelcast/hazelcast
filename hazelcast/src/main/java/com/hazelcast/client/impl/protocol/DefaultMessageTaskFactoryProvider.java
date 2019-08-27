@@ -110,6 +110,7 @@ import com.hazelcast.cp.internal.session.client.CloseSessionMessageTask;
 import com.hazelcast.cp.internal.session.client.CreateSessionMessageTask;
 import com.hazelcast.cp.internal.session.client.GenerateThreadIdMessageTask;
 import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
+import com.hazelcast.cp.internal.subsystem.client.CPSubsystemIsEnabledMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -2340,6 +2341,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ReleasePermitsMessageTask(clientMessage, node, connection);
+            }
+        });
+        factories.put(com.hazelcast.client.impl.protocol.codec.CPSubsystemIsEnabledCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CPSubsystemIsEnabledMessageTask(clientMessage, node, connection);
             }
         });
     }

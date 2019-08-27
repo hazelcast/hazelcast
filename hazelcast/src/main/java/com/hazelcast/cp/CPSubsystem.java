@@ -295,4 +295,11 @@ public interface CPSubsystem {
      */
     CPSessionManagementService getCPSessionManagementService();
 
+    /**
+     * Returns whether or not the CP subsystem is enabled.
+     *
+     * @return {@code true} if the CP subsystem is enabled, {@code false} otherwise.
+     */
+    boolean isEnabled();
+
 }

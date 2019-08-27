@@ -18,7 +18,10 @@ package com.hazelcast.client.cp.internal;
 
 import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemIsEnabledCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
@@ -40,8 +43,10 @@ import com.hazelcast.cp.session.CPSessionManagementService;
 public class CPSubsystemImpl implements CPSubsystem {
 
     private final ClientRaftProxyFactory proxyFactory;
+    private final HazelcastClientInstanceImpl client;
 
     public CPSubsystemImpl(HazelcastClientInstanceImpl client) {
+        this.client = client;
         this.proxyFactory = new ClientRaftProxyFactory(client);
     }
 
@@ -87,5 +92,12 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public CPSessionManagementService getCPSessionManagementService() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        ClientMessage request = CPSubsystemIsEnabledCodec.encodeRequest();
+        ClientMessage response = new ClientInvocation(client, request, null).invoke().join();
+        return CPSubsystemIsEnabledCodec.decodeResponse(response).isEnabled;
     }
 }

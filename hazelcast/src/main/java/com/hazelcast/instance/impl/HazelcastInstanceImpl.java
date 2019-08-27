@@ -42,7 +42,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.internal.CPSubsystemImpl;
+import com.hazelcast.cp.internal.subsystem.CPSubsystemImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;

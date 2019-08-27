@@ -31,7 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -101,6 +103,12 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         thrown.expect(HazelcastException.class);
 
         instance.getCPSubsystem().getCPSessionManagementService();
+    }
+
+    @Test
+    public void test_cpSubsystemIsEnabled_whenCPSubsystemNotConfigured() {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        assertFalse(instance.getCPSubsystem().isEnabled());
     }
 
     @Test
@@ -185,6 +193,18 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         assertNotNull(instance.getCPSubsystem().getCPSessionManagementService());
+    }
+
+    @Test
+    public void test_cpSubsystemIsEnabled_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        assertTrue(instance.getCPSubsystem().isEnabled());
     }
 
 }

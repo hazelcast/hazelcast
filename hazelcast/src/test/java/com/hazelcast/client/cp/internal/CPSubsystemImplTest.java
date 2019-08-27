@@ -32,7 +32,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -114,6 +116,13 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         thrown.expect(UnsupportedOperationException.class);
 
         client.getCPSubsystem().getCPSessionManagementService();
+    }
+
+    @Test
+    public void test_cpSubsystemIsEnabled_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertFalse(client.getCPSubsystem().isEnabled());
     }
 
     @Test
@@ -207,6 +216,19 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
         thrown.expect(UnsupportedOperationException.class);
 
         client.getCPSubsystem().getCPSessionManagementService();
+    }
+
+    @Test
+    public void test_cpSubsystemIsEnabled_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertTrue(client.getCPSubsystem().isEnabled());
     }
 
 }

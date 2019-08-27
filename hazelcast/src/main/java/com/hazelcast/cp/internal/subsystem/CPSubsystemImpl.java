@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal;
+package com.hazelcast.cp.internal.subsystem;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.IAtomicLong;
@@ -24,6 +24,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
@@ -102,6 +103,11 @@ public class CPSubsystemImpl implements CPSubsystem {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }
         return instance.node.getNodeEngine().getService(RaftSessionService.SERVICE_NAME);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return instance.getConfig().getCPSubsystemConfig().getCPMemberCount() > 0;
     }
 
     private <T> T getService(String serviceName) {
