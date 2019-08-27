@@ -33,8 +33,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * {@link org.springframework.transaction.PlatformTransactionManager} implementation
  * for a single {@link HazelcastInstance}. Binds a Hazelcast {@link TransactionContext}
  * from the instance to the thread (as it is already bounded by Hazelcast itself) and makes it available for access.
- * <p>
- * <i>Note:</i> This transaction manager doesn't supports nested transactions, since Hazelcast doesn't support them either.
+ *
  *
  * @author Balint Krivan
  * @see #getTransactionContext(HazelcastInstance)
@@ -59,7 +58,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         if (transactionContextHolder == null) {
             throw new NoTransactionException("No TransactionContext with actual transaction available for current thread");
         }
-        return transactionContextHolder.getContext();
+        return transactionContextHolder;
     }
 
     /**
@@ -84,7 +83,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
                 (TransactionContextHolder) TransactionSynchronizationManager.getResource(hazelcastInstance);
         if (transactionContextHolder != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Found thread-bound TransactionContext [" + transactionContextHolder.getContext() + "]");
+                logger.debug("Found thread-bound TransactionContext [" + transactionContextHolder + "]");
             }
             txObject.setTransactionContextHolder(transactionContextHolder, false);
         }
@@ -123,7 +122,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
     private void closeTransactionContextAfterFailedBegin(HazelcastTransactionObject txObject) {
         if (txObject.isNewTransactionContextHolder()) {
-            TransactionContext context = txObject.getTransactionContextHolder().getContext();
+            TransactionContext context = txObject.getTransactionContextHolder();
             try {
                 context.rollbackTransaction();
             } catch (Throwable ex) {
@@ -138,11 +137,11 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         HazelcastTransactionObject txObject = (HazelcastTransactionObject) status.getTransaction();
         if (status.isDebug()) {
             logger.debug("Committing Hazelcast transaction on TransactionContext ["
-                    + txObject.getTransactionContextHolder().getContext() + "]");
+                    + txObject.getTransactionContextHolder() + "]");
         }
 
         try {
-            txObject.getTransactionContextHolder().getContext().commitTransaction();
+            txObject.getTransactionContextHolder().commitTransaction();
         } catch (com.hazelcast.transaction.TransactionException ex) {
             throw new TransactionSystemException("Could not commit Hazelcast transaction", ex);
         }
@@ -159,22 +158,41 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         HazelcastTransactionObject txObject = (HazelcastTransactionObject) status.getTransaction();
         if (status.isDebug()) {
             logger.debug("Rolling back Hazelcast transaction on TransactionContext ["
-                    + txObject.getTransactionContextHolder().getContext() + "]");
+                    + txObject.getTransactionContextHolder() + "]");
         }
 
-        TransactionContext tx = txObject.getTransactionContextHolder().getContext();
+        TransactionContext tx = txObject.getTransactionContextHolder();
         tx.rollbackTransaction();
     }
 
     @Override
     protected void doCleanupAfterCompletion(Object transaction) {
         HazelcastTransactionObject txObject = (HazelcastTransactionObject) transaction;
-
         if (txObject.isNewTransactionContextHolder()) {
             TransactionSynchronizationManager.unbindResourceIfPossible(hazelcastInstance);
         }
+    }
 
-        txObject.getTransactionContextHolder().clear();
+    @Override
+    protected Object doSuspend(Object transaction) throws TransactionException {
+        HazelcastTransactionObject txObject = (HazelcastTransactionObject) transaction;
+
+        TransactionContext transactionContext = txObject.getTransactionContextHolder();
+        transactionContext.suspendTransaction();
+
+        txObject.setTransactionContextHolder(null, false);
+
+        return TransactionSynchronizationManager.unbindResourceIfPossible(hazelcastInstance);
+    }
+
+    @Override
+    protected void doResume(Object transaction, Object suspendedResources) throws TransactionException {
+        TransactionContextHolder transactionContext = (TransactionContextHolder) suspendedResources;
+        transactionContext.resumeTransaction();
+
+        HazelcastTransactionObject txObject = (HazelcastTransactionObject) transaction;
+        txObject.setTransactionContextHolder(transactionContext, false);
+        TransactionSynchronizationManager.bindResource(hazelcastInstance, transactionContext);
     }
 
     private static class HazelcastTransactionObject implements SmartTransactionObject {
