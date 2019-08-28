@@ -16,14 +16,10 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.stream.IntStream;
@@ -34,21 +30,11 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-public class SlowSourceYieldTest {
-
-    private JetInstance instance;
-    private JetTestInstanceFactory factory;
+public class SlowSourceYieldTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        factory = new JetTestInstanceFactory();
-        instance = factory.newMember();
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
+        initialize(1, null);
     }
 
     @Test
@@ -58,7 +44,7 @@ public class SlowSourceYieldTest {
         Vertex sink = dag.newVertex("sink", noopP()).localParallelism(1);
         dag.edge(between(source, sink));
 
-        instance.newJob(dag).join();
+        instance().newJob(dag).join();
         assertTrue("processor never yielded", SlowSourceP.yieldCount > 0);
     }
 

@@ -19,8 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -31,7 +30,6 @@ import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -43,17 +41,15 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
-public class VertexDef_HigherPrioritySourceTest {
+public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSupport {
 
     private static final ProcessorMetaSupplier MOCK_PMS =
             addresses -> address -> count -> nCopies(count, new DummyProcessor());
-    private static final JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private static NodeEngineImpl nodeEngineImpl;
     private static MembersView membersView;
 
@@ -66,15 +62,10 @@ public class VertexDef_HigherPrioritySourceTest {
 
     @BeforeClass
     public static void beforeClass() {
-        JetInstance inst = factory.newMember();
-        nodeEngineImpl = getNodeEngineImpl(inst.getHazelcastInstance());
+        initialize(1, null);
+        nodeEngineImpl = getNodeEngineImpl(instance().getHazelcastInstance());
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
         membersView = clusterService.getMembershipManager().getMembersView();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        factory.shutdownAll();
     }
 
     @Test

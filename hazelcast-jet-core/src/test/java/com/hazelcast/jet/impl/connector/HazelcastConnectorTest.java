@@ -25,24 +25,19 @@ import com.hazelcast.jet.ICacheJet;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetCacheManager;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,14 +65,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-public class HazelcastConnectorTest extends JetTestSupport {
+public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
     private static final int ENTRY_COUNT = 100;
-
-    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
-    private static JetInstance jetInstance;
-    private static JetInstance jetInstance2;
 
     private String sourceName;
     private String sinkName;
@@ -91,8 +81,8 @@ public class HazelcastConnectorTest extends JetTestSupport {
         Config hazelcastConfig = jetConfig.getHazelcastConfig();
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hazelcastConfig.addEventJournalConfig(new EventJournalConfig().setCacheName("stream*").setMapName("stream*"));
-        jetInstance = factory.newMember(jetConfig);
-        jetInstance2 = factory.newMember(jetConfig);
+
+        initialize(2, jetConfig);
     }
 
     @Before
@@ -104,21 +94,16 @@ public class HazelcastConnectorTest extends JetTestSupport {
         streamSinkName = "stream" + sinkName;
 
         // workaround for `cache is not created` exception, create cache locally on all nodes
-        JetCacheManager cacheManager = jetInstance2.getCacheManager();
+        JetCacheManager cacheManager = instances()[1].getCacheManager();
         cacheManager.getCache(sourceName);
         cacheManager.getCache(sinkName);
         cacheManager.getCache(streamSourceName);
         cacheManager.getCache(streamSinkName);
     }
 
-    @AfterClass
-    public static void afterClass() {
-        factory.shutdownAll();
-    }
-
     @Test
     public void when_readMap_and_writeMap() {
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
         DAG dag = new DAG();
@@ -127,14 +112,14 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
-        assertEquals(ENTRY_COUNT, jetInstance.getMap(sinkName).size());
+        assertEquals(ENTRY_COUNT, instance().getMap(sinkName).size());
     }
 
     @Test
     public void when_readMap_withNativePredicateAndProjection() {
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
         DAG dag = new DAG();
@@ -147,9 +132,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", writeListP(sinkName));
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
-        IListJet<Object> list = jetInstance.getList(sinkName);
+        IListJet<Object> list = instance().getList(sinkName);
         assertEquals(ENTRY_COUNT - 1, list.size());
         for (int i = 0; i < ENTRY_COUNT; i++) {
             assertEquals(i != 0, list.contains(i));
@@ -158,7 +143,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
     @Test
     public void when_readMap_withProjectionToNull_then_nullsSkipped() {
-        IMapJet<Integer, Entry<Integer, String>> sourceMap = jetInstance.getMap(sourceName);
+        IMapJet<Integer, Entry<Integer, String>> sourceMap = instance().getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         DAG dag = new DAG();
@@ -169,7 +154,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", writeListP(sinkName));
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
         checkContents_projectedToNull(sinkName);
     }
@@ -181,14 +166,14 @@ public class HazelcastConnectorTest extends JetTestSupport {
                          .mapToObj(String::valueOf)
                          .sorted()
                          .collect(joining("\n")),
-                jetInstance.getHazelcastInstance().<String>getList(sinkName).stream()
+                instance().getHazelcastInstance().<String>getList(sinkName).stream()
                         .sorted()
                         .collect(joining("\n")));
     }
 
     @Test
     public void when_readMap_withPredicateAndFunction() {
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
         DAG dag = new DAG();
@@ -197,9 +182,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
-        IListJet<Object> list = jetInstance.getList(sinkName);
+        IListJet<Object> list = instance().getList(sinkName);
         assertEquals(ENTRY_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));
@@ -214,12 +199,12 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(streamSourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
-        assertSizeEventually(ENTRY_COUNT, jetInstance.getList(streamSinkName));
+        assertSizeEventually(ENTRY_COUNT, instance().getList(streamSinkName));
         job.cancel();
     }
 
@@ -234,9 +219,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        IMapJet<Integer, Entry<Integer, String>> sourceMap = jetInstance.getMap(streamSourceName);
+        IMapJet<Integer, Entry<Integer, String>> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName));
@@ -253,20 +238,20 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(streamSourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
-        assertSizeEventually(ENTRY_COUNT - 1, jetInstance.getList(streamSinkName));
-        assertFalse(jetInstance.getList(streamSinkName).contains(0));
-        assertTrue(jetInstance.getList(streamSinkName).contains(1));
+        assertSizeEventually(ENTRY_COUNT - 1, instance().getList(streamSinkName));
+        assertFalse(instance().getList(streamSinkName).contains(0));
+        assertTrue(instance().getList(streamSinkName).contains(1));
         job.cancel();
     }
 
     @Test
     public void when_readCache_and_writeCache() {
-        ICache<Integer, Integer> sourceCache = jetInstance.getCacheManager().getCache(sourceName);
+        ICache<Integer, Integer> sourceCache = instance().getCacheManager().getCache(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
 
         DAG dag = new DAG();
@@ -275,9 +260,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
-        assertEquals(ENTRY_COUNT, jetInstance.getCacheManager().getCache(sinkName).size());
+        assertEquals(ENTRY_COUNT, instance().getCacheManager().getCache(sinkName).size());
     }
 
     @Test
@@ -289,12 +274,12 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        ICacheJet<Integer, Integer> sourceCache = jetInstance.getCacheManager().getCache(streamSourceName);
+        ICacheJet<Integer, Integer> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
 
-        assertSizeEventually(ENTRY_COUNT, jetInstance.getList(streamSinkName));
+        assertSizeEventually(ENTRY_COUNT, instance().getList(streamSinkName));
         job.cancel();
     }
 
@@ -308,20 +293,20 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        ICacheJet<Integer, Integer> sourceCache = jetInstance.getCacheManager().getCache(streamSourceName);
+        ICacheJet<Integer, Integer> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
 
-        assertSizeEventually(ENTRY_COUNT - 1, jetInstance.getList(streamSinkName));
-        assertFalse(jetInstance.getList(streamSinkName).contains(0));
-        assertTrue(jetInstance.getList(streamSinkName).contains(1));
+        assertSizeEventually(ENTRY_COUNT - 1, instance().getList(streamSinkName));
+        assertFalse(instance().getList(streamSinkName).contains(0));
+        assertTrue(instance().getList(streamSinkName).contains(1));
         job.cancel();
     }
 
     @Test
     public void when_readList_and_writeList() {
-        IListJet<Integer> list = jetInstance.getList(sourceName);
+        IListJet<Integer> list = instance().getList(sourceName);
         list.addAll(range(0, ENTRY_COUNT).boxed().collect(toList()));
 
         DAG dag = new DAG();
@@ -330,9 +315,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).join();
+        instance().newJob(dag).join();
 
-        assertEquals(ENTRY_COUNT, jetInstance.getList(sinkName).size());
+        assertEquals(ENTRY_COUNT, instance().getList(sinkName).size());
     }
 
     @Test
@@ -344,14 +329,14 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(streamSourceName);
+        IMapJet<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
 
-        IListJet<Entry<Integer, Integer>> sinkList = jetInstance.getList(streamSinkName);
+        IListJet<Entry<Integer, Integer>> sinkList = instance().getList(streamSinkName);
         assertTrueEventually(() -> {
             assertEquals(2, sinkList.size());
 
@@ -376,14 +361,14 @@ public class HazelcastConnectorTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = jetInstance.newJob(dag);
+        Job job = instance().newJob(dag);
 
-        ICacheJet<Object, Object> sourceCache = jetInstance.getCacheManager().getCache(streamSourceName);
+        ICacheJet<Object, Object> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         sourceCache.put(1, 1); // ADDED
         sourceCache.remove(1); // REMOVED - filtered out
         sourceCache.put(1, 2); // UPDATED
 
-        IListJet<Entry<Integer, Integer>> sinkList = jetInstance.getList(streamSinkName);
+        IListJet<Entry<Integer, Integer>> sinkList = instance().getList(streamSinkName);
         assertTrueEventually(() -> {
             assertEquals(2, sinkList.size());
 
