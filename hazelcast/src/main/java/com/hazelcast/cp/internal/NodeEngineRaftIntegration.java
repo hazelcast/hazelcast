@@ -64,7 +64,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.properties.GroupProperty.RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED;
 
 /**
  * The integration point of the Raft algorithm implementation and
@@ -157,7 +156,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public boolean isReachable(RaftEndpoint target) {
-        CPMember targetMember = getCpMember(target);
+        CPMember targetMember = getCPMember(target);
         return targetMember != null && nodeEngine.getClusterService().getMember(targetMember.getAddress()) != null;
     }
 
@@ -248,7 +247,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     private boolean send(AsyncRaftOp operation, RaftEndpoint target) {
-        CPMember targetMember = getCpMember(target);
+        CPMember targetMember = getCPMember(target);
         if (targetMember == null || localAddress.equals(targetMember.getAddress())) {
             if (localCPMember.getUuid().equals(target.getUuid())) {
                 throw new IllegalStateException("Cannot send " + operation + " to "
@@ -263,7 +262,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public CPMember getCpMember(RaftEndpoint target) {
+    public CPMember getCPMember(RaftEndpoint target) {
         return invocationManager.getCPMember(target);
     }
 

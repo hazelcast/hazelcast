@@ -45,8 +45,8 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
                           Collection<CPMember> members) {
         this.id = id;
         this.status = status;
-        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(initialMembers));
-        this.members = unmodifiableSet(new LinkedHashSet<CPMember>(members));
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<>(initialMembers));
+        this.members = unmodifiableSet(new LinkedHashSet<>(members));
     }
 
     @Override
@@ -74,7 +74,7 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.CP_GROUP_SUMMARY;
     }
 

@@ -16,11 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
@@ -29,6 +24,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;

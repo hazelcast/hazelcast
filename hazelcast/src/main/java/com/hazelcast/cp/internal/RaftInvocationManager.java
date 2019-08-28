@@ -56,7 +56,6 @@ import java.util.concurrent.Executor;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Performs invocations to create &amp; destroy Raft groups,
@@ -135,7 +134,7 @@ public class RaftInvocationManager {
                 members.sort(new CPMemberReachabilityComparator());
                 members = members.subList(0, groupSize);
 
-                List<RaftEndpoint> groupEndpoints = new ArrayList<RaftEndpoint>();
+                List<RaftEndpoint> groupEndpoints = new ArrayList<>();
                 for (CPMemberInfo member : members) {
                     groupEndpoints.add(member.toRaftEndpoint());
 
@@ -150,7 +149,7 @@ public class RaftInvocationManager {
         });
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpointImpl> members,
+    private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpoint> members,
                                        SimpleCompletableFuture<RaftGroupId> resultFuture) {
         ICompletableFuture<RaftGroupId> f = invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
 

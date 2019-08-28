@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.state.LeadershipTransferState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.logging.ILogger;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**
@@ -91,7 +91,7 @@ public class LeadershipTransferTask implements Runnable {
             logger.info("Transferring leadership to " + leadershipTransferState.endpoint());
         }
 
-        leaderState.getFollowerState(targetEndpoint).resetAppendRequestBackoff();
+        leaderState.getFollowerState(targetEndpoint).appendRequestAckReceived();
         raftNode.sendAppendRequest(targetEndpoint);
 
         LogEntry entry = state.log().lastLogOrSnapshotEntry();

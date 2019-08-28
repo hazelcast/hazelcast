@@ -47,7 +47,7 @@ public class TriggerLeaderElectionOp extends AsyncRaftOp {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.TRIGGER_LEADER_ELECTION_OP;
     }
 

@@ -20,7 +20,7 @@ import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChang
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
-import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
+import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftBackupOp;
@@ -118,7 +118,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int UNSAFE_SNAPSHOT_REPLICATE_OP = 45;
     public static final int CP_ENDPOINT = 46;
     public static final int CP_GROUP_SUMMARY = 47;
-    public static final int GET_LEADERSHIP_GROUPS_OP = 48;
+    public static final int GET_LEADED_GROUPS = 48;
     public static final int TRANSFER_LEADERSHIP_OP = 49;
     public static final int TRIGGER_LEADER_ELECTION_OP = 50;
 
@@ -225,8 +225,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new RaftEndpointImpl();
                 case CP_GROUP_SUMMARY:
                     return new CPGroupSummary();
-                case GET_LEADERSHIP_GROUPS_OP:
-                    return new GetLeadershipGroupsOp();
+                case GET_LEADED_GROUPS:
+                    return new GetLeadedGroupsOp();
                 case TRANSFER_LEADERSHIP_OP:
                     return new TransferLeadershipOp();
                 case TRIGGER_LEADER_ELECTION_OP:

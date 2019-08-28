@@ -59,8 +59,8 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     public CPGroupInfo(RaftGroupId id, Collection<RaftEndpoint> members) {
         this.id = id;
         this.status = ACTIVE;
-        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(members));
-        this.members = unmodifiableSet(new LinkedHashSet<RaftEndpoint>(members));
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<>(members));
+        this.members = unmodifiableSet(new LinkedHashSet<>(members));
     }
 
     public RaftGroupId id() {
@@ -75,9 +75,8 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         return initialMembers.size();
     }
 
-    @SuppressWarnings("unchecked")
     public Collection<RaftEndpoint> members() {
-        return (Collection) members;
+        return members;
     }
 
     public int memberCount() {
@@ -92,7 +91,6 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         return members;
     }
 
-    @SuppressWarnings("unchecked")
     public Collection<RaftEndpoint> initialMembers() {
         return initialMembers;
     }
@@ -136,7 +134,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
             return false;
         }
 
-        Set<RaftEndpoint> m = new LinkedHashSet<RaftEndpoint>(members);
+        Set<RaftEndpoint> m = new LinkedHashSet<>(members);
         if (leaving != null) {
             boolean removed = m.remove(leaving);
             assert removed : leaving + " is not member of " + toString();
@@ -153,12 +151,12 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     }
 
     CPGroupSummary toSummary(Collection<CPMemberInfo> cpMembers) {
-        Map<UUID, CPMemberInfo> cpMembersMap = new HashMap<UUID, CPMemberInfo>();
+        Map<UUID, CPMemberInfo> cpMembersMap = new HashMap<>();
         for (CPMemberInfo cpMember : cpMembers) {
             cpMembersMap.put(cpMember.getUuid(), cpMember);
         }
         // we should preserve the member ordering so we iterate over group members instead of all cp members
-        List<CPMember> groupEndpoints = new ArrayList<CPMember>();
+        List<CPMember> groupEndpoints = new ArrayList<>();
         for (RaftEndpoint endpoint : members) {
             CPMemberInfo memberInfo = cpMembersMap.get(endpoint.getUuid());
             if (memberInfo == null) {
@@ -193,7 +191,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readObject();
         int initialMemberCount = in.readInt();
-        Set<RaftEndpoint> initialMembers = new LinkedHashSet<RaftEndpoint>();
+        Set<RaftEndpoint> initialMembers = new LinkedHashSet<>();
         for (int i = 0; i < initialMemberCount; i++) {
             RaftEndpoint member = in.readObject();
             initialMembers.add(member);
@@ -201,7 +199,7 @@ public final class CPGroupInfo implements IdentifiedDataSerializable {
         this.initialMembers = unmodifiableSet(initialMembers);
         membersCommitIndex = in.readLong();
         int memberCount = in.readInt();
-        members = new LinkedHashSet<RaftEndpoint>(memberCount);
+        members = new LinkedHashSet<>(memberCount);
         for (int i = 0; i < memberCount; i++) {
             RaftEndpoint member = in.readObject();
             members.add(member);

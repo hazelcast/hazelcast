@@ -17,10 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.persistence.CPMemberMetadataStore;
-import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
-import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -33,22 +30,20 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -342,7 +337,8 @@ public interface NodeExtension {
      */
     AuditlogService getAuditlogService();
 
-    CPMemberMetadataStore getCPMemberMetadataStore();
-
-    RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure);
+    /**
+     * Returns CP persistence service.
+     */
+    CPPersistenceService getCPPersistenceService();
 }

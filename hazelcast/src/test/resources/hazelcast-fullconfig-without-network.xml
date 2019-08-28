@@ -802,6 +802,7 @@
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
         <persistence-enabled>false</persistence-enabled>
         <base-dir>data</base-dir>
+        <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

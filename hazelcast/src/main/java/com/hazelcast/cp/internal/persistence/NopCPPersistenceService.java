@@ -37,13 +37,17 @@ public final class NopCPPersistenceService implements CPPersistenceService {
     }
 
     @Override
-    public CPMemberMetadataStore getCPMemberMetadataStore() {
-        return NopCPMemberMetadataStore.INSTANCE;
+    public CPMetadataStore getCPMetadataStore() {
+        return NopCPMetadataStore.INSTANCE;
     }
 
     @Override
     public RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure) {
         return NopRaftStateStore.INSTANCE;
+    }
+
+    @Override
+    public void removeRaftStateStore(@Nonnull RaftGroupId groupId) {
     }
 
     @Override

@@ -69,7 +69,7 @@ public class TriggerLeaderElection implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftDataSerializerHook.TRIGGER_LEADER_ELECTION;
     }
 

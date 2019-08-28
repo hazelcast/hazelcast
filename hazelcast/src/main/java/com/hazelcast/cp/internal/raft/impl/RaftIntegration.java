@@ -191,8 +191,8 @@ public interface RaftIntegration {
      * Submits the given task for execution.
      * <p>
      * If the caller is already on the thread that runs the Raft node,
-     * the given task cannot be executed immediately and it must be executed
-     * to the internal task queue.
+     * the given task cannot be executed immediately and it must be put into
+     * the internal task queue for execution in future.
      *
      * @param task to be executed later.
      */
@@ -237,9 +237,9 @@ public interface RaftIntegration {
     boolean isLinearizableReadOptimizationEnabled();
 
     /**
-     * TODO
+     * Returns the CP member instance of the given Raft endpoint
      */
-    CPMember getCpMember(RaftEndpoint target);
+    CPMember getCPMember(RaftEndpoint target);
 
     /**
      * Called when RaftNode status changes.

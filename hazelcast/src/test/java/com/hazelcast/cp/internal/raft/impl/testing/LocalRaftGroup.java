@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.IBiFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
@@ -27,15 +26,13 @@ import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateLoader;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.IntFunction;
+import com.hazelcast.internal.util.function.BiFunctionEx;
 import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.restoreRaftNode;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
@@ -43,8 +40,8 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.minority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
@@ -64,13 +61,9 @@ public class LocalRaftGroup {
         private RaftAlgorithmConfig config;
         private boolean appendNopEntryOnLeaderElection;
         private IntFunction<TestRaftEndpoint> endpointFactory;
-        private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory = new IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore>() {
-            @Override
-            public RaftStateStore apply(RaftEndpoint endpoint, RaftAlgorithmConfig config) {
-                return NopRaftStateStore.INSTANCE;
-            }
-        };
-        private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory;
+        private BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory =
+                (BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore>) (endpoint, config) -> NopRaftStateStore.INSTANCE;
+        private BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory;
 
         public LocalRaftGroupBuilder(int nodeCount) {
             this(nodeCount, new RaftAlgorithmConfig());
@@ -86,12 +79,12 @@ public class LocalRaftGroup {
             return this;
         }
 
-        public LocalRaftGroupBuilder setRaftStateStoreFactory(IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
+        public LocalRaftGroupBuilder setRaftStateStoreFactory(BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory) {
             this.raftStateStoreFactory = raftStateStoreFactory;
             return this;
         }
 
-        public LocalRaftGroupBuilder setRaftStateLoaderFactory(IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
+        public LocalRaftGroupBuilder setRaftStateLoaderFactory(BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
             this.raftStateLoaderFactory = raftStateLoaderFactory;
             return this;
         }
@@ -115,7 +108,7 @@ public class LocalRaftGroup {
         }
     }
 
-    static final int FIRST_RAFT_NODE_PORT = 5000;
+    private static final int FIRST_RAFT_NODE_PORT = 5000;
 
 
     private final CPGroupId groupId;
@@ -128,14 +121,8 @@ public class LocalRaftGroup {
     private LocalRaftIntegration[] integrations;
     private RaftNodeImpl[] nodes;
     private int createdNodeCount;
-    private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory;
-    private IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory;
-    private IntFunction<TestRaftEndpoint> endpointFactory = new IntFunction<TestRaftEndpoint>() {
-        @Override
-        public TestRaftEndpoint apply(int port) {
-            return newRaftMember(port);
-        }
-    };
+    private BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory;
+    private IntFunction<TestRaftEndpoint> endpointFactory = port -> newRaftMember(port);
 
     public LocalRaftGroup(int size) {
         this(size, new RaftAlgorithmConfig());
@@ -154,8 +141,8 @@ public class LocalRaftGroup {
     public LocalRaftGroup(int size, RaftAlgorithmConfig raftAlgorithmConfig, String serviceName,
                           Class<? extends SnapshotAwareService> serviceClazz, boolean appendNopEntryOnLeaderElection,
                           IntFunction<TestRaftEndpoint> endpointFactory,
-                          IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory,
-                          IBiFunction<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
+                          BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> raftStateStoreFactory,
+                          BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateLoader> raftStateLoaderFactory) {
         initialMembers = new RaftEndpoint[size];
         members = new RaftEndpoint[size];
         integrations = new LocalRaftIntegration[size];
@@ -170,7 +157,6 @@ public class LocalRaftGroup {
         }
 
         this.raftStateStoreFactory = raftStateStoreFactory;
-        this.raftStateLoaderFactory = raftStateLoaderFactory;
 
         for (; createdNodeCount < size; createdNodeCount++) {
             LocalRaftIntegration integration = createNewLocalRaftIntegration();

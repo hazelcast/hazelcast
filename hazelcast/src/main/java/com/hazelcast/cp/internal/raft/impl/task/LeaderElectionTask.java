@@ -26,8 +26,8 @@ import com.hazelcast.cp.internal.raft.impl.state.RaftState;
  * LeaderElectionTask is scheduled when current leader is null, unreachable
  * or unknown by {@link PreVoteResponseHandlerTask} after a follower receives
  * votes from at least majority. Local member becomes a candidate using
- * {@link RaftState#toCandidate()} and sends {@link VoteRequest}s to other
- * members.
+ * {@link RaftState#toCandidate(boolean)} and sends {@link VoteRequest}s to
+ * other members.
  * <p>
  * Also a {@link LeaderElectionTimeoutTask} is scheduled with a
  * {@link RaftNodeImpl#getLeaderElectionTimeoutInMillis()} delay to trigger

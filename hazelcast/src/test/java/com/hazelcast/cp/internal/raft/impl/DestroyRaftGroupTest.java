@@ -22,7 +22,6 @@ import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -138,14 +137,11 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : followers) {
-                    RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
-                    assertNotNull(leaderEndpoint);
-                    assertNotEquals(leader.getLocalMember(), leaderEndpoint);
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : followers) {
+                RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
+                assertNotNull(leaderEndpoint);
+                assertNotEquals(leader.getLocalMember(), leaderEndpoint);
             }
         });
 

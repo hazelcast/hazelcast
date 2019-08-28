@@ -27,8 +27,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Represents an endpoint that runs the Raft consensus algorithm as a member of
@@ -77,7 +77,7 @@ public class RaftEndpointImpl implements RaftEndpoint, IdentifiedDataSerializabl
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.CP_ENDPOINT;
     }
 

@@ -36,7 +36,7 @@ import java.util.LinkedHashSet;
 import static com.hazelcast.cp.internal.raft.impl.log.RaftLog.newRaftLog;
 import static com.hazelcast.cp.internal.raft.impl.log.RaftLog.restoreRaftLog;
 import static com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry.isNonInitial;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableSet;
 
 /**

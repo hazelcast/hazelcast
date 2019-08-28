@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
@@ -27,32 +28,35 @@ import com.hazelcast.cp.internal.RaftSystemOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
 /**
- * TODO
+ * Triggers the local CP member to transfer Raft group leadership to given CP
+ * member for the given CP group
  */
-public class TransferLeadershipOp extends Operation
-        implements RaftSystemOperation, IdentifiedDataSerializable, ExecutionCallback {
+public class TransferLeadershipOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable,
+                                                               ExecutionCallback {
 
     private CPGroupId groupId;
-    private CPMember to;
+    private CPMember destination;
 
     public TransferLeadershipOp() {
     }
 
-    public TransferLeadershipOp(CPGroupId groupId, CPMember to) {
+    public TransferLeadershipOp(CPGroupId groupId, CPMember destination) {
         this.groupId = groupId;
-        this.to = to;
+        this.destination = destination;
     }
 
     @Override
     public CallStatus call() throws Exception {
         RaftService service = getService();
-        ICompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) to);
+        ICompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
         future.andThen(this);
         return CallStatus.DONE_VOID;
     }
@@ -73,6 +77,14 @@ public class TransferLeadershipOp extends Operation
     }
 
     @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
+    }
+
+    @Override
     public final String getServiceName() {
         return RaftService.SERVICE_NAME;
     }
@@ -83,19 +95,19 @@ public class TransferLeadershipOp extends Operation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return RaftServiceDataSerializerHook.TRANSFER_LEADERSHIP_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(groupId);
-        out.writeObject(to);
+        out.writeObject(destination);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         groupId = in.readObject();
-        to = in.readObject();
+        destination = in.readObject();
     }
 }

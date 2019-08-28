@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class LeaderState {
 
-    private final Map<RaftEndpoint, FollowerState> followerStates = new HashMap<RaftEndpoint, FollowerState>();
+    private final Map<RaftEndpoint, FollowerState> followerStates = new HashMap<>();
     private final QueryState queryState = new QueryState();
     private long flushedLogIndex;
 

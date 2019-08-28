@@ -43,7 +43,7 @@ import static com.hazelcast.cp.internal.MetadataRaftGroupManager.INITIAL_METADAT
 public class RaftInvocationContext {
 
     private static final CPMembersContainer INITIAL_VALUE = new CPMembersContainer(
-            new CPMembersVersion(INITIAL_METADATA_GROUP_ID.seed(), -1), new CPMemberInfo[0]);
+            new CPMembersVersion(INITIAL_METADATA_GROUP_ID.getSeed(), -1), new CPMemberInfo[0]);
 
 
     private final ILogger logger;
@@ -51,7 +51,7 @@ public class RaftInvocationContext {
     private final ConcurrentMap<CPGroupId, CPMember> knownLeaders = new ConcurrentHashMap<>();
     private final boolean failOnIndeterminateOperationState;
 
-    private AtomicReference<CPMembersContainer> membersContainer = new AtomicReference<CPMembersContainer>(INITIAL_VALUE);
+    private AtomicReference<CPMembersContainer> membersContainer = new AtomicReference<>(INITIAL_VALUE);
 
     public RaftInvocationContext(ILogger logger, RaftService raftService) {
         this.logger = logger;
@@ -65,7 +65,6 @@ public class RaftInvocationContext {
     }
 
     public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
-        CPMemberInfo localCPMember = raftService.getLocalCPMember();
         if (members.size() < 2) {
             return false;
         }
@@ -84,23 +83,44 @@ public class RaftInvocationContext {
         }
     }
 
-    int getCPGroupPartitionId(CPGroupId groupId) {
-        return raftService.getCPGroupPartitionId(groupId);
+    public void updateMember(CPMemberInfo member) {
+        while (true) {
+            // Put the given member into the current member list,
+            // even if the given member does not exist with another address.
+            // In addition, remove any other member that has the address of the given member.
+            CPMembersContainer currentContainer = membersContainer.get();
+            CPMemberInfo otherMember = null;
+            for (CPMemberInfo m : currentContainer.members) {
+                if (m.getAddress().equals(member.getAddress()) && !m.getUuid().equals(member.getUuid())) {
+                    otherMember = m;
+                    break;
+                }
+            }
+            CPMemberInfo existingMember = currentContainer.membersMap.get(member.getUuid());
+            if (otherMember == null && existingMember != null && existingMember.getAddress().equals(member.getAddress())) {
+                return;
+            }
+
+            Map<UUID, CPMemberInfo> newMembers = new HashMap<UUID, CPMemberInfo>(currentContainer.membersMap);
+            newMembers.put(member.getUuid(), member);
+            if (otherMember != null) {
+                newMembers.remove(otherMember.getUuid());
+            }
+
+            CPMembersContainer newContainer = new CPMembersContainer(currentContainer.version, newMembers);
+            if (membersContainer.compareAndSet(currentContainer, newContainer)) {
+                logger.info("Replaced " + existingMember + " -> " + member);
+                return;
+            }
+        }
     }
 
-    public CPMemberInfo getCPMember(String memberUid) {
-        if (memberUid == null) {
-            return null;
-        }
-        return getCPMember(UUID.fromString(memberUid));
+    int getCPGroupPartitionId(CPGroupId groupId) {
+        return raftService.getCPGroupPartitionId(groupId);
     }
 
     public CPMemberInfo getCPMember(UUID memberUid) {
         return membersContainer.get().membersMap.get(memberUid);
-    }
-
-    int getCPGroupPartitionId(CPGroupId groupId) {
-        return raftService.getCPGroupPartitionId(groupId);
     }
 
     CPMember getKnownLeader(CPGroupId groupId) {
@@ -169,10 +189,16 @@ public class RaftInvocationContext {
         CPMembersContainer(CPMembersVersion version, CPMemberInfo[] members) {
             this.version = version;
             this.members = members;
-            membersMap = new HashMap<UUID, CPMemberInfo>();
+            membersMap = new HashMap<UUID, CPMemberInfo>(members.length);
             for (CPMemberInfo member : members) {
                 membersMap.put(member.getUuid(), member);
             }
+        }
+
+        CPMembersContainer(CPMembersVersion version, Map<UUID, CPMemberInfo> members) {
+            this.version = version;
+            this.members = members.values().toArray(new CPMemberInfo[0]);
+            this.membersMap = members;
         }
     }
 

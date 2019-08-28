@@ -103,6 +103,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public CPSubsystemConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
+        throw new UnsupportedOperationException();
+    }
+
     static class DynamicRaftAlgorithmConfig extends RaftAlgorithmConfig {
 
         DynamicRaftAlgorithmConfig(RaftAlgorithmConfig config) {

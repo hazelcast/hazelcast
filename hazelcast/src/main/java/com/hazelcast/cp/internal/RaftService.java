@@ -31,6 +31,7 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
@@ -63,6 +64,10 @@ import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsExtractor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -89,6 +94,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -96,9 +102,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -121,32 +130,33 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains {@link RaftNode} instances that run the Raft consensus algorithm
- * for the created CP groups. Also implements CP subsystem management methods.
+ * for the created CP groups. Also implements CP Subsystem management methods.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
                                     MembershipAwareService, CPSubsystemManagementService, PreJoinAwareService,
-                                    RaftNodeLifecycleAwareService {
+                                    RaftNodeLifecycleAwareService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
+    private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
     @Probe
-    private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<CPGroupId, RaftNode>();
-    private final ConcurrentMap<CPGroupId, RaftNodeMetrics> nodeMetrics = new ConcurrentHashMap<CPGroupId, RaftNodeMetrics>();
+    private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CPGroupId, RaftNodeMetrics> nodeMetrics = new ConcurrentHashMap<>();
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     @Probe
-    private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<CPGroupId, Boolean>());
+    private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     @Probe
-    private final Set<CPGroupId> steppedDownGroupIds = newSetFromMap(new ConcurrentHashMap<CPGroupId, Boolean>());
+    private final Set<CPGroupId> steppedDownGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
     @Probe
-    private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<CPMemberInfo, Long>();
+    private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;
 
@@ -164,8 +174,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         this.metadataGroupManager = new MetadataRaftGroupManager(this.nodeEngine, this, config);
 
         MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "raft");
-        metricsRegistry.scanAndRegister(metadataGroupManager, "raft.metadata");
+        metricsRegistry.registerStaticMetrics(this, "raft");
+        metricsRegistry.registerStaticMetrics(metadataGroupManager, "raft.metadata");
+        metricsRegistry.registerDynamicMetricsProvider(this);
         this.metricsPeriod = nodeEngine.getProperties().getInteger(MetricsPlugin.PERIOD_SECONDS);
     }
 
@@ -190,9 +201,17 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public void shutdown(boolean terminate) {
-        if (getCpPersistenceService().isEnabled()) {
+        if (getCPPersistenceService().isEnabled()) {
+            List<Future> futures = new ArrayList<>(nodes.size());
             for (RaftNode raftNode : nodes.values()) {
-                raftNode.forceSetTerminatedStatus();
+                futures.add(raftNode.forceSetTerminatedStatus());
+            }
+            for (Future future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    logger.severe("Error while terminating RaftNode", e);
+                }
             }
         }
     }
@@ -227,18 +246,18 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public ICompletableFuture<Void> restart() {
-        checkState(cpSubsystemEnabled, "CP subsystem is not enabled!");
+        checkState(cpSubsystemEnabled, "CP Subsystem is not enabled!");
 
         SimpleCompletableFuture<Void> future = newCompletableFuture();
         ClusterService clusterService = nodeEngine.getClusterService();
         Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
         if (!clusterService.isMaster()) {
-            return complete(future, new IllegalStateException("Only master can restart CP subsystem!"));
+            return complete(future, new IllegalStateException("Only master can restart CP Subsystem!"));
         }
 
         if (config.getCPMemberCount() > members.size() + 1) {
-            return complete(future, new IllegalStateException("Not enough cluster members to restart CP subsystem! "
+            return complete(future, new IllegalStateException("Not enough cluster members to restart CP Subsystem! "
                     + "Required: " + config.getCPMemberCount() + ", available: " + (members.size() + 1)));
         }
 
@@ -267,7 +286,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         };
 
         long seed = newSeed();
-        logger.warning("Restarting CP subsystem with groupId seed: " + seed);
+        logger.warning("Resetting CP Subsystem with groupId seed: " + seed);
         restartLocal(seed);
 
         OperationServiceImpl operationService = nodeEngine.getOperationService();
@@ -298,27 +317,47 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        // we should clear the current raft state before resetting the metadata manager
-        resetLocalRaftState();
+        nodeLock.writeLock().lock();
+        try {
+            // we should clear the current raft state before resetting the metadata manager
+            resetLocalRaftState();
 
-        getCpPersistenceService().reset();
-        metadataGroupManager.restart(seed);
-        logger.info("CP state is reset with groupId seed: " + seed);
+            getCPPersistenceService().reset();
+            metadataGroupManager.restart(seed);
+            logger.info("Local CP state is reset with groupId seed: " + seed);
+        } finally {
+            nodeLock.writeLock().unlock();
+        }
     }
 
     private void resetLocalRaftState() {
+        // node.forceSetTerminatedStatus() will trigger RaftNodeLifecycleAwareService.onRaftGroupDestroyed()
+        // which will attempt to acquire the read lock on nodeLock. In order to prevent it, we first
+        // add group ids into destroyedGroupIds to short-cut RaftNodeLifecycleAwareService.onRaftGroupDestroyed()
+
+        List<ICompletableFuture> futures = new ArrayList<>(nodes.size());
+        destroyedGroupIds.addAll(nodes.keySet());
+        for (RaftNode node : nodes.values()) {
+            ICompletableFuture f = node.forceSetTerminatedStatus();
+            futures.add(f);
+        }
+
+        nodes.clear();
+
+        for (ICompletableFuture future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                logger.fine(e);
+            }
+        }
+
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(RaftRemoteService.class)) {
             if (serviceInfo.getService() instanceof RaftManagedService) {
                 ((RaftManagedService) serviceInfo.getService()).onCPSubsystemRestart();
             }
         }
 
-        for (RaftNode node : nodes.values()) {
-            node.forceSetTerminatedStatus();
-        }
-
-        destroyedGroupIds.addAll(nodes.keySet());
-        nodes.clear();
         nodeMetrics.clear();
         missingMembers.clear();
         invocationManager.reset();
@@ -329,7 +368,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         SimpleCompletableFuture<Void> future = newCompletableFuture();
 
         if (!metadataGroupManager.isDiscoveryCompleted()) {
-            return complete(future, new IllegalStateException("CP subsystem discovery is not completed yet!"));
+            return complete(future, new IllegalStateException("CP Subsystem discovery is not completed yet!"));
         }
 
         if (nodeEngine.getLocalMember().isLiteMember()) {
@@ -460,6 +499,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return true;
         }
 
+        if (getCPPersistenceService().isEnabled()) {
+            // When persistence is enabled, we do not remove this member from CP Subsystem.
+            // Because it is supposed to recover by restoring disk data.
+            return true;
+        }
+
         logger.fine("Triggering remove member procedure for " + localMember);
 
         if (ensureCPMemberRemoved(localMember, unit.toNanos(timeout))) {
@@ -531,7 +576,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     void updateMissingMembers() {
-        if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || !metadataGroupManager.isDiscoveryCompleted()) {
+        if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || !metadataGroupManager.isDiscoveryCompleted()
+                || (!isStartCompleted() && getCPPersistenceService().getCPMetadataStore().hasMetadata())) {
             return;
         }
 
@@ -658,7 +704,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         if (!target.equals(node.getLocalMember())) {
             if (logger.isFineEnabled()) {
-                logger.warning("Won't handle " + message + ". We are not the expected target: " + target);
+                logger.warning("Won't handle " + message + ". We are not the expected target: " + target + ", local endpoint: "
+                        + node.getLocalMember());
             }
             return null;
         }
@@ -693,75 +740,89 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     void createRaftNode(CPGroupId groupId, Collection<RaftEndpoint> members, RaftEndpoint localCPMember) {
-        if (nodes.containsKey(groupId) || !isStartCompleted()) {
+        if (nodes.containsKey(groupId) || !isStartCompleted() || !hasSameSeed(groupId)) {
             return;
         }
 
-        if (destroyedGroupIds.contains(groupId)) {
-            logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
-            return;
-        } else if (steppedDownGroupIds.contains(groupId)) {
-            if (!nodeEngine.isRunning()) {
-                logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already stepped down");
-                return;
-            }
-            steppedDownGroupIds.remove(groupId);
-        }
-
-        int partitionId = getCPGroupPartitionId(groupId);
-        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember, partitionId);
-        RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftStateStore stateStore = nodeEngine.getNode().getNodeExtension()
-                                              .createRaftStateStore((RaftGroupId) groupId, null);
-        RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
-
-        if (nodes.putIfAbsent(groupId, node) == null) {
+        nodeLock.readLock().lock();
+        try {
             if (destroyedGroupIds.contains(groupId)) {
-                node.forceSetTerminatedStatus();
                 logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
                 return;
+            } else if (steppedDownGroupIds.contains(groupId)) {
+                if (!nodeEngine.isRunning()) {
+                    logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already stepped down");
+                    return;
+                }
+                steppedDownGroupIds.remove(groupId);
             }
 
-            registerNodeMetrics(node);
-            node.start();
-            logger.info("RaftNode[" + groupId + "] is created with " + members);
+            int partitionId = getCPGroupPartitionId(groupId);
+            RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember, partitionId);
+            RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
+            RaftStateStore stateStore = getCPPersistenceService().createRaftStateStore((RaftGroupId) groupId, null);
+            RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
+
+            if (nodes.putIfAbsent(groupId, node) == null) {
+                if (destroyedGroupIds.contains(groupId)) {
+                    destroyRaftNode(node);
+                    logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
+                    return;
+                }
+
+                registerNodeMetrics(groupId);
+                node.start();
+                logger.info("RaftNode[" + groupId + "] is created with " + members);
+            }
+        } finally {
+            nodeLock.readLock().unlock();
         }
+    }
+
+    CPPersistenceService getCPPersistenceService() {
+        return nodeEngine.getNode().getNodeExtension().getCPPersistenceService();
     }
 
     public RaftNodeImpl restoreRaftNode(RaftGroupId groupId, RestoredRaftState restoredState, LogFileStructure logFileStructure) {
         int partitionId = getCPGroupPartitionId(groupId);
-        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId,
-                restoredState.localEndpoint(), partitionId);
+        RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, restoredState.localEndpoint(),
+                partitionId);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-        RaftStateStore stateStore =
-                nodeEngine.getNode().getNodeExtension().createRaftStateStore(groupId, logFileStructure);
-        RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(
-                groupId, restoredState, raftAlgorithmConfig, integration, stateStore);
+        RaftStateStore stateStore = getCPPersistenceService().createRaftStateStore(groupId, logFileStructure);
+        RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(groupId, restoredState, raftAlgorithmConfig, integration, stateStore);
 
+        // no need to lock here...
         RaftNode prev = nodes.putIfAbsent(groupId, node);
         checkState(prev == null, "Could not restore " + groupId + " because its Raft node already exists!");
 
-        registerNodeMetrics(node);
+        registerNodeMetrics(groupId);
         node.start();
         logger.info("RaftNode[" + groupId + "] is restored.");
         return node;
     }
 
-    private void registerNodeMetrics(RaftNodeImpl node) {
-        RaftNodeMetrics metrics = new RaftNodeMetrics();
-        CPGroupId groupId = node.getGroupId();
-        nodeMetrics.put(groupId, metrics);
+    @Override
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        MetricTagger rootTagger = taggerSupplier.getMetricTagger("raft.group");
+        for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
+            CPGroupId groupId = entry.getKey();
+            MetricTagger tagger = rootTagger.withIdTag("groupId", String.valueOf(groupId.getId()))
+                    .withTag("name", groupId.getName());
+            extractor.extractMetrics(tagger, entry.getValue());
+        }
+    }
 
-        MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(metrics, "raft." + groupId.getName() + "(" + groupId.getId() + ")");
+    private void registerNodeMetrics(CPGroupId groupId) {
+        RaftNodeMetrics metrics = new RaftNodeMetrics();
+        nodeMetrics.put(groupId, metrics);
     }
 
     private void deregisterNodeMetrics(CPGroupId groupId) {
-        RaftNodeMetrics metrics = nodeMetrics.remove(groupId);
-        if (metrics != null) {
-            MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-            metricsRegistry.deregister(metrics);
-        }
+        nodeMetrics.remove(groupId);
+    }
+
+    private boolean hasSameSeed(CPGroupId groupId) {
+        return getMetadataGroupId().getSeed() == ((RaftGroupId) groupId).getSeed();
     }
 
     public boolean updateInvocationManagerMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
@@ -769,23 +830,65 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public void destroyRaftNode(CPGroupId groupId) {
-        destroyedGroupIds.add(groupId);
-        RaftNode node = nodes.remove(groupId);
-        deregisterNodeMetrics(groupId);
-        if (node != null) {
-            node.forceSetTerminatedStatus();
-            if (logger.isFineEnabled()) {
-                logger.fine("Local RaftNode[" + groupId + "] is destroyed.");
+        if (destroyedGroupIds.contains(groupId) || !hasSameSeed(groupId)) {
+            return;
+        }
+
+        nodeLock.readLock().lock();
+        try {
+            if (destroyedGroupIds.contains(groupId)) {
+                return;
             }
+
+            destroyedGroupIds.add(groupId);
+            RaftNode node = nodes.remove(groupId);
+            deregisterNodeMetrics(groupId);
+            if (node != null) {
+                destroyRaftNode(node);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Local RaftNode[" + groupId + "] is destroyed.");
+                }
+            }
+        } finally {
+            nodeLock.readLock().unlock();
         }
     }
 
+    private void destroyRaftNode(RaftNode node) {
+        final RaftGroupId groupId = (RaftGroupId) node.getGroupId();
+        node.forceSetTerminatedStatus().andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                getCPPersistenceService().removeRaftStateStore(groupId);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                getCPPersistenceService().removeRaftStateStore(groupId);
+            }
+        });
+    }
+
+
     public void stepDownRaftNode(CPGroupId groupId) {
-        RaftNode node = nodes.get(groupId);
-        if (node != null && node.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            steppedDownGroupIds.add(groupId);
-            nodes.remove(groupId, node);
-            deregisterNodeMetrics(groupId);
+        if (steppedDownGroupIds.contains(groupId) || !hasSameSeed(groupId)) {
+            return;
+        }
+
+        nodeLock.readLock().lock();
+        try {
+            if (steppedDownGroupIds.contains(groupId)) {
+                return;
+            }
+
+            RaftNode node = nodes.get(groupId);
+            if (node != null && node.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+                steppedDownGroupIds.add(groupId);
+                nodes.remove(groupId, node);
+                deregisterNodeMetrics(groupId);
+            }
+        } finally {
+            nodeLock.readLock().unlock();
         }
     }
 
@@ -928,7 +1031,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    public void handleActiveCPMembers(RaftGroupId latestMetadataGroupId, long membersCommitIndex,
+    public void handleActiveCPMembers(RaftGroupId receivedMetadataGroupId, long membersCommitIndex,
                                       Collection<CPMemberInfo> members) {
         if (!metadataGroupManager.isDiscoveryCompleted()) {
             if (logger.isFineEnabled()) {
@@ -944,26 +1047,31 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        updateInvocationManagerMembers(latestMetadataGroupId.getSeed(), membersCommitIndex, members);
-
         CPMemberInfo localMember = getLocalCPMember();
-        if (localMember != null && !members.contains(localMember) && nodeEngine.getNode().isRunning()) {
-            if (nodeEngine.getNode().isRunning()) {
-                boolean missingAutoRemovalEnabled = config.getMissingCPMemberAutoRemovalSeconds() > 0;
-                logger.severe("Local " + localMember + " is not part of received active CP members: " + members
-                        + ". It seems local member is removed from CP subsystem. "
-                        + "Auto removal of missing members is " + (missingAutoRemovalEnabled ? "enabled." : "disabled."));
+        members = replaceLocalMemberIfAddressChanged(membersCommitIndex, members, localMember);
+
+        if (updateInvocationManagerMembers(receivedMetadataGroupId.getSeed(), membersCommitIndex, members)) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Handled new active CP members list: " + members + ", members commit index: " + membersCommitIndex
+                        + ", METADATA group id seed: " + receivedMetadataGroupId.getSeed());
             }
-            return;
         }
 
         RaftGroupId metadataGroupId = getMetadataGroupId();
-
-        if (latestMetadataGroupId.getSeed() < metadataGroupId.getSeed() || metadataGroupId.equals(latestMetadataGroupId)) {
+        if (receivedMetadataGroupId.getSeed() < metadataGroupId.getSeed() || metadataGroupId.equals(receivedMetadataGroupId)) {
             return;
         }
 
-        if (getRaftNode(latestMetadataGroupId) != null) {
+        if (!isStartCompleted()) {
+            if (!metadataGroupId.equals(receivedMetadataGroupId)) {
+                logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
+                        + receivedMetadataGroupId + ". There must have been a CP Subsystem reset while this member was down...");
+            }
+
+            return;
+        }
+
+        if (getRaftNode(receivedMetadataGroupId) != null) {
             if (logger.isFineEnabled()) {
                 logger.fine(localMember + " is already part of METADATA group but received active CP members!");
             }
@@ -971,13 +1079,57 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        if (!latestMetadataGroupId.equals(metadataGroupId) && getRaftNode(metadataGroupId) != null) {
+        if (!receivedMetadataGroupId.equals(metadataGroupId) && getRaftNode(metadataGroupId) != null) {
             logger.warning(localMember + " was part of " + metadataGroupId + ", but received active CP members for "
-                    + latestMetadataGroupId + ".");
+                    + receivedMetadataGroupId + ".");
             return;
         }
 
-        metadataGroupManager.handleMetadataGroupId(latestMetadataGroupId);
+        metadataGroupManager.handleMetadataGroupId(receivedMetadataGroupId);
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    private Collection<CPMemberInfo> replaceLocalMemberIfAddressChanged(long membersCommitIndex, Collection<CPMemberInfo> members,
+                                                                        CPMemberInfo localMember) {
+        if (localMember != null && !members.contains(localMember)) {
+            // If I am present in the received CP member list with another address, I replace my local member.
+            // In addition, I will remove any other member that has my address.
+            CPMemberInfo otherMember = null;
+            CPMemberInfo staleLocalMember = null;
+            for (CPMemberInfo m : members) {
+                if (m.getAddress().equals(localMember.getAddress()) && !m.getUuid().equals(localMember.getUuid())) {
+                    otherMember = m;
+                } else if (!m.getAddress().equals(localMember.getAddress()) && m.getUuid().equals(localMember.getUuid())) {
+                    staleLocalMember = m;
+                }
+            }
+
+            if (otherMember != null || staleLocalMember != null) {
+                members = new ArrayList<>(members);
+                members.remove(otherMember);
+                members.remove(staleLocalMember);
+                if (logger.isFineEnabled()) {
+                    // prints null if there is no other member with the same address but it is ok in a debug log...
+                    logger.fine("Removing other member: " + otherMember + " in received CP members list: " + members
+                            + " and commit index: " + membersCommitIndex);
+                }
+            }
+
+            if (staleLocalMember != null) {
+                members.add(localMember);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Replacing stale local member: " + staleLocalMember + " with: " + localMember
+                            + " in received CP members list: " + members + " and commit index: " + membersCommitIndex);
+                }
+            } else if (nodeEngine.getNode().isRunning()) {
+                boolean missingAutoRemovalEnabled = config.getMissingCPMemberAutoRemovalSeconds() > 0;
+                logger.severe("Local " + localMember + " is not part of received active CP members: " + members
+                        + ". It seems local member is removed from CP Subsystem. "
+                        + "Auto removal of missing members is " + (missingAutoRemovalEnabled ? "enabled." : "disabled."));
+            }
+        }
+
+        return members;
     }
 
     @Override
@@ -990,9 +1142,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         stepDownRaftNode(groupId);
     }
 
-    // TODO: rename!
-    public Collection<CPGroupId> getLeadershipGroups() {
-        Collection<CPGroupId> groupIds = new ArrayList<CPGroupId>();
+    public Collection<CPGroupId> getLeadedGroups() {
+        Collection<CPGroupId> groupIds = new ArrayList<>();
         RaftEndpoint localEndpoint = getLocalCPEndpoint();
         for (RaftNode raftNode : nodes.values()) {
             if (CPGroup.METADATA_CP_GROUP_NAME.equals(raftNode.getGroupId().getName())) {
@@ -1007,12 +1158,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return groupIds;
     }
 
-    public ICompletableFuture transferLeadership(CPGroupId groupId, CPMemberInfo to) {
+    public ICompletableFuture transferLeadership(CPGroupId groupId, CPMemberInfo destination) {
         RaftNode raftNode = getRaftNode(groupId);
         if (raftNode == null) {
             throw new IllegalStateException("RaftNode does not exist for group: " + groupId);
         }
-        return raftNode.transferLeadership(to.toRaftEndpoint());
+        return raftNode.transferLeadership(destination.toRaftEndpoint());
     }
 
     public int getCPGroupPartitionId(CPGroupId groupId) {
@@ -1196,15 +1347,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 final RaftNodeMetrics metrics = nodeMetrics.get(node.getGroupId());
                 assert metrics != null;
 
-                raftNode.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        RaftState state = raftNode.state();
-                        RaftLog log = state.log();
-                        metrics.update(state.term(), state.commitIndex(), state.lastApplied(),
-                                log.lastLogOrSnapshotTerm(), log.snapshotIndex(),
-                                log.lastLogOrSnapshotIndex(), log.availableCapacity());
-                    }
+                raftNode.execute(() -> {
+                    RaftState state = raftNode.state();
+                    RaftLog log = state.log();
+                    metrics.update(state.term(), state.commitIndex(), state.lastApplied(),
+                            log.lastLogOrSnapshotTerm(), log.snapshotIndex(),
+                            log.lastLogOrSnapshotIndex(), log.availableCapacity());
                 });
             }
         }

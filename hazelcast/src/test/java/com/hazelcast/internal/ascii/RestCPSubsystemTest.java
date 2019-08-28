@@ -57,7 +57,6 @@ import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -360,7 +359,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, clusterName, groupPassword);
+        ConnectionResponse  response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, clusterName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }

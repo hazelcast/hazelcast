@@ -24,11 +24,12 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
+
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -80,7 +81,7 @@ public class QueryTask implements Runnable {
         } catch (Throwable t) {
             logger.severe(queryPolicy + " query failed", t);
             RaftEndpoint leader = raftNode.getLeader();
-            String leaderUuid = leader != null ? leader.getUuid().toString() : null;
+            UUID leaderUuid = leader != null ? leader.getUuid() : null;
             resultFuture.setResult(new CPSubsystemException("Internal failure", t, leaderUuid));
         }
     }
@@ -147,15 +148,19 @@ public class QueryTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
-            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
-            return false;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
-            return false;
+        switch (raftNode.getStatus()) {
+            case INITIAL:
+                resultFuture.setResult(new CannotReplicateException(null));
+                return false;
+            case TERMINATED:
+                resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
+                return false;
+            case STEPPED_DOWN:
+                resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                return false;
+            default:
+                return true;
         }
-
-        return true;
     }
 
 }

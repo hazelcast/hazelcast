@@ -33,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableList;
 
 /**
- * When there is a membership change in the CP subsystem,
+ * When there is a membership change in CP Subsystem,
  * all decided membership changes of Raft groups are maintained here.
  * {@link RaftGroupMembershipManager} realizes these membership changes.
  *
@@ -161,7 +161,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
         public void readData(ObjectDataInput in) throws IOException {
             membersCommitIndex = in.readLong();
             int len = in.readInt();
-            members = new HashSet<RaftEndpoint>(len);
+            members = new HashSet<>(len);
             for (int i = 0; i < len; i++) {
                 RaftEndpoint member = in.readObject();
                 members.add(member);

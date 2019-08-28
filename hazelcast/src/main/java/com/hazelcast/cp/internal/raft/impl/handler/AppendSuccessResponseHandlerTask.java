@@ -25,11 +25,6 @@ import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
-import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 

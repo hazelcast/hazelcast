@@ -546,7 +546,8 @@ public class ConfigCompatibilityChecker {
                     && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
                     && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
                     && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
-                    && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile());
+                    && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
+                    && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;

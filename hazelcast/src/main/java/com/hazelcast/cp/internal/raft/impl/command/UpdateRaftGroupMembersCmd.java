@@ -94,6 +94,6 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
 
     @Override
     public String toString() {
-        return "ChangeRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", mode=" + mode + '}';
+        return "UpdateRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", mode=" + mode + '}';
     }
 }

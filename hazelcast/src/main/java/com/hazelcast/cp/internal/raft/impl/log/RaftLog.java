@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry.isNonInitial;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * {@code RaftLog} keeps and maintains Raft log entries and snapshot. Entries

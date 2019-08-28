@@ -24,7 +24,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
-import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
+import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.TransferLeadershipOp;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
@@ -42,10 +42,11 @@ import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,8 +75,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 class RaftGroupMembershipManager {
 
     static final long MANAGEMENT_TASK_PERIOD_IN_MILLIS = SECONDS.toMillis(1);
+    static final HazelcastProperty LEADERSHIP_BALANCE_TASK_PERIOD
+            = new HazelcastProperty("hazelcast.raft.leadership.rebalance.period", 60);
     private static final long CHECK_LOCAL_RAFT_NODES_TASK_PERIOD = 10;
-    private static final long LEADERSHIP_BALANCE_TASK_PERIOD = Integer.getInteger("hazelcast.raft.leadership.rebalance.period", 60);
 
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
@@ -104,8 +106,9 @@ class RaftGroupMembershipManager {
                 MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
         executionService.scheduleWithRepetition(new CheckLocalRaftNodesTask(), CHECK_LOCAL_RAFT_NODES_TASK_PERIOD,
                 CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
-        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(false), LEADERSHIP_BALANCE_TASK_PERIOD,
-                LEADERSHIP_BALANCE_TASK_PERIOD, SECONDS);
+        int leadershipRebalancePeriod = nodeEngine.getProperties().getInteger(LEADERSHIP_BALANCE_TASK_PERIOD);
+        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(), leadershipRebalancePeriod,
+                leadershipRebalancePeriod, SECONDS);
     }
 
     private boolean skipRunningTask() {
@@ -113,7 +116,7 @@ class RaftGroupMembershipManager {
     }
 
     void rebalanceGroupLeaderships() {
-        new RaftGroupLeadershipBalanceTask(true).run();
+        new RaftGroupLeadershipBalanceTask().run();
     }
 
     private class CheckLocalRaftNodesTask implements Runnable {
@@ -458,12 +461,6 @@ class RaftGroupMembershipManager {
 
     private final class RaftGroupLeadershipBalanceTask implements Runnable {
 
-        private final boolean awaitIfRunning;
-
-        private RaftGroupLeadershipBalanceTask(boolean awaitIfRunning) {
-            this.awaitIfRunning = awaitIfRunning;
-        }
-
         @Override
         public void run() {
             if (skipRunningTask()) {
@@ -471,19 +468,18 @@ class RaftGroupMembershipManager {
             }
 
             if (!rebalanceTaskRunning.compareAndSet(false, true)) {
-                while (awaitIfRunning && rebalanceTaskRunning.get()) {
-                    try {
-                        Thread.sleep(MANAGEMENT_TASK_PERIOD_IN_MILLIS);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-                return;
+                throw new IllegalStateException(getClass().getSimpleName() + " is already running!");
             }
 
             try {
                 rebalanceLeaderships();
+            } catch (Exception e) {
+                if (logger.isFineEnabled()) {
+                    logger.warning("Cannot execute leadership rebalance at the moment", e);
+                } else {
+                    logger.info("Cannot execute leadership rebalance at the moment: "
+                            + e.getClass().getName() + ": " + e.getMessage());
+                }
             } finally {
                 rebalanceTaskRunning.set(false);
             }
@@ -497,7 +493,7 @@ class RaftGroupMembershipManager {
             final int avgGroupsPerMember = groupIds.size() / members.size();
             final boolean overAvgAllowed = groupIds.size() % members.size() != 0;
 
-            Collection<CPGroupSummary> allGroups = new ArrayList<CPGroupSummary>(groupIds.size());
+            Collection<CPGroupSummary> allGroups = new ArrayList<>(groupIds.size());
             for (CPGroupId groupId : groupIds) {
                 CPGroupSummary group = getCpGroup(groupId);
                 allGroups.add(group);
@@ -506,18 +502,19 @@ class RaftGroupMembershipManager {
             logger.info("Searching for leadership imbalance in " + groupIds.size() + " CPGroups, "
                     + "average groups per member is " + avgGroupsPerMember);
 
-            Set<CPMember> handledMembers = new HashSet<CPMember>(members.size());
+            Set<CPMember> handledMembers = new HashSet<>(members.size());
             Map<CPMember, Collection<CPGroupId>> leaderships = getLeadershipsMap(members);
 
-            for (; ; ) {
-                Tuple2<CPMember, Integer> from = getEndpointWithMaxLeaderships(leaderships, avgGroupsPerMember, handledMembers);
+            for (; ;) {
+                BiTuple<CPMember, Integer> from = getEndpointWithMaxLeaderships(leaderships, avgGroupsPerMember, handledMembers);
                 if (from.element1 == null) {
                     // nothing to transfer
                     logger.info("CPGroup leadership balance is fine, cannot rebalance further...");
                     return;
                 }
 
-                logger.info("Searching a candidate transfer leadership from " + from + " with " + from.element2 + " leaderships.");
+                logger.info("Searching a candidate transfer leadership from "
+                        + from.element1 + " with " + from.element2 + " leaderships.");
                 Collection<CPGroupSummary> groups = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), allGroups);
 
                 int maxLeaderships;
@@ -534,9 +531,9 @@ class RaftGroupMembershipManager {
                 } else {
                     maxLeaderships = avgGroupsPerMember;
                 }
-                Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
+                BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
                 if (to.element1 == null) {
-                    logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
+                    logger.info("No candidate could be found to get leadership from " + from.element1 + ". Skipping to next...");
                     // could not found target member to transfer membership
                     // try to find next leader
                     handledMembers.add(from.element1);
@@ -553,12 +550,12 @@ class RaftGroupMembershipManager {
         }
 
         private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(Map<RaftEndpoint, CPMember> members) {
-            Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
+            Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<>();
             OperationService operationService = nodeEngine.getOperationService();
             StringBuilder s = new StringBuilder("Current leadership claims:");
             for (CPMember member : members.values()) {
                 Collection<CPGroupId> groups =
-                        operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadershipGroupsOp(),
+                        operationService.<Collection<CPGroupId>>invokeOnTarget(null, new GetLeadedGroupsOp(),
                                 member.getAddress()).join();
                 leaderships.put(member, groups);
                 if (logger.isFineEnabled()) {
@@ -574,9 +571,9 @@ class RaftGroupMembershipManager {
 
         private Collection<CPGroupSummary> getLeaderGroupsOf(CPMember member, Collection<CPGroupId> leaderships,
                 Collection<CPGroupSummary> groups) {
-            List<CPGroupSummary> memberGroups = new ArrayList<CPGroupSummary>();
+            List<CPGroupSummary> memberGroups = new ArrayList<>();
             for (CPGroupSummary group : groups) {
-                if (CPGroup.METADATA_CP_GROUP_NAME.equals(group.id().name())) {
+                if (CPGroup.METADATA_CP_GROUP_NAME.equals(group.id().getName())) {
                     // ignore metadata group, we don't expect any significant load on metadata
                     continue;
                 }
@@ -590,7 +587,7 @@ class RaftGroupMembershipManager {
             return memberGroups;
         }
 
-        private Tuple2<CPMember, CPGroupId> getEndpointWithMinLeaderships(Collection<CPGroupSummary> groups,
+        private BiTuple<CPMember, CPGroupId> getEndpointWithMinLeaderships(Collection<CPGroupSummary> groups,
                                                                           Map<CPMember, Collection<CPGroupId>> leaderships,
                                                                           int maxLeaderships) {
             CPMember to = null;
@@ -607,11 +604,11 @@ class RaftGroupMembershipManager {
                     }
                 }
             }
-            return Tuple2.of(to, groupId);
+            return BiTuple.of(to, groupId);
         }
 
-        private Tuple2<CPMember, Integer> getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
-                int minLeaderships, Set<CPMember> excludeSet) {
+        private BiTuple<CPMember, Integer> getEndpointWithMaxLeaderships(Map<CPMember, Collection<CPGroupId>> leaderships,
+                                                                         int minLeaderships, Set<CPMember> excludeSet) {
             CPMember from = null;
             int max = minLeaderships;
             for (Entry<CPMember, Collection<CPGroupId>> entry : leaderships.entrySet()) {
@@ -624,7 +621,7 @@ class RaftGroupMembershipManager {
                     max = count;
                 }
             }
-            return Tuple2.of(from, max);
+            return BiTuple.of(from, max);
         }
 
         private boolean transferLeadership(CPMember from, CPMember to, CPGroupId groupId) {
@@ -643,7 +640,7 @@ class RaftGroupMembershipManager {
         private Map<RaftEndpoint, CPMember> getMembers() {
             InternalCompletableFuture<Collection<CPMemberInfo>> future = queryMetadata(new GetActiveCPMembersOp());
             Collection<CPMemberInfo> members = future.join();
-            Map<RaftEndpoint, CPMember> map = new HashMap<RaftEndpoint, CPMember>(members.size());
+            Map<RaftEndpoint, CPMember> map = new HashMap<>(members.size());
             for (CPMemberInfo member : members) {
                 map.put(member.toRaftEndpoint(), member);
             }

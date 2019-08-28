@@ -25,14 +25,14 @@ import com.hazelcast.internal.util.Preconditions;
 public class FencedLockConfig {
 
     /**
-     * Default reentrant lock acquire limit of {@link FencedLock}.
+     * The default reentrant lock acquire limit of {@link FencedLock}.
      * 0 means there is no upper bound for number of reentrant lock acquires.
      */
     public static final int DEFAULT_LOCK_ACQUIRE_LIMIT = 0;
 
 
     /**
-     * Name of the FencedLock
+     * Name of FencedLock
      */
     private String name;
 
@@ -72,14 +72,14 @@ public class FencedLockConfig {
     }
 
     /**
-     * Returns name of the FencedLock
+     * Returns the name of FencedLock
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets name of the semaphore
+     * Sets the name of FencedLock
      */
     public FencedLockConfig setName(String name) {
         this.name = name;
@@ -89,15 +89,14 @@ public class FencedLockConfig {
     /**
      * Returns the maximum number of lock acquires a lock holder can perform.
      * 0 means no upper-bound on the number of reentrant lock acquires.
-     * 1 means the lock is non-reentrant.
-     * It can also be bigger than 1.
+     * 1 means the lock is non-reentrant. It can also be bigger than 1.
      */
     public int getLockAcquireLimit() {
         return lockAcquireLimit;
     }
 
     /**
-     * Sets the number of lock acquires a lock holder can perform
+     * Sets the number of lock acquires a lock holder can perform.
      */
     public FencedLockConfig setLockAcquireLimit(int lockAcquireLimit) {
         Preconditions.checkTrue(lockAcquireLimit >= 0, "reentrant lock acquire limit cannot be negative");
@@ -106,9 +105,8 @@ public class FencedLockConfig {
     }
 
     /**
-     * Disable reentrancy. It means once the lock is acquired,
-     * the caller will not be able to acquire it again, until
-     * it releases the lock.
+     * Disable reentrancy. It means once the lock is acquired, the caller
+     * will not be able to acquire it again before it releases the lock.
      */
     public FencedLockConfig disableReentrancy() {
         this.lockAcquireLimit = 1;
@@ -116,9 +114,9 @@ public class FencedLockConfig {
     }
 
     /**
-     * Enables reentrancy. It means once the lock is acquired,
-     * the caller can acquire the lock again many times, without
-     * having an upper bound on the number of reentrant acquires.
+     * Enables reentrancy. It means once the lock is acquired, the
+     * caller can acquire the lock again many times, without having
+     * an upper bound on the number of reentrant acquires.
      */
     public FencedLockConfig enableReentrancy() {
         this.lockAcquireLimit = DEFAULT_LOCK_ACQUIRE_LIMIT;

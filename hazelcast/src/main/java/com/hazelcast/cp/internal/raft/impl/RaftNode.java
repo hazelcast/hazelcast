@@ -101,7 +101,7 @@ public interface RaftNode {
      * Sets node's status to {@link RaftNodeStatus#TERMINATED} unconditionally
      * if it's not terminated or stepped down yet.
      */
-    void forceSetTerminatedStatus();
+    ICompletableFuture forceSetTerminatedStatus();
 
     /**
      * Handles {@link PreVoteRequest} sent by another follower.

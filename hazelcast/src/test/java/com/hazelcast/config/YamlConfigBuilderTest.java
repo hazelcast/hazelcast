@@ -3274,6 +3274,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    fail-on-indeterminate-operation-state: true\n"
                 + "    persistence-enabled: true\n"
                 + "    base-dir: /mnt/cp-data\n"
+                + "    data-load-timeout-seconds: 30\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -3302,6 +3303,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

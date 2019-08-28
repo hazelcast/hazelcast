@@ -342,7 +342,7 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public ConnectionResponse removeCPMember(UUID cpMemberUid, String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse removeCPMember(UUID cpMemberUid, String clusterName, String groupPassword) throws IOException {
         String url = address + "cp-subsystem/members/" + cpMemberUid + "/remove";
         return doPost(url, clusterName, groupPassword);
     }

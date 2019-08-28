@@ -19,8 +19,10 @@ package com.hazelcast.cp.exception;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 
+import java.util.UUID;
+
 /**
- * Base exception for failures in the CP subsystem
+ * Base exception for failures in CP Subsystem
  * <p>
  * This exception can include the known leader of a {@link CPGroup}
  * when it's thrown.
@@ -30,18 +32,18 @@ public class CPSubsystemException extends HazelcastException {
 
     private static final long serialVersionUID = 3165333502175586105L;
 
-    private final String leaderUuid;
+    private final UUID leaderUuid;
 
-    public CPSubsystemException(String leaderUuid) {
+    public CPSubsystemException(UUID leaderUuid) {
         this.leaderUuid = leaderUuid;
     }
 
-    public CPSubsystemException(String message, String leaderUuid) {
+    public CPSubsystemException(String message, UUID leaderUuid) {
         super(message);
         this.leaderUuid = leaderUuid;
     }
 
-    public CPSubsystemException(String message, Throwable cause, String leaderUuid) {
+    public CPSubsystemException(String message, Throwable cause, UUID leaderUuid) {
         super(message, cause);
         this.leaderUuid = leaderUuid;
     }
@@ -50,7 +52,7 @@ public class CPSubsystemException extends HazelcastException {
      * Returns the leader endpoint of related CP group, if known/available
      * by the time this exception is thrown.
      */
-    public String getLeaderUuid() {
+    public UUID getLeaderUuid() {
         return leaderUuid;
     }
 }

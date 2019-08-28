@@ -174,7 +174,7 @@ public class TimedMemberStateFactory {
             memberState.setCpMemberUuid(null);
         } else {
             CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
-            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid().toString() : null);
+            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid() : null);
         }
 
         Address thisAddress = node.getThisAddress();

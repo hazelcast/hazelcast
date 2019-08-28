@@ -22,7 +22,6 @@ import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.QueryRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -192,13 +191,10 @@ public class LocalQueryTest extends HazelcastTestSupport {
         RaftNodeImpl followerNode = group.getAnyFollowerNode();
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
-                assertNotNull(leaderEndpoint);
-                assertNotEquals(leader.getLocalMember(), leaderEndpoint);
-            }
+        assertTrueEventually(() -> {
+            RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
+            assertNotNull(leaderEndpoint);
+            assertNotEquals(leader.getLocalMember(), leaderEndpoint);
         });
 
         RaftNodeImpl newLeader = group.getNode(getLeaderMember(followerNode));
@@ -232,13 +228,10 @@ public class LocalQueryTest extends HazelcastTestSupport {
         RaftNodeImpl followerNode = group.getAnyFollowerNode();
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
-                assertNotNull(leaderEndpoint);
-                assertNotEquals(leader.getLocalMember(), leaderEndpoint);
-            }
+        assertTrueEventually(() -> {
+            RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
+            assertNotNull(leaderEndpoint);
+            assertNotEquals(leader.getLocalMember(), leaderEndpoint);
         });
 
         RaftNodeImpl newLeader = group.getNode(getLeaderMember(followerNode));

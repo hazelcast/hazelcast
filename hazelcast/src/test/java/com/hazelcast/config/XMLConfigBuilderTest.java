@@ -2995,6 +2995,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <fail-on-indeterminate-operation-state>true</fail-on-indeterminate-operation-state>\n"
                 + "  <persistence-enabled>true</persistence-enabled>\n"
                 + "  <base-dir>/mnt/cp-data</base-dir>\n"
+                + "  <data-load-timeout-seconds>30</data-load-timeout-seconds>\n"
                 + "  <raft-algorithm>\n"
                 + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
                 + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
@@ -3036,6 +3037,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

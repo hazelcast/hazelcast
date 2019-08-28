@@ -38,13 +38,19 @@ public interface CPPersistenceService {
      * Returns the utility that is used for storing {@link CPMember} identity of
      * the local Hazelcast member.
      */
-    CPMemberMetadataStore getCPMemberMetadataStore();
+    CPMetadataStore getCPMetadataStore();
 
     /**
      * Creates a {@link RaftStateStore} that is going to be used by the local Raft node
      * of the given CP group.
      */
     RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure);
+
+    /**
+     * Removes the store associated with groupId,
+     * removes all persisted state and releases acquired resources.
+     */
+    void removeRaftStateStore(@Nonnull RaftGroupId groupId);
 
     /**
      * Deletes all persisted data from the storage.
