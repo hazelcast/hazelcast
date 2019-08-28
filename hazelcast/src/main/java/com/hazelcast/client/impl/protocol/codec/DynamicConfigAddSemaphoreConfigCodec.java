@@ -67,14 +67,14 @@ public final class DynamicConfigAddSemaphoreConfigCodec {
         public int asyncBackupCount;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum number of members
-         * required in the cluster for the lock to remain functional. When {@code null}, quorum does not
+         * name of an existing configured split brain protection to be used to determine the minimum number of members
+         * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int initialPermits, int backupCount, int asyncBackupCount, java.lang.String quorumName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int initialPermits, int backupCount, int asyncBackupCount, java.lang.String splitBrainProtectionName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -86,7 +86,7 @@ public final class DynamicConfigAddSemaphoreConfigCodec {
         encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         return clientMessage;
     }
 
@@ -98,7 +98,7 @@ public final class DynamicConfigAddSemaphoreConfigCodec {
         request.backupCount = decodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET);
         request.asyncBackupCount = decodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
     }
 

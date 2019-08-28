@@ -81,11 +81,11 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         public java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum number of members
-         * required in the cluster for the lock to remain functional. When {@code null}, quorum does not
+         * name of an existing configured split brain protection to be used to determine the minimum number of members
+         * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
 
         /**
          * TODO DOC
@@ -93,7 +93,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String inMemoryFormat, boolean asyncFillup, boolean statisticsEnabled, java.lang.String mergePolicy, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.lang.String quorumName, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String inMemoryFormat, boolean asyncFillup, boolean statisticsEnabled, java.lang.String mergePolicy, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.lang.String splitBrainProtectionName, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -108,7 +108,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         StringCodec.encode(clientMessage, inMemoryFormat);
         StringCodec.encode(clientMessage, mergePolicy);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         return clientMessage;
     }
 
@@ -123,7 +123,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         request.inMemoryFormat = StringCodec.decode(iterator);
         request.mergePolicy = StringCodec.decode(iterator);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
     }
 

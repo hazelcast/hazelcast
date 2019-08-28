@@ -67,14 +67,14 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         public int capacity;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum number of members
-         * required in the cluster for the lock to remain functional. When {@code null}, quorum does not
+         * name of an existing configured split brain protection to be used to determine the minimum number of members
+         * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, java.lang.String quorumName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, java.lang.String splitBrainProtectionName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -86,7 +86,7 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         return clientMessage;
     }
 
@@ -98,7 +98,7 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         request.durability = decodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET);
         request.capacity = decodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
     }
 

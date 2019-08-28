@@ -43,7 +43,7 @@ public class AddLockConfigMessageTask
     @Override
     protected IdentifiedDataSerializable getConfig() {
         LockConfig config = new LockConfig(parameters.name);
-        config.setQuorumName(parameters.quorumName);
+        config.setQuorumName(parameters.splitBrainProtectionName);
         return config;
     }
 

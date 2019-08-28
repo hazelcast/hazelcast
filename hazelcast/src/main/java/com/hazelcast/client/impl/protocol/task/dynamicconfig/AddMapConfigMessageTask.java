@@ -96,7 +96,7 @@ public class AddMapConfigMessageTask
             config.setPartitionLostListenerConfigs(
                     (List<MapPartitionLostListenerConfig>) adaptListenerConfigs(parameters.partitionLostListenerConfigs));
         }
-        config.setQuorumName(parameters.quorumName);
+        config.setQuorumName(parameters.splitBrainProtectionName);
         if (parameters.queryCacheConfigs != null && !parameters.queryCacheConfigs.isEmpty()) {
             List<QueryCacheConfig> queryCacheConfigs = new ArrayList<QueryCacheConfig>(parameters.queryCacheConfigs.size());
             for (QueryCacheConfigHolder holder : parameters.queryCacheConfigs) {

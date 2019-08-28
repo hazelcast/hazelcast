@@ -122,11 +122,11 @@ public final class DynamicConfigAddCacheConfigCodec {
         public java.lang.String inMemoryFormat;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum
+         * name of an existing configured split brain protection to be used to determine the minimum
          * number of members required in the cluster for the cache to remain functional.
-         * When {@code null}, quorum does not apply to this cache's operations.
+         * When {@code null}, split brain protection does not apply to this cache's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
 
         /**
          * name of a class implementing {@link com.hazelcast.cache.CacheMergePolicy}
@@ -183,7 +183,7 @@ public final class DynamicConfigAddCacheConfigCodec {
         public com.hazelcast.config.HotRestartConfig hotRestartConfig;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String keyType, java.lang.String valueType, boolean statisticsEnabled, boolean managementEnabled, boolean readThrough, boolean writeThrough, java.lang.String cacheLoaderFactory, java.lang.String cacheWriterFactory, java.lang.String cacheLoader, java.lang.String cacheWriter, int backupCount, int asyncBackupCount, java.lang.String inMemoryFormat, java.lang.String quorumName, java.lang.String mergePolicy, boolean disablePerEntryInvalidationEvents, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, java.lang.String expiryPolicyFactoryClassName, com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig, java.util.Collection<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners, com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.HotRestartConfig hotRestartConfig) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String keyType, java.lang.String valueType, boolean statisticsEnabled, boolean managementEnabled, boolean readThrough, boolean writeThrough, java.lang.String cacheLoaderFactory, java.lang.String cacheWriterFactory, java.lang.String cacheLoader, java.lang.String cacheWriter, int backupCount, int asyncBackupCount, java.lang.String inMemoryFormat, java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, boolean disablePerEntryInvalidationEvents, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, java.lang.String expiryPolicyFactoryClassName, com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig, java.util.Collection<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners, com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.HotRestartConfig hotRestartConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -206,7 +206,7 @@ public final class DynamicConfigAddCacheConfigCodec {
         CodecUtil.encodeNullable(clientMessage, cacheLoader, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, cacheWriter, StringCodec::encode);
         StringCodec.encode(clientMessage, inMemoryFormat);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, mergePolicy, StringCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, partitionLostListenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, expiryPolicyFactoryClassName, StringCodec::encode);
@@ -238,7 +238,7 @@ public final class DynamicConfigAddCacheConfigCodec {
         request.cacheLoader = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.cacheWriter = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.inMemoryFormat = StringCodec.decode(iterator);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.partitionLostListenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.expiryPolicyFactoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
