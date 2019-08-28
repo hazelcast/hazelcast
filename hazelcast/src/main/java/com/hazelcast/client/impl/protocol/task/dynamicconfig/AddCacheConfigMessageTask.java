@@ -79,7 +79,7 @@ public class AddCacheConfigMessageTask
         } else {
             config.setPartitionLostListenerConfigs(new ArrayList<CachePartitionLostListenerConfig>());
         }
-        config.setQuorumName(parameters.quorumName);
+        config.setQuorumName(parameters.splitBrainProtectionName);
         config.setReadThrough(parameters.readThrough);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         config.setValueType(parameters.valueType);

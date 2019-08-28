@@ -52,7 +52,7 @@ public class AddQueueConfigMessageTask
         config.setBackupCount(parameters.backupCount);
         config.setEmptyQueueTtl(parameters.emptyQueueTtl);
         config.setMaxSize(parameters.maxSize);
-        config.setQuorumName(parameters.quorumName);
+        config.setQuorumName(parameters.splitBrainProtectionName);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.queueStoreConfig != null) {
             QueueStoreConfig storeConfig = parameters.queueStoreConfig.asQueueStoreConfig(serializationService);

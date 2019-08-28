@@ -85,11 +85,11 @@ public final class DynamicConfigAddQueueConfigCodec {
         public boolean statisticsEnabled;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum number of members
-         * required in the cluster for the queue to remain functional. When {@code null}, quorum does not
+         * name of an existing configured split brain protection to be used to determine the minimum number of members
+         * required in the cluster for the queue to remain functional. When {@code null}, split brain protection does not
          * apply to this queue configuration's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
 
         /**
          * backing queue store configuration
@@ -107,7 +107,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, java.lang.String quorumName, com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, java.lang.String splitBrainProtectionName, com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -123,7 +123,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
         return clientMessage;
@@ -141,7 +141,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queueStoreConfig = CodecUtil.decodeNullable(iterator, QueueStoreConfigHolderCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
         return request;

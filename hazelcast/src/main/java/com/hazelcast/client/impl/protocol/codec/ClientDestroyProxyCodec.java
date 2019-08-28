@@ -59,7 +59,7 @@ public final class ClientDestroyProxyCodec {
          * "hz:impl:executorService"
          * "hz:impl:mapService"
          * "hz:impl:multiMapService"
-         * "hz:impl:quorumService"
+         * "hz:impl:splitBrainProtectionService"
          * "hz:impl:replicatedMapService"
          * "hz:impl:ringbufferService"
          * "hz:core:proxyService"

@@ -50,11 +50,11 @@ public final class DynamicConfigAddAtomicLongConfigCodec {
         public java.lang.String name;
 
         /**
-         * name of an existing configured quorum to be used to determine the minimum number of members
-         * required in the cluster for the lock to remain functional. When {@code null}, quorum does not
+         * name of an existing configured split brain protection to be used to determine the minimum number of members
+         * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String quorumName;
+        public java.lang.String splitBrainProtectionName;
 
         /**
          * TODO DOC
@@ -67,7 +67,7 @@ public final class DynamicConfigAddAtomicLongConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String quorumName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -77,7 +77,7 @@ public final class DynamicConfigAddAtomicLongConfigCodec {
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, quorumName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
         return clientMessage;
     }
@@ -88,7 +88,7 @@ public final class DynamicConfigAddAtomicLongConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.quorumName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
         return request;
     }
