@@ -72,7 +72,9 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
             assertNull(map.get("key" + i));
         }
 
-        assertEquals(entryCount, entryLoader.getLoadCallCount());
+        // entryLoader.loadCallCount() may be greater than entryCount because of retries
+        assertGreaterOrEquals("entryLoader.loadCallCount()", entryLoader.getLoadCallCount(), entryCount);
+        assertEquals(entryCount, entryLoader.getLoadUniqueKeysCount());
     }
 
     @Test
@@ -103,12 +105,15 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         for (int i = 0; i < entryCount; i++) {
             assertEquals("val" + i, map.get("key" + i));
         }
+        assertEquals(0, entryLoader.getLoadCallCount());
         sleepAtLeastSeconds(6);
-
         for (int i = 0; i < entryCount; i++) {
             assertNull(map.get("key" + i));
         }
-        assertEquals(entryCount, entryLoader.getLoadCallCount());
+
+        // entryLoader.loadCallCount() may be greater than entryCount because of retries
+        assertGreaterOrEquals("entryLoader.loadCallCount()", entryLoader.getLoadCallCount(), entryCount);
+        assertEquals(entryCount, entryLoader.getLoadUniqueKeysCount());
     }
 
     private Config createConfig(MapStoreConfig.InitialLoadMode loadMode, EntryLoader entryLoader) {
