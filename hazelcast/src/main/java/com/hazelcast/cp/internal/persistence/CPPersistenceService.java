@@ -35,6 +35,11 @@ public interface CPPersistenceService {
     boolean isEnabled();
 
     /**
+     * Returns local CP member.
+     */
+    CPMember getLocalMember();
+
+    /**
      * Returns the utility that is used for storing {@link CPMember} identity of
      * the local Hazelcast member.
      */

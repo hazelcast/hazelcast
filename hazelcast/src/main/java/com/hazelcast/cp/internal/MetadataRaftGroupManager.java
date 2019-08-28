@@ -903,6 +903,35 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 && localCPMember.toRaftEndpoint().equals(raftNode.getLeader());
     }
 
+    public void updateMember(long commitIndex, CPMemberInfo member) {
+        checkNotNull(member);
+        checkMetadataGroupInitSuccessful();
+
+        Collection<CPMemberInfo> newMembers = new LinkedHashSet<CPMemberInfo>(activeMembers.size());
+        boolean found = false;
+
+        for (CPMemberInfo existingMember : activeMembers) {
+            if (existingMember.getUuid().equals(member.getUuid())) {
+                if (existingMember.getAddress().equals(member.getAddress())) {
+                    logger.fine(member + " already exists.");
+                    return;
+                }
+                logger.info("Replaced " + existingMember + " with " + member);
+                newMembers.add(member);
+                found = true;
+            } else {
+                newMembers.add(existingMember);
+            }
+        }
+
+        if (!found) {
+            throw new IllegalArgumentException(member + " does not exist!");
+        }
+
+        logger.info("Added new " + member + ". New active CP members list: " + newMembers);
+        doSetActiveMembers(commitIndex, newMembers);
+    }
+
     /**
      * this method is idempotent
      */
@@ -1056,7 +1085,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private class DiscoverInitialCPMembersTask implements Runnable {
 
-        private final CPMember cpMember;
+        private /*final*/ CPMember cpMember;
         private final boolean markedAPMember;
         private Collection<Member> latestMembers = Collections.emptySet();
         private final boolean terminateOnDiscoveryFailure;
@@ -1066,8 +1095,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             this.terminateOnDiscoveryFailure = terminateOnDiscoveryFailure;
             try {
                 this.markedAPMember = metadataStore.isMarkedAPMember();
-                this.cpMember = metadataStore.readLocalMember();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new HazelcastException(e);
             }
         }
@@ -1078,6 +1106,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             if (shouldRescheduleOrSkip()) {
                 return;
             }
+
+            cpMember = raftService.getCpPersistenceService().getLocalMember();
 
             if (cpMember != null) {
                 logger.fine("CP member is already set: " + cpMember);

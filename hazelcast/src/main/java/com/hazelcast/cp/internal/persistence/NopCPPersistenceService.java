@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.persistence;
 
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.raft.impl.persistence.LogFileStructure;
 import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
@@ -34,6 +35,11 @@ public final class NopCPPersistenceService implements CPPersistenceService {
     @Override
     public boolean isEnabled() {
         return false;
+    }
+
+    @Override
+    public CPMember getLocalMember() {
+        return null;
     }
 
     @Override

@@ -65,7 +65,6 @@ public class RaftInvocationContext {
     }
 
     public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
-        CPMemberInfo localCPMember = raftService.getLocalCPMember();
         if (members.size() < 2) {
             return false;
         }
@@ -80,6 +79,28 @@ public class RaftInvocationContext {
                 }
             } else {
                 return false;
+            }
+        }
+    }
+
+    public void updateMember(CPMemberInfo member) {
+        while (true) {
+            CPMembersContainer currentContainer = membersContainer.get();
+            CPMemberInfo existingMember = currentContainer.membersMap.get(member.getUuid());
+            if (existingMember == null) {
+                return;
+            }
+            if (existingMember.getAddress().equals(member.getAddress())) {
+                return;
+            }
+
+            Map<UUID, CPMemberInfo> newMembers = new HashMap<UUID, CPMemberInfo>(currentContainer.membersMap);
+            newMembers.put(member.getUuid(), member);
+            CPMembersContainer newContainer = new CPMembersContainer(currentContainer.version, newMembers);
+
+            if (membersContainer.compareAndSet(currentContainer, newContainer)) {
+                logger.info("Replaced " + existingMember + " -> " + member);
+                return;
             }
         }
     }
@@ -165,10 +186,16 @@ public class RaftInvocationContext {
         CPMembersContainer(CPMembersVersion version, CPMemberInfo[] members) {
             this.version = version;
             this.members = members;
-            membersMap = new HashMap<UUID, CPMemberInfo>();
+            membersMap = new HashMap<UUID, CPMemberInfo>(members.length);
             for (CPMemberInfo member : members) {
                 membersMap.put(member.getUuid(), member);
             }
+        }
+
+        CPMembersContainer(CPMembersVersion version, Map<UUID, CPMemberInfo> members) {
+            this.version = version;
+            this.members = members.values().toArray(new CPMemberInfo[0]);
+            this.membersMap = members;
         }
     }
 
