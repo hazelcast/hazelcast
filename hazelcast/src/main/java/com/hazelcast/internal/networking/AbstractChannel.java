@@ -116,6 +116,10 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public void connect(InetSocketAddress address, int timeoutMillis) throws IOException {
         try {
+            if (!clientMode) {
+                throw new IllegalStateException("Can't call connect on a Channel that isn't in clientMode");
+            }
+
             checkNotNull(address, "address");
             checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
 
