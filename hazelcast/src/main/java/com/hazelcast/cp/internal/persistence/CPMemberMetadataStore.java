@@ -42,12 +42,12 @@ public interface CPMemberMetadataStore {
     /**
      * Persists {@link CPMember} identity of the local member to storage.
      */
-    void persistLocalMember(CPMember member) throws IOException;
+    void persistLocalCPMember(CPMember member) throws IOException;
 
     /**
      * Reads {@link CPMember} identity of this member from storage.
      * If {@code null} is returned, it means that AP/CP identity of the member
      * is not not known yet CP member discovery will run.
      */
-    CPMember readLocalMember() throws IOException;
+    CPMember readLocalCPMember() throws IOException;
 }

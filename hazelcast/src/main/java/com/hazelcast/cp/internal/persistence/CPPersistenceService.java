@@ -37,7 +37,7 @@ public interface CPPersistenceService {
     /**
      * Returns local CP member.
      */
-    CPMember getLocalMember();
+    CPMember getLocalCPMember();
 
     /**
      * Returns the utility that is used for storing {@link CPMember} identity of

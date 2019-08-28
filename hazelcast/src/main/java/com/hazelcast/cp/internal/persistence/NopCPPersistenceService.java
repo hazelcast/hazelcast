@@ -38,7 +38,7 @@ public final class NopCPPersistenceService implements CPPersistenceService {
     }
 
     @Override
-    public CPMember getLocalMember() {
+    public CPMember getLocalCPMember() {
         return null;
     }
 

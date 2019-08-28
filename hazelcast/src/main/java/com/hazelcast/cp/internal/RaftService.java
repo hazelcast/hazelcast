@@ -663,7 +663,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         if (!target.equals(node.getLocalMember())) {
             if (logger.isFineEnabled()) {
-                logger.warning("Won't handle " + message + ". We are not the expected target: " + target);
+                logger.warning("Won't handle " + message + ". We are not the expected target: " + target + ", local endpoint: "
+                        + node.getLocalMember());
             }
             return null;
         }
