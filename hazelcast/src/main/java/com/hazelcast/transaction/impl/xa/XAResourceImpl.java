@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -110,6 +111,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             default:
                 throw new XAException("Unknown flag! " + flags);
         }
+        if (logger.isFinestEnabled()) {
+            logger.finest("Started transaction with xid: " + xid +", flags: " + flags);
+        }
     }
 
     private TransactionContext createTransactionContext(Xid xid) {
@@ -130,6 +134,10 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         if (contexts == null && logger.isFinestEnabled()) {
             logger.finest("There is no TransactionContexts for the given xid: " + xid);
         }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Ended transaction with xid: " + xid +", flags: " + flags);
+        }
     }
 
     @Override
@@ -142,6 +150,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             Transaction transaction = getTransaction(context);
             transaction.prepare();
         }
+        if (logger.isFinestEnabled()) {
+            logger.finest("Prepared transaction with xid: " + xid);
+        }
         return XA_OK;
     }
 
@@ -153,6 +164,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         }
         if (contexts == null) {
             finalizeTransactionRemotely(xid, true);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Committed transaction with xid: " + xid);
+            }
             return;
         }
 
@@ -164,6 +178,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             transaction.commit();
         }
         clearRemoteTransactions(xid);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Committed and cleared remote transactions with xid: " + xid);
+        }
     }
 
     @Override
@@ -171,12 +188,18 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         List<TransactionContext> contexts = xidContextMap.remove(xid);
         if (contexts == null) {
             finalizeTransactionRemotely(xid, false);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Rolled back transaction with xid: " + xid);
+            }
             return;
         }
         for (TransactionContext context : contexts) {
             getTransaction(context).rollback();
         }
         clearRemoteTransactions(xid);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Rolled back and cleared remote transactions with xid: " + xid);
+        }
     }
 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) throws XAException {
@@ -197,6 +220,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         }
         if (errorCode != null) {
             throw new XAException(errorCode);
+        }
+        if (logger.isFinestEnabled()) {
+            logger.finest("Finalized transaction remotely with xid: " + xid);
         }
     }
 
@@ -219,6 +245,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             throw new XAException("No context with the given xid: " + xid);
         }
         clearRemoteTransactions(xid);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Forget transaction with xid: " + xid);
+        }
     }
 
     @Override
@@ -251,6 +280,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             futureList.add(future);
         }
         Set<SerializableXID> xids = new HashSet<SerializableXID>(xaService.getPreparedXids());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Recover collected local prepared xids: " + xids);
+        }
 
         for (Future<SerializableList> future : futureList) {
             try {
@@ -273,6 +305,10 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
                 }
             }
         }
+        if (logger.isFinestEnabled()) {
+            logger.finest("Recover collected all prepared xids: " + xids);
+        }
+
         return xids.toArray(new SerializableXID[0]);
     }
 

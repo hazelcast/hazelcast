@@ -81,11 +81,13 @@ public final class XATransaction implements Transaction {
 
     private State state = NO_TXN;
     private long startTime;
+    private final ILogger logger;
 
     private boolean originatedFromClient;
 
     public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
         this.transactionLog = new TransactionLog();
         this.timeoutMillis = SECONDS.toMillis(timeout);
         this.txnId = UuidUtil.newUnsecureUuidString();
@@ -102,6 +104,7 @@ public final class XATransaction implements Transaction {
     public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
                          String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
         this.transactionLog = new TransactionLog(logs);
         this.timeoutMillis = timeoutMillis;
         this.txnId = txnId;
@@ -123,6 +126,9 @@ public final class XATransaction implements Transaction {
         }
         startTime = Clock.currentTimeMillis();
         state = ACTIVE;
+        if (logger.isFinestEnabled()) {
+            logger.finest("Started XATransaction with xid: " + xid);
+        }
     }
 
     @Override
@@ -138,6 +144,9 @@ public final class XATransaction implements Transaction {
             futures.clear();
             putTransactionInfoRemote();
             state = PREPARED;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Prepared XATransaction with xid: " + xid);
+            }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
@@ -151,6 +160,9 @@ public final class XATransaction implements Transaction {
         int partitionId = partitionService.getPartitionId(xid);
         InternalCompletableFuture<Object> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         future.get();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Put XATransaction info remote with xid: " + xid);
+        }
     }
 
     @Override
@@ -168,6 +180,9 @@ public final class XATransaction implements Transaction {
             waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, commitExceptionHandler);
 
             state = COMMITTED;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Committed XATransaction with xid: " + xid);
+            }
         } catch (Throwable e) {
             state = COMMIT_FAILED;
             throw ExceptionUtil.rethrow(e, TransactionException.class);
@@ -184,6 +199,9 @@ public final class XATransaction implements Transaction {
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;
+        if (logger.isFinestEnabled()) {
+            logger.finest("Commit async XATransaction with xid: " + xid);
+        }
     }
 
     @Override
@@ -199,6 +217,9 @@ public final class XATransaction implements Transaction {
             throw ExceptionUtil.rethrow(e);
         } finally {
             state = ROLLED_BACK;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Rolled back XATransaction with xid: " + xid);
+            }
         }
     }
 
@@ -210,6 +231,9 @@ public final class XATransaction implements Transaction {
         transactionLog.rollbackAsync(nodeEngine, callback);
         //todo: I doubt this is correct; rollbackAsync is an async operation so has potentially not yet completed.
         state = ROLLED_BACK;
+        if (logger.isFinestEnabled()) {
+            logger.finest("Roll back async XATransaction with xid: " + xid);
+        }
     }
 
     @Override
