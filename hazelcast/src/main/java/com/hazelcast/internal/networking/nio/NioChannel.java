@@ -40,12 +40,12 @@ public final class NioChannel extends AbstractChannel {
     // The close delays is needed for the TLS goodbye handshake to complete.
     NioInboundPipeline inboundPipeline;
     NioOutboundPipeline outboundPipeline;
+    final ProtocolType protocolType;
 
     private final Executor closeListenerExecutor;
     private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
-    final ProtocolType protocolType;
 
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
