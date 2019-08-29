@@ -120,6 +120,7 @@ samples using the Core API.
 
 - [Kafka Source](kafka/src/main/java/com/hazelcast/jet/examples/kafka/KafkaSource.java)
   - variant with [Avro Serialization](kafka/src/main/java/com/hazelcast/jet/examples/kafka/avro/KafkaAvroSource.java)
+- [Kafka Sink](kafka/src/main/java/com/hazelcast/jet/examples/kafka/KafkaSink.java)
 - [Hadoop Distributed File System (HDFS) Source and Sink](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java)
   - variant with [Avro Serialization](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/avro/HadoopAvro.java)
 - [JDBC Source](jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSource.java)
