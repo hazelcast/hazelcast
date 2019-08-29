@@ -86,8 +86,8 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
-    private NetworkStats inboundNetworkStats;
-    private NetworkStats outboundNetworkStats;
+    private NetworkStats inboundNetworkStats = new NetworkStats();
+    private NetworkStats outboundNetworkStats = new NetworkStats();
 
     public MemberStateImpl() {
     }

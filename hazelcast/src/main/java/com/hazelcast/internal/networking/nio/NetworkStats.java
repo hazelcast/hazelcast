@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class NetworkStats {
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
-    NetworkStats() {
+    public NetworkStats() {
         bytesTransceived = new EnumMap<ProtocolType, AtomicLong>(ProtocolType.class);
         for (ProtocolType protocolType : ProtocolType.values()) {
             bytesTransceived.put(protocolType, new AtomicLong());

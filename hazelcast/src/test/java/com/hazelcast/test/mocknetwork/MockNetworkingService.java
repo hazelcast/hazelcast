@@ -20,7 +20,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.NetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -36,6 +39,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.StripedRunnable;
 
+import java.io.IOException;
+import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -345,7 +350,35 @@ class MockNetworkingService
 
     @Override
     public Networking getNetworking() {
-        return null;
+        return new Networking() {
+            @Override
+            public Channel register(EndpointQualifier endpointQualifier,
+                                    ChannelInitializerProvider channelInitializerProvider,
+                                    SocketChannel socketChannel,
+                                    boolean clientMode) throws IOException {
+                return null;
+            }
+
+            @Override
+            public void start() {
+                // NO-OP
+            }
+
+            @Override
+            public void shutdown() {
+                // NO-OP
+            }
+
+            @Override
+            public NetworkStats getOutboundNetworkStats() {
+                return new NetworkStats();
+            }
+
+            @Override
+            public NetworkStats getInboundNetworkStats() {
+                return new NetworkStats();
+            }
+        };
     }
 
     @Override
