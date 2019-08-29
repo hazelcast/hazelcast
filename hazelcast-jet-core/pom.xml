@@ -30,10 +30,6 @@
         <version>3.2-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <main.basedir>${project.parent.basedir}</main.basedir>
-    </properties>
-
     <build>
         <plugins>
             <plugin>

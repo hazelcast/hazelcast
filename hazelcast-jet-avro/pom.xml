@@ -33,11 +33,6 @@
         <version>3.2-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <main.basedir>${project.parent.basedir}</main.basedir>
-        <avro.version>1.8.2</avro.version>
-    </properties>
-
     <build>
         <plugins>
             <plugin>

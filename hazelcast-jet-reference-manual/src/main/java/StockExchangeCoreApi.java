@@ -27,7 +27,7 @@ import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import datamodel.Trade;
+import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
 
 import java.time.Instant;
 import java.time.ZoneId;

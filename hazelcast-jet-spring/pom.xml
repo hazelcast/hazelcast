@@ -32,10 +32,6 @@
         <version>3.2-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <main.basedir>${project.parent.basedir}</main.basedir>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -44,7 +40,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>com.hazelcast.jet.spring</Automatic-Module-Name>
+                            <Automatic-Module-Name>com.hazelcast.com.hazelcast.jet.examples.spring</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

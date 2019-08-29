@@ -30,7 +30,6 @@
     </parent>
 
     <properties>
-        <main.basedir>${project.parent.basedir}</main.basedir>
         <config.directory>${project.build.directory}/config</config.directory>
         <hazelcast.jet.artifact>hazelcast-jet</hazelcast.jet.artifact>
     </properties>

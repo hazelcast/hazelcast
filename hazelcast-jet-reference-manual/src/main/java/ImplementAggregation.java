@@ -22,9 +22,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
-import datamodel.AddToCart;
-import datamodel.PageVisit;
-import datamodel.Payment;
+import com.hazelcast.jet.examples.enrichment.datamodel.AddToCart;
+import com.hazelcast.jet.examples.enrichment.datamodel.PageVisit;
+import com.hazelcast.jet.examples.enrichment.datamodel.Payment;
 
 import java.util.Map.Entry;
 

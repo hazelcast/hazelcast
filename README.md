@@ -132,7 +132,7 @@ See the [Hazelcast Jet Reference Manual].
 
 ## Code Samples
 
-See [Hazelcast Jet Code Samples] for some examples.
+See [examples folder](examples) for some examples.
 
 ## Additional Connectors
 

@@ -30,10 +30,10 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import datamodel.PageVisit;
-import datamodel.Payment;
-import datamodel.StockInfo;
-import datamodel.Trade;
+import com.hazelcast.jet.examples.enrichment.datamodel.PageVisit;
+import com.hazelcast.jet.examples.enrichment.datamodel.Payment;
+import com.hazelcast.jet.examples.enrichment.datamodel.StockInfo;
+import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;

@@ -30,7 +30,7 @@ import com.hazelcast.jet.pipeline.StreamSourceStage;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import datamodel.Person;
+import com.hazelcast.jet.examples.enrichment.datamodel.Person;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;

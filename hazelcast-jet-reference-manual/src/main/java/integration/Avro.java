@@ -21,7 +21,7 @@ import com.hazelcast.jet.avro.AvroSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import datamodel.Person;
+import com.hazelcast.jet.examples.enrichment.datamodel.Person;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 
