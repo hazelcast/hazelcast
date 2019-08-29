@@ -44,14 +44,16 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 public class CompleteExecutionOperation extends Operation implements IdentifiedDataSerializable {
 
     private long executionId;
+    private boolean collectMetrics;
     private Throwable error;
     private RawJobMetrics response;
 
     public CompleteExecutionOperation() {
     }
 
-    public CompleteExecutionOperation(long executionId, Throwable error) {
+    public CompleteExecutionOperation(long executionId, boolean collectMetrics, Throwable error) {
         this.executionId = executionId;
+        this.collectMetrics = collectMetrics;
         this.error = error;
     }
 
@@ -72,12 +74,14 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         JobExecutionService jobExecutionService = service.getJobExecutionService();
-        JobMetricsRenderer metricsRenderer = new JobMetricsRenderer(executionId, nodeEngine.getLocalMember(), logger);
-        nodeEngine.getMetricsRegistry().render(metricsRenderer);
-        metricsRenderer.whenComplete();
-        //TODO: we should probably filter out some of the metrics for completed jobs, not all make sense at this point
-        //  take for example MetricNames.LAST_FORWARDED_WM_LATENCY
-        response = metricsRenderer.getJobMetrics();
+        if (collectMetrics) {
+            JobMetricsRenderer metricsRenderer = new JobMetricsRenderer(executionId, nodeEngine.getLocalMember(), logger);
+            nodeEngine.getMetricsRegistry().render(metricsRenderer);
+            metricsRenderer.whenComplete();
+            response = metricsRenderer.getJobMetrics();
+        } else {
+            response = RawJobMetrics.empty();
+        }
 
         jobExecutionService.completeExecution(executionId, error);
     }
@@ -106,6 +110,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(executionId);
+        out.writeBoolean(collectMetrics);
         out.writeObject(error);
     }
 
@@ -113,6 +118,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         executionId = in.readLong();
+        collectMetrics = in.readBoolean();
         error = in.readObject();
     }
 
@@ -162,7 +168,6 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
 
         @Override
         public void renderNoValue(String name) {
-            throw new UnsupportedOperationException();
         }
 
         public void whenComplete() {

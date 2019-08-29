@@ -425,7 +425,7 @@ public class JobRepository {
     }
 
     @Nullable
-    public List<RawJobMetrics> getJobMetrics(long jobId) {
+    List<RawJobMetrics> getJobMetrics(long jobId) {
         return jobMetrics.get(jobId);
     }
 

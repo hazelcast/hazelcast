@@ -552,8 +552,9 @@ public class MasterJobContext {
             finalError = new IllegalStateException("Job coordination failed");
         }
 
+        boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor = plan ->
-                new CompleteExecutionOperation(mc.executionId(), finalError);
+                new CompleteExecutionOperation(mc.executionId(), savingMetricsEnabled, finalError);
         mc.invokeOnParticipants(operationCtor, responses -> {
             if (responses.stream().map(Map.Entry::getValue).anyMatch(Throwable.class::isInstance)) {
                 // log errors

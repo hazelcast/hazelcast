@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.nio.Address;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,6 +50,7 @@ import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -64,6 +66,32 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     @Test
+    public void when_jobMetricsDisabled_then_emptyMetrics() throws Throwable {
+        DAG dag = new DAG();
+        dag.newVertex("v1", MockP::new);
+        dag.newVertex("v2", (SupplierEx<Processor>) NoOutputSourceP::new);
+
+        //init
+        JobConfig config = new JobConfig()
+                .setMetricsEnabled(true) //enable metric collection
+                .setStoreMetricsAfterJobCompletion(false); //disable metric saving on completion
+        Job job = jet().newJob(dag, config);
+
+        //when
+        NoOutputSourceP.executionStarted.await();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        //then
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        NoOutputSourceP.proceedLatch.countDown();
+        job.join();
+        //then
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertEmptyJobMetrics(job, false);
+    }
+
+    @Test
     public void when_jobRunning_then_nonEmptyMetrics() throws Throwable {
         DAG dag = new DAG();
         dag.newVertex("v1", MockP::new);
@@ -74,12 +102,15 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
         assertJobStatusEventually(job, JobStatus.RUNNING);
         //then
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
+        //when
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
+        //then
         assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertJobHasMetrics(job);
+        assertJobHasMetrics(job, true);
+        assertTrue(jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
     @Test
@@ -98,7 +129,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
             assertExceptionInCauses(exc, e);
         }
 
-        assertEmptyJobMetrics(job);
+        assertEmptyJobMetrics(job, true);
     }
 
     @Test
@@ -108,9 +139,9 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         dag.newVertex("v1", new BlockingInInitMetaSupplier());
 
         Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-        assertTrueAllTheTime(() -> assertEmptyJobMetrics(job), 2);
+        assertTrueAllTheTime(() -> assertEmptyJobMetrics(job, false), 2);
         BlockingInInitMetaSupplier.latch.countDown();
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
     }
 
     @Test
@@ -126,7 +157,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         dag.edge(between(v1, v2).distributed());
         Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         job.join();
-        assertJobHasMetrics(job);
+        assertJobHasMetrics(job, true);
         // If there would be multiple metrics with the same name, then an
         // assertion error would be thrown when merging them.
     }
@@ -138,23 +169,72 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
         dag.edge(between(v1, v2));
 
+        //init
         Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+
+        //when
         TestProcessors.NoOutputSourceP.executionStarted.await();
+        //then
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
+        //when
         job.suspend();
+        //then
         assertJobStatusEventually(job, SUSPENDED);
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
+        //when
         job.resume();
+        //then
         assertJobStatusEventually(job, RUNNING);
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
+        //when
         TestProcessors.NoOutputSourceP.proceedLatch.countDown();
         job.join();
+        //then
         assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertJobHasMetrics(job);
+        assertJobHasMetrics(job, true);
+    }
+
+    @Test
+    public void when_jobSuspended_andMetricsNotStored_then_onlyPeriodicMetricsReturned() throws Throwable {
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", TestProcessors.MockP::new);
+        Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
+        dag.edge(between(v1, v2));
+
+        //init
+        JobConfig config = new JobConfig()
+                .setMetricsEnabled(true) //enable metric collection
+                .setStoreMetricsAfterJobCompletion(false); //disable metric saving on completion
+        Job job = jet().newJob(dag, config);
+
+        //when
+        TestProcessors.NoOutputSourceP.executionStarted.await();
+        //then
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        job.suspend();
+        //then
+        assertJobStatusEventually(job, SUSPENDED);
+        assertTrueEventually(() -> assertEmptyJobMetrics(job, false));
+
+        //when
+        job.resume();
+        //then
+        assertJobStatusEventually(job, RUNNING);
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        TestProcessors.NoOutputSourceP.proceedLatch.countDown();
+        job.join();
+        //then
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertEmptyJobMetrics(job, false);
     }
 
     @Test
@@ -170,12 +250,12 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         job.restart();
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertTrueEventually(() -> assertJobHasMetrics(job));
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
         TestProcessors.NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertJobHasMetrics(job);
+        assertJobHasMetrics(job, true);
     }
 
     @Test
@@ -191,7 +271,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
 
         Job job = runJobExpectFailure(dag, e);
         assertJobStatusEventually(job, JobStatus.FAILED);
-        assertJobHasMetrics(job);
+        assertJobHasMetrics(job, true);
     }
 
     @Test
@@ -200,21 +280,23 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         dag.newVertex("v1", MockP::new);
         dag.newVertex("v2", (SupplierEx<Processor>) NoOutputSourceP::new);
 
-        JobConfig config = new JobConfig().setMetricsEnabled(false);
+        JobConfig config = new JobConfig()
+                .setMetricsEnabled(false)
+                .setStoreMetricsAfterJobCompletion(true);
         Job job = jet().newJob(dag, config);
 
         //when
         NoOutputSourceP.executionStarted.await();
         assertJobStatusEventually(job, JobStatus.RUNNING);
         //then
-        assertTrueAllTheTime(() -> assertEmptyJobMetrics(job), 2);
+        assertTrueAllTheTime(() -> assertEmptyJobMetrics(job, false), 2);
 
         //when
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         //then
-        assertEmptyJobMetrics(job);
+        assertEmptyJobMetrics(job, true);
     }
 
     private Job runJobExpectFailure(@Nonnull DAG dag, @Nonnull RuntimeException expectedException) {
@@ -230,13 +312,15 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         return job;
     }
 
-    private void assertJobHasMetrics(Job job) {
+    private void assertJobHasMetrics(Job job, boolean saved) {
         assertFalse(job.getMetrics().metrics().isEmpty());
         assertFalse(job.getMetrics().get("queuesSize").isEmpty());
+        assertEquals(saved, jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
-    private void assertEmptyJobMetrics(Job job) {
+    private void assertEmptyJobMetrics(Job job, boolean saved) {
         assertTrue(job.getMetrics().metrics().isEmpty());
+        assertEquals(saved, jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
     private static class BlockingInInitMetaSupplier implements ProcessorMetaSupplier {

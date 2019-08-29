@@ -88,29 +88,25 @@ public interface Job {
      * Returns a snapshot of the current values of all job-specific metrics.
      * <p>
      * While the job is running the metric values are updated periodically
-     * (see {@link MetricsConfig#setCollectionIntervalSeconds}).
+     * (see {@link MetricsConfig#setCollectionIntervalSeconds metrics
+     * collection interval}), assuming
+     * that both {@link MetricsConfig#setEnabled global metrics collection}
+     * and {@link JobConfig#isMetricsEnabled() per job metrics collection}
+     * are enabled. Otherwise empty metrics will be returned.
      * <p>
-     * Once a job stops executing (successfully, after a failure, cancellation,
-     * or temporarily while suspended) the metrics will have their most
-     * recent values (i.e. the last metric values from the moment before the
-     * job completed).
+     * Keep in mind that the collections may occur at different times on
+     * each member, metrics from various members aren't from the same instant.
      * <p>
      * When a job is restarted (or resumed after being previously suspended)
      * the metrics are reset too, their values will reflect only updates
      * from the latest execution of the job.
      * <p>
-     * The method returns empty metrics if either
-     * {@link MetricsConfig#setEnabled global metrics collection} or
-     * {@link JobConfig#isMetricsEnabled() per job metrics collection}
-     * are disabled or until the first metric collection takes place.
-     * <p>
-     * For completed jobs, metrics are only persisted if
-     * {@link JobConfig#setStoreMetricsAfterJobCompletion(boolean)}
-     * was enabled, otherwise empty metrics are returned.
-     * <p>
-     * Also keep in mind that the collections may occur at different times on
-     * each member, metrics from various members aren't from the same instant
-     * of time.
+     * Once a job stops executing (successfully, after a failure, cancellation,
+     * or temporarily while suspended) the metrics will have their most
+     * recent values (i.e. the last metric values from the moment before the
+     * job completed), assuming that
+     * {@link JobConfig#setStoreMetricsAfterJobCompletion(boolean) metrics
+     * storage} was enabled. Otherwise empty metrics will be returned.
      *
      * @since 3.2
      */
