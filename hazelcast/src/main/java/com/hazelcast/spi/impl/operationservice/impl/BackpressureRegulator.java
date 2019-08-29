@@ -280,6 +280,10 @@ public class BackpressureRegulator {
 
         private final AtomicBoolean clusterOverloadDetected = new AtomicBoolean(false);
 
+        public boolean clusterOverloadDetected() {
+            return clusterOverloadDetected.get();
+        }
+
         public void process(NioChannel channel) {
             if (asyncBackupOverloadCheckIntervalMs <= 0) {
                 // disabled

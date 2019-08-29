@@ -29,6 +29,7 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.impl.BackpressureRegulator;
 import com.hazelcast.util.function.Supplier;
 
@@ -148,6 +149,7 @@ public final class NioOutboundPipeline
     }
 
     private final Set<Integer> URGENT_MESSAGE_TYPES = new HashSet<>();
+
     {
         for (ClientMessageType type : ClientMessageType.values()) {
             URGENT_MESSAGE_TYPES.add(type.id());
@@ -155,6 +157,13 @@ public final class NioOutboundPipeline
     }
 
     public void write(OutboundFrame frame) {
+        if (backpressureRegulatorMonitor != null && backpressureRegulatorMonitor.clusterOverloadDetected()) {
+            if (frame instanceof Packet && ((Packet) frame).getPacketType() == Packet.Type.EVENT) {
+                // we dump events in case of overload.
+                return;
+            }
+        }
+
         bytesQueued.inc(frame.getFrameLength());
 
         // Avoid blocking system threads, urgent messages. This requires client-protocol change to include the urgent flag
