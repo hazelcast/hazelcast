@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
@@ -261,6 +260,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     public void setMetadataGroupId(RaftGroupId groupId) {
+        if (raftService.isStartCompleted()) {
+            throw new IllegalStateException("Cannot set metadata groupId after start process is completed!");
+        }
         if (groupId.equals(getMetadataGroupId())) {
             return;
         }
@@ -271,6 +273,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             throw new IllegalStateException("Metadata groupId is not allowed to be set!");
         }
         metadataGroupIdRef.set(groupId);
+    }
+
+    public void setLocalCPMember(CPMemberInfo member) {
+        if (raftService.isStartCompleted()) {
+            throw new IllegalStateException("Cannot set local CP member after start process is completed!");
+        }
+        if (!localCPMember.compareAndSet(null, member)) {
+            throw new IllegalStateException("Local CP member is already set! Current: " + localCPMember.get());
+        }
     }
 
     long getGroupIdSeed() {
@@ -1085,7 +1096,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private class DiscoverInitialCPMembersTask implements Runnable {
 
-        private /*final*/ CPMember cpMember;
         private final boolean markedAPMember;
         private Collection<Member> latestMembers = Collections.emptySet();
         private final boolean terminateOnDiscoveryFailure;
@@ -1107,12 +1117,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return;
             }
 
-            cpMember = raftService.getCpPersistenceService().getLocalCPMember();
-
-            if (cpMember != null) {
-                logger.fine("CP member is already set: " + cpMember);
-                localCPMember.set((CPMemberInfo) cpMember);
-            } else if (!markedAPMember) {
+            if (!markedAPMember) {
                 // If there is no AP and CP identity restored,
                 // it means that this member is starting from scratch
                 // so we should run the CP discovery process...
