@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.util.ExceptionUtil;
 
 public class DistributedObjectFuture {

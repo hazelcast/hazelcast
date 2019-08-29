@@ -84,7 +84,7 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -679,7 +679,7 @@ public class ReferenceObjects {
     public static RingbufferStoreConfigHolder ringbufferStore;
     public static QueueStoreConfigHolder queueStoreConfig;
 
-    public static Properties props;
+    public static Map<String, String> props;
     public static List<ListenerConfigHolder> listenerConfigs;
 
     public static WanReplicationRef wanReplicationRef;
@@ -696,8 +696,8 @@ public class ReferenceObjects {
     public static List<CacheSimpleEntryListenerConfig> cacheEntryListenerConfigs;
 
     static {
-        props = new Properties();
-        props.setProperty("a", "b");
+        props = new HashMap<>();
+        props.put("a", "b");
 
         BigEndianSerializationServiceBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServiceBuilder();
         SerializationService serializationService = defaultSerializationServiceBuilder
@@ -719,8 +719,6 @@ public class ReferenceObjects {
         listenerConfigs.add(holder5);
         listenerConfigs.add(holder6);
 
-        Properties props = new Properties();
-        props.setProperty("a", "b");
         ringbufferStore = new RingbufferStoreConfigHolder("com.hazelcast.RingbufferStore", null, null, null,
                 props, true);
         queueStoreConfig = new QueueStoreConfigHolder("com.hazelcast.QueueStore", null, null, null, props, true);

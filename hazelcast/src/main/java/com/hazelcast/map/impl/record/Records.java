@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 
@@ -148,7 +148,13 @@ public final class Records {
 
         //we managed to lock the record for ourselves
         Object valueAfterCas = record.getValue();
-        Object object = serializationService.toObject(valueBeforeCas);
+        Object object = null;
+        try {
+            object = serializationService.toObject(valueBeforeCas);
+        } catch (Exception e) {
+            record.casCachedValue(currentThread, null);
+            throw e;
+        }
         if (valueAfterCas == valueBeforeCas) {
             //this check is needed to make sure a partition thread had not changed the value
             //right before we won the CAS

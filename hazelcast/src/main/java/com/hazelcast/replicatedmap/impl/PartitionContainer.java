@@ -45,26 +45,22 @@ public class PartitionContainer {
     }
 
     private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
-        return new ConcurrentHashMap<String, ReplicatedRecordStore>();
+        return new ConcurrentHashMap<>();
     }
 
     private ConstructorFunction<String, ReplicatedRecordStore> buildConstructorFunction() {
-        return new ConstructorFunction<String, ReplicatedRecordStore>() {
-
-            @Override
-            public ReplicatedRecordStore createNew(String name) {
-                ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
-                InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-                switch (inMemoryFormat) {
-                    case OBJECT:
-                        return new ObjectReplicatedRecordStorage(name, service, partitionId);
-                    case BINARY:
-                        return new DataReplicatedRecordStore(name, service, partitionId);
-                    case NATIVE:
-                        throw new IllegalStateException("Native memory not yet supported for replicated map");
-                    default:
-                        throw new IllegalStateException("Unsupported in memory format: " + inMemoryFormat);
-                }
+        return name -> {
+            ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
+            InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
+            switch (inMemoryFormat) {
+                case OBJECT:
+                    return new ObjectReplicatedRecordStorage(name, service, partitionId);
+                case BINARY:
+                    return new DataReplicatedRecordStore(name, service, partitionId);
+                case NATIVE:
+                    throw new IllegalStateException("Native memory not yet supported for replicated map");
+                default:
+                    throw new IllegalStateException("Unsupported in memory format: " + inMemoryFormat);
             }
         };
     }

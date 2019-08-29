@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;

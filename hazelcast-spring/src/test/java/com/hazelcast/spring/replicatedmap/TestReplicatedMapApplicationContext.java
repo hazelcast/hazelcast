@@ -56,11 +56,9 @@ public class TestReplicatedMapApplicationContext {
     public void testReplicatedMapConfig() {
         ReplicatedMapConfig replicatedMapConfig = instance.getConfig().getReplicatedMapConfig("replicatedMap");
         assertNotNull(replicatedMapConfig);
-        assertEquals(3, replicatedMapConfig.getConcurrencyLevel());
         assertEquals("OBJECT", InMemoryFormat.OBJECT.name());
         assertTrue(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals(10, replicatedMapConfig.getReplicationDelayMillis());
 
         List<ListenerConfig> listenerConfigs = replicatedMapConfig.getListenerConfigs();
         assertEquals(1, listenerConfigs.size());

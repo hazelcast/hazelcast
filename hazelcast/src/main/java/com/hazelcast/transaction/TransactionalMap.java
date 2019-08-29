@@ -246,7 +246,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#keySet(com.hazelcast.query.Predicate)
      */
     @Override
-    Set<K> keySet(Predicate predicate);
+    Set<K> keySet(Predicate<K, V> predicate);
 
     /**
      * Transactional implementation of {@link IMap#values()}.
@@ -263,5 +263,5 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#values(com.hazelcast.query.Predicate)
      */
     @Override
-    Collection<V> values(Predicate predicate);
+    Collection<V> values(Predicate<K, V> predicate);
 }

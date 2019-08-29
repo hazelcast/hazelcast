@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.ClientEndpointManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -46,7 +46,7 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        //Runs on {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR}
+        //Runs on {@link com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR}
         // to work in sync with ClientReAuthOperation
         engine.getClientManagementExecutor().execute(new ClientDisconnectedTask());
     }
@@ -77,7 +77,7 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     public boolean returnsResponse() {
         // This method actually returns a response.
         // Since operation needs to work on a different executor,
-        // (see {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR})
+        // (see {@link com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR})
         // the response is returned via ClientDisconnectionOperation.ClientDisconnectedTask
         return false;
     }

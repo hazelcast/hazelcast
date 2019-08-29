@@ -59,8 +59,9 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<MapMergeTypes> mergingEntries, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
-                   boolean disableWanReplicationEvent) {
+    public MergeOperation(String name, List<MapMergeTypes> mergingEntries,
+                          SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                          boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -91,7 +92,6 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         Data dataKey = mergingEntry.getKey();
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        //noinspection unchecked
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
             hasMergedValues = true;
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));

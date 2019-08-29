@@ -16,13 +16,19 @@
 
 package com.hazelcast.quorum.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.services.MemberAttributeServiceEvent;
+import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.services.QuorumAwareService;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.HeartbeatAware;
 import com.hazelcast.quorum.PingAware;
@@ -33,16 +39,10 @@ import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumListener;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.MemberAttributeServiceEvent;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -103,7 +103,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
             return;
         }
 
-        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
         // single thread quorum executor
         executionService.register(QUORUM_EXECUTOR, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
 

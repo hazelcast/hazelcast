@@ -79,8 +79,8 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         config.addWanReplicationConfig(
                 new WanReplicationConfig()
                         .setName("seattle-tokyo")
-                        .addWanPublisherConfig(
-                                new WanPublisherConfig()
+                        .addWanBatchReplicationPublisherConfig(
+                                new WanBatchReplicationPublisherConfig()
                                         .setGroupName("target-cluster")
                                         .setEndpoint("does-not-exist")));
 
@@ -104,11 +104,11 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         AdvancedNetworkConfig config = new AdvancedNetworkConfig();
         config.setMemberEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.MEMBER)
-                .setPort(19999)
+                                                .setPort(19999)
         );
         config.setMemberEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.MEMBER)
-                .setPort(11000)
+                                                .setPort(11000)
         );
 
         assertEquals(11000, ((ServerSocketEndpointConfig) config.getEndpointConfigs().get(MEMBER)).getPort());

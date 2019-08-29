@@ -16,14 +16,10 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
@@ -61,7 +57,7 @@ public final class MergePolicyValidator {
      * the supplied {@code mergePolicy}, {@code false} otherwise
      */
     public static boolean checkMergePolicySupportsInMemoryFormat(String name, Object mergePolicy, InMemoryFormat inMemoryFormat,
-            boolean failFast, ILogger logger) {
+                                                                 boolean failFast, ILogger logger) {
         if (inMemoryFormat != NATIVE) {
             return true;
         }
@@ -83,75 +79,17 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks the merge policy configuration in the context of an {@link ICache}.
-     *
-     * @param mergePolicyClassname the configured merge policy of the cache
-     * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} of the cache
-     * @param mergePolicyProvider  the {@link CacheMergePolicyProvider} to resolve merge policy classes
-     */
-    static void checkCacheMergePolicy(String mergePolicyClassname, SplitBrainMergeTypeProvider mergeTypeProvider,
-                                      CacheMergePolicyProvider mergePolicyProvider) {
-        if (mergePolicyProvider == null) {
-            return;
-        }
-        Object mergePolicyInstance = getMergePolicyInstance(mergePolicyProvider, mergePolicyClassname);
-        checkMergePolicy(mergeTypeProvider, mergePolicyInstance);
-    }
-
-    private static Object getMergePolicyInstance(CacheMergePolicyProvider mergePolicyProvider, String mergePolicyClassname) {
-        try {
-            return mergePolicyProvider.getMergePolicy(mergePolicyClassname);
-        } catch (InvalidConfigurationException e) {
-            throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy"
-                    + " or CacheMergePolicy, but was " + mergePolicyClassname, e.getCause());
-        }
-    }
-
-    /**
-     * Checks the merge policy configuration of the given {@link ReplicatedMapConfig}.
-     *
-     * @param replicatedMapConfig the {@link ReplicatedMapConfig} to check
-     * @param mergePolicyProvider the {@link com.hazelcast.replicatedmap.merge.MergePolicyProvider}
-     *                            to resolve merge policy classes
-     */
-    static void checkReplicatedMapMergePolicy(ReplicatedMapConfig replicatedMapConfig,
-                                              com.hazelcast.replicatedmap.merge.MergePolicyProvider mergePolicyProvider) {
-        String mergePolicyClassName = replicatedMapConfig.getMergePolicyConfig().getPolicy();
-        Object mergePolicyInstance = getMergePolicyInstance(mergePolicyProvider, mergePolicyClassName);
-        checkMergePolicy(replicatedMapConfig, mergePolicyInstance);
-    }
-
-    private static Object getMergePolicyInstance(com.hazelcast.replicatedmap.merge.MergePolicyProvider mergePolicyProvider,
-                                                 String mergePolicyClassName) {
-        try {
-            return mergePolicyProvider.getMergePolicy(mergePolicyClassName);
-        } catch (InvalidConfigurationException e) {
-            throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy"
-                    + " or ReplicatedMapMergePolicy, but was " + mergePolicyClassName, e.getCause());
-        }
-    }
-
-    /**
      * Checks the merge policy configuration of the given {@link MapConfig}.
      *
-     * @param mapConfig           the {@link MapConfig}
-     * @param mergePolicyProvider the {@link MergePolicyProvider} to resolve merge policy classes
+     * @param mapConfig the {@link MapConfig}
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    static void checkMapMergePolicy(MapConfig mapConfig, MergePolicyProvider mergePolicyProvider) {
+    static void checkMapMergePolicy(MapConfig mapConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
-        Object mergePolicyInstance = getMergePolicyInstance(mergePolicyProvider, mergePolicyClassName);
-        List<Class> requiredMergeTypes = checkMergePolicy(mapConfig, mergePolicyInstance);
+        SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
+        List<Class> requiredMergeTypes = checkSplitBrainMergePolicy(mapConfig, mergePolicyInstance);
         if (!mapConfig.isStatisticsEnabled() && requiredMergeTypes != null) {
             checkMapMergePolicyWhenStatisticsAreDisabled(mergePolicyClassName, requiredMergeTypes);
-        }
-    }
-
-    private static Object getMergePolicyInstance(MergePolicyProvider mergePolicyProvider, String mergePolicyClassName) {
-        try {
-            return mergePolicyProvider.getMergePolicy(mergePolicyClassName);
-        } catch (InvalidConfigurationException e) {
-            throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy"
-                    + " or MapMergePolicy, but was " + mergePolicyClassName, e.getCause());
         }
     }
 
@@ -181,8 +119,14 @@ public final class MergePolicyValidator {
      * @throws InvalidConfigurationException if the given merge policy is no {@link SplitBrainMergePolicy}
      */
     static void checkMergePolicy(SplitBrainMergeTypeProvider mergeTypeProvider,
-                                 SplitBrainMergePolicyProvider mergePolicyProvider, String mergePolicyClassName) {
-        SplitBrainMergePolicy mergePolicy = getMergePolicyInstance(mergePolicyProvider, mergePolicyClassName);
+                                 SplitBrainMergePolicyProvider mergePolicyProvider,
+                                 String mergePolicyClassName) {
+        if (mergePolicyProvider == null) {
+            return;
+        }
+
+        SplitBrainMergePolicy mergePolicy = getMergePolicyInstance(mergePolicyProvider,
+                mergePolicyClassName);
         checkSplitBrainMergePolicy(mergeTypeProvider, mergePolicy);
     }
 
@@ -194,20 +138,6 @@ public final class MergePolicyValidator {
             throw new InvalidConfigurationException("Merge policy must be an instance of SplitBrainMergePolicy,"
                     + " but was " + mergePolicyClassName, e.getCause());
         }
-    }
-
-    /**
-     * Checks if a {@link SplitBrainMergeTypeProvider} provides all required types of a given merge policy instance.
-     *
-     * @param mergeTypeProvider   the {@link SplitBrainMergeTypeProvider} to retrieve the provided merge types
-     * @param mergePolicyInstance the merge policy instance
-     * @return a list of the required merge types if the merge policy is a {@link SplitBrainMergePolicy}, {@code null} otherwise
-     */
-    private static List<Class> checkMergePolicy(SplitBrainMergeTypeProvider mergeTypeProvider, Object mergePolicyInstance) {
-        if (mergePolicyInstance instanceof SplitBrainMergePolicy) {
-            return checkSplitBrainMergePolicy(mergeTypeProvider, (SplitBrainMergePolicy) mergePolicyInstance);
-        }
-        return null;
     }
 
     /**

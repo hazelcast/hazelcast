@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -62,9 +63,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public abstract void testConfiguration_withNullInputStream();
-
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testInvalidRootElement();
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testJoinValidation();
@@ -570,4 +568,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(expected.getName(), configured.getName());
         assertEquals(expected.getActions(), configured.getActions());
     }
+
+    public abstract void testPersistentMemoryDirectoryConfiguration() throws IOException;
 }

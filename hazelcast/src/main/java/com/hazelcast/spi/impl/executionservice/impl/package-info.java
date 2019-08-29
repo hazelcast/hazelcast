@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the {@link com.hazelcast.spi.impl.executionservice.InternalExecutionService}.
+ * Contains the implementation of the {@link com.hazelcast.spi.impl.executionservice.ExecutionService}.
  */
 package com.hazelcast.spi.impl.executionservice.impl;

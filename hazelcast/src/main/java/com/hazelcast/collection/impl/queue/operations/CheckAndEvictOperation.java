@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 /**

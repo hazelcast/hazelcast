@@ -42,14 +42,9 @@ class LocalReplicatedMapStatsProvider {
     private static final LocalReplicatedMapStats EMPTY_LOCAL_MAP_STATS = new EmptyLocalReplicatedMapStats();
 
     private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
+            new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
-            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
-                @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
-                }
-            };
+            arg -> new LocalReplicatedMapStatsImpl();
 
     private final Config config;
     private final PartitionContainer[] partitionContainers;

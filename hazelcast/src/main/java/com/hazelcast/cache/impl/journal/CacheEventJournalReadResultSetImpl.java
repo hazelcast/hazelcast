@@ -21,7 +21,7 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.function.Function;

@@ -1,3 +1,4 @@
 com.hazelcast.spi.discovery.DiscoverySpiTest$TestDiscoveryStrategyFactory
 com.hazelcast.spi.discovery.DiscoverySpiTest$MetadataProvidingDiscoveryStrategyFactory
 com.hazelcast.spi.discovery.DiscoverySpiTest$ParametrizedDiscoveryStrategyFactory
+com.hazelcast.client.impl.spi.impl.discovery.ClientDiscoverySpiTest$TestDiscoveryStrategyFactory

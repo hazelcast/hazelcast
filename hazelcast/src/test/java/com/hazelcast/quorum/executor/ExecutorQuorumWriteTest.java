@@ -16,11 +16,10 @@
 
 package com.hazelcast.quorum.executor;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
@@ -62,6 +61,7 @@ import static com.hazelcast.quorum.executor.ExecutorQuorumWriteTest.Selector.sel
 import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
@@ -85,7 +85,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

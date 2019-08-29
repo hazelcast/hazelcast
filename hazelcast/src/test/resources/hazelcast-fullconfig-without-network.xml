@@ -61,30 +61,29 @@
         <property name="foo">bar</property>
     </properties>
     <wan-replication name="my-wan-cluster">
-        <wan-publisher group-name="tokyo" publisher-id="tokyoPublisherId">
-            <class-name>com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication</class-name>
+        <batch-publisher>
+            <group-name>tokyo</group-name>
+            <publisher-id>tokyoPublisherId</publisher-id>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
-            <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <batch-size>50</batch-size>
+            <batch-max-delay-millis>3000</batch-max-delay-millis>
+            <snapshot-enabled>true</snapshot-enabled>
+            <response-timeout-millis>5000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+            <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
             <wan-sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
             </wan-sync>
-            <properties>
-                <property name="batch.size">50</property>
-                <property name="batch.max.delay.millis">3000</property>
-                <property name="snapshot.enabled">false</property>
-                <property name="response.timeout.millis">5000</property>
-                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
-                <property name="endpoints">10.3.5.1:5701, 10.3.5.2:5701</property>
-                <property name="snapshot.enabled">false</property>
-                <property name="group.password">pass</property>
-            </properties>
-        </wan-publisher>
-        <wan-publisher group-name="istanbul">
-            <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
-            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+        </batch-publisher>
+        <batch-publisher>
+            <group-name>istanbul</group-name>
+            <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>
             <initial-publisher-state>STOPPED</initial-publisher-state>
-            <queue-capacity>10000</queue-capacity>
+            <queue-capacity>12345</queue-capacity>
+            <discovery-period-seconds>5</discovery-period-seconds>
+            <max-target-endpoints>2</max-target-endpoints>
             <aws enabled="false" connection-timeout-seconds="10">
                 <access-key>sample-access-key</access-key>
                 <secret-key>sample-secret-key</secret-key>
@@ -117,7 +116,7 @@
                 <namespace>hazelcast</namespace>
             </eureka>
             <discovery-strategies>
-                <node-filter class="DummyFilterClass" />
+                <node-filter class="DummyFilterClass"/>
                 <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
                     <properties>
                         <property name="key-string">foo</property>
@@ -128,17 +127,15 @@
             </discovery-strategies>
             <properties>
                 <property name="custom.prop.publisher">prop.publisher</property>
-                <property name="discovery.period">5</property>
-                <property name="maxEndpoints">2</property>
             </properties>
-        </wan-publisher>
-        <wan-consumer>
+        </batch-publisher>
+        <consumer>
             <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>
             <properties>
                 <property name="custom.prop.consumer">prop.consumer</property>
             </properties>
             <persist-wan-replicated-data>true</persist-wan-replicated-data>
-        </wan-consumer>
+        </consumer>
     </wan-replication>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
@@ -334,12 +331,11 @@
                `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
         -->
         <near-cache>
-            <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
             <max-idle-seconds>0</max-idle-seconds>
-            <eviction-policy>LFU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
+            <eviction eviction-policy="LRU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
@@ -406,8 +402,6 @@
 
     <replicatedmap name="dummy">
         <in-memory-format>BINARY</in-memory-format>
-        <concurrency-level>12</concurrency-level>
-        <replication-delay-millis>12</replication-delay-millis>
         <async-fillup>false</async-fillup>
         <statistics-enabled>false</statistics-enabled>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>

@@ -23,8 +23,8 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
@@ -46,14 +46,13 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom group name which prevents
  * accidental joins (e.g. dangling members).
  * <p>
- * <b>Tests using this factory should not be annotated with {@code ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
+ * <b>Tests using this factory should not be annotated with {@link ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
  * <p>
- * Usage of {@link ParallelJVMTest} is allowed with this instance factory.<br>
  * Example:
  *
  * <pre>
  * &#64;RunWith(HazelcastParallelClassRunner.class)
- * &#64;Category({QuickTest.class, ParallelJVMTest.class})
+ * &#64;Category(QuickTest.class)
  * public class Test {
  *
  *     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
@@ -85,7 +84,7 @@ public class TestAwareInstanceFactory {
 
     private static final AtomicInteger PORT = new AtomicInteger(5000);
 
-    protected final Map<String, List<HazelcastInstance>> perMethodMembers = new ConcurrentHashMap<String, List<HazelcastInstance>>();
+    protected final Map<String, List<HazelcastInstance>> perMethodMembers = new ConcurrentHashMap<>();
 
     /**
      * Calls {@link #newHazelcastInstance(Config, NodeContext)} using the
@@ -158,11 +157,7 @@ public class TestAwareInstanceFactory {
 
     protected List<HazelcastInstance> getOrInitInstances(Map<String, List<HazelcastInstance>> map) {
         String methodName = getTestMethodName();
-        List<HazelcastInstance> list = map.get(methodName);
-        if (list == null) {
-            list = new ArrayList<HazelcastInstance>();
-            map.put(methodName, list);
-        }
+        List<HazelcastInstance> list = map.computeIfAbsent(methodName, k -> new ArrayList<>());
         return list;
     }
 

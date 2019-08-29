@@ -41,16 +41,6 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     }
 
     @Override
-    public NearCacheConfig setMaxSize(int maxSize) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
     public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
         throw new UnsupportedOperationException("This config is read-only");
     }

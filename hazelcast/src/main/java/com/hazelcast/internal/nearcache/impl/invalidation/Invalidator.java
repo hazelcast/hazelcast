@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
@@ -155,7 +155,7 @@ public abstract class Invalidator {
 
     /**
      * Shuts down this invalidator and releases used resources.
-     * Aimed to call with {@link com.hazelcast.spi.ManagedService#shutdown(boolean)}
+     * Aimed to call with {@link ManagedService#shutdown(boolean)}
      *
      * @see ManagedService#shutdown(boolean)
      */

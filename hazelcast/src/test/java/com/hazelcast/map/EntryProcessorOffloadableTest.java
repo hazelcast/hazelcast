@@ -24,7 +24,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;

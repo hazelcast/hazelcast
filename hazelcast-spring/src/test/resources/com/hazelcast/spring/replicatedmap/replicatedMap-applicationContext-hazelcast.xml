@@ -37,8 +37,8 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
-            <hz:replicatedmap name="replicatedMap" concurrency-level="3" in-memory-format="OBJECT" async-fillup="true"
-                              statistics-enabled="false" replication-delay-millis="10">
+            <hz:replicatedmap name="replicatedMap" in-memory-format="OBJECT" async-fillup="true"
+                              statistics-enabled="false">
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
                 </hz:entry-listeners>

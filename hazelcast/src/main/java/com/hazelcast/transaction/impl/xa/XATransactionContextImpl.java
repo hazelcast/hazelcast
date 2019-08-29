@@ -26,7 +26,7 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -66,6 +66,16 @@ public class XATransactionContextImpl implements TransactionContext {
     @Override
     public void rollbackTransaction() {
         throw new UnsupportedOperationException("XA Transaction cannot be rolled back manually!");
+    }
+
+    @Override
+    public void suspendTransaction() {
+        throw new UnsupportedOperationException("XA Transaction cannot be suspended manually!");
+    }
+
+    @Override
+    public void resumeTransaction() {
+        throw new UnsupportedOperationException("XA Transaction cannot be resumed manually!");
     }
 
     @Override

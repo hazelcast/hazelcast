@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.internal.services.ServiceConfigurationParser;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 

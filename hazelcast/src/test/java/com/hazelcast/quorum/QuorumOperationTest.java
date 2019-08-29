@@ -23,20 +23,22 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedO
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
+import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
 import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
+import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ServiceLoader;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -79,8 +81,9 @@ public class QuorumOperationTest {
             "remove", "delete", "evict",
             "offer", "poll", "drain",
             "init", "acquire", "release", "detach",
-            "aggregate",
-            "countdown",
+            "aggregate", "made", "create",
+            "set", "reset", "subscribe",
+            "countdown", "consume", "assign",
             "entryoperation", "entrywithpredicateoperation",
             "callable", "task", "dispose", "cancel", "shutdown",
             "lock", "signal",
@@ -99,7 +102,7 @@ public class QuorumOperationTest {
             "estimate",
             "iterator",
             "available", "await",
-            "size", "isempty", "isnull"
+            "size", "isempty", "isnull", "read"
     );
 
     /**
@@ -109,9 +112,12 @@ public class QuorumOperationTest {
             AwaitMapFlushOperation.class,
             NotifyMapFlushOperation.class,
             IsPartitionLoadedOperation.class,
+            TriggerLoadIfNeededOperation.class,
+            IsKeyLoadFinishedOperation.class,
             IsLockedOperation.class,
             GetLockCountOperation.class,
-            GetRemainingLeaseTimeOperation.class
+            GetRemainingLeaseTimeOperation.class,
+            MapEventJournalSubscribeOperation.class
     );
 
     /**
@@ -135,11 +141,13 @@ public class QuorumOperationTest {
     private static final Collection<String> NO_QUORUM_PACKAGES = asList(
             "com.hazelcast.flakeidgen.impl.",
             "com.hazelcast.topic.impl.",
-            "com.hazelcast.transaction.impl.xa.operations."
+            "com.hazelcast.transaction.impl.xa.operations.",
+            "com.hazelcast.map.impl.querycache.",
+            "MapAssignAndGetUuidsOperation",
+            "EntryOffloadableSetUnlockOperation"
     );
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
-
     private static final String MUTATING_OP_NAME = MutatingOperation.class.getSimpleName();
     private static final String READ_ONLY_OP_NAME = ReadonlyOperation.class.getSimpleName();
 

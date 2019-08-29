@@ -57,8 +57,7 @@ public class AddMultiMapConfigMessageTask extends
                 multiMapConfig.addEntryListenerConfig(entryListenerConfig);
             }
         }
-        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
-                parameters.mergeBatchSize);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
         return multiMapConfig;
     }

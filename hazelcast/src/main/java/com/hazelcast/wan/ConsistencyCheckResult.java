@@ -16,32 +16,39 @@
 
 package com.hazelcast.wan;
 
+import java.util.UUID;
+
 /**
- * Result of the last WAN consistency check result
+ * Result of the last WAN consistency check result.
  */
 public class ConsistencyCheckResult {
     /**
-     * Number of checked partitions
+     * The UUID of the consistency check request.
+     */
+    private final UUID uuid;
+    /**
+     * Number of checked partitions.
      */
     private final int lastCheckedPartitionCount;
     /**
-     * Number of partitions found to be inconsistent
+     * Number of partitions found to be inconsistent.
      */
     private final int lastDiffPartitionCount;
     /**
-     * Number of checked Merkle tree leaves
+     * Number of checked Merkle tree leaves.
      */
     private final int lastCheckedLeafCount;
     /**
-     * Number of different Merkle tree leaves
+     * Number of different Merkle tree leaves.
      */
     private final int lastDiffLeafCount;
     /**
-     * Number of entries to synchronize to get the clusters into sync
+     * Number of entries to synchronize to get the clusters into sync.
      */
     private final int lastEntriesToSync;
 
-    public ConsistencyCheckResult() {
+    public ConsistencyCheckResult(UUID uuid) {
+        this.uuid = uuid;
         lastCheckedPartitionCount = 0;
         lastDiffPartitionCount = 0;
         lastCheckedLeafCount = 0;
@@ -51,6 +58,8 @@ public class ConsistencyCheckResult {
 
     /**
      * Constructs the result of the WAN consistency check comparison
+     * @param uuid                      the UUID of the consistency check
+     *                                  request
      * @param lastCheckedPartitionCount the number of last checked
      *                                  partitions
      * @param lastDiffPartitionCount    the number of different partitions
@@ -60,13 +69,18 @@ public class ConsistencyCheckResult {
      *                                  found different
      * @param lastEntriesToSync         the number of the entries need to
      */
-    public ConsistencyCheckResult(int lastCheckedPartitionCount, int lastDiffPartitionCount, int lastCheckedLeafCount,
+    public ConsistencyCheckResult(UUID uuid, int lastCheckedPartitionCount, int lastDiffPartitionCount, int lastCheckedLeafCount,
                                   int lastDiffLeafCount, int lastEntriesToSync) {
+        this.uuid = uuid;
         this.lastCheckedPartitionCount = lastCheckedPartitionCount;
         this.lastDiffPartitionCount = lastDiffPartitionCount;
         this.lastCheckedLeafCount = lastCheckedLeafCount;
         this.lastDiffLeafCount = lastDiffLeafCount;
         this.lastEntriesToSync = lastEntriesToSync;
+    }
+
+    public UUID getUuid() {
+        return uuid;
     }
 
     public int getLastCheckedPartitionCount() {

@@ -20,14 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
@@ -37,16 +36,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link ReplicatedMap}
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
+public class ReplicatedMapConfig
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
-    /**
-     * Default value of concurrency level
-     */
-    public static final int DEFAULT_CONCURRENCY_LEVEL = 32;
-    /**
-     * Default value of delay of replication in millisecond
-     */
-    public static final int DEFAULT_REPLICATION_DELAY_MILLIS = 100;
     /**
      * Default value of In-memory format
      */
@@ -55,27 +47,14 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
      * Default value of asynchronous fill up
      */
     public static final boolean DEFAULT_ASNYC_FILLUP = true;
-    /**
-     * Default policy for merging
-     */
-    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
 
-    private String name;
-    // concurrencyLevel is deprecated and it's not used anymore
-    // it's left just for backwards compatibility -> it's transient
-    private transient int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
-    // replicationDelayMillis is deprecated, unused and hence transient
-    private transient long replicationDelayMillis = DEFAULT_REPLICATION_DELAY_MILLIS;
-    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    // replicatorExecutorService is deprecated, unused and hence transient
-    private transient ScheduledExecutorService replicatorExecutorService;
-    private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private boolean statisticsEnabled = true;
-    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
-    private List<ListenerConfig> listenerConfigs;
-
+    private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
+    private String name;
     private String quorumName;
+    private List<ListenerConfig> listenerConfigs;
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private transient volatile ReplicatedMapConfigReadOnly readOnly;
 
@@ -94,11 +73,8 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     public ReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
         this.name = replicatedMapConfig.name;
         this.inMemoryFormat = replicatedMapConfig.inMemoryFormat;
-        this.concurrencyLevel = replicatedMapConfig.concurrencyLevel;
-        this.replicationDelayMillis = replicatedMapConfig.replicationDelayMillis;
-        this.replicatorExecutorService = replicatedMapConfig.replicatorExecutorService;
         this.listenerConfigs = replicatedMapConfig.listenerConfigs == null ? null
-                : new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
+                : new ArrayList<>(replicatedMapConfig.getListenerConfigs());
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicyConfig = replicatedMapConfig.mergePolicyConfig;
@@ -122,71 +98,6 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
      */
     public ReplicatedMapConfig setName(String name) {
         this.name = name;
-        return this;
-    }
-
-    /**
-     * The number of milliseconds after a put is executed before the value is replicated
-     * to other nodes. During this time, multiple puts can be operated and cached up to be sent
-     * out all at once after the delay.
-     * <p>
-     * The default value is 100ms before a replication is operated.
-     * If set to 0, no delay is used and all values are replicated one by one.
-     *
-     * @return the number of milliseconds after a put is executed before the value is replicated to other nodes
-     * @deprecated since new implementation will route puts to the partition owner nodes,
-     * caching won't help replication speed because most of the time subsequent puts will end up in different nodes
-     */
-    @Deprecated
-    public long getReplicationDelayMillis() {
-        return replicationDelayMillis;
-    }
-
-    /**
-     * Sets the number of milliseconds after a put is executed before the value is replicated
-     * to other nodes. During this time, multiple puts can be operated and cached up to be sent
-     * out all at once after the delay.
-     * <p>
-     * The default value is 100ms before a replication is operated.
-     * If set to 0, no delay is used and all values are replicated one by one.
-     *
-     * @param replicationDelayMillis the number of milliseconds after a put is executed before the value is replicated
-     *                               to other nodes
-     * @return the current replicated map config instance
-     * @deprecated since new implementation will route puts to the partition owner nodes,
-     * caching won't help replication speed because most of the time subsequent puts will end up in different nodes
-     */
-    @Deprecated
-    public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
-        this.replicationDelayMillis = replicationDelayMillis;
-        return this;
-    }
-
-    /**
-     * Number of parallel mutexes to minimize contention on keys. The default value is 32 which
-     * is a good number for lots of applications. If higher contention is seen on writes to values
-     * inside of the replicated map, this value can be adjusted to the needs.
-     *
-     * @return Number of parallel mutexes to minimize contention on keys
-     * @deprecated new implementation doesn't use mutexes
-     */
-    @Deprecated
-    public int getConcurrencyLevel() {
-        return concurrencyLevel;
-    }
-
-    /**
-     * Sets the number of parallel mutexes to minimize contention on keys. The default value is 32 which
-     * is a good number for lots of applications. If higher contention is seen on writes to values
-     * inside of the replicated map, this value can be adjusted to the needs.
-     *
-     * @param concurrencyLevel Number of parallel mutexes to minimize contention on keys
-     * @return the current replicated map config instance
-     * @deprecated new implementation doesn't use mutexes
-     */
-    @Deprecated
-    public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
-        this.concurrencyLevel = concurrencyLevel;
         return this;
     }
 
@@ -224,26 +135,9 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
         return this;
     }
 
-    /**
-     * @deprecated new implementation doesn't use executor service for replication
-     */
-    @Deprecated
-    public ScheduledExecutorService getReplicatorExecutorService() {
-        return replicatorExecutorService;
-    }
-
-    /**
-     * @deprecated new implementation doesn't use executor service for replication
-     */
-    @Deprecated
-    public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
-        this.replicatorExecutorService = replicatorExecutorService;
-        return this;
-    }
-
     public List<ListenerConfig> getListenerConfigs() {
         if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<ListenerConfig>();
+            listenerConfigs = new ArrayList<>();
         }
         return listenerConfigs;
     }
@@ -338,28 +232,6 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
     }
 
     /**
-     * Gets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
-     *
-     * @return the updated replicated map configuration
-     * @deprecated since 3.10, please use {@link #getMergePolicyConfig()} and {@link MergePolicyConfig#getPolicy()}
-     */
-    public String getMergePolicy() {
-        return mergePolicyConfig.getPolicy();
-    }
-
-    /**
-     * Sets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
-     *
-     * @param mergePolicy the replicated map merge policy to set
-     * @return the updated replicated map configuration
-     * @deprecated since 3.10, please use {@link #setMergePolicyConfig(MergePolicyConfig)}
-     */
-    public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
-        this.mergePolicyConfig.setPolicy(mergePolicy);
-        return this;
-    }
-
-    /**
      * Gets the {@link MergePolicyConfig} for this replicated map.
      *
      * @return the {@link MergePolicyConfig} for this replicated map
@@ -388,8 +260,6 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
         return "ReplicatedMapConfig{"
                 + "name='" + name + '\''
                 + "', inMemoryFormat=" + inMemoryFormat + '\''
-                + ", concurrencyLevel=" + concurrencyLevel
-                + ", replicationDelayMillis=" + replicationDelayMillis
                 + ", asyncFillup=" + asyncFillup
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", quorumName='" + quorumName + '\''
@@ -446,19 +316,19 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (!Objects.equals(quorumName, that.quorumName)) {
             return false;
         }
-        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
-        return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
+        return Objects.equals(listenerConfigs, that.listenerConfigs);
     }
 
     @Override

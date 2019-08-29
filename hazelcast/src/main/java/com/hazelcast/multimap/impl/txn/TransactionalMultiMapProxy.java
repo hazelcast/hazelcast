@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl.txn;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
 

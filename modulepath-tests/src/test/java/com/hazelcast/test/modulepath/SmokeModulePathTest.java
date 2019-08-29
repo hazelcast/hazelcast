@@ -60,8 +60,6 @@ public class SmokeModulePathTest {
         assertNotNull("Module path was expected", modulePath);
         assertTrue("Module path should contain hazelcast JAR",
                 modulePath.matches(".*hazelcast-[1-9][\\p{Alnum}\\-_\\.]+\\.jar.*"));
-        assertTrue("Module path should contain hazelcast-client JAR",
-                modulePath.matches(".*hazelcast-client-[\\p{Alnum}\\-_\\.]+\\.jar.*"));
     }
 
     /**
@@ -71,7 +69,7 @@ public class SmokeModulePathTest {
     public void testModuleNames() {
         Set<String> hazelcastModuleNames = ModuleLayer.boot().modules().stream().map(Module::getName)
                 .filter(s -> s.contains("hazelcast")).collect(Collectors.toSet());
-        assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.client", "com.hazelcast.tests"));
+        assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.tests"));
     }
 
     /**

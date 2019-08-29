@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 public class EventJournalWriterRecordStoreMutationObserver implements RecordStoreMutationObserver {
     private final MapEventJournal eventJournal;

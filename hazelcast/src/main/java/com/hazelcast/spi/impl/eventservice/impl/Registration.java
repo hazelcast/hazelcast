@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.util.Preconditions;
 

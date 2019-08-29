@@ -104,7 +104,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        versions = new ConcurrentHashMap<String, Long>();
+        versions = new ConcurrentHashMap<>();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();

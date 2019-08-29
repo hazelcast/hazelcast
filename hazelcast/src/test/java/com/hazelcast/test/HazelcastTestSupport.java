@@ -55,7 +55,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
@@ -63,7 +63,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.starter.HazelcastStarter;
 import com.hazelcast.util.UuidUtil;
@@ -134,6 +134,7 @@ public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
+    public static final String PERSISTENT_MEMORY_DIRECTORY;
 
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
@@ -152,6 +153,8 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
+        String pmemDirectory = System.getProperty("hazelcast.persistent.memory");
+        PERSISTENT_MEMORY_DIRECTORY =  pmemDirectory != null ? pmemDirectory : "/tmp/pmem";
     }
 
     @After

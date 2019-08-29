@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.Iterator;
@@ -65,8 +65,11 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
 
     protected List<Data> segment;
 
-    public AbstractMapQueryPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId,
-                                             Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+    public AbstractMapQueryPartitionIterator(IMap<K, V> map,
+                                             int fetchSize,
+                                             int partitionId,
+                                             Predicate<K, V> predicate,
+                                             Projection<? super Entry<K, V>, R> projection) {
         this.map = map;
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;

@@ -32,7 +32,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -76,7 +76,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
-    protected static final long REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
+    protected static final long REFERENCE_SIZE = MEM_AVAILABLE
+            ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
     protected static final long MILLI_SECONDS_IN_A_SECOND = 1000;
 
     protected final long timeToLiveMillis;
@@ -96,7 +97,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected volatile long reservationId;
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig,
+                                        SerializationService serializationService,
                                         ClassLoader classLoader) {
         this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
     }

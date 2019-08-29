@@ -24,8 +24,8 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ScheduledFuture;

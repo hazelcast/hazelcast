@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;

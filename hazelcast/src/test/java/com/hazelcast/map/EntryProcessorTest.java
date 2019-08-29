@@ -1767,16 +1767,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class StoreOperation implements EntryProcessor<Object, MyObject, Integer> {
+    private static class StoreOperation implements EntryProcessor<String, MyObject, Integer> {
         @Override
-        public Integer process(Entry<Object, MyObject> entry) {
+        public Integer process(Entry<String, MyObject> entry) {
             MyObject myObject = new MyObject();
             entry.setValue(myObject);
             return 1;
         }
 
         @Override
-        public EntryProcessor<Object, MyObject, Integer> getBackupProcessor() {
+        public EntryProcessor<String, MyObject, Integer> getBackupProcessor() {
             return null;
         }
     }
@@ -1836,7 +1836,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Object, Object, Object>,
+    private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Integer, Integer, Object>,
             HazelcastInstanceAware {
 
         private String name;
@@ -1847,13 +1847,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(Entry<Object, Object> entry) {
+        public Object process(Entry<Integer, Integer> entry) {
             hz.getMap(name).put(entry.getKey(), entry.getValue());
             return null;
         }
 
         @Override
-        public EntryProcessor<Object, Object, Object> getBackupProcessor() {
+        public EntryProcessor<Integer, Integer, Object> getBackupProcessor() {
             return null;
         }
 

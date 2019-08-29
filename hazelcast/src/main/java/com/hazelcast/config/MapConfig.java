@@ -18,11 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -74,10 +72,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
 
     /**
-     * Default policy for merging.
-     */
-    public static final String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
-    /**
      * Default In-Memory format is binary.
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
@@ -92,58 +86,32 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public static final MetadataPolicy DEFAULT_METADATA_POLICY = MetadataPolicy.CREATE_ON_UPDATE;
 
-    private String name;
-
-    private int backupCount = DEFAULT_BACKUP_COUNT;
-
-    private int asyncBackupCount = MIN_BACKUP_COUNT;
-
-    private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
-
-    private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
-
-    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-
-    private MapEvictionPolicy mapEvictionPolicy;
-
-    private MapStoreConfig mapStoreConfig = new MapStoreConfig().setEnabled(false);
-
-    private NearCacheConfig nearCacheConfig;
-
     private boolean readBackupData;
-
-    private CacheDeserializedValues cacheDeserializedValues = DEFAULT_CACHED_DESERIALIZED_VALUES;
-
-    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
-    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-
-    private WanReplicationRef wanReplicationRef;
-
-    private List<EntryListenerConfig> entryListenerConfigs;
-
-    private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
-
-    private List<MapIndexConfig> mapIndexConfigs;
-
-    private List<MapAttributeConfig> mapAttributeConfigs;
-
-    private List<QueryCacheConfig> queryCacheConfigs;
-
     private boolean statisticsEnabled = true;
-
-    private PartitioningStrategyConfig partitioningStrategyConfig;
-
+    private int backupCount = DEFAULT_BACKUP_COUNT;
+    private int asyncBackupCount = MIN_BACKUP_COUNT;
+    private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
+    private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
+    private String name;
     private String quorumName;
-
+    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    private MapEvictionPolicy mapEvictionPolicy;
+    private MapStoreConfig mapStoreConfig = new MapStoreConfig().setEnabled(false);
+    private NearCacheConfig nearCacheConfig;
+    private CacheDeserializedValues cacheDeserializedValues = DEFAULT_CACHED_DESERIALIZED_VALUES;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+    private WanReplicationRef wanReplicationRef;
+    private List<EntryListenerConfig> entryListenerConfigs;
+    private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
+    private List<MapIndexConfig> mapIndexConfigs;
+    private List<MapAttributeConfig> mapAttributeConfigs;
+    private List<QueryCacheConfig> queryCacheConfigs;
+    private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
-
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
-
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
     private transient MapConfigReadOnly readOnly;
@@ -171,7 +139,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.readBackupData = config.readBackupData;
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
         this.partitionLostListenerConfigs =
@@ -436,31 +404,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public MapConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
         this.nearCacheConfig = nearCacheConfig;
-        return this;
-    }
-
-    /**
-     * Gets the merge policy.
-     *
-     * @return the merge policy classname
-     * @deprecated since 3.10, please use {@link #getMergePolicyConfig()} and {@link MergePolicyConfig#getPolicy()}
-     */
-    public String getMergePolicy() {
-        return mergePolicyConfig.getPolicy();
-    }
-
-    /**
-     * Sets the merge policy.
-     * <p>
-     * Accepts a classname of {@link SplitBrainMergePolicy}
-     * or the deprecated {@link com.hazelcast.map.merge.MapMergePolicy}.
-     *
-     * @param mergePolicy the merge policy classname to set
-     * @return the updated map configuration
-     * @deprecated since 3.10, please use {@link #setMergePolicyConfig(MergePolicyConfig)}
-     */
-    public MapConfig setMergePolicy(String mergePolicy) {
-        this.mergePolicyConfig.setPolicy(mergePolicy);
         return this;
     }
 

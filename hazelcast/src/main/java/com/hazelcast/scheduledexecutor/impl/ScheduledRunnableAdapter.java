@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.internal.services.NodeAware;
 
 import java.io.IOException;
 import java.util.Map;

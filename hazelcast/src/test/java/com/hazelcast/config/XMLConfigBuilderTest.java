@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -59,7 +60,8 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
-import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -137,18 +139,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void testConfiguration_withNullInputStream() {
         new XmlConfigBuilder((InputStream) null);
-    }
-
-    @Override
-    @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
-        String xml = "<hazelcast-client>"
-                + "<group>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</group>"
-                + "</hazelcast-client>";
-        buildConfig(xml);
     }
 
     @Override
@@ -1034,8 +1024,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction-policy>LRU</eviction-policy>\n"
                 + "    </map>\n"
                 + "<map name=\"lfuMap\">"
-                +
-                "        <eviction-policy>LFU</eviction-policy>\n"
+                + "        <eviction-policy>LFU</eviction-policy>\n"
                 + "    </map>\n"
                 + "<map name=\"noneMap\">"
                 + "        <eviction-policy>NONE</eviction-policy>\n"
@@ -1327,10 +1316,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <near-cache name=\"test\">\n"
                 + "      <in-memory-format>OBJECT</in-memory-format>\n"
                 + "      <serialize-keys>false</serialize-keys>\n"
-                + "      <max-size>1234</max-size>\n"
                 + "      <time-to-live-seconds>77</time-to-live-seconds>\n"
                 + "      <max-idle-seconds>92</max-idle-seconds>\n"
-                + "      <eviction-policy>LFU</eviction-policy>\n"
                 + "      <invalidate-on-change>false</invalidate-on-change>\n"
                 + "      <cache-local-entries>false</cache-local-entries>\n"
                 + "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\"/>\n"
@@ -1343,10 +1330,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertEquals(1234, nearCacheConfig.getMaxSize());
         assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -1389,22 +1374,45 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-publisher group-name=\"nyc\" publisher-id=\"publisherId\">\n"
-                + "            <class-name>PublisherClassName</class-name>\n"
-                + "            <queue-capacity>15000</queue-capacity>\n"
-                + "            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>\n"
-                + "            <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>nyc</group-name>\n"
+                + "                <publisher-id>publisherId</publisher-id>\n"
+                + "                <batch-size>100</batch-size>\n"
+                + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
+                + "                <response-timeout-millis>300</response-timeout-millis>\n"
+                + "                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <snapshot-enabled>true</snapshot-enabled>\n"
+                + "                <idle-min-park-ns>400</idle-min-park-ns>\n"
+                + "                <idle-max-park-ns>500</idle-max-park-ns>\n"
+                + "                <max-concurrent-invocations>600</max-concurrent-invocations>\n"
+                + "                <discovery-period-seconds>700</discovery-period-seconds>\n"
+                + "                <use-endpoint-private-address>true</use-endpoint-private-address>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
+                + "                <max-target-endpoints>800</max-target-endpoints>\n"
+                + "                <queue-capacity>21</queue-capacity>\n"
+                + "            <target-endpoints>a,b,c,d</target-endpoints>"
+                + "            <wan-sync>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "            </wan-sync>\n"
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
                 + "            <endpoint>nyc-endpoint</endpoint>\n"
-                + "        </wan-publisher>\n"
-                + "        <wan-consumer>\n"
+                + "        </batch-publisher>"
+                + "        <custom-publisher>\n"
+                + "                <class-name>PublisherClassName</class-name>\n"
+                + "                <publisher-id>customPublisherId</publisher-id>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </custom-publisher>\n"
+                + "        <consumer>\n"
                 + "            <class-name>ConsumerClassName</class-name>\n"
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
-                + "        </wan-consumer>\n"
+                + "        </consumer>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1422,19 +1430,44 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals("PublisherClassName", publisherConfig.getClassName());
-        assertEquals("nyc", publisherConfig.getGroupName());
-        assertEquals("publisherId", publisherConfig.getPublisherId());
-        assertEquals(15000, publisherConfig.getQueueCapacity());
-        assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-        assertEquals("nyc-endpoint", publisherConfig.getEndpoint());
+        WanBatchReplicationPublisherConfig pc = publishers.get(0);
 
-        properties = publisherConfig.getProperties();
+        assertEquals("nyc", pc.getGroupName());
+        assertEquals("publisherId", pc.getPublisherId());
+        assertEquals(100, pc.getBatchSize());
+        assertEquals(200, pc.getBatchMaxDelayMillis());
+        assertEquals(300, pc.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc.getAcknowledgeType());
+        assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
+        assertTrue(pc.isSnapshotEnabled());
+        assertEquals(400, pc.getIdleMinParkNs());
+        assertEquals(500, pc.getIdleMaxParkNs());
+        assertEquals(600, pc.getMaxConcurrentInvocations());
+        assertEquals(700, pc.getDiscoveryPeriodSeconds());
+        assertTrue(pc.isUseEndpointPrivateAddress());
+        assertEquals(THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(800, pc.getMaxTargetEndpoints());
+        assertEquals(21, pc.getQueueCapacity());
+        assertEquals("a,b,c,d", pc.getTargetEndpoints());
+        assertEquals("nyc-endpoint", pc.getEndpoint());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
+
+        properties = pc.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+
+
+        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        assertNotNull(customPublishers);
+        assertEquals(1, customPublishers.size());
+        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        assertEquals("customPublisherId", customPublisher.getPublisherId());
+        assertEquals("PublisherClassName", customPublisher.getClassName());
+        properties = customPublisher.getProperties();
         assertNotNull(properties);
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
@@ -1446,8 +1479,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-consumer>\n"
-                + "        </wan-consumer>\n"
+                + "        <consumer>\n"
+                + "        </consumer>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1463,12 +1496,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-publisher group-name=\"nyc\">\n"
-                + "            <class-name>PublisherClassName</class-name>\n"
-                + "            <wan-sync>\n"
-                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "            </wan-sync>\n"
-                + "        </wan-publisher>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>nyc</group-name>\n"
+                + "                <wan-sync>\n"
+                + "                    <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "                </wan-sync>\n"
+                + "            </batch-publisher>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1477,12 +1510,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
-                .getConsistencyCheckStrategy());
+        WanBatchReplicationPublisherConfig pc = publishers.get(0);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
     }
 
     @Override
@@ -1638,48 +1670,71 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <wan-replication name=\"my-wan-cluster\">\n"
-                + "      <wan-publisher group-name=\"istanbul\" publisher-id=\"istanbulPublisherId\">\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
-                + "         <queue-capacity>21</queue-capacity>\n"
-                + "         <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
-                + "            <access-key>sample-access-key</access-key>\n"
-                + "            <secret-key>sample-secret-key</secret-key>\n"
-                + "            <iam-role>sample-role</iam-role>\n"
-                + "            <region>sample-region</region>\n"
-                + "            <host-header>sample-header</host-header>\n"
-                + "            <security-group-name>sample-group</security-group-name>\n"
-                + "            <tag-key>sample-tag-key</tag-key>\n"
-                + "            <tag-value>sample-tag-value</tag-value>\n"
-                + "         </aws>\n"
-                + "         <discovery-strategies>\n"
-                + "            <node-filter class=\"DummyFilterClass\" />\n"
-                + "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
-                + "               <properties>\n"
-                + "                  <property name=\"key-string\">foo</property>\n"
-                + "                  <property name=\"key-int\">123</property>\n"
-                + "                  <property name=\"key-boolean\">true</property>\n"
-                + "               </properties>\n"
-                + "            </discovery-strategy>\n"
-                + "         </discovery-strategies>\n"
-                + "         <properties>\n"
-                + "            <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
-                + "            <property name=\"discovery.period\">5</property>\n"
-                + "            <property name=\"maxEndpoints\">2</property>\n"
-                + "         </properties>\n"
-                + "      </wan-publisher>\n"
-                + "      <wan-publisher group-name=\"ankara\">\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
-                + "         <initial-publisher-state>STOPPED</initial-publisher-state>\n"
-                + "      </wan-publisher>\n"
-                + "      <wan-consumer>\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
-                + "         <properties>\n"
-                + "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
-                + "         </properties>\n"
-                + "      <persist-wan-replicated-data>true</persist-wan-replicated-data>\n"
-                + "      </wan-consumer>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>istanbul</group-name>\n"
+                + "                <publisher-id>istanbulPublisherId</publisher-id>\n"
+                + "                <batch-size>100</batch-size>\n"
+                + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
+                + "                <response-timeout-millis>300</response-timeout-millis>\n"
+                + "                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <snapshot-enabled>true</snapshot-enabled>\n"
+                + "                <idle-min-park-ns>400</idle-min-park-ns>\n"
+                + "                <idle-max-park-ns>500</idle-max-park-ns>\n"
+                + "                <max-concurrent-invocations>600</max-concurrent-invocations>\n"
+                + "                <discovery-period-seconds>700</discovery-period-seconds>\n"
+                + "                <use-endpoint-private-address>true</use-endpoint-private-address>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
+                + "                <max-target-endpoints>800</max-target-endpoints>\n"
+                + "                <queue-capacity>21</queue-capacity>\n"
+                + "                <target-endpoints>a,b,c,d</target-endpoints>\n"
+                + "            <wan-sync>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "            </wan-sync>\n"
+                + "            <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
+                + "               <access-key>sample-access-key</access-key>\n"
+                + "               <secret-key>sample-secret-key</secret-key>\n"
+                + "               <iam-role>sample-role</iam-role>\n"
+                + "               <region>sample-region</region>\n"
+                + "               <host-header>sample-header</host-header>\n"
+                + "               <security-group-name>sample-group</security-group-name>\n"
+                + "               <tag-key>sample-tag-key</tag-key>\n"
+                + "               <tag-value>sample-tag-value</tag-value>\n"
+                + "            </aws>\n"
+                + "            <discovery-strategies>\n"
+                + "               <node-filter class=\"DummyFilterClass\" />\n"
+                + "               <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
+                + "                  <properties>\n"
+                + "                     <property name=\"key-string\">foo</property>\n"
+                + "                     <property name=\"key-int\">123</property>\n"
+                + "                     <property name=\"key-boolean\">true</property>\n"
+                + "                  </properties>\n"
+                + "               </discovery-strategy>\n"
+                + "            </discovery-strategies>\n"
+                + "            <properties>\n"
+                + "                <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
+                + "            </properties>\n"
+                + "            <endpoint>nyc-endpoint</endpoint>\n"
+                + "        </batch-publisher>"
+                + "        <batch-publisher>\n"
+                + "                <group-name>ankara</group-name>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
+                + "        </batch-publisher>\n"
+                + "        <custom-publisher>\n"
+                + "                <publisher-id>customPublisherId</publisher-id>\n"
+                + "                <class-name>PublisherClassName</class-name>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </custom-publisher>\n"
+                + "        <consumer>\n"
+                + "            <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
+                + "            <properties>\n"
+                + "                <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
+                + "            </properties>\n"
+                + "            <persist-wan-replicated-data>true</persist-wan-replicated-data>\n"
+                + "        </consumer>\n"
                 + "   </wan-replication>"
                 + HAZELCAST_END_TAG;
 
@@ -1687,32 +1742,54 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
         assertNotNull(wanConfig);
 
-        List<WanPublisherConfig> publisherConfigs = wanConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanPublisherConfig publisherConfig1 = publisherConfigs.get(0);
-        assertEquals("istanbul", publisherConfig1.getGroupName());
-        assertEquals("istanbulPublisherId", publisherConfig1.getPublisherId());
-        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
-        assertEquals(WanPublisherState.REPLICATING, publisherConfig1.getInitialPublisherState());
-        assertEquals(21, publisherConfig1.getQueueCapacity());
-        Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
+        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbulPublisherId", pc1.getPublisherId());
+        assertEquals(100, pc1.getBatchSize());
+        assertEquals(200, pc1.getBatchMaxDelayMillis());
+        assertEquals(300, pc1.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc1.getAcknowledgeType());
+        assertEquals(WanPublisherState.STOPPED, pc1.getInitialPublisherState());
+        assertTrue(pc1.isSnapshotEnabled());
+        assertEquals(400, pc1.getIdleMinParkNs());
+        assertEquals(500, pc1.getIdleMaxParkNs());
+        assertEquals(600, pc1.getMaxConcurrentInvocations());
+        assertEquals(700, pc1.getDiscoveryPeriodSeconds());
+        assertTrue(pc1.isUseEndpointPrivateAddress());
+        assertEquals(THROW_EXCEPTION, pc1.getQueueFullBehavior());
+        assertEquals(800, pc1.getMaxTargetEndpoints());
+        assertEquals(21, pc1.getQueueCapacity());
+        assertEquals("a,b,c,d", pc1.getTargetEndpoints());
+        assertEquals("nyc-endpoint", pc1.getEndpoint());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc1.getWanSyncConfig().getConsistencyCheckStrategy());
+        Map<String, Comparable> pubProperties = pc1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
-        assertEquals("5", pubProperties.get("discovery.period"));
-        assertEquals("2", pubProperties.get("maxEndpoints"));
-        assertFalse(publisherConfig1.getAwsConfig().isEnabled());
-        assertAwsConfig(publisherConfig1.getAwsConfig());
-        assertFalse(publisherConfig1.getGcpConfig().isEnabled());
-        assertFalse(publisherConfig1.getAzureConfig().isEnabled());
-        assertFalse(publisherConfig1.getKubernetesConfig().isEnabled());
-        assertFalse(publisherConfig1.getEurekaConfig().isEnabled());
-        assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
+        assertFalse(pc1.getAwsConfig().isEnabled());
+        assertAwsConfig(pc1.getAwsConfig());
+        assertFalse(pc1.getGcpConfig().isEnabled());
+        assertFalse(pc1.getAzureConfig().isEnabled());
+        assertFalse(pc1.getKubernetesConfig().isEnabled());
+        assertFalse(pc1.getEurekaConfig().isEnabled());
+        assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
-        WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
-        assertEquals("ankara", publisherConfig2.getGroupName());
-        assertNull(publisherConfig2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig2.getInitialPublisherState());
+        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        assertEquals("ankara", pc2.getGroupName());
+        assertEquals("", pc2.getPublisherId());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
+
+        List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();
+        assertNotNull(customPublishers);
+        assertEquals(1, customPublishers.size());
+        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        assertEquals("customPublisherId", customPublisher.getPublisherId());
+        assertEquals("PublisherClassName", customPublisher.getClassName());
+        Map<String, Comparable> properties = customPublisher.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
@@ -1927,7 +2004,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <backup-count>1</backup-count>"
                 + "        <async-backup-count>0</async-backup-count>"
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
-                + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
+                + "        <merge-policy batch-size=\"111\">LatestAccessMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
                 + "        <event-journal enabled=\"true\">\n"
                 + "            <capacity>120</capacity>\n"
@@ -1970,7 +2047,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals("com.hazelcast.cache.merge.LatestAccessCacheMergePolicy", cacheConfig.getMergePolicy());
+        assertEquals("LatestAccessMergePolicy", cacheConfig.getMergePolicyConfig().getPolicy());
+        assertEquals(111, cacheConfig.getMergePolicyConfig().getBatchSize());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
@@ -2125,8 +2203,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <value-collection-type>SET</value-collection-type>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "        <entry-listeners>\n"
-                +
-                "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
+                + "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "  </multimap>"
@@ -2280,17 +2357,15 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            </properties>\n"
                 + "          </map-store>"
                 + "        <near-cache>\n"
-                + "            <max-size>5000</max-size>\n"
                 + "            <time-to-live-seconds>42</time-to-live-seconds>\n"
                 + "            <max-idle-seconds>42</max-idle-seconds>\n"
-                + "            <eviction-policy>LRU</eviction-policy>\n"
                 + "            <invalidate-on-change>true</invalidate-on-change>\n"
                 + "            <in-memory-format>BINARY</in-memory-format>\n"
                 + "            <cache-local-entries>false</cache-local-entries>\n"
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2306,8 +2381,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
                 + "          </partition-lost-listeners>"
                 + "        <entry-listeners>\n"
-                +
-                "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
+                + "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
@@ -2364,7 +2438,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         assertNotNull(nearCacheConfig);
-        assertEquals(5000, nearCacheConfig.getMaxSize());
         assertEquals(42, nearCacheConfig.getMaxIdleSeconds());
         assertEquals(42, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.BINARY, nearCacheConfig.getInMemoryFormat());
@@ -2377,7 +2450,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("com.hazelcast.map.merge.PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }
@@ -3211,6 +3284,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
         buildConfig(xml);
     }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration() throws IOException {
+        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+
+        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
+
+        assertEquals("/mnt/optane", xmlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
+    }
+
 
     @Override
     protected Config buildCompleteAdvancedNetworkConfig() {

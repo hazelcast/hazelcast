@@ -35,6 +35,7 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -103,8 +104,8 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -586,9 +587,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(23, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
-                .setEndpoints(Collections.<String>emptySet());
+                .setEndpoints(Collections.emptySet());
         assertContains(clientPermissionConfigs, pnCounterPermission);
-        Set<PermissionType> permTypes = new HashSet<PermissionType>(Arrays.asList(PermissionType.values()));
+        Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : clientPermissionConfigs) {
             permTypes.remove(pc.getType());
         }
@@ -981,38 +982,40 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
 
-        WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
-        assertEquals("tokyo", publisherConfig.getGroupName());
-        assertEquals("tokyoPublisherId", publisherConfig.getPublisherId());
-        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", publisherConfig.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-        assertEquals(1000, publisherConfig.getQueueCapacity());
-        Map<String, Comparable> publisherProps = publisherConfig.getProperties();
-        assertEquals("50", publisherProps.get("batch.size"));
-        assertEquals("3000", publisherProps.get("batch.max.delay.millis"));
-        assertEquals("false", publisherProps.get("snapshot.enabled"));
-        assertEquals("5000", publisherProps.get("response.timeout.millis"));
-        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE.name(), publisherProps.get("ack.type"));
-        assertEquals("pass", publisherProps.get("group.password"));
+        WanBatchReplicationPublisherConfig pc = wcfg.getBatchPublisherConfigs().get(0);
+        assertEquals("tokyo", pc.getGroupName());
+        assertEquals("tokyoPublisherId", pc.getPublisherId());
+        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
+        assertEquals(1000, pc.getQueueCapacity());
+        assertEquals(50, pc.getBatchSize());
+        assertEquals(3000, pc.getBatchMaxDelayMillis());
+        assertTrue(pc.isSnapshotEnabled());
+        assertEquals(5000, pc.getResponseTimeoutMillis());
+        assertEquals(5, pc.getMaxTargetEndpoints());
+        assertEquals(5, pc.getDiscoveryPeriodSeconds());
+        assertTrue(pc.isUseEndpointPrivateAddress());
+        assertEquals(5, pc.getIdleMinParkNs());
+        assertEquals(5, pc.getIdleMaxParkNs());
+        assertEquals(5, pc.getMaxConcurrentInvocations());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc.getAcknowledgeType());
+        assertEquals(5, pc.getDiscoveryPeriodSeconds());
+        assertEquals(5, pc.getMaxTargetEndpoints());
+        assertAwsConfig(pc.getAwsConfig());
+        assertGcpConfig(pc.getGcpConfig());
+        assertAzureConfig(pc.getAzureConfig());
+        assertKubernetesConfig(pc.getKubernetesConfig());
+        assertEurekaConfig(pc.getEurekaConfig());
+        assertDiscoveryConfig(pc.getDiscoveryConfig());
 
-        WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
-        assertEquals("istanbul", customPublisher.getGroupName());
+        CustomWanPublisherConfig customPublisher = wcfg.getCustomPublisherConfigs().get(0);
         assertEquals("istanbulPublisherId", customPublisher.getPublisherId());
         assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
         assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
-        assertEquals("5", customPublisherProps.get("discovery.period"));
-        assertEquals("2", customPublisherProps.get("maxEndpoints"));
-        assertAwsConfig(customPublisher.getAwsConfig());
-        assertGcpConfig(customPublisher.getGcpConfig());
-        assertAzureConfig(customPublisher.getAzureConfig());
-        assertKubernetesConfig(customPublisher.getKubernetesConfig());
-        assertEurekaConfig(customPublisher.getEurekaConfig());
-        assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
-        WanPublisherConfig publisherPlaceHolderConfig = wcfg.getWanPublisherConfigs().get(2);
+        WanBatchReplicationPublisherConfig publisherPlaceHolderConfig = wcfg.getBatchPublisherConfigs().get(1);
         assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());
 
         WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
@@ -1041,22 +1044,21 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testWanReplicationSyncConfig() {
         final WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan2");
         final WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
-        final Map<String, Comparable> consumerProps = new HashMap<String, Comparable>();
+        final Map<String, Comparable> consumerProps = new HashMap<>();
         consumerProps.put("custom.prop.consumer", "prop.consumer");
         consumerConfig.setProperties(consumerProps);
         assertInstanceOf(DummyWanConsumer.class, consumerConfig.getImplementation());
         assertEquals("prop.consumer", consumerConfig.getProperties().get("custom.prop.consumer"));
         assertFalse(consumerConfig.isPersistWanReplicatedData());
 
-        final List<WanPublisherConfig> publisherConfigs = wcfg.getWanPublisherConfigs();
+        final List<WanBatchReplicationPublisherConfig> publisherConfigs = wcfg.getBatchPublisherConfigs();
         assertNotNull(publisherConfigs);
         assertEquals(1, publisherConfigs.size());
 
-        final WanPublisherConfig publisherConfig = publisherConfigs.get(0);
-        assertEquals("tokyo", publisherConfig.getGroupName());
-        assertEquals("PublisherClassName", publisherConfig.getClassName());
+        final WanBatchReplicationPublisherConfig pc = publisherConfigs.get(0);
+        assertEquals("tokyo", pc.getGroupName());
 
-        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSyncConfig();
+        final WanSyncConfig wanSyncConfig = pc.getWanSyncConfig();
         assertNotNull(wanSyncConfig);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
     }
@@ -1176,6 +1178,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
         assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+        assertEquals("/mnt/optane", nativeMemoryConfig.getPersistentMemoryDirectory());
     }
 
     @Test
@@ -1187,8 +1190,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(replicatedMapConfig);
         assertEquals("replicatedMap", replicatedMapConfig.getName());
         assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
-        assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
-        assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
         assertEquals("my-quorum", replicatedMapConfig.getQuorumName());
@@ -1335,8 +1336,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMemberNearCacheEvictionPolicies() {
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEvictionMap", config));
-        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEvictionMap", config));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {

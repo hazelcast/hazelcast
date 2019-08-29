@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.semaphore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
@@ -37,6 +36,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -54,7 +54,7 @@ public class SemaphoreQuorumWriteTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

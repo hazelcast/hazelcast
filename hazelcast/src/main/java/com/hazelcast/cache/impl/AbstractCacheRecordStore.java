@@ -16,13 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
-import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
@@ -46,19 +42,19 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -1776,69 +1772,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return merged ? record : null;
     }
 
-    @Override
-    public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
-                             String caller, String origin, int completionId, CallerProvenance callerProvenance) {
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
-        boolean merged = false;
-        Data key = cacheEntryView.getKey();
-        Data value = cacheEntryView.getValue();
-        long expiryTime = cacheEntryView.getExpirationTime();
-        R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
-        boolean disableWriteThrough = !persistenceEnabledFor(callerProvenance);
-
-        if (record == null || isExpired) {
-            Object newValue = mergePolicy.merge(name, createCacheEntryView(
-                    key,
-                    value,
-                    cacheEntryView.getCreationTime(),
-                    cacheEntryView.getExpirationTime(),
-                    cacheEntryView.getLastAccessTime(),
-                    cacheEntryView.getAccessHit(),
-                    cacheEntryView.getExpiryPolicy(),
-                    mergePolicy),
-                    null);
-            if (newValue != null) {
-                record = createRecordWithExpiry(key, newValue, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
-                merged = record != null;
-            }
-        } else {
-            Object oldValue = record.getValue();
-            Object newValue = mergePolicy.merge(name,
-                    createCacheEntryView(
-                            key,
-                            value,
-                            cacheEntryView.getCreationTime(),
-                            cacheEntryView.getExpirationTime(),
-                            cacheEntryView.getLastAccessTime(),
-                            cacheEntryView.getAccessHit(),
-                            cacheEntryView.getExpiryPolicy(),
-                            mergePolicy),
-                    createCacheEntryView(
-                            key,
-                            oldValue,
-                            cacheEntryView.getCreationTime(),
-                            record.getExpirationTime(),
-                            record.getLastAccessTime(),
-                            record.getAccessHit(),
-                            record.getExpiryPolicy(),
-                            mergePolicy));
-
-
-            merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
-        }
-
-        if (merged && isStatisticsEnabled()) {
-            statistics.increaseCachePuts(1);
-            statistics.addPutTimeNanos(System.nanoTime() - start);
-        }
-
-        return merged ? record : null;
-    }
-
     private boolean updateWithMergingValue(Data key, Object existingValue, Object mergingValue,
                                            R record, long expiryTime, long now, boolean disableWriteThrough) {
 
@@ -1857,15 +1790,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return record.getExpiryPolicy();
         }
         return null;
-    }
-
-    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime, long expirationTime,
-                                                long lastAccessTime, long accessHit, Object expiryPolicy,
-                                                CacheMergePolicy mergePolicy) {
-        // null serialization service means that use as storage type without conversion,
-        // non-null serialization service means that conversion is required
-        SerializationService ss = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : this.ss;
-        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, expiryPolicy, ss);
     }
 
     @Override
@@ -1979,7 +1903,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void closeListeners() {
-        InternalEventService eventService = (InternalEventService) cacheService.getNodeEngine().getEventService();
+        EventService eventService = cacheService.getNodeEngine().getEventService();
         Collection<EventRegistration> candidates = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         for (EventRegistration eventRegistration : candidates) {
             eventService.close(eventRegistration);

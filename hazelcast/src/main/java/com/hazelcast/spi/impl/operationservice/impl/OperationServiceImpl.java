@@ -33,8 +33,8 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
@@ -67,7 +67,7 @@ import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation
 import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.util.CollectionUtil.toIntegerList;
+import static com.hazelcast.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -153,7 +153,8 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
                 node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
+                node.getLogger(OperationServiceImpl.class),
+                backpressureRegulator.newCallIdSequence(nodeEngine.getConcurrencyDetection()));
 
         this.invocationMonitor = new InvocationMonitor(
                 nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
@@ -418,7 +419,13 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName, OperationFactory operationFactory, Collection<Integer> partitions) {
 
-        Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
+        return invokeOnPartitionsAsync(serviceName, operationFactory, getMemberPartitions(partitions));
+    }
+
+    @Override
+    public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
+            String serviceName, OperationFactory operationFactory, Map<Address, List<Integer>> memberPartitions) {
+
         InvokeOnPartitions invokeOnPartitions =
                 new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync();
@@ -427,7 +434,7 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, int[] partitions)
             throws Exception {
-        return invokeOnPartitions(serviceName, operationFactory, toIntegerList(partitions));
+        return invokeOnPartitions(serviceName, operationFactory, asIntegerList(partitions));
     }
 
     @Override

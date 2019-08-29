@@ -19,7 +19,7 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.ConstructorFunction;
 

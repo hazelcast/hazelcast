@@ -16,15 +16,31 @@
 
 package com.hazelcast.replicatedmap;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
-public class CustomReplicatedMapMergePolicy implements ReplicatedMapMergePolicy {
+import java.io.IOException;
+
+public class CustomReplicatedMapMergePolicy
+        implements SplitBrainMergePolicy<Integer, MergingValue<Integer>> {
+
     @Override
-    public Object merge(String mapName, ReplicatedMapEntryView mergingEntry, ReplicatedMapEntryView existingEntry) {
-        if (mergingEntry.getValue() instanceof Integer) {
-            return mergingEntry.getValue();
+    public Integer merge(MergingValue<Integer> mergingValue, MergingValue<Integer> existingValue) {
+        if (mergingValue.getValue() instanceof Integer) {
+            return mergingValue.getValue();
         }
         return null;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+
     }
 }

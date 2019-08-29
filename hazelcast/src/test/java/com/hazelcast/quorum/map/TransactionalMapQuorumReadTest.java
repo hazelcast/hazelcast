@@ -16,7 +16,6 @@
 
 package com.hazelcast.quorum.map;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
@@ -43,6 +42,7 @@ import java.util.Collection;
 
 import static com.hazelcast.quorum.QuorumType.READ;
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
@@ -76,7 +76,7 @@ public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
 
     @BeforeClass
     public static void setUp() {
-        initTestEnvironment(new Config(), new TestHazelcastInstanceFactory());
+        initTestEnvironment(smallInstanceConfig(), new TestHazelcastInstanceFactory());
     }
 
     @AfterClass

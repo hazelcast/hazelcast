@@ -301,36 +301,36 @@ public class ConfigXmlGeneratorTest {
 
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
-                .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
-                .setClientBlockUnmappedActions(false)
-                .setClientLoginModuleConfigs(Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                .setMemberLoginModuleConfigs(Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("member.f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("member.b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("member.l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
-                .setClientPermissionConfigs(new HashSet<PermissionConfig>(singletonList(
-                        new PermissionConfig()
-                                .setActions(newHashSet("read", "remove"))
-                                .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
-                                .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
-                                .setName("mycounter")
-                                .setPrincipal("devos"))));
+                      .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
+                      .setClientBlockUnmappedActions(false)
+                      .setClientLoginModuleConfigs(Arrays.asList(
+                              new LoginModuleConfig()
+                                      .setClassName("f.o.o")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                              new LoginModuleConfig()
+                                      .setClassName("b.a.r")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                              new LoginModuleConfig()
+                                      .setClassName("l.o.l")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                      .setMemberLoginModuleConfigs(Arrays.asList(
+                              new LoginModuleConfig()
+                                      .setClassName("member.f.o.o")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                              new LoginModuleConfig()
+                                      .setClassName("member.b.a.r")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                              new LoginModuleConfig()
+                                      .setClassName("member.l.o.l")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                      .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+                      .setClientPermissionConfigs(new HashSet<>(singletonList(
+                              new PermissionConfig()
+                                      .setActions(newHashSet("read", "remove"))
+                                      .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
+                                      .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
+                                      .setName("mycounter")
+                                      .setPrincipal("devos"))));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -446,7 +446,6 @@ public class ConfigXmlGeneratorTest {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")
                 .setStatisticsEnabled(false)
-                .setConcurrencyLevel(128)
                 .setQuorumName("quorum")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -463,7 +462,6 @@ public class ConfigXmlGeneratorTest {
         MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
         assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("quorum", xmlReplicatedMapConfig.getQuorumName());
         assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
@@ -515,7 +513,7 @@ public class ConfigXmlGeneratorTest {
                         new CachePartitionLostListenerConfig("partitionLostListener")))
                 .setQuorumName("testQuorum");
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
         expectedConfig.setWanReplicationRef(wanReplicationRef());
 
@@ -543,7 +541,7 @@ public class ConfigXmlGeneratorTest {
                 .setPartitionLostListenerConfigs(singletonList(
                         new CachePartitionLostListenerConfig("partitionLostListener")));
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
 
         Config config = new Config()
@@ -1066,9 +1064,8 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testMapNearCacheEvictionConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
-                .setName("nearCache")
-                .setMaxSize(23)
-                .setEvictionPolicy("LRU");
+                .setName("nearCache");
+        expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
         MapConfig mapConfig = new MapConfig()
                 .setName("nearCacheTest")
@@ -1080,8 +1077,8 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
-        assertEquals(23, actualConfig.getMaxSize());
-        assertEquals("LRU", actualConfig.getEvictionPolicy());
+        assertEquals(23, actualConfig.getEvictionConfig().getSize());
+        assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -1106,30 +1103,52 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testWanConfig() {
-        HashMap<String, Comparable> props = new HashMap<String, Comparable>();
+        HashMap<String, Comparable> props = new HashMap<>();
         props.put("prop1", "val1");
         props.put("prop2", "val2");
         props.put("prop3", "val3");
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("testName")
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
-        WanPublisherConfig publisherConfig = new WanPublisherConfig()
+        WanBatchReplicationPublisherConfig batchPublisher = new WanBatchReplicationPublisherConfig()
                 .setGroupName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
-                .setClassName("dummyClass")
-                .setAwsConfig(getDummyAwsConfig())
+                .setSnapshotEnabled(false)
                 .setInitialPublisherState(WanPublisherState.STOPPED)
-                .setDiscoveryConfig(getDummyDiscoveryConfig());
-        publisherConfig.getWanSyncConfig()
-                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+                .setQueueCapacity(1000)
+                .setBatchSize(500)
+                .setBatchMaxDelayMillis(1000)
+                .setResponseTimeoutMillis(60000)
+                .setQueueFullBehavior(WANQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
+                .setDiscoveryPeriodSeconds(20)
+                .setMaxTargetEndpoints(100)
+                .setMaxConcurrentInvocations(500)
+                .setUseEndpointPrivateAddress(true)
+                .setIdleMinParkNs(100)
+                .setIdleMaxParkNs(1000)
+                .setTargetEndpoints("a,b,c,d")
+                .setAwsConfig(getDummyAwsConfig())
+                .setDiscoveryConfig(getDummyDiscoveryConfig())
+                .setEndpoint("WAN")
+                .setProperties(props);
+
+        batchPublisher.getWanSyncConfig()
+                      .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+
+        CustomWanPublisherConfig customPublisher = new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
+                .setClassName("className")
+                .setProperties(props);
+
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
                 .setClassName("dummyClass")
                 .setProperties(props)
                 .setPersistWanReplicatedData(false);
 
-        wanConfig
-                .setWanConsumerConfig(wanConsumerConfig)
-                .setWanPublisherConfigs(singletonList(publisherConfig));
+        wanConfig.setWanConsumerConfig(wanConsumerConfig)
+                 .addWanBatchReplicationPublisherConfig(batchPublisher)
+                 .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);

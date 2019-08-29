@@ -32,9 +32,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ListenerWrapperEventFilter;
-import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.internal.services.ListenerWrapperEventFilter;
+import com.hazelcast.internal.services.NotifiableEventListener;
 
 import java.security.Permission;
 import java.util.Set;

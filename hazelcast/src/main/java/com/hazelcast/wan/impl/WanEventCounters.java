@@ -34,15 +34,9 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class WanEventCounters {
     private static final ConstructorFunction<String, WanPublisherEventCounters> WAN_EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, WanPublisherEventCounters>() {
-        @Override
-        public WanPublisherEventCounters createNew(String ignored) {
-            return new WanPublisherEventCounters();
-        }
-    };
+            = ignored -> new WanPublisherEventCounters();
 
-    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap =
-            new ConcurrentHashMap<String, WanPublisherEventCounters>();
+    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap = new ConcurrentHashMap<>();
 
 
     /**

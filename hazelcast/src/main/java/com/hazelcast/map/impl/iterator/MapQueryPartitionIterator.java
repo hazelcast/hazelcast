@@ -25,9 +25,9 @@ import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,7 +47,8 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
     private final MapProxyImpl<K, V> mapProxy;
 
     public MapQueryPartitionIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionId,
-                                     Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+                                     Predicate<K, V> predicate,
+                                     Projection<? super Entry<K, V>, R> projection) {
         super(mapProxy, fetchSize, partitionId, predicate, projection);
         this.mapProxy = mapProxy;
         advance();

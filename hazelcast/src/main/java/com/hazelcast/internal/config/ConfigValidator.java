@@ -17,7 +17,6 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.AbstractBasicConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -42,7 +41,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
@@ -50,7 +49,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -75,10 +73,8 @@ import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.instance.ProtocolType.REST;
 import static com.hazelcast.instance.ProtocolType.WAN;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkCacheMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkReplicatedMapMergePolicy;
 import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
@@ -111,11 +107,11 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link MapConfig}.
      *
-     * @param mapConfig           the {@link MapConfig}
-     * @param mergePolicyProvider the {@link MergePolicyProvider} to resolve merge policy classes
+     * @param mapConfig the {@link MapConfig}
      */
     public static void checkMapConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig,
-                                      MergePolicyProvider mergePolicyProvider, HazelcastProperties properties) {
+                                      SplitBrainMergePolicyProvider mergePolicyProvider,
+                                      HazelcastProperties properties) {
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
 
         boolean enterprise = getBuildInfo().isEnterprise();
@@ -234,7 +230,7 @@ public final class ConfigValidator {
 
         // endpoint qualifiers referenced by WAN publishers must exist
         for (WanReplicationConfig wanReplicationConfig : config.getWanReplicationConfigs().values()) {
-            for (WanPublisherConfig wanPublisherConfig : wanReplicationConfig.getWanPublisherConfigs()) {
+            for (WanBatchReplicationPublisherConfig wanPublisherConfig : wanReplicationConfig.getBatchPublisherConfigs()) {
                 if (wanPublisherConfig.getEndpoint() != null) {
                     EndpointQualifier qualifier = EndpointQualifier.resolve(WAN, wanPublisherConfig.getEndpoint());
                     if (endpointConfigs.get(qualifier) == null) {
@@ -377,22 +373,23 @@ public final class ConfigValidator {
      * Validates the given {@link CacheSimpleConfig}.
      *
      * @param cacheSimpleConfig   the {@link CacheSimpleConfig} to check
-     * @param mergePolicyProvider the {@link CacheMergePolicyProvider} to resolve merge policy classes
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig, CacheMergePolicyProvider mergePolicyProvider) {
+    public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig,
+                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
         checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
-                cacheSimpleConfig.getMergePolicy(), cacheSimpleConfig, mergePolicyProvider);
+                cacheSimpleConfig.getMergePolicyConfig().getPolicy(), cacheSimpleConfig, mergePolicyProvider);
     }
 
     /**
      * Validates the given {@link CacheConfig}.
      *
      * @param cacheConfig         the {@link CacheConfig} to check
-     * @param mergePolicyProvider the {@link CacheMergePolicyProvider} to resolve merge policy classes
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(CacheConfig cacheConfig, CacheMergePolicyProvider mergePolicyProvider) {
-        checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(), cacheConfig.getMergePolicy(),
-                cacheConfig, mergePolicyProvider);
+    public static void checkCacheConfig(CacheConfig cacheConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
+                cacheConfig.getMergePolicyConfig().getPolicy(), cacheConfig, mergePolicyProvider);
     }
 
     /**
@@ -402,14 +399,15 @@ public final class ConfigValidator {
      * @param evictionConfig       the {@link EvictionConfig} of the cache
      * @param mergePolicyClassname the configured merge policy of the cache
      * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} of the cache
-     * @param mergePolicyProvider  the {@link CacheMergePolicyProvider} to resolve merge policy classes
+     * @param mergePolicyProvider  the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig, String mergePolicyClassname,
+    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig,
+                                        String mergePolicyClassname,
                                         SplitBrainMergeTypeProvider mergeTypeProvider,
-                                        CacheMergePolicyProvider mergePolicyProvider) {
+                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
         checkNotNativeWhenOpenSource(inMemoryFormat);
         checkEvictionConfig(inMemoryFormat, evictionConfig);
-        checkCacheMergePolicy(mergePolicyClassname, mergeTypeProvider, mergePolicyProvider);
+        checkMergePolicy(mergeTypeProvider, mergePolicyProvider, mergePolicyClassname);
     }
 
     /**
@@ -437,12 +435,12 @@ public final class ConfigValidator {
      * Validates the given {@link ReplicatedMapConfig}.
      *
      * @param replicatedMapConfig the {@link ReplicatedMapConfig} to check
-     * @param mergePolicyProvider the {@link com.hazelcast.replicatedmap.merge.MergePolicyProvider}
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider}
      *                            to resolve merge policy classes
      */
     public static void checkReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig,
-                                                com.hazelcast.replicatedmap.merge.MergePolicyProvider mergePolicyProvider) {
-        checkReplicatedMapMergePolicy(replicatedMapConfig, mergePolicyProvider);
+                                                SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(replicatedMapConfig, mergePolicyProvider, replicatedMapConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**

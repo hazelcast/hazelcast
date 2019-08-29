@@ -17,7 +17,7 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;

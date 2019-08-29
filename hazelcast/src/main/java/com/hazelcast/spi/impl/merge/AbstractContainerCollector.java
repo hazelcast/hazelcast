@@ -17,9 +17,9 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;

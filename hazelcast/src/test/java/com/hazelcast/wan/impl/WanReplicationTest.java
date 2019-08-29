@@ -17,29 +17,29 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -211,7 +211,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
     @Test
     public void programmaticImplCreationTest() {
         Config config = getConfig();
-        WanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan").getWanPublisherConfigs().get(0);
+        CustomWanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan")
+                                                         .getCustomPublisherConfigs()
+                                                         .get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
         publisherConfig.setImplementation(dummyWanReplication);
         instance1 = factory.newHazelcastInstance(config);
@@ -221,45 +223,23 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    public void mergeOperationGeneratesWanReplicationEvent_withLegacyMergePolicy() {
-        boolean enableWANReplicationEvent = true;
-        boolean useLegacyMergePolicy = true;
-        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
-
-        assertTotalQueueSize(1);
-    }
-
-    @Test
-    @SuppressWarnings("ConstantConditions")
     public void mergeOperationGeneratesWanReplicationEvent() {
         boolean enableWANReplicationEvent = true;
-        boolean useLegacyMergePolicy = false;
-        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
+        runMergeOpForWAN(enableWANReplicationEvent);
 
         assertTotalQueueSize(1);
-    }
-
-    @Test
-    @SuppressWarnings("ConstantConditions")
-    public void mergeOperationDoesNotGenerateWanReplicationEventWhenDisabled_withLegacyMergePolicy() {
-        boolean enableWANReplicationEvent = false;
-        boolean useLegacyMergePolicy = true;
-        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
-
-        assertTrueAllTheTime(() -> assertTotalQueueSize(0), 3);
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
     public void mergeOperationDoesNotGenerateWanReplicationEventWhenDisabled() {
         boolean enableWANReplicationEvent = false;
-        boolean useLegacyMergePolicy = false;
-        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
+        runMergeOpForWAN(enableWANReplicationEvent);
 
         assertTrueAllTheTime(() -> assertTotalQueueSize(0), 3);
     }
 
-    private void runMergeOpForWAN(boolean enableWANReplicationEvent, boolean useLegacyMergePolicy) {
+    private void runMergeOpForWAN(boolean enableWANReplicationEvent) {
         // init hazelcast instances
         String mapName = "merge_operation_generates_wan_replication_event";
         initInstancesAndMap(mapName);
@@ -278,15 +258,11 @@ public class WanReplicationTest extends HazelcastTestSupport {
         Data data = serializationService.toData(1);
         MapOperation op;
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
-        if (useLegacyMergePolicy) {
-            op = operationProvider.createLegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(),
-                    !enableWANReplicationEvent);
-        } else {
-            MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
-            SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
-                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
-            op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
-        }
+
+        MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
+        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
+                = new com.hazelcast.spi.merge.PassThroughMergePolicy<>();
+        op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }
 
@@ -300,7 +276,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
     protected Config getConfig() {
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("dummyWan")
-                .addWanPublisherConfig(getPublisherConfig());
+                .addCustomPublisherConfig(getPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
@@ -314,10 +290,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 .addMapConfig(mapConfig);
     }
 
-    private WanPublisherConfig getPublisherConfig() {
-        WanPublisherConfig publisherConfig = new WanPublisherConfig();
-        publisherConfig.setClassName(DummyWanReplication.class.getName());
-        return publisherConfig;
+    private CustomWanPublisherConfig getPublisherConfig() {
+        return new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
+                .setClassName(DummyWanReplication.class.getName());
     }
 
     private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {

@@ -38,15 +38,6 @@ public interface EvictionConfiguration {
     EvictionPolicy getEvictionPolicy();
 
     /**
-     * Gets the type of eviction policy.
-     *
-     * @return the type of eviction policy
-     * @deprecated since 3.9, use {@link #getEvictionPolicy()} instead
-     */
-    @Deprecated
-    EvictionPolicyType getEvictionPolicyType();
-
-    /**
      * Gets the class name of the configured {@link EvictionPolicyComparator} implementation.
      *
      * @return class name of the configured {@link EvictionPolicyComparator} implementation

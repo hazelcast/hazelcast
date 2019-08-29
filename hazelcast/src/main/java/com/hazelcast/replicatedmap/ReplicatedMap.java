@@ -21,6 +21,8 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
@@ -35,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * the new value.</p>
  * <p>When a new node joins the cluster, the new node initially will request existing
  * values from older nodes and replicate them locally.</p>
- *
+ * <p>
  * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @param <K> the type of keys maintained by this map
@@ -57,7 +59,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param ttl      ttl to be associated with the specified key-value pair.
      * @param timeUnit TimeUnit to be used for the ttl value.
      */
-    V put(K key, V value, long ttl, TimeUnit timeUnit);
+    V put(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeUnit);
 
     /**
      * <p>The clear operation wipes data out of the replicated maps.
@@ -73,7 +75,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param id ID of the registered entry listener.
      * @return true if registration is removed, false otherwise.
      */
-    boolean removeEntryListener(String id);
+    boolean removeEntryListener(@Nonnull String id);
 
     /**
      * Adds an entry listener for this map. The listener will be notified
@@ -81,7 +83,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @param listener entry listener
      */
-    String addEntryListener(EntryListener<K, V> listener);
+    @Nonnull
+    String addEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -96,7 +99,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param key      the key to listen to
      * @throws NullPointerException if the specified key is null
      */
-    String addEntryListener(EntryListener<K, V> listener, K key);
+    @Nonnull
+    String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key);
 
     /**
      * Adds an continuous entry listener for this map. The listener will be notified
@@ -105,7 +109,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param listener  the entry listener to add
      * @param predicate the predicate for filtering entries
      */
-    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate);
+    @Nonnull
+    String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate);
 
     /**
      * Adds an continuous entry listener for this map. The listener will be notified
@@ -115,7 +120,10 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param predicate the predicate for filtering entries
      * @param key       the key to listen to
      */
-    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
+    @Nonnull
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                            @Nonnull Predicate<K, V> predicate,
+                            @Nullable K key);
 
     /**
      * Returns a lazy {@link Collection} view of the values contained in this map.<br>
@@ -149,6 +157,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @return A collection view of the values contained in this map.
      */
+    @Nonnull
     Collection<V> values();
 
     /**
@@ -163,7 +172,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param comparator the Comparator to sort the returned elements.
      * @return An eagerly populated {@link Collection} view of the values contained in this map.
      */
-    Collection<V> values(Comparator<V> comparator);
+    @Nonnull
+    Collection<V> values(@Nullable Comparator<V> comparator);
 
     /**
      * Returns a lazy {@link Set} view of the mappings contained in this map.<br>
@@ -192,6 +202,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @return A lazy set view of the mappings contained in this map.
      */
+    @Nonnull
     Set<Entry<K, V>> entrySet();
 
     /**
@@ -226,6 +237,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @return A lazy {@link Set} view of the keys contained in this map.
      */
+    @Nonnull
     Set<K> keySet();
 
     /**
@@ -237,6 +249,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @return this replicated map's statistics.
      */
+    @Nonnull
     LocalReplicatedMapStats getReplicatedMapStats();
 
 }

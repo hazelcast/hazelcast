@@ -135,7 +135,7 @@ import java.util.concurrent.TimeUnit;
  * will continue to use the primary or back-up version.
  * <p>
  * When the split heals, Hazelcast by default, performs a
- * {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
+ * {@link com.hazelcast.spi.merge.PutIfAbsentMergePolicy}.
  * Users can also decide to
  * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
  * specify their own map merge policies</a>, these policies when used in
@@ -2020,7 +2020,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #localKeySet()
      * @deprecated please use {@link #addLocalEntryListener(MapListener)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener listener);
+    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2057,7 +2057,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener listener,
+    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  boolean includeValue);
 
@@ -2100,7 +2100,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener listener,
+    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
                                  boolean includeValue);
@@ -2150,7 +2150,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified listener is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener listener, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                            boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -2240,7 +2241,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, Object, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener listener, @Nonnull K key, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                            @Nonnull K key,
+                            boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2256,7 +2259,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                              is {@code null}
      * @see MapListener
      */
-    String addEntryListener(@Nonnull MapListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(@Nonnull MapListener listener,
+                            @Nonnull Predicate<K, V> predicate,
+                            boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map.
@@ -2270,7 +2275,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener listener, @Nonnull Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                            @Nonnull Predicate<K, V> predicate,
+                            boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2303,7 +2310,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener listener,
+    String addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull Predicate<K, V> predicate,
                             @Nullable K key,
                             boolean includeValue);
@@ -2447,7 +2454,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<K> keySet(@Nonnull Predicate predicate);
+    Set<K> keySet(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Queries the map based on the specified predicate and returns an immutable set of the matching entries.
@@ -2469,7 +2476,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate);
+    Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Queries the map based on the specified predicate and returns an immutable
@@ -2492,7 +2499,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException             if the predicate is {@code null}
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Collection<V> values(@Nonnull Predicate predicate);
+    Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Returns the locally owned immutable set of keys.
@@ -2543,7 +2550,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    Set<K> localKeySet(@Nonnull Predicate predicate);
+    Set<K> localKeySet(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Adds an index to this map for the specified entries so
@@ -2682,7 +2689,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ReadOnly
      */
     <R> R executeOnKey(@Nonnull K key,
-                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
+                       @Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
@@ -2738,7 +2745,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if there's null element in {@code keys}
      */
     <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
-                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
+                                @Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by
@@ -2822,7 +2829,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ReadOnly
      */
     <R> void submitToKey(@Nonnull K key,
-                         @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                         @Nonnull EntryProcessor<K, V, R> entryProcessor,
                          @Nullable ExecutionCallback<? super R> callback);
 
     /**
@@ -2907,7 +2914,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ICompletableFuture
      */
     <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
-                                          @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
+                                          @Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
@@ -2945,7 +2952,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param <R>            return type for entry processor
      * @return results mapped by entry key
      */
-    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
@@ -2984,7 +2991,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param <R>            return type for entry processor
      * @return results mapped by entry key
      */
-    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                    @Nonnull Predicate<K, V> predicate);
 
     /**
@@ -3000,7 +3007,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator);
+    <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator);
 
     /**
      * Applies the aggregation logic on map entries filtered with the Predicated and returns the result
@@ -3016,7 +3023,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator, @Nonnull Predicate<K, V> predicate);
+    <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator,
+                    @Nonnull Predicate<K, V> predicate);
 
     /**
      * Applies the projection logic on all map entries and returns the result
@@ -3026,7 +3034,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection);
+    <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection);
 
     /**
      * Applies the projection logic on map entries filtered with the Predicated and returns the result
@@ -3037,7 +3045,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection, @Nonnull Predicate<K, V> predicate);
+    <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                              @Nonnull Predicate<K, V> predicate);
 
     /**
      * Returns corresponding {@code QueryCache} instance for the supplied {@code name} or null.
@@ -3073,7 +3082,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see QueryCache
      * @since 3.8
      */
-    QueryCache<K, V> getQueryCache(@Nonnull String name, @Nonnull Predicate<K, V> predicate, boolean includeValue);
+    QueryCache<K, V> getQueryCache(@Nonnull String name,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   boolean includeValue);
 
     /**
      * Creates an always up to date snapshot of this {@code IMap} according to

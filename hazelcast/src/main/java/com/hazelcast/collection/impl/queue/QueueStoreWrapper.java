@@ -24,9 +24,9 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Arrays;
 import java.util.Collection;

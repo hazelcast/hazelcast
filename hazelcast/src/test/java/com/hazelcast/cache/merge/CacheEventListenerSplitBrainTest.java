@@ -97,7 +97,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
             cacheConfig.getEvictionConfig().setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE);
         }
         cacheConfig.setStatisticsEnabled(true);
-        cacheConfig.setMergePolicy(mergePolicyClass.getName());
+        cacheConfig.getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
 
         if (updatedListener != null) {
             MutableCacheEntryListenerConfiguration listenerConfiguration =

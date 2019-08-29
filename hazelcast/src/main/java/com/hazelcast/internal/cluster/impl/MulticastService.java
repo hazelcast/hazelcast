@@ -48,6 +48,11 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
 
+    /**
+     * IP address of a multicast group. If not set, configuration is read from the {@link MulticastConfig} configuration.
+     */
+    public static final String SYSTEM_PROPERTY_MULTICAST_GROUP = "hazelcast.multicast.group";
+
     private static final int SEND_OUTPUT_SIZE = 1024;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
     private static final int SOCKET_BUFFER_SIZE = 64 * 1024;
@@ -131,7 +136,7 @@ public final class MulticastService implements Runnable {
             }
             multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
             multicastSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            String multicastGroup = System.getProperty("hazelcast.multicast.group");
+            String multicastGroup = System.getProperty(SYSTEM_PROPERTY_MULTICAST_GROUP);
             if (multicastGroup == null) {
                 multicastGroup = multicastConfig.getMulticastGroup();
             }

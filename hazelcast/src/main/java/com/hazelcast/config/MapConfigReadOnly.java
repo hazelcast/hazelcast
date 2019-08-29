@@ -213,11 +213,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setMergePolicy(String mergePolicy) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw throwReadOnly();
     }

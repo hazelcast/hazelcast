@@ -40,7 +40,7 @@ public class PaxExamTestRunner extends JUnit4TestRunner {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                Assume.assumeTrue(JavaVersion.isAtMost(JavaVersion.JAVA_1_8));
+                Assume.assumeTrue(JavaVersion.isAtMost(JavaVersion.JAVA_8));
                 statement.evaluate();
             }
         };

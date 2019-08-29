@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.internal.services.PostJoinAwareService;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -23,6 +23,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Set;
 
 /**
@@ -49,7 +51,7 @@ public interface Cluster {
      * @throws java.lang.NullPointerException if listener is null
      * @see #removeMembershipListener(String)
      */
-    String addMembershipListener(MembershipListener listener);
+    String addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
      * Removes the specified MembershipListener.
@@ -63,7 +65,7 @@ public interface Cluster {
      * @throws java.lang.NullPointerException if the registration ID is null
      * @see #addMembershipListener(MembershipListener)
      */
-    boolean removeMembershipListener(String registrationId);
+    boolean removeMembershipListener(@Nonnull String registrationId);
 
     /**
      * Set of the current members in the cluster. The returned set is an immutable set; it can't be modified.
@@ -120,7 +122,7 @@ public interface Cluster {
      * @return state of the cluster
      * @since 3.6
      */
-    ClusterState getClusterState();
+    @Nonnull ClusterState getClusterState();
 
     /**
      * Changes state of the cluster to the given state transactionally. Transaction will be
@@ -152,7 +154,7 @@ public interface Cluster {
      *                                  or this transaction timeouts
      * @since 3.6
      */
-    void changeClusterState(ClusterState newState);
+    void changeClusterState(@Nonnull ClusterState newState);
 
     /**
      * Changes state of the cluster to the given state transactionally. Transaction must be a
@@ -185,7 +187,7 @@ public interface Cluster {
      *                                  or this transaction timeouts
      * @since 3.6
      */
-    void changeClusterState(ClusterState newState, TransactionOptions transactionOptions);
+    void changeClusterState(@Nonnull ClusterState newState, @Nonnull TransactionOptions transactionOptions);
 
     /**
      * The cluster version indicates the operating version of the cluster. It is separate from each node's codebase version,
@@ -269,7 +271,7 @@ public interface Cluster {
      * @see ClusterState#PASSIVE
      * @since 3.6
      */
-    void shutdown(TransactionOptions transactionOptions);
+    void shutdown(@Nullable TransactionOptions transactionOptions);
 
     /**
      * Changes the cluster version transactionally. Internally this method uses the same transaction infrastructure as
@@ -295,7 +297,7 @@ public interface Cluster {
      * @param version new version of the cluster
      * @since 3.8
      */
-    void changeClusterVersion(Version version);
+    void changeClusterVersion(@Nonnull Version version);
 
     /**
      * Changes the cluster version transactionally, with the transaction options provided. Internally this method uses the same
@@ -322,5 +324,6 @@ public interface Cluster {
      * @param options options by which to execute the transaction
      * @since 3.8
      */
-    void changeClusterVersion(Version version, TransactionOptions options);
+    void changeClusterVersion(@Nonnull Version version,
+                              @Nonnull TransactionOptions options);
 }

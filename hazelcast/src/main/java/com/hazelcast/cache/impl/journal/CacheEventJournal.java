@@ -20,7 +20,7 @@ import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 /**
  * The event journal is a container for events related to a data structure.
