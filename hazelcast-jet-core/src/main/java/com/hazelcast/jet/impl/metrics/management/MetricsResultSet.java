@@ -57,7 +57,8 @@ public class MetricsResultSet {
         private final long timestamp;
         private final byte[] bytes;
 
-        MetricsCollection(long timestamp, byte[] bytes) {
+        @SuppressWarnings("WeakerAccess") //used in MC tests
+        public MetricsCollection(long timestamp, byte[] bytes) {
             this.timestamp = timestamp;
             this.bytes = bytes;
         }
