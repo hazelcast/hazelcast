@@ -1117,7 +1117,11 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 return;
             }
 
-            if (!markedAPMember) {
+            // runs after CP restore procedure is completed...
+
+            if (!markedAPMember && localCPMember.get() == null) {
+                logger.fine("Starting CP discovery...");
+
                 // If there is no AP and CP identity restored,
                 // it means that this member is starting from scratch
                 // so we should run the CP discovery process...
