@@ -435,7 +435,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
          */
         private static final class PublishableSwCounter {
             private final SwCounter counter = newSwCounter();
-            private long lastPublishedValue;
+            private volatile long lastPublishedValue;
 
             public long inc(long amount) {
                 return counter.inc(amount);
