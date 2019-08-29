@@ -23,26 +23,34 @@ import com.hazelcast.sql.impl.expression.Expression;
 import java.io.IOException;
 
 /**
- * Filter node.
+ * Collocated join node.
  */
-public class FilterPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
+public class CollocatedJoinPhysicalNode implements PhysicalNode {
+    /** Left input. */
+    private PhysicalNode left;
+
+    /** Right input. */
+    private PhysicalNode right;
 
     /** Condition. */
     private Expression<Boolean> condition;
 
-    public FilterPhysicalNode() {
+    public CollocatedJoinPhysicalNode() {
         // No-op.
     }
 
-    public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> condition) {
-        this.upstream = upstream;
+    public CollocatedJoinPhysicalNode(PhysicalNode left, PhysicalNode right, Expression<Boolean> condition) {
+        this.left = left;
+        this.right = right;
         this.condition = condition;
     }
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+    public PhysicalNode getLeft() {
+        return left;
+    }
+
+    public PhysicalNode getRight() {
+        return right;
     }
 
     public Expression<Boolean> getCondition() {
@@ -51,20 +59,23 @@ public class FilterPhysicalNode implements PhysicalNode {
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
-        upstream.visit(visitor);
+        right.visit(visitor);
+        left.visit(visitor);
 
-        visitor.onFilterNode(this);
+        visitor.onCollocatedJoinNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+        out.writeObject(left);
+        out.writeObject(right);
         out.writeObject(condition);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+        left = in.readObject();
+        right = in.readObject();
         condition = in.readObject();
     }
 }

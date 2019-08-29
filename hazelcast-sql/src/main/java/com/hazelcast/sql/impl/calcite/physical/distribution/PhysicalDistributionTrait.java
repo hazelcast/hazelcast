@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class PhysicalDistributionTrait implements RelTrait {
-    /** Data is distributed between nodes, but actual distirbution column is unknown. */
+    /** Data is distributed between nodes, but actual distribution column is unknown. */
     public static final PhysicalDistributionTrait DISTRIBUTED =
         new PhysicalDistributionTrait(PhysicalDistributionType.DISTRIBUTED);
 
@@ -45,6 +45,8 @@ public class PhysicalDistributionTrait implements RelTrait {
     private final PhysicalDistributionType type;
 
     /** Distribution fields. */
+    // TODO: Maintain a set of equivalent fields instead of a single list: Set<List<>> instead of List<>.
+    // TODO: Motivation is explained in "CollocatedJoinPhysicalRule" TODOs.
     private final List<PhysicalDistributionField> fields;
 
     public static PhysicalDistributionTrait distributedPartitioned(List<PhysicalDistributionField> fields) {
@@ -76,41 +78,53 @@ public class PhysicalDistributionTrait implements RelTrait {
     @Override
     public boolean satisfies(RelTrait targetTrait) {
         if (targetTrait instanceof PhysicalDistributionTrait) {
-            Boolean res;
-
             PhysicalDistributionType targetType = ((PhysicalDistributionTrait)targetTrait).getType();
 
             // Any type satisfies ANY.
             if (targetType == PhysicalDistributionType.ANY)
-                res = true;
+                return true;
             else {
                 // Any distributed mode satisfies DISTRIBUTED, as it is an arbitrary distribution.
                 switch (type) {
                     case DISTRIBUTED:
                     case DISTRIBUTED_PARTITIONED:
-                        if (targetType == PhysicalDistributionType.DISTRIBUTED) {
-                            res = true;
+                        if (targetType == PhysicalDistributionType.DISTRIBUTED)
+                            return true;
 
-                            break;
-                        }
+                        break;
 
                     case REPLICATED:
                         if (targetType == PhysicalDistributionType.SINGLETON &&
-                            HazelcastCalciteContext.get().isDataMember()) {
-                            res = true;
+                            HazelcastCalciteContext.get().isDataMember())
+                            return true;
 
-                            break;
-                        }
-
-                    default:
-                        res = this.equals(targetTrait);
+                        break;
                 }
             }
 
-            return res;
+            return this.equals(targetTrait);
         }
 
         return false;
+    }
+
+    /**
+     * @return {@code True} if input is distributed, i.e. it's tuples are spread between multiple nodes, and there is
+     * only one instance of each tuple.
+     */
+    public boolean isDistributed() {
+        return type == PhysicalDistributionType.DISTRIBUTED || type == PhysicalDistributionType.DISTRIBUTED_PARTITIONED;
+    }
+
+    /**
+     * Check if input of the distribution is complete, i.e. the whole set of tuples is available locally. This holds
+     * for SINGLETON distribution (follow from it's definition) and for REPLICATED distribution (all data members
+     * has the whole result set).
+     *
+     * @return {@code True} if distribution is complete, {@code false} otherwise.
+     */
+    public boolean isComplete() {
+        return type == PhysicalDistributionType.SINGLETON || type == PhysicalDistributionType.REPLICATED;
     }
 
     @Override

@@ -61,6 +61,6 @@ public class PhysicalDistributionField {
 
     @Override
     public String toString() {
-        return "PhysicalDistributionField{index=" + index + ", nestedField='" + nestedField + '}';
+        return "PhysicalDistributionField{index=" + index + ", nestedField=" + nestedField + '}';
     }
 }

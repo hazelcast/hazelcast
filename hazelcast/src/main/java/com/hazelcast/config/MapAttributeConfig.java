@@ -38,6 +38,7 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_]*$");
 
     private String name;
+    private String path;
     private String extractor;
 
     private transient MapAttributeConfigReadOnly readOnly;
@@ -66,6 +67,7 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
 
     public MapAttributeConfig(MapAttributeConfig config) {
         name = config.getName();
+        path = config.getPath();
         extractor = config.getExtractor();
     }
 
@@ -129,6 +131,16 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
         }
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public MapAttributeConfig setPath(String path) {
+        this.path = path;
+
+        return this;
+    }
+
     /**
      * Gets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
@@ -154,6 +166,7 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "MapAttributeConfig{"
                 + "name='" + name + '\''
+                + "path='" + path + '\''
                 + "extractor='" + extractor + '\''
                 + '}';
     }
@@ -171,12 +184,14 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(path);
         out.writeUTF(extractor);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        path = in.readUTF();
         extractor = in.readUTF();
     }
 
@@ -193,12 +208,16 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
+        if (path != null ? !path.equals(that.path) : that.path != null) {
+            return false;
+        }
         return extractor != null ? extractor.equals(that.extractor) : that.extractor == null;
     }
 
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (path != null ? path.hashCode() : 0);
         result = 31 * result + (extractor != null ? extractor.hashCode() : 0);
         return result;
     }

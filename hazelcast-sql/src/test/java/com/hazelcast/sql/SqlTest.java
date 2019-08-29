@@ -17,119 +17,191 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("serial")
 public class SqlTest extends HazelcastTestSupport {
+    private static final int CITY_CNT = 2;
+    private static final int DEPARTMENT_CNT = 2;
+    private static final int PERSON_CNT = 10;
 
-    private static final String QUERY = "SELECT age FROM persons WHERE age > 5";
+    private HazelcastInstance member;
 
-    @Test(timeout = Long.MAX_VALUE)
-    public void testSimpleQuery() throws Exception {
-        // Start several members.
+    @Before
+    public void before() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         Config cfg = new Config();
 
-//        cfg.addMapConfig(new MapConfig()
-//            .setName("persons")
-//            .setPartitioningStrategyConfig(
-//                new PartitioningStrategyConfig()
-//                    .setPartitioningStrategy(new DeclarativePartitioningStrategy().setField("key"))
-//            )
-//        );
+        ReplicatedMapConfig cityCfg = new ReplicatedMapConfig("city");
+        cityCfg.setAsyncFillup(false);
 
-        HazelcastInstance member1 = nodeFactory.newHazelcastInstance(cfg);
+        MapConfig departmentCfg = new MapConfig("department");
+
+        MapConfig personCfg = new MapConfig("person");
+
+        personCfg.setPartitioningStrategyConfig(
+            new PartitioningStrategyConfig().setPartitioningStrategy(
+                new DeclarativePartitioningStrategy().setField("deptId")
+            )
+        );
+
+        personCfg.addMapAttributeConfig(new MapAttributeConfig().setName("deptId").setPath("__key.deptId"));
+
+        cfg.addReplicatedMapConfig(cityCfg);
+        cfg.addMapConfig(departmentCfg);
+        cfg.addMapConfig(personCfg);
+
+        member = nodeFactory.newHazelcastInstance(cfg);
         nodeFactory.newHazelcastInstance(cfg);
 
-        // Add some data.
-        for (int i = 0; i < 10; i++)
-            member1.getReplicatedMap("city").put(i, new City(i));
+        ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
+        IMap<Long, Department> departmentMap = member.getMap("department");
+        IMap<PersonKey, Person> personMap = member.getMap("person");
 
-        for (int i = 0; i < 100; i++)
-            member1.getMap("persons").put(new PersonKey(i), new Person(i));
+        for (int i = 0; i < CITY_CNT; i++)
+            cityMap.put((long)i, new City("city-" + i));
 
-        // Execute.
-        SqlCursor cursor = member1.getSqlService().query(QUERY);
+        for (int i = 0; i < DEPARTMENT_CNT; i++)
+            departmentMap.put((long)i, new Department("department-" + i));
 
-        List<SqlRow> res = new ArrayList<>();
+        int age = 40;
+        long salary = 1000;
+
+        for (int i = 0; i < PERSON_CNT; i++) {
+            PersonKey key = new PersonKey(i, i % DEPARTMENT_CNT);
+
+            Person val = new Person(
+                "person-" + i,
+                age++ % 80,
+                salary * (i + 1),
+                i % CITY_CNT
+            );
+
+            personMap.put(key, val);
+        }
+
+        System.out.println(">>> DATA LOAD COMPLETED");
+    }
+
+    @After
+    public void after() {
+        member = null;
+
+        Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = Long.MAX_VALUE)
+    public void testReplicatedProject() throws Exception {
+        doQuery("SELECT name FROM city");
+    }
+
+    @Test(timeout = Long.MAX_VALUE)
+    public void testJoin() throws Exception {
+        List<SqlRow> res = doQuery("SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key");
+
+        Assert.assertEquals(PERSON_CNT, res.size());
+    }
+
+    private List<SqlRow> doQuery(String sql) {
+        SqlCursor cursor = member.getSqlService().query(sql);
+
+        List<SqlRow> rows = new ArrayList<>();
 
         for (SqlRow row : cursor)
-            res.add(row);
+            rows.add(row);
 
-        System.out.println(">>> SIZE: " + res.size());
-        System.out.println(">>> RES:  " + res);
+        print(rows);
+
+        return rows;
     }
 
-    public static class PersonKey implements Serializable {
-        private static final long serialVersionUID = -2761952188092172459L;
+    private void print(List<SqlRow> rows) {
+        System.out.println(">>> RESULT:");
 
-        public final int key;
-        public final String keyStr;
+        for (SqlRow row : rows)
+            System.out.println(">>>\t" + row);
+    }
 
-        public PersonKey(int key) {
-            this.key = key;
+    private static class City implements Serializable {
+        private String name;
 
-            keyStr = Integer.toString(key);
+        public City() {
+            // No-op.
+        }
+
+        public City(String name) {
+            this.name = name;
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public static class Person implements Serializable {
-        private static final long serialVersionUID = -221704179714350820L;
+    private static class Department implements Serializable {
+        private String title;
 
-        public final String name;
-        public final int age;
-        public final double height;
-        public final boolean active;
-        public final LocalDateTime birthDate = LocalDateTime.now();
-        public final String birthDateString;
-        public final Address address = new Address();
-        public final List tokens = new ArrayList();
+        public Department() {
+            // No-op.
+        }
 
-        public Person(int key) {
-
-            this.name = "Person " + key;
-            this.age = ThreadLocalRandom.current().nextInt(10);
-            this.height = ThreadLocalRandom.current().nextDouble(170);
-            this.active = ThreadLocalRandom.current().nextBoolean();
-
-            birthDateString = LocalDateTime.now().toString();
+        public Department(String title) {
+            this.title = title;
         }
     }
 
-    public static class Address implements Serializable {
-        private static final long serialVersionUID = 8442512199470933111L;
+    private static class PersonKey implements Serializable {
+        private long id;
+        private long deptId;
 
-        public final int apartment = ThreadLocalRandom.current().nextInt(100);
+        public PersonKey() {
+            // No-op.
+        }
+
+        public PersonKey(long id, long deptId) {
+            this.id = id;
+            this.deptId = deptId;
+        }
     }
 
-    public static class City implements Serializable {
-        private static final long serialVersionUID = -5759518310551454362L;
+    private static class Person implements Serializable {
+        private String name;
+        private int age;
+        private long salary;
+        private long cityId;
 
-        public final String name;
+        public Person() {
+            // No-op.
+        }
 
-        public City(int i) {
-            this.name = "City-" + i;
+        public Person(String name, int age, long salary, long cityId) {
+            this.name = name;
+            this.age = age;
+            this.salary = salary;
+            this.cityId = cityId;
         }
     }
 }

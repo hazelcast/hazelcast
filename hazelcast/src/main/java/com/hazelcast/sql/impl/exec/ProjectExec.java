@@ -31,12 +31,6 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Projection expressions. */
     private final List<Expression> projections;
 
-    /** Last upstream batch. */
-    private RowBatch curBatch;
-
-    /** Current position in the last upstream batch. */
-    private int curBatchPos = -1;
-
     /** Current row. */
     private RowBatch curRow;
 
@@ -48,76 +42,53 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
-        if (curBatch == null) {
-            if (upstreamDone)
+        while (true) {
+            if (!state.advance())
+                return IterationResult.WAIT;
+
+            Row upstreamRow = state.nextIfExists();
+
+            if (upstreamRow != null) {
+                curRow = projectRow(upstreamRow);
+
+                return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+            }
+
+            if (state.isDone()) {
+                curRow = EmptyRowBatch.INSTANCE;
+
                 return IterationResult.FETCHED_DONE;
-
-            switch (advanceUpstream()) {
-                case FETCHED_DONE:
-                case FETCHED:
-                    RowBatch batch = upstreamCurrentBatch;
-
-                    if (batch.getRowCount() > 0) {
-                        curBatch = batch;
-                        curBatchPos = 0;
-                    }
-
-                    break;
-
-                case WAIT:
-                    return IterationResult.WAIT;
-
-                default:
-                    throw new IllegalStateException("Should not reach this.");
             }
         }
-
-        return advanceCurrentBatch();
     }
 
     /**
-     * Advance currently available batch.
+     * Project upstream row.
      *
-     * @return Result.
+     * @param row Upstream row.
+     * @return Projected row.
      */
-    private IterationResult advanceCurrentBatch() {
-        // TODO: Make sure that we do not perform unnecessary call to upstream.
-        // TODO: To achieve this, upstream must set FETCHED_DONE when the last row is returned.
-        if (curBatch == null) {
-            assert upstreamDone;
-
-            curRow = EmptyRowBatch.INSTANCE;
-
-            return IterationResult.FETCHED_DONE;
-        }
-
-        Row upstreamRow = curBatch.getRow(curBatchPos);
-
-        HeapRow curRow0 = new HeapRow(projections.size());
+    private HeapRow projectRow(Row row) {
+        HeapRow projectedRow = new HeapRow(projections.size());
 
         int colIdx = 0;
 
         for (Expression projection : projections) {
-            Object res = projection.eval(ctx, upstreamRow);
+            Object projectionRes = projection.eval(ctx, row);
 
-            curRow0.set(colIdx++, res);
+            projectedRow.set(colIdx++, projectionRes);
         }
 
-        curRow = curRow0;
-
-        if (++curBatchPos == curBatch.getRowCount()) {
-            curBatch = null;
-            curBatchPos = -1;
-
-            if (upstreamDone)
-                return IterationResult.FETCHED_DONE;
-        }
-
-        return IterationResult.FETCHED;
+        return projectedRow;
     }
 
     @Override
     public RowBatch currentBatch() {
         return curRow;
+    }
+
+    @Override
+    protected void reset1() {
+        curRow = null;
     }
 }

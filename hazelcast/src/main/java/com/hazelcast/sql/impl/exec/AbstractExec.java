@@ -36,4 +36,19 @@ public abstract class AbstractExec implements Exec {
     protected void setup0(QueryContext ctx, DataWorker worker) {
         // No-op.
     }
+
+    @Override
+    public final void reset() {
+        if (!canReset())
+            throw new UnsupportedOperationException("Reset is not supported: " + this.getClass().getSimpleName());
+
+        reset0();
+    }
+
+    /**
+     * Internal reset routine.
+     */
+    protected void reset0() {
+        // No-op.
+    }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Executor which sends results to remote stripes.
  */
+// TODO: Consider multiplexing.
 public class SendExec extends AbstractUpstreamAwareExec {
     /** Expression to get the hash of the stripe. */
     private final Expression<Integer> partitionHasher;
@@ -31,11 +32,8 @@ public class SendExec extends AbstractUpstreamAwareExec {
     /** Outboxes. */
     private final Outbox[] outboxes;
 
-    /** Last upstream batch. */
-    private RowBatch curBatch;
-
-    /** Current position in the last upstream batch. */
-    private int curBatchPos = -1;
+    /** Row which pending send. */
+    private Row pendingRow;
 
     public SendExec(Exec upstream, Expression<Integer> partitionHasher, Outbox[] outboxes) {
         super(upstream);
@@ -46,39 +44,45 @@ public class SendExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
+        if (pendingRow != null) {
+            if (pushRow(pendingRow))
+                pendingRow = null;
+            else
+                return IterationResult.WAIT;
+        }
+
         while (true) {
-            if (curBatch == null) {
-                if (upstreamDone) {
-                    for (Outbox outbox : outboxes)
-                        outbox.flush();
+            if (!state.advance())
+                return IterationResult.WAIT;
 
-                    return IterationResult.FETCHED_DONE;
-                }
+            for (Row upstreamRow : state) {
+                if (!pushRow(upstreamRow)) {
+                    pendingRow = upstreamRow;
 
-                switch (advanceUpstream()) {
-                    case FETCHED_DONE:
-                    case FETCHED:
-                        RowBatch batch = upstreamCurrentBatch;
-
-                        if (batch.getRowCount() == 0)
-                            continue;
-
-                        curBatch = batch;
-                        curBatchPos = 0;
-
-                        break;
-
-                    case WAIT:
-                        return IterationResult.WAIT;
-
-                    default:
-                        throw new IllegalStateException("Should not reach this.");
+                    return IterationResult.WAIT;
                 }
             }
 
-            if (!pushRows())
-                return IterationResult.WAIT;
+            if (state.isDone()) {
+                for (Outbox outbox : outboxes)
+                    outbox.flush();
+
+                return IterationResult.FETCHED_DONE;
+            }
         }
+    }
+
+    /**
+     * Push the current row to the outbox.
+     *
+     * @param row Row.
+     * @return {@code True} if pushed successfully, {@code false}
+     */
+    private boolean pushRow(Row row) {
+        int part = partitionHasher.eval(ctx, row);
+        int idx =  part % outboxes.length;
+
+        return outboxes[idx].onRow(row);
     }
 
     @Override
@@ -86,25 +90,11 @@ public class SendExec extends AbstractUpstreamAwareExec {
         throw new UnsupportedOperationException("Should not be called.");
     }
 
-    private boolean pushRows() {
-        int curBatchPos0 = curBatchPos;
-
-        for (; curBatchPos0 < curBatch.getRowCount(); curBatchPos0++) {
-            Row row = curBatch.getRow(curBatchPos0);
-
-            int part = partitionHasher.eval(ctx, row);
-            int idx =  part % outboxes.length;
-
-            if (!outboxes[idx].onRow(row)) {
-                curBatchPos = curBatchPos0;
-
-                return false;
-            }
-        }
-
-        curBatch = null;
-        curBatchPos = -1;
-
-        return true;
+    @Override
+    public boolean canReset() {
+        // TODO: Sender is a top-level operator (similar to root), so currently no operator can initiate a reset on it.
+        // TODO: However, in more complex operations, e.g. distributed joins, there is a chance that we will send
+        // TODO: reset requests from receivers to their senders.
+        return false;
     }
 }

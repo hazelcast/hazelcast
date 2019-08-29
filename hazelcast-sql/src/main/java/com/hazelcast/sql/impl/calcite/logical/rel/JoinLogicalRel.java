@@ -1,5 +1,6 @@
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.sql.impl.calcite.common.AbstractJoinRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -10,13 +11,7 @@ import org.apache.calcite.rex.RexNode;
 import java.util.Collections;
 import java.util.List;
 
-public class JoinLogicalRel extends Join implements LogicalRel {
-    /** Indexes of left keys. */
-    protected final List<Integer> leftKeys;
-
-    /** Indexes of right keys. */
-    protected final List<Integer> rightKeys;
-
+public class JoinLogicalRel extends AbstractJoinRel implements LogicalRel {
     public JoinLogicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
@@ -27,18 +22,7 @@ public class JoinLogicalRel extends Join implements LogicalRel {
         List<Integer> leftKeys,
         List<Integer> rightKeys
     ) {
-        super(cluster, traitSet, left, right, condition, Collections.emptySet(), joinType);
-
-        this.leftKeys = leftKeys;
-        this.rightKeys = rightKeys;
-    }
-
-    public List<Integer> getLeftKeys() {
-        return leftKeys;
-    }
-
-    public List<Integer> getRightKeys() {
-        return rightKeys;
+        super(cluster, traitSet, left, right, condition, joinType, leftKeys, rightKeys);
     }
 
     @Override

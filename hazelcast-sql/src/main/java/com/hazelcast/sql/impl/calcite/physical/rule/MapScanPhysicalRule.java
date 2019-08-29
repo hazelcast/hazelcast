@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
+import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
@@ -104,12 +105,19 @@ public class MapScanPhysicalRule extends RelOptRule {
      * @return Distribution field wrapped into a list or an empty list if no distribution field could be determined.
      */
     private static List<PhysicalDistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
+        if (hazelcastTable.isReplicated())
+            return Collections.emptyList();
+
+        MapProxyImpl map = hazelcastTable.getContainer();
+
         String distributionField = getDistributionFieldName(hazelcastTable);
 
         int index = 0;
 
         for (RelDataTypeField field : hazelcastTable.getFieldList()) {
-            if (field.getName().equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
+            String path = map.normalizeAttributePath(field.getName());
+
+            if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.
                 if (distributionField == null)
                     return Collections.singletonList(new PhysicalDistributionField(index));
@@ -120,6 +128,16 @@ public class MapScanPhysicalRule extends RelOptRule {
 
                     if (nestedField.getName().equals(distributionField))
                         return Collections.singletonList(new PhysicalDistributionField(index, nestedFieldName));
+                }
+            }
+            else {
+                // Try extracting the field from the key-based path and check if it is the distribution field.
+                // E.g. "field" -> (attribute) -> "__key.distField" -> (strategy) -> "distField".
+                String keyPath = SqlUtils.extractKeyPath(path);
+
+                if (keyPath != null) {
+                    if (keyPath.equals(distributionField))
+                        return Collections.singletonList(new PhysicalDistributionField(index));
                 }
             }
 

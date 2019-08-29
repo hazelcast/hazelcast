@@ -46,4 +46,14 @@ public class EmptyScanExec implements Exec {
     public RowBatch currentBatch() {
         return EmptyRowBatch.INSTANCE;
     }
+
+    @Override
+    public boolean canReset() {
+        return true;
+    }
+
+    @Override
+    public void reset() {
+        // No-op.
+    }
 }

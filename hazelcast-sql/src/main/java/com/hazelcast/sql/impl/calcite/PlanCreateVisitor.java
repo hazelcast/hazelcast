@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
@@ -288,9 +289,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(aggNode);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onCollocatedJoin(CollocatedJoinPhysicalRel rel) {
-        // TODO: Implement me.
+        PhysicalNode leftInput = pollSingleUpstream();
+        PhysicalNode rightInput = pollSingleUpstream();
+
+        RexNode condition = rel.getCondition();
+        Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+        CollocatedJoinPhysicalNode joinNode = new CollocatedJoinPhysicalNode(leftInput, rightInput, convertedCondition);
+
+        pushUpstream(joinNode);
     }
 
     private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
@@ -317,7 +327,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      * @param node Node.
      */
     private void pushUpstream(PhysicalNode node) {
-        upstreamNodes.add(node);
+        upstreamNodes.addFirst(node);
     }
 
     /**
@@ -326,8 +336,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      * @return Upstream node.
      */
     private PhysicalNode pollSingleUpstream() {
-        assert upstreamNodes.size() == 1;
-
         return upstreamNodes.pollFirst();
     }
 

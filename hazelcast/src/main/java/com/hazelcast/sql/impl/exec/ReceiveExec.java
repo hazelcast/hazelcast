@@ -69,4 +69,9 @@ public class ReceiveExec extends AbstractExec {
     public RowBatch currentBatch() {
         return curBatch;
     }
+
+    @Override
+    public boolean canReset() {
+        return false;
+    }
 }

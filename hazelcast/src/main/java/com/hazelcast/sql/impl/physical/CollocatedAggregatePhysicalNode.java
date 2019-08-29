@@ -76,7 +76,7 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
     public void visit(PhysicalNodeVisitor visitor) {
         upstream.visit(visitor);
 
-        visitor.onCollocatedAggregate(this);
+        visitor.onCollocatedAggregateNode(this);
     }
 
     @Override

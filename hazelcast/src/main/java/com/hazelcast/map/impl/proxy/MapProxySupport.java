@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -199,6 +200,7 @@ abstract class MapProxySupport<K, V>
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
+    protected final Map<String, String> aliases;
 
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
@@ -228,6 +230,19 @@ abstract class MapProxySupport<K, V>
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+
+        List<MapAttributeConfig> attributeConfigs = mapConfig.getMapAttributeConfigs();
+
+        if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
+            aliases = new HashMap<>();
+
+            for (MapAttributeConfig attributeConfig : attributeConfigs) {
+                if (attributeConfig.getPath() != null)
+                    aliases.put(attributeConfig.getName(), attributeConfig.getPath());
+            }
+        }
+        else
+            aliases = Collections.emptyMap();
     }
 
     @Override
@@ -1322,6 +1337,25 @@ abstract class MapProxySupport<K, V>
                 ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
             }
         }
+    }
+
+    public MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
+    }
+
+    /**
+     * Normalize attribute name by replacing it with it's extractor path.
+     *
+     * @param name Attribute name.
+     * @return Extractor path for the given attribute name.
+     */
+    public String normalizeAttributePath(String name) {
+        String res = aliases.get(name);
+
+        if (res == null)
+            res = name;
+
+        return res;
     }
 
     private class IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {

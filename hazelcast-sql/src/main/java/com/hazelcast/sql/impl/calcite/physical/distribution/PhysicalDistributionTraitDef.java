@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
+import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.*;
@@ -53,8 +54,8 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
             return rel;
 
         // TODO: What is the reason of having this RelSubset check?
-        // if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
-        if (currentTrait.equals(ANY))
+        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
+//        if (currentTrait.equals(ANY))
             return null;
 
         // Only physical nodes could be converted.

@@ -21,8 +21,10 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.util.StringUtil;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -33,12 +35,22 @@ public final class ExtractorHelper {
 
     static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs,
                                                              ClassLoader classLoader) {
+        Set<String> allNames = new HashSet<>();
+
         Map<String, ValueExtractor> extractors = createHashMap(mapAttributeConfigs.size());
         for (MapAttributeConfig config : mapAttributeConfigs) {
-            if (extractors.containsKey(config.getName())) {
+            if (!allNames.add(config.getName())) {
                 throw new IllegalArgumentException("Could not add " + config
-                        + ". Extractor for this attribute name already added.");
+                    + ". Extractor for this attribute name already added.");
             }
+
+            if (config.getPath() != null) {
+                if (config.getExtractor() != null)
+                    throw new IllegalArgumentException("Extractor cannot be set if path is not null: " + config);
+
+                continue;
+            }
+
             extractors.put(config.getName(), instantiateExtractor(config, classLoader));
         }
         return extractors;

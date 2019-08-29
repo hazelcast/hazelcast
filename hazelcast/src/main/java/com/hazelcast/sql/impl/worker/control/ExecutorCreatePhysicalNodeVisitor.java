@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql.impl.worker.control;
 
+ import com.hazelcast.map.impl.proxy.MapProxyImpl;
  import com.hazelcast.spi.NodeEngine;
+ import com.hazelcast.sql.HazelcastSqlException;
  import com.hazelcast.sql.impl.QueryFragment;
  import com.hazelcast.sql.impl.QueryId;
  import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
@@ -30,12 +32,14 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
  import com.hazelcast.sql.impl.exec.RootExec;
  import com.hazelcast.sql.impl.exec.SendExec;
- import com.hazelcast.sql.impl.exec.SortExec;
+ import com.hazelcast.sql.impl.exec.LocalSortExec;
+ import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
  import com.hazelcast.sql.impl.mailbox.AbstractInbox;
  import com.hazelcast.sql.impl.mailbox.Outbox;
  import com.hazelcast.sql.impl.mailbox.SingleInbox;
  import com.hazelcast.sql.impl.mailbox.StripedInbox;
  import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+ import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
  import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
  import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
  import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
@@ -127,7 +131,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     public void onRootNode(RootPhysicalNode node) {
         assert stack.size() == 1;
 
-        exec = new RootExec(stack.get(0));
+        exec = new RootExec(pop());
     }
 
     @Override
@@ -152,7 +156,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         // Instantiate executor and put it to stack.
         ReceiveExec res = new ReceiveExec(inbox);
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
@@ -180,7 +184,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             node.getAscs()
         );
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
@@ -216,7 +220,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             }
         }
 
-        exec = new SendExec(stack.get(0), node.getPartitionHasher(), sendOutboxes);
+        exec = new SendExec(pop(), node.getPartitionHasher(), sendOutboxes);
     }
 
     @Override
@@ -242,10 +246,18 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         if (stripePartsCnt == 0)
             res = EmptyScanExec.INSTANCE;
-        else
-            res = new MapScanExec(node.getMapName(), stripeParts, node.getProjections(), node.getFilter());
+        else {
+            String mapName = node.getMapName();
 
-        stack.add(res);
+            MapProxyImpl map = (MapProxyImpl)nodeEngine.getHazelcastInstance().getMap(mapName);
+
+            if (map == null)
+                throw new HazelcastSqlException(-1, "IMap doesn't exist: " + mapName);
+
+            res = new MapScanExec(map, stripeParts, node.getProjections(), node.getFilter());
+        }
+
+        push(res);
     }
 
     @Override
@@ -259,40 +271,46 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         else
             res = EmptyScanExec.INSTANCE;
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
     public void onSortNode(SortPhysicalNode node) {
-        Exec res = new SortExec(stack.remove(0), node.getExpressions(), node.getAscs());
+        Exec res = new LocalSortExec(pop(), node.getExpressions(), node.getAscs());
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
     public void onProjectNode(ProjectPhysicalNode node) {
-        Exec res = new ProjectExec(stack.remove(0), node.getProjections());
+        Exec res = new ProjectExec(pop(), node.getProjections());
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
     public void onFilterNode(FilterPhysicalNode node) {
-        Exec res = new FilterExec(stack.remove(0), node.getCondition());
+        Exec res = new FilterExec(pop(), node.getCondition());
 
-        stack.add(res);
+        push(res);
     }
 
     @Override
-    public void onCollocatedAggregate(CollocatedAggregatePhysicalNode node) {
-        Exec res = new LocalAggregateExec(
-            stack.remove(0),
-            node.getGroupKeySize(),
-            node.getAccumulators(),
-            node.isSorted()
+    public void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node) {
+        Exec res = new LocalAggregateExec(pop(), node.getGroupKeySize(), node.getAccumulators(), node.isSorted());
+
+        push(res);
+    }
+
+    @Override
+    public void onCollocatedJoinNode(CollocatedJoinPhysicalNode node) {
+        Exec res = new LocalJoinExec(
+            pop(),
+            pop(),
+            node.getCondition()
         );
 
-        stack.add(res);
+        push(res);
     }
 
     public Exec getExec() {
@@ -305,5 +323,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     public List<Outbox> getOutboxes() {
         return outboxes != null ? outboxes : Collections.emptyList();
+    }
+
+    private Exec pop() {
+        return stack.remove(stack.size() - 1);
+    }
+
+    private void push(Exec exec) {
+        stack.add(exec);
     }
 }

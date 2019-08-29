@@ -51,15 +51,6 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     /** Number of columns. */
     private final int columnCount;
 
-    /** Last upstream batch. */
-    private RowBatch curBatch;
-
-    /** Current position in the last upstream batch. */
-    private int curBatchPos = -1;
-
-    /** Current row. */
-    private RowBatch curRow;
-
     /** Aggregated rows (for blocking mode). */
     // TODO: Use array for collectors?
     private Map<AggregateKey, List<AggregateCollector>> map;
@@ -69,6 +60,9 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
     /** Current single values (for non-blocking mode). */
     private List<AggregateCollector> singleValues;
+
+    /** Current row. */
+    private RowBatch curRow;
 
     public LocalAggregateExec(
         Exec upstream,
@@ -96,131 +90,61 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
-        // Fetch data in cycle because we do not know when to stop in advance.
         while (true) {
-            if (curBatch == null) {
-                if (upstreamDone)
-                    return IterationResult.FETCHED_DONE;
+            if (!state.advance())
+                return IterationResult.WAIT;
 
-                switch (advanceUpstream()) {
-                    case FETCHED_DONE:
-                    case FETCHED:
-                        RowBatch batch = upstreamCurrentBatch;
+            // Loop through the current batch.
+            for (Row upstreamRow : state) {
+                // Prepare key and value.
+                AggregateKey key = getKey(upstreamRow);
+                List<AggregateCollector> values = getValues(key);
 
-                        int batchRowCnt = batch.getRowCount();
+                // Accumulate.
+                for (int i = 0; i < expressions.size(); i++) {
+                    AggregateExpression expression = expressions.get(i);
+                    AggregateCollector value = values.get(i);
 
-                        if (batchRowCnt > 0) {
-                            curBatch = batch;
-                            curBatchPos = 0;
-                        }
-
-                        break;
-
-                    case WAIT:
-                        return IterationResult.WAIT;
-
-                    default:
-                        throw new IllegalStateException("Should not reach this.");
+                    expression.collect(ctx, upstreamRow, value);
                 }
-            }
 
-            IterationResult res = advanceCurrentBatch();
-
-            if (res != null)
-                return res;
-        }
-    }
-
-    /**
-     * Advance position in the current batch.
-     *
-     * @return Iteration result if succeeded, {@code null} if all rows from the given batch were consumed, and
-     *     more rows from the upstream is needed.
-     */
-    private IterationResult advanceCurrentBatch() {
-        // Handle empty batch.
-        if (curBatch == null) {
-            assert upstreamDone;
-
-            if (sorted) {
-                if (singleKey == null)
-                    curRow = EmptyRowBatch.INSTANCE;
-                else {
-                    curRow = createRowFromKeyAndValues(singleKey, singleValues);
-
-                    singleKey = null;
-                    singleValues = null;
-                }
-            }
-            else
-                curRow = createRows();
-
-            return IterationResult.FETCHED_DONE;
-        }
-
-        RowBatch curBatch0 = curBatch;
-        int curBatchPos0 = curBatchPos;
-
-        // We need to loop through current upstream batch because we do not know how many rows to consume in advance.
-        while (true) {
-            // Prepare key and value.
-            Row row = curBatch0.getRow(curBatchPos0);
-
-            AggregateKey key = getKey(row);
-            List<AggregateCollector> values = getValues(key);
-
-            // Accumulate.
-            for (int i = 0; i < expressions.size(); i++) {
-                AggregateExpression expression = expressions.get(i);
-                AggregateCollector value = values.get(i);
-
-                expression.collect(ctx, row, value);
-            }
-
-            // Nullify state if this was the last entry in the upstream batch.
-            boolean last = curBatchPos0 + 1 == curBatch0.getRowCount();
-
-            if (last) {
-                curBatch = null;
-                curBatchPos = -1;
-            }
-
-            // Post-process.
-            if (sorted) {
                 // Special handling of non-blocking mode: if the key has changed, replace old key/value pair with the
                 // one, and return the old one as a row.
-                if (singleKey != null && singleKey != key) {
-                    curRow = createRowFromKeyAndValues(singleKey, singleValues);
-
-                    singleKey = key;
-                    singleValues = values;
-
-                    if (last)
-                        return upstreamDone ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                if (sorted) {
+                    if (singleKey == null) {
+                        singleKey = key;
+                        singleValues = values;
+                    }
                     else {
-                        // Advance batch position for the next call.
-                        curBatchPos = curBatchPos0;
+                        if (singleKey != key) {
+                            curRow = createRowFromKeyAndValues(singleKey, singleValues);
 
-                        // This is not the last entry.
-                        return IterationResult.FETCHED;
+                            singleKey = key;
+                            singleValues = values;
+
+                            return IterationResult.FETCHED;
+                        }
                     }
                 }
             }
-            else {
-                if (last) {
-                    if (upstreamDone) {
-                        // All data is fetched. Prepare the final row batch.
-                        curRow = createRows();
 
-                        return IterationResult.FETCHED_DONE;
+            // Finalize the state if no more rows are expected.
+            if (state.isDone()) {
+                if (sorted) {
+                    if (singleKey == null)
+                        curRow = EmptyRowBatch.INSTANCE;
+                    else {
+                        curRow = createRowFromKeyAndValues(singleKey, singleValues);
+
+                        singleKey = null;
+                        singleValues = null;
                     }
-                    else
-                        // Request the next batch.
-                        return null;
                 }
-            }
+                else
+                    curRow = createRows();
 
-            curBatchPos0++;
+                return IterationResult.FETCHED_DONE;
+            }
         }
     }
 
@@ -363,5 +287,16 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     @Override
     public RowBatch currentBatch() {
         return curRow;
+    }
+
+    @Override
+    protected void reset1() {
+        if (map != null)
+            map.clear();
+
+        singleKey = null;
+        singleValues = null;
+
+        curRow = null;
     }
 }

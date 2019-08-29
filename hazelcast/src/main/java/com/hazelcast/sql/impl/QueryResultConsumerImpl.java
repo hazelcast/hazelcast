@@ -90,6 +90,38 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     }
 
     @Override
+    public boolean consume(Iterable<Row> source) {
+        synchronized (mux) {
+            int remaining = maxSize - rows.size();
+
+            if (remaining == 0)
+                return false;
+
+            boolean added = false;
+            boolean consumed = true;
+
+            for (Row row : source) {
+                rows.add(row);
+
+                added = true;
+
+                if (--remaining == 0) {
+                    consumed = false;
+
+                    break;
+                }
+            }
+
+            rootScheduled = false;
+
+            if (added)
+                mux.notifyAll();
+
+            return consumed;
+        }
+    }
+
+    @Override
     public void done() {
         synchronized (mux) {
             done = true;

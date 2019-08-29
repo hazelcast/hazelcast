@@ -7,16 +7,10 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.Collections;
 import java.util.List;
 
-public class CollocatedJoinPhysicalRel extends Join implements PhysicalRel {
-    /** Indexes of left keys. */
-    protected final List<Integer> leftKeys;
-
-    /** Indexes of right keys. */
-    protected final List<Integer> rightKeys;
-
+// TODO: JavaDoc: describe traits propagation
+public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implements PhysicalRel {
     public CollocatedJoinPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
@@ -27,18 +21,7 @@ public class CollocatedJoinPhysicalRel extends Join implements PhysicalRel {
         List<Integer> leftKeys,
         List<Integer> rightKeys
     ) {
-        super(cluster, traitSet, left, right, condition, Collections.emptySet(), joinType);
-
-        this.leftKeys = leftKeys;
-        this.rightKeys = rightKeys;
-    }
-
-    public List<Integer> getLeftKeys() {
-        return leftKeys;
-    }
-
-    public List<Integer> getRightKeys() {
-        return rightKeys;
+        super(cluster, traitSet, left, right, condition, joinType, leftKeys, rightKeys);
     }
 
     @Override
@@ -63,10 +46,7 @@ public class CollocatedJoinPhysicalRel extends Join implements PhysicalRel {
     }
 
     @Override
-    public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel)right).visit(visitor);
-        ((PhysicalRel)left).visit(visitor);
-
+    protected void visitAfterInputs(PhysicalRelVisitor visitor) {
         visitor.onCollocatedJoin(this);
     }
 }

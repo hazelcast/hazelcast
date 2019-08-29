@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.worker.data.DataWorker;
-import com.hazelcast.sql.impl.worker.data.RootDataTask;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
+import com.hazelcast.sql.impl.worker.data.RootDataTask;
 
 /**
  * Root executor which consumes results from the upstream stages and pass them to target consumer.
@@ -31,12 +31,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
     /** Consumer (user iterator, client listener, etc). */
     private QueryResultConsumer consumer;
-
-    /** Current row batch. */
-    private RowBatch curBatch;
-
-    /** Position within a batch. */
-    private int curBatchPos = -1;
 
     public RootExec(Exec upstream) {
         super(upstream);
@@ -54,62 +48,26 @@ public class RootExec extends AbstractUpstreamAwareExec {
     @Override
     public IterationResult advance() {
         while (true) {
-            if (curBatch == null) {
-                if (upstreamDone) {
-                    consumer.done();
-
-                    return IterationResult.FETCHED_DONE;
-                }
-
-                switch (advanceUpstream()) {
-                    case FETCHED_DONE:
-                    case FETCHED:
-                        RowBatch batch = upstreamCurrentBatch;
-
-                        if (batch.getRowCount() == 0)
-                            continue;
-
-                        curBatch = batch;
-                        curBatchPos = 0;
-
-                        break;
-
-                    case WAIT:
-                        return IterationResult.WAIT;
-
-                    default:
-                        throw new IllegalStateException("Should not reach this.");
-                }
-            }
-
-            assert curBatch != null;
-
-            if (!consumeBatch())
+            // Advance if needed.
+            if (!state.advance())
                 return IterationResult.WAIT;
+
+            // Try consuming as much rows as possible.
+            if (!consumer.consume(state))
+                return IterationResult.WAIT;
+
+            // Close the consumer if we reached the end.
+            if (state.isDone()) {
+                consumer.done();
+
+                return IterationResult.FETCHED_DONE;
+            }
         }
     }
 
     @Override
     public RowBatch currentBatch() {
         throw new UnsupportedOperationException("Should not be called.");
-    }
-
-    /**
-     * Try consuming current batch.
-     */
-    private boolean consumeBatch() {
-        int consumed = consumer.consume(curBatch, curBatchPos);
-
-        curBatchPos += consumed;
-
-        if (curBatchPos == curBatch.getRowCount()) {
-            curBatch = null;
-            curBatchPos = -1;
-
-            return true;
-        }
-        else
-            return false;
     }
 
     /**
@@ -126,5 +84,10 @@ public class RootExec extends AbstractUpstreamAwareExec {
      */
     public int getThread() {
         return worker.getThread();
+    }
+
+    @Override
+    public boolean canReset() {
+        return false;
     }
 }

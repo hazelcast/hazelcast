@@ -31,7 +31,7 @@ import java.util.TreeMap;
 /**
  * Executor which sorts rows from the upstream operator.
  */
-public class SortExec extends AbstractUpstreamAwareExec {
+public class LocalSortExec extends AbstractUpstreamAwareExec {
     /** Expressions. */
     private final List<Expression> expressions;
 
@@ -44,7 +44,7 @@ public class SortExec extends AbstractUpstreamAwareExec {
     /** Index for unique elements. */
     private long idx;
 
-    public SortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
+    public LocalSortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
         super(upstream);
 
         this.expressions = expressions;
@@ -54,41 +54,24 @@ public class SortExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
-        while (!upstreamDone) {
-            switch (advanceUpstream()) {
-                case FETCHED_DONE:
-                case FETCHED:
-                    consumeBatch(upstreamCurrentBatch);
+        while (true) {
+            if (!state.advance())
+                return IterationResult.WAIT;
 
-                    continue;
+            for (Row upstreamRow : state)
+                consumeRow(upstreamRow);
 
-                case WAIT:
-                    return IterationResult.WAIT;
+            if (state.isDone()) {
+                finalizeResult();
 
-                default:
-                    throw new IllegalStateException("Should not reach this.");
+                return IterationResult.FETCHED_DONE;
             }
         }
-
-        // Blocking stage -> always end up in FETCHED_DONE state.
-        finalizeResult();
-
-        return IterationResult.FETCHED_DONE;
     }
 
     @Override
     public RowBatch currentBatch() {
         return res != null ? res : EmptyRowBatch.INSTANCE;
-    }
-
-    /**
-     * Consume a batch.
-     *
-     * @param batch Batch.
-     */
-    private void consumeBatch(RowBatch batch) {
-        for (int i = 0; i < batch.getRowCount(); i++)
-            consumeRow(batch.getRow(i));
     }
 
     /**
@@ -117,5 +100,15 @@ public class SortExec extends AbstractUpstreamAwareExec {
         resList.addAll(map.values());
 
         res = new ListRowBatch(resList);
+    }
+
+    @Override
+    protected void reset1() {
+        // TODO: After sorting is completed, there is no need to do a reset since.
+        map.clear();
+
+        res = null;
+
+        idx = 0;
     }
 }

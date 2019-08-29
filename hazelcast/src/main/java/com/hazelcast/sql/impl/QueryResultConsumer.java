@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.SqlRow;
 
@@ -41,6 +42,14 @@ public interface QueryResultConsumer {
      * @return Number of rows consumed.
      */
     int consume(RowBatch batch, int startPos);
+
+    /**
+     * Consume rows from the source.
+     *
+     * @param source Row source.
+     * @return {@code True} if consumed.
+     */
+    boolean consume(Iterable<Row> source);
 
     /**
      * Mark results as finished.

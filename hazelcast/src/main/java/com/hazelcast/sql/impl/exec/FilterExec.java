@@ -28,12 +28,6 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     /** Filter. */
     private final Expression<Boolean> filter;
 
-    /** Last upstream batch. */
-    private RowBatch curBatch;
-
-    /** Current position in the last upstream batch. */
-    private int curBatchPos = -1;
-
     /** Current row. */
     private RowBatch curRow;
 
@@ -45,103 +39,35 @@ public class FilterExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
-        // Cycle is needed because some of the rows will be filtered, so we do not how many upstream rows to consume.
         while (true) {
-            if (curBatch == null) {
-                if (upstreamDone)
-                    return IterationResult.FETCHED_DONE;
+            if (!state.advance())
+                return IterationResult.WAIT;
 
-                switch (advanceUpstream()) {
-                    case FETCHED_DONE:
-                    case FETCHED:
-                        RowBatch batch = upstreamCurrentBatch;
+            for (Row upstreamRow : state) {
+                boolean matches = filter.eval(ctx, upstreamRow);
 
-                        if (batch.getRowCount() > 0) {
-                            curBatch = batch;
-                            curBatchPos = 0;
-                        }
+                if (matches) {
+                    curRow = upstreamRow;
 
-                        break;
-
-                    case WAIT:
-                        return IterationResult.WAIT;
-
-                    default:
-                        throw new IllegalStateException("Should not reach this.");
+                    return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
                 }
             }
 
-            IterationResult res = advanceCurrentBatch();
+            if (state.isDone()) {
+                curRow = EmptyRowBatch.INSTANCE;
 
-            if (res != null)
-                return res;
-        }
-    }
-
-    /**
-     * Advance position in the current batch
-     *
-     * @return Iteration result if succeeded, {@code null} if all rows from the given batch were filtered and more
-     *    data from the upstream is required.
-     */
-    private IterationResult advanceCurrentBatch() {
-        if (curBatch == null) {
-            assert upstreamDone;
-
-            curRow = EmptyRowBatch.INSTANCE;
-
-            return IterationResult.FETCHED_DONE;
-        }
-
-        RowBatch curBatch0 = curBatch;
-        int curBatchPos0 = curBatchPos;
-
-        while (true) {
-            Row candidateRow = curBatch0.getRow(curBatchPos0);
-
-            boolean matches = filter.eval(ctx, candidateRow);
-            boolean last = curBatchPos0 + 1 == curBatch0.getRowCount();
-
-            // Nullify state if this was the last entry in the upstream batch.
-            if (last) {
-                curBatch = null;
-                curBatchPos = -1;
+                return IterationResult.FETCHED_DONE;
             }
-
-            if (matches) {
-                curRow = candidateRow;
-
-                if (last)
-                    // Return DONE if the upstream is not going to provide more data.
-                    return upstreamDone ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-                else {
-                    // Advance batch position for the next call.
-                    curBatchPos = curBatchPos0;
-
-                    // This is not the last entry.
-                    return IterationResult.FETCHED;
-                }
-            }
-            else {
-                if (last) {
-                    if (upstreamDone) {
-                        // Set empty batch for the downstream operator.
-                        curRow = EmptyRowBatch.INSTANCE;
-
-                        return IterationResult.FETCHED_DONE;
-                    }
-                    else
-                        // Request the next batch.
-                        return null;
-                }
-            }
-
-            curBatchPos0++;
         }
     }
 
     @Override
     public RowBatch currentBatch() {
         return curRow;
+    }
+
+    @Override
+    protected void reset1() {
+        curRow = null;
     }
 }

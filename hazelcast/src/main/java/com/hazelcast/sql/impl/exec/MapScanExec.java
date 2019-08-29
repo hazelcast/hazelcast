@@ -16,26 +16,17 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.KeyValueRow;
-import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -44,33 +35,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
-
 /**
  * Executor for map scan.
  */
-public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
-    /** Map name. */
-    private final String mapName;
+public class MapScanExec extends AbstractMapScanExec {
+    /** Underlying map. */
+    private final MapProxyImpl map;
 
     /** Partitions to be scanned. */
     private final PartitionIdSet parts;
-
-    /** Projection expressions. */
-    private final List<Expression> projections;
-
-    /** Filter. */
-    private final Expression<Boolean> filter;
-
-    /** Map service context. */
-    private MapServiceContext mapServiceContext;
-
-    /** Extractors. */
-    private Extractors extractors;
-
-    /** Serialization service. */
-    private InternalSerializationService serializationService;
 
     /** All rows fetched on first access. */
     private Collection<Row> rows;
@@ -81,27 +54,16 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     /** Current row. */
     private Row currentRow;
 
-    /** Row to get data with extractors. */
-    private KeyValueRow keyValueRow;
+    public MapScanExec(
+        MapProxyImpl map,
+        PartitionIdSet parts,
+        List<Expression> projections,
+        Expression<Boolean> filter
+    ) {
+        super(map.getName(), projections, filter);
 
-    public MapScanExec(String mapName, PartitionIdSet parts, List<Expression> expressions, Expression<Boolean> filter) {
-        this.mapName = mapName;
+        this.map = map;
         this.parts = parts;
-        this.projections = expressions;
-        this.filter = filter;
-    }
-
-    @Override
-    protected void setup0(QueryContext ctx, DataWorker worker) {
-        MapProxyImpl map = (MapProxyImpl)ctx.getNodeEngine().getHazelcastInstance().getMap(mapName);
-        MapService mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
-
-        mapServiceContext = mapService.getMapServiceContext();
-
-        extractors = mapServiceContext.getExtractors(mapName);
-        serializationService = (InternalSerializationService)map.getNodeEngine().getSerializationService();
-
-        keyValueRow = new KeyValueRow(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -115,7 +77,7 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
                     continue;
 
                 // Per-partition stuff.
-                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(i);
+                PartitionContainer partitionContainer = map.getMapServiceContext().getPartitionContainer(i);
 
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
 
@@ -130,22 +92,10 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
                     Object key = serializationService.toObject(keyData);
                     Object val = valData instanceof Data ? serializationService.toObject(valData) : valData;
 
-                    keyValueRow.setKeyValue(key, val);
+                    HeapRow row = prepareRow(key, val);
 
-                    // Evaluate the filter.
-                    if (filter != null && !filter.eval(ctx, keyValueRow))
-                        continue;
-
-                    // Create final row.
-                    HeapRow row = new HeapRow(projections.size());
-
-                    for (int j = 0; j < projections.size(); j++) {
-                        Object projectionRes = projections.get(j).eval(ctx, keyValueRow);
-
-                        row.set(j, projectionRes);
-                    }
-
-                    rows.add(row);
+                    if (row != null)
+                        rows.add(row);
                 }
             }
 
@@ -170,31 +120,19 @@ public class MapScanExec extends AbstractExec implements KeyValueRowExtractor {
     }
 
     @Override
-    public Object extract(Object key, Object val, String path) {
-        Object res;
+    protected void reset0() {
+        rows = null;
+        rowsIter = null;
+        currentRow = null;
+    }
 
-        if (KEY_ATTRIBUTE_NAME.value().equals(path))
-            res = key;
-        else if (THIS_ATTRIBUTE_NAME.value().equals(path))
-            res = val;
-        else {
-            boolean isKey = path.startsWith(KEY_ATTRIBUTE_NAME.value());
+    @Override
+    protected Extractors createExtractors() {
+        return map.getMapServiceContext().getExtractors(mapName);
+    }
 
-            Object target;
-
-            if (isKey) {
-                target = key;
-                path = path.substring(KEY_ATTRIBUTE_NAME.value().length() + 1);
-            }
-            else
-                target = val;
-
-            res = extractors.extract(target, path, null);
-        }
-
-        if (res instanceof HazelcastJsonValue)
-            res = Json.parse(res.toString());
-
-        return res;
+    @Override
+    protected String normalizePath(String path) {
+        return map.normalizeAttributePath(path);
     }
 }

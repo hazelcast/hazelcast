@@ -16,23 +16,15 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
-import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Executor which has an upstream executor and hence delegate to it at some stages.
  */
 public abstract class AbstractUpstreamAwareExec extends AbstractExec {
-    /** Upstream operator. */
-    private final Exec upstream;
-
-    /** Current batch returned from the upstream. */
-    protected RowBatch upstreamCurrentBatch;
-
-    /** Whether upstream is finished. */
-    protected boolean upstreamDone;
+    /** Upstream state. */
+    protected final UpstreamState state;
 
     /**
      * Constructor.
@@ -40,12 +32,12 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
      * @param upstream Upstream stage.
      */
     protected AbstractUpstreamAwareExec(Exec upstream) {
-        this.upstream = upstream;
+        state = new UpstreamState(upstream);
     }
 
     @Override
     protected final void setup0(QueryContext ctx, DataWorker worker) {
-        upstream.setup(ctx, worker);
+        state.setup(ctx, worker);
 
         setup1(ctx, worker);
     }
@@ -54,37 +46,22 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
         // No-op.
     }
 
+    @Override
+    public boolean canReset() {
+        return state.canReset();
+    }
+
+    @Override
+    protected final void reset0() {
+        state.reset();
+
+        reset1();
+    }
+
     /**
-     * Advance upstream stage and return the result.
-     *
-     * @return Advance result.
+     * Internal reset routine.
      */
-    protected IterationResult advanceUpstream() {
-        if (upstreamDone)
-            return IterationResult.FETCHED_DONE;
-
-        IterationResult res = upstream.advance();
-
-        switch (res) {
-            case FETCHED_DONE:
-                upstreamDone = true;
-
-                // Fall-through.
-
-            case FETCHED:
-                upstreamCurrentBatch = upstream.currentBatch();
-
-                break;
-
-            case WAIT:
-                upstreamCurrentBatch = EmptyRowBatch.INSTANCE;
-
-                break;
-
-            default:
-                throw new IllegalStateException("Should not reach this.");
-        }
-
-        return res;
+    protected void reset1() {
+        // No-op.
     }
 }
