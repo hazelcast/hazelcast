@@ -21,6 +21,12 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -52,12 +58,12 @@ import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
+import static com.hazelcast.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.config.ConfigSections.CLUSTER;
 import static com.hazelcast.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.ConfigSections.INSTANCE_NAME;
@@ -101,6 +107,8 @@ import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CON
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
+import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
+import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
@@ -148,13 +156,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private boolean handleNode(Node node, String nodeName) throws Exception {
         if (INSTANCE_NAME.isEqual(nodeName)) {
-            handleInstanceName(node);
+            config.setInstanceName(getNonEmptyText(node, "Instance name"));
         } else if (NETWORK.isEqual(nodeName)) {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
             throw new HazelcastException("Non-expanded <import> element found");
-        } else if (CLUSTER.isEqual(nodeName)) {
-            handleCluster(node);
+        } else if (CLUSTER_NAME.isEqual(nodeName)) {
+            config.setClusterName(getNonEmptyText(node, "Clustername"));
         } else if (PROPERTIES.isEqual(nodeName)) {
             fillProperties(node, config.getProperties());
         } else if (WAN_REPLICATION.isEqual(nodeName)) {
@@ -231,12 +239,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return false;
     }
 
-    private void handleInstanceName(Node node) {
-        String instanceName = getTextContent(node);
-        if (instanceName.isEmpty()) {
-            throw new InvalidConfigurationException("Instance name in XML configuration is empty");
+    private String getNonEmptyText(Node node, String configName) throws InvalidConfigurationException {
+        String val = getTextContent(node);
+        if (val == null || val.isEmpty()) {
+            throw new InvalidConfigurationException("XML configuration is empty: " + configName);
         }
-        config.setInstanceName(instanceName);
+        return val;
     }
 
     private void handleUserCodeDeployment(Node dcRoot) {
@@ -1023,18 +1031,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addFlakeIdGeneratorConfig(generatorConfig);
-    }
-
-    private void handleCluster(Node node) {
-        for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
-            String nodeName = cleanNodeName(n);
-            if ("name".equals(nodeName)) {
-                config.setClusterName(value);
-            } else if ("password".equals(nodeName)) {
-                config.setClusterPassword(value);
-            }
-        }
     }
 
     private void handleInterfaces(Node node) {
@@ -2570,12 +2566,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getSecurityConfig().setEnabled(enabled);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("member-credentials-factory".equals(nodeName)) {
-                handleCredentialsFactory(child);
-            } else if ("member-login-modules".equals(nodeName)) {
-                handleLoginModules(child, true, config);
-            } else if ("client-login-modules".equals(nodeName)) {
-                handleLoginModules(child, false, config);
+            if ("realms".equals(nodeName)) {
+                handleRealms(child);
+            } else if ("member-authentication".equals(nodeName)) {
+                config.getSecurityConfig().setMemberRealm(getAttribute(child, "realm"));
+            } else if ("client-authentication".equals(nodeName)) {
+                config.getSecurityConfig().setClientRealm(getAttribute(child, "realm"));
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
             } else if ("client-permissions".equals(nodeName)) {
@@ -2584,6 +2580,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleSecurityInterceptors(child);
             } else if ("client-block-unmapped-actions".equals(nodeName)) {
                 config.getSecurityConfig().setClientBlockUnmappedActions(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
+    protected void handleRealms(Node node) {
+        for (Node child : childElements(node)) {
+            if ("realm".equals(cleanNodeName(child))) {
+                handleRealm(child);
             }
         }
     }
@@ -2619,37 +2623,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleMemberAttributesNode(Node n, String attributeName, String value) {
         config.getMemberAttributeConfig().setAttribute(attributeName, value);
-    }
-
-    private void handleCredentialsFactory(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
-        Node classNameNode = attrs.getNamedItem("class-name");
-        String className = getTextContent(classNameNode);
-        SecurityConfig cfg = config.getSecurityConfig();
-        CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
-        cfg.setMemberCredentialsConfig(credentialsFactoryConfig);
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("properties".equals(nodeName)) {
-                fillProperties(child, credentialsFactoryConfig.getProperties());
-                break;
-            }
-        }
-    }
-
-    protected void handleLoginModules(Node node, boolean member, Config config) {
-        SecurityConfig cfg = config.getSecurityConfig();
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("login-module".equals(nodeName)) {
-                LoginModuleConfig lm = handleLoginModule(child);
-                if (member) {
-                    cfg.addMemberLoginModuleConfig(lm);
-                } else {
-                    cfg.addClientLoginModuleConfig(lm);
-                }
-            }
-        }
     }
 
     LoginModuleConfig handleLoginModule(Node node) {
@@ -2967,6 +2940,128 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
             } else if ("minimum-level".equals(nodeName)) {
                 metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            }
+        }
+    }
+
+    protected void handleRealm(Node node) {
+        String realmName = getAttribute(node, "name");
+        RealmConfig realmConfig = new RealmConfig();
+        config.getSecurityConfig().addRealmConfig(realmName, realmConfig);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("authentication".equals(nodeName)) {
+                handleAuthentication(realmConfig, child);
+            } else if ("identity".contentEquals(nodeName)) {
+                handleIdentity(realmConfig, child);
+            }
+        }
+    }
+
+    private void handleAuthentication(RealmConfig realmConfig, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("jaas".equals(nodeName)) {
+                handleJaasAuthentication(realmConfig, child);
+            } else if ("tls".contentEquals(nodeName)) {
+                handleTlsAuthentication(realmConfig, child);
+            } else if ("ldap".contentEquals(nodeName)) {
+                handleLdapAuthentication(realmConfig, child);
+            }
+        }
+    }
+
+    private void handleIdentity(RealmConfig realmConfig, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("username-password".equals(nodeName)) {
+                realmConfig.setUsernamePasswordIdentityConfig(getAttribute(child, "username"), getAttribute(child, "password"));
+            } else if ("credentials-factory".contentEquals(nodeName)) {
+                handleCredentialsFactory(realmConfig, child);
+            } else if ("token".contentEquals(nodeName)) {
+                handleToken(realmConfig, child);
+            }
+        }
+    }
+
+    protected void handleToken(RealmConfig realmConfig, Node node) {
+        TokenEncoding encoding = TokenEncoding.getTokenEncoding(getAttribute(node, "encoding"));
+        TokenIdentityConfig tic = new TokenIdentityConfig(encoding, getTextContent(node));
+        realmConfig.setTokenIdentityConfig(tic);
+    }
+
+    protected void handleTlsAuthentication(RealmConfig realmConfig, Node node) {
+        String roleAttribute = getAttribute(node, "roleAttribute");
+        TlsAuthenticationConfig tlsCfg = new TlsAuthenticationConfig();
+
+        if (roleAttribute != null) {
+            tlsCfg.setRoleAttribute(roleAttribute);
+        }
+        realmConfig.setTlsAuthenticationConfig(tlsCfg);
+    }
+
+    protected void handleLdapAuthentication(RealmConfig realmConfig, Node node) {
+        LdapAuthenticationConfig ldapCfg = new LdapAuthenticationConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("url".equals(nodeName)) {
+                ldapCfg.setUrl(getTextContent(child));
+            } else if ("socket-factory-class-name".contentEquals(nodeName)) {
+                ldapCfg.setSocketFactoryClassName(getTextContent(child));
+            } else if ("parse-dn".contentEquals(nodeName)) {
+                ldapCfg.setParseDn(getBooleanValue(getTextContent(child)));
+            } else if ("role-context".contentEquals(nodeName)) {
+                ldapCfg.setRoleContext(getTextContent(child));
+            } else if ("role-filter".contentEquals(nodeName)) {
+                ldapCfg.setRoleFilter(getTextContent(child));
+            } else if ("role-mapping-attribute".contentEquals(nodeName)) {
+                ldapCfg.setRoleMappingAttribute(getTextContent(child));
+            } else if ("role-mapping-mode".contentEquals(nodeName)) {
+                ldapCfg.setRoleMappingMode(getRoleMappingMode(getTextContent(child)));
+            } else if ("role-name-attribute".contentEquals(nodeName)) {
+                ldapCfg.setRoleNameAttribute(getTextContent(child));
+            } else if ("role-recursion-max-depth".contentEquals(nodeName)) {
+                ldapCfg.setRoleRecursionMaxDepth(getIntegerValue("role-recursion-max-depth", getTextContent(child)));
+            } else if ("role-search-scope".contentEquals(nodeName)) {
+                ldapCfg.setRoleSearchScope(getSearchScope(getTextContent(child)));
+            } else if ("user-name-attribute".contentEquals(nodeName)) {
+                ldapCfg.setUserNameAttribute(getTextContent(child));
+            } else if ("system-user-dn".contentEquals(nodeName)) {
+                ldapCfg.setSystemUserDn(getTextContent(child));
+            } else if ("system-user-password".contentEquals(nodeName)) {
+                ldapCfg.setSystemUserPassword(getTextContent(child));
+            } else if ("password-attribute".contentEquals(nodeName)) {
+                ldapCfg.setPasswordAttribute(getTextContent(child));
+            } else if ("user-context".contentEquals(nodeName)) {
+                ldapCfg.setUserContext(getTextContent(child));
+            } else if ("user-filter".contentEquals(nodeName)) {
+                ldapCfg.setUserFilter(getTextContent(child));
+            } else if ("user-search-scope".contentEquals(nodeName)) {
+                ldapCfg.setUserSearchScope(getSearchScope(getTextContent(child)));
+            }
+        }
+        realmConfig.setLdapAuthenticationConfig(ldapCfg);
+    }
+
+    protected void handleJaasAuthentication(RealmConfig realmConfig, Node node) {
+        JaasAuthenticationConfig jaasAuthenticationConfig = new JaasAuthenticationConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("login-module".equals(nodeName)) {
+                jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
+            }
+        }
+        realmConfig.setJaasAuthenticationConfig(jaasAuthenticationConfig);
+    }
+
+    private void handleCredentialsFactory(RealmConfig realmConfig, Node node) {
+        String className = getAttribute(node, "class-name");
+        CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
+        realmConfig.setCredentialsFactoryConfig(credentialsFactoryConfig);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("properties".equals(nodeName)) {
+                fillProperties(child, credentialsFactoryConfig.getProperties());
             }
         }
     }

@@ -55,6 +55,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             "javax.security.auth",
             "javax.transaction.xa",
             "javax.xml",
+            "javax.naming",
 
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",

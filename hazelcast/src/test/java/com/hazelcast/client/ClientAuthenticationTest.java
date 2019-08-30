@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.security.SimpleTokenCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -38,9 +38,6 @@ import org.junit.runner.RunWith;
 public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
-    private final String USERNAME = "user";
-    private final String PASSWORD = "pass";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -64,8 +61,6 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
         // with this config, the server will authenticate any credential of type CustomCredentials
         Config config = new Config();
-        config.setClusterName(USERNAME)
-                .setClusterPassword(PASSWORD);
         config.getSerializationConfig()
                 .addPortableFactory(1, factory);
         hazelcastFactory.newHazelcastInstance(config);
@@ -81,30 +76,15 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     private class CustomCredentialsPortableFactory implements PortableFactory {
         @Override
         public Portable create(int classId) {
-            return new CustomCredentials() {
-                @Override
-                public String getName() {
-                    return USERNAME;
-                }
-
-                @Override
-                public String getPassword() {
-                    return PASSWORD;
-                }
-            };
+            return new CustomCredentials();
         }
     }
 
-    private class CustomCredentials extends UsernamePasswordCredentials {
-
+    private class CustomCredentials extends SimpleTokenCredentials {
         @Override
-        public int getFactoryId() {
-            return 1;
+        public byte[] getToken() {
+            return new byte[10];
         }
 
-        @Override
-        public int getClassId() {
-            return 1;
-        }
     }
 }

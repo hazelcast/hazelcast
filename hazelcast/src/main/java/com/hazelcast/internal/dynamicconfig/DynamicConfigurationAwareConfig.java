@@ -196,16 +196,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public String getClusterPassword() {
-        return staticConfig.getClusterPassword();
-    }
-
-    @Override
-    public Config setClusterPassword(final String password) {
-        return staticConfig.setClusterPassword(password);
-    }
-
-    @Override
     public NetworkConfig getNetworkConfig() {
         return staticConfig.getNetworkConfig();
     }

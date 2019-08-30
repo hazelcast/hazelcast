@@ -124,7 +124,6 @@ public class CacheConfigTest extends HazelcastTestSupport {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
         assertEquals("test-cluster1", config1.getClusterName());
-        assertEquals("test-pass1", config1.getClusterPassword());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
         assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory",
@@ -323,7 +322,6 @@ public class CacheConfigTest extends HazelcastTestSupport {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
         assertEquals("test-cluster1", config1.getClusterName());
-        assertEquals("test-pass1", config1.getClusterPassword());
 
         CacheSimpleConfig cacheSimpleConfig1 = config1.getCacheConfig("cache1");
         CacheConfig cacheConfig1 = new CacheConfig(cacheSimpleConfig1);

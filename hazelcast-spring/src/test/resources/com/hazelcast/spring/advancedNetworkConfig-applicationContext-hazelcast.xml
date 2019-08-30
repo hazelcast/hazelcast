@@ -35,9 +35,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
-            <hz:cluster
-                    name="${cluster.name}"
-                    password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
 
             <hz:properties>
@@ -76,7 +74,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -161,7 +159,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"

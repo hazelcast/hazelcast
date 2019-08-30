@@ -34,6 +34,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -47,7 +48,6 @@ import static com.hazelcast.client.config.ClientConfigSections.BACKUP_ACK_TO_CLI
 import static com.hazelcast.client.config.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientConfigSections.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.client.config.ClientConfigSections.CLUSTER;
 import static com.hazelcast.client.config.ClientConfigSections.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.ClientConfigSections.LISTENERS;
@@ -68,6 +68,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
@@ -114,8 +115,6 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSerialization(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
-        } else if (CLUSTER.isEqual(nodeName)) {
-            handleCluster(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (NETWORK.isEqual(nodeName)) {
@@ -142,6 +141,8 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleLabels(node);
         } else if (BACKUP_ACK_TO_CLIENT.isEqual(nodeName)) {
             handleBackupAckToClient(node);
+        } else if ("client-name".equals(nodeName)) {
+            clientConfig.setClientName(getTextContent(node));
         }
     }
 
@@ -566,18 +567,6 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleCluster(Node node) {
-        for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
-            String nodeName = cleanNodeName(n);
-            if ("name".equals(nodeName)) {
-                clientConfig.setClusterName(value);
-            } else if ("password".equals(nodeName)) {
-                clientConfig.setClusterPassword(value);
-            }
-        }
-    }
-
     private void handleSerialization(Node node) {
         SerializationConfig serializationConfig = parseSerialization(node);
         clientConfig.setSerializationConfig(serializationConfig);
@@ -613,14 +602,22 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("credentials".equals(nodeName)) {
-                String className = getTextContent(child);
-                clientSecurityConfig.setCredentialsClassname(className);
+            if ("username-password".equals(nodeName)) {
+                clientSecurityConfig.setUsernamePasswordIdentityConfig(
+                        getAttribute(child, "username"),
+                        getAttribute(child, "password"));
+            } else if ("token".equals(nodeName)) {
+                handleTokenIdentity(clientSecurityConfig, child);
             } else if ("credentials-factory".equals(nodeName)) {
                 handleCredentialsFactory(child, clientSecurityConfig);
             }
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
+    }
+
+    protected void handleTokenIdentity(ClientSecurityConfig clientSecurityConfig, Node node) {
+        clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
+                getTokenEncoding(getAttribute(node, "encoding")), getTextContent(node)));
     }
 
     private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {

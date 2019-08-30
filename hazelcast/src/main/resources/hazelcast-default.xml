@@ -31,9 +31,8 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <cluster>
-        <name>dev</name>
-    </cluster>
+    <cluster-name>dev</cluster-name>
+
     <management-center enabled="false">http://localhost:8080/hazelcast-mancenter</management-center>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
@@ -76,7 +75,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <cluster-name>CLUSTER-NAME</cluster-name>
+                <group-name>RESOURCE-GROUP-NAME</group-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>

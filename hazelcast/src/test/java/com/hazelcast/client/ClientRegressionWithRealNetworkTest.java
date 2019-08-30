@@ -79,7 +79,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance(config2);
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("bar");
+        clientConfig.setClientName("bar");
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap("map");

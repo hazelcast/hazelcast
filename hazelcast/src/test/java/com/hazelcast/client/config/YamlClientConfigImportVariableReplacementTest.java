@@ -275,12 +275,11 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
                 + "      - class-name: " + AbstractConfigImportVariableReplacementTest.IdentityReplacer.class.getName() + "\n"
-                + "  cluster:\n"
-                + "    name: ${java.version} $ID{dev}\n"
-                + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
+                + "  client-name: ${java.version} $ID{dev}\n"
+                + "  instance-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
         ClientConfig config = buildConfig(yaml, System.getProperties());
-        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
-        assertEquals("My very secret secret", config.getClusterPassword());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClientName());
+        assertEquals("My very secret secret", config.getInstanceName());
     }
 
     @Override
@@ -291,8 +290,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "  config-replacers:\n"
                 + "    replacers:\n"
                 + "      - class-name: " + EncryptionReplacer.class.getName() + "\n"
-                + "    group:\n"
-                + "      name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
+                + "    client-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
         buildConfig(yaml, System.getProperties());
     }
 
@@ -310,10 +308,9 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
-                + "  cluster:\n"
-                + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}";
+                + "  client-name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}";
         ClientConfig config = buildConfig(yaml, System.getProperties());
-        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
+        assertEquals("a property  another property <test/> $T{p5}", config.getClientName());
     }
 
     @Override
@@ -321,24 +318,22 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     public void testNoConfigReplacersMissingProperties() {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  cluster:\n"
-                + "    name: ${noSuchPropertyAvailable}";
+                + "  client-name: ${noSuchPropertyAvailable}";
 
-        ClientConfig config = buildConfig(yaml, System.getProperties());
-        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
+        ClientConfig clientConfig = buildConfig(yaml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", clientConfig.getClientName());
     }
 
     @Override
     @Test
-    public void testImportClusterConfigFromClassPath() {
+    public void testImportConfigFromClassPath() {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - classpath:hazelcast-client-c1.yaml";
 
         ClientConfig config = buildConfig(yaml);
-        assertEquals("cluster1", config.getClusterName());
-        assertEquals("cluster1pass", config.getClusterPassword());
+        assertEquals("cluster1", config.getClientName());
     }
 
     @Override
@@ -371,18 +366,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  client-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: name2";
+                + "  client-name: name2";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -393,19 +386,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  cluster:\n"
-                + "    name: name";
+                + "  client-name: name";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  cluster:\n"
-                + "    name: name";
+                + "  client-name: name";
 
         ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
-        assertEquals("name", config.getClusterName());
+        assertEquals("name", config.getClientName());
     }
 
     @Test
@@ -414,19 +405,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  client-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqName: {}";
+                + "  client-name:\n"
+                + "    - seqName: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -437,18 +426,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  client-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  client-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -459,19 +446,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqname";
+                + "  client-name:\n"
+                + "    - seqname";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  client-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }

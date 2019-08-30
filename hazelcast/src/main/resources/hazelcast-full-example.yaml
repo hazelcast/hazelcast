@@ -654,7 +654,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        cluster-name: CLUSTER-NAME
+        group-name: RESOURCE-GROUP-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -2111,18 +2111,12 @@ hazelcast:
   # It has the following attributes and sub-elements:
   # * enabled:
   #     Set to true to enable Hazelcast's security features.
-  # * "member-credentials-factory":
-  #     Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
-  #     interface.
-  # * "member-login-modules":
-  #     Specifies the name and properties of your class that you developed by implementing Hazelcast's LoginModule
-  #     interface. Each login module class can be given by using the "login-module" element. This element has the
-  #     attribute "usage" that specifies the way you want to use the LoginModule's  behavior during the
-  #     authentication process for Hazelcast members. Available values for this attribute are REQUIRED, REQUISITE,
-  #     SUFFICIENT and OPTIONAL.
-  # * "client-login-modules":
-  # It has the same purpose as "member-login-modules" explained above. However, instead of Hazelcast members,
-  # it is used for Hazelcast native clients.
+  # * realms:
+  #     Defines set of named security realms
+  # * member-authentication
+  #     Maps member authentication to a realm name. It has the "realm" attribute.
+  # * client-authentication
+  #     Maps client authentication to a realm name. It has the "realm" attribute.
   # * "client-permission-policy":
   #     Specifies the name and properties of your class that you developed by implementing Hazelcast's
   #     IPermissionPolicy interface, which is the default permission policy (com.hazelcast.security.IPermissionPolicy).
@@ -2139,26 +2133,97 @@ hazelcast:
   #     Specifies whether to block (true) or allow (false) actions, submitted as tasks in an Executor from
   #     the clients and have no permission mappings.
   #
+  #  HAZELCAST SECURITY REALMS
+  #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
+  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication 
+  #  configuration and one type of identity configuration is allowed per the realm.
+  #  Authentication types:
+  #  * jaas
+  #      Defines JAAS authentication - i.e. list of <login-modules> and its optional <properties>
+  #  * tls
+  #      TLS defines X.509 based authentication (for cases when SSL mutual authentication is configured
+  #      in Hazelcast network configuration)
+  #  * ldap
+  #      LDAP based authentication
+  #  Identity configuration types:
+  #  * credentials-factory
+  #      Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
+  #      interface.
+  #      This element has a mandatory "class-name" attribute where you should define the factory class implementing
+  #      ICredentialsFactory used to create Credentials objects.
+  #      With the <properties> sub-element, you can define properties for the factory class. The properties can be
+  #      defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
+  #      "name" used to define the name of the attribute. The value of the property is defined in the body.
+  #  * username-password
+  #      Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+  #       "username" and "password" attributes.
+  #  * token
+  #      Defines a static TokenCredentials instance as the client's identity. It has a "value" and
+  #      it can have also "encoding" defined.
   security:
     enabled: false
-    member-credentials-factory:
-      class-name: com.hazelcast.examples.MyCredentialsFactory
-      properties:
-        property: value
-    member-login-modules:
-      - class-name: com.hazelcast.examples.MyRequiredLoginModule
-        usage: REQUIRED
-        properties:
-          property: value
-    client-login-modules:
-      - class-name: com.hazelcast.examples.MyOptionalLoginModule
-        usage: OPTIONAL
-        properties:
-          property: value
-      - class-name: com.hazelcast.examples.MyRequiredLoginModule
-        usage: REQUIRED
-        properties:
-          property: value
+    realms:
+      - name: mr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+        identity:
+          credentials-factory:
+            class-name: com.hazelcast.examples.MyCredentialsFactory
+            properties:
+              property: value
+      - name: cr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyOptionalLoginModule
+              usage: OPTIONAL
+              properties:
+                property: value
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+      - name: ldapRealm
+        authentication:
+          ldap:
+             url: ldap://ldap.my-company.example
+             socket-factory-class-name: socketFactoryClassName
+             parse-dn: true
+             role-context: roleContext
+             role-filter: roleFilter
+             role-mapping-attribute: roleMappingAttribute
+             role-mapping-mode: reverse
+             role-name-attribute: roleNameAttribute
+             role-recursion-max-depth: 25
+             role-search-scope: object
+             user-name-attribute: userNameAttribute
+             system-user-dn: systemUserDn
+             system-user-password: systemUserPassword
+             password-attribute: passwordAttribute
+             user-context: userContext
+             user-filter: userFilter
+             user-search-scope: one-level
+      - name: tlsRealm
+        authentication:
+          tls:
+             roleAttribute: cn
+      - name: usernamePasswordIdentityRealm
+        identity:
+          username-password:
+             username: user
+             password: Hazelcast
+      - name: tokenIdentityRealm
+        identity:
+          token:
+             encoding: base64
+             value: SGF6ZWxjYXN0
+    member-authentication:
+      realm: mr
+    client-authentication:
+      realm: cr
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -2840,7 +2905,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        cluster-name: CLUSTER-NAME
+        group-name: RESOURCE-GROUP-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE

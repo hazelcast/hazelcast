@@ -17,6 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.instance.ProtocolType;
@@ -142,18 +146,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     void handleSecurityPermissionEndpoints(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
             permConfig.addEndpoint(getTextContent(child).trim());
-        }
-    }
-
-    protected void handleLoginModules(Node node, boolean member, Config config) {
-        SecurityConfig cfg = config.getSecurityConfig();
-        for (Node child : childElements(node)) {
-            LoginModuleConfig lm = handleLoginModule(child);
-            if (member) {
-                cfg.addMemberLoginModuleConfig(lm);
-            } else {
-                cfg.addClientLoginModuleConfig(lm);
-            }
         }
     }
 
@@ -870,5 +862,28 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             }
             cpSubsystemConfig.addLockConfig(lockConfig);
         }
+    }
+
+    @Override
+    protected void handleRealms(Node node) {
+        for (Node child : childElements(node)) {
+            handleRealm(child);
+        }
+    }
+
+    @Override
+    protected void handleJaasAuthentication(RealmConfig realmConfig, Node node) {
+        JaasAuthenticationConfig jaasAuthenticationConfig = new JaasAuthenticationConfig();
+        for (Node child : childElements(node)) {
+            jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
+        }
+        realmConfig.setJaasAuthenticationConfig(jaasAuthenticationConfig);
+    }
+
+    @Override
+    protected void handleToken(RealmConfig realmConfig, Node node) {
+        TokenEncoding encoding = TokenEncoding.getTokenEncoding(getAttribute(node, "encoding"));
+        TokenIdentityConfig tic = new TokenIdentityConfig(encoding, getAttribute(node, "value"));
+        realmConfig.setTokenIdentityConfig(tic);
     }
 }

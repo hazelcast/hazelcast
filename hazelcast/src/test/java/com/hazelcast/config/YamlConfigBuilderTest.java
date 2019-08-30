@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -151,28 +153,38 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      - foo\n"
                 + "      - bar\n"
                 + "    client-block-unmapped-actions: false\n"
-                + "    member-credentials-factory:\n"
-                + "      class-name: MyCredentialsFactory\n"
-                + "      properties:\n"
-                + "        property: value\n"
-                + "    member-login-modules:\n"
-                + "      - class-name: MyRequiredLoginModule\n"
-                + "        usage: REQUIRED\n"
-                + "        properties:\n"
-                + "          login-property: login-value\n"
-                + "      - class-name: MyRequiredLoginModule2\n"
-                + "        usage: SUFFICIENT\n"
-                + "        properties:\n"
-                + "          login-property2: login-value2\n"
-                + "    client-login-modules:\n"
-                + "      - class-name: MyOptionalLoginModule\n"
-                + "        usage: OPTIONAL\n"
-                + "        properties:\n"
-                + "          client-property: client-value\n"
-                + "      - class-name: MyRequiredLoginModule\n"
-                + "        usage: REQUIRED\n"
-                + "        properties:\n"
-                + "          client-property2: client-value2\n"
+                + "    member-authentication:\n"
+                + "      realm: mr\n"
+                + "    client-authentication:\n"
+                + "      realm: cr\n"
+                + "    realms:\n"
+                + "      - name: mr\n"
+                + "        authentication:\n"
+                + "          jaas:\n"
+                + "            - class-name: MyRequiredLoginModule\n"
+                + "              usage: REQUIRED\n"
+                + "              properties:\n"
+                + "                login-property: login-value\n"
+                + "            - class-name: MyRequiredLoginModule2\n"
+                + "              usage: SUFFICIENT\n"
+                + "              properties:\n"
+                + "                login-property2: login-value2\n"
+                + "        identity:\n"
+                + "          credentials-factory:\n"
+                + "            class-name: MyCredentialsFactory\n"
+                + "            properties:\n"
+                + "              property: value\n"
+                + "      - name: cr\n"
+                + "        authentication:\n"
+                + "          jaas:\n"
+                + "            - class-name: MyOptionalLoginModule\n"
+                + "              usage: OPTIONAL\n"
+                + "              properties:\n"
+                + "                client-property: client-value\n"
+                + "            - class-name: MyRequiredLoginModule\n"
+                + "              usage: REQUIRED\n"
+                + "              properties:\n"
+                + "                client-property2: client-value2\n"
                 + "    client-permission-policy:\n"
                 + "      class-name: MyPermissionPolicy\n"
                 + "      properties:\n"
@@ -187,46 +199,44 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("bar", interceptorConfigs.get(1).className);
         assertFalse(securityConfig.getClientBlockUnmappedActions());
 
-        // member-credentials-factory
-        CredentialsFactoryConfig memberCredentialsConfig = securityConfig.getMemberCredentialsConfig();
+        RealmConfig memberRealm = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        CredentialsFactoryConfig memberCredentialsConfig = memberRealm.getCredentialsFactoryConfig();
         assertEquals("MyCredentialsFactory", memberCredentialsConfig.getClassName());
         assertEquals(1, memberCredentialsConfig.getProperties().size());
         assertEquals("value", memberCredentialsConfig.getProperties().getProperty("property"));
 
-        // member-login-modules
-        List<LoginModuleConfig> memberLoginModuleConfigs = securityConfig.getMemberLoginModuleConfigs();
+        List<LoginModuleConfig> memberLoginModuleConfigs = memberRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, memberLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> memberLoginIterator = memberLoginModuleConfigs.iterator();
 
         LoginModuleConfig memberLoginModuleCfg1 = memberLoginIterator.next();
         assertEquals("MyRequiredLoginModule", memberLoginModuleCfg1.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.REQUIRED, memberLoginModuleCfg1.getUsage());
+        assertEquals(LoginModuleUsage.REQUIRED, memberLoginModuleCfg1.getUsage());
         assertEquals(1, memberLoginModuleCfg1.getProperties().size());
         assertEquals("login-value", memberLoginModuleCfg1.getProperties().getProperty("login-property"));
 
         LoginModuleConfig memberLoginModuleCfg2 = memberLoginIterator.next();
         assertEquals("MyRequiredLoginModule2", memberLoginModuleCfg2.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.SUFFICIENT, memberLoginModuleCfg2.getUsage());
+        assertEquals(LoginModuleUsage.SUFFICIENT, memberLoginModuleCfg2.getUsage());
         assertEquals(1, memberLoginModuleCfg2.getProperties().size());
         assertEquals("login-value2", memberLoginModuleCfg2.getProperties().getProperty("login-property2"));
 
-        // client-login-modules
-        List<LoginModuleConfig> clientLoginModuleConfigs = securityConfig.getClientLoginModuleConfigs();
+        RealmConfig clientRealm = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        List<LoginModuleConfig> clientLoginModuleConfigs = clientRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, clientLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> clientLoginIterator = clientLoginModuleConfigs.iterator();
 
         LoginModuleConfig clientLoginModuleCfg1 = clientLoginIterator.next();
         assertEquals("MyOptionalLoginModule", clientLoginModuleCfg1.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.OPTIONAL, clientLoginModuleCfg1.getUsage());
+        assertEquals(LoginModuleUsage.OPTIONAL, clientLoginModuleCfg1.getUsage());
         assertEquals(1, clientLoginModuleCfg1.getProperties().size());
         assertEquals("client-value", clientLoginModuleCfg1.getProperties().getProperty("client-property"));
 
         LoginModuleConfig clientLoginModuleCfg2 = clientLoginIterator.next();
         assertEquals("MyRequiredLoginModule", clientLoginModuleCfg2.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
+        assertEquals(LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
         assertEquals(1, clientLoginModuleCfg2.getProperties().size());
         assertEquals("client-value2", clientLoginModuleCfg2.getProperties().getProperty("client-property2"));
-
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
         assertEquals("MyPermissionPolicy", permissionPolicyConfig.getClassName());

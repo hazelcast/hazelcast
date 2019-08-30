@@ -72,7 +72,7 @@ public class ClientConfigTest {
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName(clusterName);
+        clientConfig.setClientName(clusterName);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertEquals(clusterName, client.getConfig().getClusterName());

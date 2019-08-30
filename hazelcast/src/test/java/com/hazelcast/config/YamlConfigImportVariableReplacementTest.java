@@ -345,14 +345,13 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Override
     @Test
-    public void testImportClusterConfigFromClassPath() {
+    public void testImportConfigFromClassPath() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - classpath:test-hazelcast.yaml";
         Config config = buildConfig(yaml, null);
         assertEquals("foobar-yaml", config.getClusterName());
-        assertEquals("dev-pass", config.getClusterPassword());
     }
 
     @Override
@@ -379,12 +378,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
                 + "      - class-name: " + IdentityReplacer.class.getName() + "\n"
-                + "  cluster:\n"
-                + "    name: ${java.version} $ID{dev}\n"
-                + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
+                + "  cluster-name: ${java.version} $ID{dev}\n"
+                + "  instance-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
         Config config = buildConfig(yaml, System.getProperties());
         assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
-        assertEquals("My very secret secret", config.getClusterPassword());
+        assertEquals("My very secret secret", config.getInstanceName());
     }
 
     @Override
@@ -395,8 +393,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  config-replacers:\n"
                 + "    replacers:\n"
                 + "      - class-name: " + EncryptionReplacer.class.getName() + "\n"
-                + "  group:\n"
-                + "    name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
+                + "  cluster-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
         buildConfig(yaml, System.getProperties());
     }
 
@@ -405,8 +402,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void testBadVariableSyntaxIsIgnored() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  cluster:\n"
-                + "    name: ${noSuchPropertyAvailable]";
+                + "  cluster-name: ${noSuchPropertyAvailable]";
         Config config = buildConfig(yaml, System.getProperties());
         assertEquals("${noSuchPropertyAvailable]", config.getClusterName());
     }
@@ -425,8 +421,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
-                + "  cluster:\n"
-                + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
+                + "  cluster-name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
         Config config = buildConfig(yaml, System.getProperties());
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
@@ -442,8 +437,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void testNoConfigReplacersMissingProperties() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  cluster:\n"
-                + "    name: ${noSuchPropertyAvailable}";
+                + "  cluster-name: ${noSuchPropertyAvailable}";
         Config config = buildConfig(yaml, System.getProperties());
         assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
@@ -584,18 +578,16 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: name2";
+                + "  cluster-name: name2";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -606,16 +598,14 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: name";
+                + "  cluster-name: name";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  cluster:\n"
-                + "    name: name";
+                + "  cluster-name: name";
 
         Config config = buildConfig(yaml, "config.location", file.getAbsolutePath());
         assertEquals("name", config.getClusterName());
@@ -627,19 +617,17 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqName: {}";
+                + "  cluster-name:\n"
+                + "    - seqName: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -650,18 +638,16 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -672,19 +658,17 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqname";
+                + "  cluster-name:\n"
+                + "    - seqname";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
