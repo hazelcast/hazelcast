@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
 import com.hazelcast.jet.impl.util.Util;
@@ -112,8 +111,8 @@ public class ExecutionContext {
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
-        JetMetricsService service = ((JetService) nodeEngine.getService(JetService.SERVICE_NAME)).getMetricsService();
-        boolean registerMetrics = jobConfig.isMetricsEnabled() && service.isEnabled();
+        boolean registerMetrics = jobConfig.isMetricsEnabled() &&
+                ((JetService) nodeEngine.getService(JetService.SERVICE_NAME)).getMetricsService().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext, registerMetrics);
         snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
         receiverMap = unmodifiableMap(plan.getReceiverMap());

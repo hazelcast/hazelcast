@@ -178,16 +178,19 @@ public class JetMetricsService implements LiveOperationsTracker {
                     1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
             );
             metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
+
             publishers.add(new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
                     (blob, ts) -> {
                         metricsJournal.add(entry(ts, blob));
                         pendingReads.forEach(this::tryCompleteRead);
                     }
             ));
+
             publishers.add(new JobMetricsPublisher(jobExecutionService, nodeEngine.getLocalMember()));
-        }
-        if (config.isJmxEnabled()) {
-            publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
+
+            if (config.isJmxEnabled()) {
+                publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
+            }
         }
         return publishers;
     }
