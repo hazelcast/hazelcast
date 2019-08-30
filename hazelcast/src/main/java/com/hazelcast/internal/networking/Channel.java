@@ -170,10 +170,13 @@ public interface Channel extends Closeable {
      * initialize the channel and to start with processing inbound and outbound data.
      *
      * This method is not threadsafe and should be made only once.
+     *
+     * This method should be called for clientMode and non clientMode channels. Otherwise
+     * the connection will not start to read from or write to the socket.
      */
     void start();
 
-      /**
+    /**
      * Connects the channel.
      *
      * This call should only be made once and is not threadsafe.
