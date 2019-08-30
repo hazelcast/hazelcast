@@ -26,7 +26,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:spring-aware/>
-            <hz:cluster name="test" password="test-pass"/>
+            <hz:cluster-name>test</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>

@@ -18,6 +18,9 @@ package com.hazelcast.security;
 
 import java.util.Properties;
 
+import javax.security.auth.callback.CallbackHandler;
+
+
 /**
  * ICredentialsFactory is used to create {@link Credentials} objects to be used
  * during node authentication before connection is accepted by the master node.
@@ -25,13 +28,20 @@ import java.util.Properties;
 public interface ICredentialsFactory {
 
     /**
+     * This method is (only) called if the factory instance is newly created from a class name provided in
+     * {@link com.hazelcast.config.CredentialsFactoryConfig}.
+     *
+     * @param properties factory properties defined in configuration
+     */
+    default void init(Properties properties) {
+    }
+
+    /**
      * Configures {@link ICredentialsFactory}.
      *
-     * @param clusterName the cluster's name
-     * @param clusterPassword the cluster's password
-     * @param properties  properties that will be used to pass custom configurations by user
+     * @param callbackHandler callback handler which can provide access to system internals
      */
-    void configure(String clusterName, String clusterPassword, Properties properties);
+    void configure(CallbackHandler callbackHandler);
 
     /**
      * Creates new {@link Credentials} object.

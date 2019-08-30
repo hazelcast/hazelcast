@@ -70,7 +70,6 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     private Config config = new Config();
     private String clusterName = config.getClusterName();
-    private String groupPassword = config.getClusterPassword();
 
     @Before
     public void setup() {
@@ -331,7 +330,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         IAtomicLong long1 = instance1.getCPSubsystem().getAtomicLong("long1");
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(DEFAULT_GROUP_NAME, clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(DEFAULT_GROUP_NAME, clusterName, null);
 
         assertEquals(200, response.responseCode);
 
@@ -359,7 +358,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse  response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, clusterName, groupPassword);
+        ConnectionResponse  response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, clusterName, null);
 
         assertEquals(400, response.responseCode);
     }
@@ -370,7 +369,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup("custom", clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup("custom", clusterName, null);
 
         assertEquals(400, response.responseCode);
     }
@@ -388,7 +387,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instance1, instance2);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid(), clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid(), clusterName, null);
 
         assertEquals(200, response.responseCode);
     }
@@ -417,7 +416,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(newUnsecureUUID(), clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(newUnsecureUUID(), clusterName, null);
 
         assertEquals(400, response.responseCode);
     }
@@ -438,7 +437,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         CPMember crashedCPMember = instance2.getCPSubsystem().getLocalCPMember();
         instance2.getLifecycleService().terminate();
 
-        ConnectionResponse response = new HTTPCommunicator(instance3).removeCPMember(crashedCPMember.getUuid(), clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance3).removeCPMember(crashedCPMember.getUuid(), clusterName, null);
 
         assertEquals(200, response.responseCode);
     }
@@ -455,7 +454,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(clusterName, groupPassword);
+                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(clusterName, null);
                 assertEquals(200, response.responseCode);
             }
         });
@@ -488,7 +487,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         waitUntilCPDiscoveryCompleted(instance1);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(clusterName, null);
 
         assertEquals(200, response.responseCode);
 
@@ -511,7 +510,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         sleepAtLeastMillis(10);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).restart(clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).restart(clusterName, null);
         assertEquals(200, response.responseCode);
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
@@ -580,7 +579,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         long sessionId = sessions1.iterator().next().id();
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, sessionId, clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, sessionId, clusterName, null);
 
         assertEquals(200, response.responseCode);
 
@@ -630,7 +629,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
 
-        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, groupPassword);
+        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, null);
 
         assertEquals(400, response1.responseCode);
     }
@@ -641,7 +640,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, groupPassword);
+        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, null);
 
         assertEquals(400, response1.responseCode);
     }

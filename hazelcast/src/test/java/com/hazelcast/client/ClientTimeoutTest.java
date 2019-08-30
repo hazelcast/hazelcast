@@ -52,7 +52,7 @@ public class ClientTimeoutTest {
     @Test(timeout = 20000, expected = IllegalStateException.class)
     public void testTimeoutToOutsideNetwork() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("dev").setClusterPassword("dev-pass");
+        clientConfig.setClientName("dev");
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress("8.8.8.8:5701");

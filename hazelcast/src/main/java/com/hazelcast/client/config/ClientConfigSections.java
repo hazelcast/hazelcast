@@ -28,7 +28,6 @@ enum ClientConfigSections {
     PROPERTIES("properties", false),
     SERIALIZATION("serialization", false),
     NATIVE_MEMORY("native-memory", false),
-    CLUSTER("cluster", false),
     LISTENERS("listeners", false),
     NETWORK("network", false),
     LOAD_BALANCER("load-balancer", false),

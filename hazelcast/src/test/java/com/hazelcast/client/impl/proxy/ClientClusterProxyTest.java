@@ -58,7 +58,7 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName(config.getClusterName());
+        clientConfig.setClientName(config.getClusterName());
         return factory.newHazelcastClient(clientConfig);
     }
 

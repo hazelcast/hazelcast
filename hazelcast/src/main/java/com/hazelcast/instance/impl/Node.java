@@ -128,7 +128,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
@@ -241,7 +240,6 @@ public class Node {
             logger = loggingService.getLogger(Node.class.getName());
 
             nodeExtension.printNodeInfo();
-            logGroupPasswordInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -916,17 +914,4 @@ public class Node {
         }
         return attributes;
     }
-
-    private void logGroupPasswordInfo() {
-        String password = config.getClusterPassword();
-        if (!(config.getSecurityConfig().isEnabled()
-                || isNullOrEmpty(password)
-                || Config.DEFAULT_CLUSTER_PASSWORD.equals(password))) {
-            logger.info("A non-empty group password is configured for the Hazelcast member."
-                    + " Since version 3.8.2, members with the same cluster name,"
-                    + " but with different group passwords (that do not use authentication) form a cluster."
-                    + " The group password configuration will be removed completely in a future release.");
-        }
-    }
-
 }

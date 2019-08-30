@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-abstract class AbstractClientFailoverConfigBuilderTest {
+public abstract class AbstractClientFailoverConfigBuilderTest {
     protected ClientFailoverConfig fullClientConfig;
 
     @After
@@ -71,8 +71,8 @@ abstract class AbstractClientFailoverConfigBuilderTest {
     void assertSampleFailoverConfig(ClientFailoverConfig config) {
         List<ClientConfig> clientConfigs = fullClientConfig.getClientConfigs();
         assertEquals(2, clientConfigs.size());
-        assertEquals("cluster1", clientConfigs.get(0).getClusterName());
-        assertEquals("cluster2", clientConfigs.get(1).getClusterName());
+        assertEquals("cluster1", clientConfigs.get(0).getClientName());
+        assertEquals("cluster2", clientConfigs.get(1).getClientName());
         assertEquals(4, config.getTryCount());
     }
 }

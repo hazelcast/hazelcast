@@ -25,6 +25,14 @@ import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfi
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.LdapRoleMappingMode;
+import com.hazelcast.config.security.LdapSearchScope;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -92,7 +100,6 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
         assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), MASK_FOR_SENSITIVE_DATA);
     }
 
     @Test
@@ -102,7 +109,7 @@ public class ConfigXmlGeneratorTest {
         String licenseKey = "HazelcastLicenseKey";
 
         Config cfg = new Config();
-        cfg.setClusterPassword(password);
+        cfg.getSecurityConfig().setMemberRealmConfig("mr", new RealmConfig().setUsernamePasswordIdentityConfig("user", password));
 
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", password)
@@ -127,7 +134,9 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, password);
         assertEquals(theSalt, salt);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
-        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), password);
+        SecurityConfig securityConfig = newConfigViaXMLGenerator.getSecurityConfig();
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        assertEquals(realmConfig.getUsernamePasswordIdentityConfig().getPassword(), password);
     }
 
     @Test
@@ -416,11 +425,24 @@ public class ConfigXmlGeneratorTest {
         Properties dummyprops = new Properties();
         dummyprops.put("a", "b");
 
+        RealmConfig memberRealm = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
+                Arrays.asList(
+                        new LoginModuleConfig()
+                        .setClassName("member.f.o.o")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                        new LoginModuleConfig()
+                        .setClassName("member.b.a.r")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                        new LoginModuleConfig()
+                        .setClassName("member.l.o.l")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                .setCredentialsFactoryConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops));
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
                       .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
                       .setClientBlockUnmappedActions(false)
-                      .setClientLoginModuleConfigs(Arrays.asList(
+                      .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
+                              Arrays.asList(
                               new LoginModuleConfig()
                                       .setClassName("f.o.o")
                                       .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
@@ -429,18 +451,9 @@ public class ConfigXmlGeneratorTest {
                                       .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
                               new LoginModuleConfig()
                                       .setClassName("l.o.l")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                      .setMemberLoginModuleConfigs(Arrays.asList(
-                              new LoginModuleConfig()
-                                      .setClassName("member.f.o.o")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                              new LoginModuleConfig()
-                                      .setClassName("member.b.a.r")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                              new LoginModuleConfig()
-                                      .setClassName("member.l.o.l")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                      .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                              .setUsernamePasswordIdentityConfig("username", "password"))
+                      .setMemberRealmConfig("mr", memberRealm)
                       .setClientPermissionConfigs(new HashSet<>(singletonList(
                               new PermissionConfig()
                                       .setActions(newHashSet("read", "remove"))
@@ -451,7 +464,65 @@ public class ConfigXmlGeneratorTest {
 
         cfg.setSecurityConfig(expectedConfig);
 
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testLdapConfig() {
+        Config cfg = new Config();
+
+        RealmConfig realmConfig = new RealmConfig().setLdapAuthenticationConfig(new LdapAuthenticationConfig()
+                .setParseDn(true)
+                .setPasswordAttribute("passwordAttribute")
+                .setRoleContext("roleContext")
+                .setRoleFilter("roleFilter")
+                .setRoleMappingAttribute("roleMappingAttribute")
+                .setRoleMappingMode(LdapRoleMappingMode.REVERSE)
+                .setRoleNameAttribute("roleNameAttribute")
+                .setRoleRecursionMaxDepth(25)
+                .setRoleSearchScope(LdapSearchScope.OBJECT)
+                .setSocketFactoryClassName("socketFactoryClassName")
+                .setSystemUserDn("systemUserDn")
+                .setSystemUserPassword("systemUserPassword")
+                .setUrl("url")
+                .setUserContext("userContext")
+                .setUserFilter("userFilter")
+                .setUserNameAttribute("userNameAttribute")
+                .setUserSearchScope(LdapSearchScope.ONE_LEVEL)
+                );
+        SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
+
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testTlsAuthenticationConfig() {
+        Config cfg = new Config();
+
+        RealmConfig realmConfig = new RealmConfig().setTlsAuthenticationConfig(new TlsAuthenticationConfig()
+                .setRoleAttribute("roleAttribute"));
+        SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("tlsRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testTokenAuthenticationConfig() {
+        Config cfg = new Config();
+
+        SecurityConfig expectedConfig = new SecurityConfig()
+                .setClientRealmConfig("cRealm",
+                        new RealmConfig().setTokenIdentityConfig(new TokenIdentityConfig(TokenEncoding.NONE, "ahoj")))
+                .setMemberRealmConfig("mRealm",
+                        new RealmConfig().setTokenIdentityConfig(new TokenIdentityConfig(TokenEncoding.BASE64, "bmF6ZGFy")));
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -554,7 +625,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testReplicatedMapConfigGenerator() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy("PassThroughMergePolicy")
@@ -976,7 +1046,6 @@ public class ConfigXmlGeneratorTest {
         testMap(mapStoreConfig);
     }
 
-    @SuppressWarnings("deprecation")
     private void testMap(MapStoreConfig mapStoreConfig) {
         AttributeConfig attrConfig = new AttributeConfig()
                 .setName("power")
@@ -1096,7 +1165,6 @@ public class ConfigXmlGeneratorTest {
         assertEquals(expectedConfig, actualConfig);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testMapNearCacheEvictionConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
@@ -1139,6 +1207,7 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testWanConfig() {
+        @SuppressWarnings("rawtypes")
         HashMap<String, Comparable> props = new HashMap<>();
         props.put("prop1", "val1");
         props.put("prop2", "val2");
@@ -1606,6 +1675,7 @@ public class ConfigXmlGeneratorTest {
         return discoveryConfig;
     }
 
+    @SuppressWarnings("deprecation")
     private AwsConfig getDummyAwsConfig() {
         return new AwsConfig().setHostHeader("dummyHost")
                 .setRegion("dummyRegion")

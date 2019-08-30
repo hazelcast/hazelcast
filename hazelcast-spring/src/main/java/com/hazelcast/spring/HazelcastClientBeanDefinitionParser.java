@@ -41,6 +41,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.cp.CPSubsystem;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -71,7 +74,7 @@ import static org.springframework.util.Assert.isTrue;
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>{@code
  *   <hz:client id="client">
- *      <hz:cluster name="${cluster.name}" password="${cluster.password}" />
+ *      <hz:client-name>${cluster.name}</hz:client-name>
  *      <hz:network
  *          connection-timeout="1000"
  *          redo-operation="true"
@@ -144,8 +147,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
-                if ("cluster".equals(nodeName)) {
-                    handleClusterAttributes(node);
+                if ("client-name".equals(nodeName)) {
+                    configBuilder.addPropertyValue("clientName", getTextContent(node));
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {
@@ -196,8 +199,18 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(child);
                 if ("credentials-factory".equals(nodeName)) {
                     handleCredentialsFactory(child, securityConfigBuilder);
-                } else if ("credentials".equals(nodeName)) {
-                    securityConfigBuilder.addPropertyValue("credentialsClassname", getTextContent(child));
+                } else if ("username-password".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(UsernamePasswordIdentityConfig.class)
+                            .addConstructorArgValue(getAttribute(child, "username"))
+                            .addConstructorArgValue(getAttribute(child, "password"));
+                    securityConfigBuilder.addPropertyValue("UsernamePasswordIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("token".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(TokenIdentityConfig.class)
+                            .addConstructorArgValue(TokenEncoding.getTokenEncoding(getAttribute(child, "encoding")))
+                            .addConstructorArgValue(getTextContent(child));
+                    securityConfigBuilder.addPropertyValue("TokenIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("credentials-ref".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyReference("credentials", getTextContent(child));
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
@@ -278,8 +291,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     String value = att.getNodeValue();
                     if ("executor-pool-size".equals(name)) {
                         configBuilder.addPropertyValue("executorPoolSize", value);
-                    } else if ("credentials-ref".equals(name)) {
-                        configBuilder.addPropertyReference("credentials", value);
                     }
                 }
             }

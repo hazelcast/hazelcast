@@ -31,7 +31,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>named-spring-hz-instance</hz:instance-name>
-            <hz:cluster name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="true"/>

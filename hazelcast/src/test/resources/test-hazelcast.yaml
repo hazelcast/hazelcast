@@ -13,6 +13,4 @@
 # limitations under the License.
 
 hazelcast:
-  cluster:
-    name: foobar-yaml
-    password: dev-pass
+  cluster-name: foobar-yaml

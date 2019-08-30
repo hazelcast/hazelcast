@@ -21,7 +21,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
@@ -755,12 +754,12 @@ public class ManagementCenterService {
         }
 
         private URL newGetTaskUrl() throws IOException {
-            Config config = instance.getConfig();
+            String clusterName = instance.getConfig().getClusterName();
 
             Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
-                    + ":" + localAddress.getPort() + "&cluster=" + encode(config.getClusterName(), "UTF-8");
+                    + ":" + localAddress.getPort() + "&cluster=" + encode(clusterName, "UTF-8");
             return new URL(urlString);
         }
 

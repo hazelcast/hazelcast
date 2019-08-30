@@ -111,6 +111,15 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.LdapRoleMappingMode;
+import com.hazelcast.config.security.LdapSearchScope;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -260,8 +269,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleNetwork(node);
                     } else if ("advanced-network".equals(nodeName)) {
                         handleAdvancedNetwork(node);
-                    } else if ("cluster".equals(nodeName)) {
-                        handleClusterAttributes(node);
                     } else if ("properties".equals(nodeName)) {
                         handleProperties(node);
                     } else if ("executor-service".equals(nodeName)) {
@@ -304,15 +311,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSecurity(node);
                     } else if ("member-attributes".equals(nodeName)) {
                         handleMemberAttributes(node);
-                    } else if ("instance-name".equals(nodeName)) {
+                    } else if ("instance-name".equals(nodeName)
+                            || "cluster-name".equals(nodeName)
+                            || "license-key".equals(nodeName)) {
                         configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("listeners".equals(nodeName)) {
                         List listeners = parseListeners(node, ListenerConfig.class);
                         configBuilder.addPropertyValue("listenerConfigs", listeners);
                     } else if ("lite-member".equals(nodeName)) {
                         handleLiteMember(node);
-                    } else if ("license-key".equals(nodeName)) {
-                        configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("management-center".equals(nodeName)) {
                         handleManagementCenter(node);
                     } else if ("services".equals(nodeName)) {
@@ -1743,12 +1750,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, securityConfigBuilder);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("member-credentials-factory".equals(nodeName)) {
-                    handleCredentialsFactory(child, securityConfigBuilder);
-                } else if ("member-login-modules".equals(nodeName)) {
-                    handleLoginModules(child, securityConfigBuilder, true);
-                } else if ("client-login-modules".equals(nodeName)) {
-                    handleLoginModules(child, securityConfigBuilder, false);
+                if ("realms".equals(nodeName)) {
+                    handleRealms(child, securityConfigBuilder);
+                } else if ("member-authentication".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyValue("memberRealm", getAttribute(child, "realm"));
+                } else if ("client-authentication".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyValue("clientRealm", getAttribute(child, "realm"));
                 } else if ("client-permission-policy".equals(nodeName)) {
                     handlePermissionPolicy(child, securityConfigBuilder);
                 } else if ("client-permissions".equals(nodeName)) {
@@ -1760,6 +1767,80 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+
+        private void handleRealms(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+            ManagedMap<String, BeanDefinition> realms = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("realm".equals(nodeName)) {
+                    realms.put(getAttribute(child, "name"), handleRealm(child, securityConfigBuilder));
+                }
+            }
+            securityConfigBuilder.addPropertyValue("realmConfigs", realms);
+        }
+
+        private AbstractBeanDefinition handleRealm(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+            BeanDefinitionBuilder realmConfigBuilder = createBeanBuilder(RealmConfig.class);
+            AbstractBeanDefinition beanDefinition = realmConfigBuilder.getBeanDefinition();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("identity".equals(nodeName)) {
+                    handleIdentity(child, realmConfigBuilder);
+                } else if ("authentication".equals(nodeName)) {
+                    handleAuthentication(child, realmConfigBuilder);
+                }
+            }
+            return beanDefinition;
+        }
+
+        private void handleAuthentication(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("jaas".equals(nodeName)) {
+                    handleLoginModules(child, realmConfigBuilder);
+                } else if ("tls".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, TlsAuthenticationConfig.class, "TlsAuthenticationConfig",
+                            realmConfigBuilder);
+                } else if ("ldap".equals(nodeName)) {
+                    handleLdapAuthenticationConfig(realmConfigBuilder, child);
+                }
+            }
+        }
+
+        private BeanDefinitionBuilder handleLdapAuthenticationConfig(BeanDefinitionBuilder realmConfigBuilder, Node node) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, LdapAuthenticationConfig.class,
+                    "LdapAuthenticationConfig", realmConfigBuilder, "roleMappingMode", "userSearchScope", "roleSearchScope");
+            for (Node n : childElements(node)) {
+                String name = xmlToJavaName(cleanNodeName(n));
+                if ("roleMappingMode".equals(name)) {
+                    builder.addPropertyValue(name, LdapRoleMappingMode.getRoleMappingMode(getTextContent(n)));
+                } else if ("userSearchScope".equals(name) || "roleSearchScope".equals(name)) {
+                    builder.addPropertyValue(name, LdapSearchScope.getSearchScope(getTextContent(n)));
+                }
+            }
+            return builder;
+        }
+
+        private void handleIdentity(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("credentials-factory".equals(nodeName)) {
+                    handleCredentialsFactory(child, realmConfigBuilder);
+                } else if ("username-password".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(UsernamePasswordIdentityConfig.class)
+                            .addConstructorArgValue(getAttribute(child, "username"))
+                            .addConstructorArgValue(getAttribute(child, "password"));
+                    realmConfigBuilder.addPropertyValue("UsernamePasswordIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("token".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(TokenIdentityConfig.class)
+                            .addConstructorArgValue(TokenEncoding.getTokenEncoding(getAttribute(child, "encoding")))
+                            .addConstructorArgValue(getTextContent(child));
+                    realmConfigBuilder.addPropertyValue("TokenIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("credentials-ref".equals(nodeName)) {
+                    realmConfigBuilder.addPropertyReference("credentials", getTextContent(child));
+                }
+            }
         }
 
         private void handleMemberAttributes(Node node) {
@@ -1869,22 +1950,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     break;
                 }
             }
-            securityConfigBuilder.addPropertyValue("memberCredentialsConfig", beanDefinition);
+            securityConfigBuilder.addPropertyValue("credentialsFactoryConfig", beanDefinition);
         }
 
-        private void handleLoginModules(Node node, BeanDefinitionBuilder securityConfigBuilder, boolean member) {
-            List<BeanDefinition> lms = new ManagedList<>();
+        private void handleLoginModules(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            BeanDefinitionBuilder jaasConfigBuilder = createBeanBuilder(JaasAuthenticationConfig.class);
+            AbstractBeanDefinition beanDefinition = jaasConfigBuilder.getBeanDefinition();
+            List<BeanDefinition> lms = new ManagedList<BeanDefinition>();
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("login-module".equals(nodeName)) {
                     handleLoginModule(child, lms);
                 }
             }
-            if (member) {
-                securityConfigBuilder.addPropertyValue("memberLoginModuleConfigs", lms);
-            } else {
-                securityConfigBuilder.addPropertyValue("clientLoginModuleConfigs", lms);
-            }
+            jaasConfigBuilder.addPropertyValue("loginModuleConfigs", lms);
+            realmConfigBuilder.addPropertyValue("jaasAuthenticationConfig", beanDefinition);
         }
 
         private void handleLoginModule(Node node, List<BeanDefinition> list) {
@@ -2080,5 +2160,4 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             return EndpointQualifier.resolve(type, getAttribute(node, "name"));
         }
     }
-
 }

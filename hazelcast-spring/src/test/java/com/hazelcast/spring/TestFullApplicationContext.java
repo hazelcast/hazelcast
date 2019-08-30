@@ -681,10 +681,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGroupConfig() {
-        assertNotNull(config);
+    public void testClusterNameConfig() {
         assertEquals("spring-cluster", config.getClusterName());
-        assertEquals("spring-cluster-pass", config.getClusterPassword());
     }
 
     @Test
@@ -824,7 +822,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
         assertEquals("SUB_ID", azure.getProperty("subscription-id"));
         assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
-        assertEquals("CLUSTER-NAME", azure.getProperty("cluster-name"));
+        assertEquals("RESOURCE-GROUP-NAME", azure.getProperty("group-name"));
     }
 
     private void assertKubernetesConfig(KubernetesConfig kubernetes) {

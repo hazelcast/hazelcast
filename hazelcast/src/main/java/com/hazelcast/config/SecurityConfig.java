@@ -19,30 +19,36 @@ package com.hazelcast.config;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.security.ICredentialsFactory;
 
 /**
  * Contains configuration for Security
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public class SecurityConfig {
 
     private static final boolean DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS = true;
 
     private boolean enabled;
 
-    private CredentialsFactoryConfig memberCredentialsConfig = new CredentialsFactoryConfig();
-
-    private List<LoginModuleConfig> memberLoginModuleConfigs = new ArrayList<LoginModuleConfig>();
-
     private List<SecurityInterceptorConfig> securityInterceptorConfigs = new ArrayList<SecurityInterceptorConfig>();
-
-    private List<LoginModuleConfig> clientLoginModuleConfigs = new ArrayList<LoginModuleConfig>();
 
     private PermissionPolicyConfig clientPolicyConfig = new PermissionPolicyConfig();
 
     private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
+
+    private Map<String, RealmConfig> realmConfigs = new HashMap<>();
+
+    private String memberRealm;
+    private String clientRealm;
 
     private boolean clientBlockUnmappedActions = DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS;
 
@@ -71,37 +77,18 @@ public class SecurityConfig {
         return this;
     }
 
-    public SecurityConfig addMemberLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
-        memberLoginModuleConfigs.add(loginModuleConfig);
-        return this;
-    }
-
-    public SecurityConfig addClientLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
-        clientLoginModuleConfigs.add(loginModuleConfig);
-        return this;
-    }
-
     public SecurityConfig addClientPermissionConfig(PermissionConfig permissionConfig) {
         clientPermissionConfigs.add(permissionConfig);
         return this;
     }
 
-    public List<LoginModuleConfig> getClientLoginModuleConfigs() {
-        return clientLoginModuleConfigs;
-    }
-
-    public SecurityConfig setClientLoginModuleConfigs(List<LoginModuleConfig> loginModuleConfigs) {
-        this.clientLoginModuleConfigs = loginModuleConfigs;
+    public SecurityConfig addRealmConfig(String realmName, RealmConfig realmConfig) {
+        realmConfigs.put(realmName, realmConfig);
         return this;
     }
 
-    public List<LoginModuleConfig> getMemberLoginModuleConfigs() {
-        return memberLoginModuleConfigs;
-    }
-
-    public SecurityConfig setMemberLoginModuleConfigs(List<LoginModuleConfig> memberLoginModuleConfigs) {
-        this.memberLoginModuleConfigs = memberLoginModuleConfigs;
-        return this;
+    public RealmConfig getRealmConfig(String realmName) {
+        return realmName == null ? null : realmConfigs.get(realmName);
     }
 
     public PermissionPolicyConfig getClientPolicyConfig() {
@@ -122,13 +109,12 @@ public class SecurityConfig {
         return this;
     }
 
-    public CredentialsFactoryConfig getMemberCredentialsConfig() {
-        return memberCredentialsConfig;
+    public ICredentialsFactory getRealmCredentialsFactory(String realmName) {
+        return getRealmConfigOrDefault(realmName).asCredentialsFactory();
     }
 
-    public SecurityConfig setMemberCredentialsConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
-        this.memberCredentialsConfig = credentialsFactoryConfig;
-        return this;
+    public LoginModuleConfig[] getRealmLoginModuleConfigs(String realmName) {
+        return getRealmConfigOrDefault(realmName).asLoginModuleConfigs();
     }
 
     public OnJoinPermissionOperationName getOnJoinPermissionOperation() {
@@ -138,6 +124,44 @@ public class SecurityConfig {
     public SecurityConfig setOnJoinPermissionOperation(OnJoinPermissionOperationName onJoinPermissionOperation) {
         this.onJoinPermissionOperation = checkNotNull(onJoinPermissionOperation,
                 "Existing " + OnJoinPermissionOperationName.class.getSimpleName() + " value has to be provided.");
+        return this;
+    }
+
+    public Map<String, RealmConfig> getRealmConfigs() {
+        return realmConfigs;
+    }
+
+    public void setRealmConfigs(Map<String, RealmConfig> realmConfigs) {
+        this.realmConfigs = realmConfigs;
+    }
+
+    public String getMemberRealm() {
+        return memberRealm;
+    }
+
+    public SecurityConfig setMemberRealm(String memberRealm) {
+        this.memberRealm = memberRealm;
+        return this;
+    }
+
+    public String getClientRealm() {
+        return clientRealm;
+    }
+
+    public SecurityConfig setClientRealm(String clientRealm) {
+        this.clientRealm = clientRealm;
+        return this;
+    }
+
+    public SecurityConfig setMemberRealmConfig(String realmName, RealmConfig realmConfig) {
+        addRealmConfig(realmName, realmConfig);
+        setMemberRealm(realmName);
+        return this;
+    }
+
+    public SecurityConfig setClientRealmConfig(String realmName, RealmConfig realmConfig) {
+        addRealmConfig(realmName, realmConfig);
+        setClientRealm(realmName);
         return this;
     }
 
@@ -178,81 +202,43 @@ public class SecurityConfig {
 
     @Override
     public String toString() {
-        return "SecurityConfig{"
-                + "enabled=" + enabled
-                + ", memberCredentialsConfig=" + memberCredentialsConfig
-                + ", memberLoginModuleConfigs=" + memberLoginModuleConfigs
-                + ", clientLoginModuleConfigs=" + clientLoginModuleConfigs
-                + ", clientPolicyConfig=" + clientPolicyConfig
-                + ", clientPermissionConfigs=" + clientPermissionConfigs
-                + ", clientBlockUnmappedActions=" + clientBlockUnmappedActions
-                + ", onJoinPermissionOperation=" + onJoinPermissionOperation
-                + '}';
+        return "SecurityConfig [enabled=" + enabled + ", securityInterceptorConfigs=" + securityInterceptorConfigs
+                + ", clientPolicyConfig=" + clientPolicyConfig + ", clientPermissionConfigs=" + clientPermissionConfigs
+                + ", realmConfigs=" + realmConfigs + ", memberRealm=" + memberRealm + ", clientRealm=" + clientRealm
+                + ", clientBlockUnmappedActions=" + clientBlockUnmappedActions + ", onJoinPermissionOperation="
+                + onJoinPermissionOperation + "]";
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        SecurityConfig that = (SecurityConfig) o;
-
-        if (enabled != that.enabled) {
-            return false;
-        }
-        if (clientBlockUnmappedActions != that.clientBlockUnmappedActions) {
-            return false;
-        }
-        if (memberCredentialsConfig != null
-                ? !memberCredentialsConfig.equals(that.memberCredentialsConfig)
-                : that.memberCredentialsConfig != null) {
-            return false;
-        }
-        if (memberLoginModuleConfigs != null
-                ? !memberLoginModuleConfigs.equals(that.memberLoginModuleConfigs)
-                : that.memberLoginModuleConfigs != null) {
-            return false;
-        }
-        if (securityInterceptorConfigs != null
-                ? !securityInterceptorConfigs.equals(that.securityInterceptorConfigs)
-                : that.securityInterceptorConfigs != null) {
-            return false;
-        }
-        if (clientLoginModuleConfigs != null
-                ? !clientLoginModuleConfigs.equals(that.clientLoginModuleConfigs)
-                : that.clientLoginModuleConfigs != null) {
-            return false;
-        }
-        if (clientPolicyConfig != null
-                ? !clientPolicyConfig.equals(that.clientPolicyConfig)
-                : that.clientPolicyConfig != null) {
-            return false;
-        }
-        if (onJoinPermissionOperation != that.onJoinPermissionOperation) {
-            return false;
-        }
-        return clientPermissionConfigs != null
-                ? clientPermissionConfigs.equals(that.clientPermissionConfigs)
-                : that.clientPermissionConfigs == null;
-    }
-
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (memberCredentialsConfig != null ? memberCredentialsConfig.hashCode() : 0);
-        result = 31 * result + (memberLoginModuleConfigs != null ? memberLoginModuleConfigs.hashCode() : 0);
-        result = 31 * result + (securityInterceptorConfigs != null ? securityInterceptorConfigs.hashCode() : 0);
-        result = 31 * result + (clientLoginModuleConfigs != null ? clientLoginModuleConfigs.hashCode() : 0);
-        result = 31 * result + (clientPolicyConfig != null ? clientPolicyConfig.hashCode() : 0);
-        result = 31 * result + (clientPermissionConfigs != null ? clientPermissionConfigs.hashCode() : 0);
-        result = 31 * result + (clientBlockUnmappedActions ? 1 : 0);
-        result = 31 * result + onJoinPermissionOperation.ordinal();
-        return result;
+        return Objects.hash(clientBlockUnmappedActions, clientPermissionConfigs, clientPolicyConfig, clientRealm, enabled,
+                memberRealm, onJoinPermissionOperation, realmConfigs, securityInterceptorConfigs);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        SecurityConfig other = (SecurityConfig) obj;
+        return clientBlockUnmappedActions == other.clientBlockUnmappedActions
+                && Objects.equals(clientPermissionConfigs, other.clientPermissionConfigs)
+                && Objects.equals(clientPolicyConfig, other.clientPolicyConfig)
+                && Objects.equals(clientRealm, other.clientRealm) && enabled == other.enabled
+                && Objects.equals(memberRealm, other.memberRealm)
+                && onJoinPermissionOperation == other.onJoinPermissionOperation
+                && Objects.equals(realmConfigs, other.realmConfigs)
+                && Objects.equals(securityInterceptorConfigs, other.securityInterceptorConfigs);
+    }
+
+    private RealmConfig getRealmConfigOrDefault(String realmName) {
+        RealmConfig realmConfig = realmName == null ? null : realmConfigs.get(realmName);
+        return realmConfig == null ? RealmConfig.DEFAULT_REALM : realmConfig;
     }
 }

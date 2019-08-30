@@ -24,6 +24,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.YamlConfigBuilderTest;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,12 +43,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.internal.nio.IOUtil.delete;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -99,9 +103,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  cluster:\n"
-                + "    name: foobar\n"
-                + "    password: dev-pass";
+                + "  client-name: foobar";
 
         File file = File.createTempFile("foo", ".yaml");
         file.deleteOnExit();
@@ -113,7 +115,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getClusterName());
+        assertEquals("foobar", config.getClientName());
     }
 
     @Override
@@ -130,7 +132,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-yaml", config.getClusterName());
+        assertEquals("foobar-yaml", config.getClientName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
@@ -361,6 +363,22 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "    type:   random   \n";
 
         buildConfig(yaml);
+    }
+
+    @Override
+    public void testTokenIdentityConfig() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  security:\n"
+                + "    token:\n"
+                + "      encoding: base64\n"
+                + "      value: SGF6ZWxjYXN0\n"
+                ;
+        ClientConfig config = buildConfig(yaml);
+        TokenIdentityConfig tokenIdentityConfig = config.getSecurityConfig().getTokenIdentityConfig();
+        assertNotNull(tokenIdentityConfig);
+        assertArrayEquals("Hazelcast".getBytes(StandardCharsets.US_ASCII), tokenIdentityConfig.getToken());
+        assertEquals("SGF6ZWxjYXN0", tokenIdentityConfig.getTokenEncoded());
     }
 
     public static ClientConfig buildConfig(String yaml) {

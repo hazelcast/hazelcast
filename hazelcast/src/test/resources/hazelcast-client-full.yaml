@@ -34,9 +34,7 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
 
-  cluster:
-    name: dev
-    password: dev-pass
+  client-name: dev
   instance-name: CLIENT_NAME
   license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
   properties:
@@ -110,7 +108,7 @@ hazelcast-client:
       tenant-id: TENANT_ID
       subscription-id: SUB_ID
       cluster-id: HZLCAST001
-      cluster-name: CLUSTER-NAME
+      group-name: RESOURCE-GROUP-NAME
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE

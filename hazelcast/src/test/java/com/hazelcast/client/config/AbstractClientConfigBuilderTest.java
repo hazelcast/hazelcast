@@ -55,6 +55,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSupport {
@@ -373,7 +374,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public void testClusterName() {
-        assertEquals("dev", fullClientConfig.getClusterName());
+        assertEquals("dev", fullClientConfig.getClientName());
     }
 
     @Test
@@ -398,7 +399,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testSecurityConfig() {
         ClientSecurityConfig securityConfig = fullClientConfig.getSecurityConfig();
-        assertEquals("com.hazelcast.security.UsernamePasswordCredentials", securityConfig.getCredentialsClassname());
+        assertNull(securityConfig.getUsernamePasswordIdentityConfig());
         CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
         assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
         Properties properties = credentialsFactoryConfig.getProperties();
@@ -452,4 +453,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testWhitespaceInNonSpaceStrings();
+
+    @Test
+    public abstract void testTokenIdentityConfig();
 }
