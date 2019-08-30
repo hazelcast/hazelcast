@@ -56,11 +56,9 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
     public HandlerStatus onRead() {
         src.flip();
         try {
-            int messagesCreated = 0;
             while (src.hasRemaining()) {
                 boolean complete = message.readFrom(src);
                 if (!complete) {
-                    normalPacketsRead.inc(messagesCreated);
                     break;
                 }
 
@@ -69,7 +67,6 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                     //HANDLE-MESSAGE
                     handleMessage(message);
                     message = ClientMessage.create();
-                    messagesCreated++;
                     continue;
                 }
 
@@ -97,7 +94,6 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                 }
 
                 message = ClientMessage.create();
-                messagesCreated++;
             }
 
             return CLEAN;
@@ -109,6 +105,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
     private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset());
         message.setConnection(connection);
+        normalPacketsRead.inc();
         dst.accept(message);
     }
 }
