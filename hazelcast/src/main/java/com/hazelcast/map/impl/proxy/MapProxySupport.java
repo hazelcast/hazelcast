@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -1302,6 +1303,11 @@ abstract class MapProxySupport<K, V>
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Override
+    public void addIndex(IndexConfig indexConfig) {
+        // TODO: Implement me!
     }
 
     @Override

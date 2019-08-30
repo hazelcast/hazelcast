@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -2595,6 +2596,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                  {@code false} otherwise.
      */
     void addIndex(@Nonnull String attribute, boolean ordered);
+
+    // TODO: JavaDoc
+    void addIndex(IndexConfig indexConfig);
 
     /**
      * Returns LocalMapStats for this map.

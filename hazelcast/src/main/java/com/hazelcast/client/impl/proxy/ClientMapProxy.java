@@ -98,6 +98,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -1434,6 +1435,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
         validateIndexAttribute(attribute);
         ClientMessage request = MapAddIndexCodec.encodeRequest(name, attribute, ordered);
         invoke(request);
+    }
+
+    @Override
+    public void addIndex(IndexConfig indexConfig) {
+        // TODO: Implement me (new codec?)
     }
 
     @Override
